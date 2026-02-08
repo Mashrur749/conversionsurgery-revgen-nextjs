@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
-import { getDb } from '@/db';
-import { leads, users } from '@/db/schema';
+import { getClientId } from '@/lib/get-client-id';
+import { getDb, leads } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -23,25 +23,24 @@ const statusColors: Record<string, string> = {
 
 export default async function LeadsPage() {
   const session = await auth();
-  
-  if (!session?.user?.email) {
-    return <div>Not authenticated</div>;
+  const clientId = await getClientId();
+
+  if (session?.user?.isAdmin && !clientId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">Select a Client</h2>
+        <p className="text-muted-foreground">
+          Use the dropdown in the header to select a client to view.
+        </p>
+      </div>
+    );
   }
 
-  const db = getDb();
-
-  // Fetch user with client info from database
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, session.user.email))
-    .limit(1);
-
-  if (!userRecord || userRecord.length === 0 || !userRecord[0].clientId) {
+  if (!clientId) {
     return <div>No client linked</div>;
   }
 
-  const clientId = userRecord[0].clientId;
+  const db = getDb();
 
   const allLeads = await db
     .select()
