@@ -7,6 +7,7 @@ import {
   integer,
   unique,
   primaryKey,
+  boolean,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { clients } from './clients';
@@ -22,6 +23,7 @@ export const users = pgTable('users', {
   emailVerified: timestamp('email_verified'),
   image: varchar('image', { length: 500 }),
   clientId: uuid('client_id').references(() => clients.id),
+  isAdmin: boolean('is_admin').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

@@ -15,6 +15,13 @@
       "when": 1770449701850,
       "tag": "0001_pale_gwen_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770531919870,
+      "tag": "0002_amused_gamora",
+      "breakpoints": true
     }
   ]
 }

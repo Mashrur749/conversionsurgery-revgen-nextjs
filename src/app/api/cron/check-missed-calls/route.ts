@@ -62,23 +62,21 @@ export async function GET(request: NextRequest) {
         console.log(`[Check Missed Calls] Call ${call.callSid} full Twilio data:`, {
           status: callData.status,
           duration: callData.duration,
-          answered: callData.answered,
+          answeredBy: (callData as any).answeredBy,
           direction: callData.direction,
           to: callData.to,
           from: callData.from,
-          numMedia: callData.numMedia,
           // Log all available properties
           allKeys: Object.keys(callData).filter(k => !k.startsWith('_'))
         });
 
-        // Check if call ended with a missed/failed status or was not answered
+        // Check if call ended with a missed/failed status
+        // no-answer means the call wasn't answered within the dial timeout
         const missedStatuses = ['no-answer', 'busy', 'failed', 'canceled'];
-        const isMissed = missedStatuses.includes(callData.status) ||
-                        callData.answered === false ||
-                        (callData.status === 'completed' && callData.answered === undefined);
+        const isMissed = missedStatuses.includes(callData.status);
 
         if (isMissed) {
-          console.log(`[Check Missed Calls - FALLBACK] Missed call detected: ${call.callSid} - status=${callData.status}, answered=${callData.answered}`);
+          console.log(`[Check Missed Calls - FALLBACK] Missed call detected: ${call.callSid} - status=${callData.status}`);
           console.log('[Check Missed Calls - FALLBACK] Processing via polling (action callback must have failed)');
 
           // Process as missed call via polling fallback
@@ -87,7 +85,6 @@ export async function GET(request: NextRequest) {
             To: call.twilioNumber,
             CallStatus: callData.status,
             CallSid: call.callSid,
-            answered: callData.answered,
           });
 
           missedDetected++;

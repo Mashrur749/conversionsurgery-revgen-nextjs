@@ -24,7 +24,7 @@ export const authOptions: NextAuthOptions = {
   }),
   callbacks: {
     async session({ session, user }) {
-      // Fetch user from database to include client info
+      // Fetch user from database to include client info and admin status
       const db = getDb();
       const dbUser = await db
         .select()
@@ -34,6 +34,7 @@ export const authOptions: NextAuthOptions = {
 
       if (dbUser && dbUser.length > 0) {
         (session as any).user.id = dbUser[0].id;
+        (session as any).user.isAdmin = dbUser[0].isAdmin ?? false;
         (session as any).client = dbUser[0].clientId ? { id: dbUser[0].clientId } : null;
       }
 

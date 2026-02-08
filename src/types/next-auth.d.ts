@@ -7,12 +7,14 @@ declare module 'next-auth' {
       email?: string | null;
       name?: string | null;
       image?: string | null;
+      isAdmin?: boolean;
     };
     client?: {
       id: string;
       businessName: string;
       ownerName: string;
     };
+    selectedClientId?: string;
   }
 
   interface User {
@@ -20,5 +22,6 @@ declare module 'next-auth' {
     email: string;
     name?: string | null;
     image?: string | null;
+    isAdmin?: boolean;
   }
 }
