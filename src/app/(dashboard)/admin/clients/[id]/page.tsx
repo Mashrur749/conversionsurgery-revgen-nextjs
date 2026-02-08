@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatPhoneNumber } from '@/lib/utils/phone';
+import { TeamManager } from './team-manager';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -110,6 +111,8 @@ export default async function ClientDetailPage({ params }: Props) {
           </Button>
         </CardContent>
       </Card>
+
+      <TeamManager clientId={client.id} />
     </div>
   );
 }
