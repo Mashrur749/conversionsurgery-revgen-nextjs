@@ -1,29 +1,27 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import {
-  getDb,
-  leads,
-  conversations,
-  dailyStats,
-  scheduledMessages,
-  clients,
-} from "@/db";
-import { eq, and, desc, gte } from "drizzle-orm";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
+import { auth } from '@/lib/auth';
+import { getClientId } from '@/lib/get-client-id';
+import { getDb, leads, dailyStats, scheduledMessages } from '@/db';
+import { eq, and, desc, gte, sql } from 'drizzle-orm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const session = await auth();
-  const clientId = (session as any).client?.id;
-  const isAdmin = (session as any).user?.isAdmin;
+  const clientId = await getClientId();
 
-  // Redirect admins to Agency Dashboard
-  if (isAdmin) {
-    redirect("/admin");
+  if (session?.user?.isAdmin && !clientId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">Select a Client</h2>
+        <p className="text-muted-foreground">
+          Use the dropdown in the header to select a client to view.
+        </p>
+      </div>
+    );
   }
 
   if (!clientId) {
@@ -33,56 +31,41 @@ export default async function DashboardPage() {
   const db = getDb();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
 
   const stats = await db
     .select({
-      messagesSent: (await import("drizzle-orm"))
-        .sql`COALESCE(SUM(${dailyStats.messagesSent}), 0)`,
+      missedCalls: sql<number>`COALESCE(SUM(${dailyStats.missedCallsCaptured}), 0)`,
+      forms: sql<number>`COALESCE(SUM(${dailyStats.formsResponded}), 0)`,
+      messages: sql<number>`COALESCE(SUM(${dailyStats.messagesSent}), 0)`,
+      appointments: sql<number>`COALESCE(SUM(${dailyStats.appointmentsReminded}), 0)`,
+      estimates: sql<number>`COALESCE(SUM(${dailyStats.estimatesFollowedUp}), 0)`,
     })
     .from(dailyStats)
-    .where(
-      and(
-        eq(dailyStats.clientId, clientId),
-        gte(dailyStats.date, sevenDaysAgoStr),
-      ),
-    );
+    .where(and(
+      eq(dailyStats.clientId, clientId),
+      gte(dailyStats.date, sevenDaysAgo.toISOString().split('T')[0])
+    ));
 
-  const weekStats = stats[0] || { messagesSent: 0 };
+  const weekStats = stats[0] || {};
 
   const actionLeads = await db
     .select()
     .from(leads)
-    .where(and(eq(leads.clientId, clientId), eq(leads.actionRequired, true)))
+    .where(and(
+      eq(leads.clientId, clientId),
+      eq(leads.actionRequired, true)
+    ))
     .orderBy(desc(leads.updatedAt))
     .limit(5);
 
-  const recentConvos = await db
-    .select({
-      conversation: conversations,
-      lead: leads,
-    })
-    .from(conversations)
-    .innerJoin(leads, eq(conversations.leadId, leads.id))
-    .where(eq(conversations.clientId, clientId))
-    .orderBy(desc(conversations.createdAt))
-    .limit(10);
-
   const pendingCount = await db
-    .select()
+    .select({ count: sql<number>`count(*)` })
     .from(scheduledMessages)
-    .where(
-      and(
-        eq(scheduledMessages.clientId, clientId),
-        eq(scheduledMessages.sent, false),
-        eq(scheduledMessages.cancelled, false),
-      ),
-    );
-
-  const totalLeads = await db
-    .select()
-    .from(leads)
-    .where(eq(leads.clientId, clientId));
+    .where(and(
+      eq(scheduledMessages.clientId, clientId),
+      eq(scheduledMessages.sent, false),
+      eq(scheduledMessages.cancelled, false)
+    ));
 
   return (
     <div className="space-y-8">
@@ -95,12 +78,16 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Leads
+              Leads Captured
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalLeads.length}</div>
-            <p className="text-xs text-muted-foreground">All time</p>
+            <div className="text-2xl font-bold">
+              {Number(weekStats.missedCalls || 0) + Number(weekStats.forms || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {weekStats.missedCalls} calls, {weekStats.forms} forms
+            </p>
           </CardContent>
         </Card>
 
@@ -111,10 +98,24 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="text-2xl font-bold">{weekStats.messages || 0}</div>
+            <p className="text-xs text-muted-foreground">Automated responses</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Follow-ups
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="text-2xl font-bold">
-              {Number(weekStats.messagesSent) || 0}
+              {Number(weekStats.estimates || 0) + Number(weekStats.appointments || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">Last 7 days</p>
+            <p className="text-xs text-muted-foreground">
+              {weekStats.estimates} estimates, {weekStats.appointments} appts
+            </p>
           </CardContent>
         </Card>
 
@@ -125,114 +126,49 @@ export default async function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingCount.length}</div>
+            <div className="text-2xl font-bold">{pendingCount[0]?.count || 0}</div>
             <p className="text-xs text-muted-foreground">Messages pending</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Action Required
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{actionLeads.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Leads need attention
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Action Required
-              {actionLeads.length > 0 && (
-                <Badge variant="destructive">{actionLeads.length}</Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {actionLeads.length === 0 ? (
-              <p className="text-muted-foreground text-sm">
-                No actions needed 👍
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {actionLeads.map((lead) => (
-                  <Link
-                    key={lead.id}
-                    href={`/leads/${lead.id}`}
-                    className="block p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{lead.name || lead.phone}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {lead.actionRequiredReason || "Action needed"}
-                        </p>
-                      </div>
-                      <Badge variant="outline">
-                        {formatDistanceToNow(new Date(lead.updatedAt!), {
-                          addSuffix: true,
-                        })}
-                      </Badge>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            Action Required
+            {actionLeads.length > 0 && (
+              <Badge variant="destructive">{actionLeads.length}</Badge>
             )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {actionLeads.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No actions needed</p>
+          ) : (
             <div className="space-y-3">
-              {recentConvos.length === 0 ? (
-                <p className="text-muted-foreground text-sm">
-                  No conversations yet
-                </p>
-              ) : (
-                recentConvos.map(({ conversation, lead }) => (
-                  <Link
-                    key={conversation.id}
-                    href={`/leads/${lead.id}`}
-                    className="block p-3 rounded-lg border hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">
-                          {lead.name || lead.phone}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {conversation.direction === "inbound" ? "← " : "→ "}
-                          {conversation.content.substring(0, 60)}
-                          {conversation.content.length > 60 ? "..." : ""}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          conversation.direction === "inbound"
-                            ? "secondary"
-                            : "outline"
-                        }
-                      >
-                        {conversation.direction}
-                      </Badge>
+              {actionLeads.map((lead) => (
+                <Link
+                  key={lead.id}
+                  href={`/leads/${lead.id}`}
+                  className="block p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{lead.name || lead.phone}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {lead.actionRequiredReason}
+                      </p>
                     </div>
-                  </Link>
-                ))
-              )}
+                    <Badge variant="outline">
+                      {formatDistanceToNow(new Date(lead.updatedAt!), { addSuffix: true })}
+                    </Badge>
+                  </div>
+                </Link>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
