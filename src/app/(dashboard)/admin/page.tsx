@@ -1,19 +1,13 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { getDb } from '@/db';
-import { clients, teamMembers, dailyStats } from '@/db/schema';
-import { eq, and, gte } from 'drizzle-orm';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { AgencyOverviewStats } from './components/agency-overview-stats';
-import { ClientsPerformance } from './components/clients-performance';
-import { QuickActions } from './components/quick-actions';
+import { getDb, clients, leads, dailyStats } from '@/db';
+import { eq, gte, sql } from 'drizzle-orm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-interface Props {
-  params: Promise<{ id: string }>;
-}
+export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboardPage() {
+export default async function AdminPage() {
   const session = await auth();
 
   if (!session?.user?.isAdmin) {
@@ -22,95 +16,141 @@ export default async function AdminDashboardPage() {
 
   const db = getDb();
 
-  // Get all clients
-  const allClients = await db
-    .select()
-    .from(clients)
-    .orderBy(clients.createdAt);
+  const allClients = await db.select().from(clients).orderBy(clients.businessName);
 
-  // Get team members count per client
-  const teamMemberCounts = await Promise.all(
-    allClients.map(async (client) => {
-      const members = await db
-        .select()
-        .from(teamMembers)
-        .where(eq(teamMembers.clientId, client.id));
-      return { clientId: client.id, count: members.length };
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const clientStats = await db
+    .select({
+      clientId: dailyStats.clientId,
+      missedCalls: sql<number>`COALESCE(SUM(${dailyStats.missedCallsCaptured}), 0)`,
+      forms: sql<number>`COALESCE(SUM(${dailyStats.formsResponded}), 0)`,
+      messages: sql<number>`COALESCE(SUM(${dailyStats.messagesSent}), 0)`,
     })
-  );
-
-  // Get today's stats for all clients
-  const today = new Date().toISOString().split('T')[0];
-  const todayStats = await db
-    .select()
     .from(dailyStats)
-    .where(eq(dailyStats.date, today as any));
+    .where(gte(dailyStats.date, sevenDaysAgo.toISOString().split('T')[0]))
+    .groupBy(dailyStats.clientId);
 
-  // Aggregate stats
-  const totalClients = allClients.length;
-  const activeClients = allClients.filter((c) => c.status === 'active').length;
-  const pendingClients = allClients.filter((c) => c.status === 'pending').length;
-  const cancelledClients = allClients.filter((c) => c.status === 'cancelled')
-    .length;
+  const statsMap = new Map(clientStats.map(s => [s.clientId, s]));
 
-  const totalPhoneNumbers = allClients.filter((c) => c.twilioNumber).length;
+  const actionCounts = await db
+    .select({
+      clientId: leads.clientId,
+      count: sql<number>`count(*)`,
+    })
+    .from(leads)
+    .where(eq(leads.actionRequired, true))
+    .groupBy(leads.clientId);
 
-  const totalTeamMembers = teamMemberCounts.reduce(
-    (sum, item) => sum + item.count,
-    0
-  );
-
-  const todayMessagesSent = todayStats.reduce(
-    (sum, stat) => sum + (stat.messagesSent || 0),
-    0
-  );
-
-  const todayMissedCallsCaptured = todayStats.reduce(
-    (sum, stat) => sum + (stat.missedCallsCaptured || 0),
-    0
-  );
-
-  // Get clients with performance data (with team member counts and phone numbers)
-  const clientsWithMetrics = allClients.map((client) => ({
-    ...client,
-    teamMemberCount: teamMemberCounts.find((tc) => tc.clientId === client.id)
-      ?.count || 0,
-    hasPhoneNumber: !!client.twilioNumber,
-    todayStats: todayStats.find((s) => s.clientId === client.id),
-  }));
+  const actionMap = new Map(actionCounts.map(a => [a.clientId, a.count]));
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Agency Dashboard</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage all your client accounts
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/admin/clients/new/wizard">+ New Client</Link>
-        </Button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">All Clients</h1>
+        <p className="text-muted-foreground">Manage all contractor accounts</p>
       </div>
 
-      {/* Overview Stats */}
-      <AgencyOverviewStats
-        totalClients={totalClients}
-        activeClients={activeClients}
-        pendingClients={pendingClients}
-        cancelledClients={cancelledClients}
-        totalPhoneNumbers={totalPhoneNumbers}
-        totalTeamMembers={totalTeamMembers}
-        todayMessagesSent={todayMessagesSent}
-        todayMissedCallsCaptured={todayMissedCallsCaptured}
-      />
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Clients
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {allClients.filter(c => c.status === 'active').length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Leads (7d)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {clientStats.reduce((sum, s) => sum + Number(s.missedCalls) + Number(s.forms), 0)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Messages Sent (7d)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {clientStats.reduce((sum, s) => sum + Number(s.messages), 0)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Needs Attention
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {Array.from(actionMap.values()).reduce((sum, count) => sum + Number(count), 0)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Quick Actions */}
-      <QuickActions />
+      <Card>
+        <CardHeader>
+          <CardTitle>Clients</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {allClients.map((client) => {
+              const stats = statsMap.get(client.id);
+              const actionCount = actionMap.get(client.id) || 0;
 
-      {/* Clients Performance */}
-      <ClientsPerformance clients={clientsWithMetrics} />
+              return (
+                <div
+                  key={client.id}
+                  className="flex items-center justify-between p-4 hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-4">
+                    {actionCount > 0 && (
+                      <span className="w-2 h-2 bg-red-500 rounded-full" />
+                    )}
+                    <div>
+                      <p className="font-medium">{client.businessName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {client.ownerName} &bull; {client.phone}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right text-sm">
+                      <p className="font-medium">
+                        {Number(stats?.missedCalls || 0) + Number(stats?.forms || 0)} leads
+                      </p>
+                      <p className="text-muted-foreground">
+                        {stats?.messages || 0} messages
+                      </p>
+                    </div>
+                    {actionCount > 0 && (
+                      <Badge variant="destructive">{actionCount} action</Badge>
+                    )}
+                    <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
+                      {client.status}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
