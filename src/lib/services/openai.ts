@@ -2,6 +2,33 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
+// ============================================
+// HOT INTENT DETECTION
+// ============================================
+const HOT_INTENT_TRIGGERS = [
+  'ready to schedule',
+  'ready to book',
+  'can you call me',
+  'call me',
+  'give me a call',
+  'want to proceed',
+  'let\'s do it',
+  'let\'s move forward',
+  'when can you start',
+  'i\'m ready',
+  'book an appointment',
+  'schedule an estimate',
+  'come out today',
+  'come out tomorrow',
+  'available today',
+  'available tomorrow',
+];
+
+export function detectHotIntent(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  return HOT_INTENT_TRIGGERS.some(trigger => lowerMessage.includes(trigger));
+}
+
 interface AIResult {
   response: string;
   confidence: number;
