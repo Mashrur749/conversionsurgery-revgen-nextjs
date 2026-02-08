@@ -34,7 +34,7 @@ export default async function AdminClientsPage() {
             <Link href="/admin/twilio">Twilio Account</Link>
           </Button>
           <Button asChild>
-            <Link href="/admin/clients/new">+ New Client</Link>
+            <Link href="/admin/clients/new/wizard">+ New Client</Link>
           </Button>
         </div>
       </div>

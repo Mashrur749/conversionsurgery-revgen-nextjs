@@ -68,8 +68,47 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
     });
   }
 
+  async function handleNext() {
+    setError('');
+
+    // Save team members to database if we have any
+    if (data.teamMembers.length > 0 && data.clientId) {
+      try {
+        for (const member of data.teamMembers) {
+          const res = await fetch('/api/team-members', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientId: data.clientId,
+              name: member.name,
+              phone: member.phone,
+              email: member.email || undefined,
+              role: member.role || undefined,
+            }),
+          });
+
+          if (!res.ok) {
+            const result = (await res.json()) as { error?: string };
+            setError(result.error || 'Failed to save team member');
+            return;
+          }
+        }
+      } catch (err) {
+        setError('Something went wrong saving team members');
+        return;
+      }
+    }
+
+    onNext();
+  }
+
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Add team members who will receive escalation notifications when AI can't answer a question.
+        They'll get SMS alerts with a link to claim and respond to the lead.
+      </p>
+
       {error && (
         <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
           {error}
@@ -168,11 +207,18 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
         </div>
       )}
 
+      {data.teamMembers.length === 0 && (
+        <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+          ⚠️ Without team members, escalations will only go to the business owner.
+          You can add team members later from the settings page.
+        </p>
+      )}
+
       <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onBack}>
           ← Back
         </Button>
-        <Button onClick={onNext}>
+        <Button onClick={handleNext}>
           Next: Business Hours →
         </Button>
       </div>

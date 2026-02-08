@@ -1,12 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import type { WizardData } from '../setup-wizard';
 
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 interface Props {
   data: WizardData;
@@ -16,83 +17,101 @@ interface Props {
 }
 
 export function StepBusinessHours({ data, updateData, onNext, onBack }: Props) {
-  function updateHours(dayIndex: number, field: 'openTime' | 'closeTime' | 'isOpen', value: string | boolean) {
-    const newHours = [...data.businessHours];
-    if (field === 'openTime' || field === 'closeTime') {
-      newHours[dayIndex] = { ...newHours[dayIndex], [field]: value };
-    } else {
-      newHours[dayIndex] = { ...newHours[dayIndex], isOpen: value as boolean };
-    }
+  const [error, setError] = useState('');
+
+  function updateHour(dayOfWeek: number, field: string, value: any) {
+    const newHours = data.businessHours.map(h =>
+      h.dayOfWeek === dayOfWeek ? { ...h, [field]: value } : h
+    );
     updateData({ businessHours: newHours });
+  }
+
+  async function handleNext() {
+    setError('');
+
+    // Save business hours if we have a client
+    if (data.clientId) {
+      try {
+        const res = await fetch('/api/business-hours', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId: data.clientId,
+            hours: data.businessHours,
+          }),
+        });
+
+        if (!res.ok) {
+          const result = (await res.json()) as { error?: string };
+          setError(result.error || 'Failed to save business hours');
+          return;
+        }
+      } catch (err) {
+        setError('Something went wrong saving business hours');
+        return;
+      }
+    }
+
+    onNext();
   }
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Set your business hours. Calls outside these times will go to voicemail.
+        Set your business hours. During these times, high-intent leads will trigger
+        hot transfers where all team phones ring simultaneously.
       </p>
 
+      {error && (
+        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+          {error}
+        </div>
+      )}
+
       <div className="space-y-3">
-        {data.businessHours.map((day, index) => (
-          <Card key={day.dayOfWeek} className="p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="w-24">
-                <p className="font-medium text-sm">{DAY_NAMES[day.dayOfWeek]}</p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={day.isOpen}
-                  onChange={(e) => updateHours(index, 'isOpen', e.target.checked)}
-                  className="w-4 h-4"
-                  id={`day-${index}`}
-                />
-                <Label htmlFor={`day-${index}`} className="text-sm cursor-pointer">
-                  Open
-                </Label>
-              </div>
-
-              {day.isOpen && (
-                <>
-                  <div className="flex-1">
-                    <Label className="text-xs">Opens</Label>
-                    <Input
-                      type="time"
-                      value={day.openTime}
-                      onChange={(e) => updateHours(index, 'openTime', e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-
-                  <div className="flex-1">
-                    <Label className="text-xs">Closes</Label>
-                    <Input
-                      type="time"
-                      value={day.closeTime}
-                      onChange={(e) => updateHours(index, 'closeTime', e.target.value)}
-                      className="mt-1"
-                    />
-                  </div>
-                </>
-              )}
-
-              {!day.isOpen && (
-                <div className="flex-1 text-sm text-muted-foreground">
-                  Closed
-                </div>
-              )}
+        {data.businessHours.map((hour) => (
+          <div key={hour.dayOfWeek} className="flex items-center gap-4">
+            <div className="w-28">
+              <Label>{DAYS[hour.dayOfWeek]}</Label>
             </div>
-          </Card>
+            <Switch
+              checked={hour.isOpen}
+              onCheckedChange={(checked) => updateHour(hour.dayOfWeek, 'isOpen', checked)}
+            />
+            {hour.isOpen ? (
+              <>
+                <Input
+                  type="time"
+                  value={hour.openTime}
+                  onChange={(e) => updateHour(hour.dayOfWeek, 'openTime', e.target.value)}
+                  className="w-32"
+                />
+                <span className="text-muted-foreground">to</span>
+                <Input
+                  type="time"
+                  value={hour.closeTime}
+                  onChange={(e) => updateHour(hour.dayOfWeek, 'closeTime', e.target.value)}
+                  className="w-32"
+                />
+              </>
+            ) : (
+              <span className="text-muted-foreground">Closed</span>
+            )}
+          </div>
         ))}
       </div>
+
+      <p className="text-sm text-muted-foreground">
+        Outside business hours, leads will still receive AI responses and escalations
+        will be queued for the next business day.
+      </p>
 
       <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onBack}>
           ← Back
         </Button>
-        <Button onClick={onNext}>
-          Next: Review & Launch →
+        <Button onClick={handleNext}>
+          Next: Review →
         </Button>
       </div>
     </div>
