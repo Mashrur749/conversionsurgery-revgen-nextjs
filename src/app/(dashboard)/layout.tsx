@@ -6,7 +6,7 @@ import SignOutButton from './signout-button';
 import { ClientSelector } from '@/components/client-selector';
 import { AdminProvider } from '@/lib/admin-context';
 
-const navItems = [
+const clientNavItems = [
   { href: '/dashboard', label: 'Overview' },
   { href: '/leads', label: 'Leads' },
   { href: '/conversations', label: 'Conversations' },
@@ -15,13 +15,18 @@ const navItems = [
 ];
 
 const adminNavItems = [
-  { href: '/admin', label: 'Agency Dashboard' },
-  { href: '/admin/ab-tests', label: 'A/B Tests' },
-  { href: '/admin/reports', label: 'Reports' },
-  { href: '/admin/phone-numbers', label: 'Phone Numbers' },
-  { href: '/admin/clients', label: 'Clients' },
-  { href: '/admin/clients/new/wizard', label: 'New Client' },
-  { href: '/admin/twilio', label: 'Twilio' },
+  { group: 'Management', items: [
+    { href: '/admin', label: 'Agency Dashboard' },
+    { href: '/admin/clients', label: 'Clients' },
+  ]},
+  { group: 'Optimization', items: [
+    { href: '/admin/ab-tests', label: 'A/B Tests' },
+    { href: '/admin/reports', label: 'Reports' },
+  ]},
+  { group: 'Configuration', items: [
+    { href: '/admin/phone-numbers', label: 'Phone Numbers' },
+    { href: '/admin/twilio', label: 'Twilio Settings' },
+  ]},
 ];
 
 export default async function DashboardLayout({
@@ -48,24 +53,36 @@ export default async function DashboardLayout({
                 <Link href="/dashboard" className="font-semibold text-lg">
                   Revenue Recovery
                 </Link>
-                <nav className="hidden md:flex gap-1">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                  {isAdmin && (
+                <nav className="hidden md:flex gap-1 flex-wrap">
+                  {isAdmin ? (
+                    // Admin navigation - grouped by feature area
                     <>
-                      <div className="border-l mx-1" />
-                      {adminNavItems.map((item) => (
+                      {adminNavItems.map((group, idx) => (
+                        <div key={group.group} className="flex items-center">
+                          {idx > 0 && <div className="border-l mx-2" />}
+                          <div className="flex gap-0.5">
+                            {group.items.map((item) => (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                className="px-3 py-2 text-sm text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-colors whitespace-nowrap"
+                                title={group.group}
+                              >
+                                {item.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    // Client navigation
+                    <>
+                      {clientNavItems.map((item) => (
                         <Link
                           key={item.href}
                           href={item.href}
-                          className="px-3 py-2 text-sm text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-colors"
+                          className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
                         >
                           {item.label}
                         </Link>
