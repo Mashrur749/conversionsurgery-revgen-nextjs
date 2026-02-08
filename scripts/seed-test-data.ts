@@ -9,6 +9,9 @@ import {
   dailyStats,
   abTests,
   reports,
+  templateVariants,
+  templatePerformanceMetrics,
+  messageTemplates,
 } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -146,7 +149,126 @@ async function seedTestData() {
       }).onConflictDoNothing();
     }
 
-    // 6. Create daily stats for last 14 days (for reports and dashboard)
+    // 6. Create template variants for aggregate A/B testing
+    console.log('✓ Creating template variants...');
+    const variantStandardId = randomUUID();
+    const variantAggressiveId = randomUUID();
+    const variantFriendlyId = randomUUID();
+
+    const templateVariantsList = [
+      {
+        id: variantStandardId,
+        templateType: 'missed_call',
+        name: 'Standard',
+        content: 'Hi {name}, you have a missed call from {business}. Call us back at {phone} to get assistance.',
+        isActive: true,
+        notes: 'Original friendly tone template',
+      },
+      {
+        id: variantAggressiveId,
+        templateType: 'missed_call',
+        name: 'Aggressive',
+        content: 'URGENT: {name}! You missed a call from {business}. Please call {phone} immediately - don\'t lose this opportunity!',
+        isActive: true,
+        notes: 'More urgent tone with stronger call to action',
+      },
+      {
+        id: variantFriendlyId,
+        templateType: 'missed_call',
+        name: 'Friendly',
+        content: 'Hey {name}! Just wanted to say hi - {business} called and couldn\'t reach you. Feel free to call back at {phone} when you get a chance 😊',
+        isActive: true,
+        notes: 'Casual, friendly tone with emoji',
+      },
+    ];
+
+    await db.insert(templateVariants).values(templateVariantsList).onConflictDoNothing();
+
+    // 7. Create message templates linked to variants for test client
+    console.log('✓ Creating message templates...');
+    await db.insert(messageTemplates).values({
+      clientId: clientId,
+      templateType: 'missed_call',
+      templateVariantId: variantStandardId, // Test client uses Standard variant
+      content: 'Hi {name}, you have a missed call from {business}. Call us back at {phone} to get assistance.',
+      createdAt: new Date(),
+    }).onConflictDoNothing();
+
+    // 8. Create template performance metrics for dashboard
+    console.log('✓ Creating template performance metrics...');
+    const metricsDate = new Date();
+    const yesterdayStr = (() => {
+      const d = new Date(metricsDate);
+      d.setDate(d.getDate() - 1);
+      return d.toISOString().split('T')[0];
+    })();
+
+    const performanceMetrics = [
+      {
+        id: randomUUID(),
+        templateVariantId: variantStandardId,
+        dateCollected: yesterdayStr as any,
+        period: 'daily',
+        totalExecutions: 847,
+        totalDelivered: 805,
+        totalConversationsStarted: 288,
+        totalAppointmentsReminded: 102,
+        totalEstimatesFollowedUp: 45,
+        totalFormsResponded: 67,
+        totalLeadsQualified: 38,
+        totalRevenueRecovered: '2850.00' as any,
+        deliveryRate: '0.95' as any,
+        engagementRate: '0.34' as any,
+        conversionRate: '0.12' as any,
+        avgResponseTime: 180,
+        clientsUsingVariant: 5,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        templateVariantId: variantAggressiveId,
+        dateCollected: yesterdayStr as any,
+        period: 'daily',
+        totalExecutions: 912,
+        totalDelivered: 876,
+        totalConversationsStarted: 332,
+        totalAppointmentsReminded: 149,
+        totalEstimatesFollowedUp: 67,
+        totalFormsResponded: 98,
+        totalLeadsQualified: 55,
+        totalRevenueRecovered: '4125.00' as any,
+        deliveryRate: '0.96' as any,
+        engagementRate: '0.38' as any,
+        conversionRate: '0.15' as any,
+        avgResponseTime: 145,
+        clientsUsingVariant: 18,
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        templateVariantId: variantFriendlyId,
+        dateCollected: yesterdayStr as any,
+        period: 'daily',
+        totalExecutions: 523,
+        totalDelivered: 495,
+        totalConversationsStarted: 157,
+        totalAppointmentsReminded: 52,
+        totalEstimatesFollowedUp: 28,
+        totalFormsResponded: 31,
+        totalLeadsQualified: 18,
+        totalRevenueRecovered: '1350.00' as any,
+        deliveryRate: '0.95' as any,
+        engagementRate: '0.30' as any,
+        conversionRate: '0.09' as any,
+        avgResponseTime: 210,
+        clientsUsingVariant: 2,
+        createdAt: new Date(),
+      },
+    ];
+
+    await db.insert(templatePerformanceMetrics).values(performanceMetrics).onConflictDoNothing();
+
+    // 9. Create daily stats for last 14 days (for reports and dashboard)
     console.log('✓ Creating daily stats...');
     const today = new Date();
     const dailyStatsData = [];
@@ -294,10 +416,13 @@ async function seedTestData() {
     console.log('   • 312 messages sent with 8.97% conversion rate');
     console.log('   • 28 appointments reminded from conversations');
     console.log('');
-    console.log('🧪 A/B Testing:');
-    console.log('   • Messaging Template Test (active)');
-    console.log('   • Variant A: Friendly tone');
-    console.log('   • Variant B: Professional tone');
+    console.log('🎯 Template Performance (Aggregate A/B Testing):');
+    console.log('   • 3 Missed Call templates created');
+    console.log('     - Standard (5 clients, 12% conversion)');
+    console.log('     - Aggressive (18 clients, 15% conversion) 🏆 WINNER');
+    console.log('     - Friendly (2 clients, 9% conversion)');
+    console.log('   • Performance metrics for yesterday');
+    console.log('   • Aggressive variant is 3% better than Standard');
     console.log('');
     console.log('📈 Reports:');
     console.log('   • Bi-weekly report generated');
@@ -309,8 +434,12 @@ async function seedTestData() {
     console.log('   2. Enter: admin@test.local');
     console.log('   3. Check your email for magic link');
     console.log('   4. Visit /admin to see Agency Dashboard');
-    console.log('   5. Visit /admin/reports to see generated reports');
-    console.log('   6. Visit /admin/ab-tests to see A/B test');
+    console.log('   5. Visit /admin/template-performance to see template metrics');
+    console.log('      - See 3 template variants (Standard, Aggressive, Friendly)');
+    console.log('      - See performance metrics and winner comparison');
+    console.log('      - Click "Roll to Clients" to assign winning variant');
+    console.log('   6. Visit /admin/reports to see generated reports');
+    console.log('   7. Visit /admin/ab-tests to see legacy per-client A/B tests');
     console.log('');
 
     process.exit(0);
