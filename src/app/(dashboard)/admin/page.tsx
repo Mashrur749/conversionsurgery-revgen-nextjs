@@ -31,11 +31,11 @@ export default async function AdminDashboardPage() {
   // Get team members count per client
   const teamMemberCounts = await Promise.all(
     allClients.map(async (client) => {
-      const count = await db
-        .select({ count: clients.id })
+      const members = await db
+        .select()
         .from(teamMembers)
         .where(eq(teamMembers.clientId, client.id));
-      return { clientId: client.id, count: count.length };
+      return { clientId: client.id, count: members.length };
     })
   );
 
