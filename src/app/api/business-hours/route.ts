@@ -1,8 +1,34 @@
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { getClientId } from '@/lib/get-client-id';
 import { getDb } from '@/db';
 import { businessHours } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+
+export async function GET(request: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const clientId = url.searchParams.get('clientId') || await getClientId();
+
+  if (!clientId) {
+    return NextResponse.json({ error: 'No client' }, { status: 403 });
+  }
+
+  const db = getDb();
+
+  const hours = await db
+    .select()
+    .from(businessHours)
+    .where(eq(businessHours.clientId, clientId))
+    .orderBy(businessHours.dayOfWeek);
+
+  return NextResponse.json({ hours });
+}
 
 const businessHoursSchema = z.object({
   clientId: z.string().uuid(),
