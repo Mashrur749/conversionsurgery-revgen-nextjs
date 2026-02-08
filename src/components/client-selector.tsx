@@ -23,8 +23,8 @@ export function ClientSelector() {
         setLoading(true);
         const res = await fetch('/api/admin/clients');
         if (res.ok) {
-          const data = await res.json();
-          setAvailableClients(data.clients || data);
+          const data = await res.json() as { clients?: Array<{ id: string; businessName: string }> };
+          setAvailableClients(data.clients || []);
         }
       } catch (error) {
         console.error('Failed to load clients:', error);
