@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "case \"$CLAUDE_FILE_PATH\" in *.env|*.env.*) echo 'BLOCKED: Do not read or edit .env files — they contain secrets' && exit 2;; esac"
+      },
+      {
+        "matcher": "Edit|Write",
+        "command": "case \"$CLAUDE_FILE_PATH\" in */package-lock.json|*/node_modules/*) echo 'BLOCKED: Do not modify lock files or node_modules' && exit 2;; esac"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "case \"$CLAUDE_FILE_PATH\" in *.ts|*.tsx) npx next lint --file \"$CLAUDE_FILE_PATH\" --quiet 2>/dev/null || true;; esac"
+      }
+    ]
+  }
+}
