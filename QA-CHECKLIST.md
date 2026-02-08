@@ -97,3 +97,73 @@
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] No new warnings related to admin-context or client-selector
+
+## 03-admin-dashboard-pages
+
+### Dashboard Layout (src/app/(dashboard)/layout.tsx)
+- [ ] Admin users see grouped admin nav items (Management, Optimization, Configuration) in amber color
+- [ ] Admin users see regular nav items (Overview, Leads, Conversations, Scheduled, Settings) after a separator
+- [ ] Non-admin users see only regular nav items in gray
+- [ ] Admin users see "Admin" badge + client selector dropdown in header
+- [ ] Non-admin users see their business name or email in header
+- [ ] Sign Out button renders for both admin and non-admin users
+- [ ] Client selector dropdown lists only active clients sorted alphabetically
+- [ ] `AdminProvider` wraps all children
+
+### Dashboard Page (src/app/(dashboard)/dashboard/page.tsx)
+- [ ] Admin without selected client sees "Select a Client" prompt
+- [ ] Non-admin without `clientId` sees "No client linked to account"
+- [ ] Stats cards show: Leads Captured (calls + forms), Messages Sent, Follow-ups (estimates + appointments), Scheduled (pending count)
+- [ ] Stats are aggregated over last 7 days from `dailyStats`
+- [ ] Scheduled count uses `count(*)` query (not `.length`)
+- [ ] Action Required section lists up to 5 leads with `actionRequired = true`
+- [ ] Each action lead links to `/leads/{id}` with name/phone and reason
+- [ ] Time-ago badge renders via `formatDistanceToNow`
+
+### Leads Page (src/app/(dashboard)/leads/page.tsx)
+- [ ] Admin without selected client sees "Select a Client" prompt
+- [ ] Uses `getClientId()` (not `session.client.id` or `users` table lookup)
+- [ ] Lists up to 100 leads sorted by `updatedAt` descending
+- [ ] Each lead shows name or formatted phone, optional project type
+- [ ] Red dot indicator for `actionRequired` leads
+- [ ] Status badges with color coding (new=blue, contacted=yellow, won=green, etc.)
+- [ ] Time-ago display for each lead
+
+### Scheduled Page (src/app/(dashboard)/scheduled/page.tsx)
+- [ ] Admin without selected client sees "Select a Client" prompt
+- [ ] Uses `getClientId()` for client resolution
+- [ ] Uses `leftJoin` with leads table for lead name/phone
+- [ ] Shows up to 50 pending messages ordered by `sendAt` ascending
+- [ ] Each message shows lead name, sequence type badge, step badge, scheduled time
+- [ ] Message content preview with `line-clamp-2`
+
+### Settings Page (src/app/(dashboard)/settings/page.tsx)
+- [ ] Admin without selected client sees "Select a Client" prompt
+- [ ] Uses `getClientId()` for client resolution
+- [ ] Shows Business Information card (name, owner, email, phone)
+- [ ] Shows SMS Configuration card (Twilio number, messages this month / limit, Google Business URL)
+- [ ] Shows Notifications card (email and SMS notification badges)
+- [ ] Shows Form Webhook card with URL and field documentation
+
+### Admin Overview Page (src/app/(dashboard)/admin/page.tsx)
+- [ ] Non-admin users are redirected to `/dashboard`
+- [ ] Shows 4 summary cards: Active Clients, Total Leads (7d), Messages Sent (7d), Needs Attention
+- [ ] "Needs Attention" count is red and sums action-required leads across all clients
+- [ ] Clients list shows each client with business name, owner, phone
+- [ ] Each client row shows 7-day leads count and messages count
+- [ ] Red dot indicator for clients with action-required leads
+- [ ] Action count badge in destructive variant when > 0
+- [ ] Status badge (active=default, other=secondary)
+- [ ] Clients sorted alphabetically by business name
+
+### Admin Client Switching
+- [ ] Select a client in the dropdown → navigate to `/dashboard` → see that client's data
+- [ ] Switch to a different client → `/dashboard` updates with new client's stats
+- [ ] Visit `/leads` → shows selected client's leads
+- [ ] Visit `/scheduled` → shows selected client's scheduled messages
+- [ ] Visit `/settings` → shows selected client's business info and SMS config
+- [ ] Visit `/admin` → shows all clients overview (not filtered by selection)
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] All routes registered: `/admin`, `/dashboard`, `/leads`, `/scheduled`, `/settings`
