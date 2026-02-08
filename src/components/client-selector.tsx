@@ -1,23 +1,16 @@
 'use client';
 
 import { useSession } from 'next-auth/react';
-import { useAdminContext } from '@/lib/admin-context';
+import { useAdmin } from '@/lib/admin-context';
 import { useEffect, useState } from 'react';
-import { getDb } from '@/db';
-import { clients } from '@/db/schema/clients';
 
 export function ClientSelector() {
   const { data: session } = useSession();
-  const { selectedClientId, setSelectedClientId, isAdmin, setIsAdmin } = useAdminContext();
+  const { selectedClientId, setSelectedClientId } = useAdmin();
   const [availableClients, setAvailableClients] = useState<Array<{ id: string; businessName: string }>>([]);
   const [loading, setLoading] = useState(false);
 
-  // Set isAdmin based on session
-  useEffect(() => {
-    if (session?.user?.isAdmin) {
-      setIsAdmin(true);
-    }
-  }, [session, setIsAdmin]);
+  const isAdmin = session?.user?.isAdmin || false;
 
   // Load available clients for admin
   useEffect(() => {
@@ -28,13 +21,10 @@ export function ClientSelector() {
     async function loadClients() {
       try {
         setLoading(true);
-        const db = getDb();
-        const allClients = await db.select().from(clients);
-        setAvailableClients(allClients);
-
-        // Set first client as default if none selected
-        if (!selectedClientId && allClients.length > 0) {
-          setSelectedClientId(allClients[0].id);
+        const res = await fetch('/api/admin/clients');
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableClients(data.clients || data);
         }
       } catch (error) {
         console.error('Failed to load clients:', error);
@@ -44,7 +34,7 @@ export function ClientSelector() {
     }
 
     loadClients();
-  }, [isAdmin, selectedClientId, setSelectedClientId]);
+  }, [isAdmin]);
 
   // Don't show selector if not admin
   if (!isAdmin) {
