@@ -1,8 +1,10 @@
 import { getDb } from '@/db';
-import { teamMembers, escalationClaims, leads } from '@/db/schema';
+import { teamMembers, escalationClaims, leads, clients } from '@/db/schema';
 import { sendSMS } from '@/lib/services/twilio';
+import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
 import { eq, and } from 'drizzle-orm';
 import { generateClaimToken } from '@/lib/utils/tokens';
+import { formatPhoneNumber } from '@/lib/utils/phone';
 
 interface EscalationPayload {
   leadId: string;
@@ -14,6 +16,7 @@ interface EscalationPayload {
 
 /**
  * Notify team members about a high-intent lead escalation
+ * Sends SMS to all active escalation members + email if configured
  */
 export async function notifyTeamForEscalation(payload: EscalationPayload) {
   const { leadId, clientId, twilioNumber, reason, lastMessage } = payload;
@@ -21,7 +24,7 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
   try {
     const db = getDb();
 
-    // Get active team members who receive escalations
+    // Get active team members who receive escalations, ordered by priority
     const members = await db
       .select()
       .from(teamMembers)
@@ -31,7 +34,8 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
           eq(teamMembers.isActive, true),
           eq(teamMembers.receiveEscalations, true)
         )
-      );
+      )
+      .orderBy(teamMembers.priority);
 
     if (members.length === 0) {
       console.log('[Team Escalation] No team members configured for escalations');
@@ -68,13 +72,16 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
       return { notified: 0, error: 'Failed to create claim' };
     }
 
-    // Notify each team member
+    // Build notification message
+    const leadDisplay = lead.name || formatPhoneNumber(lead.phone);
+    const truncatedMessage =
+      lastMessage.length > 80 ? lastMessage.substring(0, 80) + '...' : lastMessage;
+    const smsBody = `🔥 ${leadDisplay} needs help!\n\n"${truncatedMessage}"\n\nReason: ${reason}\n\nClaim to respond: ${claimUrl}`;
+
     let notifiedCount = 0;
-    const leadName = lead.name || lead.phone || 'New Lead';
-    const truncatedMessage = lastMessage.length > 80 ? lastMessage.substring(0, 80) + '...' : lastMessage;
-    const smsBody = `🔥 ${leadName} needs help!\n\n"${truncatedMessage}"\n\nClaim to respond: ${claimUrl}`;
 
     for (const member of members) {
+      // Send SMS notification
       try {
         const smsResult = await sendSMS(member.phone, twilioNumber, smsBody);
         if (smsResult.success) {
@@ -82,11 +89,31 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
           console.log(`[Team Escalation] SMS sent to ${member.name}`);
         }
       } catch (error) {
-        console.error(`[Team Escalation] Failed to notify ${member.name}:`, error);
+        console.error(`[Team Escalation] Failed to SMS ${member.name}:`, error);
+      }
+
+      // Send email notification if member has email
+      if (member.email) {
+        try {
+          const emailData = actionRequiredEmail({
+            businessName: '',
+            leadName: lead.name || undefined,
+            leadPhone: formatPhoneNumber(lead.phone),
+            reason,
+            lastMessage,
+            dashboardUrl: claimUrl,
+          });
+          await sendEmail({ to: member.email, ...emailData });
+          console.log(`[Team Escalation] Email sent to ${member.name}`);
+        } catch (error) {
+          console.error(`[Team Escalation] Failed to email ${member.name}:`, error);
+        }
       }
     }
 
-    console.log(`[Team Escalation] Escalation created. Notified ${notifiedCount}/${members.length} team members`);
+    console.log(
+      `[Team Escalation] Escalation created. Notified ${notifiedCount}/${members.length} team members`
+    );
 
     return {
       notified: notifiedCount,
@@ -101,6 +128,7 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
 
 /**
  * Claim an escalation by a team member
+ * Updates lead status, notifies other team members
  */
 export async function claimEscalation(token: string, teamMemberId: string) {
   try {
@@ -119,8 +147,23 @@ export async function claimEscalation(token: string, teamMemberId: string) {
     }
 
     if (escalation.status !== 'pending') {
+      // Look up who claimed it
+      let claimedByName = 'Someone';
+      if (escalation.claimedBy) {
+        const [claimer] = await db
+          .select()
+          .from(teamMembers)
+          .where(eq(teamMembers.id, escalation.claimedBy))
+          .limit(1);
+        if (claimer) claimedByName = claimer.name;
+      }
+
       console.log('[Team Escalation] Escalation already claimed:', escalation.id);
-      return { success: false, error: 'Already claimed' };
+      return {
+        success: false,
+        error: 'Already claimed',
+        claimedBy: claimedByName,
+      };
     }
 
     // Verify team member exists
@@ -145,13 +188,66 @@ export async function claimEscalation(token: string, teamMemberId: string) {
       })
       .where(eq(escalationClaims.id, escalation.id));
 
+    // Clear action required flag on the lead
+    await db
+      .update(leads)
+      .set({
+        actionRequired: false,
+        actionRequiredReason: null,
+      })
+      .where(eq(leads.id, escalation.leadId));
+
+    // Notify other team members that someone claimed it
+    const otherMembers = await db
+      .select()
+      .from(teamMembers)
+      .where(
+        and(
+          eq(teamMembers.clientId, escalation.clientId),
+          eq(teamMembers.isActive, true),
+          eq(teamMembers.receiveEscalations, true)
+        )
+      );
+
+    const [lead] = await db
+      .select()
+      .from(leads)
+      .where(eq(leads.id, escalation.leadId))
+      .limit(1);
+
+    const [client] = await db
+      .select()
+      .from(clients)
+      .where(eq(clients.id, escalation.clientId))
+      .limit(1);
+
+    if (client?.twilioNumber) {
+      const leadDisplay = lead?.name || formatPhoneNumber(lead?.phone || '');
+
+      for (const otherMember of otherMembers) {
+        if (otherMember.id === teamMemberId) continue;
+
+        try {
+          await sendSMS(
+            otherMember.phone,
+            client.twilioNumber,
+            `✓ ${member.name} is handling ${leadDisplay}`
+          );
+        } catch (error) {
+          console.error(
+            `[Team Escalation] Failed to notify ${otherMember.name} of claim:`,
+            error
+          );
+        }
+      }
+    }
+
     console.log(`[Team Escalation] Escalation claimed by ${member.name}`);
 
     return {
       success: true,
       leadId: escalation.leadId,
-      escalationId: escalation.id,
-      claimedBy: member.name,
+      leadPhone: lead?.phone,
     };
   } catch (error) {
     console.error('[Team Escalation] Error claiming:', error);
