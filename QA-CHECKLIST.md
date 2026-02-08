@@ -361,3 +361,91 @@
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] Routes registered: `/settings`, `/api/team-members`, `/api/team-members/[id]`
+
+## 07-hot-transfer-schema-services
+
+### Schema: business_hours Table
+- [ ] `business_hours` table exists in `src/db/schema/business-hours.ts`
+- [ ] Columns: `id` (uuid PK), `clientId` (FK → clients.id, cascade), `dayOfWeek` (integer, not null)
+- [ ] Columns: `openTime` (time, nullable), `closeTime` (time, nullable), `isOpen` (boolean, default true)
+- [ ] Column: `createdAt` (timestamp, defaultNow)
+- [ ] Unique index on `(clientId, dayOfWeek)` — `business_hours_client_day_unique`
+- [ ] Exported types: `BusinessHours`, `NewBusinessHours`
+- [ ] Exported from `src/db/schema/index.ts`
+
+### Schema: call_attempts Table
+- [ ] `call_attempts` table exists in `src/db/schema/call-attempts.ts`
+- [ ] Columns: `id` (uuid PK), `leadId` (FK → leads.id, cascade), `clientId` (FK → clients.id, cascade)
+- [ ] Columns: `callSid` (varchar 50), `status` (varchar 20), `answeredBy` (FK → teamMembers.id, set null)
+- [ ] Columns: `duration` (integer), `recordingUrl` (varchar 500)
+- [ ] Columns: `createdAt` (timestamp, defaultNow), `answeredAt` (timestamp), `endedAt` (timestamp)
+- [ ] Indexes: `idx_call_attempts_lead_id`, `idx_call_attempts_client_id`, `idx_call_attempts_status`
+- [ ] Exported types: `CallAttempt`, `NewCallAttempt`
+- [ ] Exported from `src/db/schema/index.ts`
+
+### Schema: Relations
+- [ ] `businessHoursRelations` defines `client` (one → clients)
+- [ ] `callAttemptsRelations` defines `lead` (one → leads), `client` (one → clients), `answeredByMember` (one → teamMembers)
+- [ ] `clientsRelations` includes `businessHours: many(businessHours)` and `callAttempts: many(callAttempts)`
+
+### Business Hours Service (src/lib/services/business-hours.ts)
+- [ ] `initializeBusinessHours(clientId)` creates 7 rows (Sun-Sat), Mon-Fri open 9-5, weekends closed
+- [ ] Uses `onConflictDoNothing()` — safe to call multiple times
+- [ ] `isWithinBusinessHours(clientId, timezone?)` returns `true` during business hours
+- [ ] Defaults to `America/Edmonton` timezone
+- [ ] Uses `Intl.DateTimeFormat` to convert current time to client's timezone
+- [ ] Returns `false` when `isOpen` is `false` for that day
+- [ ] Returns `false` when current time is outside `openTime`–`closeTime` range
+- [ ] `getBusinessHours(clientId)` returns all 7 rows ordered by `dayOfWeek`
+- [ ] `updateBusinessHours(clientId, dayOfWeek, openTime, closeTime, isOpen)` upserts a single day
+- [ ] All functions use `getDb()` per-request (not cached instance)
+- [ ] All functions have try/catch error handling with console logging
+
+### Hot Intent Detection (src/lib/services/openai.ts)
+- [ ] `detectHotIntent(message)` function exported
+- [ ] Returns `true` for messages containing any trigger phrase (case-insensitive)
+- [ ] Trigger phrases include: "ready to schedule", "ready to book", "can you call me", "call me", "give me a call", "want to proceed", "let's do it", "let's move forward", "when can you start", "i'm ready", "book an appointment", "schedule an estimate", "come out today", "come out tomorrow", "available today", "available tomorrow"
+- [ ] Returns `false` for messages with no trigger phrases
+- [ ] Case-insensitive matching (e.g., "I'M READY" matches "i'm ready")
+
+### Ring Group Service (src/lib/services/ring-group.ts)
+- [ ] `initiateRingGroup(payload)` function exported
+- [ ] Accepts `{ leadId, clientId, leadPhone, twilioNumber }`
+- [ ] Queries active team members with `receiveHotTransfers = true`, ordered by `priority`
+- [ ] Returns `{ initiated: false, reason: 'No team members' }` when no members configured
+- [ ] Creates `callAttempts` record with `status: 'initiated'`
+- [ ] Creates Twilio outbound call to `leadPhone` from `twilioNumber`
+- [ ] Sets `url` to ring-connect webhook with `attemptId` and `leadPhone` params
+- [ ] Sets `statusCallback` to ring-status webhook with `attemptId` param
+- [ ] Updates call attempt with `callSid` and `status: 'ringing'` after call creation
+- [ ] Sends SMS to each team member notifying of hot lead
+- [ ] Returns `{ initiated: true, callSid, attemptId, membersToRing }` on success
+- [ ] On failure: updates call attempt to `status: 'failed'` and returns `{ initiated: false, error }`
+- [ ] Uses `getDb()` per-request (not cached instance)
+
+### Ring Group No-Answer Handler (src/lib/services/ring-group.ts)
+- [ ] `handleNoAnswer(payload)` function exported
+- [ ] Sends SMS to each hot-transfer team member about missed call with lead info
+- [ ] Sends SMS to lead apologizing and offering callback
+- [ ] Sets `actionRequired = true` and `actionRequiredReason = 'Hot transfer - no answer'` on lead
+- [ ] Uses `formatPhoneNumber()` for display-friendly phone numbers
+
+### Manual Verification Steps
+1. Check file existence:
+   - `src/db/schema/business-hours.ts` exists
+   - `src/db/schema/call-attempts.ts` exists
+   - `src/lib/services/business-hours.ts` exists
+   - `src/lib/services/ring-group.ts` exists
+2. Verify `detectHotIntent` in `src/lib/services/openai.ts`:
+   - `detectHotIntent("I'm ready to book")` → `true`
+   - `detectHotIntent("What services do you offer?")` → `false`
+   - `detectHotIntent("CALL ME please")` → `true`
+3. Verify imports resolve correctly:
+   - `import { businessHours, callAttempts } from '@/db/schema'` — no errors
+   - `import { detectHotIntent } from '@/lib/services/openai'` — no errors
+   - `import { initiateRingGroup, handleNoAnswer } from '@/lib/services/ring-group'` — no errors
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] `Compiled successfully` in build output
+- [ ] No new TypeScript warnings related to business-hours, call-attempts, or ring-group
