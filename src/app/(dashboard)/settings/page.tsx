@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TeamMembersList } from './team-members-list';
+import { BusinessHoursEditor } from './business-hours-editor';
 
 export const dynamic = 'force-dynamic';
 
@@ -144,6 +145,18 @@ export default async function SettingsPage() {
           </CardHeader>
           <CardContent>
             <TeamMembersList clientId={clientId} />
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Business Hours</CardTitle>
+            <CardDescription>
+              Set when hot transfers should connect calls immediately
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BusinessHoursEditor clientId={clientId} />
           </CardContent>
         </Card>
       </div>
