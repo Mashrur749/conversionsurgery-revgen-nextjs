@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import SignOutButton from './signout-button';
-import { ClientSelector } from '@/components/client-selector';
 import { AdminProvider } from '@/lib/admin-context';
 
 const clientNavItems = [
@@ -102,7 +101,6 @@ export default async function DashboardLayout({
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-8">
-          {isAdmin && <ClientSelector />}
           {children}
         </main>
       </div>
