@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import {
   getDb,
   leads,
@@ -18,6 +19,12 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const session = await auth();
   const clientId = (session as any).client?.id;
+  const isAdmin = (session as any).user?.isAdmin;
+
+  // Redirect admins to Agency Dashboard
+  if (isAdmin) {
+    redirect("/admin");
+  }
 
   if (!clientId) {
     return <div>No client linked to account</div>;
