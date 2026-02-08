@@ -89,7 +89,7 @@ Google Business:  (leave empty)
 psql $DATABASE_URL -c "SELECT id, business_name, email, status FROM clients WHERE email = 'john.smith@prodtest.com';"
 ```
 
-Should show client created with status='active'
+Should show client created with status='pending' (not active until Step 5)
 
 ---
 
@@ -206,9 +206,10 @@ WHERE email = 'john.smith@prodtest.com';
 ```
 
 Expected:
-- status = 'active'
-- twilio_number = selected number
+- status = 'active' (changed from 'pending' when activated in Step 5)
+- twilio_number = selected number (from Step 2)
 - created_at = recent timestamp
+- All team members and business hours configured
 
 ✅ **Test 1 Complete!**
 
