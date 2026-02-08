@@ -18,8 +18,8 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === 'development',
   adapter: DrizzleAdapter(getDb(), {
     usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
+    accountsTable: accounts as any,
+    sessionsTable: sessions as any,
     verificationTokensTable: verificationTokens,
   }),
   callbacks: {
@@ -43,8 +43,6 @@ export const authOptions: NextAuthOptions = {
   },
   providers: [
     EmailProvider({
-      id: 'email',
-      name: 'Email',
       from: process.env.EMAIL_FROM || 'noreply@example.com',
       maxAge: 24 * 60 * 60, // 24 hours
       async sendVerificationRequest({ identifier, url, expires, provider, theme }) {
