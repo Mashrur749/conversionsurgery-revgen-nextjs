@@ -43,3 +43,57 @@
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] All auth routes registered: `/api/auth/[...nextauth]`
+
+## 02-admin-ui-components
+
+### File Existence
+- [ ] `src/components/ui/select.tsx` exists (shadcn Select component)
+- [ ] `src/lib/admin-context.tsx` exists (AdminProvider + useAdmin hook)
+- [ ] `src/components/providers.tsx` wraps children with `AdminProvider`
+- [ ] `src/components/admin/client-selector.tsx` exists (shadcn-based selector)
+- [ ] `src/lib/get-client-id.ts` exists (server-side helper)
+- [ ] `src/lib/hooks/use-client-id.ts` exists (client-side hook)
+
+### Admin Context (src/lib/admin-context.tsx)
+- [ ] `AdminProvider` persists `selectedClientId` to `localStorage`
+- [ ] `AdminProvider` syncs `selectedClientId` to a cookie (`adminSelectedClientId`)
+- [ ] `AdminProvider` restores `selectedClientId` from `localStorage` on mount
+- [ ] `setSelectedClientId(null)` clears both `localStorage` and cookie
+- [ ] `selectedClient` is derived from `clients` array when `selectedClientId` changes
+- [ ] `isLoading` starts `true` and becomes `false` after hydration
+- [ ] `useAdmin()` throws if used outside `AdminProvider`
+
+### Providers (src/components/providers.tsx)
+- [ ] `SessionProvider` wraps `AdminProvider` (session available inside admin context)
+- [ ] Both providers are `'use client'` components
+
+### Client Selector (src/components/admin/client-selector.tsx)
+- [ ] Renders an "Admin" badge with amber styling
+- [ ] Renders a shadcn `Select` dropdown with client business names
+- [ ] Selecting a client updates `AdminContext` (and persists to localStorage/cookie)
+- [ ] If no client is selected and clients exist, auto-selects the first client
+- [ ] Accepts `clients` as a prop (server-fetched data passed down)
+
+### Server-Side Client ID (src/lib/get-client-id.ts)
+- [ ] Returns `null` if no session
+- [ ] For admin users: reads `adminSelectedClientId` cookie and returns it
+- [ ] For non-admin users: returns `session.client.id`
+- [ ] Uses `await cookies()` (Next.js 15+ async API)
+
+### Client-Side Hook (src/lib/hooks/use-client-id.ts)
+- [ ] For admin users: returns `selectedClientId` from `AdminContext`
+- [ ] For non-admin users: returns `session.client.id`
+- [ ] Returns `null` if no session
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Sign in as admin user
+3. Open browser console and verify `localStorage.getItem('adminSelectedClientId')` returns a client ID
+4. Check that the `adminSelectedClientId` cookie is set (DevTools > Application > Cookies)
+5. Refresh the page — the selected client should persist (not reset)
+6. Change client selection in the dropdown — verify localStorage and cookie both update
+7. Clear selection — verify localStorage and cookie are removed
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] No new warnings related to admin-context or client-selector
