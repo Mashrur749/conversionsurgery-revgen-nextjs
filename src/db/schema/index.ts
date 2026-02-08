@@ -11,6 +11,8 @@ export * from './webhook-log';
 export * from './message-templates';
 export * from './daily-stats';
 export * from './active-calls';
+export * from './team-members';
+export * from './escalation-claims';
 
 // Auth tables (NextAuth)
 export * from './auth';
