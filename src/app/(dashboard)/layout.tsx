@@ -16,6 +16,7 @@ const navItems = [
 
 const adminNavItems = [
   { href: '/admin/clients', label: 'Clients' },
+  { href: '/admin/clients/new/wizard', label: 'New Client Wizard' },
   { href: '/admin/twilio', label: 'Twilio' },
 ];
 
