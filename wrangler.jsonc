@@ -34,7 +34,7 @@
 	],
 	"observability": {
 		"enabled": true
-	}
+	},
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -52,5 +52,7 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
+	"vars": {
+		"DATABASE_URL": "postgresql://neondb_owner:npg_YOUR_PASSWORD@ep-falling-forest-aiyuokks.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require"
+	}
 }

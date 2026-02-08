@@ -1,0 +1,168 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getDb, scheduledMessages, leads, clients, conversations, blockedNumbers, dailyStats } from '@/db';
+import { sendSMS } from '@/lib/services/twilio';
+import { eq, and, lte, sql } from 'drizzle-orm';
+
+// Verify cron secret to prevent unauthorized access
+function verifyCronSecret(request: NextRequest): boolean {
+  const authHeader = request.headers.get('authorization');
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) return false;
+  return authHeader === `Bearer ${cronSecret}`;
+}
+
+export async function GET(request: NextRequest) {
+  if (!verifyCronSecret(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const db = getDb();
+
+    // Reset monthly message counts on the 1st of each month
+    const now = new Date();
+    if (now.getDate() === 1 && now.getHours() < 1) {
+      await db
+        .update(clients)
+        .set({ messagesSentThisMonth: 0 });
+      console.log('Reset monthly message counts');
+    }
+
+    // Get due messages (limit to prevent timeout)
+    const dueMessages = await db
+      .select({
+        message: scheduledMessages,
+        lead: leads,
+        client: clients,
+      })
+      .from(scheduledMessages)
+      .innerJoin(leads, eq(scheduledMessages.leadId, leads.id))
+      .innerJoin(clients, eq(scheduledMessages.clientId, clients.id))
+      .where(and(
+        eq(scheduledMessages.sent, false),
+        eq(scheduledMessages.cancelled, false),
+        lte(scheduledMessages.sendAt, new Date())
+      ))
+      .limit(50);
+
+    let sent = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const { message, lead, client } of dueMessages) {
+      // Skip if lead opted out
+      if (lead.optedOut) {
+        await markCancelled(db, message.id, 'Lead opted out');
+        skipped++;
+        continue;
+      }
+
+      // Skip if number blocked
+      const blockedResult = await db
+        .select()
+        .from(blockedNumbers)
+        .where(and(
+          eq(blockedNumbers.clientId, client.id),
+          eq(blockedNumbers.phone, lead.phone)
+        ))
+        .limit(1);
+
+      if (blockedResult.length) {
+        await markCancelled(db, message.id, 'Number blocked');
+        skipped++;
+        continue;
+      }
+
+      // Skip if over monthly limit
+      const messagesSent = client.messagesSentThisMonth || 0;
+      const limit = client.monthlyMessageLimit || 10000;
+      if (messagesSent >= limit) {
+        skipped++;
+        continue;
+      }
+
+      // Skip if client has no Twilio number
+      if (!client.twilioNumber) {
+        await markCancelled(db, message.id, 'No Twilio number');
+        skipped++;
+        continue;
+      }
+
+      // Send SMS
+      const result = await sendSMS(lead.phone, client.twilioNumber, message.content);
+
+      if (result.success) {
+        // Mark sent
+        await db
+          .update(scheduledMessages)
+          .set({ sent: true, sentAt: new Date() })
+          .where(eq(scheduledMessages.id, message.id));
+
+        // Log conversation
+        await db.insert(conversations).values({
+          leadId: lead.id,
+          clientId: client.id,
+          direction: 'outbound',
+          messageType: 'scheduled',
+          content: message.content,
+          twilioSid: result.sid,
+        });
+
+        // Update daily stats
+        await updateDailyStats(db, client.id, message.sequenceType);
+
+        // Increment monthly count
+        await db
+          .update(clients)
+          .set({ messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1` })
+          .where(eq(clients.id, client.id));
+
+        sent++;
+      } else {
+        console.error('Failed to send scheduled message:', message.id, result.error);
+        failed++;
+      }
+    }
+
+    return NextResponse.json({
+      processed: dueMessages.length,
+      sent,
+      skipped,
+      failed,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Cron error:', error);
+    return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
+  }
+}
+
+async function markCancelled(db: any, messageId: string, reason: string) {
+  await db
+    .update(scheduledMessages)
+    .set({
+      cancelled: true,
+      cancelledAt: new Date(),
+      cancelledReason: reason,
+    })
+    .where(eq(scheduledMessages.id, messageId));
+}
+
+async function updateDailyStats(db: any, clientId: string, sequenceType: string | null) {
+  const today = new Date().toISOString().split('T')[0];
+
+  await db
+    .insert(dailyStats)
+    .values({
+      clientId,
+      date: today,
+      messagesSent: 1,
+    })
+    .onConflictDoUpdate({
+      target: [dailyStats.clientId, dailyStats.date],
+      set: {
+        messagesSent: sql`${dailyStats.messagesSent} + 1`,
+      },
+    });
+}
