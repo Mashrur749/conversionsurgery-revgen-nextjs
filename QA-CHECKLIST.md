@@ -167,3 +167,71 @@
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] All routes registered: `/admin`, `/dashboard`, `/leads`, `/scheduled`, `/settings`
+
+## 04-team-schema-service
+
+### Schema: team_members Table
+- [ ] `team_members` table exists in `src/db/schema/team-members.ts`
+- [ ] Columns: `id` (uuid PK), `clientId` (FK → clients.id, cascade), `name` (varchar 255, not null), `phone` (varchar 20, not null)
+- [ ] Columns: `email` (varchar 255, nullable), `role` (varchar 50, nullable)
+- [ ] Columns: `receiveEscalations` (boolean, default true), `receiveHotTransfers` (boolean, default true)
+- [ ] Columns: `priority` (integer, default 1), `isActive` (boolean, default true)
+- [ ] Columns: `createdAt` (timestamp, defaultNow), `updatedAt` (timestamp, defaultNow)
+- [ ] Index: `idx_team_members_client_id` on `clientId`
+- [ ] Exported types: `TeamMember`, `NewTeamMember`
+
+### Schema: escalation_claims Table
+- [ ] `escalation_claims` table exists in `src/db/schema/escalation-claims.ts`
+- [ ] Columns: `id` (uuid PK), `leadId` (FK → leads.id, cascade), `clientId` (FK → clients.id, cascade)
+- [ ] Columns: `claimedBy` (FK → teamMembers.id, set null on delete)
+- [ ] Columns: `claimToken` (varchar 64, not null, unique)
+- [ ] Columns: `escalationReason` (varchar 255), `lastLeadMessage` (text)
+- [ ] Columns: `status` (varchar 20, default 'pending') — values: pending, claimed, resolved
+- [ ] Columns: `notifiedAt` (timestamp, defaultNow), `claimedAt` (timestamp), `resolvedAt` (timestamp), `createdAt` (timestamp, defaultNow)
+- [ ] Indexes: `idx_escalation_claims_lead_id`, `idx_escalation_claims_token`, `idx_escalation_claims_client_id`, `idx_escalation_claims_status`
+- [ ] Exported types: `EscalationClaim`, `NewEscalationClaim`
+
+### Schema: Relations
+- [ ] `teamMembersRelations` defines `client` (one → clients) and `claims` (many → escalationClaims)
+- [ ] `escalationClaimsRelations` defines `lead` (one → leads), `client` (one → clients), `claimedByMember` (one → teamMembers)
+- [ ] `clientsRelations` includes `teamMembers: many(teamMembers)` and `escalationClaims: many(escalationClaims)`
+- [ ] Both schemas exported from `src/db/schema/index.ts`
+
+### Token Utility (src/lib/utils/tokens.ts)
+- [ ] `generateClaimToken()` function exists
+- [ ] Uses `crypto.randomBytes(32).toString('hex')` — produces 64-char hex string
+- [ ] Calling `generateClaimToken()` twice produces different values (randomness check)
+
+### Team Escalation Service (src/lib/services/team-escalation.ts)
+- [ ] `notifyTeamForEscalation(payload)` function exists
+- [ ] Accepts `EscalationPayload` with `leadId`, `clientId`, `twilioNumber`, `reason`, `lastMessage`
+- [ ] Uses `getDb()` per-request (not cached `db` instance)
+- [ ] Queries only active team members with `receiveEscalations = true`, ordered by `priority`
+- [ ] Returns `{ notified: 0 }` when no team members configured
+- [ ] Returns `{ notified: 0, error: 'Lead not found' }` when lead doesn't exist
+- [ ] Creates escalation claim record with `status: 'pending'`, unique `claimToken`
+- [ ] Sends SMS to each team member with lead name, truncated message (80 chars), reason, and claim URL
+- [ ] Sends email via `actionRequiredEmail` to team members who have email configured
+- [ ] Returns `{ notified, escalationId, claimToken }` on success
+
+### Claim Escalation (src/lib/services/team-escalation.ts)
+- [ ] `claimEscalation(token, teamMemberId)` function exists
+- [ ] Returns `{ success: false, error: 'Invalid claim link' }` for unknown tokens
+- [ ] Returns `{ success: false, error: 'Already claimed', claimedBy: '<name>' }` for already-claimed escalations
+- [ ] Looks up claimer name from `teamMembers` table when returning "Already claimed"
+- [ ] Returns `{ success: false, error: 'Team member not found' }` for invalid team member ID
+- [ ] Updates escalation claim: sets `claimedBy`, `claimedAt`, `status: 'claimed'`
+- [ ] Clears `actionRequired = false` and `actionRequiredReason = null` on the lead
+- [ ] Notifies other team members via SMS: "✓ <name> is handling <lead>"
+- [ ] Skips SMS notification for the claiming member themselves
+- [ ] Returns `{ success: true, leadId, leadPhone }` on success
+
+### Pending Escalations (src/lib/services/team-escalation.ts)
+- [ ] `getPendingEscalations(clientId)` function exists
+- [ ] Returns array of pending claims with lead name and phone via `innerJoin`
+- [ ] Only returns claims with `status: 'pending'` for the given `clientId`
+- [ ] Returns empty array on error (does not throw)
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] No new warnings related to team-escalation service

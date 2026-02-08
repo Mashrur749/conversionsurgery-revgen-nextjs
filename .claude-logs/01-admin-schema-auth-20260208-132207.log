@@ -1,0 +1,20 @@
+All done. Here's the summary:
+
+## 01-admin-schema-auth: Already Implemented
+
+All 5 steps from the doc were already present in the codebase:
+
+| Step | File | Status |
+|------|------|--------|
+| 1. Schema (`isAdmin`, auth tables) | `src/db/schema/auth.ts` | Already exists |
+| 2. Push schema | Database | Already applied |
+| 3. Auth types | `src/types/next-auth.d.ts` | Already exists |
+| 4. Auth config (signIn/session callbacks) | `src/lib/auth-options.ts` | Already exists |
+| 5. Set admin user | SQL manual step | Your responsibility |
+
+**Note on Step 5**: Run this in your Neon console to set yourself as admin:
+```sql
+UPDATE users SET is_admin = true WHERE email = 'your-email@example.com';
+```
+
+**Commit**: `4d0a1db` — Created `QA-CHECKLIST.md` with verification steps for this phase. Build passes with 0 TypeScript errors.

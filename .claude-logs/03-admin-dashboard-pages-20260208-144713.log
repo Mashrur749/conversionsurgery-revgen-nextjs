@@ -1,0 +1,22 @@
+All done. Here's a summary of what was implemented:
+
+### Commits (7 total)
+
+| # | Commit | Description |
+|---|--------|-------------|
+| 1 | `1ef6dd4` | Updated dashboard layout with admin client selector dropdown, dual navigation (admin grouped nav + regular nav), and DB query for active clients |
+| 2 | `40c4abc` | Updated dashboard page with `getClientId()`, richer 7-day stats (leads captured, messages, follow-ups, scheduled), and admin "Select a Client" prompt |
+| 3 | `34778fd` | Updated leads page with `getClientId()` replacing the old `users` table lookup for admin client switching |
+| 4 | `05fd4c1` | Updated scheduled page with `getClientId()` and left join for lead data, admin prompt when no client selected |
+| 5 | `b642978` | Updated settings page with `getClientId()` for admin client switching |
+| 6 | `cea6688` | Replaced admin page with All Clients overview showing 4 summary cards (active clients, 7d leads, 7d messages, needs attention) and per-client stats |
+| 7 | `46df49d` | Appended 70 lines of QA test steps to QA-CHECKLIST.md |
+
+### Key adaptations from the doc
+- Used `getDb()` from `@/db` instead of `db` from `@/lib/db`
+- Kept existing `SignOutButton` client component instead of server action `signOut`
+- Kept `AdminProvider` wrapper in layout
+- Preserved existing admin nav groups (Management, Optimization, Configuration) with amber styling
+- All pages now use `getClientId()` for unified admin/client resolution via cookie
+
+### Build: 0 TypeScript errors
