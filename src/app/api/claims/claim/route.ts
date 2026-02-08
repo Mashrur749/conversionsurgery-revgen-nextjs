@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { claimEscalation } from '@/lib/services/team-escalation';
+import { getDb } from '@/db';
+import { teamMembers } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+
+/**
+ * POST /api/claims/claim
+ * Claim an escalation using a claim token and team member ID
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { token } = await request.json() as { token?: string };
+
+    if (!token) {
+      return NextResponse.json({ error: 'Claim token required' }, { status: 400 });
+    }
+
+    // Get current user's team member ID
+    const db = getDb();
+    const clientId = (session as any).client?.id;
+
+    const [userTeamMember] = await db
+      .select()
+      .from(teamMembers)
+      .where(eq(teamMembers.clientId, clientId))
+      .limit(1);
+
+    if (!userTeamMember) {
+      return NextResponse.json(
+        { error: 'Not a team member for this client' },
+        { status: 403 }
+      );
+    }
+
+    // Claim the escalation
+    const result = await claimEscalation(token, userTeamMember.id);
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('[Claims Claim API] Error:', error);
+    return NextResponse.json({ error: 'Failed to claim escalation' }, { status: 500 });
+  }
+}

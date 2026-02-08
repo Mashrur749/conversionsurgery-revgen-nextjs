@@ -10,6 +10,8 @@ import { messageTemplates } from './message-templates';
 import { dailyStats } from './daily-stats';
 import { teamMembers } from './team-members';
 import { escalationClaims } from './escalation-claims';
+import { businessHours } from './business-hours';
+import { callAttempts } from './call-attempts';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -26,6 +28,8 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   dailyStats: many(dailyStats),
   teamMembers: many(teamMembers),
   escalationClaims: many(escalationClaims),
+  businessHours: many(businessHours),
+  callAttempts: many(callAttempts),
 }));
 
 export const leadsRelations = relations(leads, ({ one, many }) => ({
@@ -129,6 +133,28 @@ export const escalationClaimsRelations = relations(escalationClaims, ({ one }) =
   }),
   claimedByMember: one(teamMembers, {
     fields: [escalationClaims.claimedBy],
+    references: [teamMembers.id],
+  }),
+}));
+
+export const businessHoursRelations = relations(businessHours, ({ one }) => ({
+  client: one(clients, {
+    fields: [businessHours.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const callAttemptsRelations = relations(callAttempts, ({ one }) => ({
+  lead: one(leads, {
+    fields: [callAttempts.leadId],
+    references: [leads.id],
+  }),
+  client: one(clients, {
+    fields: [callAttempts.clientId],
+    references: [clients.id],
+  }),
+  answeredByMember: one(teamMembers, {
+    fields: [callAttempts.answeredBy],
     references: [teamMembers.id],
   }),
 }));

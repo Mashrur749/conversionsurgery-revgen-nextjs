@@ -13,6 +13,8 @@ export * from './daily-stats';
 export * from './active-calls';
 export * from './team-members';
 export * from './escalation-claims';
+export * from './business-hours';
+export * from './call-attempts';
 
 // Auth tables (NextAuth)
 export * from './auth';
