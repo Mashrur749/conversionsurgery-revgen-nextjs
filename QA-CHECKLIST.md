@@ -235,3 +235,72 @@
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] No new warnings related to team-escalation service
+
+## 05-claim-pages-sms-update
+
+### Claim API Route (src/app/api/claim/route.ts)
+- [ ] `POST /api/claim` route exists
+- [ ] Validates input with Zod: `token` (string, min 1), `teamMemberId` (string, uuid)
+- [ ] Returns 400 with `{ success: false, error: 'Invalid input' }` on validation failure
+- [ ] Returns 500 with `{ success: false, error: 'Failed to claim' }` on unexpected error
+- [ ] Calls `claimEscalation(token, teamMemberId)` and returns the result
+- [ ] Successful claim returns `{ success: true, leadId, leadPhone }`
+- [ ] Already-claimed returns `{ success: false, error: 'Already claimed', claimedBy: '<name>' }`
+
+### Claim Page (src/app/(auth)/claim/page.tsx)
+- [ ] Page exists at `/claim` route under `(auth)` layout
+- [ ] Reads `token` from async `searchParams` (Next.js 16 pattern)
+- [ ] Redirects to `/claim-error?reason=invalid` when no token provided
+- [ ] Redirects to `/claim-error?reason=invalid` when token doesn't match any escalation
+- [ ] Redirects to `/claim-error?reason=claimed&by=<name>` when escalation already claimed
+- [ ] Uses `getDb()` per-request (not cached instance)
+- [ ] Displays lead name or formatted phone number
+- [ ] Displays last lead message in quotes
+- [ ] Displays escalation reason
+- [ ] Renders `ClaimForm` with token, active team members, and lead ID
+- [ ] Only shows active team members for the escalation's client
+
+### Claim Form Component (src/app/(auth)/claim/claim-form.tsx)
+- [ ] `'use client'` component exists
+- [ ] Renders shadcn `Select` dropdown with team member names
+- [ ] "Select your name..." placeholder shown when no member selected
+- [ ] "Claim & Respond" button is disabled when no member selected
+- [ ] "Claim & Respond" button is disabled while loading
+- [ ] Button text changes to "Claiming..." during submission
+- [ ] Sends `POST /api/claim` with `{ token, teamMemberId }`
+- [ ] On success, redirects to `/leads/<leadId>?claimed=true`
+- [ ] On "Already claimed" error, redirects to `/claim-error?reason=claimed&by=<name>`
+- [ ] On other errors, shows alert with error message
+
+### Claim Error Page (src/app/(auth)/claim-error/page.tsx)
+- [ ] Page exists at `/claim-error` route under `(auth)` layout
+- [ ] Reads `reason` and `by` from async `searchParams` (Next.js 16 pattern)
+- [ ] Shows "Invalid Link" title and "This claim link is invalid or has expired." for `reason=invalid`
+- [ ] Shows "Already Claimed" title and "<name> is already handling this lead." for `reason=claimed`
+- [ ] Shows generic "Claim Error" title for unknown reasons
+- [ ] Has "Go to Dashboard" button linking to `/dashboard`
+
+### Incoming SMS Handler (src/lib/automations/incoming-sms.ts)
+- [ ] Imports `notifyTeamForEscalation` from `@/lib/services/team-escalation`
+- [ ] Imports `sendEmail` and `actionRequiredEmail` from `@/lib/services/resend`
+- [ ] On escalation: calls `notifyTeamForEscalation()` with leadId, clientId, twilioNumber, reason, lastMessage
+- [ ] On escalation with 0 team members notified: falls back to contractor SMS notification (if `notificationSms` enabled)
+- [ ] On escalation with 0 team members notified: falls back to contractor email notification (if `notificationEmail` enabled)
+- [ ] Escalation return includes `teamNotified` count
+- [ ] After AI response (non-escalation): sends contractor notification SMS with lead name, truncated message, and dashboard URL
+- [ ] Conversation history limited to 20 messages
+- [ ] Dashboard URL constructed from `NEXT_PUBLIC_APP_URL` environment variable
+- [ ] All database operations use `getDb()` per-request
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Verify `/claim` page renders (will redirect to `/claim-error?reason=invalid` without a token)
+3. Verify `/claim-error` page renders with "Invalid Link" message
+4. Verify `/claim-error?reason=claimed&by=John` shows "Already Claimed" with "John is already handling this lead."
+5. Send `POST /api/claim` with invalid body → expect 400 response
+6. Send `POST /api/claim` with `{ "token": "fake", "teamMemberId": "<valid-uuid>" }` → expect `{ success: false, error: 'Invalid claim link' }`
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/claim`, `/claim-error`, `/api/claim`
+- [ ] Incoming SMS handler file has no lint errors
