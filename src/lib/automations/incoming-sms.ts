@@ -1,7 +1,9 @@
 import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats } from '@/db';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
-import { generateAIResponse } from '@/lib/services/openai';
+import { generateAIResponse, detectHotIntent } from '@/lib/services/openai';
+import { isWithinBusinessHours } from '@/lib/services/business-hours';
+import { initiateRingGroup } from '@/lib/services/ring-group';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
@@ -111,6 +113,66 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       eq(scheduledMessages.sent, false),
       eq(scheduledMessages.cancelled, false)
     ));
+
+  // 6.5 Check for hot intent BEFORE AI processing
+  const isHotIntent = detectHotIntent(messageBody);
+
+  if (isHotIntent) {
+    const withinHours = await isWithinBusinessHours(client.id, client.timezone || 'America/Edmonton');
+
+    if (withinHours) {
+      const ringResult = await initiateRingGroup({
+        leadId: lead.id,
+        clientId: client.id,
+        leadPhone: senderPhone,
+        twilioNumber: client.twilioNumber!,
+      });
+
+      if (ringResult.initiated) {
+        await sendSMS(
+          senderPhone,
+          client.twilioNumber!,
+          `Great! We're calling you right now. Please pick up!`
+        );
+
+        await db.insert(conversations).values({
+          leadId: lead.id,
+          clientId: client.id,
+          direction: 'outbound',
+          messageType: 'hot_transfer',
+          content: 'Initiated hot transfer call',
+        });
+
+        return {
+          processed: true,
+          leadId: lead.id,
+          hotTransfer: true,
+          callSid: ringResult.callSid,
+        };
+      }
+    } else {
+      await sendSMS(
+        senderPhone,
+        client.twilioNumber!,
+        `Thanks for your interest! We're currently outside business hours, but someone will call you first thing tomorrow morning.`
+      );
+
+      await notifyTeamForEscalation({
+        leadId: lead.id,
+        clientId: client.id,
+        twilioNumber: client.twilioNumber!,
+        reason: 'Hot intent - outside business hours',
+        lastMessage: messageBody,
+      });
+
+      return {
+        processed: true,
+        leadId: lead.id,
+        hotTransfer: false,
+        outsideHours: true,
+      };
+    }
+  }
 
   // 7. Get conversation history
   const history = await db
