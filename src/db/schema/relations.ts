@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { clients } from './clients';
+import { users, accounts, sessions } from './auth';
 import { leads } from './leads';
 import { conversations } from './conversations';
 import { scheduledMessages } from './scheduled-messages';
@@ -30,6 +31,20 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   escalationClaims: many(escalationClaims),
   businessHours: many(businessHours),
   callAttempts: many(callAttempts),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  client: one(clients, { fields: [users.clientId], references: [clients.id] }),
+  accounts: many(accounts),
+  sessions: many(sessions),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, { fields: [accounts.userId], references: [users.id] }),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, { fields: [sessions.userId], references: [users.id] }),
 }));
 
 export const leadsRelations = relations(leads, ({ one, many }) => ({

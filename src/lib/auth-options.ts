@@ -3,6 +3,7 @@ import EmailProvider from 'next-auth/providers/email';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { getDb } from '@/db';
 import { users, accounts, sessions, verificationTokens } from '@/db/schema/auth';
+import { clients } from '@/db/schema/clients';
 import { eq } from 'drizzle-orm';
 import { sendEmail } from './services/resend';
 
@@ -26,19 +27,78 @@ export const authOptions: NextAuthOptions = {
     async session({ session, user }) {
       // Fetch user from database to include client info and admin status
       const db = getDb();
-      const dbUser = await db
-        .select()
+      const [dbUser] = await db
+        .select({
+          id: users.id,
+          clientId: users.clientId,
+          isAdmin: users.isAdmin,
+        })
         .from(users)
         .where(eq(users.email, user.email!))
         .limit(1);
 
-      if (dbUser && dbUser.length > 0) {
-        (session as any).user.id = dbUser[0].id;
-        (session as any).user.isAdmin = dbUser[0].isAdmin ?? false;
-        (session as any).client = dbUser[0].clientId ? { id: dbUser[0].clientId } : null;
+      if (dbUser) {
+        session.user.id = dbUser.id;
+        (session as any).user.isAdmin = dbUser.isAdmin ?? false;
+
+        // Fetch full client details for non-admin users with a client association
+        if (!dbUser.isAdmin && dbUser.clientId) {
+          const [client] = await db
+            .select({
+              id: clients.id,
+              businessName: clients.businessName,
+              ownerName: clients.ownerName,
+            })
+            .from(clients)
+            .where(eq(clients.id, dbUser.clientId))
+            .limit(1);
+
+          if (client) {
+            (session as any).client = {
+              id: client.id,
+              businessName: client.businessName,
+              ownerName: client.ownerName,
+            };
+          }
+        }
       }
 
       return session;
+    },
+    async signIn({ user }) {
+      if (!user.email) return false;
+
+      const db = getDb();
+
+      // Check if user exists in database
+      const [dbUser] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, user.email))
+        .limit(1);
+
+      // Admins can always sign in
+      if (dbUser?.isAdmin) return true;
+
+      // Check if there's a matching client for this email
+      const [client] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.email, user.email))
+        .limit(1);
+
+      // No matching client = deny sign in
+      if (!client) return false;
+
+      // Auto-link user to client if not already linked
+      if (user.id && dbUser && !dbUser.clientId) {
+        await db
+          .update(users)
+          .set({ clientId: client.id })
+          .where(eq(users.id, user.id));
+      }
+
+      return true;
     },
   },
   providers: [
