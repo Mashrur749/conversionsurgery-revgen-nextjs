@@ -304,3 +304,60 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] Routes registered: `/claim`, `/claim-error`, `/api/claim`
 - [ ] Incoming SMS handler file has no lint errors
+
+## 06-team-members-ui
+
+### Team Members API (src/app/api/team-members/route.ts)
+- [ ] `GET /api/team-members` returns members for authenticated users
+- [ ] Admin users can pass `?clientId=` query param to fetch any client's members
+- [ ] Non-admin users get members via `getClientId()` (cookie/session-based)
+- [ ] Returns `{ success: true, members: [...] }` on success
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 403 if no client resolved
+- [ ] Members ordered by `priority`
+- [ ] `POST /api/team-members` creates a new member with Zod validation
+- [ ] Phone number normalized via `normalizePhoneNumber()` on create
+- [ ] Returns 400 with validation details on invalid input
+- [ ] `DELETE /api/team-members?memberId=<id>` removes a member
+- [ ] Returns 400 if `memberId` not provided
+
+### Team Members PATCH/DELETE API (src/app/api/team-members/[id]/route.ts)
+- [ ] `PATCH /api/team-members/<id>` updates a member's fields
+- [ ] Updates `updatedAt` timestamp automatically
+- [ ] Returns 404 if member not found
+- [ ] Returns 401 if not authenticated
+- [ ] `DELETE /api/team-members/<id>` removes a member by path param
+- [ ] Uses Next.js 16 async params pattern (`Promise<{ id: string }>`)
+
+### TeamMembersList Component (src/app/(dashboard)/settings/team-members-list.tsx)
+- [ ] Renders "No team members yet" message when list is empty
+- [ ] Shows loading state while fetching
+- [ ] Displays each member with name, phone, email, role badge, and active status
+- [ ] "Add Team Member" button toggles inline form
+- [ ] Form has name, phone, email (optional), and role fields
+- [ ] "Add Member" button disabled when name or phone is empty
+- [ ] Cancel button hides the form
+- [ ] Enable/Disable button toggles `isActive` via PATCH
+- [ ] Remove button shows confirmation dialog before deleting
+- [ ] List refreshes automatically after add, toggle, or remove
+
+### Settings Page Integration (src/app/(dashboard)/settings/page.tsx)
+- [ ] "Team Members" card renders spanning full width (`md:col-span-2`)
+- [ ] Card description reads "People who receive escalation notifications when AI can't answer"
+- [ ] `TeamMembersList` receives `clientId` prop from server component
+- [ ] Admin without selected client sees "Select a Client" prompt (no crash)
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Sign in and go to `/settings`
+3. Scroll down to see "Team Members" section
+4. Click "+ Add Team Member"
+5. Fill in name and phone → click "Add Member" → member appears in list
+6. Click "Disable" on a member → badge changes to "Inactive"
+7. Click "Enable" → badge changes back to "Active"
+8. Click "Remove" → confirm dialog → member is removed
+9. Add a member with email and role → verify both display correctly
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/settings`, `/api/team-members`, `/api/team-members/[id]`
