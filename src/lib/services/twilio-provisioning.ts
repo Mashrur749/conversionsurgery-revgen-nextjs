@@ -117,15 +117,26 @@ export async function purchaseNumber(phoneNumber: string, clientId: string): Pro
   }
 
   try {
-    // Purchase the number
-    const purchased = await twilioClient.incomingPhoneNumbers.create({
-      phoneNumber,
-      voiceUrl: `${baseUrl}/api/webhooks/twilio/voice`,
-      voiceMethod: 'POST',
-      smsUrl: `${baseUrl}/api/webhooks/twilio/sms`,
-      smsMethod: 'POST',
-      friendlyName: `Client: ${clientId}`,
-    });
+    // Check if this is a mock number (for development)
+    const isMockNumber = isMockPhoneNumber(phoneNumber);
+    let purchased: any = null;
+
+    if (!isMockNumber) {
+      // Purchase the number from Twilio
+      console.log(`[Twilio Purchase] Purchasing real number: ${phoneNumber}`);
+      purchased = await twilioClient.incomingPhoneNumbers.create({
+        phoneNumber,
+        voiceUrl: `${baseUrl}/api/webhooks/twilio/voice`,
+        voiceMethod: 'POST',
+        smsUrl: `${baseUrl}/api/webhooks/twilio/sms`,
+        smsMethod: 'POST',
+        friendlyName: `Client: ${clientId}`,
+      });
+    } else {
+      // In development, mock numbers are auto-purchased
+      console.log(`[Twilio Purchase] Assigning mock number: ${phoneNumber}`);
+      purchased = { sid: `mock-${phoneNumber.replace(/\D/g, '').slice(-6)}` };
+    }
 
     // Update client with the new number
     const db = getDb();
@@ -138,14 +149,22 @@ export async function purchaseNumber(phoneNumber: string, clientId: string): Pro
       })
       .where(eq(clients.id, clientId));
 
+    console.log(`[Twilio Purchase] Successfully assigned ${phoneNumber} to client ${clientId}`);
     return { success: true, sid: purchased.sid };
   } catch (error: any) {
-    console.error('Error purchasing number:', error);
+    console.error('[Twilio Purchase] Error:', error);
     return {
       success: false,
       error: error.message || 'Failed to purchase number',
     };
   }
+}
+
+function isMockPhoneNumber(phoneNumber: string): boolean {
+  // Mock numbers are in format: +1XXX5550000 to +1XXX5559999
+  // where XXX is area code
+  const mockPattern = /^\+1\d{3}555\d{4}$/;
+  return mockPattern.test(phoneNumber) && process.env.NODE_ENV === 'development';
 }
 
 export async function configureExistingNumber(

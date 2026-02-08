@@ -72,7 +72,7 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
 
   async function handlePurchase(phoneNumber: string) {
     if (!data.clientId) {
-      setError('Client not created yet');
+      setError('Client not created yet. Please go back and complete Step 1.');
       return;
     }
 
@@ -80,6 +80,8 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
     setError('');
 
     try {
+      console.log('Purchasing phone number:', phoneNumber, 'for client:', data.clientId);
+
       const res = await fetch('/api/admin/twilio/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,15 +91,20 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
         }),
       });
 
-      const result = (await res.json()) as { error?: string };
+      const result = (await res.json()) as { error?: string; success?: boolean };
 
       if (!res.ok) {
-        setError(result.error || 'Failed to purchase');
+        console.error('Purchase failed:', result.error);
+        setError(result.error || 'Failed to purchase phone number');
         return;
       }
 
+      console.log('Phone number assigned successfully');
       updateData({ twilioNumber: phoneNumber });
       onNext();
+    } catch (err) {
+      console.error('Purchase error:', err);
+      setError('Failed to purchase phone number. Check browser console for details.');
     } finally {
       setPurchasing(false);
     }
