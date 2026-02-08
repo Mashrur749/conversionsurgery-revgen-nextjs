@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { getClientId } from '@/lib/get-client-id';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,7 +9,18 @@ export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
   const session = await auth();
-  const clientId = (session as any).client?.id;
+  const clientId = await getClientId();
+
+  if (session?.user?.isAdmin && !clientId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">Select a Client</h2>
+        <p className="text-muted-foreground">
+          Use the dropdown in the header to select a client to view.
+        </p>
+      </div>
+    );
+  }
 
   if (!clientId) {
     return <div>No client linked</div>;
@@ -16,17 +28,15 @@ export default async function SettingsPage() {
 
   const db = getDb();
 
-  const clientResult = await db
+  const [client] = await db
     .select()
     .from(clients)
     .where(eq(clients.id, clientId))
     .limit(1);
 
-  if (!clientResult.length) {
+  if (!client) {
     return <div>Client not found</div>;
   }
-
-  const client = clientResult[0];
 
   return (
     <div className="space-y-6">
