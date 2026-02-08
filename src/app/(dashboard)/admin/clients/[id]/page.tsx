@@ -110,7 +110,7 @@ export default async function ClientDetailPage({ params }: Props) {
               {client.twilioNumber ? 'Change Phone Number' : 'Assign Phone Number'}
             </Link>
           </Button>
-          <DeleteButton clientId={client.id} clientName={client.businessName} />
+          <DeleteButton clientId={client.id} clientName={client.businessName} status={client.status} />
         </CardContent>
       </Card>
 
