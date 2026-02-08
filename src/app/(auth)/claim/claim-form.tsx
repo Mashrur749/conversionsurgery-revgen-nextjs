@@ -38,14 +38,14 @@ export function ClaimForm({ token, members, leadId }: Props) {
         body: JSON.stringify({ token, teamMemberId: selectedMember }),
       });
 
-      const data = await res.json();
+      const data = await res.json() as { success: boolean; error?: string; claimedBy?: string };
 
       if (data.success) {
         router.push(`/leads/${leadId}?claimed=true`);
       } else {
         alert(data.error || 'Failed to claim');
         if (data.error === 'Already claimed') {
-          router.push(`/claim-error?reason=claimed&by=${encodeURIComponent(data.claimedBy)}`);
+          router.push(`/claim-error?reason=claimed&by=${encodeURIComponent(data.claimedBy || 'Someone')}`);
         }
       }
     } finally {
