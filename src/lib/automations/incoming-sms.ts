@@ -1,6 +1,8 @@
 import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats } from '@/db';
 import { sendSMS } from '@/lib/services/twilio';
+import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
 import { generateAIResponse } from '@/lib/services/openai';
+import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -22,7 +24,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   const twilioNumber = normalizePhoneNumber(To);
   const messageBody = Body.trim();
 
-  // 1. Find client
+  // 1. Find client by Twilio number
   const clientResult = await db
     .select()
     .from(clients)
@@ -39,12 +41,12 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
 
   const client = clientResult[0];
 
-  // 2. Handle STOP/opt-out
+  // 2. Handle opt-out
   if (STOP_WORDS.includes(messageBody.toLowerCase())) {
     return await handleOptOut(db, client, senderPhone);
   }
 
-  // 3. Check if blocked
+  // 3. Check blocked
   const blockedResult = await db
     .select()
     .from(blockedNumbers)
@@ -86,7 +88,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     lead = leadResult[0];
   }
 
-  // 5. Log incoming message
+  // 5. Log inbound message
   await db.insert(conversations).values({
     leadId: lead.id,
     clientId: client.id,
@@ -96,7 +98,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     twilioSid: MessageSid,
   });
 
-  // 6. Pause any active sequences (lead replied)
+  // 6. Pause active sequences
   await db
     .update(scheduledMessages)
     .set({
@@ -115,7 +117,8 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     .select()
     .from(conversations)
     .where(eq(conversations.leadId, lead.id))
-    .orderBy(conversations.createdAt);
+    .orderBy(conversations.createdAt)
+    .limit(20);
 
   const conversationHistory = history.map(msg => ({
     role: msg.direction === 'inbound' ? 'user' as const : 'assistant' as const,
@@ -130,9 +133,10 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     conversationHistory
   );
 
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/leads/${lead.id}`;
+
   // 9. Handle escalation
   if (aiResult.shouldEscalate) {
-    // Mark lead as action required
     await db
       .update(leads)
       .set({
@@ -143,7 +147,6 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       })
       .where(eq(leads.id, lead.id));
 
-    // Send acknowledgment to lead
     const ackMessage = renderTemplate('escalation_ack', {
       ownerName: client.ownerName,
     });
@@ -158,11 +161,43 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       content: ackMessage,
     });
 
+    // Notify team (new behavior)
+    const escalationResult = await notifyTeamForEscalation({
+      leadId: lead.id,
+      clientId: client.id,
+      twilioNumber: client.twilioNumber!,
+      reason: aiResult.escalationReason || 'Needs human response',
+      lastMessage: messageBody,
+    });
+
+    // Fallback to single contractor if no team members
+    if (escalationResult.notified === 0) {
+      if (client.notificationSms) {
+        await sendSMS(
+          client.phone,
+          client.twilioNumber!,
+          `⚠️ ${lead.name || formatPhoneNumber(senderPhone)} needs you: "${messageBody.substring(0, 80)}..." ${dashboardUrl}`
+        );
+      }
+      if (client.notificationEmail) {
+        const emailData = actionRequiredEmail({
+          businessName: client.businessName,
+          leadName: lead.name || undefined,
+          leadPhone: formatPhoneNumber(senderPhone),
+          reason: aiResult.escalationReason || 'Needs human response',
+          lastMessage: messageBody,
+          dashboardUrl,
+        });
+        await sendEmail({ to: client.email, ...emailData });
+      }
+    }
+
     return {
       processed: true,
       leadId: lead.id,
       escalated: true,
       reason: aiResult.escalationReason,
+      teamNotified: escalationResult.notified,
     };
   }
 
@@ -170,7 +205,6 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   const smsResult = await sendSMS(senderPhone, client.twilioNumber!, aiResult.response);
 
   if (smsResult.success) {
-    // Log outbound message
     await db.insert(conversations).values({
       leadId: lead.id,
       clientId: client.id,
@@ -201,13 +235,21 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         },
       });
 
-    // Increment monthly count
     await db
       .update(clients)
       .set({
         messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1`,
       })
       .where(eq(clients.id, client.id));
+  }
+
+  // 11. Notify contractor of activity
+  if (client.notificationSms) {
+    await sendSMS(
+      client.phone,
+      client.twilioNumber!,
+      `💬 ${lead.name || formatPhoneNumber(senderPhone)}: "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}" — AI replied. ${dashboardUrl}`
+    );
   }
 
   return {
@@ -218,8 +260,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   };
 }
 
-async function handleOptOut(db: any, client: typeof clients.$inferSelect, phone: string) {
-  // 1. Add to blocked list
+async function handleOptOut(db: ReturnType<typeof getDb>, client: typeof clients.$inferSelect, phone: string) {
   await db
     .insert(blockedNumbers)
     .values({
@@ -229,7 +270,6 @@ async function handleOptOut(db: any, client: typeof clients.$inferSelect, phone:
     })
     .onConflictDoNothing();
 
-  // 2. Update lead
   const leadResult = await db
     .select()
     .from(leads)
@@ -250,7 +290,6 @@ async function handleOptOut(db: any, client: typeof clients.$inferSelect, phone:
       })
       .where(eq(leads.id, lead.id));
 
-    // Cancel all scheduled messages
     await db
       .update(scheduledMessages)
       .set({
@@ -265,15 +304,11 @@ async function handleOptOut(db: any, client: typeof clients.$inferSelect, phone:
       ));
   }
 
-  // 3. Send confirmation
   const confirmMessage = renderTemplate('opt_out_confirmation', {
     businessName: client.businessName,
   });
 
   await sendSMS(phone, client.twilioNumber!, confirmMessage);
 
-  return {
-    processed: true,
-    optedOut: true,
-  };
+  return { processed: true, optedOut: true };
 }
