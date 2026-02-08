@@ -15,6 +15,7 @@ export * from './team-members';
 export * from './escalation-claims';
 export * from './business-hours';
 export * from './call-attempts';
+export * from './ab-tests';
 
 // Auth tables (NextAuth)
 export * from './auth';

@@ -16,6 +16,7 @@ const navItems = [
 
 const adminNavItems = [
   { href: '/admin', label: 'Agency Dashboard' },
+  { href: '/admin/ab-tests', label: 'A/B Tests' },
   { href: '/admin/phone-numbers', label: 'Phone Numbers' },
   { href: '/admin/clients', label: 'Clients' },
   { href: '/admin/clients/new/wizard', label: 'New Client' },
