@@ -36,6 +36,20 @@
       "when": 1770532434447,
       "tag": "0004_kind_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770575054203,
+      "tag": "0005_add_ab_tests_and_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770575758042,
+      "tag": "0006_stiff_whizzer",
+      "breakpoints": true
     }
   ]
 }

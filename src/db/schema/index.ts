@@ -17,6 +17,8 @@ export * from './business-hours';
 export * from './call-attempts';
 export * from './ab-tests';
 export * from './reports';
+export * from './template-variants';
+export * from './template-performance-metrics';
 
 // Auth tables (NextAuth)
 export * from './auth';

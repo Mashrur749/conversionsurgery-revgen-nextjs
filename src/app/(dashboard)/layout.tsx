@@ -19,7 +19,7 @@ const adminNavItems = [
     { href: '/admin/clients', label: 'Clients' },
   ]},
   { group: 'Optimization', items: [
-    { href: '/admin/ab-tests', label: 'A/B Tests' },
+    { href: '/admin/template-performance', label: 'Template Performance' },
     { href: '/admin/reports', label: 'Reports' },
   ]},
   { group: 'Configuration', items: [

@@ -8,6 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { clients } from './clients';
+import { templateVariants } from './template-variants';
 
 export const messageTemplates = pgTable(
   'message_templates',
@@ -17,6 +18,10 @@ export const messageTemplates = pgTable(
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
     templateType: varchar('template_type', { length: 50 }), // missed_call, form_response, appointment_day_before, etc.
+    templateVariantId: uuid('template_variant_id').references(
+      () => templateVariants.id,
+      { onDelete: 'set null' }
+    ), // Links to the variant this client is using
     content: text('content').notNull(),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
