@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { TeamManager } from './team-manager';
+import { DeleteButton } from './delete-button';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -109,6 +110,7 @@ export default async function ClientDetailPage({ params }: Props) {
               {client.twilioNumber ? 'Change Phone Number' : 'Assign Phone Number'}
             </Link>
           </Button>
+          <DeleteButton clientId={client.id} clientName={client.businessName} />
         </CardContent>
       </Card>
 
