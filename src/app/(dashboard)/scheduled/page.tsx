@@ -1,9 +1,10 @@
 import { auth } from '@/lib/auth';
+import { getClientId } from '@/lib/get-client-id';
 import { getDb, scheduledMessages, leads } from '@/db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, asc } from 'drizzle-orm';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 
@@ -11,7 +12,18 @@ export const dynamic = 'force-dynamic';
 
 export default async function ScheduledPage() {
   const session = await auth();
-  const clientId = (session as any).client?.id;
+  const clientId = await getClientId();
+
+  if (session?.user?.isAdmin && !clientId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">Select a Client</h2>
+        <p className="text-muted-foreground">
+          Use the dropdown in the header to select a client to view.
+        </p>
+      </div>
+    );
+  }
 
   if (!clientId) {
     return <div>No client linked</div>;
@@ -19,62 +31,65 @@ export default async function ScheduledPage() {
 
   const db = getDb();
 
-  const messages = await db
+  const pending = await db
     .select({
-      message: scheduledMessages,
-      lead: leads,
+      id: scheduledMessages.id,
+      content: scheduledMessages.content,
+      sendAt: scheduledMessages.sendAt,
+      sequenceType: scheduledMessages.sequenceType,
+      sequenceStep: scheduledMessages.sequenceStep,
+      leadId: scheduledMessages.leadId,
+      leadName: leads.name,
+      leadPhone: leads.phone,
     })
     .from(scheduledMessages)
-    .innerJoin(leads, eq(scheduledMessages.leadId, leads.id))
+    .leftJoin(leads, eq(scheduledMessages.leadId, leads.id))
     .where(and(
       eq(scheduledMessages.clientId, clientId),
       eq(scheduledMessages.sent, false),
       eq(scheduledMessages.cancelled, false)
     ))
-    .orderBy(scheduledMessages.sendAt)
-    .limit(100);
+    .orderBy(asc(scheduledMessages.sendAt))
+    .limit(50);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Scheduled Messages</h1>
-        <p className="text-muted-foreground">{messages.length} pending</p>
+        <p className="text-muted-foreground">{pending.length} messages pending</p>
       </div>
 
       <Card>
         <CardContent className="p-0">
           <div className="divide-y">
-            {messages.length === 0 ? (
+            {pending.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
-                No scheduled messages
+                No scheduled messages. They'll appear here when sequences are started.
               </div>
             ) : (
-              messages.map(({ message, lead }) => (
+              pending.map((msg) => (
                 <Link
-                  key={message.id}
-                  href={`/leads/${lead.id}`}
-                  className="flex items-start justify-between p-4 hover:bg-gray-50 transition-colors"
+                  key={msg.id}
+                  href={`/leads/${msg.leadId}`}
+                  className="block p-4 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <p className="font-medium">
-                      {lead.name || formatPhoneNumber(lead.phone)}
-                    </p>
-                    <p className="text-sm text-muted-foreground truncate pr-4">
-                      {message.content.substring(0, 80)}...
-                    </p>
-                    <div className="flex gap-2">
-                      <Badge variant="outline">{message.sequenceType}</Badge>
-                      <Badge variant="secondary">Step {message.sequenceStep}</Badge>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-medium">
+                        {msg.leadName || formatPhoneNumber(msg.leadPhone || '')}
+                      </p>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline">{msg.sequenceType}</Badge>
+                        <Badge variant="secondary">Step {msg.sequenceStep}</Badge>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-medium">
-                      {format(new Date(message.sendAt), 'MMM d')}
-                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(message.sendAt), 'h:mm a')}
+                      {format(new Date(msg.sendAt), 'MMM d, h:mm a')}
                     </p>
                   </div>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {msg.content}
+                  </p>
                 </Link>
               ))
             )}
