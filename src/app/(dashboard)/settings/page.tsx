@@ -4,6 +4,7 @@ import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { TeamMembersList } from './team-members-list';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,6 +132,18 @@ export default async function SettingsPage() {
               Include <code>clientId</code>, <code>phone</code>, and optionally{' '}
               <code>name</code>, <code>email</code>, <code>message</code>
             </p>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Team Members</CardTitle>
+            <CardDescription>
+              People who receive escalation notifications when AI can&apos;t answer
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <TeamMembersList clientId={clientId} />
           </CardContent>
         </Card>
       </div>

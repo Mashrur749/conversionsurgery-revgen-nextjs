@@ -15,12 +15,12 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
 
     const db = getDb();
     const [updated] = await db
       .update(teamMembers)
-      .set({ ...body, updatedAt: new Date() })
+      .set({ ...body, updatedAt: new Date() } as Partial<typeof teamMembers.$inferInsert>)
       .where(eq(teamMembers.id, id))
       .returning();
 

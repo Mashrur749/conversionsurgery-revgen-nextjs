@@ -27,7 +27,7 @@ export function TeamMembersList({ clientId }: { clientId: string }) {
 
   async function fetchMembers() {
     const res = await fetch(`/api/team-members?clientId=${clientId}`);
-    const data = await res.json();
+    const data = (await res.json()) as { members?: TeamMember[] };
     setMembers(data.members || []);
     setLoading(false);
   }
