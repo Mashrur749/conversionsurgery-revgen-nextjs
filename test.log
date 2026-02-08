@@ -1,0 +1,20 @@
+Here's a summary of `01-admin-schema-auth.md`:
+
+## Phase 7a: Admin Schema & Auth
+
+This doc provides a step-by-step guide for adding admin functionality to the ConversionSurgery app. It covers 5 steps:
+
+1. **Update Schema** — Replaces `src/lib/db/schema.ts` with the full database schema containing 12 tables: `clients`, `users`, `accounts`, `sessions`, `verificationTokens`, `leads`, `conversations`, `scheduledMessages`, `appointments`, `invoices`, `blockedNumbers`, `messageTemplates`, `dailyStats`, and `errorLog`. The key change is adding `isAdmin: boolean` and `clientId: uuid` to the `users` table. Relations are defined between all tables.
+
+2. **Push Schema** — Run `drizzle-kit push` to apply changes to the database.
+
+3. **Update Auth Types** — Extends the NextAuth `Session` type to include `isAdmin` on the user and an optional `client` object with `id`, `businessName`, and `ownerName`.
+
+4. **Update Auth Config** — Rewrites `src/lib/auth.ts` with:
+   - **Session callback**: Looks up the user's `isAdmin` flag and attaches client info for non-admin users
+   - **SignIn callback**: Allows admins through, blocks users without a matching client record, and auto-links users to their client by email
+   - Uses database session strategy with Drizzle adapter + Resend email provider
+
+5. **Set Admin** — A SQL query to manually flag your user as admin in the database.
+
+**Verification**: Login, check the session object for `isAdmin: true`.

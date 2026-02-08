@@ -1,0 +1,17 @@
+All 5 steps from `01-admin-schema-auth.md` are **already implemented** from previous sessions. Here's the mapping:
+
+| Doc Step | Current Implementation | Status |
+|---|---|---|
+| **Step 1**: Add `isAdmin` to users schema | `src/db/schema/auth.ts:26` — `isAdmin: boolean('is_admin').default(false)` | Already done |
+| **Step 2**: Push schema changes | Column exists in production DB (used across sessions 3-10) | Already done |
+| **Step 3**: Update auth types | `src/types/next-auth.d.ts` — `isAdmin` on Session and User | Already done |
+| **Step 4**: Update auth config | `src/lib/auth-options.ts` — session callback fetches `isAdmin` from DB | Already done |
+| **Step 5**: Set admin user | Admin user has been active for all previous sessions | Already done |
+
+The current implementation is actually **more mature** than what the doc specifies:
+- Uses per-table schema files (`src/db/schema/`) instead of a monolithic file
+- Auth config has Resend email integration with HTML templates
+- Session callback includes `clientId` attachment
+- Type definitions include `selectedClientId` for multi-client support
+
+Nothing to commit since there are no changes to make. Want me to move on to `02-admin-ui-components.md`?
