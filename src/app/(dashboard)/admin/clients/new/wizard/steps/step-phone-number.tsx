@@ -41,18 +41,30 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
 
     try {
       const res = await fetch(`/api/admin/twilio/search?areaCode=${areaCode}&country=CA`);
-      const result = (await res.json()) as { error?: string; numbers?: AvailableNumber[] };
+      const result = (await res.json()) as {
+        error?: string;
+        numbers?: AvailableNumber[];
+        count?: number;
+        isDevelopmentMock?: boolean;
+      };
 
       if (!res.ok) {
-        setError(result.error || 'Failed to search');
+        setError(result.error || 'Failed to search numbers');
         return;
       }
 
-      setNumbers(result.numbers || []);
+      const foundNumbers = result.numbers || [];
+      setNumbers(foundNumbers);
 
-      if ((result.numbers?.length || 0) === 0) {
-        setError('No numbers found. Try a different area code.');
+      if (foundNumbers.length === 0) {
+        setError('No numbers found in area code ' + areaCode + '. Try a different area code.');
+      } else if (result.isDevelopmentMock) {
+        // Show subtle info that we're using mock numbers in development
+        console.log('Using development mock numbers for testing');
       }
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('Failed to search for numbers. Check browser console for details.');
     } finally {
       setSearching(false);
     }

@@ -43,9 +43,19 @@ export async function searchAvailableNumbers(params: SearchParams): Promise<Avai
       searchParams.contains = contains;
     }
 
+    console.log('Searching for numbers with params:', { areaCode, country, ...searchParams });
+
     const numbers = await twilioClient.availablePhoneNumbers(country)
       .local
       .list(searchParams);
+
+    console.log(`Found ${numbers.length} available numbers`);
+
+    if (numbers.length === 0 && process.env.NODE_ENV === 'development') {
+      // In development, provide mock numbers for testing if no real results
+      console.warn('No numbers found from Twilio. Using mock data for development.');
+      return generateMockNumbers(areaCode || '403', country);
+    }
 
     return numbers.slice(0, 10).map(num => ({
       phoneNumber: num.phoneNumber,
@@ -58,10 +68,41 @@ export async function searchAvailableNumbers(params: SearchParams): Promise<Avai
         MMS: num.capabilities.mms,
       },
     }));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error searching numbers:', error);
-    throw new Error('Failed to search available numbers');
+
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Twilio API error. Using mock data for development.');
+      return generateMockNumbers(params.areaCode || '403', params.country || 'CA');
+    }
+
+    throw new Error(`Twilio search failed: ${error.message}`);
   }
+}
+
+function generateMockNumbers(areaCode: string, country: string): AvailableNumber[] {
+  // Generate mock numbers for development/testing
+  const mockLocalities: { [key: string]: { locality: string; region: string } } = {
+    '403': { locality: 'Calgary', region: 'AB' },
+    '780': { locality: 'Edmonton', region: 'AB' },
+    '604': { locality: 'Vancouver', region: 'BC' },
+    '416': { locality: 'Toronto', region: 'ON' },
+    '514': { locality: 'Montreal', region: 'QC' },
+  };
+
+  const location = mockLocalities[areaCode] || { locality: 'Unknown', region: 'XX' };
+
+  return Array.from({ length: 10 }, (_, i) => ({
+    phoneNumber: `+1${areaCode}555${String(i).padStart(4, '0')}`,
+    friendlyName: `Available ${location.region}`,
+    locality: location.locality,
+    region: location.region,
+    capabilities: {
+      voice: true,
+      SMS: true,
+      MMS: true,
+    },
+  }));
 }
 
 export async function purchaseNumber(phoneNumber: string, clientId: string): Promise<{
