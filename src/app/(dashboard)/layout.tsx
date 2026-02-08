@@ -14,6 +14,11 @@ const navItems = [
   { href: '/settings', label: 'Settings' },
 ];
 
+const adminNavItems = [
+  { href: '/admin/clients', label: 'Clients' },
+  { href: '/admin/twilio', label: 'Twilio' },
+];
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -26,6 +31,7 @@ export default async function DashboardLayout({
   }
 
   const client = (session as any).client;
+  const isAdmin = (session as any).user?.isAdmin;
 
   return (
     <AdminProvider>
@@ -47,6 +53,20 @@ export default async function DashboardLayout({
                       {item.label}
                     </Link>
                   ))}
+                  {isAdmin && (
+                    <>
+                      <div className="border-l mx-1" />
+                      {adminNavItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="px-3 py-2 text-sm text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-md transition-colors"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </>
+                  )}
                 </nav>
               </div>
               <div className="flex items-center gap-4">
@@ -60,7 +80,7 @@ export default async function DashboardLayout({
         </header>
 
         <main className="max-w-7xl mx-auto px-4 py-8">
-          {(session as any).user?.isAdmin && <ClientSelector />}
+          {isAdmin && <ClientSelector />}
           {children}
         </main>
       </div>
