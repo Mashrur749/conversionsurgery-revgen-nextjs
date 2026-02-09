@@ -17,6 +17,7 @@ import { magicLinkTokens } from './magic-link-tokens';
 import { flowTemplates, flowTemplateSteps, flowTemplateVersions } from './flow-templates';
 import { flows, flowSteps } from './flows';
 import { flowExecutions, flowStepExecutions, suggestedActions } from './flow-executions';
+import { knowledgeBase } from './knowledge-base';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -39,6 +40,7 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   flows: many(flows),
   flowExecutions: many(flowExecutions),
   suggestedActions: many(suggestedActions),
+  knowledgeBase: many(knowledgeBase),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -282,5 +284,13 @@ export const suggestedActionsRelations = relations(suggestedActions, ({ one }) =
   flowExecution: one(flowExecutions, {
     fields: [suggestedActions.flowExecutionId],
     references: [flowExecutions.id],
+  }),
+}));
+
+// Knowledge Base
+export const knowledgeBaseRelations = relations(knowledgeBase, ({ one }) => ({
+  client: one(clients, {
+    fields: [knowledgeBase.clientId],
+    references: [clients.id],
   }),
 }));
