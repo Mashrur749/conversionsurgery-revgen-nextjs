@@ -45,7 +45,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const db = getDb();
 
   try {
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, any>;
     const { steps, ...templateData } = body;
 
     // Update template

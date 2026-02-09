@@ -61,7 +61,7 @@ export function PushUpdateView({ template, usage }: PushUpdateViewProps) {
         method: 'POST',
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as PushResult;
       setResult(data);
       toast.success(`Updated ${data.affected} client flows`);
     } catch {
@@ -79,7 +79,7 @@ export function PushUpdateView({ template, usage }: PushUpdateViewProps) {
         { method: 'POST' }
       );
 
-      const data = await res.json();
+      const data = (await res.json()) as PushResult;
       setResult(data);
     } catch {
       toast.error('Failed to preview');

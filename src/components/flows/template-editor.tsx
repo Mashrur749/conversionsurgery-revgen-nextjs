@@ -191,7 +191,7 @@ export function TemplateEditor({ template, steps, isNew }: TemplateEditorProps) 
 
       if (!res.ok) throw new Error('Failed to save');
 
-      const data = await res.json();
+      const data = (await res.json()) as { id: string };
       toast.success('Template saved!');
 
       if (isNew) {

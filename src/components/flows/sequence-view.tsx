@@ -136,10 +136,9 @@ export function SequenceView({
                           {step.name || `Step ${step.stepNumber}`}
                         </span>
                         {step.source === 'template' && (
-                          <LinkIcon
-                            className="h-3 w-3 text-blue-500"
-                            title="From template"
-                          />
+                          <span title="From template">
+                            <LinkIcon className="h-3 w-3 text-blue-500" />
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -241,7 +240,7 @@ export function SequenceView({
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground italic">
-                          Using template: {formatDelay(templateStep.delayMinutes)}
+                          Using template: {formatDelay(templateStep!.delayMinutes)}
                         </p>
                       )}
                     </div>
@@ -289,7 +288,7 @@ export function SequenceView({
                       ) : (
                         <div className="p-3 bg-muted rounded-md text-sm italic">
                           Using template: &quot;
-                          {templateStep.messageTemplate?.substring(0, 100)}...&quot;
+                          {templateStep!.messageTemplate?.substring(0, 100)}...&quot;
                         </div>
                       )}
 

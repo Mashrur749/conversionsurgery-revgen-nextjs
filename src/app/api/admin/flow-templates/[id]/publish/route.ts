@@ -15,7 +15,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
 
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = (await request.json().catch(() => ({}))) as {
+      changeNotes?: string;
+    };
     const version = await publishTemplate(
       id,
       body.changeNotes,
