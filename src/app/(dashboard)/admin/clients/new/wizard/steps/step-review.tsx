@@ -36,7 +36,7 @@ export function StepReview({ data, onBack, onComplete }: Props) {
       });
 
       if (!res.ok) {
-        const result = await res.json();
+        const result = (await res.json()) as { error?: string };
         setError(result.error || 'Failed to activate');
         return;
       }
