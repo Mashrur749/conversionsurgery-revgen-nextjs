@@ -37,7 +37,10 @@ export default async function KnowledgeBasePage({ params }: Props) {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href={`/admin/clients/${id}`}>← Back</Link>
+            <Link href={`/admin/clients/${id}`}>Back</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={`/admin/clients/${id}/knowledge/preview`}>Test AI</Link>
           </Button>
           <Button asChild>
             <Link href={`/admin/clients/${id}/knowledge/new`}>+ Add Entry</Link>
