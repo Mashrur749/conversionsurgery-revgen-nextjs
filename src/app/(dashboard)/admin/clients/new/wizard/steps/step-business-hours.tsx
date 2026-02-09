@@ -27,29 +27,16 @@ export function StepBusinessHours({ data, updateData, onNext, onBack }: Props) {
   }
 
   async function handleNext() {
-    setError('');
-
     // Save business hours if we have a client
     if (data.clientId) {
-      try {
-        const res = await fetch('/api/business-hours', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientId: data.clientId,
-            hours: data.businessHours,
-          }),
-        });
-
-        if (!res.ok) {
-          const result = (await res.json()) as { error?: string };
-          setError(result.error || 'Failed to save business hours');
-          return;
-        }
-      } catch (err) {
-        setError('Something went wrong saving business hours');
-        return;
-      }
+      await fetch('/api/business-hours', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: data.clientId,
+          hours: data.businessHours,
+        }),
+      });
     }
 
     onNext();
