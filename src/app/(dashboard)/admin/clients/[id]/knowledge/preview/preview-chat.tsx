@@ -36,9 +36,9 @@ export function KnowledgePreviewChat({ clientId }: Props) {
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json() as { response?: string; error?: string };
       if (res.ok) {
-        setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: data.response || 'No response' }]);
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: data.error || 'Error generating response' }]);
       }
