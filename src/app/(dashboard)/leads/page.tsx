@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
+import { LeadScoreBadge } from '@/components/leads/lead-score-badge';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,6 +94,11 @@ export default async function LeadsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
+                    <LeadScoreBadge
+                      score={lead.score || 50}
+                      temperature={(lead.temperature as 'hot' | 'warm' | 'cold') || 'warm'}
+                      compact
+                    />
                     <Badge className={statusColors[lead.status || 'new'] || statusColors.new}>
                       {lead.status?.replace(/_/g, ' ') || 'new'}
                     </Badge>
