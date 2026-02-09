@@ -43,6 +43,12 @@ const updateClientSchema = z.object({
   notificationSms: z.boolean().optional(),
   monthlyMessageLimit: z.number().min(0).optional(),
   status: z.enum(['pending', 'active', 'paused', 'cancelled']).optional(),
+  // Voice AI settings
+  voiceEnabled: z.boolean().optional(),
+  voiceMode: z.enum(['after_hours', 'overflow', 'always']).optional(),
+  voiceGreeting: z.string().optional().or(z.null()),
+  voiceVoiceId: z.string().optional().or(z.null()),
+  voiceMaxDuration: z.number().min(30).max(600).optional(),
 });
 
 export async function PATCH(
