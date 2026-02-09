@@ -652,3 +652,98 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] Routes registered: `/api/admin/clients`, `/api/admin/clients/[id]`, `/api/admin/clients/[id]/stats`
 - [ ] Routes registered: `/api/admin/users`, `/api/admin/users/[id]`
+
+## 10-client-management-ui
+
+### Admin Page (/admin)
+- [ ] Non-admin users are redirected to `/dashboard`
+- [ ] Page title reads "Client Management"
+- [ ] "Manage Users" button links to `/admin/users`
+- [ ] "+ New Client" button links to `/admin/clients/new`
+- [ ] 4 stat cards: Total Clients (with active count), Total Leads (7d), Messages Sent (7d), Needs Attention
+- [ ] "Needs Attention" count shown in red, aggregates action-required leads across all clients
+- [ ] Client list shows each client as a clickable link to `/admin/clients/:id`
+- [ ] Each client row shows: business name, owner name, email
+- [ ] "No phone number" warning shown for clients without `twilioNumber`
+- [ ] Red dot indicator for clients with action-required leads
+- [ ] Action count badge in destructive variant when > 0
+- [ ] Color-coded status badges (green=active, yellow=pending, gray=paused, red=cancelled)
+- [ ] Empty state: "No clients yet. Create your first client to get started."
+
+### Create Client Page (/admin/clients/new)
+- [ ] Non-admin users are redirected to `/dashboard`
+- [ ] Setup Wizard promotion card links to `/admin/clients/new/wizard`
+- [ ] "Create New Client" form card with description
+- [ ] Form fields: Business Name (required), Owner Name (required), Email (required), Phone (required)
+- [ ] Timezone dropdown with 5 Canadian timezones (default: Mountain/Edmonton)
+- [ ] Google Business URL field (optional)
+- [ ] "Create Client" button submits to `POST /api/admin/clients`
+- [ ] Error message shown on failed creation (e.g., duplicate email)
+- [ ] On success, redirects to `/admin/clients/:id`
+- [ ] "Cancel" button navigates back
+
+### Client Detail Page (/admin/clients/:id)
+- [ ] Non-admin users are redirected to `/dashboard`
+- [ ] 404 page shown for non-existent client ID
+- [ ] Header shows business name with color-coded status badge
+- [ ] Shows "Created" date formatted as "MMM d, yyyy"
+- [ ] "Back to Clients" button links to `/admin`
+- [ ] "Assign Phone Number" button shown when no phone assigned
+- [ ] Left column: Edit Client Form (see below)
+- [ ] Right column: Phone Number card, Team Members summary, Usage stats, Actions card
+- [ ] Phone card shows formatted number with "Change Number" link when assigned
+- [ ] Phone card shows "No phone number assigned" with assign button when unassigned
+- [ ] Team Members summary shows member count and list with active/inactive badges
+- [ ] Usage card shows "Messages this month: X / Y"
+- [ ] Actions card contains Delete/Reactivate button
+- [ ] Team Manager section at bottom for adding/removing team members
+
+### Edit Client Form (on detail page)
+- [ ] Pre-populated with existing client data
+- [ ] Editable fields: Business Name, Owner Name, Email, Phone, Timezone, Status, Google Business URL, Monthly Message Limit
+- [ ] Timezone dropdown with 5 Canadian options
+- [ ] Status dropdown: Pending, Active, Paused, Cancelled
+- [ ] Email Notifications toggle (Switch component)
+- [ ] SMS Notifications toggle (Switch component)
+- [ ] "Save Changes" button submits to `PATCH /api/admin/clients/:id`
+- [ ] Success message: "Client updated successfully" in green
+- [ ] Error message shown on failed update in red
+- [ ] Page refreshes after successful save
+
+### User Management Page (/admin/users)
+- [ ] Non-admin users are redirected to `/dashboard`
+- [ ] Page title reads "User Management"
+- [ ] "Back to Clients" button links to `/admin`
+- [ ] All users listed with: name (or "No name"), email, client association, created date, admin badge
+- [ ] Client association shown as "→ Business Name" when linked
+- [ ] Amber "Admin" badge shown for admin users
+- [ ] "Actions" dropdown button for each user
+
+### User Actions Component
+- [ ] "Assign to Client" opens a dialog with client dropdown
+- [ ] Client dropdown lists all active clients + "No client (admin only)" option
+- [ ] Save button in dialog calls `PATCH /api/admin/users/:id` with `clientId`
+- [ ] "Make Admin" / "Remove Admin" toggle calls `PATCH /api/admin/users/:id` with `isAdmin`
+- [ ] "Remove Admin" text shown in red
+- [ ] Cannot toggle admin for the currently logged-in user (disabled)
+- [ ] Page refreshes after any user action
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Sign in as admin and navigate to `/admin`
+3. Verify stat cards display correct counts
+4. Click "+ New Client" → fill form → submit → verify redirect to detail page
+5. On detail page: edit business name → save → verify success message and page refresh
+6. Change client status to "paused" → save → verify badge changes to gray
+7. Toggle email/SMS notifications → save → verify toggles persist on refresh
+8. Navigate to `/admin/users` → verify user list
+9. Click "Actions" → "Assign to Client" → select a client → save → verify association shows
+10. Click "Actions" → "Make Admin" on a non-current user → verify admin badge appears
+11. Click "Actions" → "Remove Admin" → verify badge removed
+12. Verify "Make Admin"/"Remove Admin" is disabled for your own user
+13. Navigate back to `/admin` → click a client row → verify navigation to detail page
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/admin`, `/admin/clients/new`, `/admin/clients/[id]`, `/admin/users`
+- [ ] UI components installed: `dialog.tsx`, `tabs.tsx`, `dropdown-menu.tsx`
