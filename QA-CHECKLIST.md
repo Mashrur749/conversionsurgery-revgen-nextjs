@@ -2489,3 +2489,91 @@
 - [ ] Dependencies installed: `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`, `sharp`
 - [ ] Skeleton UI component installed
 - [ ] No regressions in existing routes
+
+---
+
+## 31-payment-links (Stripe Integration)
+
+### Schema Verification
+- [ ] `payments` table exists with columns: `id`, `client_id`, `invoice_id`, `lead_id`, `type`, `amount`, `description`, `stripe_payment_intent_id`, `stripe_payment_link_id`, `stripe_payment_link_url`, `status`, `paid_at`, `link_sent_at`, `link_opened_at`, `link_expires_at`, `metadata`, `created_at`
+- [ ] `payment_reminders` table exists with columns: `id`, `payment_id`, `invoice_id`, `reminder_number`, `sent_at`, `message_content`, `lead_replied`, `reply_content`, `created_at`
+- [ ] `invoices` table has new columns: `job_id`, `description`, `total_amount`, `paid_amount`, `remaining_amount`, `stripe_customer_id`, `notes`
+- [ ] `leads` table has new column: `stripe_customer_id`
+- [ ] Indexes exist on `payments` for `client_id`, `lead_id`, `invoice_id`, `status`, `stripe_payment_link_id`
+- [ ] Foreign keys: `payments.client_id` -> `clients.id`, `payments.lead_id` -> `leads.id`, `payments.invoice_id` -> `invoices.id`
+- [ ] Foreign keys: `payment_reminders.payment_id` -> `payments.id`, `payment_reminders.invoice_id` -> `invoices.id`
+
+### Stripe Service (`src/lib/services/stripe.ts`)
+- [ ] `getOrCreateStripeCustomer()` creates a Stripe customer if none exists for the lead
+- [ ] `getOrCreateStripeCustomer()` returns existing `stripeCustomerId` from leads table if present
+- [ ] `createPaymentLink()` creates a Stripe price + payment link and saves to `payments` table
+- [ ] `createPaymentLink()` sets `linkExpiresAt` to 30 days from creation
+- [ ] `createInvoiceWithLink()` creates both an invoice record and a Stripe payment link
+- [ ] `createDepositLink()` calculates deposit amount as percentage of invoice total
+- [ ] `handlePaymentSuccess()` updates payment status to `paid` and sets `paidAt`
+- [ ] `handlePaymentSuccess()` updates invoice `paidAmount` and `remainingAmount`
+- [ ] `handlePaymentSuccess()` updates invoice status to `paid` when fully paid or `partial` when partially paid
+- [ ] `handlePaymentSuccess()` updates job `paidAmount` for revenue attribution
+- [ ] `formatAmount()` formats cents to CAD currency string
+- [ ] `generatePaymentMessage()` includes overdue messaging when applicable
+- [ ] Stripe client is lazy-initialized (does not fail at build time without env vars)
+
+### Stripe Webhook (`/api/webhooks/stripe`)
+- [ ] Route registered at `/api/webhooks/stripe`
+- [ ] Validates `stripe-signature` header and returns 400 if missing or invalid
+- [ ] Handles `checkout.session.completed` — calls `handlePaymentSuccess()`
+- [ ] Sends confirmation SMS to lead on successful payment via client's Twilio number
+- [ ] Notifies client owner via admin Twilio number on payment receipt
+- [ ] Handles `checkout.session.expired` — marks payment as `cancelled`
+- [ ] Handles `charge.refunded` — marks payment as `refunded`
+- [ ] Returns `{ received: true }` on success
+
+### Payment API Routes
+- [ ] `GET /api/payments?clientId=...` returns payments filtered by clientId
+- [ ] `GET /api/payments?leadId=...` returns payments filtered by leadId
+- [ ] `GET /api/payments` returns 400 if neither clientId nor leadId provided
+- [ ] `POST /api/payments` creates a payment link with Zod-validated input
+- [ ] `POST /api/payments` converts dollar amount to cents before creating link
+- [ ] `POST /api/payments` with `createInvoice: true` creates invoice + payment link
+- [ ] `POST /api/payments` returns 400 on invalid input with Zod error details
+- [ ] `POST /api/payments/[id]/send` sends payment link via SMS to lead
+- [ ] `POST /api/payments/[id]/send` returns 404 if payment not found
+- [ ] `POST /api/payments/[id]/send` returns 400 if client has no Twilio number
+- [ ] `POST /api/payments/[id]/send` updates `linkSentAt` timestamp after sending
+- [ ] Both routes require authentication (401 if no session)
+
+### Payment Reminder Automation
+- [ ] `startPaymentReminder()` auto-creates Stripe payment link when no `paymentLink` provided and amount > 0
+- [ ] Created payment link URL is saved to the invoice record
+- [ ] Payment link URL is included in scheduled reminder messages
+- [ ] `paymentReminders` table records are created for each scheduled reminder
+- [ ] `markInvoicePaid()` also marks pending payments as `paid`
+- [ ] Existing payment sequences are cancelled before creating new ones
+
+### SendPaymentButton Component
+- [ ] Dialog opens on button click
+- [ ] Amount input accepts decimal values (step 0.01)
+- [ ] Description field is optional (defaults to "Payment from {leadName}")
+- [ ] Payment type selector offers: Full, Deposit, Progress, Final
+- [ ] "Create Payment Link" button calls `POST /api/payments` and shows link
+- [ ] Created link is displayed in a read-only input with copy button
+- [ ] Copy button copies link to clipboard and shows toast
+- [ ] "Send via SMS" button calls `POST /api/payments/[id]/send`
+- [ ] Success toast shown and dialog closes after SMS sent
+- [ ] Form fields are disabled after payment link is created
+- [ ] Form resets when dialog is closed
+- [ ] Loading spinner shown during API calls
+
+### Payment Success Page (`/payment/success`)
+- [ ] Route registered at `/payment/success`
+- [ ] Shows green checkmark icon
+- [ ] Shows "Payment Successful!" heading
+- [ ] Shows confirmation text about receiving a text
+- [ ] Page is statically rendered (no auth required — public page)
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/api/payments`, `/api/payments/[id]/send`, `/api/webhooks/stripe`, `/payment/success`
+- [ ] Schema exports: `payments`, `paymentReminders` exported from `src/db/schema/index.ts`
+- [ ] Relations defined for `payments` and `paymentReminders` in `relations.ts`
+- [ ] No regressions in existing routes
