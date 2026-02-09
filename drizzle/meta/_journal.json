@@ -50,6 +50,13 @@
       "when": 1770575758042,
       "tag": "0006_stiff_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1770610494134,
+      "tag": "0007_bright_wasp",
+      "breakpoints": true
     }
   ]
 }

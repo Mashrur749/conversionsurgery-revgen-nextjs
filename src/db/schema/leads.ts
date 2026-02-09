@@ -4,6 +4,8 @@ import {
   varchar,
   text,
   boolean,
+  integer,
+  jsonb,
   timestamp,
   index,
   unique,
@@ -31,6 +33,17 @@ export const leads = pgTable(
     conversationMode: varchar('conversation_mode', { length: 10 }).default('ai'), // ai, human, paused
     humanTakeoverAt: timestamp('human_takeover_at'),
     humanTakeoverBy: varchar('human_takeover_by', { length: 255 }),
+    score: integer('score').default(50),
+    scoreUpdatedAt: timestamp('score_updated_at'),
+    scoreFactors: jsonb('score_factors').$type<{
+      urgency: number;
+      budget: number;
+      engagement: number;
+      intent: number;
+      signals: string[];
+      lastAnalysis: string;
+    }>(),
+    temperature: varchar('temperature', { length: 10 }).default('warm'),
     optedOut: boolean('opted_out').default(false),
     optedOutAt: timestamp('opted_out_at'),
     createdAt: timestamp('created_at').defaultNow(),
