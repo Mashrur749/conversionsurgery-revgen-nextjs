@@ -5,6 +5,7 @@ import { generateAIResponse, detectHotIntent } from '@/lib/services/openai';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { initiateRingGroup } from '@/lib/services/ring-group';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
+import { checkAndSuggestFlows, handleApprovalResponse } from '@/lib/services/flow-suggestions';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -48,6 +49,14 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     const { sendDashboardLink } = await import('@/lib/services/magic-link');
     await sendDashboardLink(client.id, senderPhone, client.twilioNumber!);
     return { processed: true, action: 'dashboard_link_sent' };
+  }
+
+  // 1b. Check for flow approval responses from client owner
+  if (normalizePhoneNumber(client.phone) === senderPhone) {
+    const approvalCheck = await handleApprovalResponse(client.id, messageBody);
+    if (approvalCheck.handled) {
+      return { processed: true, action: approvalCheck.action };
+    }
   }
 
   // 2. Handle opt-out
@@ -316,6 +325,9 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       })
       .where(eq(clients.id, client.id));
   }
+
+  // 10b. After AI responds, check for flow suggestions (async, don't wait)
+  checkAndSuggestFlows(lead.id, client.id, conversationHistory).catch(console.error);
 
   // 11. Notify contractor of activity
   if (client.notificationSms) {
