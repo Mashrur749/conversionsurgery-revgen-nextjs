@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 
 interface Client {
@@ -27,40 +28,31 @@ interface AvailableNumber {
   };
 }
 
-type ActiveTab = 'current' | 'search' | 'existing';
-
 export function PhoneNumberManager({ client }: { client: Client }) {
-  const [activeTab, setActiveTab] = useState<ActiveTab>(client.twilioNumber ? 'current' : 'search');
-
-  const tabButtons = [
-    { id: 'current' as const, label: 'Current Number', disabled: !client.twilioNumber },
-    { id: 'search' as const, label: 'Search New', disabled: false },
-    { id: 'existing' as const, label: 'Use Existing', disabled: false },
-  ];
+  const [activeTab, setActiveTab] = useState(client.twilioNumber ? 'current' : 'search');
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2 border-b">
-        {tabButtons.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            disabled={tab.disabled}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            } ${tab.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="current" disabled={!client.twilioNumber}>
+          Current Number
+        </TabsTrigger>
+        <TabsTrigger value="search">Search New</TabsTrigger>
+        <TabsTrigger value="existing">Use Existing</TabsTrigger>
+      </TabsList>
 
-      {activeTab === 'current' && <CurrentNumber client={client} onRelease={() => setActiveTab('search')} />}
-      {activeTab === 'search' && <SearchNumbers clientId={client.id} />}
-      {activeTab === 'existing' && <UseExistingNumber clientId={client.id} />}
-    </div>
+      <TabsContent value="current">
+        <CurrentNumber client={client} onRelease={() => setActiveTab('search')} />
+      </TabsContent>
+
+      <TabsContent value="search">
+        <SearchNumbers clientId={client.id} />
+      </TabsContent>
+
+      <TabsContent value="existing">
+        <UseExistingNumber clientId={client.id} />
+      </TabsContent>
+    </Tabs>
   );
 }
 
