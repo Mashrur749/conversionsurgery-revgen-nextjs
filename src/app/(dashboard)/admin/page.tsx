@@ -66,7 +66,7 @@ export default async function AdminPage() {
             <Link href="/admin/users">Manage Users</Link>
           </Button>
           <Button asChild>
-            <Link href="/admin/clients/new">+ New Client</Link>
+            <Link href="/admin/clients/new/wizard">+ New Client</Link>
           </Button>
         </div>
       </div>
