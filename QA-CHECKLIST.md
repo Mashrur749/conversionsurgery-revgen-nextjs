@@ -1024,3 +1024,75 @@
 - [ ] Entry point route registered: `/admin/clients/new`
 - [ ] All 5 step components import correctly from `./steps/`
 - [ ] `WizardData` interface exported from `setup-wizard.tsx`
+
+## 14-setup-wizard-steps
+
+### Step 1: Team Members Step (step-team-members.tsx)
+- [ ] Toggle-based add form: "+ Add Team Member" button shows/hides form
+- [ ] Form fields: Name (required), Phone (required), Email (optional), Role (optional)
+- [ ] Validation: shows "Name and phone are required" when missing
+- [ ] Added members displayed in bordered list with name, phone, email, and role Badge
+- [ ] "Remove" button deletes member from list
+- [ ] "Cancel" button hides the add form
+- [ ] Warning shown when no members: "Without team members, escalations will only go to the business owner"
+- [ ] Clicking "Next: Business Hours" saves all members via `POST /api/team-members` for each member
+- [ ] Back button returns to Step 2
+
+### Step 2: Business Hours Step (step-business-hours.tsx)
+- [ ] Shows 7 days (Sunday-Saturday) with Switch toggle for each
+- [ ] Default: Mon-Fri open (08:00-18:00), weekends closed
+- [ ] Open days show time inputs for open and close times
+- [ ] Closed days show "Closed" text
+- [ ] Clicking "Next: Review" saves hours via `PUT /api/business-hours`
+- [ ] Explanatory text about hot transfers and after-hours behavior shown
+- [ ] Back button returns to Step 3
+
+### Step 3: Review Step (step-review.tsx)
+- [ ] Business Information section: business name, owner, email, phone
+- [ ] Twilio Number section: formatted number with "Configured" Badge, or "No number assigned" with "Pending" Badge
+- [ ] Team Members section: list of members with name and phone, or "No team members added" message
+- [ ] Business Hours section: open days as Badges with times, or "No business hours set" message
+- [ ] Warning panel appears when phone number missing or no team members added
+- [ ] "Activate Client" button calls `PATCH /api/admin/clients/{id}` with `status: 'active'`
+- [ ] Activate button disabled when no Twilio number assigned
+- [ ] Button shows "Activating..." during API call
+- [ ] On error, JSON response parsed with type assertion `as { error?: string }`
+- [ ] On success, shows completion screen
+
+### Step 4: New Client Page (admin/clients/new/page.tsx)
+- [ ] Page header shows "Create New Client" title with "Use Setup Wizard →" button
+- [ ] Quick Create card with `CreateClientForm` component
+- [ ] Card description: "Add a new contractor with basic info. You can configure phone number and team later."
+- [ ] Wizard promotion card (blue) with "Prefer guided setup?" heading
+- [ ] Promotion card links to `/admin/clients/new/wizard`
+- [ ] Non-admin users redirected to `/dashboard`
+
+### Step 5: Admin Page Button Update (admin/page.tsx)
+- [ ] "+ New Client" button links to `/admin/clients/new/wizard` (not `/admin/clients/new`)
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Navigate to `/admin` — verify "+ New Client" links to `/admin/clients/new/wizard`
+3. Navigate to `/admin/clients/new` — verify page header with wizard link and Quick Create form
+4. Click "Use Setup Wizard →" — verify navigation to `/admin/clients/new/wizard`
+5. Complete Steps 1-2 in wizard, then on Step 3 (Team Members):
+   - Click "+ Add Team Member" — verify form appears
+   - Fill name and phone only — click "Add Member" — verify member appears in list
+   - Add a second member with email and role — verify Badge shows for role
+   - Click "Remove" on a member — verify removed
+   - Click "Cancel" — verify form hides
+   - Click "Next" — verify members saved via API
+6. On Step 4 (Business Hours):
+   - Toggle Sunday switch on — verify time inputs appear
+   - Toggle a weekday switch off — verify "Closed" text appears
+   - Click "Next" — verify hours saved via API
+7. On Step 5 (Review):
+   - Verify all 4 summary sections display correctly
+   - Verify warning panel if phone or team members missing
+   - Click "Activate Client" — verify activation and completion screen
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] No TypeScript type assertion errors in step-review.tsx
+- [ ] All wizard routes registered: `/admin/clients/new`, `/admin/clients/new/wizard`
+- [ ] Admin page links directly to wizard for new client creation
