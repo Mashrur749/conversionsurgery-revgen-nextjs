@@ -57,6 +57,13 @@
       "when": 1770610494134,
       "tag": "0007_bright_wasp",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1770653934709,
+      "tag": "0008_misty_leper_queen",
+      "breakpoints": true
     }
   ]
 }
