@@ -1,6 +1,8 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { SummarySettings } from './summary-settings';
 
 export default async function ClientSettingsPage() {
@@ -21,6 +23,19 @@ export default async function ClientSettingsPage() {
             day={session.client.weeklySummaryDay ?? 1}
             time={session.client.weeklySummaryTime ?? '08:00'}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Notifications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/client/settings/notifications">
+              Manage Notifications
+            </Link>
+          </Button>
         </CardContent>
       </Card>
     </div>
