@@ -39,6 +39,9 @@ export * from './revenue-events';
 export * from './media-attachments';
 export * from './payments';
 export * from './payment-reminders';
+export * from './reviews';
+export * from './review-sources';
+export * from './review-metrics';
 
 // Auth tables (NextAuth)
 export * from './auth';
