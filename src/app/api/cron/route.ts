@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { updateMonthlySummaries } from '@/lib/services/usage-tracking';
+import { checkAllClientAlerts } from '@/lib/services/usage-alerts';
 
 export async function POST(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
-  
+
   // Get cron identifier from Cloudflare
   const cronId = request.headers.get('cf-cron');
-  
+
   if (!cronId) {
     return NextResponse.json({ error: 'Not a cron request' }, { status: 400 });
   }
@@ -20,21 +22,30 @@ export async function POST(request: NextRequest) {
 
     const processResult = await processResponse.json();
 
-    // Check if this is Monday 7am UTC for weekly summary
     const now = new Date();
+    const results: Record<string, unknown> = { scheduled: processResult };
+
+    // Hourly: update usage summaries and check alerts (runs when minutes < 10)
+    if (now.getUTCMinutes() < 10) {
+      try {
+        await updateMonthlySummaries();
+        await checkAllClientAlerts();
+        results.usageTracking = { success: true };
+      } catch (error) {
+        console.error('Usage tracking cron error:', error);
+        results.usageTracking = { error: 'Failed' };
+      }
+    }
+
+    // Check if this is Monday 7am UTC for weekly summary
     if (now.getUTCDay() === 1 && now.getUTCHours() === 7 && now.getUTCMinutes() < 10) {
       const summaryResponse = await fetch(`${baseUrl}/api/cron/weekly-summary`, {
         headers: { Authorization: `Bearer ${cronSecret}` },
       });
-      const summaryResult = await summaryResponse.json();
-      
-      return NextResponse.json({
-        scheduled: processResult,
-        weeklySummary: summaryResult,
-      });
+      results.weeklySummary = await summaryResponse.json();
     }
 
-    return NextResponse.json({ scheduled: processResult });
+    return NextResponse.json(results);
   } catch (error) {
     console.error('Cron handler error:', error);
     return NextResponse.json({ error: 'Cron failed' }, { status: 500 });
