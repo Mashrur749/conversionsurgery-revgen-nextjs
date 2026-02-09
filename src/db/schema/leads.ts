@@ -28,6 +28,9 @@ export const leads = pgTable(
     status: varchar('status', { length: 50 }).default('new'), // new, contacted, estimate_sent, won, lost, opted_out
     actionRequired: boolean('action_required').default(false),
     actionRequiredReason: varchar('action_required_reason', { length: 255 }),
+    conversationMode: varchar('conversation_mode', { length: 10 }).default('ai'), // ai, human, paused
+    humanTakeoverAt: timestamp('human_takeover_at'),
+    humanTakeoverBy: varchar('human_takeover_by', { length: 255 }),
     optedOut: boolean('opted_out').default(false),
     optedOutAt: timestamp('opted_out_at'),
     createdAt: timestamp('created_at').defaultNow(),
