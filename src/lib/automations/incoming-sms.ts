@@ -7,26 +7,30 @@ import { initiateRingGroup } from '@/lib/services/ring-group';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 import { checkAndSuggestFlows, handleApprovalResponse } from '@/lib/services/flow-suggestions';
 import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
+import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/services/media';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
+import type { MediaAttachment } from '@/db/schema/media-attachments';
 
 interface IncomingSMSPayload {
   To: string;
   From: string;
   Body: string;
   MessageSid: string;
+  NumMedia?: number;
+  MediaItems?: { url: string; contentType: string; sid?: string }[];
 }
 
 const STOP_WORDS = ['stop', 'unsubscribe', 'cancel', 'end', 'quit'];
 
 export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   const db = getDb();
-  const { To, From, Body, MessageSid } = payload;
+  const { To, From, Body, MessageSid, NumMedia = 0, MediaItems = [] } = payload;
 
   const senderPhone = normalizePhoneNumber(From);
   const twilioNumber = normalizePhoneNumber(To);
-  const messageBody = Body.trim();
+  const messageBody = (Body || '').trim();
 
   // 1. Find client by Twilio number
   const clientResult = await db
@@ -108,14 +112,39 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   }
 
   // 5. Log inbound message
-  await db.insert(conversations).values({
+  const messageContent = NumMedia > 0 && !messageBody
+    ? `[${NumMedia} media attachment${NumMedia > 1 ? 's' : ''}]`
+    : messageBody || '[empty message]';
+
+  const [inboundMsg] = await db.insert(conversations).values({
     leadId: lead.id,
     clientId: client.id,
     direction: 'inbound',
-    messageType: 'sms',
-    content: messageBody,
+    messageType: NumMedia > 0 ? 'mms' : 'sms',
+    content: messageContent,
     twilioSid: MessageSid,
-  });
+  }).returning();
+
+  // 5.1 Process media attachments from MMS
+  const savedMedia: MediaAttachment[] = [];
+  if (NumMedia > 0 && MediaItems.length > 0) {
+    for (const item of MediaItems) {
+      try {
+        const saved = await processIncomingMedia({
+          clientId: client.id,
+          leadId: lead.id,
+          messageId: inboundMsg.id,
+          twilioMediaSid: item.sid,
+          twilioMediaUrl: item.url,
+          mimeType: item.contentType,
+        });
+        savedMedia.push(saved);
+      } catch (err) {
+        console.error('[MMS] Failed to process media:', err);
+      }
+    }
+    console.log(`[MMS] Processed ${savedMedia.length}/${NumMedia} media items for lead ${lead.id}`);
+  }
 
   // 5a. Update lead score (quick mode for speed)
   scoreLead(lead.id, { useAI: false }).catch(console.error);
@@ -223,8 +252,48 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   }));
 
   // 8. Generate AI response (with knowledge base context)
+  // If media-only message (no text), send photo acknowledgment instead of AI response
+  if (savedMedia.length > 0 && !messageBody) {
+    const firstMedia = savedMedia[0];
+    const ackMessage = generatePhotoAcknowledgment(
+      firstMedia.aiDescription,
+      firstMedia.aiTags as string[] | null
+    );
+
+    const smsResult = await sendSMS(senderPhone, client.twilioNumber!, ackMessage);
+    if (smsResult.success) {
+      await db.insert(conversations).values({
+        leadId: lead.id,
+        clientId: client.id,
+        direction: 'outbound',
+        messageType: 'ai_response',
+        content: ackMessage,
+        twilioSid: smsResult.sid,
+      });
+    }
+
+    return {
+      processed: true,
+      leadId: lead.id,
+      mediaProcessed: savedMedia.length,
+      aiResponse: ackMessage,
+    };
+  }
+
+  // Build additional context if media was included with text
+  let mediaContext = '';
+  if (savedMedia.length > 0) {
+    const photoDescriptions = savedMedia
+      .filter(m => m.type === 'image')
+      .map(m => m.aiDescription || 'a photo')
+      .join(', ');
+    if (photoDescriptions) {
+      mediaContext = `\nThe customer also sent ${savedMedia.length} photo(s) showing: ${photoDescriptions}`;
+    }
+  }
+
   const aiResult = await generateAIResponse(
-    messageBody,
+    messageBody + mediaContext,
     client.businessName,
     client.ownerName,
     conversationHistory,

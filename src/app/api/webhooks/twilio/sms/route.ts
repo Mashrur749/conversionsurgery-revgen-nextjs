@@ -8,11 +8,26 @@ export async function POST(request: NextRequest) {
 
     console.log('Twilio SMS webhook:', payload.From, payload.Body?.substring(0, 50));
 
+    // Extract media attachments from MMS
+    const numMedia = parseInt(payload.NumMedia || '0', 10);
+    const mediaItems: { url: string; contentType: string; sid?: string }[] = [];
+
+    for (let i = 0; i < numMedia; i++) {
+      const url = payload[`MediaUrl${i}`];
+      const contentType = payload[`MediaContentType${i}`];
+      const sid = payload[`MediaSid${i}`];
+      if (url && contentType) {
+        mediaItems.push({ url, contentType, sid });
+      }
+    }
+
     await handleIncomingSMS({
       To: payload.To,
       From: payload.From,
-      Body: payload.Body,
+      Body: payload.Body || '',
       MessageSid: payload.MessageSid,
+      NumMedia: numMedia,
+      MediaItems: mediaItems,
     });
 
     // Return empty TwiML
