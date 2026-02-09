@@ -1187,3 +1187,100 @@
 - [ ] Routes registered: `/admin/usage`, `/admin/usage/[clientId]`
 - [ ] API routes registered: `/api/admin/usage`, `/api/admin/usage/[clientId]`, `/api/admin/usage/alerts/[id]/acknowledge`
 - [ ] No unused imports or variables
+
+## 16-client-dashboard
+
+### Schema: magic_link_tokens Table
+- [ ] `magic_link_tokens` table exists in `src/db/schema/magic-link-tokens.ts`
+- [ ] Columns: `id` (uuid PK), `clientId` (FK → clients.id, cascade), `token` (varchar 64, not null, unique)
+- [ ] Columns: `expiresAt` (timestamp, not null), `usedAt` (timestamp, nullable), `createdAt` (timestamp, defaultNow)
+- [ ] Index: `idx_magic_link_tokens_token` on `token`
+- [ ] Exported types: `MagicLinkToken`, `NewMagicLinkToken`
+- [ ] Exported from `src/db/schema/index.ts`
+- [ ] Relation defined in `src/db/schema/relations.ts` (client: one → clients)
+- [ ] `clientsRelations` includes `magicLinkTokens: many(magicLinkTokens)`
+
+### Magic Link Service (src/lib/services/magic-link.ts)
+- [ ] `generateToken()` returns a 64-character hex string
+- [ ] `createMagicLink(clientId)` inserts token with 7-day expiry and returns URL
+- [ ] Generated URL format: `${NEXT_PUBLIC_APP_URL}/d/${token}`
+- [ ] `validateMagicLink(token)` returns `{ valid: true, clientId }` for valid unexpired tokens
+- [ ] `validateMagicLink(token)` returns `{ valid: false, error }` for expired or invalid tokens
+- [ ] `validateMagicLink(token)` marks token as used on first validation (sets `usedAt`)
+- [ ] Token remains valid for reuse within 7-day expiry window
+- [ ] `sendDashboardLink(clientId, phone, twilioNumber)` sends SMS with dashboard link
+- [ ] All functions use `getDb()` per-request (not cached db instance)
+
+### Dashboard Auth Route (src/app/d/[token]/route.ts)
+- [ ] `GET /d/:token` route exists
+- [ ] Validates token via `validateMagicLink()`
+- [ ] Invalid/expired token redirects to `/link-expired`
+- [ ] Valid token sets `clientSessionId` cookie (httpOnly, secure in prod, sameSite lax, 7-day maxAge)
+- [ ] Valid token redirects to `/client`
+- [ ] Uses Next.js 16 async params pattern (`Promise<{ token: string }>`)
+- [ ] Uses `await cookies()` for cookie access
+
+### Client Auth Helper (src/lib/client-auth.ts)
+- [ ] `getClientSession()` reads `clientSessionId` from cookies
+- [ ] Returns `null` when no cookie present
+- [ ] Returns `null` when client not found in database
+- [ ] Returns `{ clientId, client }` for valid session
+- [ ] Uses `getDb()` per-request (not cached db instance)
+- [ ] Uses `await cookies()` for cookie access
+
+### Link Expired Page (src/app/(auth)/link-expired/page.tsx)
+- [ ] Page exists at `/link-expired` under `(auth)` layout group
+- [ ] Shows "Link Expired" title
+- [ ] Shows message about expired/invalid link
+- [ ] Instructs user to text "DASHBOARD" for a new link
+
+### Client Dashboard Layout (src/app/(client)/layout.tsx)
+- [ ] Layout exists under `(client)` route group
+- [ ] Redirects to `/link-expired` when no client session
+- [ ] Shows client business name in header (truncated to max 200px)
+- [ ] Navigation has 3 links: Dashboard (`/client`), Conversations (`/client/conversations`), Team (`/client/team`)
+- [ ] Sticky header with `z-10`
+- [ ] Mobile-first design with `max-w-3xl` content area
+- [ ] `bg-gray-50` background
+
+### Client Dashboard Page (src/app/(client)/client/page.tsx)
+- [ ] Redirects to `/link-expired` when no client session
+- [ ] Shows 2 stat cards: "Leads This Month" and "Messages Sent"
+- [ ] Stats aggregated from `dailyStats` for current month
+- [ ] Leads count = `missedCallsCaptured + formsResponded`
+- [ ] "Upcoming Appointments" card shows up to 5 scheduled appointments
+- [ ] Appointments joined with leads table for name/phone display
+- [ ] Only shows future appointments with status "scheduled"
+- [ ] "Recent Leads" card shows up to 5 most recent leads
+- [ ] Each lead shows name (or phone), source, and time ago
+- [ ] Empty states shown when no appointments or leads exist
+- [ ] Uses `getDb()` per-request (not cached db instance)
+- [ ] Uses `formatDistanceToNow` from date-fns for time display
+
+### DASHBOARD Text Command (src/lib/automations/incoming-sms.ts)
+- [ ] Check added after finding client, before opt-out handling
+- [ ] Matches `messageBody.toUpperCase() === 'DASHBOARD'`
+- [ ] Calls `sendDashboardLink(client.id, senderPhone, client.twilioNumber)`
+- [ ] Returns `{ processed: true, action: 'dashboard_link_sent' }`
+- [ ] Uses dynamic import for magic-link service
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Verify `/link-expired` page renders with "Link Expired" message and DASHBOARD instruction
+3. Verify `/client` redirects to `/link-expired` without a valid session cookie
+4. As admin, create a magic link for a client via the service (or simulate SMS "DASHBOARD")
+5. Visit `/d/<token>` — verify redirect to `/client` and cookie is set
+6. On `/client` page — verify business name in header, nav links work
+7. Verify stat cards show correct monthly aggregations
+8. Verify upcoming appointments section (may be empty)
+9. Verify recent leads section with time-ago display
+10. Wait for token to expire (or use expired token) — verify redirect to `/link-expired`
+11. Text "DASHBOARD" to a Twilio number — verify SMS response with dashboard link
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/d/[token]`, `/link-expired`, `/client`
+- [ ] Schema file exists: `src/db/schema/magic-link-tokens.ts`
+- [ ] Service file exists: `src/lib/services/magic-link.ts`
+- [ ] Auth helper exists: `src/lib/client-auth.ts`
+- [ ] No unused imports or variables
