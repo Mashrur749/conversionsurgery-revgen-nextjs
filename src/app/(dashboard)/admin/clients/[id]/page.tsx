@@ -177,6 +177,11 @@ export default async function ClientDetailPage({ params }: Props) {
                   Knowledge Base
                 </Link>
               </Button>
+              <Button asChild variant="outline" className="w-full">
+                <Link href={`/admin/clients/${client.id}/reviews`}>
+                  Reputation Monitoring
+                </Link>
+              </Button>
               <DeleteButton clientId={client.id} clientName={client.businessName} status={client.status} />
             </CardContent>
           </Card>

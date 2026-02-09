@@ -25,6 +25,7 @@ const adminNavItems = [
     { href: '/admin/analytics', label: 'Analytics' },
     { href: '/admin/template-performance', label: 'Template Performance' },
     { href: '/admin/reports', label: 'Reports' },
+    { href: '/admin/reputation', label: 'Reputation' },
     { href: '/admin/usage', label: 'Usage' },
   ]},
   { group: 'Configuration', items: [
