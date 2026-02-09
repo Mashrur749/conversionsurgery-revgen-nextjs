@@ -47,6 +47,9 @@ export * from './review-responses';
 export * from './calendar-integrations';
 export * from './calendar-events';
 export * from './voice-calls';
+export * from './subscription-plans';
+export * from './admin-users';
+export * from './system-settings';
 
 // Auth tables (NextAuth)
 export * from './auth';
