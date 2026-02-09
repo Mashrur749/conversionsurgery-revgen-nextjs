@@ -1,7 +1,13 @@
-import { getDb, flowExecutions, flowStepExecutions, leads, clients } from '@/db';
+import { getDb, flowExecutions, flowStepExecutions, flows, leads, clients } from '@/db';
 import { eq } from 'drizzle-orm';
 import { resolveFlowSteps } from './flow-resolution';
 import { sendSMS } from './twilio';
+import {
+  recordExecutionStart,
+  recordStepMessageSent,
+  updateClientOutcomes,
+} from './flow-metrics';
+import { format } from 'date-fns';
 
 /**
  * Start executing a flow for a lead.
@@ -22,6 +28,15 @@ export async function startFlowExecution(
     throw new Error('Flow has no steps');
   }
 
+  // Look up the flow to get templateId for metrics
+  const [flow] = await db
+    .select({ templateId: flows.templateId })
+    .from(flows)
+    .where(eq(flows.id, flowId))
+    .limit(1);
+
+  const templateId = flow?.templateId || null;
+
   // Create the execution record
   const [execution] = await db
     .insert(flowExecutions)
@@ -35,6 +50,17 @@ export async function startFlowExecution(
       triggeredBy,
     })
     .returning();
+
+  // Record metrics for execution start
+  await recordExecutionStart(templateId).catch(console.error);
+
+  // Update client outcomes: lead contacted
+  await updateClientOutcomes(
+    clientId,
+    flowId,
+    format(new Date(), 'yyyy-MM'),
+    { leadsContacted: 1 }
+  ).catch(console.error);
 
   // Get lead and client for variable substitution
   const [lead] = await db
@@ -66,7 +92,7 @@ export async function startFlowExecution(
 
   if (firstStep.delayMinutes === 0) {
     // Execute immediately
-    await executeStep(execution.id, firstStep, messageContent, lead, client);
+    await executeStep(execution.id, firstStep, messageContent, lead, client, templateId);
   } else {
     // Schedule for later
     const scheduledAt = new Date();
@@ -95,7 +121,8 @@ async function executeStep(
   step: { id: string; stepNumber: number; name: string | null },
   messageContent: string,
   lead: { id: string; phone: string } | undefined,
-  client: { twilioNumber: string | null } | undefined
+  client: { twilioNumber: string | null } | undefined,
+  templateId: string | null = null
 ): Promise<void> {
   const db = getDb();
 
@@ -123,4 +150,9 @@ async function executeStep(
     messageSid: smsResult.sid || null,
     error: smsResult.success ? null : String(smsResult.error),
   });
+
+  // Record step message sent metric
+  if (smsResult.success) {
+    await recordStepMessageSent(templateId, step.stepNumber).catch(console.error);
+  }
 }
