@@ -2241,3 +2241,73 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] New routes registered: `/client/cancel`, `/client/cancel/call-scheduled`, `/client/cancel/confirmed`, `/api/client/cancel`
 - [ ] No regressions in existing routes
+
+---
+
+## 28-revenue-attribution
+
+### Schema Verification
+- [ ] `jobs` table exists with columns: id, lead_id, client_id, status, quote_amount, deposit_amount, final_amount, paid_amount, description, address, scheduled_date, completed_date, won_at, lost_at, lost_reason, created_at, updated_at
+- [ ] `revenue_events` table exists with columns: id, job_id, client_id, event_type, amount, notes, created_at
+- [ ] `job_status` enum has values: lead, quoted, won, lost, completed
+- [ ] `jobs.client_id` FK cascades on delete
+- [ ] `jobs.lead_id` FK sets null on delete
+- [ ] `revenue_events.job_id` FK cascades on delete
+- [ ] Indexes exist: `idx_jobs_client`, `idx_jobs_status`
+
+### Revenue Service
+- [ ] `createJobFromLead()` creates a job with status "lead" and logs a "job_created" revenue event
+- [ ] `updateJobStatus()` updates job status and sets wonAt/lostAt/completedDate appropriately
+- [ ] `updateJobStatus("won")` logs a revenue event with the final or quote amount
+- [ ] `recordPayment()` increments paidAmount and logs a "payment_received" event
+- [ ] `getRevenueStats()` returns correct counts and sums filtered by clientId and date range
+- [ ] `getRecentJobs()` returns jobs with lead name/phone, ordered by newest first
+
+### API Routes - GET /api/admin/clients/[id]/jobs
+- [ ] Returns 403 for non-admin users
+- [ ] Returns jobs list and revenue stats for valid admin request
+- [ ] Returns 500 with error message on server failure
+
+### API Routes - POST /api/admin/clients/[id]/jobs
+- [ ] Returns 403 for non-admin users
+- [ ] Creates a job from a valid leadId and returns jobId
+- [ ] Returns 400 with validation details for invalid input (missing leadId, non-UUID)
+- [ ] Returns 500 with error message on server failure
+
+### API Routes - PATCH /api/admin/clients/[id]/jobs/[jobId]
+- [ ] Returns 403 for non-admin users
+- [ ] `action: "update_status"` updates job status correctly
+- [ ] `action: "record_payment"` records payment with amount and optional notes
+- [ ] Returns 400 for invalid action or missing required fields
+- [ ] Returns 500 with error message on server failure
+
+### Revenue Dashboard Page
+- [ ] `/admin/clients/[id]/revenue` loads for admin users
+- [ ] Redirects non-admin users to `/dashboard`
+- [ ] Shows 404 for non-existent client ID
+- [ ] Displays client business name in header
+- [ ] "Back" button links to `/admin/clients/[id]`
+
+### Revenue Metrics Component
+- [ ] ROI banner displays ROI percentage, revenue attributed, and collected amounts
+- [ ] Pipeline stats show leads, quoted, won, lost, and win rate
+- [ ] Quote value shown under "Quoted" card
+- [ ] Average job value card displays correctly
+- [ ] All monetary values formatted as dollars (cents / 100)
+
+### Jobs List Component
+- [ ] Each job shows lead name or phone number
+- [ ] Status badge with correct color: lead (gray), quoted (blue), won (green), lost (red), completed (purple)
+- [ ] Quote and final amounts displayed when present
+- [ ] Status dropdown allows changing job status
+- [ ] Status change triggers API call and page refresh
+- [ ] Empty state message shown when no jobs exist
+
+### Client Detail Page Integration
+- [ ] "Revenue Tracking" button appears in Actions card on `/admin/clients/[id]`
+- [ ] Button links to `/admin/clients/[id]/revenue`
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/admin/clients/[id]/revenue`, `/api/admin/clients/[id]/jobs`, `/api/admin/clients/[id]/jobs/[jobId]`
+- [ ] No regressions in existing routes
