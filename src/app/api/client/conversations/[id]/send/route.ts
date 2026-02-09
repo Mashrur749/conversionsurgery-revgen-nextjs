@@ -15,7 +15,8 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { message } = await request.json();
+  const body = await request.json() as { message?: string };
+  const { message } = body;
 
   if (!message?.trim()) {
     return NextResponse.json({ error: 'Message required' }, { status: 400 });

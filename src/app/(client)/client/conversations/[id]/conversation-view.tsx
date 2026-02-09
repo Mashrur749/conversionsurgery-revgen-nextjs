@@ -73,7 +73,7 @@ export function ConversationView({ lead, messages }: Props) {
     });
 
     if (res.ok) {
-      const data = await res.json();
+      const data: { message: Message } = await res.json();
       setLocalMessages([...localMessages, data.message]);
       setNewMessage('');
     }
