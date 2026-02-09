@@ -2112,3 +2112,71 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] New routes registered: `/admin/clients/[id]/knowledge/preview`, `/api/admin/clients/[id]/knowledge/test`
 - [ ] No regressions in existing routes
+
+## 26-notification-preferences
+
+### Schema Verification
+- [ ] `notification_preferences` table exists in database
+- [ ] `client_id` column has unique constraint and cascading delete
+- [ ] SMS boolean columns default correctly: `sms_new_lead=true`, `sms_escalation=true`, `sms_weekly_summary=true`, `sms_flow_approval=true`, `sms_negative_review=true`
+- [ ] Email boolean columns default correctly: `email_new_lead=false`, `email_daily_summary=false`, `email_weekly_summary=true`, `email_monthly_report=true`
+- [ ] Quiet hours defaults: `quiet_hours_enabled=false`, `quiet_hours_start='22:00'`, `quiet_hours_end='07:00'`
+- [ ] `urgent_override` defaults to `true`
+- [ ] Schema exported from `src/db/schema/index.ts`
+- [ ] Relations defined in `src/db/schema/relations.ts`
+
+### Service Layer
+- [ ] `getNotificationPrefs()` returns defaults when no record exists
+- [ ] `getNotificationPrefs()` auto-creates a database record on first call
+- [ ] `updateNotificationPrefs()` inserts new record if none exists (upsert behavior)
+- [ ] `updateNotificationPrefs()` updates existing record and sets `updatedAt`
+- [ ] `isInQuietHours()` returns false when quiet hours disabled
+- [ ] `isInQuietHours()` handles overnight ranges (e.g., 22:00 to 07:00)
+- [ ] `isInQuietHours()` handles same-day ranges (e.g., 13:00 to 17:00)
+- [ ] `shouldNotify()` returns false when notification type is disabled
+- [ ] `shouldNotify()` respects quiet hours
+- [ ] `shouldNotify()` allows urgent notifications during quiet hours when `urgentOverride=true`
+
+### API Endpoints
+- [ ] `GET /api/client/notifications` returns 401 without `clientSessionId` cookie
+- [ ] `GET /api/client/notifications` returns preferences JSON for authenticated client
+- [ ] `PUT /api/client/notifications` returns 401 without `clientSessionId` cookie
+- [ ] `PUT /api/client/notifications` validates input with Zod (rejects invalid time format)
+- [ ] `PUT /api/client/notifications` updates preferences and returns `{ success: true }`
+- [ ] `PUT /api/client/notifications` accepts partial updates (e.g., only `smsNewLead`)
+
+### Notification Settings Page
+- [ ] `/client/settings/notifications` redirects to `/link-expired` without session
+- [ ] Page loads with current preferences from database
+- [ ] "Back" button navigates to `/client/settings`
+- [ ] Page title shows "Notification Settings"
+
+### Notification Settings Form
+- [ ] SMS section shows 5 toggle switches (New lead, Escalations, Weekly summary, Flow approval, Negative review)
+- [ ] Email section shows 4 toggle switches (New lead, Daily summary, Weekly summary, Monthly report)
+- [ ] Quiet hours section shows enable toggle
+- [ ] Enabling quiet hours reveals start/end time inputs and urgent override toggle
+- [ ] Disabling quiet hours hides time inputs and urgent override
+- [ ] Time inputs accept valid HH:MM format
+- [ ] "Allow urgent notifications" toggle appears with description text
+- [ ] "Save Preferences" button shows "Saving..." during API call
+- [ ] "Save Preferences" button shows "Saved!" for 3 seconds after success
+- [ ] All toggle changes are reflected in state before saving
+
+### Settings Page Integration
+- [ ] `/client/settings` shows "Notifications" card with "Manage Notifications" link
+- [ ] Link navigates to `/client/settings/notifications`
+- [ ] Button uses outline variant
+
+### End-to-End Test Scenarios
+- [ ] Navigate to client settings, click "Manage Notifications"
+- [ ] Toggle off all SMS notifications, save, reload — all SMS toggles remain off
+- [ ] Toggle on all email notifications, save, reload — all email toggles remain on
+- [ ] Enable quiet hours, set start to 23:00 and end to 06:00, save, reload — times persist
+- [ ] Enable quiet hours, disable urgent override, save, reload — urgent override remains off
+- [ ] Disable quiet hours, save, reload — quiet hours section is collapsed
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/client/settings/notifications`, `/api/client/notifications`
+- [ ] No regressions in existing routes
