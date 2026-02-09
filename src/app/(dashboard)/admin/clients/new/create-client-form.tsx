@@ -46,14 +46,14 @@ export function CreateClientForm() {
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string; client?: { id: string } };
 
       if (!res.ok) {
         setError(data.error || 'Failed to create client');
         return;
       }
 
-      router.push(`/admin/clients/${data.client.id}`);
+      router.push(`/admin/clients/${data.client!.id}`);
     } catch {
       setError('Something went wrong');
     } finally {

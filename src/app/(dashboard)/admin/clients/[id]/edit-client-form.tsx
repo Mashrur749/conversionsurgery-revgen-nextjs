@@ -74,7 +74,7 @@ export function EditClientForm({ client }: { client: Client }) {
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string };
 
       if (!res.ok) {
         setError(data.error || 'Failed to update');
