@@ -1,5 +1,5 @@
 import { auth } from '@/lib/auth';
-import { getDb, leads, conversations, scheduledMessages, users } from '@/db';
+import { getDb, leads, conversations, scheduledMessages, users, mediaAttachments } from '@/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { ReplyForm } from './reply-form';
 import { ActionButtons } from './action-buttons';
+import { MessageMedia } from './message-media';
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -55,6 +56,21 @@ export default async function LeadDetailPage({ params }: Props) {
     .where(eq(conversations.leadId, lead.id))
     .orderBy(conversations.createdAt);
 
+  // Fetch media for this lead, grouped by messageId
+  const media = await db
+    .select()
+    .from(mediaAttachments)
+    .where(eq(mediaAttachments.leadId, lead.id));
+
+  const mediaByMessage = new Map<string, typeof media>();
+  for (const m of media) {
+    if (m.messageId) {
+      const existing = mediaByMessage.get(m.messageId) || [];
+      existing.push(m);
+      mediaByMessage.set(m.messageId, existing);
+    }
+  }
+
   const scheduled = await db
     .select()
     .from(scheduledMessages)
@@ -93,18 +109,25 @@ export default async function LeadDetailPage({ params }: Props) {
               {messages.length === 0 ? (
                 <p className="text-muted-foreground">No messages yet</p>
               ) : (
-                messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-lg p-3 ${msg.direction === 'outbound' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                      <p className={`text-xs mt-1 ${msg.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'}`}>
-                        {format(new Date(msg.createdAt!), 'MMM d, h:mm a')}
-                        {msg.messageType === 'ai_response' && ' • AI'}
-                        {msg.messageType === 'escalation' && ' • Escalation'}
-                      </p>
+                messages.map((msg) => {
+                  const msgMedia = mediaByMessage.get(msg.id) || [];
+                  return (
+                    <div key={msg.id} className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] rounded-lg p-3 ${msg.direction === 'outbound' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        {msgMedia.length > 0 && (
+                          <MessageMedia items={msgMedia} />
+                        )}
+                        <p className={`text-xs mt-1 ${msg.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'}`}>
+                          {format(new Date(msg.createdAt!), 'MMM d, h:mm a')}
+                          {msg.messageType === 'ai_response' && ' • AI'}
+                          {msg.messageType === 'escalation' && ' • Escalation'}
+                          {msg.messageType === 'mms' && ' • MMS'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </CardContent>
           </Card>
