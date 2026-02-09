@@ -2379,3 +2379,113 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] New routes registered: `/api/leads/[id]/score`, `/api/clients/[id]/leads/scores`
 - [ ] No regressions in existing routes
+
+## 30-photo-handling
+
+### Database Schema (`src/db/schema/media-attachments.ts`)
+- [ ] `media_attachments` table exists with correct columns: id, clientId, leadId, messageId
+- [ ] `media_type` enum includes: image, video, audio, document, other
+- [ ] Storage columns: storageKey (required), publicUrl, thumbnailKey, thumbnailUrl
+- [ ] Twilio columns: twilioMediaSid, twilioMediaUrl
+- [ ] AI columns: aiDescription (text), aiTags (jsonb string array)
+- [ ] Metadata columns: width, height, duration, fileSize, mimeType, fileName
+- [ ] Indexes on leadId, clientId, messageId
+- [ ] Schema exported from `src/db/schema/index.ts`
+- [ ] Relations defined in `relations.ts` (client, lead, message)
+- [ ] Clients, leads, conversations relations include `mediaAttachments: many()`
+
+### Storage Service (`src/lib/services/storage.ts`)
+- [ ] `uploadFile()` uploads buffer to R2 and returns key + public URL
+- [ ] `uploadImage()` uploads original + generates 300x300 JPEG thumbnail
+- [ ] Thumbnail key has `_thumb.jpg` suffix
+- [ ] `deleteFile()` removes file from R2
+- [ ] `getSignedDownloadUrl()` generates time-limited signed URL
+- [ ] `getImageDimensions()` returns width/height using sharp metadata
+- [ ] S3 client configured with R2 endpoint and credentials from env vars
+- [ ] Each function creates fresh S3 client (no cached instance)
+
+### Media Service (`src/lib/services/media.ts`)
+- [ ] `processIncomingMedia()` fetches from Twilio URL with Basic auth
+- [ ] Images get uploaded with thumbnail via `uploadImage()`
+- [ ] Non-images get uploaded via `uploadFile()`
+- [ ] Images are analyzed with OpenAI Vision (gpt-4o-mini)
+- [ ] AI analysis returns description + tags as JSON
+- [ ] Failed AI analysis falls back to "Image received" / ["unanalyzed"]
+- [ ] Media record saved to database with all fields populated
+- [ ] `getLeadMedia()` returns all media for a lead, ordered by createdAt desc
+- [ ] `getClientMedia()` supports filtering by type, limit, offset
+- [ ] `getMessageMedia()` returns media for a specific conversation message
+- [ ] `deleteMedia()` removes file + thumbnail from R2, then deletes DB record
+- [ ] `generatePhotoAcknowledgment()` returns contextual message based on AI tags
+- [ ] Photo acknowledgment handles: roof damage, leak, completed work, before photo
+- [ ] Generic acknowledgment includes AI description when available
+- [ ] Uses `getDb()` pattern (fresh instance per call)
+
+### Twilio Webhook MMS Handling (`src/app/api/webhooks/twilio/sms/route.ts`)
+- [ ] Extracts `NumMedia` from Twilio payload
+- [ ] Loops through `MediaUrl0..N`, `MediaContentType0..N`, `MediaSid0..N`
+- [ ] Passes `NumMedia` and `MediaItems` array to `handleIncomingSMS()`
+- [ ] Body defaults to empty string when undefined (MMS can have no text)
+
+### Incoming SMS Automation (`src/lib/automations/incoming-sms.ts`)
+- [ ] `IncomingSMSPayload` interface includes optional `NumMedia` and `MediaItems`
+- [ ] Inbound message content shows "[N media attachment(s)]" when no text
+- [ ] Message type is "mms" when media is present, "sms" otherwise
+- [ ] Inbound message is inserted with `.returning()` to get message ID
+- [ ] Each media item calls `processIncomingMedia()` with message ID
+- [ ] Failed media processing is caught and logged, doesn't break flow
+- [ ] Photo-only messages (no text) get photo acknowledgment response
+- [ ] Photo+text messages add media context to AI prompt
+- [ ] AI response for photo+text includes "The customer also sent N photo(s) showing: ..."
+- [ ] Lead scoring still runs after media processing
+
+### Media API Routes
+- [ ] `GET /api/leads/[id]/media` returns all media for a lead (auth required)
+- [ ] `GET /api/media/[id]` returns single media record (auth required)
+- [ ] `DELETE /api/media/[id]` deletes media from storage and DB (auth required)
+- [ ] All routes use `auth()` and return 401 if not authenticated
+- [ ] All routes use Next.js 16 async params pattern (`Promise<{ id: string }>`)
+
+### Media Gallery Component (`src/components/media/media-gallery.tsx`)
+- [ ] Grid layout: 3 cols mobile, 4 cols md, 6 cols lg
+- [ ] Empty state shows icon and "No photos or files yet" message
+- [ ] Image thumbnails display in grid with aspect-square
+- [ ] Non-image types show appropriate icon (video, audio, document, file)
+- [ ] Hover overlay shows zoom icon
+- [ ] Clicking opens dialog with full-size image
+- [ ] Dialog shows AI description and tags as badges
+- [ ] Dialog shows time ago and dimensions
+- [ ] Download button opens file in new tab
+- [ ] Delete button calls onDelete callback and closes dialog
+- [ ] Uses controlled Dialog (open/onOpenChange) instead of DialogTrigger asChild
+
+### Conversation View Media (`src/app/(dashboard)/leads/[id]/`)
+- [ ] Lead detail page fetches media attachments from DB
+- [ ] Media grouped by messageId into a lookup map
+- [ ] Message bubbles show inline photos (thumbnails) for MMS messages
+- [ ] Clicking inline photo opens full-size in new tab
+- [ ] Non-image attachments show type icon in bubble
+- [ ] MMS messages show "MMS" badge in timestamp line
+- [ ] `MessageMedia` is a client component for interactive behavior
+
+### Lead Tabs (`src/app/(dashboard)/leads/[id]/lead-tabs.tsx`)
+- [ ] Tabs component with "Conversation" and "Photos" tabs
+- [ ] Conversation tab shows messages with inline media (same as before)
+- [ ] Photos tab shows `LeadMediaTab` with full gallery view
+- [ ] Reply form and opt-out card render inside conversation tab via children
+- [ ] Media count badge shown on Photos tab when media exists
+- [ ] Tab icons: MessageSquare for conversation, ImageIcon for photos
+
+### Lead Media Tab (`src/components/leads/lead-media-tab.tsx`)
+- [ ] Fetches media via `/api/leads/[leadId]/media` on mount
+- [ ] Shows skeleton loading state (6 square placeholders)
+- [ ] Renders `MediaGallery` with fetched items
+- [ ] Delete handler calls `/api/media/[id]` DELETE and removes from state
+- [ ] Delete shows confirmation dialog before proceeding
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/api/leads/[id]/media`, `/api/media/[id]`
+- [ ] Dependencies installed: `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`, `sharp`
+- [ ] Skeleton UI component installed
+- [ ] No regressions in existing routes
