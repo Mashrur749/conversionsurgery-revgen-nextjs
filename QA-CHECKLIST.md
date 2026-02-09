@@ -561,3 +561,94 @@
 - [ ] Routes registered: `/api/webhooks/twilio/ring-connect`, `/api/webhooks/twilio/member-answered`, `/api/webhooks/twilio/ring-result`
 - [ ] Route registered: `/api/business-hours` (GET + PUT)
 - [ ] No new TypeScript warnings related to hot-transfer webhooks or business hours UI
+
+## 09-client-crud-api
+
+### Clients API (src/app/api/admin/clients/route.ts)
+- [ ] `GET /api/admin/clients` returns all clients ordered by `createdAt` descending
+- [ ] `GET /api/admin/clients` returns 403 for non-admin users
+- [ ] `POST /api/admin/clients` creates a new client with required fields
+- [ ] `POST /api/admin/clients` validates `businessName`, `ownerName`, `email`, `phone` are required
+- [ ] `POST /api/admin/clients` returns 400 for duplicate email addresses
+- [ ] `POST /api/admin/clients` normalizes phone numbers via `normalizePhoneNumber()`
+- [ ] `POST /api/admin/clients` sets default timezone to `America/Edmonton`
+- [ ] `POST /api/admin/clients` sets initial status to `pending`
+- [ ] `POST /api/admin/clients` accepts optional `googleBusinessUrl` (valid URL or empty string)
+- [ ] `POST /api/admin/clients` returns 400 with validation details for invalid input
+- [ ] `POST /api/admin/clients` returns 403 for non-admin users
+
+### Single Client API (src/app/api/admin/clients/[id]/route.ts)
+- [ ] `GET /api/admin/clients/:id` returns a single client by ID
+- [ ] `GET /api/admin/clients/:id` returns 404 for non-existent client
+- [ ] `GET /api/admin/clients/:id` returns 403 for non-admin users
+- [ ] `PATCH /api/admin/clients/:id` updates client fields (all optional)
+- [ ] `PATCH /api/admin/clients/:id` normalizes phone number when provided
+- [ ] `PATCH /api/admin/clients/:id` updates `updatedAt` timestamp
+- [ ] `PATCH /api/admin/clients/:id` returns 404 for non-existent client
+- [ ] `PATCH /api/admin/clients/:id` validates status enum: pending, active, paused, cancelled
+- [ ] `PATCH /api/admin/clients/:id` returns 400 with validation details for invalid input
+- [ ] `PATCH /api/admin/clients/:id` returns 403 for non-admin users
+- [ ] `DELETE /api/admin/clients/:id` performs soft delete (sets status to `cancelled`)
+- [ ] `DELETE /api/admin/clients/:id` updates `updatedAt` timestamp
+- [ ] `DELETE /api/admin/clients/:id` returns 404 for non-existent client
+- [ ] `DELETE /api/admin/clients/:id` returns 403 for non-admin users
+
+### Admin Users API (src/app/api/admin/users/route.ts)
+- [ ] `GET /api/admin/users` returns all users with client name via left join
+- [ ] `GET /api/admin/users` returns fields: id, name, email, isAdmin, clientId, clientName, createdAt
+- [ ] `GET /api/admin/users` orders by `createdAt` descending
+- [ ] `GET /api/admin/users` returns 403 for non-admin users
+
+### Single User API (src/app/api/admin/users/[id]/route.ts)
+- [ ] `PATCH /api/admin/users/:id` updates `isAdmin` boolean field
+- [ ] `PATCH /api/admin/users/:id` updates `clientId` UUID field (or null)
+- [ ] `PATCH /api/admin/users/:id` prevents admin from demoting themselves (returns 400)
+- [ ] `PATCH /api/admin/users/:id` updates `updatedAt` timestamp
+- [ ] `PATCH /api/admin/users/:id` returns 404 for non-existent user
+- [ ] `PATCH /api/admin/users/:id` returns 400 with validation details for invalid input
+- [ ] `PATCH /api/admin/users/:id` returns 403 for non-admin users
+
+### Client Stats API (src/app/api/admin/clients/[id]/stats/route.ts)
+- [ ] `GET /api/admin/clients/:id/stats` returns lead counts (total, actionRequired)
+- [ ] `GET /api/admin/clients/:id/stats` returns 7-day stats (missedCalls, forms, messages)
+- [ ] `GET /api/admin/clients/:id/stats` returns active team member count
+- [ ] `GET /api/admin/clients/:id/stats` calculates `leadsThisWeek` as missedCalls + forms
+- [ ] `GET /api/admin/clients/:id/stats` returns 0 for all stats when no data exists
+- [ ] `GET /api/admin/clients/:id/stats` returns 403 for non-admin users
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Test client list:
+   ```bash
+   curl http://localhost:3000/api/admin/clients
+   ```
+3. Test client creation:
+   ```bash
+   curl -X POST http://localhost:3000/api/admin/clients \
+     -H "Content-Type: application/json" \
+     -d '{"businessName":"Test Co","ownerName":"John","email":"john@test.com","phone":"4035551234"}'
+   ```
+4. Test client update (use ID from step 3):
+   ```bash
+   curl -X PATCH http://localhost:3000/api/admin/clients/<id> \
+     -H "Content-Type: application/json" \
+     -d '{"status":"active"}'
+   ```
+5. Test soft delete:
+   ```bash
+   curl -X DELETE http://localhost:3000/api/admin/clients/<id>
+   ```
+6. Test user list:
+   ```bash
+   curl http://localhost:3000/api/admin/users
+   ```
+7. Test client stats:
+   ```bash
+   curl http://localhost:3000/api/admin/clients/<id>/stats
+   ```
+8. All endpoints should return 403 without an admin session
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/api/admin/clients`, `/api/admin/clients/[id]`, `/api/admin/clients/[id]/stats`
+- [ ] Routes registered: `/api/admin/users`, `/api/admin/users/[id]`
