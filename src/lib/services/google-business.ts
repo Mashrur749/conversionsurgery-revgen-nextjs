@@ -71,8 +71,8 @@ export async function postResponseToGoogle(
     });
 
     if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error?.message || 'Failed to post response');
+      const errorData = (await res.json()) as { error?: { message?: string } };
+      throw new Error(errorData.error?.message || 'Failed to post response');
     }
 
     // Update response status
@@ -129,7 +129,7 @@ async function refreshGoogleToken(
     }),
   });
 
-  const data = await res.json();
+  const data = (await res.json()) as { access_token?: string; expires_in?: number };
 
   if (!data.access_token) {
     throw new Error('Failed to refresh token');
@@ -141,7 +141,7 @@ async function refreshGoogleToken(
     .update(clients)
     .set({
       googleAccessToken: data.access_token,
-      googleTokenExpiresAt: new Date(Date.now() + data.expires_in * 1000),
+      googleTokenExpiresAt: new Date(Date.now() + (data.expires_in || 3600) * 1000),
     })
     .where(eq(clients.id, clientId));
 

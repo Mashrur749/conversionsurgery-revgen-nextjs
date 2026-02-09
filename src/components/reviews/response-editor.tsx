@@ -59,7 +59,7 @@ export function ResponseEditor({
         body: JSON.stringify({ tone }),
       });
       if (!res.ok) throw new Error('Failed to generate');
-      const data = await res.json();
+      const data = (await res.json()) as { responseText: string; id: string };
       setResponseText(data.responseText);
       setResponseId(data.id);
       toast.success('Response generated!');
@@ -84,7 +84,7 @@ export function ResponseEditor({
         body: JSON.stringify(options),
       });
       if (!res.ok) throw new Error('Failed to regenerate');
-      const data = await res.json();
+      const data = (await res.json()) as { responseText: string };
       setResponseText(data.responseText);
       toast.success('Response updated!');
     } catch {
@@ -114,7 +114,7 @@ export function ResponseEditor({
       });
 
       if (!res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as { error?: string };
         throw new Error(data.error || 'Failed to post');
       }
 
