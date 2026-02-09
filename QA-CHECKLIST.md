@@ -2577,3 +2577,96 @@
 - [ ] Schema exports: `payments`, `paymentReminders` exported from `src/db/schema/index.ts`
 - [ ] Relations defined for `payments` and `paymentReminders` in `relations.ts`
 - [ ] No regressions in existing routes
+
+---
+
+## Phase 32: Reputation Monitoring
+
+### Schema Tables
+- [ ] `reviews` table created with columns: id, clientId, source, externalId, externalUrl, authorName, authorPhoto, rating, reviewText, hasResponse, responseText, responseDate, sentiment, aiSuggestedResponse, keyTopics, alertSent, alertSentAt, matchedLeadId, reviewDate, fetchedAt, createdAt
+- [ ] `review_sources` table created with columns: id, clientId, source, isActive, googlePlaceId, yelpBusinessId, facebookPageId, lastFetchedAt, lastReviewDate, totalReviews, averageRating, lastError, consecutiveErrors, createdAt, updatedAt
+- [ ] `review_metrics` table created with columns: id, clientId, period, periodStart, periodEnd, totalReviews, averageRating, star counts, source counts, sentiment counts, respondedCount, avgResponseTimeHours, createdAt
+- [ ] All three schemas exported from `src/db/schema/index.ts`
+- [ ] Indexes on reviews (clientId, source, reviewDate) and review_sources (clientId)
+- [ ] Unique constraint on review_metrics (clientId, period, periodStart)
+
+### Google Places Service (`src/lib/services/google-places.ts`)
+- [ ] `fetchGooglePlaceDetails(placeId)` fetches place details from Google Places API
+- [ ] Returns null and logs error when API key is missing
+- [ ] Returns null and logs error when API returns non-OK status
+- [ ] `findGooglePlaceId(businessName, address?)` searches for a place and returns place_id
+- [ ] `syncGoogleReviews(clientId)` fetches and saves new reviews for a client
+- [ ] Deduplicates reviews by externalId (author_name + time)
+- [ ] Updates reviewSources stats (lastFetchedAt, totalReviews, averageRating) after sync
+- [ ] Tracks consecutive errors on the reviewSources record
+- [ ] Assigns sentiment based on rating (>=4 positive, 3 neutral, <=2 negative)
+
+### Review Monitoring Service (`src/lib/services/review-monitoring.ts`)
+- [ ] `syncAllReviews(clientId)` calls syncGoogleReviews and returns results
+- [ ] `checkAndAlertNegativeReviews(clientId)` finds unalerted reviews with rating <= 2
+- [ ] Generates AI suggested response via OpenAI for each negative review
+- [ ] Sends SMS alert to client phone number for each negative review
+- [ ] Marks reviews as alertSent=true with timestamp after alerting
+- [ ] `generateReviewResponse(review)` generates appropriate tone based on rating
+- [ ] `calculateReviewMetrics(clientId, period, date)` aggregates and upserts metrics
+- [ ] `getReviewSummary(clientId)` returns totalReviews, averageRating, recentReviews, needsResponse, sources
+
+### Review API Routes
+- [ ] `GET /api/admin/clients/[id]/reviews` returns reviews list with summary
+- [ ] Supports query params: source, rating, needsResponse, limit
+- [ ] Returns 403 for non-admin users
+- [ ] `POST /api/admin/clients/[id]/reviews` triggers review sync from all sources
+- [ ] `GET /api/admin/clients/[id]/reviews/sources` lists configured review sources
+- [ ] `POST /api/admin/clients/[id]/reviews/sources` adds/updates a review source
+- [ ] Google source auto-finds Place ID from business name if not provided
+- [ ] Returns 400 if Google Place ID cannot be found
+- [ ] Validates input with Zod schema
+- [ ] Upserts source (updates existing or creates new)
+
+### Cron Job (`src/app/api/cron/route.ts`)
+- [ ] Review sync runs hourly (when UTC minutes < 10)
+- [ ] Finds reviewSources not fetched in the last hour or never fetched
+- [ ] Groups by clientId and syncs each client
+- [ ] Calls checkAndAlertNegativeReviews after sync
+- [ ] Logs synced count and alerts count
+- [ ] Catches and logs errors per-client without stopping the loop
+
+### Review Dashboard Component (`src/components/reviews/review-dashboard.tsx`)
+- [ ] Renders 4 summary cards: average rating, total reviews, last 30 days, needs response
+- [ ] Star rating display with filled/unfilled stars
+- [ ] "Sync Reviews" button triggers POST and refreshes data
+- [ ] Spinning animation on refresh icon while syncing
+- [ ] Reviews list with source badge and relative date
+- [ ] Negative reviews (rating <= 2) highlighted with red border/background
+- [ ] AI suggested response shown for reviews with rating <= 3 that have no response
+- [ ] "Copy Response" button copies AI suggestion to clipboard
+- [ ] "Mark Responded" button marks review as responded (optimistic update)
+- [ ] "Responded" badge shown for reviews with hasResponse=true
+- [ ] Loading and empty states handled
+
+### Review Source Config Component
+- [ ] Input field for Google Place ID with auto-detect option
+- [ ] "Link" / "Update" button based on whether source exists
+- [ ] Shows error message when linking fails
+- [ ] Shows success message when linked
+- [ ] Lists connected sources with status badges
+- [ ] Shows average rating and total reviews per source
+- [ ] Shows last synced date and error status
+
+### Reputation Overview Page (`/admin/reputation`)
+- [ ] Lists all active clients with their review sources
+- [ ] Shows average rating and total review count per client
+- [ ] Shows source badges (google, yelp, etc.)
+- [ ] "View Reviews" / "Setup" link to client review page
+- [ ] Admin-only access (redirects non-admin)
+
+### Client Detail Integration
+- [ ] "Reputation Monitoring" button added to client detail Actions card
+- [ ] Links to `/admin/clients/[id]/reviews`
+- [ ] "Reputation" link added to admin navigation under Optimization group
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/admin/reputation`, `/admin/clients/[id]/reviews`, `/api/admin/clients/[id]/reviews`, `/api/admin/clients/[id]/reviews/sources`
+- [ ] Schema exports: `reviews`, `reviewSources`, `reviewMetrics` exported from `src/db/schema/index.ts`
+- [ ] No regressions in existing routes
