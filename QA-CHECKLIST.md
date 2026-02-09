@@ -1926,3 +1926,58 @@
 - [ ] `Compiled successfully` in build output
 - [ ] Routes registered: `/admin/analytics`, `/api/admin/analytics/templates`, `/api/admin/analytics/templates/[id]`, `/api/clients/[id]/outcomes`
 - [ ] No regressions in existing routes
+
+## 23-knowledge-schema
+
+### Schema Verification
+- [ ] `knowledge_base` table exists with columns: `id`, `client_id`, `category`, `title`, `content`, `keywords`, `priority`, `is_active`, `created_at`, `updated_at`
+- [ ] `knowledge_category` pgEnum created with values: `services`, `pricing`, `faq`, `policies`, `about`, `custom`
+- [ ] `client_id` has FK to `clients.id` with `ON DELETE CASCADE`
+- [ ] Indexes exist: `idx_knowledge_base_client_id`, `idx_knowledge_base_category`
+- [ ] `knowledgeBase` exported from `src/db/schema/index.ts`
+- [ ] `knowledgeBaseRelations` defined in `relations.ts` (one → clients)
+- [ ] `knowledgeBase` added to `clientsRelations` many array
+
+### Knowledge Base Service
+- [ ] `getClientKnowledge(clientId)` returns active entries ordered by priority desc, then category
+- [ ] `searchKnowledge(clientId, query)` filters by title, content, and keywords using ilike
+- [ ] `searchKnowledge` ignores search terms with 2 or fewer characters
+- [ ] `searchKnowledge` returns max 10 results
+- [ ] `buildKnowledgeContext(clientId)` returns formatted string with business name header
+- [ ] `buildKnowledgeContext` groups entries by category with section labels
+- [ ] `buildKnowledgeContext` returns empty string if client not found
+- [ ] `initializeClientKnowledge(clientId)` creates 5 default entries for new clients
+- [ ] `initializeClientKnowledge` is idempotent (skips if entries already exist)
+- [ ] `addKnowledgeEntry` inserts and returns new entry ID
+- [ ] `updateKnowledgeEntry` updates fields and sets `updatedAt`
+- [ ] `deleteKnowledgeEntry` hard-deletes the entry
+
+### API Routes — GET /api/admin/clients/[id]/knowledge
+- [ ] Returns 403 if user is not admin
+- [ ] Initializes default knowledge if none exists for client
+- [ ] Returns `{ entries }` array of active knowledge entries
+- [ ] Handles server errors with 500 response
+
+### API Routes — POST /api/admin/clients/[id]/knowledge
+- [ ] Returns 403 if user is not admin
+- [ ] Validates body with Zod: `category` (enum), `title` (min 1), `content` (min 1), optional `keywords`, optional `priority`
+- [ ] Returns 400 with validation details on invalid input
+- [ ] Returns `{ id }` of created entry on success
+- [ ] Handles server errors with 500 response
+
+### API Routes — PATCH /api/admin/clients/[id]/knowledge/[entryId]
+- [ ] Returns 403 if user is not admin
+- [ ] Validates body with Zod: all fields optional
+- [ ] Updates only provided fields plus `updatedAt`
+- [ ] Returns `{ success: true }` on success
+
+### API Routes — DELETE /api/admin/clients/[id]/knowledge/[entryId]
+- [ ] Returns 403 if user is not admin
+- [ ] Hard-deletes the knowledge entry
+- [ ] Returns `{ success: true }` on success
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] `Compiled successfully` in build output
+- [ ] Routes registered: `/api/admin/clients/[id]/knowledge`, `/api/admin/clients/[id]/knowledge/[entryId]`
+- [ ] No regressions in existing routes
