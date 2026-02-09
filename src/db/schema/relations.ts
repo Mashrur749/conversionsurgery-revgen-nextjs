@@ -13,6 +13,7 @@ import { teamMembers } from './team-members';
 import { escalationClaims } from './escalation-claims';
 import { businessHours } from './business-hours';
 import { callAttempts } from './call-attempts';
+import { magicLinkTokens } from './magic-link-tokens';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -31,6 +32,7 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   escalationClaims: many(escalationClaims),
   businessHours: many(businessHours),
   callAttempts: many(callAttempts),
+  magicLinkTokens: many(magicLinkTokens),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -171,5 +173,12 @@ export const callAttemptsRelations = relations(callAttempts, ({ one }) => ({
   answeredByMember: one(teamMembers, {
     fields: [callAttempts.answeredBy],
     references: [teamMembers.id],
+  }),
+}));
+
+export const magicLinkTokensRelations = relations(magicLinkTokens, ({ one }) => ({
+  client: one(clients, {
+    fields: [magicLinkTokens.clientId],
+    references: [clients.id],
   }),
 }));

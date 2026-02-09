@@ -23,6 +23,7 @@ export * from './api-usage';
 export * from './api-usage-daily';
 export * from './api-usage-monthly';
 export * from './usage-alerts';
+export * from './magic-link-tokens';
 
 // Auth tables (NextAuth)
 export * from './auth';
