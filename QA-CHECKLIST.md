@@ -2042,3 +2042,73 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] Routes registered: `/admin/clients/[id]/knowledge`, `/admin/clients/[id]/knowledge/new`, `/admin/clients/[id]/knowledge/[entryId]`
 - [ ] No regressions in existing routes
+
+---
+
+## Phase 15c: AI Integration with Knowledge Base
+
+### AI Response Service (openai.ts)
+- [ ] `generateAIResponse` accepts optional `clientId` parameter
+- [ ] When `clientId` is provided, knowledge context is included in the AI prompt
+- [ ] Relevant knowledge entries are searched based on the incoming message
+- [ ] AI uses `gpt-4o-mini` model
+- [ ] Existing escalation triggers still work (pricing, complaints, human requests)
+- [ ] Conversation length escalation (6+ messages) still triggers
+
+### Knowledge-Aware Response Handler (knowledge-ai.ts)
+- [ ] `generateKnowledgeAwareResponse` fetches client, lead, and conversation history
+- [ ] Knowledge context is built and included in the system prompt
+- [ ] Relevant entries (top 3) are highlighted in the prompt
+- [ ] SMS-appropriate response length (1-3 sentences)
+- [ ] Graceful error handling returns fallback message on AI failure
+
+### Incoming SMS Handler Integration
+- [ ] `handleIncomingSMS` passes `client.id` to `generateAIResponse`
+- [ ] AI responses now reflect knowledge base content
+- [ ] Existing SMS flow (opt-out, blocking, hot intent, escalation) unaffected
+
+### Knowledge Preview Page
+- [ ] Navigate to `/admin/clients/[id]/knowledge/preview`
+- [ ] Page requires admin authentication (non-admins redirected)
+- [ ] Left panel shows full knowledge context (what AI sees)
+- [ ] Right panel shows test chat interface
+- [ ] Client business name displayed in header
+- [ ] "Back" button links to knowledge base page
+
+### Preview Chat Component
+- [ ] Chat interface renders with placeholder text when empty
+- [ ] User messages appear on the right (blue background)
+- [ ] AI responses appear on the left (gray background)
+- [ ] "Thinking..." animation shows while waiting for response
+- [ ] Enter key sends the message
+- [ ] Send button disabled when input is empty or loading
+- [ ] Conversation history is maintained across messages in the session
+- [ ] Error responses display gracefully
+
+### Test API Endpoint
+- [ ] POST `/api/admin/clients/[id]/knowledge/test` is accessible
+- [ ] Returns 403 for non-admin users
+- [ ] Returns 404 for invalid client ID
+- [ ] Returns 400 for missing/invalid message
+- [ ] Includes knowledge context and relevant entries in AI prompt
+- [ ] Returns AI-generated response in JSON `{ response: string }`
+- [ ] Conversation history from chat is sent and used for context
+
+### Knowledge Base Page Link
+- [ ] "Test AI" button visible in knowledge base page header
+- [ ] Button links to `/admin/clients/[id]/knowledge/preview`
+- [ ] Button uses outline variant
+
+### End-to-End Test Scenarios
+- [ ] Add knowledge entries for a client (services, pricing, FAQ)
+- [ ] Go to Knowledge Base -> Test AI
+- [ ] Ask "What services do you offer?" — AI uses knowledge base entries
+- [ ] Ask "How much does a roof repair cost?" — AI references pricing entries
+- [ ] Ask "What areas do you serve?" — AI references service area entry
+- [ ] Ask a question with no matching knowledge — AI offers to have someone follow up
+- [ ] Multi-turn conversation maintains context
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/admin/clients/[id]/knowledge/preview`, `/api/admin/clients/[id]/knowledge/test`
+- [ ] No regressions in existing routes
