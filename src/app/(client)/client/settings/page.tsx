@@ -38,6 +38,19 @@ export default async function ClientSettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <Card className="border-red-200">
+        <CardHeader>
+          <CardTitle className="text-red-600">Danger Zone</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="destructive">
+            <Link href="/client/cancel">
+              Cancel Subscription
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
