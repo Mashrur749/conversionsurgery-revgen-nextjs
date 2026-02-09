@@ -44,6 +44,8 @@ export * from './review-sources';
 export * from './review-metrics';
 export * from './response-templates';
 export * from './review-responses';
+export * from './calendar-integrations';
+export * from './calendar-events';
 
 // Auth tables (NextAuth)
 export * from './auth';
