@@ -671,3 +671,54 @@ _One integrated manual test pass covering the critical happy paths._
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] All 60 tables recognized by Drizzle (verify in `db:generate` output)
+
+---
+
+## Part 22: Feature Flags & Configuration (01E)
+
+### Type Definitions
+- [ ] `src/types/client.ts` exports `ClientFeatureFlags` interface
+- [ ] Interface includes all 15 boolean flags + `aiAgentMode` enum + `preferredLanguage` string
+- [ ] `voiceMode` typed as `'always' | 'after_hours' | 'overflow'`
+- [ ] `aiAgentMode` typed as `'off' | 'assist' | 'autonomous'`
+
+### Feature Check Helper (`src/lib/features/check-feature.ts`)
+- [ ] `FeatureFlag` type covers all 14 feature flags (missedCallSms through multiLanguage)
+- [ ] `featureToColumn` maps each FeatureFlag to the correct `clients` column name
+- [ ] `isFeatureEnabled(clientId, feature)` returns `true` when flag is true in DB
+- [ ] `isFeatureEnabled(clientId, feature)` returns `false` when flag is false or client not found
+- [ ] `getEnabledFeatures(clientId, features)` returns a Record with correct boolean for each requested flag
+- [ ] `requireFeature(clientId, feature)` resolves when flag is true
+- [ ] `requireFeature(clientId, feature)` throws Error with feature name when flag is false
+- [ ] `requireFeature(clientId, feature, customMsg)` throws with custom message when flag is false
+
+### API Schema Update (`/api/admin/clients/[id]` PATCH)
+- [ ] Zod schema accepts all 14 boolean feature flags as optional booleans
+- [ ] Zod schema accepts `aiAgentMode` as optional enum `'off' | 'assist' | 'autonomous'`
+- [ ] Zod schema accepts `preferredLanguage` as optional string (max 10 chars)
+- [ ] PATCH with `{ missedCallSmsEnabled: false }` → updates DB → returns updated client
+- [ ] PATCH with `{ aiAgentMode: 'autonomous' }` → updates DB → returns updated client
+- [ ] PATCH with `{ aiAgentMode: 'invalid' }` → returns 400 validation error
+
+### Feature Toggles Panel (Admin UI)
+- [ ] Feature Toggles card appears on `/admin/clients/[id]` page
+- [ ] Card has 7 sections: Core SMS, AI Agent, Voice AI, Automation, Integrations, Reputation, Communication
+- [ ] Each section has uppercase tracking-wide header label
+- [ ] Each toggle shows label, description, and Switch component
+- [ ] AI Agent Mode has Select dropdown with Off/Assist/Autonomous options
+- [ ] Toggling a switch updates local state immediately (optimistic UI)
+- [ ] "Save Feature Settings" button sends PATCH to API
+- [ ] Success message "Features updated successfully" shown on save
+- [ ] Error message shown on API failure
+- [ ] Page refreshes after successful save (router.refresh)
+
+### Feature Status Display (Admin UI)
+- [ ] Feature Status card appears on `/admin/clients/[id]` page (above toggles)
+- [ ] Shows "X of 14 enabled" count in header
+- [ ] 14 feature items in 2/3 column grid (responsive)
+- [ ] Enabled features show green background, green icon, "Enabled" text
+- [ ] Disabled features show gray background, gray icon, "Disabled" text
+- [ ] Each feature has its own Lucide icon (Phone, Bot, Brain, Mic, etc.)
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors after all feature flag changes
