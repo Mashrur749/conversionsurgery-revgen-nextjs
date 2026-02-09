@@ -449,3 +449,115 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] `Compiled successfully` in build output
 - [ ] No new TypeScript warnings related to business-hours, call-attempts, or ring-group
+
+## 08-hot-transfer-webhooks-ui
+
+### Ring Connect Webhook (src/app/api/webhooks/twilio/ring-connect/route.ts)
+- [ ] File exists at `src/app/api/webhooks/twilio/ring-connect/route.ts`
+- [ ] Exports `POST` handler
+- [ ] Reads `attemptId` and `leadPhone` from query params
+- [ ] Returns TwiML error message when `attemptId` is missing
+- [ ] Fetches call attempt record from database by `attemptId`
+- [ ] Returns TwiML error when call attempt not found
+- [ ] Queries active team members with `receiveHotTransfers = true`, ordered by priority
+- [ ] Returns "no one available" TwiML when no team members found
+- [ ] Generates TwiML with `<Say voice="alice">Please hold...</Say>`
+- [ ] Generates `<Dial>` with 25-second timeout and ring-result action callback
+- [ ] Sets `callerId` to `leadPhone` on dial
+- [ ] Adds `<Number>` for each team member with member-answered status callback
+- [ ] Appends fallback "no one available" `<Say>` after `<Dial>`
+- [ ] Returns response with `Content-Type: text/xml` header
+- [ ] Uses `getDb()` per-request (not cached instance)
+
+### Member Answered Webhook (src/app/api/webhooks/twilio/member-answered/route.ts)
+- [ ] File exists at `src/app/api/webhooks/twilio/member-answered/route.ts`
+- [ ] Exports `POST` handler
+- [ ] Reads `attemptId` and `memberId` from query params
+- [ ] Returns 'OK' when params are missing (no error)
+- [ ] Updates call attempt: sets `answeredBy`, `answeredAt`, `status: 'answered'`
+- [ ] Returns 'OK' when call attempt update returns no rows
+- [ ] Fetches answering member details from `teamMembers`
+- [ ] Fetches all other active hot-transfer team members for the client
+- [ ] Fetches lead details for display name
+- [ ] Fetches client details for Twilio number
+- [ ] Sends SMS notification to OTHER team members (skips answering member)
+- [ ] SMS notification includes answering member name and lead display name
+- [ ] Clears `actionRequired` and `actionRequiredReason` on the lead
+- [ ] Uses `formatPhoneNumber()` for lead display when no name available
+- [ ] Uses `getDb()` per-request (not cached instance)
+
+### Ring Result Webhook (src/app/api/webhooks/twilio/ring-result/route.ts)
+- [ ] File exists at `src/app/api/webhooks/twilio/ring-result/route.ts`
+- [ ] Exports `POST` handler
+- [ ] Reads `attemptId` from query params
+- [ ] Reads `DialCallStatus` from form data
+- [ ] Returns TwiML hangup when `attemptId` is missing
+- [ ] Fetches call attempt record from database
+- [ ] Returns TwiML hangup when call attempt not found
+- [ ] Updates call attempt status to 'answered' when `DialCallStatus` is 'completed'
+- [ ] Updates call attempt status to 'no-answer' for other statuses
+- [ ] Sets `endedAt` timestamp on call attempt
+- [ ] Calls `handleNoAnswer()` when call was NOT completed or answered
+- [ ] Passes correct `leadId`, `clientId`, `leadPhone`, `twilioNumber` to `handleNoAnswer`
+- [ ] Returns TwiML hangup response
+- [ ] Uses `getDb()` per-request (not cached instance)
+
+### Business Hours API - GET (src/app/api/business-hours/route.ts)
+- [ ] `GET /api/business-hours` endpoint exists
+- [ ] Returns 401 when not authenticated
+- [ ] Returns 403 when no client resolved
+- [ ] Accepts `clientId` query param (falls back to `getClientId()`)
+- [ ] Returns `{ hours: [...] }` with hours ordered by `dayOfWeek`
+- [ ] Works for both admin (with query param) and non-admin (via session)
+
+### Business Hours Editor (src/app/(dashboard)/settings/business-hours-editor.tsx)
+- [ ] File exists at `src/app/(dashboard)/settings/business-hours-editor.tsx`
+- [ ] Marked as `'use client'` component
+- [ ] Accepts `clientId` prop
+- [ ] Fetches hours from `GET /api/business-hours?clientId=...` on mount
+- [ ] Shows "Loading..." while fetching
+- [ ] Defaults to Mon-Fri 08:00-18:00 when no hours exist
+- [ ] Displays all 7 days (Sunday through Saturday)
+- [ ] Each day has a `Switch` toggle for isOpen
+- [ ] When open: shows time inputs for open/close times
+- [ ] When closed: shows "Closed" text
+- [ ] "Save Hours" button calls `PUT /api/business-hours`
+- [ ] Button shows "Saving..." while saving
+- [ ] Button is disabled while saving
+
+### Settings Page Update (src/app/(dashboard)/settings/page.tsx)
+- [ ] Imports `BusinessHoursEditor` from `./business-hours-editor`
+- [ ] "Business Hours" card renders spanning full width (`md:col-span-2`)
+- [ ] Card description reads "Set when hot transfers should connect calls immediately"
+- [ ] `BusinessHoursEditor` receives `clientId` prop from server component
+- [ ] Business Hours card appears AFTER Team Members card
+
+### Hot Intent Integration (src/lib/automations/incoming-sms.ts)
+- [ ] Imports `detectHotIntent` from `@/lib/services/openai`
+- [ ] Imports `isWithinBusinessHours` from `@/lib/services/business-hours`
+- [ ] Imports `initiateRingGroup` from `@/lib/services/ring-group`
+- [ ] Hot intent check happens BEFORE AI response generation (step 6.5)
+- [ ] Calls `detectHotIntent(messageBody)` on every incoming message
+- [ ] On hot intent + within business hours: calls `initiateRingGroup()` with lead/client data
+- [ ] On successful ring group: sends "We're calling you right now" SMS to lead
+- [ ] On successful ring group: logs 'hot_transfer' conversation
+- [ ] On successful ring group: returns `{ processed: true, hotTransfer: true, callSid }`
+- [ ] On hot intent + outside hours: sends "outside business hours" SMS to lead
+- [ ] On hot intent + outside hours: calls `notifyTeamForEscalation()` with reason "Hot intent - outside business hours"
+- [ ] On hot intent + outside hours: returns `{ processed: true, hotTransfer: false, outsideHours: true }`
+- [ ] Non-hot-intent messages proceed to normal AI processing (unchanged behavior)
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Go to Settings page and verify "Business Hours" section appears at bottom
+3. Toggle days on/off with Switch — verify time inputs appear/disappear
+4. Set business hours and click "Save Hours" — verify save completes
+5. Refresh page — verify hours persist (loaded from API)
+6. Verify webhook routes registered in build output: `ring-connect`, `member-answered`, `ring-result`
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] `Compiled successfully` in build output
+- [ ] Routes registered: `/api/webhooks/twilio/ring-connect`, `/api/webhooks/twilio/member-answered`, `/api/webhooks/twilio/ring-result`
+- [ ] Route registered: `/api/business-hours` (GET + PUT)
+- [ ] No new TypeScript warnings related to hot-transfer webhooks or business hours UI
