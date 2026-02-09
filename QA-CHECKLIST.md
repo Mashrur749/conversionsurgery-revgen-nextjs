@@ -1284,3 +1284,106 @@
 - [ ] Service file exists: `src/lib/services/magic-link.ts`
 - [ ] Auth helper exists: `src/lib/client-auth.ts`
 - [ ] No unused imports or variables
+
+## 17-crm-conversations
+
+### Schema: Conversation Mode on Leads
+- [ ] `leads` table has `conversation_mode` column (varchar 10, default 'ai')
+- [ ] `leads` table has `human_takeover_at` column (timestamp, nullable)
+- [ ] `leads` table has `human_takeover_by` column (varchar 255, nullable)
+- [ ] New columns exported via `Lead` type from `src/db/schema/leads.ts`
+
+### Conversations List Page (`/client/conversations`)
+- [ ] Page exists at `src/app/(client)/client/conversations/page.tsx`
+- [ ] Redirects to `/link-expired` when no client session
+- [ ] Lists up to 50 leads for the authenticated client, ordered by `createdAt` desc
+- [ ] Each lead shows name (or phone), conversation mode badge (AI/Human/Paused)
+- [ ] Shows last message preview from conversations table (uses `content` column)
+- [ ] Shows message count per lead
+- [ ] Shows time-ago for last message (or lead creation date if no messages)
+- [ ] Red left border on leads with `actionRequired = true`
+- [ ] Mode legend badges shown in header (AI blue, Human green)
+- [ ] Empty state: "No conversations yet" when no leads exist
+- [ ] Each lead card links to `/client/conversations/[id]`
+
+### Conversation Detail Page (`/client/conversations/[id]`)
+- [ ] Page exists at `src/app/(client)/client/conversations/[id]/page.tsx`
+- [ ] Redirects to `/link-expired` when no client session
+- [ ] Returns 404 for leads not belonging to the authenticated client
+- [ ] Uses Next.js 16 async params pattern (`Promise<{ id: string }>`)
+- [ ] Fetches messages ordered by `createdAt` ascending
+- [ ] Passes lead and messages to `ConversationView` client component
+
+### Conversation View Component
+- [ ] File exists at `src/app/(client)/client/conversations/[id]/conversation-view.tsx`
+- [ ] Marked as `'use client'` component
+- [ ] Header shows lead name (or phone) with back arrow link to `/client/conversations`
+- [ ] Shows conversation mode badge (AI blue, Human green)
+- [ ] "Take Over" button visible in AI mode
+- [ ] "Hand Back to AI" button visible in Human mode
+- [ ] Messages displayed as chat bubbles: outbound right (blue), inbound left (gray)
+- [ ] AI messages marked with "AI" prefix in timestamp
+- [ ] Messages auto-scroll to bottom on load and new messages
+- [ ] In Human mode: text input and Send button visible
+- [ ] In AI mode: info card "AI is handling this conversation" shown instead of input
+- [ ] Send button disabled while sending or when input is empty
+- [ ] Enter key triggers send (without Shift)
+
+### Takeover API (`POST /api/client/conversations/[id]/takeover`)
+- [ ] Route exists at `src/app/api/client/conversations/[id]/takeover/route.ts`
+- [ ] Returns 401 when no `clientSessionId` cookie
+- [ ] Uses Next.js 16 async params and `await cookies()`
+- [ ] Sets `conversationMode` to `'human'` on the lead
+- [ ] Sets `humanTakeoverAt` to current timestamp
+- [ ] Sets `humanTakeoverBy` to `'client'`
+- [ ] Sets `actionRequired` to `false`
+- [ ] Only updates leads matching both `id` and `clientId`
+- [ ] Returns `{ success: true }`
+
+### Handback API (`POST /api/client/conversations/[id]/handback`)
+- [ ] Route exists at `src/app/api/client/conversations/[id]/handback/route.ts`
+- [ ] Returns 401 when no `clientSessionId` cookie
+- [ ] Uses Next.js 16 async params and `await cookies()`
+- [ ] Sets `conversationMode` to `'ai'` on the lead
+- [ ] Sets `humanTakeoverAt` to `null`
+- [ ] Sets `humanTakeoverBy` to `null`
+- [ ] Only updates leads matching both `id` and `clientId`
+- [ ] Returns `{ success: true }`
+
+### Send Message API (`POST /api/client/conversations/[id]/send`)
+- [ ] Route exists at `src/app/api/client/conversations/[id]/send/route.ts`
+- [ ] Returns 401 when no `clientSessionId` cookie
+- [ ] Returns 400 when message is empty or missing
+- [ ] Returns 404 when lead not found or doesn't belong to client
+- [ ] Returns 400 when client has no Twilio number configured
+- [ ] Sends SMS via `sendSMS(lead.phone, client.twilioNumber, message)`
+- [ ] Saves conversation record with `direction: 'outbound'`, `messageType: 'contractor_response'`
+- [ ] Returns `{ message: { id, direction, content, messageType, createdAt } }`
+- [ ] Uses `getDb()` per-request pattern
+- [ ] Request body typed as `{ message?: string }` (no `unknown` errors)
+
+### Incoming SMS Human Mode Check
+- [ ] `src/lib/automations/incoming-sms.ts` checks `lead.conversationMode === 'human'` after logging inbound message
+- [ ] When in human mode: returns `{ processed: true, action: 'human_mode_saved' }` without AI processing
+- [ ] Inbound message is still logged to conversations table even in human mode
+- [ ] AI response, hot intent detection, and escalation logic are skipped in human mode
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Access client dashboard via magic link (`/d/<token>`)
+3. Click "Conversations" in navigation — verify list page loads
+4. Verify leads display with name/phone, mode badges, message counts, and time ago
+5. Click into a conversation — verify message bubbles display correctly
+6. Outbound messages should appear on the right (blue), inbound on the left (gray)
+7. Click "Take Over" — verify mode badge changes to "Human" and text input appears
+8. Type a message and press Enter or click Send — verify message appears in chat
+9. Click "Hand Back to AI" — verify mode changes back to "AI" and input disappears
+10. Verify back arrow navigation returns to conversations list
+11. Verify conversations list shows correct mode for the lead after takeover/handback
+12. Send an SMS to the client's Twilio number while lead is in human mode — verify AI does NOT auto-respond
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/client/conversations`, `/client/conversations/[id]`
+- [ ] API routes registered: `/api/client/conversations/[id]/takeover`, `/api/client/conversations/[id]/handback`, `/api/client/conversations/[id]/send`
+- [ ] No unused imports or variables
