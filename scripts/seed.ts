@@ -473,6 +473,56 @@ async function seedSystemSettings() {
 }
 
 // ============================================
+// 5. OVERAGE PRICING
+// ============================================
+
+const OVERAGE_PRICING = [
+  {
+    resource: 'leads',
+    pricePerUnit: 50,
+    unit: 'lead',
+    description: '$0.50 per additional lead',
+  },
+  {
+    resource: 'messages',
+    pricePerUnit: 3,
+    unit: 'message',
+    description: '$0.03 per additional message',
+  },
+  {
+    resource: 'team_members',
+    pricePerUnit: 2000,
+    unit: 'seat',
+    description: '$20.00 per additional team member',
+  },
+  {
+    resource: 'phone_numbers',
+    pricePerUnit: 1500,
+    unit: 'number',
+    description: '$15.00 per additional phone number',
+  },
+  {
+    resource: 'voice_minutes',
+    pricePerUnit: 15,
+    unit: 'minute',
+    description: '$0.15 per voice AI minute',
+  },
+];
+
+async function seedOveragePricing() {
+  console.log('Seeding overage pricing...');
+
+  // This would go into a dedicated table or plan configuration
+  // For now, log what should be configured in Stripe
+  console.log('  Configure these overages in Stripe:');
+  for (const overage of OVERAGE_PRICING) {
+    console.log(`    - ${overage.resource}: ${overage.description}`);
+  }
+
+  console.log('  ✓ Overage pricing noted');
+}
+
+// ============================================
 // MAIN SEED FUNCTION
 // ============================================
 
@@ -488,6 +538,7 @@ export async function seed() {
     await seedFlowTemplates();
     await seedAdminUser();
     await seedSystemSettings();
+    await seedOveragePricing();
 
     console.log('');
     console.log('========================================');
