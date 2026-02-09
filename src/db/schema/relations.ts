@@ -21,6 +21,7 @@ import { knowledgeBase } from './knowledge-base';
 import { notificationPreferences } from './notification-preferences';
 import { jobs } from './jobs';
 import { revenueEvents } from './revenue-events';
+import { mediaAttachments } from './media-attachments';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -47,6 +48,7 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   notificationPreferences: many(notificationPreferences),
   jobs: many(jobs),
   revenueEvents: many(revenueEvents),
+  mediaAttachments: many(mediaAttachments),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -75,9 +77,10 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   flowExecutions: many(flowExecutions),
   suggestedActions: many(suggestedActions),
   jobs: many(jobs),
+  mediaAttachments: many(mediaAttachments),
 }));
 
-export const conversationsRelations = relations(conversations, ({ one }) => ({
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
   lead: one(leads, {
     fields: [conversations.leadId],
     references: [leads.id],
@@ -86,6 +89,7 @@ export const conversationsRelations = relations(conversations, ({ one }) => ({
     fields: [conversations.clientId],
     references: [clients.id],
   }),
+  mediaAttachments: many(mediaAttachments),
 }));
 
 export const scheduledMessagesRelations = relations(
@@ -320,4 +324,20 @@ export const jobsRelations = relations(jobs, ({ one, many }) => ({
 export const revenueEventsRelations = relations(revenueEvents, ({ one }) => ({
   job: one(jobs, { fields: [revenueEvents.jobId], references: [jobs.id] }),
   client: one(clients, { fields: [revenueEvents.clientId], references: [clients.id] }),
+}));
+
+// Media Attachments
+export const mediaAttachmentsRelations = relations(mediaAttachments, ({ one }) => ({
+  client: one(clients, {
+    fields: [mediaAttachments.clientId],
+    references: [clients.id],
+  }),
+  lead: one(leads, {
+    fields: [mediaAttachments.leadId],
+    references: [leads.id],
+  }),
+  message: one(conversations, {
+    fields: [mediaAttachments.messageId],
+    references: [conversations.id],
+  }),
 }));
