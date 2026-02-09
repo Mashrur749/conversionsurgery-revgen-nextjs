@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { updateMonthlySummaries } from '@/lib/services/usage-tracking';
 import { checkAllClientAlerts } from '@/lib/services/usage-alerts';
 import { scoreClientLeads } from '@/lib/services/lead-scoring';
-import { getDb, clients } from '@/db';
-import { eq } from 'drizzle-orm';
+import { syncAllReviews, checkAndAlertNegativeReviews } from '@/lib/services/review-monitoring';
+import { getDb, clients, reviewSources } from '@/db';
+import { eq, and, or, isNull, lt } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -37,6 +38,48 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('Usage tracking cron error:', error);
         results.usageTracking = { error: 'Failed' };
+      }
+    }
+
+    // Hourly: sync reviews and alert on negative reviews
+    if (now.getUTCMinutes() < 10) {
+      try {
+        const db = getDb();
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+        const sourcesToSync = await db
+          .select({ clientId: reviewSources.clientId })
+          .from(reviewSources)
+          .where(
+            and(
+              eq(reviewSources.isActive, true),
+              or(
+                isNull(reviewSources.lastFetchedAt),
+                lt(reviewSources.lastFetchedAt, oneHourAgo)
+              )
+            )
+          )
+          .groupBy(reviewSources.clientId);
+
+        let synced = 0;
+        let alerts = 0;
+
+        for (const { clientId } of sourcesToSync) {
+          if (!clientId) continue;
+          try {
+            await syncAllReviews(clientId);
+            alerts += await checkAndAlertNegativeReviews(clientId);
+            synced++;
+          } catch (err) {
+            console.error(`Error syncing reviews for client ${clientId}:`, err);
+          }
+        }
+
+        console.log(`[Review Cron] Synced ${synced} clients, sent ${alerts} alerts`);
+        results.reviewSync = { success: true, synced, alerts };
+      } catch (error) {
+        console.error('Review sync cron error:', error);
+        results.reviewSync = { error: 'Failed' };
       }
     }
 
