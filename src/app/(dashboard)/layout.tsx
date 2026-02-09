@@ -31,6 +31,7 @@ const adminNavItems = [
   { group: 'Configuration', items: [
     { href: '/admin/phone-numbers', label: 'Phone Numbers' },
     { href: '/admin/twilio', label: 'Twilio Settings' },
+    { href: '/admin/voice-ai', label: 'Voice AI' },
   ]},
 ];
 
