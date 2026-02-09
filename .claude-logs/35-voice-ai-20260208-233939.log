@@ -1,0 +1,46 @@
+All done. Here's a summary of everything implemented:
+
+## Phase 35: Voice AI - Complete
+
+### 8 Commits Made
+
+| # | Commit | Description |
+|---|--------|-------------|
+| 1 | `adc3918` | Voice configuration schema (voiceCalls table + client voice fields) |
+| 2 | `367edef` | Voice AI webhook handler with business hours routing |
+| 3 | `fb51884` | AI conversation handler with OpenAI speech processing |
+| 4 | `cdc4485` | Transfer and dial-complete handlers for call routing |
+| 5 | `e181038` | Call summary service with AI summarization and SMS notification |
+| 6 | `14d4665` | Voice settings UI component + voice fields in client PATCH API |
+| 7 | `b95ff32` | Voice call history component, API endpoint, and admin page |
+| 8 | `6843698` | QA test steps appended to QA-CHECKLIST.md |
+
+### Files Created/Modified (14 files)
+
+**Schema** (2 files):
+- `src/db/schema/voice-calls.ts` - New `voiceCalls` table
+- `src/db/schema/clients.ts` - Added 5 voice columns
+- `src/db/schema/index.ts` - Export `voice-calls`
+
+**Webhook Routes** (4 files):
+- `src/app/api/webhooks/twilio/voice/ai/route.ts` - Main voice AI entry point
+- `src/app/api/webhooks/twilio/voice/ai/gather/route.ts` - AI conversation loop
+- `src/app/api/webhooks/twilio/voice/ai/transfer/route.ts` - Call transfer/voicemail
+- `src/app/api/webhooks/twilio/voice/ai/dial-complete/route.ts` - Dial outcome handler
+
+**Services** (1 file):
+- `src/lib/services/voice-summary.ts` - AI summary + SMS notification
+
+**API** (1 file):
+- `src/app/api/admin/clients/[id]/voice-calls/route.ts` - Call history endpoint
+- `src/app/api/admin/clients/[id]/route.ts` - Updated with voice fields in schema
+
+**UI** (3 files):
+- `src/components/settings/voice-settings.tsx` - Enable/mode/greeting settings
+- `src/components/voice/call-history.tsx` - Call list with transcripts
+- `src/app/(dashboard)/admin/voice-ai/page.tsx` - Admin page
+
+**Navigation**:
+- `src/app/(dashboard)/layout.tsx` - Added "Voice AI" to admin nav
+
+### Build: 0 TypeScript errors, 6 new routes registered

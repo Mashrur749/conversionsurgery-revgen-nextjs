@@ -14,6 +14,15 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
+HEARTBEAT_PID=""
+cleanup() {
+  if [ -n "$HEARTBEAT_PID" ]; then
+    kill "$HEARTBEAT_PID" 2>/dev/null
+    wait "$HEARTBEAT_PID" 2>/dev/null
+  fi
+}
+trap cleanup EXIT INT TERM
+
 # Get current spec
 if [ -f "$PROGRESS_FILE" ]; then
   current=$(cat "$PROGRESS_FILE")
@@ -31,6 +40,22 @@ echo "╚═══════════════════════�
 echo -e "${NC}"
 echo "Specs: $total | Starting from: $current"
 echo ""
+
+heartbeat() {
+  local spec_name="$1"
+  while true; do
+    sleep 60
+    local last_commit=$(git log --oneline -1 2>/dev/null)
+    local changed=$(git diff --name-only 2>/dev/null | head -5 | tr '\n' ', ' | sed 's/,$//')
+    local staged=$(git diff --cached --name-only 2>/dev/null | head -5 | tr '\n' ', ' | sed 's/,$//')
+    echo ""
+    echo -e "${YELLOW}[$(date +%H:%M)] ♥ $spec_name${NC}"
+    echo -e "${YELLOW}  Last commit: $last_commit${NC}"
+    [ -n "$changed" ] && echo -e "${YELLOW}  Modified: $changed${NC}"
+    [ -n "$staged" ] && echo -e "${YELLOW}  Staged: $staged${NC}"
+    echo ""
+  done
+}
 
 run_spec() {
   local spec_file="$1"
@@ -66,6 +91,16 @@ while [ "$current" -le "$total" ]; do
   
   # Retry loop for rate limits
   while true; do
+    # Kill any previous heartbeat
+    if [ -n "$HEARTBEAT_PID" ]; then
+      kill "$HEARTBEAT_PID" 2>/dev/null
+      wait "$HEARTBEAT_PID" 2>/dev/null
+    fi
+
+    # Start heartbeat
+    heartbeat "$spec_name" &
+    HEARTBEAT_PID=$!
+
     run_spec "$spec_file" "$spec_name" "$log_file"
     exit_code=$?
     
@@ -104,6 +139,13 @@ while [ "$current" -le "$total" ]; do
     # Success or non-retryable error - move on
     break
   done
+
+  # Kill heartbeat after spec completes
+  if [ -n "$HEARTBEAT_PID" ]; then
+    kill "$HEARTBEAT_PID" 2>/dev/null
+    wait "$HEARTBEAT_PID" 2>/dev/null
+    HEARTBEAT_PID=""
+  fi
   
   echo ""
   echo -e "${GREEN}✓ Completed: $spec_name${NC}"
