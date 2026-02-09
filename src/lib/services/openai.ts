@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { buildKnowledgeContext, searchKnowledge } from './knowledge-base';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -54,7 +55,8 @@ export async function generateAIResponse(
   incomingMessage: string,
   businessName: string,
   ownerName: string,
-  conversationHistory: { role: 'user' | 'assistant'; content: string }[]
+  conversationHistory: { role: 'user' | 'assistant'; content: string }[],
+  clientId?: string
 ): Promise<AIResult> {
 
   // Check for immediate escalation triggers
@@ -80,32 +82,45 @@ export async function generateAIResponse(
     };
   }
 
-  const systemPrompt = `You are a helpful text assistant for ${businessName}, a remodeling contractor.
+  // Build knowledge context if clientId is provided
+  let knowledgeSection = '';
+  if (clientId) {
+    const knowledgeContext = await buildKnowledgeContext(clientId);
+    const relevantKnowledge = await searchKnowledge(clientId, incomingMessage);
 
-Your role is to:
-- Acknowledge inquiries warmly
-- Gather basic information (project type, address, timeline)
-- Keep conversations moving toward scheduling an estimate
+    if (knowledgeContext) {
+      knowledgeSection = `\n${knowledgeContext}`;
+    }
 
-You must NEVER:
-- Provide pricing or quotes (say "I'll have ${ownerName} get back to you with pricing details")
-- Make promises about timelines or availability
-- Handle complaints (say "${ownerName} will reach out to discuss this personally")
-- Schedule appointments (say "Let me have ${ownerName} reach out to find a time that works")
+    if (relevantKnowledge.length > 0) {
+      knowledgeSection += `\nMOST RELEVANT TO THIS QUESTION:\n${relevantKnowledge.map(k => `- ${k.title}: ${k.content}`).join('\n')}`;
+    }
+  }
 
-Keep responses SHORT (1-3 sentences max). Sound like a real text message, not a corporate bot.
-Ask ONE question at a time to keep the conversation going.
-Be friendly but professional.`;
+  const systemPrompt = `You are a helpful text assistant for ${businessName}.
+${knowledgeSection}
+
+GUIDELINES:
+- Be friendly, professional, and helpful
+- Answer questions using the business information provided above
+- If you don't have specific information, offer to have ${ownerName} follow up
+- Keep responses concise (1-3 sentences for simple questions)
+- For complex questions, provide helpful information and offer to schedule a call
+- Never make up information not provided above
+- If asked about pricing, refer to the pricing information or offer a free estimate
+- Always represent the business positively
+- Sound like a real text message, not a corporate bot
+- Ask ONE question at a time to keep the conversation going`;
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
-        ...conversationHistory.slice(-10), // Last 10 messages
+        ...conversationHistory.slice(-10),
         { role: 'user', content: incomingMessage },
       ],
-      max_tokens: 150,
+      max_tokens: 200,
       temperature: 0.7,
     });
 
