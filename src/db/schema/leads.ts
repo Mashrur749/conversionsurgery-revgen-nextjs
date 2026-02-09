@@ -44,6 +44,7 @@ export const leads = pgTable(
       lastAnalysis: string;
     }>(),
     temperature: varchar('temperature', { length: 10 }).default('warm'),
+    stripeCustomerId: varchar('stripe_customer_id', { length: 100 }),
     optedOut: boolean('opted_out').default(false),
     optedOutAt: timestamp('opted_out_at'),
     createdAt: timestamp('created_at').defaultNow(),

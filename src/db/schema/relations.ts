@@ -22,6 +22,8 @@ import { notificationPreferences } from './notification-preferences';
 import { jobs } from './jobs';
 import { revenueEvents } from './revenue-events';
 import { mediaAttachments } from './media-attachments';
+import { payments } from './payments';
+import { paymentReminders } from './payment-reminders';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -49,6 +51,7 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   jobs: many(jobs),
   revenueEvents: many(revenueEvents),
   mediaAttachments: many(mediaAttachments),
+  payments: many(payments),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -78,6 +81,7 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   suggestedActions: many(suggestedActions),
   jobs: many(jobs),
   mediaAttachments: many(mediaAttachments),
+  payments: many(payments),
 }));
 
 export const conversationsRelations = relations(conversations, ({ one, many }) => ({
@@ -117,7 +121,7 @@ export const appointmentsRelations = relations(appointments, ({ one }) => ({
   }),
 }));
 
-export const invoicesRelations = relations(invoices, ({ one }) => ({
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   lead: one(leads, {
     fields: [invoices.leadId],
     references: [leads.id],
@@ -126,6 +130,12 @@ export const invoicesRelations = relations(invoices, ({ one }) => ({
     fields: [invoices.clientId],
     references: [clients.id],
   }),
+  job: one(jobs, {
+    fields: [invoices.jobId],
+    references: [jobs.id],
+  }),
+  payments: many(payments),
+  reminders: many(paymentReminders),
 }));
 
 export const blockedNumbersRelations = relations(
@@ -324,6 +334,19 @@ export const jobsRelations = relations(jobs, ({ one, many }) => ({
 export const revenueEventsRelations = relations(revenueEvents, ({ one }) => ({
   job: one(jobs, { fields: [revenueEvents.jobId], references: [jobs.id] }),
   client: one(clients, { fields: [revenueEvents.clientId], references: [clients.id] }),
+}));
+
+// Payments
+export const paymentsRelations = relations(payments, ({ one, many }) => ({
+  client: one(clients, { fields: [payments.clientId], references: [clients.id] }),
+  lead: one(leads, { fields: [payments.leadId], references: [leads.id] }),
+  invoice: one(invoices, { fields: [payments.invoiceId], references: [invoices.id] }),
+  reminders: many(paymentReminders),
+}));
+
+export const paymentRemindersRelations = relations(paymentReminders, ({ one }) => ({
+  payment: one(payments, { fields: [paymentReminders.paymentId], references: [payments.id] }),
+  invoice: one(invoices, { fields: [paymentReminders.invoiceId], references: [invoices.id] }),
 }));
 
 // Media Attachments

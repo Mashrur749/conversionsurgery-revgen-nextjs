@@ -37,6 +37,8 @@ export * from './cancellation-requests';
 export * from './jobs';
 export * from './revenue-events';
 export * from './media-attachments';
+export * from './payments';
+export * from './payment-reminders';
 
 // Auth tables (NextAuth)
 export * from './auth';
