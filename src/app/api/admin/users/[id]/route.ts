@@ -21,19 +21,17 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
-  // Prevent demoting yourself
-  if (id === session.user.id) {
-    const body = (await request.json()) as Record<string, unknown>;
-    if (body.isAdmin === false) {
+  try {
+    const body = await request.json();
+
+    // Prevent demoting yourself
+    if (id === session.user.id && body.isAdmin === false) {
       return NextResponse.json(
         { error: 'Cannot remove your own admin access' },
         { status: 400 }
       );
     }
-  }
 
-  try {
-    const body = await request.json();
     const data = updateUserSchema.parse(body);
 
     const db = getDb();
