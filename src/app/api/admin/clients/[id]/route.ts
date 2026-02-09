@@ -49,6 +49,22 @@ const updateClientSchema = z.object({
   voiceGreeting: z.string().optional().or(z.null()),
   voiceVoiceId: z.string().optional().or(z.null()),
   voiceMaxDuration: z.number().min(30).max(600).optional(),
+  // Feature flags
+  missedCallSmsEnabled: z.boolean().optional(),
+  aiResponseEnabled: z.boolean().optional(),
+  aiAgentEnabled: z.boolean().optional(),
+  aiAgentMode: z.enum(['off', 'assist', 'autonomous']).optional(),
+  autoEscalationEnabled: z.boolean().optional(),
+  flowsEnabled: z.boolean().optional(),
+  leadScoringEnabled: z.boolean().optional(),
+  reputationMonitoringEnabled: z.boolean().optional(),
+  autoReviewResponseEnabled: z.boolean().optional(),
+  calendarSyncEnabled: z.boolean().optional(),
+  hotTransferEnabled: z.boolean().optional(),
+  paymentLinksEnabled: z.boolean().optional(),
+  photoRequestsEnabled: z.boolean().optional(),
+  multiLanguageEnabled: z.boolean().optional(),
+  preferredLanguage: z.string().max(10).optional(),
 });
 
 export async function PATCH(
