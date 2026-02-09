@@ -1760,3 +1760,71 @@
 - [ ] Routes registered: `/admin/flow-templates`, `/admin/flow-templates/[id]`, `/admin/flow-templates/[id]/push`
 - [ ] API routes registered: `/api/admin/flow-templates`, `/api/admin/flow-templates/[id]`, `/api/admin/flow-templates/[id]/publish`, `/api/admin/flow-templates/[id]/push`
 - [ ] No regressions in existing routes
+
+## 21-ai-flow-triggering
+
+### Signal Detection Service
+- [ ] `detectSignals()` accepts conversation history array and returns DetectedSignals
+- [ ] Returns all 10 boolean signal fields (readyToSchedule, wantsEstimate, etc.)
+- [ ] Returns confidence score (0-100) and rawSignals array
+- [ ] Uses GPT-4o-mini with JSON response format
+- [ ] Only analyzes last 10 messages for efficiency
+- [ ] Returns all-false defaults on error (does not throw)
+- [ ] `mapSignalsToFlows()` maps readyToSchedule to "Schedule Appointment"
+- [ ] `mapSignalsToFlows()` maps wantsEstimate to "Estimate Follow-up"
+- [ ] `mapSignalsToFlows()` maps satisfied to "Review Request"
+- [ ] `mapSignalsToFlows()` maps referralMention to "Referral Request"
+- [ ] `mapSignalsToFlows()` maps paymentMention to "Payment Reminder"
+
+### Flow Suggestion Service
+- [ ] `checkAndSuggestFlows()` detects signals and creates suggested_actions records
+- [ ] Skips when confidence < 60
+- [ ] Only matches flows with trigger='ai_suggested' and isActive=true
+- [ ] Does not create duplicate pending suggestions for same lead+flow
+- [ ] Sets 24-hour expiration on suggestions
+- [ ] Sends SMS approval to client owner when flow has approvalMode='ask_sms'
+- [ ] Approval SMS includes short suggestion ID (first 8 chars)
+- [ ] `handleApprovalResponse()` detects YES/NO + 8-char ID patterns
+- [ ] YES response sets status='approved', respondedBy='sms', starts flow
+- [ ] NO response sets status='rejected', respondedBy='sms'
+- [ ] Non-matching messages return { handled: false }
+
+### Flow Execution Service
+- [ ] `startFlowExecution()` resolves flow steps via flow-resolution service
+- [ ] Creates flow_executions record with status='active'
+- [ ] Executes first step immediately if delayMinutes=0
+- [ ] Schedules first step if delayMinutes > 0
+- [ ] Substitutes {leadName}, {businessName}, {ownerName} variables in messages
+- [ ] Creates flow_step_executions records with sent/failed/skipped status
+- [ ] Handles missing phone or message gracefully (skips step)
+
+### Incoming SMS Integration
+- [ ] Approval responses from client owner phone are intercepted before opt-out check
+- [ ] `handleApprovalResponse()` called when sender matches client.phone
+- [ ] Returns early with action result if approval was handled
+- [ ] `checkAndSuggestFlows()` fires asynchronously after AI response
+- [ ] Flow suggestion errors are caught and logged (do not break SMS handling)
+
+### Suggested Actions API
+- [ ] `GET /api/client/leads/{id}/suggestions` returns suggestions with flow name
+- [ ] Returns 401 if clientSessionId cookie is missing
+- [ ] Returns up to 10 suggestions ordered by createdAt desc
+- [ ] `POST /api/client/leads/{id}/suggestions` accepts approve/reject action
+- [ ] Returns 400 for missing suggestionId or invalid action
+- [ ] Approve sets status='approved', respondedBy='crm', starts flow execution
+- [ ] Reject sets status='rejected', respondedBy='crm'
+
+### Conversation View UI
+- [ ] Suggestions fetched on mount via /api/client/leads/{id}/suggestions
+- [ ] Only pending suggestions displayed
+- [ ] Each suggestion shows flow name and detection reason
+- [ ] "Send" button approves suggestion and removes from list
+- [ ] "Dismiss" button rejects suggestion and removes from list
+- [ ] Suggestions appear between messages and input area
+- [ ] Suggestions styled as blue cards (bg-blue-50, border-blue-200)
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] `Compiled successfully` in build output
+- [ ] Route registered: `/api/client/leads/[id]/suggestions`
+- [ ] No regressions in existing routes
