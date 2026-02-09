@@ -1490,3 +1490,176 @@
 - [ ] Routes registered: `/client/settings`, `/api/client/settings/summary`, `/api/cron/weekly-summary`
 - [ ] Service file exists: `src/lib/services/weekly-summary.ts`
 - [ ] No unused imports or variables
+
+## 19-flow-schema-templates
+
+### Schema: Flow Enums (src/db/schema/flow-enums.ts)
+- [ ] `flow_category` enum exists with values: missed_call, form_response, estimate, appointment, payment, review, referral, custom
+- [ ] `flow_trigger` enum exists with values: webhook, scheduled, manual, ai_suggested
+- [ ] `flow_approval` enum exists with values: auto, suggest, ask_sms
+- [ ] `flow_sync_mode` enum exists with values: inherit, override, detached
+
+### Schema: flow_templates Table (src/db/schema/flow-templates.ts)
+- [ ] `flow_templates` table exists with columns: id, name, slug (unique), description, category (enum)
+- [ ] Versioning columns: version (default 1), is_published (default false), published_at
+- [ ] Default columns: default_trigger (enum, default 'manual'), default_approval_mode (enum, default 'auto')
+- [ ] Metadata columns: usage_count (default 0), tags (JSONB string[])
+- [ ] Timestamps: created_at (defaultNow), updated_at (defaultNow)
+- [ ] Primary key uses `uuid_generate_v4()` default
+- [ ] Exported types: `FlowTemplate`, `NewFlowTemplate`
+
+### Schema: flow_template_steps Table
+- [ ] `flow_template_steps` table exists with columns: id, template_id (FK → flow_templates, cascade delete)
+- [ ] Step columns: step_number (integer, not null), name (varchar 100), delay_minutes (default 0)
+- [ ] Message column: message_template (text, not null)
+- [ ] Conditions: skip_conditions (JSONB with ifReplied, ifScheduled, ifPaid, custom fields)
+- [ ] Timestamp: created_at (defaultNow)
+- [ ] Exported types: `FlowTemplateStep`, `NewFlowTemplateStep`
+
+### Schema: flow_template_versions Table
+- [ ] `flow_template_versions` table exists with columns: id, template_id (FK → flow_templates, cascade delete), version (integer)
+- [ ] Snapshot column: snapshot (JSONB with name and steps array)
+- [ ] Metadata: change_notes (text), published_at (defaultNow), published_by (uuid)
+- [ ] Exported types: `FlowTemplateVersion`, `NewFlowTemplateVersion`
+
+### Schema: flows Table (src/db/schema/flows.ts)
+- [ ] `flows` table exists with columns: id, client_id (FK → clients, cascade delete)
+- [ ] Identity: name (varchar 100, not null), description, category (enum)
+- [ ] Template linking: template_id (FK → flow_templates, set null), template_version, sync_mode (enum, default 'inherit')
+- [ ] Trigger config: trigger (enum, not null, default 'manual'), approval_mode (enum, default 'auto')
+- [ ] AI conditions: ai_trigger_conditions (JSONB with signals, minConfidence, keywords)
+- [ ] Status: is_active (default true), priority (default 0)
+- [ ] Indexes: `flows_template_idx` on template_id, `flows_client_idx` on client_id
+- [ ] Exported types: `Flow`, `NewFlow`
+
+### Schema: flow_steps Table
+- [ ] `flow_steps` table exists with columns: id, flow_id (FK → flows, cascade delete)
+- [ ] Template linking: template_step_id (FK → flow_template_steps, set null)
+- [ ] Step config: step_number (not null), name (varchar 100)
+- [ ] Template fallback: use_template_delay (default true), custom_delay_minutes, use_template_message (default true), custom_message
+- [ ] Conditions: skip_conditions (JSONB), is_active (default true)
+- [ ] Exported types: `FlowStep`, `NewFlowStep`
+
+### Schema: flow_executions Table (src/db/schema/flow-executions.ts)
+- [ ] `flow_executions` table with: id, flow_id (set null), lead_id (cascade), client_id (cascade)
+- [ ] Status tracking: status (default 'active'), current_step (default 1), total_steps
+- [ ] Timing: started_at, completed_at, cancelled_at, cancel_reason, next_step_at
+- [ ] Trigger: triggered_by, triggered_by_user_id
+- [ ] Approval: approval_status, approval_requested_at, approval_responded_at, approved_by
+- [ ] Context: metadata (JSONB)
+- [ ] Indexes: flow_executions_lead_idx, flow_executions_status_idx, flow_executions_client_idx
+- [ ] Exported types: `FlowExecution`, `NewFlowExecution`
+
+### Schema: flow_step_executions Table
+- [ ] Table with: id, flow_execution_id (cascade), flow_step_id (set null), step_number (not null)
+- [ ] Status: status (default 'pending'), scheduled_at, executed_at
+- [ ] Message: message_content, message_sid (varchar 50)
+- [ ] Error handling: skip_reason, error (text), retry_count (default 0)
+- [ ] Exported types: `FlowStepExecution`, `NewFlowStepExecution`
+
+### Schema: suggested_actions Table
+- [ ] Table with: id, lead_id (cascade), client_id (cascade), flow_id (cascade)
+- [ ] Detection: detected_signal, confidence (0-100), reason, trigger_message_id
+- [ ] Status: status (default 'pending'), created_at, expires_at, responded_at, responded_by
+- [ ] Execution link: flow_execution_id (FK → flow_executions)
+- [ ] Indexes: suggested_actions_lead_idx, suggested_actions_status_idx
+- [ ] Exported types: `SuggestedAction`, `NewSuggestedAction`
+
+### Schema: Relations (src/db/schema/relations.ts)
+- [ ] `flowTemplatesRelations` defines: steps (many), versions (many), flows (many)
+- [ ] `flowTemplateStepsRelations` defines: template (one → flowTemplates)
+- [ ] `flowTemplateVersionsRelations` defines: template (one → flowTemplates)
+- [ ] `flowsRelations` defines: client (one), template (one), steps (many), executions (many), suggestedActions (many)
+- [ ] `flowStepsRelations` defines: flow (one), templateStep (one)
+- [ ] `flowExecutionsRelations` defines: flow (one), lead (one), client (one), stepExecutions (many)
+- [ ] `flowStepExecutionsRelations` defines: execution (one), step (one)
+- [ ] `suggestedActionsRelations` defines: lead (one), client (one), flow (one), flowExecution (one)
+- [ ] `clientsRelations` updated with: flows (many), flowExecutions (many), suggestedActions (many)
+- [ ] `leadsRelations` updated with: flowExecutions (many), suggestedActions (many)
+
+### Schema: Exports
+- [ ] All new tables exported from `src/db/schema/index.ts`
+- [ ] All enums exported from `src/db/schema/index.ts`
+- [ ] Types exported from `src/db/types.ts`: FlowTemplate, Flow, FlowStep, FlowExecution, FlowStepExecution, SuggestedAction (+ New* variants)
+
+### Flow Templates Service (src/lib/services/flow-templates.ts)
+- [ ] `createTemplate(input)` creates template + steps, returns template record
+- [ ] `updateTemplateStep(stepId, updates)` updates a single step
+- [ ] `addTemplateStep(templateId, step)` adds a step to template, returns new step
+- [ ] `deleteTemplateStep(stepId)` deletes step and renumbers remaining steps
+- [ ] `publishTemplate(templateId, changeNotes?, publishedBy?)` creates version snapshot and increments version
+- [ ] Publish updates: version, isPublished, publishedAt, updatedAt on template
+- [ ] `getTemplateUsage(templateId)` returns all flows using the template
+- [ ] `pushTemplateUpdate(templateId, options?)` pushes updates to client flows
+- [ ] Push skips detached flows with reason "Flow is detached from template"
+- [ ] Push skips flows already on latest version with reason "Already on latest version"
+- [ ] Push 'inherit' mode: deletes and recreates all steps from template
+- [ ] Push 'override' mode: only adds new steps from template, preserves custom overrides
+- [ ] Push updates usageCount on template
+- [ ] Push supports `dryRun` option (no DB writes)
+- [ ] `createFlowFromTemplate(clientId, templateId, options?)` creates flow + steps linked to template
+- [ ] Flow creation increments template usageCount
+- [ ] `createCustomFlow(clientId, input)` creates detached flow with custom steps
+- [ ] Custom flow steps use `useTemplateDelay: false`, `useTemplateMessage: false`
+- [ ] `detachFlowFromTemplate(flowId)` converts template values to custom values
+- [ ] Detach decrements template usageCount
+- [ ] All functions use `getDb()` per-request (not cached db instance)
+
+### Flow Resolution Service (src/lib/services/flow-resolution.ts)
+- [ ] `resolveFlowSteps(flowId)` returns resolved steps with template fallbacks
+- [ ] Returns correct `delayMinutes` from template when `useTemplateDelay` is true
+- [ ] Returns correct `messageTemplate` from template when `useTemplateMessage` is true
+- [ ] Returns custom values when `useTemplate*` flags are false
+- [ ] Returns `source: 'template'` when both delay and message come from template
+- [ ] Returns `source: 'custom'` when both are custom
+- [ ] Returns `source: 'mixed'` when one is template and one is custom
+- [ ] `getStepMessage(stepId, variables)` returns message with `{variable}` substitution
+- [ ] Variable substitution replaces all occurrences of `{key}` with value
+- [ ] `formatDelay(minutes)` returns 'Immediately' for 0
+- [ ] `formatDelay(minutes)` returns 'X hours before' for negative values
+- [ ] `formatDelay(minutes)` returns human-readable days/hours/minutes
+- [ ] All async functions use `getDb()` per-request
+
+### Seed Script (scripts/seed-flow-templates.ts)
+- [ ] Script defines 8 default templates: estimate-standard, estimate-aggressive, payment-friendly, payment-firm, review-simple, review-with-reminder, referral-standard, appointment-reminder
+- [ ] Each template has correct category assignment
+- [ ] Each template has appropriate step delays (e.g., estimate-standard: 0, 2d, 5d, 14d)
+- [ ] Skip conditions set correctly (ifReplied, ifScheduled, ifPaid)
+- [ ] Payment templates use `ask_sms` approval mode
+- [ ] Review/referral templates use `ai_suggested` trigger
+- [ ] Appointment template uses `scheduled` trigger with negative delay (-24h for day-before)
+- [ ] Script checks for existing templates by slug before inserting (idempotent)
+- [ ] Script publishes each template after creation
+- [ ] Script can be run with: `npx tsx scripts/seed-flow-templates.ts`
+
+### Manual Verification Steps
+1. Run `npm run build` — verify 0 TypeScript errors
+2. Verify schema files exist:
+   - `src/db/schema/flow-enums.ts`
+   - `src/db/schema/flow-templates.ts`
+   - `src/db/schema/flows.ts`
+   - `src/db/schema/flow-executions.ts`
+3. Verify service files exist:
+   - `src/lib/services/flow-templates.ts`
+   - `src/lib/services/flow-resolution.ts`
+4. Verify seed script exists: `scripts/seed-flow-templates.ts`
+5. Verify all new tables exported from `src/db/schema/index.ts`
+6. Verify all new types exported from `src/db/types.ts`
+7. Verify relations added to `src/db/schema/relations.ts` for all new tables
+8. After running migration:
+   - Run `npx tsx scripts/seed-flow-templates.ts`
+   - Verify 8 templates created with `SELECT * FROM flow_templates;`
+   - Verify template steps created with `SELECT * FROM flow_template_steps ORDER BY template_id, step_number;`
+   - Verify version snapshots with `SELECT * FROM flow_template_versions;`
+9. Test import paths resolve correctly:
+   ```ts
+   import { flowTemplates, flows, flowExecutions, suggestedActions } from '@/db';
+   import { createTemplate, publishTemplate } from '@/lib/services/flow-templates';
+   import { resolveFlowSteps, getStepMessage, formatDelay } from '@/lib/services/flow-resolution';
+   ```
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] `Compiled successfully` in build output
+- [ ] No new TypeScript warnings related to flow schemas or services
+- [ ] Existing routes still registered (no regressions)
