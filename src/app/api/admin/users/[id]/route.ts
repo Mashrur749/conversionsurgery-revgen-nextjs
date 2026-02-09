@@ -22,7 +22,7 @@ export async function PATCH(
   }
 
   try {
-    const body = await request.json();
+    const body = (await request.json()) as Record<string, unknown>;
 
     // Prevent demoting yourself
     if (id === session.user.id && body.isAdmin === false) {
