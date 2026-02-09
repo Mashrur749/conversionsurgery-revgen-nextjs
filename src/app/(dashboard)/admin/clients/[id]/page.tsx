@@ -168,6 +168,11 @@ export default async function ClientDetailPage({ params }: Props) {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button asChild variant="outline" className="w-full">
+                <Link href={`/admin/clients/${client.id}/revenue`}>
+                  Revenue Tracking
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
                 <Link href={`/admin/clients/${client.id}/knowledge`}>
                   Knowledge Base
                 </Link>
