@@ -166,7 +166,12 @@ export default async function ClientDetailPage({ params }: Props) {
             <CardHeader>
               <CardTitle>Actions</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-3">
+              <Button asChild variant="outline" className="w-full">
+                <Link href={`/admin/clients/${client.id}/knowledge`}>
+                  Knowledge Base
+                </Link>
+              </Button>
               <DeleteButton clientId={client.id} clientName={client.businessName} status={client.status} />
             </CardContent>
           </Card>
