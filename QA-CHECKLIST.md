@@ -2311,3 +2311,71 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] New routes registered: `/admin/clients/[id]/revenue`, `/api/admin/clients/[id]/jobs`, `/api/admin/clients/[id]/jobs/[jobId]`
 - [ ] No regressions in existing routes
+
+---
+
+## Phase 17b: Lead Scoring
+
+### Schema Changes
+- [ ] `leads` table has new columns: `score` (integer, default 50), `score_updated_at` (timestamp), `score_factors` (jsonb), `temperature` (varchar, default 'warm')
+- [ ] Migration file generated in `drizzle/` directory
+- [ ] Migration runs successfully against database
+
+### Lead Scoring Service (`src/lib/services/lead-scoring.ts`)
+- [ ] `quickScore()` detects high urgency signals (e.g., "asap", "emergency", "leak")
+- [ ] `quickScore()` detects budget signals (e.g., "how much", "too expensive", "budget ready")
+- [ ] `quickScore()` detects intent signals (e.g., "ready to book", "just looking")
+- [ ] `quickScore()` detects satisfaction and frustration signals
+- [ ] `calculateEngagement()` returns 0-25 based on response ratio and recency
+- [ ] `aiScore()` calls OpenAI gpt-4o-mini and returns structured score factors
+- [ ] `aiScore()` falls back to `quickScore()` on JSON parse failure
+- [ ] `scoreLead()` combines all factors into total score (0-100)
+- [ ] `scoreLead()` sets temperature: hot (>=70), warm (>=40), cold (<40)
+- [ ] `scoreLead()` updates lead record in database with score, temperature, scoreFactors, scoreUpdatedAt
+- [ ] `scoreClientLeads()` batch scores all leads for a client
+- [ ] `getLeadsByTemperature()` returns leads filtered by temperature, sorted by score desc
+
+### Webhook Integration (`src/lib/automations/incoming-sms.ts`)
+- [ ] Inbound SMS triggers `scoreLead()` with `useAI: false` (quick mode)
+- [ ] High-value signals (high_urgency, high_intent, budget_ready) trigger async AI scoring
+- [ ] Scoring errors are caught and logged, do not interrupt SMS flow
+
+### Scoring API Endpoints
+- [ ] `GET /api/leads/[id]/score` returns lead score, temperature, scoreFactors, scoreUpdatedAt
+- [ ] `GET /api/leads/[id]/score` returns 404 for non-existent lead
+- [ ] `GET /api/leads/[id]/score` returns 401 for unauthenticated requests
+- [ ] `POST /api/leads/[id]/score` recalculates score (with AI by default)
+- [ ] `GET /api/clients/[id]/leads/scores` returns score distribution by temperature with counts and avg scores
+- [ ] `GET /api/clients/[id]/leads/scores` returns top 10 hot leads
+- [ ] `POST /api/clients/[id]/leads/scores` batch rescores all client leads
+
+### LeadScoreBadge Component (`src/components/leads/lead-score-badge.tsx`)
+- [ ] Compact mode shows colored pill with icon and score number
+- [ ] Full mode shows card with temperature label, score, and 4-factor breakdown
+- [ ] Hot leads show red styling with Flame icon
+- [ ] Warm leads show yellow styling with Thermometer icon
+- [ ] Cold leads show blue styling with Snowflake icon
+- [ ] Tooltip on compact badge shows factor breakdown (urgency, budget, intent, engagement out of 25)
+- [ ] Signal tags displayed in full mode when present
+
+### Lead Score Distribution Component (`src/components/leads/lead-score-distribution.tsx`)
+- [ ] Temperature distribution bar shows proportional red/yellow/blue segments
+- [ ] Legend shows counts for each temperature category
+- [ ] Hot leads priority list shows name, phone, and score
+- [ ] Empty state shows "No scored leads yet" message
+
+### Leads List Page Integration (`src/app/(dashboard)/leads/page.tsx`)
+- [ ] Each lead row shows compact LeadScoreBadge next to status badge
+- [ ] Score badge appears for all leads with default score of 50 / warm
+- [ ] Badge tooltip works on hover showing score details
+
+### Daily Cron Job (`src/app/api/cron/route.ts`)
+- [ ] Lead scoring runs at midnight UTC (hour=0, minutes<10)
+- [ ] All active clients' leads are rescored in quick mode (no AI)
+- [ ] Cron result includes `leadScoring` with client count and leads scored
+- [ ] Errors are caught and logged, do not crash the cron handler
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/api/leads/[id]/score`, `/api/clients/[id]/leads/scores`
+- [ ] No regressions in existing routes
