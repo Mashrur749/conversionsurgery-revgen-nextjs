@@ -19,6 +19,8 @@ import { flows, flowSteps } from './flows';
 import { flowExecutions, flowStepExecutions, suggestedActions } from './flow-executions';
 import { knowledgeBase } from './knowledge-base';
 import { notificationPreferences } from './notification-preferences';
+import { jobs } from './jobs';
+import { revenueEvents } from './revenue-events';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -43,6 +45,8 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   suggestedActions: many(suggestedActions),
   knowledgeBase: many(knowledgeBase),
   notificationPreferences: many(notificationPreferences),
+  jobs: many(jobs),
+  revenueEvents: many(revenueEvents),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -70,6 +74,7 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   invoices: many(invoices),
   flowExecutions: many(flowExecutions),
   suggestedActions: many(suggestedActions),
+  jobs: many(jobs),
 }));
 
 export const conversationsRelations = relations(conversations, ({ one }) => ({
@@ -303,4 +308,16 @@ export const notificationPreferencesRelations = relations(notificationPreference
     fields: [notificationPreferences.clientId],
     references: [clients.id],
   }),
+}));
+
+// Jobs (Revenue Attribution)
+export const jobsRelations = relations(jobs, ({ one, many }) => ({
+  lead: one(leads, { fields: [jobs.leadId], references: [leads.id] }),
+  client: one(clients, { fields: [jobs.clientId], references: [clients.id] }),
+  events: many(revenueEvents),
+}));
+
+export const revenueEventsRelations = relations(revenueEvents, ({ one }) => ({
+  job: one(jobs, { fields: [revenueEvents.jobId], references: [jobs.id] }),
+  client: one(clients, { fields: [revenueEvents.clientId], references: [clients.id] }),
 }));

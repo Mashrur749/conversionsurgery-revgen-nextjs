@@ -34,6 +34,8 @@ export * from './client-flow-outcomes';
 export * from './knowledge-base';
 export * from './notification-preferences';
 export * from './cancellation-requests';
+export * from './jobs';
+export * from './revenue-events';
 
 // Auth tables (NextAuth)
 export * from './auth';

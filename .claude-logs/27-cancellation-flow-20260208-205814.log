@@ -1,0 +1,39 @@
+All done. Here's a summary of what was implemented:
+
+### Cancellation Flow — Complete
+
+**8 commits**, **8 files created/modified**, **0 TypeScript errors**
+
+| Commit | Description |
+|--------|-------------|
+| `0f7322e` | Install radio-group UI component |
+| `6717e2c` | Create cancellation-requests schema table |
+| `f68a1ca` | Create cancellation service with value summary and retention logic |
+| `fe58db9` | Create cancellation page with value summary display |
+| `08634d7` | Create cancellation flow component with reason selection and retention offer |
+| `d1cf93e` | Create cancellation API with Zod validation and admin email notifications |
+| `e88d5b5` | Create call-scheduled and cancellation-confirmed pages |
+| `3319f2c` | Add cancel subscription link to client settings page |
+| `acf26bb` | Append QA test steps to QA-CHECKLIST.md |
+
+**Files created:**
+- `src/db/schema/cancellation-requests.ts` — schema table
+- `src/lib/services/cancellation.ts` — service with value summary, initiate, schedule call, confirm
+- `src/app/(client)/client/cancel/page.tsx` — main cancel page with ROI display
+- `src/app/(client)/client/cancel/cancellation-flow.tsx` — 2-step client component
+- `src/app/api/client/cancel/route.ts` — API with Zod validation + admin emails
+- `src/app/(client)/client/cancel/call-scheduled/page.tsx` — confirmation page
+- `src/app/(client)/client/cancel/confirmed/page.tsx` — confirmation page
+
+**Files modified:**
+- `src/db/schema/index.ts` — exported new schema
+- `src/app/(client)/client/settings/page.tsx` — added Danger Zone card
+- `QA-CHECKLIST.md` — 61 lines of QA test steps appended
+
+**Key adaptations from doc to match codebase:**
+- Used `getDb()` per-request pattern instead of `db` singleton
+- Used `sendEmail({ to, subject, html })` from `@/lib/services/resend` instead of positional args
+- Used `await cookies()` (Next.js 16 async pattern)
+- Added Zod validation on API input
+- Used `sql\`uuid_generate_v4()\`` for primary key defaults
+- Escaped apostrophes with `&apos;` in JSX
