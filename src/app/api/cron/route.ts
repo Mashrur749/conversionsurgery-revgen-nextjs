@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateMonthlySummaries } from '@/lib/services/usage-tracking';
 import { checkAllClientAlerts } from '@/lib/services/usage-alerts';
+import { scoreClientLeads } from '@/lib/services/lead-scoring';
+import { getDb, clients } from '@/db';
+import { eq } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
@@ -34,6 +37,28 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('Usage tracking cron error:', error);
         results.usageTracking = { error: 'Failed' };
+      }
+    }
+
+    // Daily at midnight UTC: rescore all leads (quick mode, no AI)
+    if (now.getUTCHours() === 0 && now.getUTCMinutes() < 10) {
+      try {
+        const db = getDb();
+        const activeClients = await db
+          .select({ id: clients.id })
+          .from(clients)
+          .where(eq(clients.status, 'active'));
+
+        let totalScored = 0;
+        for (const client of activeClients) {
+          const result = await scoreClientLeads(client.id, { useAI: false });
+          totalScored += result.updated;
+        }
+        console.log(`Rescored ${totalScored} leads for ${activeClients.length} clients`);
+        results.leadScoring = { success: true, clients: activeClients.length, leadsScored: totalScored };
+      } catch (error) {
+        console.error('Lead scoring cron error:', error);
+        results.leadScoring = { error: 'Failed' };
       }
     }
 
