@@ -35,3 +35,26 @@ export type { MessageTemplate, NewMessageTemplate } from './schema/message-templ
 
 // Daily Stats
 export type { DailyStats, NewDailyStats } from './schema/daily-stats';
+
+// Flow Templates
+export type {
+  FlowTemplate,
+  NewFlowTemplate,
+  FlowTemplateStep,
+  NewFlowTemplateStep,
+  FlowTemplateVersion,
+  NewFlowTemplateVersion,
+} from './schema/flow-templates';
+
+// Flows
+export type { Flow, NewFlow, FlowStep, NewFlowStep } from './schema/flows';
+
+// Flow Executions
+export type {
+  FlowExecution,
+  NewFlowExecution,
+  FlowStepExecution,
+  NewFlowStepExecution,
+  SuggestedAction,
+  NewSuggestedAction,
+} from './schema/flow-executions';

@@ -14,6 +14,9 @@ import { escalationClaims } from './escalation-claims';
 import { businessHours } from './business-hours';
 import { callAttempts } from './call-attempts';
 import { magicLinkTokens } from './magic-link-tokens';
+import { flowTemplates, flowTemplateSteps, flowTemplateVersions } from './flow-templates';
+import { flows, flowSteps } from './flows';
+import { flowExecutions, flowStepExecutions, suggestedActions } from './flow-executions';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -33,6 +36,9 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   businessHours: many(businessHours),
   callAttempts: many(callAttempts),
   magicLinkTokens: many(magicLinkTokens),
+  flows: many(flows),
+  flowExecutions: many(flowExecutions),
+  suggestedActions: many(suggestedActions),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -58,6 +64,8 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   scheduledMessages: many(scheduledMessages),
   appointments: many(appointments),
   invoices: many(invoices),
+  flowExecutions: many(flowExecutions),
+  suggestedActions: many(suggestedActions),
 }));
 
 export const conversationsRelations = relations(conversations, ({ one }) => ({
@@ -180,5 +188,99 @@ export const magicLinkTokensRelations = relations(magicLinkTokens, ({ one }) => 
   client: one(clients, {
     fields: [magicLinkTokens.clientId],
     references: [clients.id],
+  }),
+}));
+
+// Flow Templates
+export const flowTemplatesRelations = relations(flowTemplates, ({ many }) => ({
+  steps: many(flowTemplateSteps),
+  versions: many(flowTemplateVersions),
+  flows: many(flows),
+}));
+
+export const flowTemplateStepsRelations = relations(flowTemplateSteps, ({ one }) => ({
+  template: one(flowTemplates, {
+    fields: [flowTemplateSteps.templateId],
+    references: [flowTemplates.id],
+  }),
+}));
+
+export const flowTemplateVersionsRelations = relations(flowTemplateVersions, ({ one }) => ({
+  template: one(flowTemplates, {
+    fields: [flowTemplateVersions.templateId],
+    references: [flowTemplates.id],
+  }),
+}));
+
+// Client Flows
+export const flowsRelations = relations(flows, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [flows.clientId],
+    references: [clients.id],
+  }),
+  template: one(flowTemplates, {
+    fields: [flows.templateId],
+    references: [flowTemplates.id],
+  }),
+  steps: many(flowSteps),
+  executions: many(flowExecutions),
+  suggestedActions: many(suggestedActions),
+}));
+
+export const flowStepsRelations = relations(flowSteps, ({ one }) => ({
+  flow: one(flows, {
+    fields: [flowSteps.flowId],
+    references: [flows.id],
+  }),
+  templateStep: one(flowTemplateSteps, {
+    fields: [flowSteps.templateStepId],
+    references: [flowTemplateSteps.id],
+  }),
+}));
+
+// Flow Executions
+export const flowExecutionsRelations = relations(flowExecutions, ({ one, many }) => ({
+  flow: one(flows, {
+    fields: [flowExecutions.flowId],
+    references: [flows.id],
+  }),
+  lead: one(leads, {
+    fields: [flowExecutions.leadId],
+    references: [leads.id],
+  }),
+  client: one(clients, {
+    fields: [flowExecutions.clientId],
+    references: [clients.id],
+  }),
+  stepExecutions: many(flowStepExecutions),
+}));
+
+export const flowStepExecutionsRelations = relations(flowStepExecutions, ({ one }) => ({
+  execution: one(flowExecutions, {
+    fields: [flowStepExecutions.flowExecutionId],
+    references: [flowExecutions.id],
+  }),
+  step: one(flowSteps, {
+    fields: [flowStepExecutions.flowStepId],
+    references: [flowSteps.id],
+  }),
+}));
+
+export const suggestedActionsRelations = relations(suggestedActions, ({ one }) => ({
+  lead: one(leads, {
+    fields: [suggestedActions.leadId],
+    references: [leads.id],
+  }),
+  client: one(clients, {
+    fields: [suggestedActions.clientId],
+    references: [clients.id],
+  }),
+  flow: one(flows, {
+    fields: [suggestedActions.flowId],
+    references: [flows.id],
+  }),
+  flowExecution: one(flowExecutions, {
+    fields: [suggestedActions.flowExecutionId],
+    references: [flowExecutions.id],
   }),
 }));
