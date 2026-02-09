@@ -1,0 +1,40 @@
+All steps complete. Here's a summary of what was implemented:
+
+## Implementation Summary - Phase 20: Flow Builder UI
+
+### Commits (10 total)
+1. `84f25b3` - Install sonner, collapsible, checkbox dependencies
+2. `b574d83` - Add template library page at /admin/flow-templates
+3. `0b56cc2` - Add template list component with category grouping
+4. `b163cb3` - Add template editor page with async params
+5. `aef66a2` - Add template editor component with settings and sequence
+6. `cf2a717` - Add sequence view component with collapsible steps
+7. `091a148` - Add push update page and component for batch client updates
+8. `fc77396` - Add flow template API routes (CRUD, publish, push)
+9. `f64a03e` - Add Flow Templates to admin navigation
+10. `6543c19` - Fix TypeScript errors for strict type checking
+11. `94b7a91` - Append QA test steps to QA-CHECKLIST.md
+
+### Files Created (11 files)
+| File | Description |
+|------|-------------|
+| `src/app/(dashboard)/admin/flow-templates/page.tsx` | Template library page |
+| `src/app/(dashboard)/admin/flow-templates/[id]/page.tsx` | Template editor page |
+| `src/app/(dashboard)/admin/flow-templates/[id]/push/page.tsx` | Push update page |
+| `src/components/flows/template-list.tsx` | Category-grouped template cards |
+| `src/components/flows/template-editor.tsx` | Editor with settings + sequence |
+| `src/components/flows/sequence-view.tsx` | Collapsible step editor |
+| `src/components/flows/push-update-view.tsx` | Batch update with dry run |
+| `src/app/api/admin/flow-templates/route.ts` | GET/POST templates |
+| `src/app/api/admin/flow-templates/[id]/route.ts` | GET/PATCH/DELETE template |
+| `src/app/api/admin/flow-templates/[id]/publish/route.ts` | POST publish |
+| `src/app/api/admin/flow-templates/[id]/push/route.ts` | POST push updates |
+
+### Key Adaptations from Doc
+- Used `getDb()` from `@/db` instead of `import { db } from '@/lib/db'`
+- Used `auth()` from `@/lib/auth` instead of `getServerSession(authOptions)`
+- Placed pages under `(dashboard)/admin/flow-templates/` (not `admin/templates/`)
+- API routes at `/api/admin/flow-templates/` to avoid conflict with existing `/api/admin/templates/`
+- Used `Promise<{ id: string }>` for Next.js 16 async params
+- Added explicit type assertions for `res.json()` and `request.json()` for strict TS
+- Build: **0 TypeScript errors**, all routes registered
