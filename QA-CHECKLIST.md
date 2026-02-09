@@ -905,3 +905,122 @@
 - [ ] Page files exist: `src/app/(dashboard)/admin/clients/[id]/phone/page.tsx`, `phone-number-manager.tsx`
 - [ ] Twilio page exists: `src/app/(dashboard)/admin/twilio/page.tsx`
 - [ ] shadcn Tabs component used in phone-number-manager
+
+## 13-setup-wizard-flow
+
+### File Existence
+- [ ] `src/app/(dashboard)/admin/clients/new/wizard/page.tsx` exists (wizard entry point)
+- [ ] `src/app/(dashboard)/admin/clients/new/wizard/setup-wizard.tsx` exists (main wizard component)
+- [ ] `src/app/(dashboard)/admin/clients/new/wizard/steps/step-business-info.tsx` exists
+- [ ] `src/app/(dashboard)/admin/clients/new/wizard/steps/step-phone-number.tsx` exists
+- [ ] `src/app/(dashboard)/admin/clients/new/wizard/steps/step-team-members.tsx` exists
+- [ ] `src/app/(dashboard)/admin/clients/new/wizard/steps/step-business-hours.tsx` exists
+- [ ] `src/app/(dashboard)/admin/clients/new/wizard/steps/step-review.tsx` exists
+- [ ] `src/app/(dashboard)/admin/clients/new/page.tsx` exists (entry point with wizard promotion)
+- [ ] `src/components/ui/progress.tsx` exists (shadcn Progress component)
+- [ ] `src/components/ui/select.tsx` exists (shadcn Select component)
+- [ ] `src/components/ui/switch.tsx` exists (shadcn Switch component)
+
+### Wizard Layout & Navigation
+- [ ] Progress bar displays at top with correct step count (Step X of 5)
+- [ ] Step indicators show numbered circles for each step
+- [ ] Completed steps show checkmark (✓) instead of number
+- [ ] Current step indicator is highlighted with primary color
+- [ ] Step titles visible on medium+ screens (`hidden md:block`)
+- [ ] Card wraps each step with title and description in header
+
+### Step 1: Business Info
+- [ ] Form shows fields: Business Name, Owner Name, Email, Phone, Timezone, Google Business URL
+- [ ] Business Name, Owner Name, Email, Phone are required (marked with *)
+- [ ] Timezone defaults to "America/Edmonton" (Mountain)
+- [ ] Timezone dropdown shows 5 Canadian time zones (Pacific, Mountain, Central, Eastern, Atlantic)
+- [ ] Clicking "Next" with empty required fields shows error: "Please fill in all required fields"
+- [ ] Clicking "Next" with invalid email shows error: "Please enter a valid email address"
+- [ ] Clicking "Next" with valid data calls `POST /api/admin/clients` to create client
+- [ ] Button shows "Creating..." while loading
+- [ ] On success, stores `clientId` in wizard state and advances to Step 2
+- [ ] On API error, displays error message from response
+
+### Step 2: Phone Number
+- [ ] Shows area code input (3-digit, numeric only) with Search button
+- [ ] Search validates 3-digit area code before API call
+- [ ] Calls `GET /api/admin/twilio/search?areaCode=XXX&country=CA` on search
+- [ ] Displays scrollable list of available numbers with phone and location info
+- [ ] Each number has a "Select" button to purchase
+- [ ] Purchase calls `POST /api/admin/twilio/purchase` with phoneNumber and clientId
+- [ ] Shows "Purchasing..." while purchasing
+- [ ] On successful purchase, stores `twilioNumber` and advances to Step 3
+- [ ] "Skip for now" button allows advancing without a phone number
+- [ ] Back button returns to Step 1
+- [ ] If number already assigned, shows it with Voice/SMS badges and Next/Back buttons
+- [ ] Shows "No numbers found" message when search returns empty results
+
+### Step 3: Team Members
+- [ ] Shows explanation text about escalation notifications
+- [ ] "Add Team Member" form has fields: Name, Email, Phone, Role
+- [ ] Role dropdown has options: Manager, Lead/Sales, Support, Admin
+- [ ] Clicking "Add Member" validates required fields (Name, Phone, Email)
+- [ ] Validates email format before adding
+- [ ] Added members appear in a card list below the form
+- [ ] Each member card shows name, email, phone, and role badge
+- [ ] "Remove" button deletes a member from the list
+- [ ] Shows warning when no members added: "escalations will only go to the business owner"
+- [ ] Clicking "Next" saves all team members via `POST /api/team-members` for each member
+- [ ] On save error, shows error message and stops navigation
+- [ ] Back button returns to Step 2
+
+### Step 4: Business Hours
+- [ ] Shows 7 days (Sunday–Saturday) each with a toggle switch
+- [ ] Monday–Friday default to open (08:00–18:00), Saturday–Sunday default to closed
+- [ ] Switch component toggles day open/closed
+- [ ] When day is open, shows time inputs for open and close times
+- [ ] When day is closed, shows "Closed" text instead of time inputs
+- [ ] Clicking "Next" saves hours via `PUT /api/business-hours` with clientId and hours array
+- [ ] On save error, shows error message and stops navigation
+- [ ] Explanatory text about after-hours AI responses shown
+- [ ] Back button returns to Step 3
+
+### Step 5: Review & Launch
+- [ ] Displays summary of all collected data in 4 sections
+- [ ] Business Information: shows business name, owner, email, phone
+- [ ] Twilio Number: shows formatted number with "Configured" badge, or "No number assigned" with "Pending" badge
+- [ ] Team Members: lists all members with name and phone, or "No team members added" message
+- [ ] Business Hours: shows open days as badges with times, or "No business hours set" message
+- [ ] Warning panel appears if phone number missing or no team members
+- [ ] "Activate Client" button calls `PATCH /api/admin/clients/{id}` with `status: 'active'`
+- [ ] Activate button is disabled if no Twilio number assigned
+- [ ] Button shows "Activating..." while loading
+- [ ] On success, shows completion screen with confetti emoji and business name
+- [ ] Completion screen has "View Client" and "Back to All Clients" buttons
+- [ ] Back button returns to Step 4
+
+### Auth & Access Control
+- [ ] `/admin/clients/new/wizard` redirects non-admin users to `/dashboard`
+- [ ] Wizard page uses `auth()` for server-side session check
+- [ ] `session?.user?.isAdmin` check enforced
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Log in as admin user
+3. Navigate to `/admin/clients/new` — verify wizard promotion card visible
+4. Click through to `/admin/clients/new/wizard` — verify progress bar and Step 1 form
+5. Submit empty form — verify "Please fill in all required fields" error
+6. Fill in valid business info and submit — verify client is created and Step 2 loads
+7. In Step 2, enter area code `403` and search — verify numbers appear (mock in dev)
+8. Select a number — verify it is purchased/assigned and Step 3 loads
+9. Add a team member with Name, Email, Phone, Role — verify card appears in list
+10. Remove the team member — verify it disappears
+11. Add member again, click Next — verify saved via API and Step 4 loads
+12. Toggle days open/closed, adjust times — verify switches and time inputs work
+13. Click Next — verify hours saved and Step 5 loads
+14. Review summary — verify all 4 sections display correctly
+15. Click "Activate Client" — verify success screen shows with business name
+16. Click "View Client" — verify navigation to client detail page
+17. Log out and log in as non-admin — navigate to `/admin/clients/new/wizard` — verify redirect to `/dashboard`
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Wizard route registered: `/admin/clients/new/wizard`
+- [ ] Entry point route registered: `/admin/clients/new`
+- [ ] All 5 step components import correctly from `./steps/`
+- [ ] `WizardData` interface exported from `setup-wizard.tsx`
