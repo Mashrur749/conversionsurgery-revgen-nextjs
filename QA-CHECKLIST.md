@@ -2670,3 +2670,86 @@
 - [ ] New routes registered: `/admin/reputation`, `/admin/clients/[id]/reviews`, `/api/admin/clients/[id]/reviews`, `/api/admin/clients/[id]/reviews/sources`
 - [ ] Schema exports: `reviews`, `reviewSources`, `reviewMetrics` exported from `src/db/schema/index.ts`
 - [ ] No regressions in existing routes
+
+---
+
+## Phase 19b: Review Response AI
+
+### Schema & Database
+- [ ] `responseTemplates` table created in `src/db/schema/response-templates.ts`
+- [ ] `reviewResponses` table created in `src/db/schema/review-responses.ts`
+- [ ] Both exported from `src/db/schema/index.ts`
+- [ ] Google OAuth fields added to `clients` schema: `googleAccessToken`, `googleRefreshToken`, `googleTokenExpiresAt`, `googleBusinessAccountId`, `googleLocationId`
+- [ ] Run `npm run db:generate` and `npm run db:migrate` to create tables
+
+### Review Response Generation Service
+- [ ] `src/lib/services/review-response.ts` exists
+- [ ] `generateReviewResponse()` calls OpenAI with correct prompt per rating (negative/neutral/positive)
+- [ ] Tone selector works: professional, friendly, apologetic, thankful
+- [ ] `findMatchingTemplate()` scores templates by rating range and keyword match
+- [ ] `applyTemplate()` substitutes `{{customer_name}}`, `{{business_name}}`, `{{owner_name}}`
+- [ ] `createDraftResponse()` tries template first, falls back to AI generation
+- [ ] `regenerateResponse()` supports tone change, shorter, and custom instructions
+
+### Google Business Profile Posting Service
+- [ ] `src/lib/services/google-business.ts` exists
+- [ ] `postResponseToGoogle()` checks review is from Google source
+- [ ] Returns error if Google Business not connected (no `googleAccessToken`)
+- [ ] Refreshes expired tokens via `refreshGoogleToken()`
+- [ ] Updates response status to `posted` on success
+- [ ] Updates review `hasResponse`, `responseText`, `responseDate` on success
+- [ ] Logs `postError` on failure
+
+### API Routes — Review Responses
+- [ ] `GET /api/admin/reviews/[id]/responses` — lists responses for a review
+- [ ] `POST /api/admin/reviews/[id]/responses` — generates draft response (AI or template)
+- [ ] Accepts `tone`, `useTemplate`, `templateId` in body
+- [ ] Returns 403 for non-admin users
+- [ ] Returns 400 for invalid Zod input
+
+### API Routes — Response Management
+- [ ] `GET /api/admin/responses/[id]` — returns single response, 404 if not found
+- [ ] `PATCH /api/admin/responses/[id]` — updates `responseText` and/or `status`
+- [ ] `DELETE /api/admin/responses/[id]` — deletes response
+- [ ] All routes return 403 for non-admin users
+
+### API Routes — Regenerate & Post
+- [ ] `POST /api/admin/responses/[id]/regenerate` — regenerates with `tone`, `shorter`, or `custom` instructions
+- [ ] `POST /api/admin/responses/[id]/post` — posts response to Google Business Profile
+- [ ] Returns 400 with error message if posting fails
+- [ ] Returns 403 for non-admin users
+
+### API Routes — Response Templates
+- [ ] `GET /api/admin/clients/[id]/templates` — lists templates for a client, ordered by usage
+- [ ] `POST /api/admin/clients/[id]/templates` — creates new template with Zod validation
+- [ ] Accepts `name`, `category`, `templateText`, `variables`, `minRating`, `maxRating`, `keywords`
+- [ ] Returns 403 for non-admin users
+
+### Response Editor Component
+- [ ] `src/components/reviews/response-editor.tsx` exists
+- [ ] Tone selector (professional/friendly/apologetic/thankful) renders
+- [ ] "Generate" button calls AI generation API
+- [ ] Response text appears in editable textarea
+- [ ] Word count displayed in bottom-right
+- [ ] "Make shorter", "More friendly", "More apologetic" quick action buttons work
+- [ ] "Copy" button copies text to clipboard with toast confirmation
+- [ ] "Post to Google" button appears only for Google reviews
+- [ ] "Copy & Reply on {source}" button appears for non-Google reviews
+- [ ] Loading spinners during generation and posting
+
+### Default Templates Seeder
+- [ ] `src/db/seed-templates.ts` exists
+- [ ] `seedDefaultTemplates(clientId)` creates 6 templates:
+  - 5-Star Thank You (positive, rating 5)
+  - 4-Star Appreciation (positive, rating 4)
+  - 3-Star Follow Up (neutral, rating 3)
+  - Negative Review - Quality Issue (negative, rating ≤2, keywords)
+  - Negative Review - Communication Issue (negative, rating ≤2, keywords)
+  - Negative Review - Timing/Delays (negative, rating ≤2, keywords)
+- [ ] All templates include `{{customer_name}}`, `{{business_name}}`, `{{owner_name}}` variables
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/api/admin/reviews/[id]/responses`, `/api/admin/responses/[id]`, `/api/admin/responses/[id]/regenerate`, `/api/admin/responses/[id]/post`, `/api/admin/clients/[id]/templates`
+- [ ] Schema exports: `reviewResponses`, `responseTemplates` exported from `src/db/schema/index.ts`
+- [ ] No regressions in existing routes
