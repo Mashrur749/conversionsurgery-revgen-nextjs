@@ -3,9 +3,16 @@ import { getDb } from '@/db';
 import { payments, invoices, leads } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover',
-});
+let _stripe: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!_stripe) {
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+      apiVersion: '2026-01-28.clover',
+    });
+  }
+  return _stripe;
+}
 
 interface CreatePaymentLinkInput {
   clientId: string;
@@ -39,7 +46,7 @@ export async function getOrCreateStripeCustomer(
     return lead.stripeCustomerId;
   }
 
-  const customer = await stripe.customers.create({
+  const customer = await getStripe().customers.create({
     email,
     phone,
     name: name || lead?.name || undefined,
@@ -78,7 +85,7 @@ export async function createPaymentLink(
   } = input;
 
   // Create Stripe price (one-time)
-  const price = await stripe.prices.create({
+  const price = await getStripe().prices.create({
     unit_amount: amount,
     currency: 'cad',
     product_data: {
@@ -87,7 +94,7 @@ export async function createPaymentLink(
   });
 
   // Create payment link
-  const paymentLink = await stripe.paymentLinks.create({
+  const paymentLink = await getStripe().paymentLinks.create({
     line_items: [{ price: price.id, quantity: 1 }],
     metadata: {
       clientId,
