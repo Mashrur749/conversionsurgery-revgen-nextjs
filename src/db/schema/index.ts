@@ -46,6 +46,7 @@ export * from './response-templates';
 export * from './review-responses';
 export * from './calendar-integrations';
 export * from './calendar-events';
+export * from './voice-calls';
 
 // Auth tables (NextAuth)
 export * from './auth';

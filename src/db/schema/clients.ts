@@ -2,6 +2,7 @@ import {
   pgTable,
   uuid,
   varchar,
+  text,
   boolean,
   integer,
   jsonb,
@@ -43,6 +44,12 @@ export const clients = pgTable(
     weeklySummaryTime: varchar('weekly_summary_time', { length: 5 }).default('08:00'),
     lastWeeklySummaryAt: timestamp('last_weekly_summary_at'),
     isTest: boolean('is_test').default(false),
+    // Voice AI
+    voiceEnabled: boolean('voice_enabled').default(false),
+    voiceMode: varchar('voice_mode', { length: 20 }).default('after_hours'), // always, after_hours, overflow
+    voiceGreeting: text('voice_greeting'),
+    voiceVoiceId: varchar('voice_voice_id', { length: 100 }), // ElevenLabs voice ID
+    voiceMaxDuration: integer('voice_max_duration').default(300), // seconds
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },
