@@ -1981,3 +1981,64 @@
 - [ ] `Compiled successfully` in build output
 - [ ] Routes registered: `/api/admin/clients/[id]/knowledge`, `/api/admin/clients/[id]/knowledge/[entryId]`
 - [ ] No regressions in existing routes
+
+## 24-knowledge-ui
+
+### Knowledge Base Page (`/admin/clients/[id]/knowledge`)
+- [ ] Page loads for admin users
+- [ ] Non-admin users are redirected to `/dashboard`
+- [ ] Client business name is displayed in the header
+- [ ] "Back" button links to `/admin/clients/[id]`
+- [ ] "+ Add Entry" button links to `/admin/clients/[id]/knowledge/new`
+- [ ] Blue info box explains how AI uses knowledge base
+- [ ] Default knowledge entries are auto-initialized on first visit
+- [ ] Entries are grouped by category (About, Services, Pricing, Policies, FAQ, Custom)
+- [ ] Each category shows a colored badge and entry count
+- [ ] Entry content is truncated at 200 characters with "..."
+- [ ] Keywords are displayed when present
+
+### Knowledge List Component
+- [ ] Entries are organized in correct category order: about, services, pricing, policies, faq, custom
+- [ ] Each entry shows title, content preview, and keywords
+- [ ] "Edit" button links to `/admin/clients/[id]/knowledge/[entryId]`
+- [ ] "Delete" button shows confirmation dialog before deleting
+- [ ] After deletion, the page refreshes and entry is removed
+- [ ] Empty state message shown when no entries exist
+
+### New Entry Page (`/admin/clients/[id]/knowledge/new`)
+- [ ] Page loads for admin users only
+- [ ] Form shows category selector with 6 options (About, Services, Pricing, Policies, FAQ, Custom)
+- [ ] Title field is required
+- [ ] Content textarea is required (6 rows)
+- [ ] Keywords field is optional with helper text
+- [ ] Priority field accepts numbers 1-10 with default of 5
+- [ ] Submit button shows "Add Entry" for new entries
+- [ ] "Saving..." shown while submitting
+- [ ] After submit, redirects to knowledge base list
+- [ ] Cancel button returns to knowledge base list
+- [ ] New entry appears in the list after creation
+
+### Edit Entry Page (`/admin/clients/[id]/knowledge/[entryId]`)
+- [ ] Page loads with existing entry data pre-filled
+- [ ] Non-existent entry ID returns 404
+- [ ] Category, title, content, keywords, and priority are editable
+- [ ] Submit button shows "Save Changes" for existing entries
+- [ ] After save, redirects to knowledge base list
+- [ ] Changes are persisted and visible in the list
+
+### Knowledge Entry Form Component
+- [ ] Form works for both create (POST) and edit (PATCH) modes
+- [ ] Category select defaults to "services" for new entries
+- [ ] Priority defaults to 5 for new entries
+- [ ] All form fields are controlled (values update on input)
+- [ ] Submit is disabled while saving
+
+### Client Detail Page Integration
+- [ ] "Knowledge Base" button visible in the Actions card
+- [ ] Button links to `/admin/clients/[id]/knowledge`
+- [ ] Button uses outline variant and full width
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/admin/clients/[id]/knowledge`, `/admin/clients/[id]/knowledge/new`, `/admin/clients/[id]/knowledge/[entryId]`
+- [ ] No regressions in existing routes
