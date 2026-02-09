@@ -1,0 +1,12 @@
+Done. Here's a summary of what happened:
+
+**All 5 API route files from the implementation doc already existed** (from Session 3). They were already adapted to project conventions (`getDb()` instead of `db`, `Promise<{ id: string }>` for async params).
+
+**Bug fixed**: `src/app/api/admin/users/[id]/route.ts` had a double `request.json()` call — the body stream was consumed once for the self-demotion check and then read again for Zod parsing, which would fail at runtime. Moved the self-demotion check inside the try block after a single body read.
+
+**Commits**:
+1. `17cd850` - Fix double request.json() read in user PATCH endpoint
+2. `877558e` - Fix TypeScript error in user PATCH body type assertion
+3. `2adf3ff` - Append QA test steps for client CRUD API to QA-CHECKLIST.md
+
+**Build**: 0 TypeScript errors, all routes registered.
