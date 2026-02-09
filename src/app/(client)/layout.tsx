@@ -6,6 +6,7 @@ const navItems = [
   { href: '/client', label: 'Dashboard' },
   { href: '/client/conversations', label: 'Conversations' },
   { href: '/client/team', label: 'Team' },
+  { href: '/client/settings', label: 'Settings' },
 ];
 
 export default async function ClientLayout({
