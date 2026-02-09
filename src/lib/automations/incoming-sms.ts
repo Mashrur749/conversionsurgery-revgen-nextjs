@@ -208,12 +208,13 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     content: msg.content,
   }));
 
-  // 8. Generate AI response
+  // 8. Generate AI response (with knowledge base context)
   const aiResult = await generateAIResponse(
     messageBody,
     client.businessName,
     client.ownerName,
-    conversationHistory
+    conversationHistory,
+    client.id
   );
 
   const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/leads/${lead.id}`;
