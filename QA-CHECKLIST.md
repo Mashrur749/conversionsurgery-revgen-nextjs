@@ -2753,3 +2753,107 @@
 - [ ] New routes registered: `/api/admin/reviews/[id]/responses`, `/api/admin/responses/[id]`, `/api/admin/responses/[id]/regenerate`, `/api/admin/responses/[id]/post`, `/api/admin/clients/[id]/templates`
 - [ ] Schema exports: `reviewResponses`, `responseTemplates` exported from `src/db/schema/index.ts`
 - [ ] No regressions in existing routes
+
+## 34-calendar-sync
+
+### Schema Verification
+- [ ] `src/db/schema/calendar-integrations.ts` exists with `calendarIntegrations` table and `calendarProviderEnum`
+- [ ] `src/db/schema/calendar-events.ts` exists with `calendarEvents` table
+- [ ] `calendarIntegrations` has columns: id, clientId, provider, isActive, accessToken, refreshToken, tokenExpiresAt, externalAccountId, calendarId, syncEnabled, lastSyncAt, syncDirection, lastError, consecutiveErrors, createdAt, updatedAt
+- [ ] `calendarEvents` has columns: id, clientId, leadId, title, description, location, startTime, endTime, isAllDay, timezone, status, provider, externalEventId, lastSyncedAt, syncStatus, assignedTeamMemberId, eventType, jobId, createdAt, updatedAt
+- [ ] `calendarProviderEnum` includes: google, jobber, servicetitan, housecall_pro, outlook
+- [ ] Both tables exported from `src/db/schema/index.ts`
+- [ ] Indexes: client_idx, time_idx, external_idx on calendarEvents; client_idx, provider_idx on calendarIntegrations
+
+### Google Calendar Service
+- [ ] `src/lib/services/calendar/google-calendar.ts` exists
+- [ ] `getGoogleAuthUrl(clientId)` generates OAuth URL with calendar scopes and client ID as state
+- [ ] `handleGoogleCallback(code, clientId)` exchanges code for tokens and upserts integration record
+- [ ] `createGoogleEvent(clientId, event)` creates event in Google Calendar and updates local record with external ID
+- [ ] `updateGoogleEvent(clientId, event)` updates existing Google Calendar event by external ID
+- [ ] `deleteGoogleEvent(clientId, externalEventId)` deletes event from Google Calendar
+- [ ] `syncFromGoogleCalendar(clientId, startDate, endDate)` pulls events from Google and creates/updates locally
+- [ ] Token refresh handled when `tokenExpiresAt` has passed
+- [ ] Error tracking: consecutiveErrors incremented on failure, cleared on success
+- [ ] Lead info (name, phone) appended to event description when leadId present
+
+### Calendar Service Facade
+- [ ] `src/lib/services/calendar/index.ts` exists
+- [ ] `createEvent(input)` inserts local event and syncs to connected providers
+- [ ] `updateEvent(eventId, updates)` updates local event and re-syncs to providers
+- [ ] `cancelEvent(eventId)` deletes from external calendar and sets status to cancelled
+- [ ] `getEvents(clientId, startDate, endDate)` returns events in date range ordered by startTime
+- [ ] `getLeadEvents(leadId)` returns up to 10 upcoming events for a lead
+- [ ] `fullSync(clientId)` runs inbound sync (-30 to +90 days) and outbound sync for pending events
+- [ ] `syncEventToProviders` skips integrations with syncDirection='inbound'
+- [ ] Re-exports `getGoogleAuthUrl` and `handleGoogleCallback`
+
+### API Routes — Calendar Events
+- [ ] `GET /api/calendar/events?clientId=X&start=Y&end=Z` returns events for date range
+- [ ] `GET /api/calendar/events` without clientId returns 400
+- [ ] `POST /api/calendar/events` creates event with Zod validation (clientId, title, startTime, endTime required)
+- [ ] `POST /api/calendar/events` with missing fields returns 400 with validation details
+- [ ] Both endpoints return 401 for unauthenticated requests
+
+### API Routes — Calendar Integrations
+- [ ] `GET /api/calendar/integrations?clientId=X` lists integrations (id, provider, isActive, syncEnabled, lastSyncAt, lastError)
+- [ ] `GET /api/calendar/integrations` without clientId returns 400
+- [ ] `POST /api/calendar/integrations` with `{clientId, provider: 'google'}` returns `{authUrl}`
+- [ ] `POST /api/calendar/integrations` with unsupported provider returns 400
+- [ ] `DELETE /api/calendar/integrations/[id]` sets isActive=false, syncEnabled=false
+- [ ] All endpoints return 401 for unauthenticated requests
+
+### API Routes — Calendar Sync
+- [ ] `POST /api/calendar/sync` with `{clientId}` triggers full bidirectional sync
+- [ ] Returns `{inbound: {created, updated}, outbound: {synced, failed}}`
+- [ ] Returns 401 for unauthenticated requests
+- [ ] Returns 400 for invalid clientId
+
+### API Routes — OAuth Callback
+- [ ] `GET /api/auth/callback/google-calendar?code=X&state=clientId` completes OAuth and redirects to client settings with success
+- [ ] `GET /api/auth/callback/google-calendar?error=access_denied&state=clientId` redirects with error=google_denied
+- [ ] Missing code or state redirects with error=invalid_callback
+- [ ] Exception during token exchange redirects with error=google_failed
+
+### Calendar Integrations UI
+- [ ] `src/components/calendar/calendar-integrations.tsx` exists
+- [ ] Shows 4 providers: Google Calendar, Jobber, ServiceTitan, Housecall Pro
+- [ ] Jobber, ServiceTitan, Housecall Pro show "Coming Soon" badge
+- [ ] Unconnected Google Calendar shows "Not connected" with "Connect" button
+- [ ] Connected Google Calendar shows green "Connected" status with last sync time
+- [ ] Connected integration shows "Disconnect" button and sync (refresh) button
+- [ ] Clicking "Connect" calls POST /api/calendar/integrations and redirects to OAuth URL
+- [ ] Clicking "Disconnect" confirms via dialog then calls DELETE /api/calendar/integrations/[id]
+- [ ] Clicking sync button calls POST /api/calendar/sync and shows spinner during sync
+- [ ] Toast notifications for connect errors, disconnect success, sync success/failure
+- [ ] Integration errors displayed as red text below provider name
+- [ ] Loading state shown while fetching integrations
+
+### Cron Job — Calendar Sync
+- [ ] `src/app/api/cron/calendar-sync/route.ts` exists
+- [ ] `GET /api/cron/calendar-sync` with valid `Authorization: Bearer CRON_SECRET` runs sync
+- [ ] Returns 401 without valid cron secret
+- [ ] Only syncs integrations not synced in last 15 minutes
+- [ ] Groups by clientId to avoid duplicate syncs
+- [ ] Returns `{synced, errors, timestamp}`
+- [ ] Continues processing remaining clients if one fails
+
+### Manual Verification Steps
+1. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` environment variables
+2. Enable Google Calendar API in Google Cloud Console
+3. Add `http://localhost:3000/api/auth/callback/google-calendar` as authorized redirect URI
+4. Start dev server: `npm run dev`
+5. Navigate to a client settings page and use the CalendarIntegrations component
+6. Click "Connect" for Google Calendar — should redirect to Google OAuth consent screen
+7. Approve access — should redirect back to client settings with `?success=google_connected`
+8. Verify integration appears as "Connected" in the UI
+9. Create event via `POST /api/calendar/events` — verify it appears in Google Calendar
+10. Create event in Google Calendar, then click sync — verify it appears locally via `GET /api/calendar/events`
+11. Test cron sync: `curl -H "Authorization: Bearer YOUR_CRON_SECRET" http://localhost:3000/api/cron/calendar-sync`
+12. Disconnect calendar — verify events stop syncing
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/api/calendar/events`, `/api/calendar/integrations`, `/api/calendar/integrations/[id]`, `/api/calendar/sync`, `/api/auth/callback/google-calendar`, `/api/cron/calendar-sync`
+- [ ] Schema exports: `calendarIntegrations`, `calendarEvents`, `calendarProviderEnum` exported from `src/db/schema/index.ts`
+- [ ] No regressions in existing routes
