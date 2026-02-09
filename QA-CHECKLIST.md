@@ -2857,3 +2857,88 @@
 - [ ] New routes registered: `/api/calendar/events`, `/api/calendar/integrations`, `/api/calendar/integrations/[id]`, `/api/calendar/sync`, `/api/auth/callback/google-calendar`, `/api/cron/calendar-sync`
 - [ ] Schema exports: `calendarIntegrations`, `calendarEvents`, `calendarProviderEnum` exported from `src/db/schema/index.ts`
 - [ ] No regressions in existing routes
+
+---
+
+## Phase 35: Voice AI
+
+### Schema
+- [ ] `voiceCalls` table exported from `src/db/schema/voice-calls.ts`
+- [ ] `src/db/schema/index.ts` exports `voiceCalls`
+- [ ] `clients` table has new columns: `voiceEnabled`, `voiceMode`, `voiceGreeting`, `voiceVoiceId`, `voiceMaxDuration`
+
+### Webhook Routes
+- [ ] `POST /api/webhooks/twilio/voice/ai` — main voice AI webhook handles incoming calls
+  - [ ] Finds client by Twilio number
+  - [ ] Returns TwiML forwarding call if voice AI is disabled
+  - [ ] Checks business hours for `after_hours` mode
+  - [ ] Creates lead if not found (source: `voice`)
+  - [ ] Creates `voiceCalls` record
+  - [ ] Returns TwiML with greeting + `<Gather>` for speech input
+- [ ] `POST /api/webhooks/twilio/voice/ai/gather` — AI conversation handler
+  - [ ] Processes `SpeechResult` from Twilio
+  - [ ] Fetches knowledge base context for client
+  - [ ] Sends speech to OpenAI for response generation
+  - [ ] Updates voice call transcript
+  - [ ] Returns TwiML with AI response + next gather or redirect to transfer
+- [ ] `POST /api/webhooks/twilio/voice/ai/transfer` — transfer handler
+  - [ ] Transfers call to client owner phone
+  - [ ] Falls back to voicemail recording if no phone available
+  - [ ] Updates voice call outcome to `transferred`
+- [ ] `POST /api/webhooks/twilio/voice/ai/dial-complete` — dial completion handler
+  - [ ] Updates voice call status on dial completion
+  - [ ] Handles missed/answered outcomes
+
+### Services
+- [ ] `src/lib/services/voice-summary.ts` — call summary service
+  - [ ] `generateCallSummary(callId)` creates AI summary from transcript
+  - [ ] `notifyClientOfCall(callId)` sends SMS notification to client owner
+
+### API Endpoints
+- [ ] `GET /api/admin/clients/[id]/voice-calls` — returns voice calls for a client
+  - [ ] Requires admin auth (returns 403 for non-admins)
+  - [ ] Returns up to 50 calls ordered by most recent
+- [ ] `PATCH /api/admin/clients/[id]` — accepts voice fields: `voiceEnabled`, `voiceMode`, `voiceGreeting`, `voiceVoiceId`, `voiceMaxDuration`
+
+### UI Components
+- [ ] `src/components/settings/voice-settings.tsx` — voice settings card
+  - [ ] Toggle to enable/disable voice AI
+  - [ ] Select for answer mode (after_hours, overflow, always)
+  - [ ] Mode description updates based on selection
+  - [ ] Textarea for custom greeting message
+  - [ ] Save button calls PATCH API
+- [ ] `src/components/voice/call-history.tsx` — voice call history card
+  - [ ] Fetches calls from `/api/admin/clients/[id]/voice-calls`
+  - [ ] Shows caller number, intent badge, outcome badge, duration
+  - [ ] Shows AI summary when available
+  - [ ] Expandable transcript view
+  - [ ] Play recording link when available
+  - [ ] Relative timestamps (e.g., "2 hours ago")
+
+### Admin Page
+- [ ] `/admin/voice-ai` page renders for admin users
+- [ ] Shows all active clients with their voice settings and call history
+- [ ] "Voice AI" link appears in admin nav under Configuration group
+
+### Navigation
+- [ ] Dashboard layout has "Voice AI" link in Configuration group
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Navigate to `/admin/voice-ai` — should show all active clients
+3. Toggle Voice AI on for a client — select a mode and add a greeting
+4. Click "Save Voice Settings" — should show success toast
+5. Verify PATCH request sent to `/api/admin/clients/[id]` with voice fields
+6. Check call history section shows "No voice calls yet" for new clients
+7. Configure Twilio Voice webhook URL to `https://yourdomain.com/api/webhooks/twilio/voice/ai`
+8. Call the Twilio number after hours — AI should answer with greeting
+9. Speak to the AI — should respond conversationally using knowledge base
+10. Request to speak to someone — AI should transfer the call
+11. After call ends, verify voice call record created in database
+12. Refresh `/admin/voice-ai` — call should appear in history with transcript
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/admin/voice-ai`, `/api/admin/clients/[id]/voice-calls`, `/api/webhooks/twilio/voice/ai`, `/api/webhooks/twilio/voice/ai/gather`, `/api/webhooks/twilio/voice/ai/transfer`, `/api/webhooks/twilio/voice/ai/dial-complete`
+- [ ] Schema exports: `voiceCalls` exported from `src/db/schema/index.ts`
+- [ ] No regressions in existing voice webhook (`/api/webhooks/twilio/voice`)
