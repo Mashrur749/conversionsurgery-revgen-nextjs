@@ -33,6 +33,7 @@ export * from './template-step-metrics';
 export * from './client-flow-outcomes';
 export * from './knowledge-base';
 export * from './notification-preferences';
+export * from './cancellation-requests';
 
 // Auth tables (NextAuth)
 export * from './auth';
