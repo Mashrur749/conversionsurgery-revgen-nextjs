@@ -28,6 +28,9 @@ export * from './flow-enums';
 export * from './flow-templates';
 export * from './flows';
 export * from './flow-executions';
+export * from './template-metrics-daily';
+export * from './template-step-metrics';
+export * from './client-flow-outcomes';
 
 // Auth tables (NextAuth)
 export * from './auth';

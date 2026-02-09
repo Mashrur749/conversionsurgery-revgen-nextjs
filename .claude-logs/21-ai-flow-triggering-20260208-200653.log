@@ -1,0 +1,24 @@
+All done. Here's a summary of what was implemented across 6 commits:
+
+### Phase 14c: AI Signal Detection & Flow Triggering - Complete
+
+**Commits:**
+1. `deadbbf` - Signal detection service
+2. `4f26014` - Flow suggestion + execution services  
+3. `a5a4e8a` - Incoming SMS integration
+4. `f5a386e` - Suggested actions API
+5. `c32fb8b` - Conversation view suggestions UI
+6. `518e516` - QA checklist
+
+**Files created (5):**
+- `src/lib/services/signal-detection.ts` - GPT-4o-mini signal detection (10 signals + confidence)
+- `src/lib/services/flow-suggestions.ts` - Suggestion creation + SMS approval handling
+- `src/lib/services/flow-execution.ts` - Flow execution with step resolution + SMS delivery
+- `src/app/api/client/leads/[id]/suggestions/route.ts` - GET/POST API for CRM
+
+**Files modified (3):**
+- `src/lib/automations/incoming-sms.ts` - Approval interception + async suggestion detection
+- `src/app/(client)/client/conversations/[id]/conversation-view.tsx` - Suggestions UI
+- `QA-CHECKLIST.md` - 68 lines of QA test steps
+
+**Build: 0 TypeScript errors, all routes registered.**
