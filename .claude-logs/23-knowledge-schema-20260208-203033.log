@@ -1,0 +1,27 @@
+All done. Here's the summary:
+
+### Phase 15a: Knowledge Base Schema — Complete
+
+**4 commits:**
+1. `86de9bb` — Schema: `knowledge_base` table with pgEnum, indexes, relations
+2. `2e3db47` — Service: CRUD, search, context builder, default templates
+3. `9487b2e` — API routes: GET/POST `/knowledge`, PATCH/DELETE `/knowledge/[entryId]`
+4. `cbafbd6` — QA checklist: 30 test steps appended
+
+**Files created (4):**
+- `src/db/schema/knowledge-base.ts` — table + enum + types
+- `src/lib/services/knowledge-base.ts` — 7 functions (~200 lines)
+- `src/app/api/admin/clients/[id]/knowledge/route.ts` — GET + POST
+- `src/app/api/admin/clients/[id]/knowledge/[entryId]/route.ts` — PATCH + DELETE
+
+**Files modified (2):**
+- `src/db/schema/index.ts` — added knowledge-base export
+- `src/db/schema/relations.ts` — added knowledgeBase relation + client many
+
+**Codebase adaptations from spec:**
+- Used `getDb()` per-request pattern (not singleton `db`)
+- Used `Promise<{ id: string }>` for Next.js 16 async params
+- Used `sql\`uuid_generate_v4()\`` for UUIDs (matching existing schema)
+- Added Zod validation on PATCH route (spec had none)
+- Added proper error handling on all routes
+- Fixed TypeScript enum typing for `category` field
