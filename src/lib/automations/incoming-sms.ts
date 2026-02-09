@@ -43,6 +43,13 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
 
   const client = clientResult[0];
 
+  // Handle DASHBOARD request
+  if (messageBody.toUpperCase() === 'DASHBOARD') {
+    const { sendDashboardLink } = await import('@/lib/services/magic-link');
+    await sendDashboardLink(client.id, senderPhone, client.twilioNumber!);
+    return { processed: true, action: 'dashboard_link_sent' };
+  }
+
   // 2. Handle opt-out
   if (STOP_WORDS.includes(messageBody.toLowerCase())) {
     return await handleOptOut(db, client, senderPhone);
