@@ -825,3 +825,83 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] Routes registered: `/api/admin/twilio/search`, `/api/admin/twilio/purchase`, `/api/admin/twilio/configure`, `/api/admin/twilio/release`, `/api/admin/twilio/account`
 - [ ] Service file exists at `src/lib/services/twilio-provisioning.ts`
+
+---
+
+## 12-phone-number-ui
+
+### Phone Number Assignment Page (`/admin/clients/[id]/phone`)
+- [ ] Page loads for admin users only (non-admin redirected to `/dashboard`)
+- [ ] Shows client business name in header
+- [ ] "Back to Client" button links to `/admin/clients/[id]`
+- [ ] Returns 404 for non-existent client ID
+- [ ] Renders `PhoneNumberManager` component with client data
+
+### Phone Number Manager Component (Tabs)
+- [ ] Uses shadcn `Tabs` component with 3 tabs: Current Number, Search New, Use Existing
+- [ ] "Current Number" tab is disabled when no number is assigned
+- [ ] Default tab is "Current Number" if number assigned, "Search New" otherwise
+
+### Current Number Tab
+- [ ] Displays current phone number in large font-mono format
+- [ ] Shows Voice Enabled and SMS Enabled badges
+- [ ] Shows webhook configuration note
+- [ ] "Release Number" button triggers confirmation dialog
+- [ ] Release calls `POST /api/admin/twilio/release` with client ID
+- [ ] On successful release, switches to "Search New" tab
+- [ ] Displays error message on release failure
+
+### Search New Tab
+- [ ] Area code input accepts only 3 digits (non-numeric stripped)
+- [ ] Shows validation error for non-3-digit area code
+- [ ] Search calls `GET /api/admin/twilio/search?areaCode=XXX&country=CA`
+- [ ] Displays list of available numbers with locality and region
+- [ ] Shows "No numbers found" message when search returns empty
+- [ ] "Purchase" button triggers confirmation dialog with formatted number
+- [ ] Purchase calls `POST /api/admin/twilio/purchase` with phoneNumber and clientId
+- [ ] On success, redirects to client detail page
+- [ ] All purchase buttons disabled while any purchase is in progress
+- [ ] Displays error message on search or purchase failure
+
+### Use Existing Tab
+- [ ] Phone number input accepts freeform text (e.g., `+14035551234`)
+- [ ] Shows validation error for empty input
+- [ ] Configure calls `POST /api/admin/twilio/configure` with stripped number and clientId
+- [ ] On success, redirects to client detail page
+- [ ] Displays error message on failure
+- [ ] Shows note about automatic webhook configuration
+
+### Twilio Account Page (`/admin/twilio`)
+- [ ] Page loads for admin users only (non-admin redirected to `/dashboard`)
+- [ ] Shows account balance with currency formatting
+- [ ] Shows "Unable to fetch balance" when balance is null
+- [ ] Displays total owned numbers count and assigned count
+- [ ] Shows number of available (unassigned) numbers
+- [ ] Lists all owned numbers with formatted phone number and friendly name
+- [ ] Shows assigned client name next to assigned numbers (green text)
+- [ ] Shows "Not assigned" for unassigned numbers
+- [ ] Shows empty state when no numbers in account
+- [ ] "Back to Clients" button links to `/admin/clients`
+
+### Navigation
+- [ ] Admin nav includes link to Twilio Settings (`/admin/twilio`)
+- [ ] Admin nav includes link to Phone Numbers (`/admin/phone-numbers`)
+- [ ] Phone number management page accessible from client detail page
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Navigate to `/admin/clients` — pick a client without a phone number
+3. Go to `/admin/clients/[id]/phone` — verify "Search New" tab is active by default
+4. Enter area code `403` and click Search — verify mock numbers appear in development
+5. Click "Purchase" on a number — confirm dialog, then verify redirect to client detail
+6. Return to `/admin/clients/[id]/phone` — verify "Current Number" tab is now active and shows the number
+7. Click "Release Number" — confirm dialog, verify tab switches to "Search New"
+8. Go to "Use Existing" tab — enter `+14035551234` and click "Configure & Assign"
+9. Navigate to `/admin/twilio` — verify account balance, owned numbers, and assignments display
+10. As non-admin user, navigate to `/admin/clients/[id]/phone` — verify redirect to `/dashboard`
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Page files exist: `src/app/(dashboard)/admin/clients/[id]/phone/page.tsx`, `phone-number-manager.tsx`
+- [ ] Twilio page exists: `src/app/(dashboard)/admin/twilio/page.tsx`
+- [ ] shadcn Tabs component used in phone-number-manager
