@@ -2180,3 +2180,64 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] New routes registered: `/client/settings/notifications`, `/api/client/notifications`
 - [ ] No regressions in existing routes
+
+---
+
+## Phase 16b: Cancellation Flow
+
+### Schema & Service
+- [ ] `cancellation_requests` table exists in database after migration/push
+- [ ] `cancellationRequests` exported from `@/db` schema index
+- [ ] `getValueSummary()` returns correct stats (monthsActive, totalLeads, totalMessages, estimatedRevenue, roi)
+- [ ] `initiateCancellation()` creates a row with status `pending` and stores value summary as JSONB
+- [ ] `scheduleRetentionCall()` updates status to `scheduled_call` and sets `scheduledCallAt`
+- [ ] `confirmCancellation()` updates status to `cancelled` and sets 7-day `gracePeriodEnds`
+- [ ] `getPendingCancellation()` returns existing pending request or undefined
+
+### Client Settings — Cancel Link
+- [ ] Navigate to `/client/settings` — "Danger Zone" card appears at bottom with red border
+- [ ] "Cancel Subscription" button links to `/client/cancel`
+
+### Cancellation Page (`/client/cancel`)
+- [ ] Unauthenticated access redirects to `/link-expired`
+- [ ] Value summary card shows leads captured, messages sent, estimated revenue, and ROI
+- [ ] Green-themed card with border highlights positive results
+- [ ] "Never mind, take me back" link returns to `/client`
+
+### Cancellation Flow (Step 1 — Reason Selection)
+- [ ] 7 radio button reasons displayed (too_expensive, not_using, switching_competitor, business_closing, missing_features, poor_results, other)
+- [ ] "Continue" button disabled until a reason is selected
+- [ ] Optional feedback textarea accepts free-form input
+- [ ] Selecting a reason and clicking "Continue" advances to step 2
+
+### Cancellation Flow (Step 2 — Retention Offer)
+- [ ] Contextual help text displayed based on selected reason (e.g., pricing options for "too_expensive")
+- [ ] "Schedule a Call" button sends POST to `/api/client/cancel` with `action: schedule_call`
+- [ ] "Cancel Anyway" button sends POST to `/api/client/cancel` with `action: confirm`
+- [ ] Both buttons disabled while submitting (prevents double-submit)
+- [ ] Grace period notice displayed: "7 days to reactivate"
+
+### Cancellation API (`POST /api/client/cancel`)
+- [ ] Returns 401 if no `clientSessionId` cookie
+- [ ] Returns 400 for invalid input (missing reason, invalid action)
+- [ ] `schedule_call` action: creates cancellation request, updates to `scheduled_call`, sends admin email
+- [ ] `confirm` action: creates cancellation request, updates to `cancelled` with grace period, sends admin email
+- [ ] Admin notification email contains business name, reason, and feedback
+
+### Confirmation Pages
+- [ ] `/client/cancel/call-scheduled` — shows "Call Scheduled!" with green border, "Back to Dashboard" link
+- [ ] `/client/cancel/confirmed` — shows "Cancellation Confirmed" with 7-day grace period notice, "Back to Dashboard" link
+
+### Pending Cancellation Redirect
+- [ ] If a pending cancellation exists, visiting `/client/cancel` redirects to `/client/cancel/pending`
+
+### End-to-End Test Scenarios
+- [ ] Full flow: Settings → Cancel → Select reason → Continue → Schedule a Call → Call Scheduled page
+- [ ] Full flow: Settings → Cancel → Select reason → Continue → Cancel Anyway → Confirmed page
+- [ ] Verify cancellation request row created in database with correct status
+- [ ] Verify admin receives email notification for both schedule_call and confirm actions
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] New routes registered: `/client/cancel`, `/client/cancel/call-scheduled`, `/client/cancel/confirmed`, `/api/client/cancel`
+- [ ] No regressions in existing routes
