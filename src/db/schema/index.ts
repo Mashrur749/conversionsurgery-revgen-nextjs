@@ -24,6 +24,8 @@ export * from './api-usage-daily';
 export * from './api-usage-monthly';
 export * from './usage-alerts';
 export * from './magic-link-tokens';
+export * from './flow-enums';
+export * from './flow-templates';
 
 // Auth tables (NextAuth)
 export * from './auth';

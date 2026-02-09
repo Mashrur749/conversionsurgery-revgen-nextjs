@@ -1,0 +1,30 @@
+All steps complete. Here's a summary of what was implemented:
+
+## Phase 18: Weekly SMS Summary - Complete
+
+### 7 Commits Made
+
+| Commit | Description |
+|--------|-------------|
+| `b97240d` | Add weekly summary preferences to clients schema |
+| `14a240d` | Create weekly summary service with SMS and email |
+| `68f138e` | Update cron route to use new weekly summary service |
+| `7c81b55` | Add client settings page with summary preferences UI |
+| `fd8326e` | Create settings API route for summary preferences |
+| `9784a98` | Add Settings link to client navigation layout |
+| `b574952` | Append QA test steps to QA-CHECKLIST.md |
+
+### Files Created (4)
+- `src/lib/services/weekly-summary.ts` - Service with stats aggregation, SMS/email formatting, send logic, cron processor
+- `src/app/(client)/client/settings/page.tsx` - Client settings page (server component)
+- `src/app/(client)/client/settings/summary-settings.tsx` - Summary preferences UI (client component)
+- `src/app/api/client/settings/summary/route.ts` - PUT endpoint with Zod validation
+
+### Files Modified (3)
+- `src/db/schema/clients.ts` - Added 4 columns: `weeklySummaryEnabled`, `weeklySummaryDay`, `weeklySummaryTime`, `lastWeeklySummaryAt`
+- `src/app/api/cron/weekly-summary/route.ts` - Replaced stub with `processWeeklySummaries()` call
+- `src/app/(client)/layout.tsx` - Added "Settings" to client nav
+
+### Build: 0 TypeScript errors, all 3 new routes registered
+
+**Note:** You'll need to run `npm run db:generate` and `npm run db:push` (or `db:migrate`) to add the 4 new columns to the database.
