@@ -1,0 +1,15 @@
+Everything is already fully implemented. Here's the summary:
+
+**All 6 steps from `17-crm-conversations.md` are already complete:**
+
+| Step | Description | Status |
+|------|-------------|--------|
+| 1 | Add conversation mode columns to leads schema | Done (`b1a648d`) |
+| 2 | Create conversations list page | Done (`6586d31`) |
+| 3 | Create conversation detail page | Done (`934afa6`) |
+| 4 | Create conversation view component | Done (`7edc9e4`) |
+| 5 | Create takeover, handback, send API routes | Done (`75f2323`) |
+| 6 | Update incoming SMS handler for human mode | Done (`a687903`) |
+| QA | Append QA test steps to QA-CHECKLIST.md | Done (`4950c75`) |
+
+The build passes with 0 errors, all routes (`/client/conversations`, `/client/conversations/[id]`, API routes) are registered, and TypeScript strict mode errors were fixed in `b70b9ef`. Nothing left to do.

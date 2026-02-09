@@ -33,6 +33,10 @@ export const clients = pgTable(
     stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
     stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
     status: varchar('status', { length: 20 }).default('active'), // active, paused, cancelled
+    weeklySummaryEnabled: boolean('weekly_summary_enabled').default(true),
+    weeklySummaryDay: integer('weekly_summary_day').default(1), // 0=Sun, 1=Mon
+    weeklySummaryTime: varchar('weekly_summary_time', { length: 5 }).default('08:00'),
+    lastWeeklySummaryAt: timestamp('last_weekly_summary_at'),
     isTest: boolean('is_test').default(false),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
