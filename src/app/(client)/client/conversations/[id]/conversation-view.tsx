@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 
@@ -25,6 +25,15 @@ interface Message {
   createdAt: Date | null;
 }
 
+interface Suggestion {
+  id: string;
+  flowName: string;
+  reason: string | null;
+  confidence: number | null;
+  status: string | null;
+  createdAt: Date | null;
+}
+
 interface Props {
   lead: Lead;
   messages: Message[];
@@ -36,11 +45,25 @@ export function ConversationView({ lead, messages }: Props) {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [localMessages, setLocalMessages] = useState(messages);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [localMessages]);
+
+  useEffect(() => {
+    async function loadSuggestions() {
+      try {
+        const res = await fetch(`/api/client/leads/${lead.id}/suggestions`);
+        const data = await res.json() as { suggestions?: Suggestion[] };
+        setSuggestions(data.suggestions?.filter(s => s.status === 'pending') || []);
+      } catch {
+        // Ignore fetch errors
+      }
+    }
+    loadSuggestions();
+  }, [lead.id]);
 
   async function handleTakeover() {
     const res = await fetch(`/api/client/conversations/${lead.id}/takeover`, {
@@ -78,6 +101,15 @@ export function ConversationView({ lead, messages }: Props) {
       setNewMessage('');
     }
     setSending(false);
+  }
+
+  async function handleSuggestion(suggestionId: string, action: 'approve' | 'reject') {
+    await fetch(`/api/client/leads/${lead.id}/suggestions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ suggestionId, action }),
+    });
+    setSuggestions(suggestions.filter(s => s.id !== suggestionId));
   }
 
   const modeColors: Record<string, string> = {
@@ -141,6 +173,32 @@ export function ConversationView({ lead, messages }: Props) {
         ))}
         <div ref={bottomRef} />
       </div>
+
+      {/* AI Suggestions */}
+      {suggestions.length > 0 && (
+        <div className="border-t pt-4 space-y-2">
+          {suggestions.map((suggestion) => (
+            <Card key={suggestion.id} className="bg-blue-50 border-blue-200">
+              <CardContent className="py-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium text-blue-900">AI Suggests: {suggestion.flowName}</p>
+                    <p className="text-sm text-blue-700">{suggestion.reason}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleSuggestion(suggestion.id, 'approve')}>
+                      Send
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleSuggestion(suggestion.id, 'reject')}>
+                      Dismiss
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Input */}
       {mode === 'human' ? (
