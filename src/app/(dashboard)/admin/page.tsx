@@ -4,6 +4,8 @@ import { getDb, clients, leads, dailyStats } from '@/db';
 import { eq, gte, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,24 +47,42 @@ export default async function AdminPage() {
 
   const actionMap = new Map(actionCounts.map(a => [a.clientId, a.count]));
 
+  const statusColors: Record<string, string> = {
+    active: 'bg-green-100 text-green-800',
+    pending: 'bg-yellow-100 text-yellow-800',
+    paused: 'bg-gray-100 text-gray-800',
+    cancelled: 'bg-red-100 text-red-800',
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">All Clients</h1>
-        <p className="text-muted-foreground">Manage all contractor accounts</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Client Management</h1>
+          <p className="text-muted-foreground">Manage all contractor accounts</p>
+        </div>
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link href="/admin/users">Manage Users</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin/clients/new">+ New Client</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Clients
+              Total Clients
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {allClients.filter(c => c.status === 'active').length}
-            </div>
+            <div className="text-2xl font-bold">{allClients.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {allClients.filter(c => c.status === 'active').length} active
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -105,7 +125,7 @@ export default async function AdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Clients</CardTitle>
+          <CardTitle>All Clients</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
@@ -114,9 +134,10 @@ export default async function AdminPage() {
               const actionCount = actionMap.get(client.id) || 0;
 
               return (
-                <div
+                <Link
                   key={client.id}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50"
+                  href={`/admin/clients/${client.id}`}
+                  className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     {actionCount > 0 && (
@@ -125,8 +146,11 @@ export default async function AdminPage() {
                     <div>
                       <p className="font-medium">{client.businessName}</p>
                       <p className="text-sm text-muted-foreground">
-                        {client.ownerName} &bull; {client.phone}
+                        {client.ownerName} &bull; {client.email}
                       </p>
+                      {!client.twilioNumber && (
+                        <p className="text-xs text-amber-600">No phone number</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
@@ -139,15 +163,20 @@ export default async function AdminPage() {
                       </p>
                     </div>
                     {actionCount > 0 && (
-                      <Badge variant="destructive">{actionCount} action</Badge>
+                      <Badge variant="destructive">{actionCount}</Badge>
                     )}
-                    <Badge variant={client.status === 'active' ? 'default' : 'secondary'}>
+                    <Badge className={statusColors[client.status || 'pending']}>
                       {client.status}
                     </Badge>
                   </div>
-                </div>
+                </Link>
               );
             })}
+            {allClients.length === 0 && (
+              <div className="p-8 text-center text-muted-foreground">
+                No clients yet. Create your first client to get started.
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
