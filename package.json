@@ -15,7 +15,9 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
-		"db:check": "drizzle-kit check"
+		"db:check": "drizzle-kit check",
+		"db:seed": "npx tsx scripts/seed.ts",
+		"db:setup": "npm run db:migrate && npm run db:seed"
 	},
 	"dependencies": {
 		"@auth/drizzle-adapter": "^1.11.1",
