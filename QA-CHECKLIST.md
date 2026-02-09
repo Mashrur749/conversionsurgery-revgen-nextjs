@@ -1663,3 +1663,100 @@
 - [ ] `Compiled successfully` in build output
 - [ ] No new TypeScript warnings related to flow schemas or services
 - [ ] Existing routes still registered (no regressions)
+
+---
+
+## 20-flow-builder-ui
+
+### Template Library Page (`/admin/flow-templates`)
+- [ ] Page loads and displays seeded templates grouped by category
+- [ ] Category icons render correctly (Phone for missed_call, FileText for estimate, etc.)
+- [ ] Each template card shows: name, description, version badge, published/draft status
+- [ ] Usage count shows number of clients using the template
+- [ ] Tags display as small badges on each card
+- [ ] "Updated X ago" timestamp shows correctly
+- [ ] "New Template" button links to `/admin/flow-templates/new`
+- [ ] Empty state shows "No templates yet" with create button if no templates exist
+- [ ] Dropdown menu on each card has: Edit, Push Update, Duplicate, Delete actions
+- [ ] Edit links to `/admin/flow-templates/{id}`
+- [ ] Push Update links to `/admin/flow-templates/{id}/push`
+
+### Template Editor - New (`/admin/flow-templates/new`)
+- [ ] Page loads with empty form and one default step
+- [ ] Back arrow returns to template library
+- [ ] Name field auto-generates slug when typing
+- [ ] All form fields editable: name, slug, description, category, trigger, approval mode, tags
+- [ ] Category dropdown shows all 8 categories
+- [ ] Trigger dropdown shows: Manual, AI Suggested, Automatic (webhook), Scheduled
+- [ ] Approval mode dropdown shows: Auto-execute, Show in CRM, Ask via SMS
+- [ ] "Add Step" button adds a new step with 1-day default delay
+- [ ] Validation: "Save Draft" shows error toast if name, slug, or category empty
+- [ ] Validation: "Save Draft" shows error toast if any step has empty message
+- [ ] After saving, redirects to edit page `/admin/flow-templates/{id}`
+- [ ] Toast notification "Template saved!" on successful save
+
+### Template Editor - Edit (`/admin/flow-templates/{id}`)
+- [ ] Page loads with existing template data pre-filled
+- [ ] Header shows "Edit: {template name}" with version and published/draft status
+- [ ] "Save Draft" updates the template via PATCH API
+- [ ] "Publish" button visible (hidden on new templates)
+- [ ] Publishing increments version and shows success toast
+- [ ] Tags comma-separated input populates correctly from existing tags
+
+### Sequence View (Step Editor)
+- [ ] Steps display in numbered order with step number circles
+- [ ] Connection lines visible between steps
+- [ ] Clicking a step expands it (collapses others)
+- [ ] Expanded step has ring-2 ring-primary highlight
+- [ ] Step name editable via input field
+- [ ] Delay configurable with number input and unit dropdown (minutes/hours/days)
+- [ ] Delay converts correctly between units (e.g., 1440 minutes = 1 day)
+- [ ] Message textarea editable with placeholder variables shown
+- [ ] Skip conditions checkboxes: "Lead replied", "Appointment scheduled", "Payment received"
+- [ ] Move up/down buttons reorder steps and renumber them
+- [ ] First step has disabled "Move up", last step has disabled "Move down"
+- [ ] Delete button removes step and renumbers remaining steps
+- [ ] Delete button hidden when only 1 step exists
+- [ ] Collapsed step shows step name, delay summary, and expand chevron
+
+### Push Update Page (`/admin/flow-templates/{id}/push`)
+- [ ] Page loads with template name and version in header
+- [ ] Summary cards show: Total using template, Will update (inherit), Partial update (override), Won't update (detached)
+- [ ] Client list shows all flows using this template
+- [ ] Each client row shows: green checkmark (will update) or gray X (won't), client name, flow name
+- [ ] Sync mode badge (inherit/override/detached) displays per client
+- [ ] Outdated version badge shows "vX → vY" for clients behind
+- [ ] "Preview Changes" button performs dry run and shows results
+- [ ] "Push to N Clients" button pushes update and shows success toast
+- [ ] Push button disabled when no outdated clients
+- [ ] Loading spinner shows during push operation
+- [ ] Result card shows affected/skipped counts after push
+- [ ] Empty state message when no clients use the template
+
+### API Routes
+- [ ] `GET /api/admin/flow-templates` returns all templates (admin only, 403 for non-admin)
+- [ ] `POST /api/admin/flow-templates` creates template with steps (validates with Zod)
+- [ ] `GET /api/admin/flow-templates/{id}` returns template with steps
+- [ ] `PATCH /api/admin/flow-templates/{id}` updates template and replaces steps
+- [ ] `DELETE /api/admin/flow-templates/{id}` deletes template
+- [ ] `POST /api/admin/flow-templates/{id}/publish` publishes template, increments version
+- [ ] `POST /api/admin/flow-templates/{id}/push` pushes update to client flows
+- [ ] `POST /api/admin/flow-templates/{id}/push?dryRun=true` previews without applying
+- [ ] All endpoints return 403 for non-admin users
+
+### Navigation
+- [ ] "Flow Templates" link appears in admin nav under Optimization group
+- [ ] Link navigates to `/admin/flow-templates`
+- [ ] Link styled consistently with other admin nav items (amber color scheme)
+
+### Toast Notifications
+- [ ] Sonner Toaster renders in root layout
+- [ ] Success toasts show in green for save, publish, push actions
+- [ ] Error toasts show in red for validation and API failures
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] `Compiled successfully` in build output
+- [ ] Routes registered: `/admin/flow-templates`, `/admin/flow-templates/[id]`, `/admin/flow-templates/[id]/push`
+- [ ] API routes registered: `/api/admin/flow-templates`, `/api/admin/flow-templates/[id]`, `/api/admin/flow-templates/[id]/publish`, `/api/admin/flow-templates/[id]/push`
+- [ ] No regressions in existing routes
