@@ -10,6 +10,7 @@ import { formatPhoneNumber } from '@/lib/utils/phone';
 import { EditClientForm } from './edit-client-form';
 import { TeamManager } from './team-manager';
 import { DeleteButton } from './delete-button';
+import { FeatureTogglesCard } from './feature-toggles';
 import { format } from 'date-fns';
 
 interface Props {
@@ -187,6 +188,28 @@ export default async function ClientDetailPage({ params }: Props) {
           </Card>
         </div>
       </div>
+
+      <FeatureTogglesCard
+        clientId={client.id}
+        flags={{
+          missedCallSmsEnabled: client.missedCallSmsEnabled,
+          aiResponseEnabled: client.aiResponseEnabled,
+          aiAgentEnabled: client.aiAgentEnabled,
+          aiAgentMode: client.aiAgentMode,
+          autoEscalationEnabled: client.autoEscalationEnabled,
+          voiceEnabled: client.voiceEnabled,
+          flowsEnabled: client.flowsEnabled,
+          leadScoringEnabled: client.leadScoringEnabled,
+          reputationMonitoringEnabled: client.reputationMonitoringEnabled,
+          autoReviewResponseEnabled: client.autoReviewResponseEnabled,
+          calendarSyncEnabled: client.calendarSyncEnabled,
+          hotTransferEnabled: client.hotTransferEnabled,
+          paymentLinksEnabled: client.paymentLinksEnabled,
+          photoRequestsEnabled: client.photoRequestsEnabled,
+          multiLanguageEnabled: client.multiLanguageEnabled,
+          preferredLanguage: client.preferredLanguage,
+        }}
+      />
 
       <TeamManager clientId={client.id} />
     </div>
