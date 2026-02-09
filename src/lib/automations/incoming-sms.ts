@@ -6,6 +6,7 @@ import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { initiateRingGroup } from '@/lib/services/ring-group';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 import { checkAndSuggestFlows, handleApprovalResponse } from '@/lib/services/flow-suggestions';
+import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -115,6 +116,19 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     content: messageBody,
     twilioSid: MessageSid,
   });
+
+  // 5a. Update lead score (quick mode for speed)
+  scoreLead(lead.id, { useAI: false }).catch(console.error);
+
+  // If high-value signals detected, do full AI scoring async
+  const quickFactors = quickScore(messageBody);
+  if (
+    quickFactors.signals?.includes('high_urgency') ||
+    quickFactors.signals?.includes('high_intent') ||
+    quickFactors.signals?.includes('budget_ready')
+  ) {
+    scoreLead(lead.id, { useAI: true }).catch(console.error);
+  }
 
   // 5b. Check conversation mode - skip AI if human has taken over
   if (lead.conversationMode === 'human') {
