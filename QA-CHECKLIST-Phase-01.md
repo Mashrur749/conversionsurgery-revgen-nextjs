@@ -620,3 +620,48 @@ _One integrated manual test pass covering the critical happy paths._
 - [ ] **Management**: Agency Dashboard, Clients, Users
 - [ ] **Optimization**: A/B Tests, Template Performance, Flow Templates, Analytics, Reports, Usage, Reputation
 - [ ] **Configuration**: Phone Numbers, Twilio Settings, Voice AI
+
+---
+
+## Part 21: Database Setup & Seed Data (00E)
+
+### Schema — Clients Feature Flags
+- [ ] `clients` table includes Core SMS flags: `missed_call_sms_enabled` (default true), `ai_response_enabled` (default true)
+- [ ] `clients` table includes AI Agent flags: `ai_agent_enabled` (default true), `ai_agent_mode` (default 'assist'), `auto_escalation_enabled` (default true)
+- [ ] `clients` table includes Automation flags: `flows_enabled` (default true), `lead_scoring_enabled` (default true)
+- [ ] `clients` table includes Integration flags: `calendar_sync_enabled` (default false), `hot_transfer_enabled` (default false), `payment_links_enabled` (default false)
+- [ ] `clients` table includes Reputation flags: `reputation_monitoring_enabled` (default false), `auto_review_response_enabled` (default false)
+- [ ] `clients` table includes Communication flags: `photo_requests_enabled` (default true), `multi_language_enabled` (default false), `preferred_language` (default 'en')
+
+### Schema — New Tables
+- [ ] `subscription_plans` table exists with columns: slug (unique), name, priceMonthly/priceYearly (integer cents), stripe IDs, included quotas (leads/messages/team/phones), features (JSONB), sortOrder, isPublic, isPopular
+- [ ] `admin_users` table exists with columns: email (unique), name, passwordHash, role (default 'admin'), lastLoginAt
+- [ ] `system_settings` table exists with columns: key (unique), value, description
+
+### Schema Exports
+- [ ] `subscription-plans.ts`, `admin-users.ts`, `system-settings.ts` files exist in `src/db/schema/`
+- [ ] All three are re-exported from `src/db/schema/index.ts`
+- [ ] TypeScript types exported: `SubscriptionPlan`, `AdminUser`, `SystemSetting` (+ insert types)
+
+### Migration
+- [ ] Migration file `0008_*.sql` exists in `drizzle/` directory
+- [ ] `npm run db:generate` runs without errors (no pending schema changes)
+
+### Seed Script
+- [ ] `scripts/seed.ts` exists and is syntactically valid
+- [ ] `npm run db:seed` is defined in `package.json` and points to `scripts/seed.ts`
+- [ ] `npm run db:setup` is defined and chains `db:migrate && db:seed`
+- [ ] Seed script is idempotent — running twice does not create duplicates (plans update, admin skips, settings skip)
+- [ ] Seeds 3 subscription plans: Starter ($497), Professional ($997), Enterprise ($1,997)
+- [ ] Seeds 5 flow templates: missed-call-standard, estimate-standard, invoice-reminder, appointment-reminder, review-request
+- [ ] Seeds 1 admin user (uses ADMIN_EMAIL/ADMIN_PASSWORD env vars or defaults)
+- [ ] Seeds 10 system settings (app.name, sms.quiet_hours_*, ai.default_model, billing.trial_days, etc.)
+
+### Database Connection
+- [ ] `GET /api/test-db` returns `{ success: true }` with 200 status
+- [ ] Database client uses `getDb()` factory per request (not cached)
+- [ ] `drizzle.config.ts` points to `./src/db/schema/index.ts`
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] All 60 tables recognized by Drizzle (verify in `db:generate` output)

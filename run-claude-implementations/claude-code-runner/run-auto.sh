@@ -58,7 +58,7 @@ heartbeat() {
     local changed=$(git diff --name-only 2>/dev/null | head -5 | tr '\n' ', ' | sed 's/,$//')
     local staged=$(git diff --cached --name-only 2>/dev/null | head -5 | tr '\n' ', ' | sed 's/,$//')
     echo ""
-    echo -e "${YELLOW}[$(date +%H:%M)] &#128193; $spec_name${NC}"
+    echo -e "${YELLOW}[$(date +%H:%M)] 📁; $spec_name${NC}"
     echo -e "${YELLOW}  Last commit: $last_commit${NC}"
     [ -n "$changed" ] && echo -e "${YELLOW}  Modified: $changed${NC}"
     [ -n "$staged" ] && echo -e "${YELLOW}  Staged: $staged${NC}"
