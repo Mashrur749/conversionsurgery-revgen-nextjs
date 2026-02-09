@@ -107,6 +107,11 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     twilioSid: MessageSid,
   });
 
+  // 5b. Check conversation mode - skip AI if human has taken over
+  if (lead.conversationMode === 'human') {
+    return { processed: true, action: 'human_mode_saved' };
+  }
+
   // 6. Pause active sequences
   await db
     .update(scheduledMessages)
