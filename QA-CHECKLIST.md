@@ -1096,3 +1096,94 @@
 - [ ] No TypeScript type assertion errors in step-review.tsx
 - [ ] All wizard routes registered: `/admin/clients/new`, `/admin/clients/new/wizard`
 - [ ] Admin page links directly to wizard for new client creation
+
+## 15-usage-tracking
+
+### Schema Verification
+- [ ] `api_usage` table exists with columns: id, client_id, service (enum), operation, model, input_tokens, output_tokens, units, cost_cents, lead_id, message_id, flow_execution_id, external_id, metadata, created_at
+- [ ] `api_usage_daily` table exists with columns: id, client_id, date, service, total_requests, total_tokens_in, total_tokens_out, total_units, total_cost_cents, operation_breakdown, updated_at
+- [ ] `api_usage_monthly` table exists with per-service cost columns and volume metrics
+- [ ] `usage_alerts` table exists with alert_type, severity, message, details, acknowledged fields
+- [ ] `api_service` enum has values: openai, twilio_sms, twilio_voice, twilio_phone, stripe, google_places, cloudflare_r2
+- [ ] Unique index on `api_usage_daily(client_id, date, service)`
+- [ ] Unique index on `api_usage_monthly(client_id, month)`
+- [ ] Foreign keys cascade on client delete for all 4 tables
+
+### Cost Configuration
+- [ ] `src/lib/config/api-costs.ts` exists with pricing for all 7 services
+- [ ] `calculateCostCents()` returns correct cents for OpenAI (input + output tokens)
+- [ ] `calculateCostCents()` returns correct cents for Twilio SMS (per segment)
+- [ ] `calculateCostCents()` returns correct cents for Stripe (percentage + fixed)
+- [ ] Cost calculation handles missing/optional parameters gracefully
+
+### Usage Tracking Service
+- [ ] `trackUsage()` inserts record into `api_usage` table
+- [ ] `trackUsage()` updates or creates `api_usage_daily` rollup record
+- [ ] Daily rollup correctly aggregates operation breakdown as JSONB
+- [ ] `getClientUsageSummary()` returns totalCostCents, byService, byDay, topOperations
+- [ ] `getCurrentMonthUsage()` returns costCents, daysRemaining, projectedCostCents
+- [ ] `updateMonthlySummaries()` upserts monthly records for all clients with usage
+- [ ] Monthly summary includes previous month comparison and cost change percent
+
+### Usage Alert Service
+- [ ] `checkUsageAlerts()` creates warning alert at $50 threshold
+- [ ] `checkUsageAlerts()` creates critical alert at $100 threshold
+- [ ] Spike detection triggers when usage is 50%+ higher than previous month
+- [ ] Projected overage triggers anomaly alert at 1.5x critical threshold
+- [ ] Alert deduplication prevents duplicate alerts within 24 hours
+- [ ] Critical alerts send SMS to admin phone number
+- [ ] `acknowledgeAlert()` sets acknowledged=true with timestamp and user ID
+- [ ] `checkAllClientAlerts()` iterates all active clients
+
+### Tracked API Clients
+- [ ] `chatCompletion()` in openai-tracked.ts calls OpenAI and tracks usage asynchronously
+- [ ] `createEmbedding()` in openai-tracked.ts tracks token usage
+- [ ] `sendTrackedSMS()` in twilio-tracked.ts sends SMS and tracks segment count
+- [ ] `trackInboundSMS()` records inbound SMS usage (called from webhook)
+- [ ] `trackPhoneProvisioning()` records phone number cost
+- [ ] Tracking errors are caught and logged (don't block API responses)
+
+### API Routes
+- [ ] `GET /api/admin/usage` returns monthly usage for all clients with totals
+- [ ] `GET /api/admin/usage?month=2026-02` filters by month parameter
+- [ ] `GET /api/admin/usage/[clientId]` returns detailed usage with alerts and projections
+- [ ] `GET /api/admin/usage/[clientId]?startDate=...&endDate=...` supports date range
+- [ ] `POST /api/admin/usage/alerts/[id]/acknowledge` acknowledges an alert
+- [ ] All usage API routes return 403 for non-admin users
+- [ ] All usage API routes return valid JSON responses
+
+### Usage Dashboard UI (`/admin/usage`)
+- [ ] Page loads with admin authentication check (redirects non-admins)
+- [ ] Month selector dropdown shows last 6 months
+- [ ] Changing month re-fetches data from API
+- [ ] Summary cards display: Total Cost, OpenAI cost, Twilio SMS cost, Avg per Client
+- [ ] Client breakdown table shows: Client name, OpenAI cost, SMS cost, Total, vs Last Month
+- [ ] Client name links to detail page `/admin/usage/[clientId]`
+- [ ] Cost change badge shows trending up/down with percentage
+- [ ] Empty state shown when no usage data for selected month
+
+### Client Usage Detail UI (`/admin/usage/[clientId]`)
+- [ ] Page loads with client name in header
+- [ ] Back arrow navigates to `/admin/usage`
+- [ ] Active alerts section shows with acknowledge button
+- [ ] Acknowledging alert refreshes data
+- [ ] Month to Date, Projected Total, Daily Average cards display correctly
+- [ ] Cost by Service section shows progress bars with percentages
+- [ ] Top Operations section shows operation name, call count, and cost
+- [ ] 404 returned for invalid client ID
+
+### Cron Integration
+- [ ] Hourly cron triggers `updateMonthlySummaries()` when UTC minutes < 10
+- [ ] Hourly cron triggers `checkAllClientAlerts()` after monthly summaries
+- [ ] Cron errors are caught and logged (don't break other cron tasks)
+- [ ] Usage tracking results included in cron response JSON
+
+### Navigation
+- [ ] "Usage" link appears in admin nav under Optimization group
+- [ ] Link navigates to `/admin/usage`
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/admin/usage`, `/admin/usage/[clientId]`
+- [ ] API routes registered: `/api/admin/usage`, `/api/admin/usage/[clientId]`, `/api/admin/usage/alerts/[id]/acknowledge`
+- [ ] No unused imports or variables
