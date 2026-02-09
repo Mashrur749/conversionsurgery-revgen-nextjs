@@ -11,6 +11,7 @@ import { EditClientForm } from './edit-client-form';
 import { TeamManager } from './team-manager';
 import { DeleteButton } from './delete-button';
 import { FeatureTogglesCard } from './feature-toggles';
+import { FeatureStatusList } from './feature-status';
 import { format } from 'date-fns';
 
 interface Props {
@@ -188,6 +189,8 @@ export default async function ClientDetailPage({ params }: Props) {
           </Card>
         </div>
       </div>
+
+      <FeatureStatusList client={client} />
 
       <FeatureTogglesCard
         clientId={client.id}
