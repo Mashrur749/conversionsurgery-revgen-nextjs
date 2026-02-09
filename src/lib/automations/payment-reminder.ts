@@ -1,7 +1,9 @@
 import { getDb, clients, leads, invoices, scheduledMessages } from '@/db';
+import { payments, paymentReminders } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { renderTemplate } from '@/lib/utils/templates';
 import { addDays, isFuture, isToday } from 'date-fns';
+import { createPaymentLink, formatAmount } from '@/lib/services/stripe';
 
 interface PaymentPayload {
   leadId: string;
@@ -35,6 +37,7 @@ export async function startPaymentReminder(payload: PaymentPayload) {
   const lead = leadResult[0];
 
   // 2. Create invoice record
+  const amountCents = amount ? Math.round(amount * 100) : undefined;
   const invoiceCreated = await db
     .insert(invoices)
     .values({
@@ -42,6 +45,8 @@ export async function startPaymentReminder(payload: PaymentPayload) {
       clientId,
       invoiceNumber: invoiceNumber || `INV-${Date.now()}`,
       amount: amount ? String(amount) : null,
+      totalAmount: amountCents,
+      remainingAmount: amountCents,
       dueDate: dueDate || new Date().toISOString().split('T')[0],
       paymentLink,
       status: 'pending',
@@ -50,7 +55,32 @@ export async function startPaymentReminder(payload: PaymentPayload) {
 
   const invoice = invoiceCreated[0];
 
-  // 3. Cancel existing payment sequences
+  // 3. Auto-create Stripe payment link if not provided and amount is set
+  let resolvedPaymentLink = paymentLink;
+  if (!resolvedPaymentLink && amountCents && amountCents > 0) {
+    try {
+      const result = await createPaymentLink({
+        clientId,
+        leadId,
+        invoiceId: invoice.id,
+        amount: amountCents,
+        description: `Invoice ${invoice.invoiceNumber || ''} - ${client.businessName}`.trim(),
+        type: 'full',
+      });
+      resolvedPaymentLink = result.paymentLinkUrl;
+
+      // Update invoice with the payment link
+      await db
+        .update(invoices)
+        .set({ paymentLink: resolvedPaymentLink })
+        .where(eq(invoices.id, invoice.id));
+    } catch (err) {
+      console.error('[PaymentReminder] Failed to create Stripe payment link:', err);
+      // Continue without a payment link
+    }
+  }
+
+  // 4. Cancel existing payment sequences
   await db
     .update(scheduledMessages)
     .set({
@@ -65,7 +95,7 @@ export async function startPaymentReminder(payload: PaymentPayload) {
       eq(scheduledMessages.cancelled, false)
     ));
 
-  // 4. Schedule reminders
+  // 5. Schedule reminders
   const dueDateObj = dueDate ? new Date(dueDate + 'T00:00:00') : new Date();
   const scheduledIds: string[] = [];
 
@@ -82,7 +112,7 @@ export async function startPaymentReminder(payload: PaymentPayload) {
       invoiceNumber: invoice.invoiceNumber || '',
       amount: amount?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00',
       currencySymbol: '$',
-      paymentLink: paymentLink || '[payment link]',
+      paymentLink: resolvedPaymentLink || '[payment link]',
       ownerName: client.ownerName,
       businessName: client.businessName,
     });
@@ -100,11 +130,20 @@ export async function startPaymentReminder(payload: PaymentPayload) {
       .returning();
 
     scheduledIds.push(scheduled[0].id);
+
+    // Record in payment_reminders table for tracking
+    await db.insert(paymentReminders).values({
+      invoiceId: invoice.id,
+      reminderNumber: item.step,
+      sentAt: sendAt,
+      messageContent: content,
+    });
   }
 
   return {
     success: true,
     invoiceId: invoice.id,
+    paymentLink: resolvedPaymentLink,
     scheduledCount: scheduledIds.length,
     scheduledIds,
   };
@@ -140,6 +179,15 @@ export async function markInvoicePaid(invoiceId: string) {
         eq(scheduledMessages.sequenceType, 'payment_reminder'),
         eq(scheduledMessages.sent, false),
         eq(scheduledMessages.cancelled, false)
+      ));
+
+    // Also mark any pending payments as paid
+    await db
+      .update(payments)
+      .set({ status: 'paid', paidAt: new Date() })
+      .where(and(
+        eq(payments.invoiceId, invoiceId),
+        eq(payments.status, 'pending')
       ));
   }
 
