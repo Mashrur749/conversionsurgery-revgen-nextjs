@@ -22,6 +22,7 @@ const adminNavItems = [
   ]},
   { group: 'Optimization', items: [
     { href: '/admin/flow-templates', label: 'Flow Templates' },
+    { href: '/admin/analytics', label: 'Analytics' },
     { href: '/admin/template-performance', label: 'Template Performance' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/usage', label: 'Usage' },
