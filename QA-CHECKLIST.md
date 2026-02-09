@@ -1828,3 +1828,101 @@
 - [ ] `Compiled successfully` in build output
 - [ ] Route registered: `/api/client/leads/[id]/suggestions`
 - [ ] No regressions in existing routes
+
+---
+
+## 22-flow-metrics
+
+### Schema Tables
+- [ ] `template_metrics_daily` table exists in `src/db/schema/template-metrics-daily.ts`
+- [ ] Has unique index on `(templateId, date)` to enable upsert
+- [ ] Tracks volume: `executionsStarted`, `executionsCompleted`, `executionsCancelled`
+- [ ] Tracks messages: `messagesSent`, `messagesDelivered`, `messagesFailed`
+- [ ] Tracks engagement: `leadsResponded`, `totalResponses`, `avgResponseTimeMinutes`
+- [ ] Tracks conversions: `conversions`, `conversionValue` (decimal)
+- [ ] Tracks opt-outs: `optOuts`
+- [ ] `template_step_metrics` table exists in `src/db/schema/template-step-metrics.ts`
+- [ ] Has unique index on `(templateId, stepNumber, date)`
+- [ ] Tracks `messagesSent`, `responsesReceived`, `skipped` per step per day
+- [ ] `client_flow_outcomes` table exists in `src/db/schema/client-flow-outcomes.ts`
+- [ ] Has unique index on `(clientId, flowId, period)`
+- [ ] Tracks `leadsContacted`, `leadsResponded`, `conversions`, `revenue`
+- [ ] All three tables exported from `src/db/schema/index.ts`
+
+### Metrics Collection Service (`src/lib/services/flow-metrics.ts`)
+- [ ] `recordExecutionStart(templateId)` upserts daily `executionsStarted` count
+- [ ] `recordExecutionComplete(templateId, converted, value)` upserts `executionsCompleted` and conditionally increments `conversions`
+- [ ] `recordStepMessageSent(templateId, stepNumber)` upserts both daily and step-level metrics
+- [ ] `recordLeadResponse(templateId, stepNumber, responseTime)` updates response counts and running average
+- [ ] `recordOptOut(templateId)` increments daily opt-out counter
+- [ ] `getTemplatePerformance(templateId, days)` returns aggregate stats with completion/response/conversion/opt-out rates
+- [ ] `getTemplatePerformance` returns `stepPerformance` array with per-step response rates
+- [ ] `compareTemplates(category, days)` returns all templates in category with rates
+- [ ] `getClientOutcomes(clientId, period)` returns outcomes grouped by flow category
+- [ ] `updateClientOutcomes(clientId, flowId, period, updates)` upserts client outcomes
+- [ ] All functions use `getDb()` per-request pattern
+- [ ] All SQL aggregates use `COALESCE` for null safety
+
+### Analytics API Routes
+- [ ] `GET /api/admin/analytics/templates` returns 403 for non-admin users
+- [ ] Requires `category` query param, returns 400 if missing
+- [ ] Accepts optional `days` param (defaults to 30)
+- [ ] Returns array of template comparison data with rates
+- [ ] `GET /api/admin/analytics/templates/[id]` returns 403 for non-admin users
+- [ ] Returns detailed template performance with step-level data
+- [ ] Uses `Promise<{ id: string }>` for async params (Next.js 16)
+- [ ] `GET /api/clients/[id]/outcomes` returns 401 for unauthenticated users
+- [ ] Returns client outcomes with missed calls, estimates, payments, reviews
+
+### Admin Analytics Dashboard (`/admin/analytics`)
+- [ ] Page renders at `/admin/analytics` route
+- [ ] Page uses `force-dynamic` to prevent build-time DB query
+- [ ] Fetches distinct template categories from database
+- [ ] Renders `CategoryPerformance` component for each category
+- [ ] Shows empty state when no templates exist
+- [ ] "Analytics" link appears in admin navigation under Optimization group
+
+### Category Performance Component
+- [ ] Fetches comparison data from `/api/admin/analytics/templates?category=X&days=Y`
+- [ ] Renders table with Template, Executions, Response Rate, Conversion Rate, Opt-out Rate
+- [ ] Date range toggles: 7d, 30d, 90d buttons
+- [ ] Low-volume warning shown when total executions < 100
+- [ ] Crown icon on best-performing template (only when >= 100 executions)
+- [ ] "Best performer" banner with conversion rate comparison (only when >= 100 executions and 2+ templates)
+- [ ] Metric cells show color: green for good, red for bad (inverse for opt-out rate)
+- [ ] Arrow button links to template detail page
+- [ ] Returns null (hidden) when no templates in category
+
+### Template Detail Stats Component
+- [ ] Fetches data from `/api/admin/analytics/templates/{id}`
+- [ ] Displays 4 summary cards: Executions, Response Rate, Conversion Rate, Opt-out Rate
+- [ ] Step performance shown as horizontal bar chart
+- [ ] Bar width proportional to max response rate in steps
+- [ ] Each bar shows percentage label and "X sent" count
+- [ ] Insights section with conditional messages:
+  - Strong first message (Step 1 response > 20%)
+  - Low initial response (Step 1 response < 10%)
+  - High opt-out rate warning (> 3%)
+  - Above average conversion note (> 15%)
+  - Empty state when no executions
+
+### Client Outcomes Widget
+- [ ] Fetches from `/api/clients/{id}/outcomes`
+- [ ] 4 outcome cards: Missed Calls (blue), Estimates (green), Payments (emerald), Reviews (yellow)
+- [ ] Each card shows count/total and rate percentage
+- [ ] Payment card shows dollar amount
+- [ ] Loading state while fetching
+
+### Flow Execution Integration
+- [ ] `startFlowExecution` looks up flow's `templateId`
+- [ ] Calls `recordExecutionStart(templateId)` after creating execution
+- [ ] Calls `updateClientOutcomes` with `leadsContacted: 1`
+- [ ] `executeStep` receives `templateId` parameter
+- [ ] Calls `recordStepMessageSent(templateId, stepNumber)` after successful SMS
+- [ ] Metrics calls wrapped in `.catch(console.error)` to not block flow execution
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] `Compiled successfully` in build output
+- [ ] Routes registered: `/admin/analytics`, `/api/admin/analytics/templates`, `/api/admin/analytics/templates/[id]`, `/api/clients/[id]/outcomes`
+- [ ] No regressions in existing routes
