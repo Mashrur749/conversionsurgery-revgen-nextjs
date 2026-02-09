@@ -18,6 +18,7 @@ import { flowTemplates, flowTemplateSteps, flowTemplateVersions } from './flow-t
 import { flows, flowSteps } from './flows';
 import { flowExecutions, flowStepExecutions, suggestedActions } from './flow-executions';
 import { knowledgeBase } from './knowledge-base';
+import { notificationPreferences } from './notification-preferences';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -41,6 +42,7 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   flowExecutions: many(flowExecutions),
   suggestedActions: many(suggestedActions),
   knowledgeBase: many(knowledgeBase),
+  notificationPreferences: many(notificationPreferences),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -291,6 +293,14 @@ export const suggestedActionsRelations = relations(suggestedActions, ({ one }) =
 export const knowledgeBaseRelations = relations(knowledgeBase, ({ one }) => ({
   client: one(clients, {
     fields: [knowledgeBase.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Notification Preferences
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  client: one(clients, {
+    fields: [notificationPreferences.clientId],
     references: [clients.id],
   }),
 }));

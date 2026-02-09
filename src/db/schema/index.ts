@@ -32,6 +32,7 @@ export * from './template-metrics-daily';
 export * from './template-step-metrics';
 export * from './client-flow-outcomes';
 export * from './knowledge-base';
+export * from './notification-preferences';
 
 // Auth tables (NextAuth)
 export * from './auth';
