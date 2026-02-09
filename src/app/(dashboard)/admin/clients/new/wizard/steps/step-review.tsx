@@ -35,9 +35,8 @@ export function StepReview({ data, onBack, onComplete }: Props) {
         body: JSON.stringify({ status: 'active' }),
       });
 
-      const result = (await res.json()) as { error?: string };
-
       if (!res.ok) {
+        const result = await res.json();
         setError(result.error || 'Failed to activate');
         return;
       }
@@ -148,10 +147,10 @@ export function StepReview({ data, onBack, onComplete }: Props) {
           <h4 className="font-medium text-amber-800 mb-2">Before you go live:</h4>
           <ul className="text-sm text-amber-700 space-y-1">
             {!data.twilioNumber && (
-              <li>• Assign a phone number to receive calls and texts</li>
+              <li>Assign a phone number to receive calls and texts</li>
             )}
             {data.teamMembers.length === 0 && (
-              <li>• Add team members to share escalation load</li>
+              <li>Add team members to share escalation load</li>
             )}
           </ul>
         </div>
@@ -167,7 +166,7 @@ export function StepReview({ data, onBack, onComplete }: Props) {
           disabled={activating || !data.twilioNumber}
           className="min-w-32"
         >
-          {activating ? 'Activating...' : '🚀 Activate Client'}
+          {activating ? 'Activating...' : 'Activate Client'}
         </Button>
       </div>
     </div>
