@@ -1387,3 +1387,106 @@
 - [ ] Routes registered: `/client/conversations`, `/client/conversations/[id]`
 - [ ] API routes registered: `/api/client/conversations/[id]/takeover`, `/api/client/conversations/[id]/handback`, `/api/client/conversations/[id]/send`
 - [ ] No unused imports or variables
+
+## 18-weekly-sms-summary
+
+### Schema: Weekly Summary Preferences on Clients
+- [ ] `clients` table has `weekly_summary_enabled` boolean column (default: true)
+- [ ] `clients` table has `weekly_summary_day` integer column (default: 1 for Monday)
+- [ ] `clients` table has `weekly_summary_time` varchar(5) column (default: '08:00')
+- [ ] `clients` table has `last_weekly_summary_at` timestamp column (nullable)
+- [ ] New columns exported via `Client` type from `src/db/schema/clients.ts`
+
+### Weekly Summary Service (src/lib/services/weekly-summary.ts)
+- [ ] `getWeeklyStats(clientId)` returns stats for the last 7 days
+- [ ] Stats include: leadsCapture (missedCalls + forms), messagesSent, appointmentsBooked
+- [ ] Stats include: escalationsClaimed, topTeamMember name, topTeamMemberClaims count
+- [ ] Escalation stats use inner join on `escalation_claims` and `team_members` tables
+- [ ] `formatWeeklySMS()` returns formatted SMS string with leads, messages, appointments
+- [ ] SMS includes top team member if available
+- [ ] SMS includes dashboard link at the end
+- [ ] `formatWeeklyEmail()` returns `{ subject, html }` with styled HTML email
+- [ ] Email includes leads captured, messages sent, appointments (if > 0), top performer
+- [ ] Email includes "View Full Dashboard" button linking to magic link
+- [ ] `sendWeeklySummary(clientId)` sends both SMS and email to the client
+- [ ] SMS sent only when client has `phone` AND `twilioNumber` configured
+- [ ] Email sent only when client has `email` configured
+- [ ] Creates magic link via `createMagicLink()` for dashboard access
+- [ ] Updates `lastWeeklySummaryAt` after sending
+- [ ] Skips sending if `weeklySummaryEnabled` is false
+- [ ] `processWeeklySummaries()` finds eligible clients by day of week and status
+- [ ] Only processes clients with matching `weeklySummaryDay` and `status: 'active'`
+- [ ] Checks `weeklySummaryTime` hour matches current hour
+- [ ] Skips clients who received summary within last 6 days (prevents duplicates)
+- [ ] Returns count of summaries sent
+- [ ] Errors for individual clients are caught and logged (don't block other clients)
+- [ ] All functions use `getDb()` per-request (not cached db instance)
+
+### Cron Route (src/app/api/cron/weekly-summary/route.ts)
+- [ ] `GET /api/cron/weekly-summary` endpoint exists
+- [ ] Verifies `CRON_SECRET` via Authorization Bearer header
+- [ ] Returns 401 when secret is missing or doesn't match
+- [ ] Calls `processWeeklySummaries()` from the service
+- [ ] Returns `{ success: true, sent: <count> }` on success
+- [ ] Returns 500 with error on failure
+- [ ] Existing cron orchestrator (`/api/cron/route.ts`) already calls this on Monday 7am UTC
+
+### Client Settings Page (src/app/(client)/client/settings/page.tsx)
+- [ ] Page exists at `/client/settings` under `(client)` layout group
+- [ ] Redirects to `/link-expired` when no client session
+- [ ] Shows "Settings" heading
+- [ ] Card with "Weekly Summary" title
+- [ ] Passes current `weeklySummaryEnabled`, `weeklySummaryDay`, `weeklySummaryTime` to component
+
+### Summary Settings Component (src/app/(client)/client/settings/summary-settings.tsx)
+- [ ] Marked as `'use client'` component
+- [ ] Switch toggle for "Receive weekly summary" (enabled/disabled)
+- [ ] When enabled: shows day-of-week selector (Sunday through Saturday)
+- [ ] When enabled: shows time selector (06:00 through 12:00)
+- [ ] When disabled: hides day and time selectors
+- [ ] "Save" button calls `PUT /api/client/settings/summary`
+- [ ] Button shows "Saving..." while request is in flight
+- [ ] Button shows "Saved!" after successful save
+- [ ] Page refreshes after save via `router.refresh()`
+
+### Settings API Route (src/app/api/client/settings/summary/route.ts)
+- [ ] `PUT /api/client/settings/summary` endpoint exists
+- [ ] Returns 401 when no `clientSessionId` cookie
+- [ ] Validates input with Zod: `enabled` (boolean), `day` (0-6 int), `time` (HH:MM format)
+- [ ] Returns 400 with validation details on invalid input
+- [ ] Updates `weeklySummaryEnabled`, `weeklySummaryDay`, `weeklySummaryTime` on client
+- [ ] Updates `updatedAt` timestamp
+- [ ] Returns `{ success: true }` on success
+- [ ] Returns 500 on unexpected errors
+
+### Client Layout Navigation
+- [ ] "Settings" link appears in client nav bar
+- [ ] Nav items: Dashboard, Conversations, Team, Settings
+- [ ] Settings link navigates to `/client/settings`
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. Access client dashboard via magic link (`/d/<token>`)
+3. Click "Settings" in navigation — verify settings page loads
+4. Verify "Weekly Summary" card displays with switch, day, and time selectors
+5. Toggle the switch off — verify day and time selectors disappear
+6. Toggle switch back on — verify selectors reappear with previous values
+7. Change day to "Friday" and time to "09:00"
+8. Click "Save" — verify button shows "Saving..." then "Saved!"
+9. Refresh the page — verify settings persisted (Friday, 09:00)
+10. Toggle switch off and save — verify persisted on refresh
+11. Manually test cron:
+    ```bash
+    curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/weekly-summary
+    ```
+12. Verify response includes `{ success: true, sent: <number> }`
+13. Without auth header, verify 401 response:
+    ```bash
+    curl http://localhost:3000/api/cron/weekly-summary
+    ```
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/client/settings`, `/api/client/settings/summary`, `/api/cron/weekly-summary`
+- [ ] Service file exists: `src/lib/services/weekly-summary.ts`
+- [ ] No unused imports or variables
