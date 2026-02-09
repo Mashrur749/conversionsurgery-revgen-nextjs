@@ -62,23 +62,17 @@ export async function getEnabledFeatures(
   features: FeatureFlag[]
 ): Promise<Record<FeatureFlag, boolean>> {
   const db = getDb();
-  const columns = features.reduce(
-    (acc, feature) => {
-      acc[feature] = clients[featureToColumn[feature]];
-      return acc;
-    },
-    {} as Record<string, (typeof clients.$inferSelect)[keyof typeof clients.$inferSelect]>
-  );
 
   const [client] = await db
-    .select(columns)
+    .select()
     .from(clients)
     .where(eq(clients.id, clientId))
     .limit(1);
 
   return features.reduce(
     (acc, feature) => {
-      acc[feature] = (client?.[feature as keyof typeof client] as boolean) ?? false;
+      const col = featureToColumn[feature] as keyof typeof client;
+      acc[feature] = (client?.[col] as boolean) ?? false;
       return acc;
     },
     {} as Record<FeatureFlag, boolean>
