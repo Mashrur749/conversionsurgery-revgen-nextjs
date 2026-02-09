@@ -1,0 +1,34 @@
+All done. Here's a summary of what was implemented:
+
+### Phase 26: Notification Preferences - Complete
+
+**5 commits made:**
+
+| Commit | Description |
+|--------|-------------|
+| `69d1ad9` | Schema: `notification_preferences` table + relations |
+| `2637f10` | Service: `getNotificationPrefs`, `updateNotificationPrefs`, `isInQuietHours`, `shouldNotify` |
+| `671d917` | API: `GET/PUT /api/client/notifications` with Zod validation |
+| `dc46272` | UI: Settings page + form with SMS/email/quiet hours controls |
+| `17ce874` | Integration: "Manage Notifications" link on client settings page |
+| `430dbc5` | QA: 68 lines of test steps appended to QA-CHECKLIST.md |
+
+**Files created (5):**
+- `src/db/schema/notification-preferences.ts` — schema with 14 preference columns
+- `src/lib/services/notification-preferences.ts` — service with 4 exported functions
+- `src/app/api/client/notifications/route.ts` — GET/PUT with auth + Zod
+- `src/app/(client)/client/settings/notifications/page.tsx` — server component
+- `src/app/(client)/client/settings/notifications/notification-settings-form.tsx` — client form
+
+**Files modified (3):**
+- `src/db/schema/index.ts` — added export
+- `src/db/schema/relations.ts` — added relation
+- `src/app/(client)/client/settings/page.tsx` — added notifications link
+
+**Key adaptations from doc to match project patterns:**
+- Used `getDb()` per-request instead of global `db`
+- Used `uuid_generate_v4()` instead of `defaultRandom()`
+- Added `await` on `cookies()` for Next.js 16
+- Added Zod validation on PUT endpoint
+- Added error handling with try/catch on API routes
+- Build: 0 TypeScript errors, 2 new routes registered
