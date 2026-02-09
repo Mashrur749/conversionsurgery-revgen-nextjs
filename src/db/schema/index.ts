@@ -19,6 +19,10 @@ export * from './ab-tests';
 export * from './reports';
 export * from './template-variants';
 export * from './template-performance-metrics';
+export * from './api-usage';
+export * from './api-usage-daily';
+export * from './api-usage-monthly';
+export * from './usage-alerts';
 
 // Auth tables (NextAuth)
 export * from './auth';
