@@ -26,6 +26,7 @@ export * from './usage-alerts';
 export * from './magic-link-tokens';
 export * from './flow-enums';
 export * from './flow-templates';
+export * from './flows';
 
 // Auth tables (NextAuth)
 export * from './auth';
