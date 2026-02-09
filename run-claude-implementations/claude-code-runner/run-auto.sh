@@ -23,15 +23,24 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# Get current spec
+# Collect spec files into sorted array
+SPEC_FILES=()
+while IFS= read -r f; do
+  SPEC_FILES+=("$f")
+done < <(ls "$SPECS_DIR"/*.md 2>/dev/null | sort)
+total=${#SPEC_FILES[@]}
+
+# Get current spec (1-based index)
 if [ -f "$PROGRESS_FILE" ]; then
   current=$(cat "$PROGRESS_FILE")
+  # Clamp to valid range
+  if [ "$current" -lt 1 ] 2>/dev/null; then
+    current=1
+  fi
 else
   current=1
   echo $current > "$PROGRESS_FILE"
 fi
-
-total=$(ls "$SPECS_DIR"/*.md 2>/dev/null | wc -l | tr -d ' ')
 
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════════════════════════╗"
@@ -70,16 +79,15 @@ run_spec() {
 }
 
 while [ "$current" -le "$total" ]; do
-  padded=$(printf "%02d" $current)
-  spec_file=$(ls "$SPECS_DIR"/${padded}-*.md 2>/dev/null | head -1)
-  
-  if [ -z "$spec_file" ]; then
+  spec_file="${SPEC_FILES[$((current - 1))]}"
+
+  if [ -z "$spec_file" ] || [ ! -f "$spec_file" ]; then
     echo -e "${YELLOW}Spec $current not found, skipping${NC}"
     current=$((current + 1))
     echo $current > "$PROGRESS_FILE"
     continue
   fi
-  
+
   spec_name=$(basename "$spec_file" .md)
   log_file="$LOG_DIR/${spec_name}-$(date +%Y%m%d-%H%M%S).log"
   

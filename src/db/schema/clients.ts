@@ -28,6 +28,41 @@ export const clients = pgTable(
     googleBusinessAccountId: varchar('google_business_account_id', { length: 100 }),
     googleLocationId: varchar('google_location_id', { length: 100 }),
     timezone: varchar('timezone', { length: 50 }).default('America/Edmonton'),
+
+    // ============================================
+    // FEATURE FLAGS
+    // ============================================
+
+    // Core SMS
+    missedCallSmsEnabled: boolean('missed_call_sms_enabled').default(true),
+    aiResponseEnabled: boolean('ai_response_enabled').default(true),
+
+    // AI Agent
+    aiAgentEnabled: boolean('ai_agent_enabled').default(true),
+    aiAgentMode: varchar('ai_agent_mode', { length: 20 }).default('assist'), // 'off', 'assist', 'autonomous'
+    autoEscalationEnabled: boolean('auto_escalation_enabled').default(true),
+
+    // Automation
+    flowsEnabled: boolean('flows_enabled').default(true),
+    leadScoringEnabled: boolean('lead_scoring_enabled').default(true),
+
+    // Integrations
+    calendarSyncEnabled: boolean('calendar_sync_enabled').default(false),
+    hotTransferEnabled: boolean('hot_transfer_enabled').default(false),
+    paymentLinksEnabled: boolean('payment_links_enabled').default(false),
+
+    // Reputation
+    reputationMonitoringEnabled: boolean('reputation_monitoring_enabled').default(false),
+    autoReviewResponseEnabled: boolean('auto_review_response_enabled').default(false),
+
+    // Communication
+    photoRequestsEnabled: boolean('photo_requests_enabled').default(true),
+    multiLanguageEnabled: boolean('multi_language_enabled').default(false),
+    preferredLanguage: varchar('preferred_language', { length: 10 }).default('en'),
+
+    // ============================================
+    // NOTIFICATIONS
+    // ============================================
     notificationEmail: boolean('notification_email').default(true),
     notificationSms: boolean('notification_sms').default(true),
     webhookUrl: varchar('webhook_url', { length: 500 }),
