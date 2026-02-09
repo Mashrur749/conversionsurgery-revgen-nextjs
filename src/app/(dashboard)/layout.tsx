@@ -23,6 +23,7 @@ const adminNavItems = [
   { group: 'Optimization', items: [
     { href: '/admin/template-performance', label: 'Template Performance' },
     { href: '/admin/reports', label: 'Reports' },
+    { href: '/admin/usage', label: 'Usage' },
   ]},
   { group: 'Configuration', items: [
     { href: '/admin/phone-numbers', label: 'Phone Numbers' },
