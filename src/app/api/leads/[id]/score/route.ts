@@ -48,7 +48,8 @@ export async function POST(
   }
 
   const { id } = await params;
-  const { useAI = true } = await request.json().catch(() => ({}));
+  const body = await request.json().catch(() => ({})) as { useAI?: boolean };
+  const { useAI = true } = body;
 
   const result = await scoreLead(id, { useAI });
 
