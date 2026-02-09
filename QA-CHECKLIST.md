@@ -747,3 +747,81 @@
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] Routes registered: `/admin`, `/admin/clients/new`, `/admin/clients/[id]`, `/admin/users`
 - [ ] UI components installed: `dialog.tsx`, `tabs.tsx`, `dropdown-menu.tsx`
+
+---
+
+## 11-twilio-provisioning-service
+
+### Service Layer (`src/lib/services/twilio-provisioning.ts`)
+- [ ] File exports 6 functions: `searchAvailableNumbers`, `purchaseNumber`, `configureExistingNumber`, `releaseNumber`, `getAccountBalance`, `listOwnedNumbers`
+- [ ] `searchAvailableNumbers` accepts `areaCode`, `contains`, `country` params
+- [ ] `searchAvailableNumbers` defaults country to `'CA'` when not provided
+- [ ] `searchAvailableNumbers` returns max 10 results with `phoneNumber`, `friendlyName`, `locality`, `region`, `capabilities`
+- [ ] Mock number fallback in development when Twilio returns no results or errors
+- [ ] Mock numbers use `+1XXX555YYYY` format (area code + 555 + 4 digits)
+- [ ] Mock localities mapped for area codes: 403 (Calgary), 780 (Edmonton), 604 (Vancouver), 416 (Toronto), 514 (Montreal)
+- [ ] `purchaseNumber` checks for `NEXT_PUBLIC_APP_URL` before proceeding
+- [ ] `purchaseNumber` configures voice webhook to `/api/webhooks/twilio/voice`
+- [ ] `purchaseNumber` configures SMS webhook to `/api/webhooks/twilio/sms`
+- [ ] `purchaseNumber` updates client `twilioNumber`, `status` to `'active'`, and `updatedAt`
+- [ ] `purchaseNumber` detects mock numbers and skips Twilio API call in development
+- [ ] `configureExistingNumber` looks up number in Twilio account before configuring
+- [ ] `configureExistingNumber` returns error if number not found in Twilio account
+- [ ] `configureExistingNumber` updates webhooks and client record on success
+- [ ] `releaseNumber` fetches client record to get current `twilioNumber`
+- [ ] `releaseNumber` returns error if no number assigned to client
+- [ ] `releaseNumber` clears webhooks but does NOT delete the number from Twilio
+- [ ] `releaseNumber` sets client `twilioNumber` to `null` and `status` to `'paused'`
+- [ ] `getAccountBalance` returns `{ balance, currency }` or `null` on error
+- [ ] `listOwnedNumbers` returns array of `{ phoneNumber, friendlyName, sid }` or empty array on error
+- [ ] All functions use `getDb()` per-request pattern (not cached db instance)
+
+### Search API (`GET /api/admin/twilio/search`)
+- [ ] Returns 403 when user is not admin
+- [ ] Accepts query params: `areaCode`, `contains`, `country`
+- [ ] Validates area code is exactly 3 digits (returns 400 if invalid)
+- [ ] Returns `{ success, numbers, count, isDevelopmentMock }` on success
+- [ ] Returns 500 with error message on Twilio failure
+
+### Purchase API (`POST /api/admin/twilio/purchase`)
+- [ ] Returns 403 when user is not admin
+- [ ] Validates body with Zod: `phoneNumber` (min 10 chars), `clientId` (UUID)
+- [ ] Returns 400 with `'Invalid input'` on Zod validation failure
+- [ ] Returns 400 with service error message when purchase fails
+- [ ] Returns `{ success: true, sid }` on successful purchase
+- [ ] Returns 500 on unexpected errors
+
+### Configure API (`POST /api/admin/twilio/configure`)
+- [ ] Returns 403 when user is not admin
+- [ ] Validates body with Zod: `phoneNumber` (min 10 chars), `clientId` (UUID)
+- [ ] Returns 400 with `'Invalid input'` on Zod validation failure
+- [ ] Returns 400 with service error when number not found in Twilio account
+- [ ] Returns `{ success: true }` on successful configuration
+
+### Release API (`POST /api/admin/twilio/release`)
+- [ ] Returns 403 when user is not admin
+- [ ] Validates body with Zod: `clientId` (UUID)
+- [ ] Returns 400 when no number assigned to client
+- [ ] Returns `{ success: true }` on successful release
+
+### Account API (`GET /api/admin/twilio/account`)
+- [ ] Returns 403 when user is not admin
+- [ ] Returns `{ balance, numbers }` with parallel data fetching
+- [ ] `balance` is `{ balance: string, currency: string }` or `null`
+- [ ] `numbers` is array of `{ phoneNumber, friendlyName, sid }`
+
+### Manual Verification Steps
+1. Start dev server: `npm run dev`
+2. As admin, call `GET /api/admin/twilio/search?areaCode=403` — verify returns mock numbers in development
+3. Call with invalid area code `?areaCode=12` — verify 400 error
+4. Call `GET /api/admin/twilio/account` — verify returns balance and numbers
+5. Create a test client, then call `POST /api/admin/twilio/purchase` with a mock number and the client ID — verify client gets number assigned
+6. Call `POST /api/admin/twilio/release` with the client ID — verify number removed and status set to paused
+7. Call `POST /api/admin/twilio/configure` with a number and client ID — verify configuration attempt
+8. As non-admin user, call any endpoint — verify 403 response
+9. Submit invalid JSON body to purchase/configure/release — verify 400 response
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/api/admin/twilio/search`, `/api/admin/twilio/purchase`, `/api/admin/twilio/configure`, `/api/admin/twilio/release`, `/api/admin/twilio/account`
+- [ ] Service file exists at `src/lib/services/twilio-provisioning.ts`
