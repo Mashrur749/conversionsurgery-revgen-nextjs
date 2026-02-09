@@ -4,14 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import type { WizardData } from '../setup-wizard';
 
 interface Props {
@@ -21,45 +14,29 @@ interface Props {
   onBack: () => void;
 }
 
-const ROLES = [
-  { value: 'manager', label: 'Manager' },
-  { value: 'lead', label: 'Lead/Sales' },
-  { value: 'support', label: 'Support' },
-  { value: 'admin', label: 'Admin' },
-];
-
 export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
+  const [showAdd, setShowAdd] = useState(false);
   const [newMember, setNewMember] = useState({
     name: '',
     phone: '',
     email: '',
-    role: 'lead',
+    role: '',
   });
   const [error, setError] = useState('');
 
   function addMember() {
-    setError('');
-
-    if (!newMember.name || !newMember.phone || !newMember.email) {
-      setError('Please fill in all team member fields');
-      return;
-    }
-
-    if (!newMember.email.includes('@')) {
-      setError('Please enter a valid email');
+    if (!newMember.name || !newMember.phone) {
+      setError('Name and phone are required');
       return;
     }
 
     updateData({
-      teamMembers: [...data.teamMembers, newMember],
+      teamMembers: [...data.teamMembers, { ...newMember }],
     });
 
-    setNewMember({
-      name: '',
-      phone: '',
-      email: '',
-      role: 'lead',
-    });
+    setNewMember({ name: '', phone: '', email: '', role: '' });
+    setShowAdd(false);
+    setError('');
   }
 
   function removeMember(index: number) {
@@ -69,33 +46,20 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
   }
 
   async function handleNext() {
-    setError('');
-
     // Save team members to database if we have any
     if (data.teamMembers.length > 0 && data.clientId) {
-      try {
-        for (const member of data.teamMembers) {
-          const res = await fetch('/api/team-members', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              clientId: data.clientId,
-              name: member.name,
-              phone: member.phone,
-              email: member.email || undefined,
-              role: member.role || undefined,
-            }),
-          });
-
-          if (!res.ok) {
-            const result = (await res.json()) as { error?: string };
-            setError(result.error || 'Failed to save team member');
-            return;
-          }
-        }
-      } catch (err) {
-        setError('Something went wrong saving team members');
-        return;
+      for (const member of data.teamMembers) {
+        await fetch('/api/team-members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId: data.clientId,
+            name: member.name,
+            phone: member.phone,
+            email: member.email || undefined,
+            role: member.role || undefined,
+          }),
+        });
       }
     }
 
@@ -115,101 +79,90 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
         </div>
       )}
 
-      {/* Add Member Form */}
-      <div className="border rounded-lg p-4 bg-gray-50">
-        <h3 className="font-semibold mb-4">Add Team Member</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="memberName">Name</Label>
-            <Input
-              id="memberName"
-              value={newMember.name}
-              onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
-              placeholder="Jane Doe"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="memberEmail">Email</Label>
-            <Input
-              id="memberEmail"
-              type="email"
-              value={newMember.email}
-              onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
-              placeholder="jane@example.com"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="memberPhone">Phone</Label>
-            <Input
-              id="memberPhone"
-              type="tel"
-              value={newMember.phone}
-              onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
-              placeholder="403-555-1234"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="memberRole">Role</Label>
-            <Select
-              value={newMember.role}
-              onValueChange={(value) => setNewMember({ ...newMember, role: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLES.map((role) => (
-                  <SelectItem key={role.value} value={role.value}>
-                    {role.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <Button onClick={addMember} className="mt-4 w-full">
-          Add Member
-        </Button>
-      </div>
-
-      {/* Team Members List */}
       {data.teamMembers.length > 0 && (
-        <div className="space-y-2">
-          <p className="font-semibold text-sm">{data.teamMembers.length} Member(s) Added</p>
+        <div className="border rounded-lg divide-y">
           {data.teamMembers.map((member, index) => (
-            <Card key={index} className="p-4">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="font-medium">{member.name}</p>
-                  <p className="text-sm text-muted-foreground">{member.email}</p>
-                  <p className="text-sm text-muted-foreground">{member.phone}</p>
-                  <p className="text-xs mt-1">
-                    <span className="inline-block px-2 py-1 bg-blue-50 text-blue-700 rounded">
-                      {ROLES.find((r) => r.value === member.role)?.label}
-                    </span>
-                  </p>
-                </div>
+            <div key={index} className="flex items-center justify-between p-3">
+              <div>
+                <p className="font-medium">{member.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {member.phone}
+                  {member.email && ` • ${member.email}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {member.role && (
+                  <Badge variant="outline">{member.role}</Badge>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="text-red-600"
                   onClick={() => removeMember(index)}
-                  className="text-red-600 hover:text-red-700"
                 >
                   Remove
                 </Button>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       )}
 
+      {showAdd ? (
+        <div className="border rounded-lg p-4 space-y-3">
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-1">
+              <Label>Name *</Label>
+              <Input
+                value={newMember.name}
+                onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                placeholder="John Smith"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Phone *</Label>
+              <Input
+                value={newMember.phone}
+                onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                placeholder="403-555-1234"
+              />
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-1">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={newMember.email}
+                onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                placeholder="john@example.com"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Role</Label>
+              <Input
+                value={newMember.role}
+                onChange={(e) => setNewMember({ ...newMember, role: e.target.value })}
+                placeholder="Sales, Estimator, etc."
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={addMember}>Add Member</Button>
+            <Button variant="ghost" onClick={() => setShowAdd(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button variant="outline" onClick={() => setShowAdd(true)}>
+          + Add Team Member
+        </Button>
+      )}
+
       {data.teamMembers.length === 0 && (
         <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-          ⚠️ Without team members, escalations will only go to the business owner.
+          Without team members, escalations will only go to the business owner.
           You can add team members later from the settings page.
         </p>
       )}
