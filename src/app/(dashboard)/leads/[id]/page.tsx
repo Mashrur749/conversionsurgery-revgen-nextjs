@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
 import { getDb, leads, conversations, scheduledMessages, users, mediaAttachments } from '@/db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { ReplyForm } from './reply-form';
 import { ActionButtons } from './action-buttons';
-import { MessageMedia } from './message-media';
+import { LeadTabs } from './lead-tabs';
 export const dynamic = 'force-dynamic';
 
 interface Props {
@@ -62,12 +62,13 @@ export default async function LeadDetailPage({ params }: Props) {
     .from(mediaAttachments)
     .where(eq(mediaAttachments.leadId, lead.id));
 
-  const mediaByMessage = new Map<string, typeof media>();
+  const mediaByMessage: Record<string, typeof media> = {};
   for (const m of media) {
     if (m.messageId) {
-      const existing = mediaByMessage.get(m.messageId) || [];
-      existing.push(m);
-      mediaByMessage.set(m.messageId, existing);
+      if (!mediaByMessage[m.messageId]) {
+        mediaByMessage[m.messageId] = [];
+      }
+      mediaByMessage[m.messageId].push(m);
     }
   }
 
@@ -101,50 +102,26 @@ export default async function LeadDetailPage({ params }: Props) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversation</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {messages.length === 0 ? (
-                <p className="text-muted-foreground">No messages yet</p>
-              ) : (
-                messages.map((msg) => {
-                  const msgMedia = mediaByMessage.get(msg.id) || [];
-                  return (
-                    <div key={msg.id} className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] rounded-lg p-3 ${msg.direction === 'outbound' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        {msgMedia.length > 0 && (
-                          <MessageMedia items={msgMedia} />
-                        )}
-                        <p className={`text-xs mt-1 ${msg.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'}`}>
-                          {format(new Date(msg.createdAt!), 'MMM d, h:mm a')}
-                          {msg.messageType === 'ai_response' && ' • AI'}
-                          {msg.messageType === 'escalation' && ' • Escalation'}
-                          {msg.messageType === 'mms' && ' • MMS'}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </CardContent>
-          </Card>
+          <LeadTabs
+            leadId={lead.id}
+            messages={messages}
+            mediaByMessage={mediaByMessage}
+            mediaCount={media.length}
+          >
+            {!lead.optedOut && (
+              <ReplyForm leadId={lead.id} leadPhone={lead.phone} />
+            )}
 
-          {!lead.optedOut && (
-            <ReplyForm leadId={lead.id} leadPhone={lead.phone} />
-          )}
-
-          {lead.optedOut && (
-            <Card className="border-yellow-200 bg-yellow-50">
-              <CardContent className="py-4">
-                <p className="text-yellow-800">
-                  This lead has opted out of messages.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+            {lead.optedOut && (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardContent className="py-4">
+                  <p className="text-yellow-800">
+                    This lead has opted out of messages.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </LeadTabs>
         </div>
 
         <div className="space-y-4">
