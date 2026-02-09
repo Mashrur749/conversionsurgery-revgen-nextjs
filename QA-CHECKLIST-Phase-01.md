@@ -662,6 +662,12 @@ _One integrated manual test pass covering the critical happy paths._
 - [ ] Database client uses `getDb()` factory per request (not cached)
 - [ ] `drizzle.config.ts` points to `./src/db/schema/index.ts`
 
+### Overage Pricing (00E.2E)
+- [ ] `seedOveragePricing()` function exists in `scripts/seed.ts` and is called from main `seed()`
+- [ ] Overage pricing logs 5 resources: leads ($0.50), messages ($0.03), team_members ($20), phone_numbers ($15), voice_minutes ($0.15)
+- [ ] `npm run db:seed` output includes "Seeding overage pricing..." and "Configure these overages in Stripe:" lines
+- [ ] `db:reset` script defined in `package.json` as `npx drizzle-kit drop && npm run db:setup`
+
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] All 60 tables recognized by Drizzle (verify in `db:generate` output)
