@@ -42,6 +42,8 @@ export * from './payment-reminders';
 export * from './reviews';
 export * from './review-sources';
 export * from './review-metrics';
+export * from './response-templates';
+export * from './review-responses';
 
 // Auth tables (NextAuth)
 export * from './auth';

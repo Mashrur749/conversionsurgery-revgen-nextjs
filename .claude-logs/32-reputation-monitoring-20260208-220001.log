@@ -1,0 +1,45 @@
+All steps complete. Here's a summary of everything implemented:
+
+## Phase 32: Reputation Monitoring - Complete
+
+### Commits (8 total)
+1. `dcd7001` - Add review schema tables (reviews, reviewSources, reviewMetrics)
+2. `c68e86c` - Create Google Places service for review fetching
+3. `a63f1b9` - Create review monitoring service with AI response generation
+4. `2e27d1e` - Create review API routes for listing, syncing, and source management
+5. `6fbb020` - Add hourly review sync and negative review alerts to cron
+6. `24ab1d9` - Create review dashboard component with summary cards and review list
+7. `ddff924` - Add reputation pages, review source config, and admin navigation
+8. `d47c034` - Append QA test steps to QA-CHECKLIST.md
+
+### Files Created (11 new files)
+| File | Lines |
+|------|-------|
+| `src/db/schema/reviews.ts` | 54 |
+| `src/db/schema/review-sources.ts` | 49 |
+| `src/db/schema/review-metrics.ts` | 56 |
+| `src/lib/services/google-places.ts` | 203 |
+| `src/lib/services/review-monitoring.ts` | 286 |
+| `src/app/api/admin/clients/[id]/reviews/route.ts` | 75 |
+| `src/app/api/admin/clients/[id]/reviews/sources/route.ts` | 111 |
+| `src/components/reviews/review-dashboard.tsx` | 243 |
+| `src/app/(dashboard)/admin/clients/[id]/reviews/page.tsx` | 52 |
+| `src/app/(dashboard)/admin/clients/[id]/reviews/review-source-config.tsx` | 153 |
+| `src/app/(dashboard)/admin/reputation/page.tsx` | 107 |
+
+### Files Modified (3)
+- `src/db/schema/index.ts` - Added 3 schema exports
+- `src/app/api/cron/route.ts` - Added hourly review sync block
+- `src/app/(dashboard)/layout.tsx` - Added "Reputation" to admin nav
+- `src/app/(dashboard)/admin/clients/[id]/page.tsx` - Added "Reputation Monitoring" action button
+
+### Key Adaptations from Doc
+- Used `getDb()` per-request pattern instead of global `db`
+- Used `varchar` for source types instead of `pgEnum` (matching codebase convention)
+- Used `auth()` instead of `getServerSession(authOptions)`
+- Used `Promise<{ id: string }>` for async params (Next.js 16)
+- Used `sendSMS(to, from, body)` signature (not object param)
+- Placed API routes under `/api/admin/` with admin auth checks (403)
+- Used `sql\`uuid_generate_v4()\`` for primary keys
+- Added proper TypeScript typing for `response.json()` results
+- 0 TypeScript errors on build
