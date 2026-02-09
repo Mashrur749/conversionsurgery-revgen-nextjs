@@ -1,0 +1,15 @@
+All done. Here's what was implemented:
+
+**Commits (3):**
+1. `acb418f` — Added `seedOveragePricing()` function with 5 overage resources (leads, messages, team_members, phone_numbers, voice_minutes) and wired it into the main `seed()` function
+2. `3938b70` — Added `db:reset` script to package.json (`npx drizzle-kit drop && npm run db:setup`)
+3. `bce094e` — Appended QA test steps for 00E.2E to `QA-CHECKLIST-Phase-01.md`
+
+**What already existed (no changes needed):**
+- All 4 schema files (`subscription-plans.ts`, `admin-users.ts`, `system-settings.ts`, `flow-templates.ts`) were already created in prior sessions
+- Schema index already exported all tables
+- `scripts/seed.ts` already had plans, templates, admin user, and system settings seeders
+- `db:seed` and `db:setup` scripts already in package.json
+- Password hashing uses `crypto.scryptSync` (better than `bcryptjs` — no external dependency)
+
+**Build: 0 TypeScript errors**
