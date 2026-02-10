@@ -7,14 +7,14 @@ import { eq, asc } from 'drizzle-orm';
 // GET - List all rules for a client
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ clientId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { clientId } = await params;
+  const { id: clientId } = await params;
   const db = getDb();
 
   try {
@@ -34,14 +34,14 @@ export async function GET(
 // POST - Create new rule
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ clientId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { clientId } = await params;
+  const { id: clientId } = await params;
   const db = getDb();
 
   try {

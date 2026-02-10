@@ -7,14 +7,14 @@ import { eq, and } from 'drizzle-orm';
 // PUT - Update rule
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ clientId: string; ruleId: string }> }
+  { params }: { params: Promise<{ id: string; ruleId: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { clientId, ruleId } = await params;
+  const { id: clientId, ruleId } = await params;
   const db = getDb();
 
   try {
@@ -58,14 +58,14 @@ export async function PUT(
 // DELETE - Delete rule
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ clientId: string; ruleId: string }> }
+  { params }: { params: Promise<{ id: string; ruleId: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { clientId, ruleId } = await params;
+  const { id: clientId, ruleId } = await params;
   const db = getDb();
 
   try {

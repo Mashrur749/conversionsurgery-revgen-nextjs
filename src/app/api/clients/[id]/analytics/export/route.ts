@@ -6,14 +6,14 @@ import { eq, desc } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ clientId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { clientId } = await params;
+  const { id: clientId } = await params;
   const { searchParams } = new URL(request.url);
   const format = searchParams.get('format') || 'csv';
   const months = parseInt(searchParams.get('months') || '12');
