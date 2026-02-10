@@ -24,6 +24,7 @@ import { revenueEvents } from './revenue-events';
 import { mediaAttachments } from './media-attachments';
 import { payments } from './payments';
 import { paymentReminders } from './payment-reminders';
+import { consentRecords, optOutRecords } from './compliance';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -52,6 +53,8 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   revenueEvents: many(revenueEvents),
   mediaAttachments: many(mediaAttachments),
   payments: many(payments),
+  consentRecords: many(consentRecords),
+  optOutRecords: many(optOutRecords),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -362,5 +365,32 @@ export const mediaAttachmentsRelations = relations(mediaAttachments, ({ one }) =
   message: one(conversations, {
     fields: [mediaAttachments.messageId],
     references: [conversations.id],
+  }),
+}));
+
+// Compliance
+export const consentRecordsRelations = relations(consentRecords, ({ one }) => ({
+  client: one(clients, {
+    fields: [consentRecords.clientId],
+    references: [clients.id],
+  }),
+  lead: one(leads, {
+    fields: [consentRecords.leadId],
+    references: [leads.id],
+  }),
+}));
+
+export const optOutRecordsRelations = relations(optOutRecords, ({ one }) => ({
+  client: one(clients, {
+    fields: [optOutRecords.clientId],
+    references: [clients.id],
+  }),
+  lead: one(leads, {
+    fields: [optOutRecords.leadId],
+    references: [leads.id],
+  }),
+  reoptinConsent: one(consentRecords, {
+    fields: [optOutRecords.reoptinConsentId],
+    references: [consentRecords.id],
   }),
 }));

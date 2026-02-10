@@ -51,6 +51,8 @@ export * from './subscription-plans';
 export * from './admin-users';
 export * from './system-settings';
 
+export * from './compliance';
+
 // Auth tables (NextAuth)
 export * from './auth';
 
