@@ -25,6 +25,8 @@
 		"@aws-sdk/client-s3": "^3.985.0",
 		"@aws-sdk/s3-request-presigner": "^3.985.0",
 		"@neondatabase/serverless": "^1.0.2",
+		"@stripe/react-stripe-js": "^5.6.0",
+		"@stripe/stripe-js": "^8.7.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"date-fns": "^4.1.0",
