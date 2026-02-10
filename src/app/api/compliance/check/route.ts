@@ -8,7 +8,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { phoneNumber, messageType, recipientTimezone } = await req.json();
+  const { phoneNumber, messageType, recipientTimezone } = await req.json() as {
+    phoneNumber?: string;
+    messageType?: 'marketing' | 'transactional';
+    recipientTimezone?: string;
+  };
 
   if (!phoneNumber) {
     return NextResponse.json(

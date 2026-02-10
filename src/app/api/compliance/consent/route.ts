@@ -8,10 +8,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await req.json();
-  const { phoneNumber, ...consent } = body;
+  const body = await req.json() as {
+    phoneNumber?: string;
+    type?: string;
+    source?: string;
+    language?: string;
+    scope?: { marketing: boolean; transactional: boolean; promotional: boolean; reminders: boolean };
+    formUrl?: string;
+  };
 
-  if (!phoneNumber || !consent.type || !consent.source || !consent.language) {
+  if (!body.phoneNumber || !body.type || !body.source || !body.language) {
     return NextResponse.json(
       { error: 'Missing required fields: phoneNumber, type, source, language' },
       { status: 400 }
@@ -20,20 +26,20 @@ export async function POST(req: NextRequest) {
 
   const consentId = await ComplianceService.recordConsent(
     session.clientId,
-    phoneNumber,
+    body.phoneNumber,
     {
-      type: consent.type,
-      source: consent.source,
-      scope: consent.scope || {
+      type: body.type as 'express_written' | 'express_oral' | 'implied' | 'transactional',
+      source: body.source as 'web_form' | 'text_optin' | 'paper_form' | 'phone_recording' | 'existing_customer' | 'manual_entry' | 'api_import',
+      scope: body.scope || {
         marketing: true,
         transactional: true,
         promotional: true,
         reminders: true,
       },
-      language: consent.language,
+      language: body.language,
       ipAddress: req.headers.get('x-forwarded-for') || undefined,
       userAgent: req.headers.get('user-agent') || undefined,
-      formUrl: consent.formUrl,
+      formUrl: body.formUrl,
     }
   );
 
