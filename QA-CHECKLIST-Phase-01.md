@@ -1140,3 +1140,87 @@ _Manual verification steps for the Phase 1 project setup and database connection
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] Routes registered: `/client/billing`, `/client/billing/upgrade`, `/admin/billing`, `/api/admin/billing/subscriptions`
+
+---
+
+## Phase 05E: Conversation Agent Schema
+
+### Schema — Agent Enums
+- [ ] `lead_stage` pgEnum exists with 8 values: new, qualifying, nurturing, hot, objection, escalated, booked, lost
+- [ ] `sentiment` pgEnum exists with 4 values: positive, neutral, negative, frustrated
+- [ ] `escalation_reason` pgEnum exists with 11 values: explicit_request, frustrated_sentiment, legal_threat, repeated_objection, complex_technical, high_value_lead, negative_review_threat, pricing_negotiation, complaint, emergency, other
+- [ ] `agent_action` pgEnum exists with 10 values: respond, wait, trigger_flow, escalate, book_appointment, send_quote, request_photos, send_payment, close_won, close_lost
+- [ ] Enums exported from `src/db/schema/agent-enums.ts` and re-exported from index
+
+### Schema — Lead Context Table
+- [ ] `lead_context` table exists with 33 columns including: id (uuid PK), leadId (FK cascade, unique), clientId (FK cascade), stage (lead_stage enum, default 'new'), signal scores (urgency/budget/intent, default 50), currentSentiment, sentimentHistory (JSONB array), project info fields, objections (JSONB array), competitorMentions (JSONB array), interaction metrics, booking/quote tracking, conversationSummary, keyFacts (JSONB), recommendedAction (agent_action enum), timestamps
+- [ ] Unique index on `lead_id`, regular indexes on `client_id`, `stage`, `intent_score`
+- [ ] JSONB columns default to empty arrays `[]` where applicable
+- [ ] Types exported: `LeadContext`, `NewLeadContext`
+
+### Schema — Agent Decisions Table
+- [ ] `agent_decisions` table exists with 16 columns including: id (uuid PK), leadId (FK cascade), clientId (FK cascade), messageId (FK to conversations, set null on delete), triggerType (varchar 30), stageAtDecision (lead_stage enum), contextSnapshot (JSONB), action (agent_action enum, not null), actionDetails (JSONB), reasoning (text), confidence (integer 0-100), alternativesConsidered (JSONB array), outcome (varchar 30), processingTimeMs, createdAt
+- [ ] Indexes on `lead_id`, `client_id`, `action`, `created_at`
+- [ ] `messageId` references `conversations.id` (not a separate `messages` table)
+- [ ] Types exported: `AgentDecision`, `NewAgentDecision`
+
+### Schema — Escalation Queue Table
+- [ ] `escalation_queue` table exists with 24 columns including: id (uuid PK), leadId (FK cascade), clientId (FK cascade), reason (escalation_reason enum, not null), reasonDetails, triggerMessageId (FK to conversations), priority (integer default 3), conversationSummary, suggestedResponse, keyPoints (JSONB array), status (varchar 20, default 'pending'), assignedTo (FK to team_members), assignedAt, resolvedAt, resolvedBy (FK to team_members), resolution (varchar 30), resolutionNotes, returnToAi (boolean default true), returnToAiAfter, timestamps, SLA fields (firstResponseAt, slaDeadline, slaBreach)
+- [ ] Indexes on `lead_id`, `client_id`, `status`, `priority`, `assigned_to`
+- [ ] Types exported: `EscalationQueueItem`, `NewEscalationQueueItem`
+
+### Schema — Escalation Rules Table
+- [ ] `escalation_rules` table exists with 12 columns including: id (uuid PK), clientId (FK cascade), name (varchar 100, not null), description, conditions (JSONB, not null — typed with triggers array and optional filters), action (JSONB, not null — typed with priority/assignTo/notifyVia/pauseAi), enabled (boolean default true), priority (integer default 100), timesTriggered (integer default 0), lastTriggeredAt, timestamps
+- [ ] Indexes on `client_id`, `enabled`
+- [ ] Conditions JSONB supports trigger types: keyword, sentiment, intent_score, objection_count, value_threshold, no_response, custom
+- [ ] Action JSONB supports notifyVia channels: sms, email, push
+- [ ] Types exported: `EscalationRule`, `NewEscalationRule`
+
+### Schema — Conversation Checkpoints Table
+- [ ] `conversation_checkpoints` table exists with 9 columns: id (uuid PK), leadId (FK cascade), messageIndex (integer, not null), checkpointAt (timestamp, default now), summary (text, not null), extractedData (JSONB with typed fields), stageAtCheckpoint (lead_stage enum), scoresAtCheckpoint (JSONB with urgency/budget/intent), tokenCount (integer)
+- [ ] Indexes on `lead_id`, `message_index`
+- [ ] Types exported: `ConversationCheckpoint`, `NewConversationCheckpoint`
+
+### Schema — Client Agent Settings Table
+- [ ] `client_agent_settings` table exists with 25 columns: id (uuid PK), clientId (FK cascade, unique), AI personality (agentName default 'Assistant', agentTone default 'professional'), response settings (maxResponseLength default 300, useEmojis, signMessages), behavior settings (autoRespond, respondOutsideHours, maxDailyMessagesPerLead default 5, minTimeBetweenMessages default 60), goal settings (primaryGoal default 'book_appointment', bookingAggressiveness default 5, maxBookingAttempts default 3), escalation thresholds (autoEscalateAfterMessages nullable, autoEscalateOnNegativeSentiment default true, autoEscalateOnHighValue nullable), knowledge boundaries (canDiscussPricing default false, canScheduleAppointments default true, canSendPaymentLinks default false), quiet hours (enabled default true, start default '21:00', end default '08:00'), timestamps
+- [ ] Unique constraint on `client_id`
+- [ ] `quiet_hours_start` and `quiet_hours_end` use `time` column type
+- [ ] Types exported: `ClientAgentSettings`, `NewClientAgentSettings`
+
+### Relations
+- [ ] `leadContext` relations defined: `lead` (one, FK leadId), `client` (one, FK clientId)
+- [ ] `agentDecisions` relations defined: `lead` (one, FK leadId), `message` (one, FK messageId → conversations)
+- [ ] `escalationQueue` relations defined: `lead` (one), `client` (one), `assignedTeamMember` (one, FK assignedTo → teamMembers)
+- [ ] `escalationRules` relations defined: `client` (one, FK clientId)
+- [ ] `conversationCheckpoints` relations defined: `lead` (one, FK leadId)
+- [ ] `clientAgentSettings` relations defined: `client` (one, FK clientId)
+- [ ] `clients` relation updated with: `leadContexts`, `agentDecisions`, `escalationQueueItems`, `escalationRules`, `clientAgentSettings` (many)
+- [ ] `leads` relation updated with: `leadContext`, `agentDecisions`, `escalationQueueItems`, `conversationCheckpoints` (many)
+
+### Type Exports
+- [ ] `src/lib/types/agent.ts` exists and exports all schema-inferred types
+- [ ] Exports `LeadStage` union type (8 values)
+- [ ] Exports `AgentAction` union type (10 values)
+- [ ] Exports `EscalationReason` union type (11 values)
+- [ ] Exports `LeadSignals` interface (urgency, budget, intent, sentiment)
+- [ ] Exports `LeadState` interface for LangGraph (leadId, clientId, stage, signals, conversationHistory, objections, extractedInfo, bookingAttempts, lastAction, humanNeededReason)
+- [ ] `src/db/types.ts` updated with agent table type re-exports
+
+### Seed Data
+- [ ] `src/db/seeds/escalation-rules.ts` exists with `seedDefaultEscalationRules(clientId)` function
+- [ ] Seeds 5 default rules: Explicit Human Request (priority 10), Legal/Complaint Threat (priority 5), Frustrated Customer (priority 50), High Value Lead (priority 60), Emergency/Safety (priority 1)
+- [ ] Each rule has properly typed conditions and action JSONB
+- [ ] Uses `getDb()` per project conventions
+
+### Migration
+- [ ] Migration file exists in `drizzle/` directory
+- [ ] Migration includes CREATE TYPE for all 4 enums
+- [ ] Migration includes CREATE TABLE for all 6 agent tables
+- [ ] Migration includes ALTER TABLE for all foreign key constraints
+- [ ] Migration includes CREATE INDEX for all declared indexes
+- [ ] `npm run db:generate` runs without pending changes
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] All 6 new tables appear in Drizzle migration output (lead_context, agent_decisions, escalation_queue, escalation_rules, conversation_checkpoints, client_agent_settings)
+- [ ] All 4 enums appear in Drizzle migration output (lead_stage, sentiment, escalation_reason, agent_action)
