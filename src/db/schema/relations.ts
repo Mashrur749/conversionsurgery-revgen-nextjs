@@ -25,6 +25,12 @@ import { mediaAttachments } from './media-attachments';
 import { payments } from './payments';
 import { paymentReminders } from './payment-reminders';
 import { consentRecords, optOutRecords } from './compliance';
+import { leadContext } from './lead-context';
+import { agentDecisions } from './agent-decisions';
+import { escalationQueue } from './escalation-queue';
+import { escalationRules } from './escalation-rules';
+import { conversationCheckpoints } from './conversation-checkpoints';
+import { clientAgentSettings } from './client-agent-settings';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -55,6 +61,11 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   payments: many(payments),
   consentRecords: many(consentRecords),
   optOutRecords: many(optOutRecords),
+  leadContexts: many(leadContext),
+  agentDecisions: many(agentDecisions),
+  escalationQueueItems: many(escalationQueue),
+  escalationRules: many(escalationRules),
+  clientAgentSettings: many(clientAgentSettings),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -85,6 +96,10 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   jobs: many(jobs),
   mediaAttachments: many(mediaAttachments),
   payments: many(payments),
+  leadContext: many(leadContext),
+  agentDecisions: many(agentDecisions),
+  escalationQueueItems: many(escalationQueue),
+  conversationCheckpoints: many(conversationCheckpoints),
 }));
 
 export const conversationsRelations = relations(conversations, ({ one, many }) => ({
@@ -392,5 +407,64 @@ export const optOutRecordsRelations = relations(optOutRecords, ({ one }) => ({
   reoptinConsent: one(consentRecords, {
     fields: [optOutRecords.reoptinConsentId],
     references: [consentRecords.id],
+  }),
+}));
+
+// Conversation Agent
+export const leadContextRelations = relations(leadContext, ({ one }) => ({
+  lead: one(leads, {
+    fields: [leadContext.leadId],
+    references: [leads.id],
+  }),
+  client: one(clients, {
+    fields: [leadContext.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const agentDecisionsRelations = relations(agentDecisions, ({ one }) => ({
+  lead: one(leads, {
+    fields: [agentDecisions.leadId],
+    references: [leads.id],
+  }),
+  message: one(conversations, {
+    fields: [agentDecisions.messageId],
+    references: [conversations.id],
+  }),
+}));
+
+export const escalationQueueRelations = relations(escalationQueue, ({ one }) => ({
+  lead: one(leads, {
+    fields: [escalationQueue.leadId],
+    references: [leads.id],
+  }),
+  client: one(clients, {
+    fields: [escalationQueue.clientId],
+    references: [clients.id],
+  }),
+  assignedTeamMember: one(teamMembers, {
+    fields: [escalationQueue.assignedTo],
+    references: [teamMembers.id],
+  }),
+}));
+
+export const escalationRulesRelations = relations(escalationRules, ({ one }) => ({
+  client: one(clients, {
+    fields: [escalationRules.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const conversationCheckpointsRelations = relations(conversationCheckpoints, ({ one }) => ({
+  lead: one(leads, {
+    fields: [conversationCheckpoints.leadId],
+    references: [leads.id],
+  }),
+}));
+
+export const clientAgentSettingsRelations = relations(clientAgentSettings, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientAgentSettings.clientId],
+    references: [clients.id],
   }),
 }));
