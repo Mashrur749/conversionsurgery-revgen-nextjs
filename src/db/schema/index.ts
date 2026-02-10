@@ -57,6 +57,7 @@ export * from './compliance';
 export * from './agent-enums';
 export * from './lead-context';
 export * from './agent-decisions';
+export * from './escalation-queue';
 
 // Billing & Subscriptions
 export * from './billing-enums';
