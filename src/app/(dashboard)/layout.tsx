@@ -13,6 +13,7 @@ const navItems = [
   { href: '/conversations', label: 'Conversations' },
   { href: '/escalations', label: 'Escalations' },
   { href: '/scheduled', label: 'Scheduled' },
+  { href: '/analytics', label: 'Analytics' },
   { href: '/settings', label: 'Settings' },
 ];
 
@@ -25,6 +26,7 @@ const adminNavItems = [
   { group: 'Optimization', items: [
     { href: '/admin/flow-templates', label: 'Flow Templates' },
     { href: '/admin/analytics', label: 'Analytics' },
+    { href: '/admin/platform-analytics', label: 'Platform' },
     { href: '/admin/template-performance', label: 'Template Performance' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/reputation', label: 'Reputation' },
