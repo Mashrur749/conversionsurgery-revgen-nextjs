@@ -60,6 +60,7 @@ export * from './agent-decisions';
 export * from './escalation-queue';
 export * from './escalation-rules';
 export * from './conversation-checkpoints';
+export * from './client-agent-settings';
 
 // Billing & Subscriptions
 export * from './billing-enums';
