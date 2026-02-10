@@ -2,20 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { handlePaymentSuccess, formatAmount } from '@/lib/services/stripe';
 import { getDb } from '@/db';
-import { payments, leads, clients } from '@/db/schema';
+import { payments, leads, clients, subscriptions, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendSMS } from '@/lib/services/twilio';
-
-let _stripe: Stripe | null = null;
-
-function getStripe(): Stripe {
-  if (!_stripe) {
-    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2026-01-28.clover',
-    });
-  }
-  return _stripe;
-}
+import { getStripeClient } from '@/lib/clients/stripe';
+import { syncInvoiceFromStripe } from '@/lib/services/subscription-invoices';
+import { addPaymentMethod } from '@/lib/services/payment-methods';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -25,10 +17,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
   }
 
+  const stripe = getStripeClient();
   let event: Stripe.Event;
 
   try {
-    event = getStripe().webhooks.constructEvent(
+    event = stripe.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -119,7 +112,175 @@ export async function POST(request: NextRequest) {
       }
       break;
     }
+
+    // ============================================
+    // SUBSCRIPTION BILLING EVENTS
+    // ============================================
+
+    case 'customer.subscription.created':
+    case 'customer.subscription.updated': {
+      const sub = event.data.object as Stripe.Subscription;
+      await handleSubscriptionUpdate(db, sub, event);
+      break;
+    }
+
+    case 'customer.subscription.deleted': {
+      const sub = event.data.object as Stripe.Subscription;
+      await handleSubscriptionDeleted(db, sub, event);
+      break;
+    }
+
+    case 'invoice.created':
+    case 'invoice.updated':
+    case 'invoice.paid':
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object as Stripe.Invoice;
+      await handleInvoiceEvent(db, invoice, event);
+      break;
+    }
+
+    case 'payment_method.attached': {
+      const pm = event.data.object as Stripe.PaymentMethod;
+      await handlePaymentMethodAttached(db, pm, event);
+      break;
+    }
+
+    case 'customer.subscription.trial_will_end': {
+      const sub = event.data.object as Stripe.Subscription;
+      const clientId = sub.metadata?.clientId;
+      if (clientId) {
+        await logBillingEvent(db, clientId, event, 'Trial ending in 3 days');
+      }
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });
+}
+
+// ============================================
+// SUBSCRIPTION BILLING HANDLERS
+// ============================================
+
+type DB = ReturnType<typeof getDb>;
+
+async function handleSubscriptionUpdate(db: DB, sub: Stripe.Subscription, event: Stripe.Event) {
+  const clientId = sub.metadata?.clientId;
+  if (!clientId) {
+    console.error('[Stripe Webhook] No clientId in subscription metadata');
+    return;
+  }
+
+  // Check for duplicate billing event
+  const [existingEvent] = await db
+    .select()
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingEvent) return;
+
+  // In Stripe v20, current_period is on subscription items
+  const firstItem = sub.items.data[0];
+
+  await db.update(subscriptions).set({
+    status: sub.status as any,
+    currentPeriodStart: firstItem ? new Date(firstItem.current_period_start * 1000) : undefined,
+    currentPeriodEnd: firstItem ? new Date(firstItem.current_period_end * 1000) : undefined,
+    cancelAtPeriodEnd: sub.cancel_at_period_end,
+    canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+    updatedAt: new Date(),
+  }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
+
+  await logBillingEvent(db, clientId, event, `Subscription ${event.type.split('.')[2]}`);
+}
+
+async function handleSubscriptionDeleted(db: DB, sub: Stripe.Subscription, event: Stripe.Event) {
+  // Check for duplicate billing event
+  const [existingEvent] = await db
+    .select()
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingEvent) return;
+
+  await db.update(subscriptions).set({
+    status: 'canceled',
+    canceledAt: new Date(),
+    updatedAt: new Date(),
+  }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
+
+  const clientId = sub.metadata?.clientId;
+  if (clientId) {
+    await logBillingEvent(db, clientId, event, 'Subscription canceled');
+
+    await db.update(clients).set({
+      status: 'cancelled',
+      updatedAt: new Date(),
+    }).where(eq(clients.id, clientId));
+  }
+}
+
+async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe.Event) {
+  try {
+    await syncInvoiceFromStripe(invoice.id);
+  } catch (err) {
+    console.error('[Stripe Webhook] Failed to sync invoice:', err);
+  }
+
+  // In Stripe v20, subscription is in parent.subscription_details
+  const stripeSubId = typeof invoice.parent?.subscription_details?.subscription === 'string'
+    ? invoice.parent.subscription_details.subscription
+    : invoice.parent?.subscription_details?.subscription?.id;
+
+  if (!stripeSubId) return;
+
+  const [subscription] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeSubscriptionId, stripeSubId))
+    .limit(1);
+
+  if (subscription) {
+    await logBillingEvent(
+      db,
+      subscription.clientId,
+      event,
+      `Invoice ${event.type.split('.')[1]}`,
+      invoice.amount_due
+    );
+  }
+}
+
+async function handlePaymentMethodAttached(db: DB, pm: Stripe.PaymentMethod, event: Stripe.Event) {
+  const customerStr = typeof pm.customer === 'string' ? pm.customer : pm.customer?.id;
+  if (!customerStr) return;
+
+  const [client] = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.stripeCustomerId, customerStr))
+    .limit(1);
+
+  if (client) {
+    await addPaymentMethod(client.id, pm.id, false);
+    await logBillingEvent(db, client.id, event, 'Payment method added');
+  }
+}
+
+async function logBillingEvent(
+  db: DB,
+  clientId: string,
+  event: Stripe.Event,
+  description: string,
+  amountCents?: number
+) {
+  await db.insert(billingEvents).values({
+    clientId,
+    eventType: event.type.replace(/\./g, '_'),
+    description,
+    stripeEventId: event.id,
+    stripeEventType: event.type,
+    amountCents,
+    rawData: event.data.object as unknown as Record<string, unknown>,
+  });
 }
