@@ -722,3 +722,73 @@ _One integrated manual test pass covering the critical happy paths._
 
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors after all feature flag changes
+
+---
+
+## Part 21.1: Database Setup Manual QA (00E Verification)
+
+_Manual verification steps for the Phase 1 project setup and database connection._
+
+### Step 1: Project & Dependencies
+- [ ] `package.json` exists with `next@16`, `drizzle-orm`, `@neondatabase/serverless`, `zod`, `date-fns`
+- [ ] `npm run dev` starts without errors on port 3000
+- [ ] All UI dependencies present: `@radix-ui/*`, `tailwindcss`, `lucide-react`, `sonner`
+- [ ] Service SDKs present: `twilio`, `openai`, `resend`, `stripe`
+
+### Step 2: Drizzle Configuration
+- [ ] `drizzle.config.ts` exists at project root
+- [ ] Schema path points to `./src/db/schema/index.ts`
+- [ ] Dialect is `postgresql`
+- [ ] `drizzle/` directory contains migration SQL files (0000 through 0008)
+
+### Step 3: Database Client Factory
+- [ ] `src/db/client.ts` exports `createNeonClient()` using `neon()` + `drizzle()`
+- [ ] `src/db/index.ts` exports `getDb()` that creates a new client per call (never cached)
+- [ ] `getDb()` handles both Cloudflare Workers and Next.js environments
+- [ ] `getDb()` throws descriptive error when `DATABASE_URL` is missing
+
+### Step 4: Core Schema Tables (10 tables)
+- [ ] `clients` table: `id` (uuid PK), `businessName`, `ownerName`, `email` (unique), `phone`, `twilioNumber`, `timezone` (default 'America/Edmonton'), `status` (default 'active'), `createdAt`, `updatedAt`
+- [ ] `leads` table: `id` (uuid PK), `clientId` (FK cascade), `phone`, `status` (default 'new'), unique on `(clientId, phone)`, indexes on `clientId`, `phone`, `status`, `actionRequired`
+- [ ] `conversations` table: `id` (uuid PK), `leadId` (FK cascade), `clientId` (FK cascade), `direction`, `messageType`, `content`, `twilioSid`, `aiConfidence`, indexes on `leadId`, `clientId`
+- [ ] `scheduled_messages` table: `sendAt` (not null), `sent`, `cancelled`, indexes on `sendAt`, `clientId`, `leadId`
+- [ ] `appointments` table: `appointmentDate` (date), `appointmentTime` (time), `status` (default 'scheduled'), `reminderDayBeforeSent`, `reminder2hrSent`
+- [ ] `invoices` table: `amount` (numeric), `totalAmount`/`paidAmount`/`remainingAmount` (integer cents), `dueDate`, `paymentLink`, `status` (default 'pending')
+- [ ] `blocked_numbers` table: unique on `(clientId, phone)`
+- [ ] `message_templates` table: `templateType`, `content`, unique on `(clientId, templateType)`
+- [ ] `daily_stats` table: 9 integer metric columns, unique on `(clientId, date)`
+- [ ] `error_log` table: `errorType`, `errorMessage`, `errorDetails` (JSONB), `resolved`
+
+### Step 5: Feature Flags on Clients
+- [ ] Core SMS: `missed_call_sms_enabled` (true), `ai_response_enabled` (true)
+- [ ] AI Agent: `ai_agent_enabled` (true), `ai_agent_mode` ('assist'), `auto_escalation_enabled` (true)
+- [ ] Voice AI: `voice_enabled` (false), `voice_mode` ('after_hours')
+- [ ] Automation: `flows_enabled` (true), `lead_scoring_enabled` (true)
+- [ ] Integrations: `calendar_sync_enabled` (false), `hot_transfer_enabled` (false), `payment_links_enabled` (false)
+- [ ] Reputation: `reputation_monitoring_enabled` (false), `auto_review_response_enabled` (false)
+- [ ] Communication: `photo_requests_enabled` (true), `multi_language_enabled` (false), `preferred_language` ('en')
+- [ ] Weekly Summary: `weekly_summary_enabled` (true), `weekly_summary_day` (1), `weekly_summary_time` ('08:00')
+
+### Step 6: Schema Exports & Relations
+- [ ] `src/db/schema/index.ts` re-exports all 55+ tables from individual files
+- [ ] `src/db/schema/relations.ts` defines relations for: `clients`, `users`, `accounts`, `sessions`, `leads`, `conversations`, `scheduledMessages`, `appointments`, `invoices`, `blockedNumbers`, `messageTemplates`, `dailyStats`, `teamMembers`, `escalationClaims`, `businessHours`, `callAttempts`, `flows`, `flowExecutions`, `payments`, `mediaAttachments`
+- [ ] Each schema file exports `$inferSelect` and `$inferInsert` types
+
+### Step 7: Test Route
+- [ ] `GET /api/test-db` exists at `src/app/api/test-db/route.ts`
+- [ ] Returns `{ success: true, message: "Database connection successful" }` with 200 on success
+- [ ] Returns `{ success: false, error: "..." }` with 500 on database failure
+- [ ] Uses `getDb()` (not a cached instance)
+
+### Step 8: Seed Script & npm Scripts
+- [ ] `scripts/seed.ts` seeds: 3 plans (Starter $497, Professional $997, Enterprise $1,997), 5 flow templates, 1 admin user, 10 system settings, overage pricing log
+- [ ] Seed is idempotent: plans update, admin skips if exists, settings skip if exists
+- [ ] `npm run db:seed` -> `npx tsx scripts/seed.ts`
+- [ ] `npm run db:setup` -> `npm run db:migrate && npm run db:seed`
+- [ ] `npm run db:reset` -> `npx drizzle-kit drop && npm run db:setup`
+- [ ] `npm run db:generate` -> `drizzle-kit generate`
+- [ ] `npm run db:studio` -> `drizzle-kit studio`
+
+### Step 9: Build Verification
+- [ ] `npm run build` completes with `Compiled successfully` and 0 TypeScript errors
+- [ ] All routes registered (60+ dynamic routes in build output)
