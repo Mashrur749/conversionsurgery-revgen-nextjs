@@ -1,0 +1,50 @@
+All steps complete. Here's a summary:
+
+## Phase 04E: Billing UI - Complete
+
+### Commits (11 total)
+1. `4f863b7` - Install Stripe client packages and alert-dialog component
+2. `cb9930b` - Add SubscriptionCard, CancelDialog, PauseDialog components
+3. `c08233d` - Add PaymentMethodCard and AddPaymentMethodDialog components
+4. `74b7c60` - Add InvoiceList component with expandable line items
+5. `27d40a9` - Add PlanSelector and UsageDisplay components
+6. `afbb6a2` - Add billing query functions and server actions
+7. `a92f4ff` - Add client billing dashboard and upgrade plan pages
+8. `17d6ee1` - Add admin billing management page with MRR stats and subscription table
+9. `7b94130` - Add Billing to client and admin navigation
+10. `4852166` - Fix TypeScript error in AdminSubscriptionTable fetch response
+11. `a764464` - Append QA test steps to QA-CHECKLIST.md
+
+### Files Created (17 new files, ~2,500 lines)
+**Components (8 files):**
+- `src/components/billing/SubscriptionCard.tsx`
+- `src/components/billing/CancelSubscriptionDialog.tsx`
+- `src/components/billing/PauseSubscriptionDialog.tsx`
+- `src/components/billing/PaymentMethodCard.tsx`
+- `src/components/billing/AddPaymentMethodDialog.tsx`
+- `src/components/billing/InvoiceList.tsx`
+- `src/components/billing/PlanSelector.tsx`
+- `src/components/billing/UsageDisplay.tsx`
+
+**Admin Components (2 files):**
+- `src/components/admin/billing/AdminSubscriptionTable.tsx`
+- `src/components/admin/billing/RevenueChart.tsx`
+
+**Pages (4 files):**
+- `src/app/(client)/client/billing/page.tsx` + `billing-client.tsx`
+- `src/app/(client)/client/billing/upgrade/page.tsx` + `upgrade-client.tsx`
+- `src/app/(dashboard)/admin/billing/page.tsx`
+
+**Services (2 files):**
+- `src/lib/billing/queries.ts`
+- `src/lib/billing/actions.ts`
+
+**API (1 file):**
+- `src/app/api/admin/billing/subscriptions/route.ts`
+
+### Key Design Decisions
+- **Reused existing services** (`src/lib/services/subscription.ts`, `payment-methods.ts`, `subscription-invoices.ts`) instead of duplicating Stripe logic
+- **Schema-accurate**: adapted to actual column names (`cancelReason`, `billingPaymentMethods`, `subscriptionInvoices`, JSONB `features`)
+- **Client billing** uses `getClientSession()` from `src/lib/client-auth.ts` (not NextAuth)
+- **Admin billing** uses `auth()` with `isAdmin` check per project conventions
+- **Build**: 0 TypeScript errors, 4 new routes registered

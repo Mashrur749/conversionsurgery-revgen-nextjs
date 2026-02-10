@@ -53,6 +53,9 @@ export * from './system-settings';
 
 export * from './compliance';
 
+// Conversation Agent
+export * from './agent-enums';
+
 // Billing & Subscriptions
 export * from './billing-enums';
 export * from './plans';
