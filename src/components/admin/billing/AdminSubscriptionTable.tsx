@@ -41,7 +41,7 @@ export function AdminSubscriptionTable() {
       try {
         const res = await fetch('/api/admin/billing/subscriptions');
         if (res.ok) {
-          const data = await res.json();
+          const data = (await res.json()) as { subscriptions: SubscriptionRow[] };
           setSubscriptions(data.subscriptions || []);
         }
       } catch (err) {
