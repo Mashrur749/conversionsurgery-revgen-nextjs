@@ -58,3 +58,12 @@ export type {
   SuggestedAction,
   NewSuggestedAction,
 } from './schema/flow-executions';
+
+// Billing & Subscriptions
+export type { Plan, NewPlan } from './schema/plans';
+export type { Subscription, NewSubscription } from './schema/subscriptions';
+export type { BillingPaymentMethod, NewBillingPaymentMethod } from './schema/billing-payment-methods';
+export type { SubscriptionInvoice, NewSubscriptionInvoice } from './schema/subscription-invoices';
+export type { UsageRecord, NewUsageRecord } from './schema/usage-records';
+export type { BillingEvent, NewBillingEvent } from './schema/billing-events';
+export type { Coupon, NewCoupon } from './schema/coupons';

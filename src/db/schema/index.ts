@@ -53,6 +53,16 @@ export * from './system-settings';
 
 export * from './compliance';
 
+// Billing & Subscriptions
+export * from './billing-enums';
+export * from './plans';
+export * from './subscriptions';
+export * from './billing-payment-methods';
+export * from './subscription-invoices';
+export * from './usage-records';
+export * from './billing-events';
+export * from './coupons';
+
 // Auth tables (NextAuth)
 export * from './auth';
 
