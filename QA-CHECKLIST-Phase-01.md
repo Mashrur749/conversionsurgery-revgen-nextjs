@@ -1006,3 +1006,137 @@ _Manual verification steps for the Phase 1 project setup and database connection
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] No type errors from Stripe v20 API changes (current_period on items, parent.subscription_details, createPreview, etc.)
 - [ ] Webhook route registered at `/api/webhooks/stripe`
+
+---
+
+## Phase 04E: Billing UI & Subscription Management
+
+### Client Billing Page (`/client/billing`)
+- [ ] Page loads behind client session auth (redirects to `/link-expired` without session)
+- [ ] Skeleton loading state renders while data fetches
+- [ ] "No Active Subscription" card renders when no subscription exists
+- [ ] "View Plans" button navigates to `/client/billing/upgrade`
+
+### Subscription Card
+- [ ] Displays plan name and monthly price (in dollars, from cents)
+- [ ] Status badge shows correct color: trialing=blue, active=green, past_due=red, canceled=gray, unpaid=red, paused=yellow
+- [ ] Discount percent shows when present (e.g. "20% discount applied")
+- [ ] Trial banner shows remaining days and charge date when status=trialing
+- [ ] Past due warning banner shows when status=past_due
+- [ ] Cancellation pending banner shows end date when cancelAtPeriodEnd=true
+- [ ] Billing period shows days remaining and date range
+- [ ] Leads usage progress bar shows X / Y with percentage
+- [ ] Warning text appears when leads usage >= 80%
+- [ ] "Upgrade Plan" button navigates to upgrade page
+- [ ] "Pause Subscription" button appears for active subscriptions
+- [ ] "Resume Subscription" button appears for paused subscriptions
+- [ ] "Cancel Subscription" button appears when not already canceling
+
+### Cancel Subscription Dialog
+- [ ] Dialog opens when "Cancel Subscription" clicked
+- [ ] Shows end date in dialog description
+- [ ] Pause suggestion banner displays
+- [ ] 7 cancellation reason radio options render
+- [ ] "Other reason" textarea appears when "Other" selected
+- [ ] "Confirm Cancellation" disabled until reason selected
+- [ ] "Confirm Cancellation" disabled when "Other" selected but empty
+- [ ] Loading state shows "Canceling..." during submission
+- [ ] Dialog closes after successful cancellation
+- [ ] "Keep Subscription" button closes dialog without action
+
+### Pause Subscription Dialog
+- [ ] Dialog opens when "Pause Subscription" clicked
+- [ ] Dropdown allows 1, 2, or 3 month selection
+- [ ] Info box updates resume date when duration changes
+- [ ] Loading state shows "Pausing..." during submission
+- [ ] Dialog closes after successful pause
+
+### Payment Methods Card
+- [ ] Card shows "No payment methods added yet" when empty
+- [ ] "Add Method" button opens Stripe Elements dialog
+- [ ] Each payment method shows brand, last4, and expiry
+- [ ] Default badge shows on default payment method
+- [ ] "Set Default" button appears on non-default methods
+- [ ] Delete button appears on non-default methods (only when >1 methods)
+- [ ] Delete confirmation dialog shows before removing
+- [ ] Failed payment banner shows when subscription status is past_due
+
+### Add Payment Method Dialog (Stripe Elements)
+- [ ] Dialog renders with Stripe CardElement
+- [ ] "Add Card" button disabled until Stripe loads
+- [ ] Loading spinner shows "Processing..." during submission
+- [ ] Error message displays on Stripe validation failure
+- [ ] Dialog closes on successful addition
+
+### Invoice List
+- [ ] "No invoices yet" message when empty
+- [ ] Table shows invoice number, date, status badge, amount
+- [ ] Status badges: draft=gray, open=blue, paid=green, void=gray, uncollectible=red
+- [ ] Clicking row expands line items
+- [ ] Line items show description, quantity, and amount
+- [ ] Total row shows at bottom of expanded view
+- [ ] PDF download button opens invoice PDF in new tab
+- [ ] External link button opens hosted invoice URL
+- [ ] "Load More" button appears when hasMore=true
+
+### Usage Display
+- [ ] Shows current billing period date range
+- [ ] Leads usage with progress bar and X/Y count
+- [ ] "Unlimited" label when leads included is null
+- [ ] Overage warning alert when leads exceed included
+- [ ] Team members usage bar with X/Y count
+- [ ] Phone numbers usage bar with X/Y count
+
+### Plan Selector (`/client/billing/upgrade`)
+- [ ] Page loads behind client session auth
+- [ ] Monthly/yearly toggle shows when yearly pricing exists
+- [ ] "Save 20%" badge shows next to yearly option
+- [ ] All active plans render as cards
+- [ ] "Most Popular" badge on isPopular plan
+- [ ] Price displays correctly in dollars (from cents)
+- [ ] Yearly price shows per-month equivalent and annual total
+- [ ] Feature list shows leads, team members, phone numbers, plus extras
+- [ ] "Current Plan" button disabled on current plan
+- [ ] "Upgrade" text on higher plans, "Downgrade" on lower
+- [ ] Downgrade note: "Takes effect at end of current billing period"
+- [ ] Processing state shows during plan change
+
+### Server Actions (`src/lib/billing/actions.ts`)
+- [ ] `cancelSubscription` finds subscription by clientId, calls service, revalidates path
+- [ ] `pauseSubscription` finds subscription by clientId, calls service with resume date
+- [ ] `resumeSubscription` finds subscription by clientId, calls service
+- [ ] `addPaymentMethod` delegates to payment-methods service
+- [ ] `removePaymentMethod` delegates to payment-methods service
+- [ ] `setDefaultPaymentMethod` delegates to payment-methods service
+- [ ] `changePlan` finds subscription, calls service with correct interval mapping
+
+### Billing Queries (`src/lib/billing/queries.ts`)
+- [ ] `getBillingData` returns subscription, paymentMethods, invoices, usage
+- [ ] Subscription includes plan details via inner join
+- [ ] Payment methods mapped with card/bankAccount detail objects
+- [ ] Invoices mapped with lineItems from JSONB
+- [ ] Usage calculates leads from usage_records, team members from count, phone from client
+- [ ] `getPlans` returns active plans ordered by displayOrder
+- [ ] `getCurrentSubscription` returns subscription for client
+- [ ] `getAdminBillingStats` returns MRR, active count, churn rate, failed payments
+
+### Admin Billing Page (`/admin/billing`)
+- [ ] Page requires admin auth (redirects non-admins)
+- [ ] 4 stat cards: MRR, Active Subscriptions, Churn Rate, Failed Payments
+- [ ] MRR calculated from active subscription plan prices
+- [ ] Revenue chart renders (placeholder when no data)
+- [ ] Subscription table loads via API fetch
+- [ ] Table shows client name, plan, status badge, MRR, renewal date, start date
+
+### Admin API (`/api/admin/billing/subscriptions`)
+- [ ] GET returns 403 for non-admin users
+- [ ] Returns subscription list with client name, plan name, status, price, dates
+- [ ] Inner joins subscriptions with plans and clients tables
+
+### Navigation
+- [ ] Client nav includes "Billing" link between "Team" and "Settings"
+- [ ] Admin nav includes "Billing" link in Management group
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes registered: `/client/billing`, `/client/billing/upgrade`, `/admin/billing`, `/api/admin/billing/subscriptions`
