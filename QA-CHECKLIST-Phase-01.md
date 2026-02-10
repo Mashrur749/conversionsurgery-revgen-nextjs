@@ -1492,3 +1492,90 @@ _Manual verification steps for the Phase 1 project setup and database connection
 - [ ] Routes `/api/escalations`, `/api/escalations/[id]/*` registered
 - [ ] Routes `/api/clients/[clientId]/escalation-rules/*` registered
 - [ ] No new lint warnings related to agent files
+
+---
+
+## Phase 08E: Analytics Schema
+
+### Schema Files (6 tables)
+- [ ] `src/db/schema/analytics-daily.ts` exists with `analytics_daily` table
+- [ ] `src/db/schema/analytics-weekly.ts` exists with `analytics_weekly` table
+- [ ] `src/db/schema/analytics-monthly.ts` exists with `analytics_monthly` table
+- [ ] `src/db/schema/platform-analytics.ts` exists with `platform_analytics` table
+- [ ] `src/db/schema/funnel-events.ts` exists with `funnel_events` table
+- [ ] `src/db/schema/client-cohorts.ts` exists with `client_cohorts` table
+- [ ] All 6 tables exported from `src/db/schema/index.ts`
+- [ ] Each schema file follows project pattern: `uuid_generate_v4()`, array-style indexes, type exports
+
+### Analytics Daily Table
+- [ ] Unique index on `(clientId, date)` prevents duplicate daily rows
+- [ ] Lead metrics: `newLeads`, `leadsFromMissedCalls`, `leadsFromWebForms`, `leadsFromReferrals`, `leadsFromOther`
+- [ ] Message metrics: `inboundMessages`, `outboundMessages`, `aiResponses`, `humanResponses`
+- [ ] Conversion metrics: `appointmentsBooked`, `quotesRequested`, `quotesSent`, `jobsWon`, `jobsLost`
+- [ ] Revenue metrics in cents: `revenueAttributedCents`, `invoicesSentCents`, `paymentsCollectedCents`
+- [ ] Lead stage distribution snapshot: `leadsNew`, `leadsQualifying`, `leadsNurturing`, `leadsHot`, `leadsBooked`, `leadsLost`
+
+### Analytics Weekly Table
+- [ ] Unique index on `(clientId, weekStart)`
+- [ ] Conversion rates stored as percentage * 100 (e.g. 2500 = 25.00%)
+- [ ] Week-over-week change fields: `leadsChangePercent`, `revenueChangePercent`
+
+### Analytics Monthly Table
+- [ ] Unique index on `(clientId, month)` with month format "YYYY-MM"
+- [ ] ROI fields: `platformCostCents`, `roiMultiple`
+- [ ] Month-over-month comparison: `previousMonthRevenueChangePct`, `previousMonthLeadsChangePct`
+
+### Platform Analytics Table
+- [ ] Unique constraint on `date` column (one row per day)
+- [ ] Client metrics: `totalClients`, `activeClients`, `newClients`, `churnedClients`
+- [ ] MRR metrics: `mrrCents`, `newMrrCents`, `churnedMrrCents`, `expansionMrrCents`
+
+### Funnel Events Table
+- [ ] References both `clients.id` and `leads.id` with cascade delete
+- [ ] Indexes on `clientId`, `leadId`, `eventType`, `createdAt`
+- [ ] Supports event types: lead_created, first_response, qualified, appointment_booked, quote_sent, job_won, etc.
+
+### Client Cohorts Table
+- [ ] Unique constraint on `clientId` (one cohort entry per client)
+- [ ] Monthly retention booleans: `month1Active` through `month12Active`
+- [ ] Revenue tracking: `month1RevenueCents` through `lifetimeRevenueCents`
+
+### Analytics Aggregation Service
+- [ ] `src/lib/services/analytics-aggregation.ts` exists
+- [ ] Uses `getDb()` per function call (not cached)
+- [ ] `calculateDailyAnalytics(clientId, date)` counts leads, messages, escalations, funnel events
+- [ ] Queries `conversations` table (not `messages`) with correct column names (`messageType` for ai_response/contractor_response)
+- [ ] Lead source filter uses `'form'` (not `'web_form'`) matching actual leads table values
+- [ ] `calculateAvgResponseTime()` uses CTE with message pairs from `conversations` table
+- [ ] `calculateWeeklyAnalytics(clientId, weekStart)` aggregates from daily with WoW comparison
+- [ ] `calculateMonthlyAnalytics(clientId, month)` aggregates from daily with MoM comparison, gets API costs
+- [ ] `calculatePlatformAnalytics(date)` aggregates across all clients
+- [ ] `runDailyAnalyticsJob()` processes all active clients, triggers weekly on Sundays, monthly on 1st
+- [ ] Upserts use `onConflictDoUpdate` for idempotent reruns
+
+### Funnel Tracking Service
+- [ ] `src/lib/services/funnel-tracking.ts` exists
+- [ ] `trackFunnelEvent()` inserts into `funnel_events` table
+- [ ] Helper functions: `trackLeadCreated`, `trackFirstResponse`, `trackAppointmentBooked`, `trackJobWon`, `trackPaymentReceived`, `trackReviewReceived`
+- [ ] `FunnelEventType` type exported with all 12 event types
+
+### Analytics Query Service
+- [ ] `src/lib/services/analytics-queries.ts` exists
+- [ ] `getClientDashboardSummary(clientId)` returns monthly + 7-day trend
+- [ ] `getConversionFunnel(clientId, startDate, endDate)` returns funnel stages with conversion rates
+- [ ] `getLeadSourceBreakdown(clientId, startDate, endDate)` groups by source with conversion count
+- [ ] `getResponseTimeDistribution(clientId, startDate, endDate)` buckets response times
+- [ ] `getMonthlyComparison(clientId, months)` returns MoM data in chronological order
+
+### Cron Job
+- [ ] `src/app/api/cron/daily/route.ts` exists with GET handler
+- [ ] Auth check: validates `Authorization: Bearer <CRON_SECRET>` header
+- [ ] Calls `runDailyAnalyticsJob()` and returns success/error JSON
+- [ ] Main cron orchestrator (`src/app/api/cron/route.ts`) imports and calls `runDailyAnalyticsJob` at midnight UTC
+- [ ] Route `/api/cron/daily` appears in build output
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Route `/api/cron/daily` registered in build output
+- [ ] All 6 schema files compile without errors
+- [ ] All 3 service files compile without errors
