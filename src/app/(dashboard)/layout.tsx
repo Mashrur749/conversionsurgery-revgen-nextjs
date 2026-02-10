@@ -19,6 +19,7 @@ const adminNavItems = [
   { group: 'Management', items: [
     { href: '/admin', label: 'All Clients' },
     { href: '/admin/clients', label: 'Clients' },
+    { href: '/admin/billing', label: 'Billing' },
   ]},
   { group: 'Optimization', items: [
     { href: '/admin/flow-templates', label: 'Flow Templates' },
