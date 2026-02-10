@@ -52,7 +52,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
           />
           <YAxis tickFormatter={(value) => `$${value}`} fontSize={12} />
           <Tooltip
-            formatter={(value: number) => [`$${value.toFixed(0)}`, '']}
+            formatter={(value) => [`$${Number(value).toFixed(0)}`, '']}
             labelFormatter={(label) => {
               try {
                 return format(parseISO(label), 'MMM d, yyyy');

@@ -42,7 +42,7 @@ export function AnalyticsDashboard({ clientId }: AnalyticsDashboardProps) {
     setLoading(true);
     try {
       const res = await fetch(`/api/clients/${clientId}/analytics`);
-      const data = await res.json();
+      const data = (await res.json()) as Record<string, any>;
       setSummary(data);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);

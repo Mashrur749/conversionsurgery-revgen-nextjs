@@ -1579,3 +1579,109 @@ _Manual verification steps for the Phase 1 project setup and database connection
 - [ ] Route `/api/cron/daily` registered in build output
 - [ ] All 6 schema files compile without errors
 - [ ] All 3 service files compile without errors
+
+---
+
+## Part 9E: Analytics Dashboard UI
+
+### Client Analytics API Routes
+- [ ] `GET /api/clients/[clientId]/analytics` returns dashboard summary (monthly + dailyTrend)
+- [ ] `GET /api/clients/[clientId]/analytics/funnel` returns funnel stages with counts and conversion rates
+- [ ] `GET /api/clients/[clientId]/analytics/funnel?startDate=...&endDate=...` filters by date range
+- [ ] `GET /api/clients/[clientId]/analytics/sources` returns lead source breakdown with leads, conversions, revenue
+- [ ] `GET /api/clients/[clientId]/analytics/sources?startDate=...` filters by date range
+- [ ] `GET /api/clients/[clientId]/analytics/monthly` returns last 6 months of data (default)
+- [ ] `GET /api/clients/[clientId]/analytics/monthly?months=12` respects months param
+- [ ] `GET /api/clients/[clientId]/analytics/response-time` returns response time distribution buckets
+- [ ] `GET /api/clients/[clientId]/analytics/export?format=csv` returns CSV file download
+- [ ] `GET /api/clients/[clientId]/analytics/export?format=json` returns JSON data
+- [ ] All client analytics routes return 401 for unauthenticated users
+- [ ] All routes use `Promise<{ clientId: string }>` and await params (Next.js 16)
+
+### Admin Platform Analytics API
+- [ ] `GET /api/admin/platform-analytics` returns MRR, active clients, churn, usage metrics
+- [ ] Returns 403 for non-admin users
+- [ ] Falls back to counting clients table when platform_analytics table is empty
+
+### Client Analytics Dashboard Page (`/analytics`)
+- [ ] Page renders at `/analytics` route
+- [ ] Requires authentication (redirects to /login if not logged in)
+- [ ] Shows "Select a Client" prompt for admin users with no client selected
+- [ ] Shows "No client linked" message for users without a client
+- [ ] Date range selector with 7/30/90/365 day options
+- [ ] Export Report button triggers CSV download
+
+### KPI Cards
+- [ ] "New Leads" card shows lead count with change percentage
+- [ ] "Appointments" card shows booking count
+- [ ] "Jobs Won" card shows win count with conversion rate in description
+- [ ] "Revenue" card shows formatted currency with highlight border
+- [ ] Trending up/down icons display correctly based on positive/negative change
+- [ ] Green/red color coding for positive/negative trends
+
+### ROI Highlight Card
+- [ ] Green gradient card shows ROI multiple (e.g., "3.5x")
+- [ ] Shows revenue vs platform cost breakdown
+- [ ] Shows net gain calculation
+- [ ] Displays "Calculating..." when ROI not yet available
+
+### Overview Tab
+- [ ] Revenue Trend chart renders with recharts LineChart (revenue + payments lines)
+- [ ] Leads by Day bar chart renders with daily lead counts
+- [ ] Messages Handled card shows total with AI handled percentage
+- [ ] Avg Response Time card shows formatted time (seconds/minutes/hours)
+- [ ] Reviews card shows count with star rating
+
+### Conversion Funnel Tab
+- [ ] Funnel displays 6 stages: Leads → First Response → Qualified → Appointments → Quotes → Jobs
+- [ ] Bar widths proportional to counts
+- [ ] Revenue values shown inside bars where applicable
+- [ ] Conversion rate arrows between stages
+- [ ] Overall Lead → Job conversion summary at bottom
+- [ ] Re-fetches when date range changes
+
+### Lead Sources Tab
+- [ ] Shows bar chart for each source (Missed Calls, Web Forms, Referrals, etc.)
+- [ ] Percentage labels based on total leads
+- [ ] Conversion rate per source
+- [ ] Revenue per source
+- [ ] Summary table with all columns (Source, Leads, Conversions, Revenue, Conv. Rate)
+- [ ] Re-fetches when date range changes
+
+### Performance Tab
+- [ ] Response Time Distribution shows 5 buckets with color coding
+- [ ] Green for fast (Under 1 min, 1-5 min), yellow/orange/red for slower
+- [ ] "Responses under 5 minutes" summary with industry benchmark
+- [ ] AI vs Human chart shows percentage split with stacked bar
+- [ ] Total counts for AI and Human responses
+
+### Admin Platform Analytics Page (`/admin/platform-analytics`)
+- [ ] Page renders at `/admin/platform-analytics` route
+- [ ] Requires admin authentication (redirects to /login if not admin)
+- [ ] MRR card shows formatted currency
+- [ ] Active Clients card shows count
+- [ ] New This Month card shows positive count in green
+- [ ] Churned card shows negative count in red
+- [ ] Platform Usage section shows messages, AI responses, escalations, leads
+- [ ] API Costs section shows total, avg per client, gross margin percentage
+- [ ] Health Indicators shows satisfaction rating and churn rate
+- [ ] Churn rate color-coded (green < 5%, red > 5%)
+
+### Navigation
+- [ ] "Analytics" link appears in client navigation bar
+- [ ] "Platform" link appears in admin Optimization nav group
+- [ ] Both navigation links route to correct pages
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] All 12 new routes registered in build output:
+  - `/analytics`
+  - `/admin/platform-analytics`
+  - `/api/clients/[clientId]/analytics`
+  - `/api/clients/[clientId]/analytics/funnel`
+  - `/api/clients/[clientId]/analytics/sources`
+  - `/api/clients/[clientId]/analytics/monthly`
+  - `/api/clients/[clientId]/analytics/response-time`
+  - `/api/clients/[clientId]/analytics/export`
+  - `/api/admin/platform-analytics`
+- [ ] recharts and date-fns packages installed in package.json

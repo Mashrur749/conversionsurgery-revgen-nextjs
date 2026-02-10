@@ -29,7 +29,7 @@ export function ResponseTimeChart({
       const res = await fetch(
         `/api/clients/${clientId}/analytics/response-time?startDate=${startDate.toISOString()}`
       );
-      const data = await res.json();
+      const data = (await res.json()) as Array<{ bucket: string; count: number }>;
       setDistribution(data);
     } catch (error) {
       console.error('Failed to fetch response time data:', error);

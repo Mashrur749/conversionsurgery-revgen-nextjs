@@ -44,7 +44,7 @@ export function LeadSourceChart({ clientId, dateRange }: LeadSourceChartProps) {
       const res = await fetch(
         `/api/clients/${clientId}/analytics/sources?startDate=${startDate.toISOString()}`
       );
-      const data = await res.json();
+      const data = (await res.json()) as SourceData[];
       setSources(data);
     } catch (error) {
       console.error('Failed to fetch sources:', error);

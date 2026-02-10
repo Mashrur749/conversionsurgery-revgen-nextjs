@@ -20,7 +20,7 @@ export function PlatformAnalytics() {
   const fetchData = async () => {
     try {
       const res = await fetch('/api/admin/platform-analytics');
-      const json = await res.json();
+      const json = (await res.json()) as Record<string, any>;
       setData(json);
     } catch (error) {
       console.error('Failed to fetch platform analytics:', error);

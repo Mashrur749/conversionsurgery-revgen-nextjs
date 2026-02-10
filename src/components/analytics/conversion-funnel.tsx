@@ -41,7 +41,7 @@ export function ConversionFunnel({ clientId, dateRange }: ConversionFunnelProps)
       const res = await fetch(
         `/api/clients/${clientId}/analytics/funnel?startDate=${startDate.toISOString()}`
       );
-      const data = await res.json();
+      const data = (await res.json()) as FunnelStage[];
       setFunnel(data);
     } catch (error) {
       console.error('Failed to fetch funnel:', error);
