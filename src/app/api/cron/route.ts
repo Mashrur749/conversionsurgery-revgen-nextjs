@@ -3,6 +3,7 @@ import { updateMonthlySummaries } from '@/lib/services/usage-tracking';
 import { checkAllClientAlerts } from '@/lib/services/usage-alerts';
 import { scoreClientLeads } from '@/lib/services/lead-scoring';
 import { syncAllReviews, checkAndAlertNegativeReviews } from '@/lib/services/review-monitoring';
+import { checkSlaBreaches } from '@/lib/services/escalation';
 import { getDb, clients, reviewSources } from '@/db';
 import { eq, and, or, isNull, lt } from 'drizzle-orm';
 
@@ -38,6 +39,18 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('Usage tracking cron error:', error);
         results.usageTracking = { error: 'Failed' };
+      }
+    }
+
+    // Hourly: check for escalation SLA breaches
+    if (now.getUTCMinutes() < 10) {
+      try {
+        const breachedCount = await checkSlaBreaches();
+        console.log(`[Escalation Cron] Found ${breachedCount} SLA breaches`);
+        results.escalationSla = { success: true, breached: breachedCount };
+      } catch (error) {
+        console.error('Escalation SLA check error:', error);
+        results.escalationSla = { error: 'Failed' };
       }
     }
 

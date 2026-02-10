@@ -11,6 +11,7 @@ const navItems = [
   { href: '/dashboard', label: 'Overview' },
   { href: '/leads', label: 'Leads' },
   { href: '/conversations', label: 'Conversations' },
+  { href: '/escalations', label: 'Escalations' },
   { href: '/scheduled', label: 'Scheduled' },
   { href: '/settings', label: 'Settings' },
 ];
