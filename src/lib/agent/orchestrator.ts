@@ -138,7 +138,7 @@ export async function processIncomingMessage(
   const processingTime = Date.now() - startTime;
 
   // Log the decision
-  await db.insert(agentDecisions).values({
+  const decisionValues: typeof agentDecisions.$inferInsert = {
     leadId,
     clientId: client.id,
     messageId,
@@ -151,24 +151,25 @@ export async function processIncomingMessage(
       sentiment: finalState.signals.sentiment,
       recentObjections: finalState.objections.slice(-3),
     },
-    action: finalState.lastAction!,
+    action: finalState.lastAction as any,
     actionDetails: {
-      responseText: finalState.responseToSend,
-      flowId: finalState.flowToTrigger,
-      escalationReason: finalState.escalationReason,
+      responseText: finalState.responseToSend ?? undefined,
+      flowId: finalState.flowToTrigger ?? undefined,
+      escalationReason: finalState.escalationReason ?? undefined,
     },
-    reasoning: finalState.decisionReasoning,
+    reasoning: finalState.decisionReasoning ?? undefined,
     confidence: 80,
     processingTimeMs: processingTime,
-  });
+  };
+  await db.insert(agentDecisions).values(decisionValues);
 
   // Update lead context
   await db.update(leadContext).set({
-    stage: finalState.stage,
+    stage: finalState.stage as any,
     urgencyScore: finalState.signals.urgency,
     budgetScore: finalState.signals.budget,
     intentScore: finalState.signals.intent,
-    currentSentiment: finalState.signals.sentiment,
+    currentSentiment: finalState.signals.sentiment as any,
     projectType: finalState.extractedInfo.projectType,
     projectSize: finalState.extractedInfo.projectSize,
     estimatedValue: finalState.extractedInfo.estimatedValue,
@@ -222,7 +223,7 @@ export async function processIncomingMessage(
     await db.insert(escalationQueue).values({
       leadId,
       clientId: client.id,
-      reason: finalState.escalationReason as EscalationReason,
+      reason: finalState.escalationReason as any,
       reasonDetails: finalState.decisionReasoning,
       triggerMessageId: messageId,
       priority: finalState.signals.sentiment === 'frustrated' ? 1 : 2,
