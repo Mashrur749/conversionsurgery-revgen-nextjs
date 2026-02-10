@@ -67,3 +67,11 @@ export type { SubscriptionInvoice, NewSubscriptionInvoice } from './schema/subsc
 export type { UsageRecord, NewUsageRecord } from './schema/usage-records';
 export type { BillingEvent, NewBillingEvent } from './schema/billing-events';
 export type { Coupon, NewCoupon } from './schema/coupons';
+
+// Conversation Agent
+export type { LeadContext, NewLeadContext } from './schema/lead-context';
+export type { AgentDecision, NewAgentDecision } from './schema/agent-decisions';
+export type { EscalationQueueItem, NewEscalationQueueItem } from './schema/escalation-queue';
+export type { EscalationRule, NewEscalationRule } from './schema/escalation-rules';
+export type { ConversationCheckpoint, NewConversationCheckpoint } from './schema/conversation-checkpoints';
+export type { ClientAgentSettings, NewClientAgentSettings } from './schema/client-agent-settings';
