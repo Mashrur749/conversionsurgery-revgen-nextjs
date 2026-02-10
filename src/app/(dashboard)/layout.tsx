@@ -32,6 +32,7 @@ const adminNavItems = [
     { href: '/admin/phone-numbers', label: 'Phone Numbers' },
     { href: '/admin/twilio', label: 'Twilio Settings' },
     { href: '/admin/voice-ai', label: 'Voice AI' },
+    { href: '/admin/compliance', label: 'Compliance' },
   ]},
 ];
 
