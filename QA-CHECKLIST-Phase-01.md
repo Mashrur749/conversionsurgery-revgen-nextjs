@@ -911,3 +911,98 @@ _Manual verification steps for the Phase 1 project setup and database connection
 - [ ] All compliance routes registered: `/api/compliance/check`, `/api/compliance/consent`, `/api/compliance/report`
 - [ ] Admin compliance page registered: `/admin/compliance`
 - [ ] `date-fns-tz` dependency installed
+
+---
+
+## Part 23: Billing Schema & Subscription Management (03E)
+
+### Schema — Billing Enums
+- [ ] `subscription_status` pgEnum exists with 6 values: trialing, active, past_due, canceled, unpaid, paused
+- [ ] `plan_interval` pgEnum exists with 2 values: month, year
+- [ ] Enums exported from `src/db/schema/billing-enums.ts`
+
+### Schema — Plans Table
+- [ ] `plans` table exists with columns: id (uuid PK), name, slug (unique), description, priceMonthly (integer cents), priceYearly (integer cents, nullable), stripe IDs, features (JSONB with typed interface), trialDays (default 14), isPopular, displayOrder, isActive, timestamps
+- [ ] Features JSONB type includes: maxLeadsPerMonth, maxTeamMembers, maxPhoneNumbers, includesVoiceAi, includesCalendarSync, includesAdvancedAnalytics, includesWhiteLabel, supportLevel, apiAccess
+- [ ] Indexes on slug and displayOrder
+
+### Schema — Subscriptions Table
+- [ ] `subscriptions` table exists with: clientId (FK cascade, unique), planId (FK), status (subscriptionStatusEnum), interval (planIntervalEnum), Stripe IDs, period timestamps, trial timestamps, cancellation fields, pause fields, discount fields, usage-based overage fields, timestamps
+- [ ] Unique index on clientId, regular indexes on stripeSubscriptionId and status
+
+### Schema — Billing Payment Methods Table
+- [ ] `billing_payment_methods` table exists with: clientId (FK cascade), stripePaymentMethodId (unique), card details (brand, last4, expMonth, expYear), bank details, isDefault, billing address (JSONB), timestamps
+- [ ] Index on clientId, unique index on stripePaymentMethodId
+
+### Schema — Subscription Invoices Table
+- [ ] `subscription_invoices` table exists with: clientId (FK cascade), subscriptionId (FK), Stripe IDs, invoiceNumber, status, amounts in cents (subtotal, discount, tax, total, amountPaid, amountDue), currency, lineItems (JSONB array), dates (invoiceDate, dueDate, paidAt), period (start/end), PDF URLs, payment tracking fields, metadata (JSONB), timestamps
+- [ ] Indexes on clientId, stripeInvoiceId (unique), status, invoiceDate
+
+### Schema — Usage Records Table
+- [ ] `usage_records` table exists with: clientId (FK cascade), subscriptionId (FK), usageType, quantity, unitAmountCents, period (start/end), reportedToStripe, stripeUsageRecordId, billedOnInvoiceId (FK), createdAt
+- [ ] Composite index on clientId+periodStart+periodEnd, index on usageType
+
+### Schema — Billing Events Table
+- [ ] `billing_events` table exists with: clientId (FK cascade), eventType, description, related entity FKs (subscriptionId, invoiceId, paymentMethodId), amountCents, Stripe event data (stripeEventId unique, stripeEventType, rawData JSONB), createdAt
+- [ ] Indexes on clientId, eventType, stripeEventId (unique), createdAt
+
+### Schema — Coupons Table
+- [ ] `coupons` table exists with: code (unique), name, discountType, discountValue, duration, durationMonths, limits, validity dates, restrictions (applicablePlans JSONB, minAmountCents, firstTimeOnly), stripeCouponId, isActive, createdAt
+- [ ] Unique index on code
+
+### Schema Exports
+- [ ] All 8 billing schema files exist in `src/db/schema/`
+- [ ] All re-exported from `src/db/schema/index.ts`
+- [ ] Types exported from `src/db/types.ts`: Plan, Subscription, BillingPaymentMethod, SubscriptionInvoice, UsageRecord, BillingEvent, Coupon (+ insert types)
+
+### Stripe Client Module
+- [ ] `src/lib/clients/stripe.ts` exports `getStripeClient()` (lazy-initialized singleton)
+- [ ] Uses Stripe API version `2026-01-28.clover` matching existing project usage
+- [ ] Throws descriptive error when `STRIPE_SECRET_KEY` is missing
+- [ ] Exports `STRIPE_WEBHOOK_SECRET` from env
+
+### Subscription Service (`src/lib/services/subscription.ts`)
+- [ ] `createSubscription()`: fetches client + plan; creates/retrieves Stripe customer; creates Stripe subscription with trial; reads period from items (Stripe v20); inserts DB record; logs billing event
+- [ ] `cancelSubscription()`: cancel immediately or at period end; updates Stripe and local record; logs event
+- [ ] `changePlan()`: retrieves current Stripe sub; updates items with proration; updates local record; logs event
+- [ ] `pauseSubscription()`: pauses collection in Stripe; updates local status to 'paused'
+- [ ] `resumeSubscription()`: removes pause in Stripe; updates local status to 'active'
+- [ ] `getSubscriptionWithPlan()`: inner joins subscriptions with plans; returns null if not found
+- [ ] `hasFeatureAccess()`: checks subscription is active/trialing then checks plan features
+- [ ] `checkUsageLimit()`: maps usage type to plan limits; returns allowed/limit/current
+
+### Payment Method Service (`src/lib/services/payment-methods.ts`)
+- [ ] `createSetupIntent()`: creates/retrieves Stripe customer; creates Stripe SetupIntent; returns client_secret
+- [ ] `addPaymentMethod()`: retrieves from Stripe; deduplicates; first method auto-default; updates Stripe subscription and customer default
+- [ ] `setDefaultPaymentMethod()`: unsets other defaults; sets new default; syncs to Stripe
+- [ ] `removePaymentMethod()`: blocks removing default; detaches from Stripe; deletes from DB
+- [ ] `getPaymentMethods()`: returns all methods for client ordered by isDefault
+
+### Subscription Invoice Service (`src/lib/services/subscription-invoices.ts`)
+- [ ] `syncInvoiceFromStripe()`: retrieves from Stripe; extracts subscription from `parent.subscription_details` (Stripe v20); maps line items with `pricing.unit_amount_decimal`; upserts invoice record
+- [ ] `getClientSubscriptionInvoices()`: filters by status/date range; ordered by invoiceDate desc
+- [ ] `retryInvoicePayment()`: validates invoice exists and not paid; calls `stripe.invoices.pay()`; re-syncs
+- [ ] `getUpcomingInvoice()`: uses `stripe.invoices.createPreview()` (Stripe v20); returns null on error
+
+### Stripe Webhook Handler (`/api/webhooks/stripe`)
+- [ ] Existing payment link handlers preserved (checkout.session.completed, expired, charge.refunded)
+- [ ] `customer.subscription.created/updated`: syncs status, period from items (v20), cancel state; logs billing event
+- [ ] `customer.subscription.deleted`: sets status 'canceled'; updates client status to 'cancelled'; logs event
+- [ ] `invoice.created/updated/paid/payment_failed`: syncs invoice; extracts sub from `parent.subscription_details` (v20); logs event with amount
+- [ ] `payment_method.attached`: finds client by customer ID; adds payment method; logs event
+- [ ] `customer.subscription.trial_will_end`: logs trial ending event
+- [ ] Duplicate event detection via `billingEvents.stripeEventId`
+- [ ] Webhook signature verification with `STRIPE_WEBHOOK_SECRET`
+- [ ] Uses shared `getStripeClient()` instead of local `getStripe()`
+
+### Seed Data (`src/db/seeds/plans.ts`)
+- [ ] `seedPlans()` inserts 3 plans: Starter ($497), Professional ($997), Enterprise ($1,997)
+- [ ] Each plan has typed features JSONB with correct limits
+- [ ] Professional marked as `isPopular`
+- [ ] All plans have 14-day trial
+- [ ] Uses `onConflictDoNothing()` for idempotency
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] No type errors from Stripe v20 API changes (current_period on items, parent.subscription_details, createPreview, etc.)
+- [ ] Webhook route registered at `/api/webhooks/stripe`
