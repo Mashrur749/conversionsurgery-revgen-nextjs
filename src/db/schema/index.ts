@@ -58,6 +58,7 @@ export * from './agent-enums';
 export * from './lead-context';
 export * from './agent-decisions';
 export * from './escalation-queue';
+export * from './escalation-rules';
 
 // Billing & Subscriptions
 export * from './billing-enums';
