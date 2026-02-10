@@ -1337,4 +1337,158 @@ _Manual verification steps for the Phase 1 project setup and database connection
 ### Build Verification
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] Route `/api/cron/agent-check` appears in build output
+
+---
+
+## Phase 38: Escalation Management (07E)
+
+### Step 1: Escalation Service (`src/lib/services/escalation.ts`)
+
+#### `createEscalation()`
+- [ ] Returns existing escalation ID if one is already pending for the lead
+- [ ] Updates priority on existing escalation if new priority is higher (lower number)
+- [ ] Matches escalation rules by trigger type (keyword or reason match)
+- [ ] Increments `timesTriggered` and sets `lastTriggeredAt` on matched rule
+- [ ] Supports `round_robin` assignment (assigns to team member with fewest pending)
+- [ ] Calculates SLA deadline: 1 hour for priority 1-2, 4 hours for priority 3+
+- [ ] Creates escalation with status `assigned` when assignee found, `pending` otherwise
+- [ ] Updates `leadContext.stage` to `escalated`
+- [ ] Sends notification to assigned team member or all eligible team members
+- [ ] Sends auto-response SMS if rule has `autoResponse` configured
+- [ ] Uses `getDb()` per-request (not cached)
+- [ ] Uses `sendTrackedSMS()` from `@/lib/clients/twilio-tracked`
+- [ ] Uses `sendEmail()` from `@/lib/services/resend`
+
+#### `assignEscalation()`
+- [ ] Sets `assignedTo`, `assignedAt`, status to `assigned`, and `updatedAt`
+
+#### `takeOverConversation()`
+- [ ] Sets status to `in_progress`, `assignedTo`, `firstResponseAt`, and `updatedAt`
+
+#### `resolveEscalation()`
+- [ ] Throws error if escalation not found
+- [ ] Sets status to `resolved` with `resolvedAt`, `resolvedBy`, `resolution`, `resolutionNotes`
+- [ ] Updates `leadContext.stage` based on resolution:
+  - `converted` → `booked`
+  - `lost` → `lost`
+  - `returned_to_ai` → `nurturing`
+  - Other → `qualifying`
+
+#### `getEscalationQueue()`
+- [ ] Filters by `clientId` (required)
+- [ ] Optionally filters by `status`, `assignedTo`, `priority`
+- [ ] Returns joined data: escalation + lead + assignee
+- [ ] Orders by priority (ascending) then createdAt (descending)
+
+#### `checkSlaBreaches()`
+- [ ] Finds escalations that are `pending` or `assigned`, not yet breached, and past SLA deadline
+- [ ] Marks each as `slaBreach: true`
+- [ ] Sends email notification to team members who receive escalations
+- [ ] Returns count of breached escalations
+
+### Step 2: Escalation Queue API Routes
+
+#### `GET /api/escalations`
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 400 if `clientId` not provided
+- [ ] Returns queue (joined escalation/lead/assignee data)
+- [ ] Returns summary counts by status (pending, assigned, in_progress, resolved)
+- [ ] Returns SLA breach count for active escalations
+- [ ] Supports `status` and `assignedTo` query param filters
+
+#### `GET /api/escalations/[id]`
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 404 if escalation not found
+- [ ] Returns escalation details, lead info, conversation history (last 50 messages), and assignee
+- [ ] Conversation history is returned in chronological order (oldest first)
+- [ ] Uses `conversations` table (not `messages`)
+- [ ] Awaits `params` for Next.js 16 compatibility
+
+#### `POST /api/escalations/[id]/assign`
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 400 if `teamMemberId` not provided
+- [ ] Calls `assignEscalation()` service method
+
+#### `POST /api/escalations/[id]/takeover`
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 400 if `teamMemberId` not provided
+- [ ] Calls `takeOverConversation()` service method
+
+#### `POST /api/escalations/[id]/resolve`
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 400 if `teamMemberId` or `resolution` not provided
+- [ ] Calls `resolveEscalation()` service method
+
+### Step 3: Escalation Rules API
+
+#### `GET /api/clients/[clientId]/escalation-rules`
+- [ ] Returns 401 if not authenticated
+- [ ] Returns rules ordered by priority (ascending)
+- [ ] Filters by `clientId`
+
+#### `POST /api/clients/[clientId]/escalation-rules`
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 400 if `name`, `conditions`, or `action` missing
+- [ ] Creates rule with default priority 100 and enabled true
+- [ ] Returns created rule
+
+#### `PUT /api/clients/[clientId]/escalation-rules/[ruleId]`
+- [ ] Returns 401 if not authenticated
+- [ ] Returns 404 if rule not found (scoped to clientId)
+- [ ] Updates rule fields and sets `updatedAt`
+
+#### `DELETE /api/clients/[clientId]/escalation-rules/[ruleId]`
+- [ ] Returns 401 if not authenticated
+- [ ] Deletes rule scoped to clientId
+
+### Step 4: Escalation Queue Page (`/escalations`)
+- [ ] Page exists at `src/app/(dashboard)/escalations/page.tsx`
+- [ ] Redirects to `/login` if not authenticated
+- [ ] Passes `clientId` from session for non-admin users
+- [ ] Passes `isAdmin` flag to component
+
+### Step 5: Escalation Queue Component
+- [ ] File exists at `src/components/escalations/escalation-queue.tsx`
+- [ ] Shows client selector dropdown for admin users
+- [ ] Fetches client list from `/api/admin/clients` for admin users
+- [ ] Shows 4 summary cards: Active, Pending, In Progress, SLA Breached
+- [ ] SLA Breached card has `border-destructive` when count > 0
+- [ ] Tabs: Active, Pending, In Progress, Resolved — each with count
+- [ ] Each escalation row shows: priority badge, lead name/phone, status badge, reason, time ago, assignee, View button
+- [ ] View button links to `/escalations/[id]`
+- [ ] Empty state shows green checkmark with "No escalations in this queue"
+- [ ] Loading state shown while fetching
+
+### Step 6: Escalation Detail Page & Component
+- [ ] Page exists at `src/app/(dashboard)/escalations/[id]/page.tsx`
+- [ ] Returns 404 if escalation not found
+- [ ] Uses `Promise<{ id: string }>` for params (Next.js 16)
+- [ ] Component exists at `src/components/escalations/escalation-detail.tsx`
+- [ ] Shows back button linking to `/escalations`
+- [ ] Shows lead name, phone, and SLA BREACH badge if applicable
+- [ ] Shows AI conversation summary if available
+- [ ] Shows conversation history with message bubbles (outbound right, inbound left)
+- [ ] Shows suggested response with "Use this" button to populate textarea
+- [ ] Has response textarea and Send button for active escalations
+- [ ] Has Take Over button when status is `assigned`
+- [ ] Right sidebar shows: reason, details, priority, status, created time, assignee
+- [ ] Quick actions: Call lead (tel: link), View Lead Profile
+- [ ] Resolution section with select (5 options) + notes textarea + Resolve button
+- [ ] Resolution options: Handled, Return to AI, Converted, Lost, No Action
+- [ ] Toast notifications on takeover, send, resolve
+
+### Step 7: SLA Check Cron & Navigation
+- [ ] SLA breach check added to `src/app/api/cron/route.ts`
+- [ ] Runs hourly (when `minutes < 10`)
+- [ ] Imports `checkSlaBreaches` from escalation service
+- [ ] Logs breached count
+- [ ] Results stored in `results.escalationSla`
+- [ ] "Escalations" nav item added to dashboard layout
+- [ ] Navigation link appears in main nav items (not admin-only)
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Routes `/escalations` and `/escalations/[id]` appear in build output
+- [ ] Routes `/api/escalations`, `/api/escalations/[id]/*` registered
+- [ ] Routes `/api/clients/[clientId]/escalation-rules/*` registered
 - [ ] No new lint warnings related to agent files
