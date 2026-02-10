@@ -4,6 +4,7 @@ import { checkAllClientAlerts } from '@/lib/services/usage-alerts';
 import { scoreClientLeads } from '@/lib/services/lead-scoring';
 import { syncAllReviews, checkAndAlertNegativeReviews } from '@/lib/services/review-monitoring';
 import { checkSlaBreaches } from '@/lib/services/escalation';
+import { runDailyAnalyticsJob } from '@/lib/services/analytics-aggregation';
 import { getDb, clients, reviewSources } from '@/db';
 import { eq, and, or, isNull, lt } from 'drizzle-orm';
 
@@ -115,6 +116,18 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('Lead scoring cron error:', error);
         results.leadScoring = { error: 'Failed' };
+      }
+    }
+
+    // Daily at midnight UTC: run analytics aggregation
+    if (now.getUTCHours() === 0 && now.getUTCMinutes() < 10) {
+      try {
+        await runDailyAnalyticsJob();
+        console.log('[Analytics Cron] Daily analytics job completed');
+        results.analytics = { success: true };
+      } catch (error) {
+        console.error('Analytics cron error:', error);
+        results.analytics = { error: 'Failed' };
       }
     }
 
