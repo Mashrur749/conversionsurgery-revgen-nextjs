@@ -1,4 +1,4 @@
-import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats } from '@/db';
+import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats, clientAgentSettings } from '@/db';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
 import { generateAIResponse, detectHotIntent } from '@/lib/services/openai';
@@ -8,6 +8,7 @@ import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 import { checkAndSuggestFlows, handleApprovalResponse } from '@/lib/services/flow-suggestions';
 import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
 import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/services/media';
+import { processIncomingMessage } from '@/lib/agent/orchestrator';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -235,6 +236,37 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         hotTransfer: false,
         outsideHours: true,
       };
+    }
+  }
+
+  // 6.7 Check if LangGraph conversation agent is enabled
+  if (client.aiAgentMode === 'autonomous') {
+    const [agentSettings] = await db
+      .select()
+      .from(clientAgentSettings)
+      .where(eq(clientAgentSettings.clientId, client.id))
+      .limit(1);
+
+    if (agentSettings?.autoRespond !== false) {
+      try {
+        const agentResult = await processIncomingMessage(
+          lead.id,
+          inboundMsg.id,
+          messageBody
+        );
+
+        console.log('[Agent] Result:', agentResult);
+
+        return {
+          processed: true,
+          leadId: lead.id,
+          agentMode: true,
+          ...agentResult,
+        };
+      } catch (err) {
+        console.error('[Agent] Processing failed, falling back to legacy:', err);
+        // Fall through to legacy AI response
+      }
     }
   }
 
