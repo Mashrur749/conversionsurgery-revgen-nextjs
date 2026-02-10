@@ -72,6 +72,14 @@ export * from './usage-records';
 export * from './billing-events';
 export * from './coupons';
 
+// Analytics
+export * from './analytics-daily';
+export * from './analytics-weekly';
+export * from './analytics-monthly';
+export * from './platform-analytics';
+export * from './funnel-events';
+export * from './client-cohorts';
+
 // Auth tables (NextAuth)
 export * from './auth';
 
