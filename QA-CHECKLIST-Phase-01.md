@@ -792,3 +792,122 @@ _Manual verification steps for the Phase 1 project setup and database connection
 ### Step 9: Build Verification
 - [ ] `npm run build` completes with `Compiled successfully` and 0 TypeScript errors
 - [ ] All routes registered (60+ dynamic routes in build output)
+
+---
+
+## Part 10: TCPA Compliance & Consent Management (02E)
+
+### Schema & Database
+- [ ] `consent_records` table created with all columns (id, clientId, leadId, phoneNumber, phoneNumberHash, consentType, consentSource, consentScope, consentLanguage, consentTimestamp, ipAddress, userAgent, formUrl, signatureImage, recordingUrl, isActive, revokedAt, revokedReason, metadata, createdAt, updatedAt)
+- [ ] `opt_out_records` table created with all columns (id, clientId, leadId, phoneNumber, phoneNumberHash, optOutReason, optOutTimestamp, triggerMessage, triggerMessageId, processedAt, processedBy, reoptedInAt, reoptinConsentId, metadata, createdAt)
+- [ ] `do_not_contact_list` table created with all columns (id, clientId, phoneNumber, phoneNumberHash, source, sourceReference, addedAt, expiresAt, isActive, removedAt, removeReason, metadata)
+- [ ] `quiet_hours_config` table created with clientId unique constraint, default quiet hours 21-8
+- [ ] `compliance_audit_log` table created with event tracking fields
+- [ ] `compliance_check_cache` table created with TTL-based caching fields
+- [ ] All tables use `uuid_generate_v4()` for primary keys
+- [ ] All indexes created (consent_client_phone, consent_phone_hash, optout_client_phone, dnc_phone_hash, audit_client_event, cache_client_phone, etc.)
+- [ ] Enums: `consent_type` (4 values), `consent_source` (7 values), `opt_out_reason` (7 values)
+- [ ] Relations added in `relations.ts` for consentRecords and optOutRecords
+- [ ] Schema exported from `src/db/schema/index.ts`
+
+### Opt-Out Handling
+- [ ] STOP keyword triggers opt-out recording
+- [ ] STOPALL, UNSUBSCRIBE, CANCEL, END, QUIT, OPT OUT, OPTOUT, REMOVE keywords detected
+- [ ] Case-insensitive opt-out detection works
+- [ ] Opt-out confirmation message returned: "You have been unsubscribed..."
+- [ ] Lead status updated to `opted_out` with `optedOut=true` and `optedOutAt` set
+- [ ] Consent record marked `isActive=false` with `revokedAt` and `revokedReason`
+- [ ] Compliance check cache invalidated after opt-out
+- [ ] Future messages blocked for opted-out numbers
+- [ ] Audit log entry created for opt-out event
+
+### Opt-In Handling
+- [ ] START keyword triggers re-opt-in
+- [ ] YES, UNSTOP, SUBSCRIBE, OPTIN, OPT IN keywords detected
+- [ ] New consent record created with `text_optin` source
+- [ ] Previous opt-out record marked with `reoptedInAt` and `reoptinConsentId`
+- [ ] Lead status updated to `active` with `optedOut=false` and `optedOutAt=null`
+- [ ] Opt-in confirmation message returned: "You have been resubscribed!"
+- [ ] Audit log entry created for consent event
+
+### Consent Recording
+- [ ] `POST /api/compliance/consent` requires auth (returns 401 without session)
+- [ ] Required fields validated: phoneNumber, type, source, language (returns 400 if missing)
+- [ ] Consent record stored with IP address from `x-forwarded-for` header
+- [ ] Consent record stored with user agent from request header
+- [ ] Consent scope defaults to all-true if not provided
+- [ ] Phone number normalized and hashed before storage
+- [ ] Associated lead found and linked if exists
+- [ ] Returns consentId on success
+
+### Compliance Check
+- [ ] `POST /api/compliance/check` requires auth (returns 401 without session)
+- [ ] Returns 400 if phoneNumber missing
+- [ ] Full check validates: opt-out status, DNC list, consent records, quiet hours
+- [ ] Opted-out numbers return `canSend: false` with `blockReason: "Recipient has opted out"`
+- [ ] DNC list numbers return `canSend: false` with `blockReason` including source
+- [ ] No consent returns `canSend: false` with `blockReason: "No valid consent record"`
+- [ ] Quiet hours return `canSend: false` with reason including time window
+- [ ] Valid consent returns `canSendMarketing` and `canSendTransactional` based on scope
+- [ ] Warning generated for consent over 1 year old
+- [ ] Warning generated for implied consent type
+- [ ] Cache checked first (5-minute TTL)
+- [ ] Cache invalidated after opt-out or consent changes
+- [ ] Audit log entries created for blocked messages
+
+### DNC List Management
+- [ ] Single number addition works via `DncService.addToDnc()`
+- [ ] Duplicate detection prevents re-adding active entries
+- [ ] Removal sets `isActive=false` with `removedAt` and `removeReason`
+- [ ] Bulk import processes in chunks of 1000
+- [ ] Bulk import returns counts: total, added, duplicates, errors
+- [ ] Global DNC (clientId=null) blocks across all clients
+- [ ] Client-specific DNC blocks only for that client
+- [ ] DNC expiration honored (expired entries not blocking)
+
+### Quiet Hours
+- [ ] Default quiet hours: 9 PM to 8 AM (21:00-08:00)
+- [ ] Weekend hours override works when configured
+- [ ] Timezone conversion uses `date-fns-tz` `getTimezoneOffset()`
+- [ ] Default timezone fallback to `America/New_York` when not provided
+- [ ] Overnight quiet hours (start > end) correctly detected
+- [ ] Federal holiday detection for fixed holidays (New Year, July 4th, Veterans Day, Christmas)
+- [ ] `enforceQuietHours=false` disables quiet hours check
+
+### Compliance Report
+- [ ] `GET /api/compliance/report` requires auth (returns 401 without session)
+- [ ] `months` query param controls report period (default: 1)
+- [ ] Report includes: totalConsents, activeConsents, totalOptOuts, optOutRate, dncListSize, messagesBlocked
+- [ ] Consent breakdown by type and source
+- [ ] Opt-out breakdown by reason with 30-day daily trend
+- [ ] Compliance events grouped by type
+- [ ] Risk detection: high opt-out rate (>5%), implied consent dominance (>30%), complaints
+- [ ] Recommendations generated for each detected risk
+
+### Admin Compliance Dashboard
+- [ ] `/admin/compliance` page accessible only to admin users
+- [ ] Non-admin redirected to `/dashboard`
+- [ ] Compliance score displayed with color-coded badge (green/yellow/red)
+- [ ] Stats grid shows: Active Consents, Opt-Outs (with rate), DNC List size, Messages Blocked
+- [ ] Risk warnings displayed in amber alert card when risks exist
+- [ ] Download Report button triggers JSON report download
+- [ ] "Compliance" link appears in admin Configuration nav group
+
+### UI Components
+- [ ] `ConsentCapture` component renders 4 checkboxes (marketing, transactional, promotional, reminders)
+- [ ] TCPA disclosure text displayed with message rates and STOP info
+- [ ] Submit button shows "Saving..." during submission
+- [ ] Success state shows "Thank you!" alert after consent saved
+- [ ] `ComplianceDashboard` component renders score, stats, risks, and download button
+- [ ] Progress bar reflects compliance score percentage
+
+### Phone Number Privacy
+- [ ] All phone numbers hashed with SHA-256 before storage in hash columns
+- [ ] Hash-based lookups used for compliance checks (not plain text matching)
+- [ ] Original phone numbers stored only where legally required (consent_records, opt_out_records)
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] All compliance routes registered: `/api/compliance/check`, `/api/compliance/consent`, `/api/compliance/report`
+- [ ] Admin compliance page registered: `/admin/compliance`
+- [ ] `date-fns-tz` dependency installed
