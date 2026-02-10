@@ -1224,3 +1224,117 @@ _Manual verification steps for the Phase 1 project setup and database connection
 - [ ] `npm run build` completes with 0 TypeScript errors
 - [ ] All 6 new tables appear in Drizzle migration output (lead_context, agent_decisions, escalation_queue, escalation_rules, conversation_checkpoints, client_agent_settings)
 - [ ] All 4 enums appear in Drizzle migration output (lead_stage, sentiment, escalation_reason, agent_action)
+
+---
+
+## Part 27: Conversation Agent Core (LangGraph) — Phase 37
+
+### Dependencies
+- [ ] `@langchain/core` is in `package.json` dependencies
+- [ ] `@langchain/langgraph` is in `package.json` dependencies
+- [ ] `@langchain/openai` is in `package.json` dependencies
+- [ ] `npm install` succeeds with no missing peer dependency errors
+
+### State Definition (`src/lib/agent/state.ts`)
+- [ ] File exists and exports `ConversationState` annotation and `ConversationStateType`
+- [ ] State includes core identifiers: `leadId`, `clientId`
+- [ ] State includes `messages` field with `messagesStateReducer`
+- [ ] State includes `stage` field with default `'new'`
+- [ ] State includes `signals` field with default `{ urgency: 50, budget: 50, intent: 50, sentiment: 'neutral' }`
+- [ ] State includes `extractedInfo`, `objections`, `bookingAttempts` fields
+- [ ] State includes `lastAction`, `responseToSend`, `flowToTrigger` fields
+- [ ] State includes `needsEscalation`, `escalationReason` fields
+- [ ] State includes `shouldWait`, `waitUntil` fields
+- [ ] State includes `clientSettings` with all required business config fields
+- [ ] State includes `knowledgeContext`, `decisionReasoning` fields
+- [ ] All fields have proper reducers and defaults
+
+### Analysis Node (`src/lib/agent/nodes/analyze.ts`)
+- [ ] File exists and exports `analyzeConversation` function
+- [ ] Uses `ChatOpenAI` with `gpt-4o-mini` and `temperature: 0.1`
+- [ ] Uses `withStructuredOutput` with Zod schema for structured analysis
+- [ ] Analysis schema includes: sentiment, scores (urgency/budget/intent), detected objections, extracted info
+- [ ] Analysis schema includes: suggested stage, escalation needed flag, key insights
+- [ ] Formats last 10 messages for analysis context
+- [ ] Returns updated signals, stage, objections, extractedInfo, escalation flags
+- [ ] Throws error if `clientSettings` is not loaded
+
+### Decision Node (`src/lib/agent/nodes/decide.ts`)
+- [ ] File exists and exports `decideAction` function
+- [ ] Uses `ChatOpenAI` with `gpt-4o-mini` and `temperature: 0.3`
+- [ ] Uses `withStructuredOutput` with Zod schema for structured decision
+- [ ] Decision schema includes 10 possible actions: respond, wait, trigger_flow, escalate, book_appointment, send_quote, request_photos, send_payment, close_won, close_lost
+- [ ] If `needsEscalation` is already set, returns escalate immediately without LLM call
+- [ ] Handles wait action: sets `shouldWait` and `waitUntil` with duration
+- [ ] Handles booking: increments `bookingAttempts` counter
+- [ ] Handles flow trigger: sets `flowToTrigger`
+- [ ] Prompt includes business context, current state, and decision guidelines
+
+### Response Generation Node (`src/lib/agent/nodes/respond.ts`)
+- [ ] File exists and exports `generateResponse` function
+- [ ] Uses `ChatOpenAI` with `gpt-4o-mini` and `temperature: 0.7`
+- [ ] Only generates response for actions: respond, book_appointment, send_quote, request_photos
+- [ ] Returns empty object for non-response actions (wait, escalate, etc.)
+- [ ] Determines response strategy based on `lastAction`
+- [ ] Adds objection handling to strategy when objections exist
+- [ ] Formats last 8 messages for conversation context
+- [ ] Respects `maxResponseLength` setting and trims if needed
+- [ ] Returns `responseToSend` text and appends `AIMessage` to messages
+
+### Graph Builder (`src/lib/agent/graph.ts`)
+- [ ] File exists and exports `buildConversationGraph` function and `conversationAgent` singleton
+- [ ] Graph has 7 nodes: analyze, decide, respond, escalate, trigger_flow, close, send_payment
+- [ ] Entry point is `__start__` → `analyze`
+- [ ] After analyze: routes to `decide` or `escalate` (if escalation needed)
+- [ ] After decide: routes to respond/escalate/trigger_flow/close/send_payment/END
+- [ ] Escalation handler sets `needsEscalation: true` and `stage: 'escalated'`
+- [ ] Close handler sets stage to `'booked'` or `'lost'` based on action
+- [ ] All terminal nodes (respond, escalate, trigger_flow, close, send_payment) route to END
+
+### Orchestrator Service (`src/lib/agent/orchestrator.ts`)
+- [ ] File exists and exports `processIncomingMessage` and `processScheduledCheck`
+- [ ] Uses `getDb()` per project conventions (not cached db instance)
+- [ ] Loads lead, client, agent settings, and lead context from database
+- [ ] Creates new lead context if none exists
+- [ ] Loads last 20 messages from conversations table
+- [ ] Converts conversation history to LangChain messages (HumanMessage/AIMessage)
+- [ ] Retrieves knowledge context via `buildKnowledgeContext()`
+- [ ] Builds initial state with all required fields from database
+- [ ] Invokes `conversationAgent.invoke()` with initial state
+- [ ] Logs agent decision to `agentDecisions` table with context snapshot
+- [ ] Updates `leadContext` with new stage, signals, extracted info, booking attempts
+- [ ] Tracks AI usage via `trackUsage()` (non-blocking with `.catch()`)
+- [ ] Sends response SMS via `sendTrackedSMS()` when response exists and no escalation
+- [ ] Saves outbound message to `conversations` table
+- [ ] Inserts into `escalationQueue` when escalation needed
+- [ ] Triggers flow via `startFlowExecution()` when flow requested
+- [ ] Returns `ProcessMessageResult` with action, responseSent, escalated, newStage
+
+### Scheduled Check (`processScheduledCheck`)
+- [ ] Returns `null` for leads in terminal stages (escalated, booked, lost)
+- [ ] Returns `null` if no messages exist for lead
+- [ ] Triggers nurture flow if last outbound message was >24 hours ago
+- [ ] Returns proper `ProcessMessageResult` for triggered flows
+
+### Webhook Integration (`src/lib/automations/incoming-sms.ts`)
+- [ ] Imports `processIncomingMessage` from `@/lib/agent/orchestrator`
+- [ ] Imports `clientAgentSettings` from `@/db`
+- [ ] Checks `client.aiAgentMode === 'autonomous'` before using LangGraph agent
+- [ ] Loads agent settings to check `autoRespond` flag
+- [ ] Calls `processIncomingMessage()` with lead ID, message ID, and message body
+- [ ] Falls back to legacy AI response if agent processing fails (try/catch)
+- [ ] Integration point is after hot intent detection and before legacy AI response
+
+### Cron Endpoint (`src/app/api/cron/agent-check/route.ts`)
+- [ ] File exists with `GET` handler
+- [ ] Uses `getDb()` per project conventions
+- [ ] Queries `leadContext` for leads not in terminal stages and not updated in 24 hours
+- [ ] Limits to 50 leads per cron run
+- [ ] Processes each stale lead with `processScheduledCheck()`
+- [ ] Catches errors per-lead without failing the entire batch
+- [ ] Returns JSON with `{ processed: count }`
+
+### Build Verification
+- [ ] `npm run build` completes with 0 TypeScript errors
+- [ ] Route `/api/cron/agent-check` appears in build output
+- [ ] No new lint warnings related to agent files
