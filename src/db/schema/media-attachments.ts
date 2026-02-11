@@ -9,7 +9,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 import { conversations } from './conversations';
@@ -25,16 +24,16 @@ export const mediaTypeEnum = pgEnum('media_type', [
 export const mediaAttachments = pgTable(
   'media_attachments',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
-    clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
-    leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
+    id: uuid('id').defaultRandom().primaryKey(),
+    clientId: uuid('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
+    leadId: uuid('lead_id').notNull().references(() => leads.id, { onDelete: 'cascade' }),
     messageId: uuid('message_id').references(() => conversations.id, { onDelete: 'set null' }),
 
     // File info
     type: mediaTypeEnum('type').notNull(),
-    mimeType: varchar('mime_type', { length: 100 }),
+    mimeType: varchar('mime_type', { length: 100 }).notNull(),
     fileName: varchar('file_name', { length: 255 }),
-    fileSize: integer('file_size'), // bytes
+    fileSize: integer('file_size'),
 
     // Storage
     storageKey: varchar('storage_key', { length: 500 }).notNull(), // R2 key
@@ -55,7 +54,7 @@ export const mediaAttachments = pgTable(
     height: integer('height'),
     duration: integer('duration'), // seconds for video/audio
 
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index('idx_media_attachments_lead_id').on(table.leadId),

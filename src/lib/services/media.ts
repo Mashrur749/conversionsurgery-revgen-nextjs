@@ -1,11 +1,14 @@
 import { getDb, mediaAttachments } from '@/db';
+import type { MediaAttachment } from '@/db/schema/media-attachments';
 import { eq, desc, and } from 'drizzle-orm';
 import { uploadFile, uploadImage, deleteFile, getImageDimensions } from './storage';
 import { randomUUID } from 'crypto';
 import OpenAI from 'openai';
 
+/** Supported media type categories */
 type MediaType = 'image' | 'video' | 'audio' | 'document' | 'other';
 
+/** Input for processing an incoming media attachment from Twilio MMS */
 interface MediaInput {
   clientId: string;
   leadId: string;
@@ -32,7 +35,9 @@ function getMediaType(mimeType: string): MediaType {
 }
 
 /**
- * Fetch media from Twilio URL with auth
+ * Fetch media from a Twilio-hosted URL using Basic auth credentials.
+ * @param url - The Twilio media URL to fetch
+ * @returns The file contents as a Buffer
  */
 async function fetchTwilioMedia(url: string): Promise<Buffer> {
   const response = await fetch(url, {
@@ -44,7 +49,7 @@ async function fetchTwilioMedia(url: string): Promise<Buffer> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch media: ${response.status}`);
+    throw new Error(`[Media] Failed to fetch Twilio media: HTTP ${response.status} for ${url}`);
   }
 
   const arrayBuffer = await response.arrayBuffer();
@@ -52,9 +57,15 @@ async function fetchTwilioMedia(url: string): Promise<Buffer> {
 }
 
 /**
- * Process and store media from Twilio MMS
+ * Process and store a media attachment received via Twilio MMS.
+ * Downloads the file from Twilio, uploads it to R2 storage (with thumbnail
+ * generation for images), runs AI analysis on images, and persists the
+ * record in the database.
+ *
+ * @param input - Media metadata including client/lead IDs and Twilio source info
+ * @returns The saved MediaAttachment database record
  */
-export async function processIncomingMedia(input: MediaInput) {
+export async function processIncomingMedia(input: MediaInput): Promise<MediaAttachment> {
   const db = getDb();
   const mediaType = getMediaType(input.mimeType);
   const fileId = randomUUID();
@@ -117,7 +128,11 @@ export async function processIncomingMedia(input: MediaInput) {
 }
 
 /**
- * Analyze image with OpenAI Vision
+ * Analyze an image using OpenAI Vision to generate a description and tags.
+ * Used for contextual acknowledgment messages and media categorization.
+ *
+ * @param imageUrl - Public URL of the image to analyze
+ * @returns Object containing a description string and an array of tags
  */
 async function analyzeImage(
   imageUrl: string
@@ -159,7 +174,8 @@ Respond in JSON format:
     // Handle markdown code blocks
     const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
     return JSON.parse(jsonStr);
-  } catch {
+  } catch (err) {
+    console.error('[Media] Failed to parse AI image analysis response:', err);
     return {
       description: 'Image received',
       tags: ['unanalyzed'],
@@ -168,9 +184,12 @@ Respond in JSON format:
 }
 
 /**
- * Get all media for a lead
+ * Retrieve all media attachments for a given lead, ordered by most recent first.
+ *
+ * @param leadId - UUID of the lead
+ * @returns Array of MediaAttachment records
  */
-export async function getLeadMedia(leadId: string) {
+export async function getLeadMedia(leadId: string): Promise<MediaAttachment[]> {
   const db = getDb();
   return db
     .select()
@@ -180,12 +199,17 @@ export async function getLeadMedia(leadId: string) {
 }
 
 /**
- * Get media for a client (for gallery view)
+ * Retrieve media attachments for a client, with optional pagination and type filtering.
+ * Used for the gallery view in the admin dashboard.
+ *
+ * @param clientId - UUID of the client
+ * @param options - Optional pagination (limit, offset) and type filter
+ * @returns Array of MediaAttachment records
  */
 export async function getClientMedia(
   clientId: string,
   options: { limit?: number; offset?: number; type?: MediaType } = {}
-) {
+): Promise<MediaAttachment[]> {
   const db = getDb();
   const { limit = 50, offset = 0, type } = options;
 
@@ -204,9 +228,12 @@ export async function getClientMedia(
 }
 
 /**
- * Get media for a specific message
+ * Retrieve media attachments associated with a specific conversation message.
+ *
+ * @param messageId - UUID of the conversation message
+ * @returns Array of MediaAttachment records
  */
-export async function getMessageMedia(messageId: string) {
+export async function getMessageMedia(messageId: string): Promise<MediaAttachment[]> {
   const db = getDb();
   return db
     .select()
@@ -216,9 +243,11 @@ export async function getMessageMedia(messageId: string) {
 }
 
 /**
- * Delete media (and file from storage)
+ * Delete a media attachment from both R2 storage (including thumbnail) and the database.
+ *
+ * @param mediaId - UUID of the media attachment to delete
  */
-export async function deleteMedia(mediaId: string) {
+export async function deleteMedia(mediaId: string): Promise<void> {
   const db = getDb();
 
   const [item] = await db
@@ -240,7 +269,12 @@ export async function deleteMedia(mediaId: string) {
 }
 
 /**
- * Generate contextual AI acknowledgment for received photo
+ * Generate a contextual acknowledgment message for a photo received from a lead.
+ * Uses AI-generated tags and description to craft a relevant response.
+ *
+ * @param aiDescription - AI-generated description of the image, or null
+ * @param aiTags - AI-generated tags for categorization, or null
+ * @returns A human-friendly acknowledgment string
  */
 export function generatePhotoAcknowledgment(
   aiDescription: string | null,
