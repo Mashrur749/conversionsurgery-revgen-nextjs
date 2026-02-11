@@ -7,16 +7,17 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 /**
- * Team members who can receive escalations and hot transfers
+ * Team members who can receive escalations and hot transfers.
+ * Each member belongs to a client and can be configured for
+ * escalation notifications and/or hot transfer calls.
  */
 export const teamMembers = pgTable(
   'team_members',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -28,8 +29,8 @@ export const teamMembers = pgTable(
     receiveHotTransfers: boolean('receive_hot_transfers').default(true),
     priority: integer('priority').default(1),
     isActive: boolean('is_active').default(true),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_team_members_client_id').on(table.clientId),

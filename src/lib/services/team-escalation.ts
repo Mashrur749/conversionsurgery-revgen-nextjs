@@ -15,8 +15,14 @@ interface EscalationPayload {
 }
 
 /**
- * Notify team members about a high-intent lead escalation
- * Sends SMS to all active escalation members + email if configured
+ * Notify team members about a high-intent lead escalation.
+ * Sends SMS to all active escalation-enabled members (ordered by priority)
+ * and email to those with an email address configured.
+ * Creates an escalation claim record with a unique token so the first
+ * team member to respond can claim ownership of the lead.
+ *
+ * @param payload - Escalation details including leadId, clientId, twilioNumber, reason, and lastMessage
+ * @returns Object with `notified` count, `escalationId`, and `claimToken` on success
  */
 export async function notifyTeamForEscalation(payload: EscalationPayload) {
   const { leadId, clientId, twilioNumber, reason, lastMessage } = payload;
@@ -127,8 +133,13 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
 }
 
 /**
- * Claim an escalation by a team member
- * Updates lead status, notifies other team members
+ * Claim an escalation by a team member.
+ * Marks the escalation as claimed, clears the actionRequired flag on the lead,
+ * and notifies remaining team members that someone has taken ownership.
+ *
+ * @param token        - The unique claim token from the escalation URL
+ * @param teamMemberId - UUID of the team member claiming the escalation
+ * @returns Object with `success`, `leadId`, and `leadPhone` on success; or `error` on failure
  */
 export async function claimEscalation(token: string, teamMemberId: string) {
   try {
@@ -256,7 +267,11 @@ export async function claimEscalation(token: string, teamMemberId: string) {
 }
 
 /**
- * Get pending escalations for a client
+ * Retrieve all pending (unclaimed) escalations for a client,
+ * joined with lead details for display.
+ *
+ * @param clientId - UUID of the client
+ * @returns Array of pending escalation records with lead name/phone, or empty array on error
  */
 export async function getPendingEscalations(clientId: string) {
   try {

@@ -3,6 +3,18 @@ import { auth } from '@/lib/auth';
 import { getDb } from '@/db';
 import { teamMembers } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+
+const updateSchema = z.object({
+  name: z.string().min(1).optional(),
+  phone: z.string().min(10).optional(),
+  email: z.string().email().optional().or(z.literal('')).optional(),
+  role: z.string().optional(),
+  receiveEscalations: z.boolean().optional(),
+  receiveHotTransfers: z.boolean().optional(),
+  priority: z.number().int().min(1).optional(),
+  isActive: z.boolean().optional(),
+});
 
 export async function PATCH(
   request: NextRequest,
@@ -15,12 +27,20 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const body = (await request.json()) as Record<string, unknown>;
+    const body = await request.json();
+
+    const parsed = updateSchema.safeParse(body);
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
 
     const db = getDb();
     const [updated] = await db
       .update(teamMembers)
-      .set({ ...body, updatedAt: new Date() } as Partial<typeof teamMembers.$inferInsert>)
+      .set({ ...parsed.data, updatedAt: new Date() })
       .where(eq(teamMembers.id, id))
       .returning();
 
@@ -30,7 +50,7 @@ export async function PATCH(
 
     return Response.json({ success: true, member: updated });
   } catch (error) {
-    console.error('Team member update error:', error);
+    console.error('[TeamHours] Team member update error:', error);
     return Response.json({ error: 'Failed to update team member' }, { status: 500 });
   }
 }
@@ -52,7 +72,7 @@ export async function DELETE(
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('Team member deletion error:', error);
+    console.error('[TeamHours] Team member deletion error:', error);
     return Response.json({ error: 'Failed to delete team member' }, { status: 500 });
   }
 }

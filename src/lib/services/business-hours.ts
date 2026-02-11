@@ -3,8 +3,12 @@ import { businessHours } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 /**
- * Initialize default business hours for a client
- * Default: Mon-Fri 9AM-5PM, Closed weekends
+ * Initialize default business hours for a client.
+ * Creates 7 rows (one per day of week) with Mon-Fri 9AM-5PM open
+ * and Saturday/Sunday closed. Uses onConflictDoNothing so it is
+ * safe to call multiple times for the same client.
+ *
+ * @param clientId - UUID of the client to initialize hours for
  */
 export async function initializeBusinessHours(clientId: string) {
   const db = getDb();
@@ -40,7 +44,15 @@ export async function initializeBusinessHours(clientId: string) {
 }
 
 /**
- * Check if current time is within business hours for a client
+ * Check if the current time falls within the configured business hours
+ * for a given client, accounting for the client's timezone.
+ *
+ * Returns `false` if the day is marked closed, if the current time is
+ * outside the open/close window, or if no hours are configured.
+ *
+ * @param clientId - UUID of the client to check hours for
+ * @param timezone - IANA timezone string (defaults to America/Edmonton)
+ * @returns `true` when the current moment is within business hours
  */
 export async function isWithinBusinessHours(
   clientId: string,
@@ -109,7 +121,10 @@ export async function isWithinBusinessHours(
 }
 
 /**
- * Get business hours configuration for a client
+ * Retrieve the full set of business hours rows for a client (up to 7 days).
+ *
+ * @param clientId - UUID of the client
+ * @returns Array of business hour rows, or empty array on error
  */
 export async function getBusinessHours(clientId: string) {
   try {
@@ -127,7 +142,16 @@ export async function getBusinessHours(clientId: string) {
 }
 
 /**
- * Update business hours for a specific day
+ * Upsert business hours for a specific day of the week.
+ * If a row for (clientId, dayOfWeek) already exists it is updated;
+ * otherwise a new row is inserted.
+ *
+ * @param clientId  - UUID of the client
+ * @param dayOfWeek - Day number (0=Sun through 6=Sat)
+ * @param openTime  - Opening time as HH:MM string, or null when closed
+ * @param closeTime - Closing time as HH:MM string, or null when closed
+ * @param isOpen    - Whether the business is open on this day
+ * @returns `true` on success, `false` on error
  */
 export async function updateBusinessHours(
   clientId: string,

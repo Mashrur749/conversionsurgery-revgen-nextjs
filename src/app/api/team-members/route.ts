@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
     return Response.json({ success: true, members, teamMembers: members });
   } catch (error) {
-    console.error('Team members fetch error:', error);
+    console.error('[TeamHours] Team members fetch error:', error);
     return Response.json({ error: 'Failed to fetch team members' }, { status: 500 });
   }
 }
@@ -59,8 +59,16 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json();
-    const validated = createSchema.parse(data);
+    const parsed = createSchema.safeParse(data);
 
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const validated = parsed.data;
     const db = getDb();
     const [member] = await db
       .insert(teamMembers)
@@ -77,13 +85,7 @@ export async function POST(req: Request) {
 
     return Response.json({ success: true, member, teamMember: member });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return Response.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('Team member creation error:', error);
+    console.error('[TeamHours] Team member creation error:', error);
     return Response.json({ error: 'Failed to create team member' }, { status: 500 });
   }
 }
@@ -107,7 +109,7 @@ export async function DELETE(req: NextRequest) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('Team member deletion error:', error);
+    console.error('[TeamHours] Team member deletion error:', error);
     return Response.json({ error: 'Failed to delete team member' }, { status: 500 });
   }
 }
