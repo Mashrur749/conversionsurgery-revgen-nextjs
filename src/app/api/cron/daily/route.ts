@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runDailyAnalyticsJob } from '@/lib/services/analytics-aggregation';
 
+/**
+ * GET handler to run daily analytics aggregation job.
+ * Aggregates analytics data for all active clients.
+ */
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get('Authorization');
@@ -18,7 +22,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[Cron] Daily analytics job failed:', error);
+    console.error('[CronScheduling] Daily analytics job failed:', error);
     return NextResponse.json(
       { error: 'Daily analytics job failed' },
       { status: 500 }

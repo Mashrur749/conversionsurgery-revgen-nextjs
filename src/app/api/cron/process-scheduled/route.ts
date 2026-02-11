@@ -3,7 +3,11 @@ import { getDb, scheduledMessages, leads, clients, conversations, blockedNumbers
 import { sendSMS } from '@/lib/services/twilio';
 import { eq, and, lte, sql } from 'drizzle-orm';
 
-// Verify cron secret to prevent unauthorized access
+/**
+ * Verifies cron secret to prevent unauthorized access.
+ * @param request - The incoming Next.js request
+ * @returns True if the request is authorized, false otherwise
+ */
 function verifyCronSecret(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -12,6 +16,10 @@ function verifyCronSecret(request: NextRequest): boolean {
   return authHeader === `Bearer ${cronSecret}`;
 }
 
+/**
+ * GET handler to process scheduled messages.
+ * Sends pending messages, handles opt-outs and blocked numbers, tracks daily stats.
+ */
 export async function GET(request: NextRequest) {
   if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -120,7 +128,7 @@ export async function GET(request: NextRequest) {
 
         sent++;
       } else {
-        console.error('Failed to send scheduled message:', message.id, result.error);
+        console.error('[CronScheduling] Failed to send scheduled message:', message.id, result.error);
         failed++;
       }
     }
@@ -133,12 +141,18 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Cron error:', error);
+    console.error('[CronScheduling] Cron error:', error);
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
   }
 }
 
-async function markCancelled(db: any, messageId: string, reason: string) {
+/**
+ * Marks a scheduled message as cancelled with a reason.
+ * @param db - Database client instance
+ * @param messageId - The scheduled message UUID
+ * @param reason - Cancellation reason (e.g., "Lead opted out", "Number blocked")
+ */
+async function markCancelled(db: ReturnType<typeof getDb>, messageId: string, reason: string) {
   await db
     .update(scheduledMessages)
     .set({
@@ -149,7 +163,13 @@ async function markCancelled(db: any, messageId: string, reason: string) {
     .where(eq(scheduledMessages.id, messageId));
 }
 
-async function updateDailyStats(db: any, clientId: string, sequenceType: string | null) {
+/**
+ * Updates daily statistics for a client after sending a message.
+ * @param db - Database client instance
+ * @param clientId - The client UUID
+ * @param sequenceType - The message sequence type (optional)
+ */
+async function updateDailyStats(db: ReturnType<typeof getDb>, clientId: string, sequenceType: string | null) {
   const today = new Date().toISOString().split('T')[0];
 
   await db

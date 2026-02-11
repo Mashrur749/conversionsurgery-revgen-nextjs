@@ -4,6 +4,10 @@ import { leadContext } from '@/db/schema';
 import { and, lt, notInArray } from 'drizzle-orm';
 import { processScheduledCheck } from '@/lib/agent/orchestrator';
 
+/**
+ * GET handler to check stale leads and trigger AI agent follow-ups.
+ * Processes leads not updated in 24 hours that haven't reached terminal stages.
+ */
 export async function GET() {
   const db = getDb();
 
@@ -24,7 +28,7 @@ export async function GET() {
       const result = await processScheduledCheck(leadId);
       if (result) processed++;
     } catch (error) {
-      console.error(`Error processing lead ${leadId}:`, error);
+      console.error(`[CronScheduling] Error processing lead ${leadId}:`, error);
     }
   }
 

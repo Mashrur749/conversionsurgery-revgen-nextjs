@@ -13,6 +13,11 @@ interface WeeklyStats {
   topTeamMemberClaims: number;
 }
 
+/**
+ * Retrieves weekly statistics for a client from the last 7 days.
+ * @param clientId - The client UUID to fetch stats for
+ * @returns Weekly statistics including leads, messages, appointments, and top team member
+ */
 export async function getWeeklyStats(clientId: string): Promise<WeeklyStats> {
   const db = getDb();
   const sevenDaysAgo = new Date();
@@ -58,6 +63,13 @@ export async function getWeeklyStats(clientId: string): Promise<WeeklyStats> {
   };
 }
 
+/**
+ * Formats weekly statistics into an SMS message for clients.
+ * @param businessName - The client's business name
+ * @param stats - Weekly statistics to include in the message
+ * @param dashboardLink - Magic link URL to the dashboard
+ * @returns Formatted SMS message string
+ */
 export function formatWeeklySMS(
   businessName: string,
   stats: WeeklyStats,
@@ -80,6 +92,14 @@ export function formatWeeklySMS(
   return message;
 }
 
+/**
+ * Formats weekly statistics into an HTML email for clients.
+ * @param businessName - The client's business name
+ * @param ownerName - The client owner's name for personalization
+ * @param stats - Weekly statistics to include in the email
+ * @param dashboardLink - Magic link URL to the dashboard
+ * @returns Object containing email subject and HTML body
+ */
 export function formatWeeklyEmail(
   businessName: string,
   ownerName: string,
@@ -128,6 +148,10 @@ export function formatWeeklyEmail(
   return { subject, html };
 }
 
+/**
+ * Sends weekly summary via SMS and email to a single client.
+ * @param clientId - The client UUID to send the summary to
+ */
 export async function sendWeeklySummary(clientId: string): Promise<void> {
   const db = getDb();
   const [client] = await db
@@ -165,6 +189,11 @@ export async function sendWeeklySummary(clientId: string): Promise<void> {
     .where(eq(clients.id, clientId));
 }
 
+/**
+ * Processes weekly summaries for all eligible clients based on their schedule.
+ * Checks day of week, time of day, and last sent timestamp.
+ * @returns Number of summaries successfully sent
+ */
 export async function processWeeklySummaries(): Promise<number> {
   const db = getDb();
   const now = new Date();
@@ -200,7 +229,7 @@ export async function processWeeklySummaries(): Promise<number> {
       await sendWeeklySummary(client.id);
       sent++;
     } catch (error) {
-      console.error(`Failed to send weekly summary to ${client.id}:`, error);
+      console.error(`[WeeklySummary] Failed to send weekly summary to ${client.id}:`, error);
     }
   }
 

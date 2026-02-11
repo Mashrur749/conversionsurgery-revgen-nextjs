@@ -4,16 +4,23 @@ import { eq, and, lte, sql } from 'drizzle-orm';
 import { handleMissedCall } from '@/lib/automations/missed-call';
 import twilio from 'twilio';
 
-// Verify cron secret to prevent unauthorized access
+/**
+ * Verifies cron secret to prevent unauthorized access.
+ * @param request - The incoming Next.js request
+ * @returns True if the request is authorized, false otherwise
+ */
 function verifyCronSecret(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
-
 
   if (!cronSecret) return false;
   return authHeader === `Bearer ${cronSecret}`;
 }
 
+/**
+ * GET handler to check for missed calls via Twilio API polling fallback.
+ * Processes active calls that weren't handled by real-time webhooks.
+ */
 export async function GET(request: NextRequest) {
   if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -112,7 +119,7 @@ export async function GET(request: NextRequest) {
           await db.delete(activeCalls).where(eq(activeCalls.id, call.id));
           processed++;
         } else {
-          console.error(`[Check Missed Calls] Error checking call ${call.callSid}:`, error.message);
+          console.error(`[CronScheduling] Error checking call ${call.callSid}:`, error.message);
         }
       }
     }
@@ -124,7 +131,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[Check Missed Calls] Cron error:', error);
+    console.error('[CronScheduling] Check missed calls cron error:', error);
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
   }
 }

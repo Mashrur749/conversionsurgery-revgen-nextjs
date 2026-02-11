@@ -15,7 +15,7 @@ import { leads } from './leads';
 export const scheduledMessages = pgTable(
   'scheduled_messages',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
@@ -31,7 +31,7 @@ export const scheduledMessages = pgTable(
     cancelled: boolean('cancelled').default(false),
     cancelledAt: timestamp('cancelled_at'),
     cancelledReason: varchar('cancelled_reason', { length: 255 }),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_scheduled_messages_send_at').on(table.sendAt).where(

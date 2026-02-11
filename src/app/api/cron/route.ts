@@ -8,6 +8,11 @@ import { runDailyAnalyticsJob } from '@/lib/services/analytics-aggregation';
 import { getDb, clients, reviewSources } from '@/db';
 import { eq, and, or, isNull, lt } from 'drizzle-orm';
 
+/**
+ * POST handler for Cloudflare Cron trigger.
+ * Orchestrates multiple cron jobs: scheduled messages, usage tracking, analytics, reviews, and more.
+ * Uses time-based conditions to run different jobs at appropriate intervals.
+ */
 export async function POST(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
 
@@ -38,7 +43,7 @@ export async function POST(request: NextRequest) {
         await checkAllClientAlerts();
         results.usageTracking = { success: true };
       } catch (error) {
-        console.error('Usage tracking cron error:', error);
+        console.error('[CronScheduling] Usage tracking cron error:', error);
         results.usageTracking = { error: 'Failed' };
       }
     }
@@ -50,7 +55,7 @@ export async function POST(request: NextRequest) {
         console.log(`[Escalation Cron] Found ${breachedCount} SLA breaches`);
         results.escalationSla = { success: true, breached: breachedCount };
       } catch (error) {
-        console.error('Escalation SLA check error:', error);
+        console.error('[CronScheduling] Escalation SLA check error:', error);
         results.escalationSla = { error: 'Failed' };
       }
     }
@@ -85,14 +90,14 @@ export async function POST(request: NextRequest) {
             alerts += await checkAndAlertNegativeReviews(clientId);
             synced++;
           } catch (err) {
-            console.error(`Error syncing reviews for client ${clientId}:`, err);
+            console.error(`[CronScheduling] Error syncing reviews for client ${clientId}:`, err);
           }
         }
 
         console.log(`[Review Cron] Synced ${synced} clients, sent ${alerts} alerts`);
         results.reviewSync = { success: true, synced, alerts };
       } catch (error) {
-        console.error('Review sync cron error:', error);
+        console.error('[CronScheduling] Review sync cron error:', error);
         results.reviewSync = { error: 'Failed' };
       }
     }
@@ -114,7 +119,7 @@ export async function POST(request: NextRequest) {
         console.log(`Rescored ${totalScored} leads for ${activeClients.length} clients`);
         results.leadScoring = { success: true, clients: activeClients.length, leadsScored: totalScored };
       } catch (error) {
-        console.error('Lead scoring cron error:', error);
+        console.error('[CronScheduling] Lead scoring cron error:', error);
         results.leadScoring = { error: 'Failed' };
       }
     }
@@ -126,7 +131,7 @@ export async function POST(request: NextRequest) {
         console.log('[Analytics Cron] Daily analytics job completed');
         results.analytics = { success: true };
       } catch (error) {
-        console.error('Analytics cron error:', error);
+        console.error('[CronScheduling] Analytics cron error:', error);
         results.analytics = { error: 'Failed' };
       }
     }
@@ -141,7 +146,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(results);
   } catch (error) {
-    console.error('Cron handler error:', error);
+    console.error('[CronScheduling] Cron handler error:', error);
     return NextResponse.json({ error: 'Cron failed' }, { status: 500 });
   }
 }

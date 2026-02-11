@@ -9,7 +9,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
@@ -24,7 +23,7 @@ export const jobStatusEnum = pgEnum('job_status', [
 export const jobs = pgTable(
   'jobs',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'set null' }),
     clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
     status: jobStatusEnum('status').default('lead'),
@@ -46,8 +45,8 @@ export const jobs = pgTable(
     lostAt: timestamp('lost_at'),
     lostReason: varchar('lost_reason', { length: 255 }),
 
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_jobs_client').on(table.clientId),

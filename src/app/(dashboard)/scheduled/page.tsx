@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { getClientId } from '@/lib/get-client-id';
-import { getDb, scheduledMessages, leads } from '@/db';
+import { getDb } from '@/db';
+import { scheduledMessages, leads } from '@/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
