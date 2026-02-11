@@ -1,11 +1,11 @@
+import { getDb } from '@/db';
 import {
-  getDb,
   flowTemplates,
   flowTemplateSteps,
   flowTemplateVersions,
   flows,
   flowSteps,
-} from '@/db';
+} from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 interface TemplateStep {
@@ -33,7 +33,9 @@ interface CreateTemplateInput {
 }
 
 /**
- * Create a new flow template
+ * Create a new flow template with steps
+ * @param input - Template configuration with steps
+ * @returns Created template record
  */
 export async function createTemplate(input: CreateTemplateInput) {
   const db = getDb();
@@ -68,7 +70,9 @@ export async function createTemplate(input: CreateTemplateInput) {
 }
 
 /**
- * Update template step
+ * Update a template step's configuration
+ * @param stepId - Step ID to update
+ * @param updates - Partial step updates
  */
 export async function updateTemplateStep(
   stepId: string,
@@ -87,7 +91,10 @@ export async function updateTemplateStep(
 }
 
 /**
- * Add step to template
+ * Add a new step to an existing template
+ * @param templateId - Template ID
+ * @param step - Step configuration
+ * @returns Created step record
  */
 export async function addTemplateStep(templateId: string, step: TemplateStep) {
   const db = getDb();
@@ -103,7 +110,8 @@ export async function addTemplateStep(templateId: string, step: TemplateStep) {
 }
 
 /**
- * Delete step from template and renumber remaining
+ * Delete a step from template and renumber remaining steps
+ * @param stepId - Step ID to delete
  */
 export async function deleteTemplateStep(stepId: string) {
   const db = getDb();
@@ -135,7 +143,11 @@ export async function deleteTemplateStep(stepId: string) {
 }
 
 /**
- * Publish template and create version snapshot
+ * Publish template and create a version snapshot
+ * @param templateId - Template ID to publish
+ * @param changeNotes - Optional change notes for this version
+ * @param publishedBy - User ID who published this version
+ * @returns New version number
  */
 export async function publishTemplate(
   templateId: string,
@@ -190,7 +202,9 @@ export async function publishTemplate(
 }
 
 /**
- * Get clients using a template
+ * Get all client flows using a specific template
+ * @param templateId - Template ID
+ * @returns List of flows using this template
  */
 export async function getTemplateUsage(templateId: string) {
   const db = getDb();
@@ -207,7 +221,10 @@ export async function getTemplateUsage(templateId: string) {
 }
 
 /**
- * Push template update to clients
+ * Push template updates to all client flows using this template
+ * @param templateId - Template ID to push
+ * @param options - Options including dryRun flag
+ * @returns Summary of affected and skipped flows
  */
 export async function pushTemplateUpdate(
   templateId: string,
@@ -346,7 +363,11 @@ export async function pushTemplateUpdate(
 }
 
 /**
- * Create client flow from template
+ * Create a new client flow from a template
+ * @param clientId - Client ID
+ * @param templateId - Template ID to use
+ * @param options - Flow customization options
+ * @returns Created flow record
  */
 export async function createFlowFromTemplate(
   clientId: string,
@@ -411,7 +432,10 @@ export async function createFlowFromTemplate(
 }
 
 /**
- * Create custom flow (no template)
+ * Create a custom flow without a template
+ * @param clientId - Client ID
+ * @param input - Flow configuration with steps
+ * @returns Created flow record
  */
 export async function createCustomFlow(
   clientId: string,
@@ -456,7 +480,8 @@ export async function createCustomFlow(
 }
 
 /**
- * Detach flow from template (make fully independent)
+ * Detach a flow from its template (make it fully independent)
+ * @param flowId - Flow ID to detach
  */
 export async function detachFlowFromTemplate(flowId: string) {
   const db = getDb();

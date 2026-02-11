@@ -8,11 +8,10 @@ import {
   jsonb,
   timestamp,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { flowCategoryEnum, flowTriggerEnum, flowApprovalEnum } from './flow-enums';
 
 export const flowTemplates = pgTable('flow_templates', {
-  id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+  id: uuid('id').defaultRandom().primaryKey(),
 
   // Identity
   name: varchar('name', { length: 100 }).notNull(),
@@ -33,12 +32,12 @@ export const flowTemplates = pgTable('flow_templates', {
   usageCount: integer('usage_count').default(0),
   tags: jsonb('tags').$type<string[]>(),
 
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export const flowTemplateSteps = pgTable('flow_template_steps', {
-  id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+  id: uuid('id').defaultRandom().primaryKey(),
   templateId: uuid('template_id').references(() => flowTemplates.id, { onDelete: 'cascade' }),
 
   // Step config
@@ -57,11 +56,11 @@ export const flowTemplateSteps = pgTable('flow_template_steps', {
     custom?: string;
   }>(),
 
-  createdAt: timestamp('created_at').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export const flowTemplateVersions = pgTable('flow_template_versions', {
-  id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+  id: uuid('id').defaultRandom().primaryKey(),
   templateId: uuid('template_id').references(() => flowTemplates.id, { onDelete: 'cascade' }),
   version: integer('version').notNull(),
 
@@ -76,7 +75,7 @@ export const flowTemplateVersions = pgTable('flow_template_versions', {
   }>(),
 
   changeNotes: text('change_notes'),
-  publishedAt: timestamp('published_at').defaultNow(),
+  publishedAt: timestamp('published_at').defaultNow().notNull(),
   publishedBy: uuid('published_by'),
 });
 

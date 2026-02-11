@@ -3,6 +3,10 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getClientOutcomes } from '@/lib/services/flow-metrics';
 
+/**
+ * GET /api/clients/[id]/outcomes
+ * Get client flow outcomes for a period
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -20,7 +24,7 @@ export async function GET(
     const outcomes = await getClientOutcomes(id, period);
     return NextResponse.json(outcomes);
   } catch (error) {
-    console.error('[Client Outcomes]', error);
+    console.error('[FlowEngine] Failed to fetch client outcomes:', error);
     return NextResponse.json(
       { error: 'Failed to fetch client outcomes' },
       { status: 500 }

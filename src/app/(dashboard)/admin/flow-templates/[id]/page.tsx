@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
-import { getDb, flowTemplates, flowTemplateSteps } from '@/db';
+import { getDb } from '@/db';
+import { flowTemplates, flowTemplateSteps } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { TemplateEditor } from '@/components/flows/template-editor';
 

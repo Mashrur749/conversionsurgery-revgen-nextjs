@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
-import { getDb, flowTemplates, flows, clients } from '@/db';
+import { getDb } from '@/db';
+import { flowTemplates, flows, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { PushUpdateView } from '@/components/flows/push-update-view';
 

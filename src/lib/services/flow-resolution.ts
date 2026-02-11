@@ -1,4 +1,5 @@
-import { getDb, flows, flowSteps, flowTemplateSteps } from '@/db';
+import { getDb } from '@/db';
+import { flows, flowSteps, flowTemplateSteps } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 interface ResolvedStep {
@@ -17,8 +18,10 @@ interface ResolvedStep {
 }
 
 /**
- * Resolve flow steps with template fallbacks.
- * Returns the actual values to use for each step.
+ * Resolve flow steps with template fallbacks
+ * Returns the actual values to use for each step by merging flow and template data
+ * @param flowId - Flow ID
+ * @returns Array of resolved steps with computed values
  */
 export async function resolveFlowSteps(flowId: string): Promise<ResolvedStep[]> {
   const db = getDb();
@@ -85,6 +88,9 @@ export async function resolveFlowSteps(flowId: string): Promise<ResolvedStep[]> 
 
 /**
  * Get effective message for a step with variable substitution
+ * @param stepId - Flow step ID
+ * @param variables - Variables to substitute in template (e.g., {name}, {business_name})
+ * @returns Processed message with variables replaced
  */
 export async function getStepMessage(
   stepId: string,
@@ -125,7 +131,9 @@ export async function getStepMessage(
 }
 
 /**
- * Format delay for display
+ * Format delay in minutes for human-readable display
+ * @param minutes - Delay in minutes
+ * @returns Human-readable delay string (e.g., "1 day", "2 hours", "30 minutes")
  */
 export function formatDelay(minutes: number): string {
   if (minutes === 0) return 'Immediately';

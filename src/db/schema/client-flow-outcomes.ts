@@ -7,7 +7,6 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { flows } from './flows';
 
@@ -15,7 +14,7 @@ import { flows } from './flows';
 export const clientFlowOutcomes = pgTable(
   'client_flow_outcomes',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
     flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'set null' }),
     period: varchar('period', { length: 10 }).notNull(), // '2024-01' monthly
@@ -26,7 +25,7 @@ export const clientFlowOutcomes = pgTable(
     conversions: integer('conversions').default(0),
     revenue: decimal('revenue', { precision: 10, scale: 2 }).default('0'),
 
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     uniqueIndex('client_flow_period_idx').on(

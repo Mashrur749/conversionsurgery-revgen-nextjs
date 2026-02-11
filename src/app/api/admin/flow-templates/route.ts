@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getDb, flowTemplates } from '@/db';
+import { getDb } from '@/db';
+import { flowTemplates } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { createTemplate } from '@/lib/services/flow-templates';
 import { z } from 'zod';
 
+/**
+ * GET /api/admin/flow-templates
+ * List all flow templates
+ */
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -56,15 +63,32 @@ const createSchema = z.object({
   ),
 });
 
+/**
+ * POST /api/admin/flow-templates
+ * Create a new flow template
+ */
 export async function POST(request: NextRequest) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   try {
     const body = await request.json();
-    const data = createSchema.parse(body);
+    const validation = createSchema.safeParse(body);
+
+    if (!validation.success) {
+      const errors = validation.error.flatten().fieldErrors;
+      console.error('[FlowEngine] Template creation validation failed:', errors);
+      return NextResponse.json(
+        { error: 'Invalid input', details: errors },
+        { status: 400 }
+      );
+    }
+
+    const data = validation.data;
 
     const template = await createTemplate({
       name: data.name,
@@ -83,15 +107,10 @@ export async function POST(request: NextRequest) {
       })),
     });
 
+    console.log('[FlowEngine] Created template:', template.id);
     return NextResponse.json(template);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('[Flow Templates] Create error:', error);
+    console.error('[FlowEngine] Template creation error:', error);
     return NextResponse.json(
       { error: 'Failed to create template' },
       { status: 500 }

@@ -1,24 +1,40 @@
-import { getDb, flows, suggestedActions, clients, leads } from '@/db';
+import { getDb } from '@/db';
+import { flows, suggestedActions, clients, leads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { detectSignals, mapSignalsToFlows, type DetectedSignals } from './signal-detection';
 import { sendSMS } from './twilio';
 
+/**
+ * Check conversation for signals and suggest matching flows (FROZEN EXPORT)
+ * @param leadId - Lead ID
+ * @param clientId - Client ID
+ * @param conversationHistory - Conversation messages
+ */
 export async function checkAndSuggestFlows(
   leadId: string,
   clientId: string,
   conversationHistory: { role: string; content: string }[]
 ): Promise<void> {
+  console.log('[FlowEngine] Checking signals for lead', leadId);
   const db = getDb();
 
   // Detect signals
   const signals = await detectSignals(conversationHistory);
 
-  if (signals.confidence < 60) return; // Not confident enough
+  if (signals.confidence < 60) {
+    console.log('[FlowEngine] Signal confidence too low:', signals.confidence);
+    return; // Not confident enough
+  }
 
   // Map signals to flow names
   const suggestedFlowNames = mapSignalsToFlows(signals);
 
-  if (suggestedFlowNames.length === 0) return;
+  if (suggestedFlowNames.length === 0) {
+    console.log('[FlowEngine] No matching flows for detected signals');
+    return;
+  }
+
+  console.log('[FlowEngine] Suggested flows:', suggestedFlowNames);
 
   // Find matching flows for this client
   const clientFlows = await db
@@ -74,12 +90,20 @@ export async function checkAndSuggestFlows(
   }
 }
 
+/**
+ * Send approval SMS to client owner for suggested flow
+ * @param suggestionId - Suggestion ID
+ * @param clientId - Client ID
+ * @param leadId - Lead ID
+ * @param flowName - Flow name
+ */
 async function sendApprovalSMS(
   suggestionId: string,
   clientId: string,
   leadId: string,
   flowName: string
 ): Promise<void> {
+  console.log('[FlowEngine] Sending approval SMS for flow:', flowName);
   const db = getDb();
 
   const [client] = await db
@@ -101,10 +125,17 @@ async function sendApprovalSMS(
   await sendSMS(client.phone, client.twilioNumber, message);
 }
 
+/**
+ * Handle approval response from client via SMS (FROZEN EXPORT)
+ * @param clientId - Client ID
+ * @param messageBody - SMS message body
+ * @returns Status of handling and action taken
+ */
 export async function handleApprovalResponse(
   clientId: string,
   messageBody: string
 ): Promise<{ handled: boolean; action?: string }> {
+  console.log('[FlowEngine] Handling approval response for client', clientId);
   const upperBody = messageBody.toUpperCase().trim();
 
   // Check for YES/NO pattern

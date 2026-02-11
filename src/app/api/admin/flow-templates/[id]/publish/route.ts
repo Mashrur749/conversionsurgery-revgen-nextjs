@@ -6,9 +6,15 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * POST /api/admin/flow-templates/[id]/publish
+ * Publish a template and create version snapshot
+ */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  const isAdmin = (session as { user?: { isAdmin?: boolean; id?: string } })?.user?.isAdmin;
+
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -18,15 +24,17 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const body = (await request.json().catch(() => ({}))) as {
       changeNotes?: string;
     };
+    const userId = (session as { user?: { id?: string } })?.user?.id;
     const version = await publishTemplate(
       id,
       body.changeNotes,
-      (session as any).user?.id
+      userId
     );
 
+    console.log('[FlowEngine] Published template:', id, 'version:', version);
     return NextResponse.json({ version });
   } catch (error) {
-    console.error('[Flow Templates] Publish error:', error);
+    console.error('[FlowEngine] Template publish error:', error);
     return NextResponse.json(
       { error: 'Failed to publish template' },
       { status: 500 }

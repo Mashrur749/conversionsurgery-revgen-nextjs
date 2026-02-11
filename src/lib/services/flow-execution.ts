@@ -1,4 +1,5 @@
-import { getDb, flowExecutions, flowStepExecutions, flows, leads, clients } from '@/db';
+import { getDb } from '@/db';
+import { flowExecutions, flowStepExecutions, flows, leads, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { resolveFlowSteps } from './flow-resolution';
 import { sendSMS } from './twilio';
@@ -9,9 +10,24 @@ import {
 } from './flow-metrics';
 import { format } from 'date-fns';
 
+interface Lead {
+  id: string;
+  phone: string;
+  name?: string | null;
+}
+
+interface Client {
+  twilioNumber: string | null;
+}
+
 /**
- * Start executing a flow for a lead.
- * Creates a flow execution record and schedules step 1.
+ * Start executing a flow for a lead
+ * Creates a flow execution record and schedules or executes first step
+ * @param flowId - Flow ID to execute
+ * @param leadId - Lead ID
+ * @param clientId - Client ID
+ * @param triggeredBy - Trigger source (manual, ai_suggested, etc.)
+ * @returns Execution ID
  */
 export async function startFlowExecution(
   flowId: string,
@@ -116,17 +132,29 @@ export async function startFlowExecution(
   return { executionId: execution.id };
 }
 
+/**
+ * Execute a single flow step
+ * @param executionId - Flow execution ID
+ * @param step - Step configuration
+ * @param messageContent - Processed message content with variables substituted
+ * @param lead - Lead record
+ * @param client - Client record
+ * @param templateId - Optional template ID for metrics
+ */
 async function executeStep(
   executionId: string,
   step: { id: string; stepNumber: number; name: string | null },
   messageContent: string,
-  lead: { id: string; phone: string } | undefined,
-  client: { twilioNumber: string | null } | undefined,
+  lead: Lead | undefined,
+  client: Client | undefined,
   templateId: string | null = null
 ): Promise<void> {
   const db = getDb();
 
+  console.log('[FlowEngine] Executing step', step.stepNumber, 'for execution', executionId);
+
   if (!lead?.phone || !client?.twilioNumber || !messageContent) {
+    console.log('[FlowEngine] Skipping step:', !lead?.phone ? 'no lead phone' : !client?.twilioNumber ? 'no twilio number' : 'no message content');
     await db.insert(flowStepExecutions).values({
       flowExecutionId: executionId,
       flowStepId: step.id,
@@ -153,6 +181,11 @@ async function executeStep(
 
   // Record step message sent metric
   if (smsResult.success) {
-    await recordStepMessageSent(templateId, step.stepNumber).catch(console.error);
+    console.log('[FlowEngine] Step executed successfully, message SID:', smsResult.sid);
+    await recordStepMessageSent(templateId, step.stepNumber).catch((err) =>
+      console.error('[FlowEngine] Failed to record step metric:', err)
+    );
+  } else {
+    console.error('[FlowEngine] Step execution failed:', smsResult.error);
   }
 }

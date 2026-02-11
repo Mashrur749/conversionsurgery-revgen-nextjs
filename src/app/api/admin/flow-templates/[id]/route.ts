@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getDb, flowTemplates, flowTemplateSteps } from '@/db';
+import { getDb } from '@/db';
+import { flowTemplates, flowTemplateSteps } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * GET /api/admin/flow-templates/[id]
+ * Get a single template with steps
+ */
 export async function GET(request: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -35,9 +42,15 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   return NextResponse.json({ ...template, steps });
 }
 
+/**
+ * PATCH /api/admin/flow-templates/[id]
+ * Update a template and its steps
+ */
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -75,9 +88,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       }
     }
 
+    console.log('[FlowEngine] Updated template:', id);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Flow Templates] Update error:', error);
+    console.error('[FlowEngine] Template update error:', error);
     return NextResponse.json(
       { error: 'Failed to update template' },
       { status: 500 }
@@ -85,9 +99,15 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 }
 
+/**
+ * DELETE /api/admin/flow-templates/[id]
+ * Delete a template
+ */
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+
+  if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -96,5 +116,6 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 
   await db.delete(flowTemplates).where(eq(flowTemplates.id, id));
 
+  console.log('[FlowEngine] Deleted template:', id);
   return NextResponse.json({ success: true });
 }

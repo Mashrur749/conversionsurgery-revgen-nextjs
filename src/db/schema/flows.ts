@@ -9,7 +9,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { flowTemplates, flowTemplateSteps } from './flow-templates';
 import {
@@ -22,7 +21,7 @@ import {
 export const flows = pgTable(
   'flows',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
 
     // Identity
@@ -50,8 +49,8 @@ export const flows = pgTable(
     isActive: boolean('is_active').default(true),
     priority: integer('priority').default(0),
 
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('flows_template_idx').on(table.templateId),
@@ -60,7 +59,7 @@ export const flows = pgTable(
 );
 
 export const flowSteps = pgTable('flow_steps', {
-  id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+  id: uuid('id').defaultRandom().primaryKey(),
   flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'cascade' }),
 
   // Template linking
@@ -89,7 +88,7 @@ export const flowSteps = pgTable('flow_steps', {
   }>(),
 
   isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export type Flow = typeof flows.$inferSelect;

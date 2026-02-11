@@ -8,7 +8,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 import { flows, flowSteps } from './flows';
@@ -16,7 +15,7 @@ import { flows, flowSteps } from './flows';
 export const flowExecutions = pgTable(
   'flow_executions',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'set null' }),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
     clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
@@ -28,7 +27,7 @@ export const flowExecutions = pgTable(
     totalSteps: integer('total_steps'),
 
     // Timing
-    startedAt: timestamp('started_at').defaultNow(),
+    startedAt: timestamp('started_at').defaultNow().notNull(),
     completedAt: timestamp('completed_at'),
     cancelledAt: timestamp('cancelled_at'),
     cancelReason: varchar('cancel_reason', { length: 255 }),
@@ -55,7 +54,7 @@ export const flowExecutions = pgTable(
 );
 
 export const flowStepExecutions = pgTable('flow_step_executions', {
-  id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+  id: uuid('id').defaultRandom().primaryKey(),
   flowExecutionId: uuid('flow_execution_id').references(() => flowExecutions.id, {
     onDelete: 'cascade',
   }),
@@ -85,7 +84,7 @@ export const flowStepExecutions = pgTable('flow_step_executions', {
 export const suggestedActions = pgTable(
   'suggested_actions',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'cascade' }),
     clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
     flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'cascade' }),
@@ -100,7 +99,7 @@ export const suggestedActions = pgTable(
     status: varchar('status', { length: 20 }).default('pending'),
 
     // Timing
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
     expiresAt: timestamp('expires_at'),
     respondedAt: timestamp('responded_at'),
     respondedBy: varchar('responded_by', { length: 255 }),
