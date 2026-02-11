@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Star, RefreshCw, AlertTriangle, MessageSquare } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
+/** Client-side representation of a review from the API. */
 interface Review {
   id: string;
   source: string;
@@ -18,6 +19,7 @@ interface Review {
   aiSuggestedResponse: string | null;
 }
 
+/** Aggregated review summary returned by the reviews API. */
 interface ReviewSummary {
   totalReviews: number;
   averageRating: number;
@@ -25,10 +27,17 @@ interface ReviewSummary {
   needsResponse: number;
 }
 
+/** API response shape for the reviews endpoint. */
+interface ReviewsApiResponse {
+  reviews?: Review[];
+  summary?: ReviewSummary;
+}
+
 interface ReviewDashboardProps {
   clientId: string;
 }
 
+/** Dashboard component for viewing and managing client reviews. */
 export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [summary, setSummary] = useState<ReviewSummary | null>(null);
@@ -40,7 +49,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/clients/${clientId}/reviews`);
-      const data = (await res.json()) as { reviews?: Review[]; summary?: ReviewSummary };
+      const data = (await res.json()) as ReviewsApiResponse;
       setReviews(data.reviews || []);
       setSummary(data.summary || null);
     } finally {

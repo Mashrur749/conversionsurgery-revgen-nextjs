@@ -10,7 +10,7 @@ const updateSchema = z.object({
   status: z.enum(['draft', 'pending_approval', 'approved', 'posted', 'rejected']).optional(),
 });
 
-// GET - Get single response
+/** GET - Get a single review response by ID. */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +18,7 @@ export async function GET(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -36,7 +36,7 @@ export async function GET(
   return NextResponse.json(response);
 }
 
-// PATCH - Update response text or status
+/** PATCH - Update a review response's text or status. */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -44,13 +44,22 @@ export async function PATCH(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   try {
     const body = await request.json();
-    const data = updateSchema.parse(body);
+    const parsed = updateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const data = parsed.data;
 
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (data.responseText) updates.responseText = data.responseText;
@@ -64,18 +73,12 @@ export async function PATCH(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('[Review Response] Update error:', error);
+    console.error('[Reputation] Update response error for', id, ':', error);
     return NextResponse.json({ error: 'Failed to update response' }, { status: 500 });
   }
 }
 
-// DELETE - Delete draft response
+/** DELETE - Delete a draft review response. */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -83,7 +86,7 @@ export async function DELETE(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

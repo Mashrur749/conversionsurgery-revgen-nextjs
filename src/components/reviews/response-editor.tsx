@@ -22,12 +22,29 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+/** Minimal review data needed by the response editor. */
 interface Review {
   id: string;
   rating: number;
   authorName: string | null;
   reviewText: string | null;
   source: string;
+}
+
+/** API response shape from the draft generation endpoint. */
+interface GenerateResponseData {
+  responseText: string;
+  id: string;
+}
+
+/** API response shape from the regenerate endpoint. */
+interface RegenerateResponseData {
+  responseText: string;
+}
+
+/** API error response shape. */
+interface ApiErrorResponse {
+  error?: string;
 }
 
 interface ResponseEditorProps {
@@ -37,6 +54,7 @@ interface ResponseEditorProps {
   onPost?: () => void;
 }
 
+/** Editor component for generating, editing, and posting review responses. */
 export function ResponseEditor({
   review,
   initialResponse,
@@ -59,7 +77,7 @@ export function ResponseEditor({
         body: JSON.stringify({ tone }),
       });
       if (!res.ok) throw new Error('Failed to generate');
-      const data = (await res.json()) as { responseText: string; id: string };
+      const data = (await res.json()) as GenerateResponseData;
       setResponseText(data.responseText);
       setResponseId(data.id);
       toast.success('Response generated!');
@@ -84,7 +102,7 @@ export function ResponseEditor({
         body: JSON.stringify(options),
       });
       if (!res.ok) throw new Error('Failed to regenerate');
-      const data = (await res.json()) as { responseText: string };
+      const data = (await res.json()) as RegenerateResponseData;
       setResponseText(data.responseText);
       toast.success('Response updated!');
     } catch {
@@ -114,7 +132,7 @@ export function ResponseEditor({
       });
 
       if (!res.ok) {
-        const data = (await res.json()) as { error?: string };
+        const data = (await res.json()) as ApiErrorResponse;
         throw new Error(data.error || 'Failed to post');
       }
 

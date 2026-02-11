@@ -1,16 +1,18 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { getDb, clients, reviewSources } from '@/db';
+import { getDb } from '@/db';
+import { clients, reviewSources } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import type { ReviewSource } from '@/db/schema/review-sources';
 
 export default async function ReputationPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     redirect('/dashboard');
   }
 
@@ -22,10 +24,10 @@ export default async function ReputationPage() {
     .where(eq(clients.status, 'active'))
     .orderBy(clients.businessName);
 
-  const allSources = await db.select().from(reviewSources);
+  const allSources: ReviewSource[] = await db.select().from(reviewSources);
 
   // Group sources by client
-  const sourcesByClient = new Map<string, typeof allSources>();
+  const sourcesByClient = new Map<string, ReviewSource[]>();
   for (const source of allSources) {
     if (!source.clientId) continue;
     const existing = sourcesByClient.get(source.clientId) || [];

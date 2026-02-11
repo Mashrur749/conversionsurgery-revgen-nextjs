@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
-import { getDb, clients } from '@/db';
+import { getDb } from '@/db';
+import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -15,7 +16,7 @@ export default async function ClientReviewsPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

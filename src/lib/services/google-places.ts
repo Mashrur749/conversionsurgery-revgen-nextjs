@@ -1,9 +1,11 @@
 import { getDb } from '@/db';
 import { reviews, reviewSources } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import type { ReviewSource } from '@/db/schema/review-sources';
 
 const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY || '';
 
+/** A single review from the Google Places API response. */
 interface GoogleReview {
   author_name: string;
   author_url?: string;
@@ -14,6 +16,7 @@ interface GoogleReview {
   relative_time_description: string;
 }
 
+/** Place details from the Google Places API. */
 interface PlaceDetails {
   place_id: string;
   name: string;
@@ -22,14 +25,30 @@ interface PlaceDetails {
   reviews?: GoogleReview[];
 }
 
+/** Response shape from the Google Places Details API. */
+interface PlaceDetailsApiResponse {
+  status: string;
+  error_message?: string;
+  result?: PlaceDetails;
+}
+
+/** Response shape from the Google Places Find Place API. */
+interface FindPlaceApiResponse {
+  status: string;
+  candidates?: { place_id: string; name: string; formatted_address: string }[];
+}
+
 /**
- * Fetch place details including reviews from Google
+ * Fetch place details (including reviews) from the Google Places API.
+ *
+ * @param placeId - The Google Place ID to look up
+ * @returns The place details including reviews, or null on error
  */
 export async function fetchGooglePlaceDetails(
   placeId: string
 ): Promise<PlaceDetails | null> {
   if (!GOOGLE_API_KEY) {
-    console.error('[Google Places] GOOGLE_PLACES_API_KEY not configured');
+    console.error('[ReviewMonitoring] GOOGLE_PLACES_API_KEY not configured');
     return null;
   }
 
@@ -39,14 +58,10 @@ export async function fetchGooglePlaceDetails(
   url.searchParams.set('key', GOOGLE_API_KEY);
 
   const response = await fetch(url.toString());
-  const data = (await response.json()) as {
-    status: string;
-    error_message?: string;
-    result?: PlaceDetails;
-  };
+  const data = (await response.json()) as PlaceDetailsApiResponse;
 
   if (data.status !== 'OK') {
-    console.error('[Google Places] API error:', data.status, data.error_message);
+    console.error('[ReviewMonitoring] Google Places API error:', data.status, data.error_message);
     return null;
   }
 
@@ -54,14 +69,18 @@ export async function fetchGooglePlaceDetails(
 }
 
 /**
- * Search for a place by name and address
+ * Search for a Google Place ID by business name and optional address.
+ *
+ * @param businessName - The name of the business to search for
+ * @param address - Optional address to narrow the search
+ * @returns The Google Place ID, or null if not found
  */
 export async function findGooglePlaceId(
   businessName: string,
   address?: string
 ): Promise<string | null> {
   if (!GOOGLE_API_KEY) {
-    console.error('[Google Places] GOOGLE_PLACES_API_KEY not configured');
+    console.error('[ReviewMonitoring] GOOGLE_PLACES_API_KEY not configured');
     return null;
   }
 
@@ -74,13 +93,10 @@ export async function findGooglePlaceId(
   url.searchParams.set('key', GOOGLE_API_KEY);
 
   const response = await fetch(url.toString());
-  const data = (await response.json()) as {
-    status: string;
-    candidates?: { place_id: string; name: string; formatted_address: string }[];
-  };
+  const data = (await response.json()) as FindPlaceApiResponse;
 
   if (data.status !== 'OK' || !data.candidates?.length) {
-    console.error('[Google Places] No candidates found for:', query);
+    console.error('[ReviewMonitoring] No Google Place candidates found for:', query);
     return null;
   }
 
@@ -88,7 +104,14 @@ export async function findGooglePlaceId(
 }
 
 /**
- * Fetch and save Google reviews for a client
+ * Fetch and save Google reviews for a client by looking up their active
+ * Google review source, fetching place details, and inserting any new
+ * reviews that don't already exist in the database.
+ *
+ * Updates the review source with the latest fetch timestamp and statistics.
+ *
+ * @param clientId - The UUID of the client whose Google reviews to sync
+ * @returns Counts of new and total reviews
  */
 export async function syncGoogleReviews(clientId: string): Promise<{
   newReviews: number;
@@ -97,7 +120,7 @@ export async function syncGoogleReviews(clientId: string): Promise<{
   const db = getDb();
 
   // Get review source config
-  const [source] = await db
+  const [source]: ReviewSource[] = await db
     .select()
     .from(reviewSources)
     .where(
@@ -180,14 +203,14 @@ export async function syncGoogleReviews(clientId: string): Promise<{
       })
       .where(eq(reviewSources.id, source.id));
 
-    console.log(`[Google Places] Synced ${newReviewCount} new reviews for client ${clientId}`);
+    console.log(`[ReviewMonitoring] Synced ${newReviewCount} new Google reviews for client ${clientId}`);
 
     return {
       newReviews: newReviewCount,
       totalReviews: placeDetails.user_ratings_total || 0,
     };
   } catch (err) {
-    console.error('[Google Places] Error syncing reviews:', err);
+    console.error(`[ReviewMonitoring] Error syncing Google reviews for client ${clientId}:`, err);
 
     await db
       .update(reviewSources)

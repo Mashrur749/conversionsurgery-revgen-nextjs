@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { postResponseToGoogle } from '@/lib/services/google-business';
 
-// POST - Post response to Google Business Profile
+/** POST - Post a review response to Google Business Profile. */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -10,7 +10,7 @@ export async function POST(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -23,7 +23,7 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Review Response] Post to Google error:', error);
+    console.error('[Reputation] Post response to Google error for', id, ':', error);
     return NextResponse.json(
       { error: 'Failed to post response to Google' },
       { status: 500 }

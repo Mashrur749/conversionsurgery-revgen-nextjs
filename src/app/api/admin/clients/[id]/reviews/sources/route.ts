@@ -13,7 +13,7 @@ const addSourceSchema = z.object({
   address: z.string().optional(),
 });
 
-// GET - List review sources
+/** GET - List all review sources for a client. */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -21,7 +21,7 @@ export async function GET(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -34,7 +34,7 @@ export async function GET(
   return NextResponse.json({ sources });
 }
 
-// POST - Add/update review source
+/** POST - Add or update a review source for a client. */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -42,13 +42,22 @@ export async function POST(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   try {
     const body = await request.json();
-    const data = addSourceSchema.parse(body);
+    const parsed = addSourceSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const data = parsed.data;
 
     // For Google, try to find place ID if not provided
     let googlePlaceId = data.placeId;
@@ -97,13 +106,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, googlePlaceId });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('Add review source error:', error);
+    console.error('[Reputation] Add review source error for client', id, ':', error);
     return NextResponse.json(
       { error: 'Failed to add review source' },
       { status: 500 }

@@ -6,7 +6,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { reviews } from './reviews';
 import { responseTemplates } from './response-templates';
@@ -14,7 +13,7 @@ import { responseTemplates } from './response-templates';
 export const reviewResponses = pgTable(
   'review_responses',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     reviewId: uuid('review_id')
       .notNull()
       .references(() => reviews.id, { onDelete: 'cascade' }),
@@ -42,8 +41,8 @@ export const reviewResponses = pgTable(
     postError: text('post_error'),
 
     // Tracking
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_review_responses_review').on(table.reviewId),

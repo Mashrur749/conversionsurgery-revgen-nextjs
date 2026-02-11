@@ -3,17 +3,48 @@ import { reviews, reviewSources, clients, reviewMetrics } from '@/db/schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { syncGoogleReviews } from './google-places';
 import { sendSMS } from './twilio';
+import type { Review } from '@/db/schema/reviews';
+import type { ReviewSource } from '@/db/schema/review-sources';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+/** Input shape for generating an AI review response suggestion. */
+interface ReviewResponseInput {
+  rating: number;
+  reviewText?: string | null;
+  authorName?: string | null;
+  source: string;
+}
+
+/** Per-source review sync result counts. */
+interface SyncResult {
+  newReviews: number;
+  totalReviews: number;
+}
+
+/** Aggregated review summary for a client across all sources. */
+interface ReviewSummaryResult {
+  totalReviews: number;
+  averageRating: number;
+  recentReviews: number;
+  needsResponse: number;
+  sources: { source: string; count: number; rating: number }[];
+}
+
 /**
- * Sync reviews from all sources for a client
+ * Sync reviews from all configured sources for a client.
+ *
+ * Currently supports Google Places; additional sources (Yelp, Facebook, etc.)
+ * will be added as integrations become available.
+ *
+ * @param clientId - The UUID of the client whose reviews to sync
+ * @returns Per-source sync results with new/total review counts
  */
 export async function syncAllReviews(clientId: string): Promise<{
-  google: { newReviews: number; totalReviews: number };
+  google: SyncResult;
 }> {
-  const results = {
+  const results: { google: SyncResult } = {
     google: { newReviews: 0, totalReviews: 0 },
   };
 
@@ -26,13 +57,17 @@ export async function syncAllReviews(clientId: string): Promise<{
 }
 
 /**
- * Check for new negative reviews and alert
+ * Find unalerted negative reviews (rating <= 2), generate AI suggestions,
+ * and send SMS alerts to the client owner.
+ *
+ * @param clientId - The UUID of the client to check for negative reviews
+ * @returns The number of alerts sent
  */
 export async function checkAndAlertNegativeReviews(clientId: string): Promise<number> {
   const db = getDb();
 
   // Find unalerted negative reviews
-  const negativeReviews = await db
+  const negativeReviews: Review[] = await db
     .select()
     .from(reviews)
     .where(
@@ -53,7 +88,10 @@ export async function checkAndAlertNegativeReviews(clientId: string): Promise<nu
     .where(eq(clients.id, clientId))
     .limit(1);
 
-  if (!client?.phone) return 0;
+  if (!client?.phone) {
+    console.warn(`[ReviewMonitoring] Client ${clientId} has no phone number, skipping alerts`);
+    return 0;
+  }
 
   let alertCount = 0;
   const twilioNumber = client.twilioNumber || process.env.TWILIO_PHONE_NUMBER || '';
@@ -88,19 +126,22 @@ export async function checkAndAlertNegativeReviews(clientId: string): Promise<nu
     alertCount++;
   }
 
-  console.log(`[Review Monitoring] Sent ${alertCount} negative review alerts for client ${clientId}`);
+  console.log(`[ReviewMonitoring] Sent ${alertCount} negative review alerts for client ${clientId}`);
   return alertCount;
 }
 
 /**
- * Generate AI response suggestion for a review
+ * Generate an AI-powered response suggestion for a single review using OpenAI.
+ *
+ * The prompt varies based on the review rating:
+ * - 1-2 stars: empathetic, offers to make it right
+ * - 3 stars: acknowledges concerns, invites to improve
+ * - 4-5 stars: warm gratitude
+ *
+ * @param review - The review data to generate a response for
+ * @returns The generated response text, or an empty string on failure
  */
-export async function generateReviewResponse(review: {
-  rating: number;
-  reviewText?: string | null;
-  authorName?: string | null;
-  source: string;
-}): Promise<string> {
+export async function generateReviewResponse(review: ReviewResponseInput): Promise<string> {
   const isNegative = review.rating <= 2;
   const isNeutral = review.rating === 3;
 
@@ -138,13 +179,20 @@ Review from ${review.authorName || 'a customer'} (${review.rating} stars):
 
     return response.choices[0].message.content || '';
   } catch (err) {
-    console.error('[Review Monitoring] Error generating response:', err);
+    console.error('[ReviewMonitoring] Error generating AI response:', err);
     return '';
   }
 }
 
 /**
- * Calculate and store review metrics for a period
+ * Calculate and upsert review metrics for a given time period.
+ *
+ * Aggregates star counts, sentiment breakdown, and response rates
+ * for the specified period type (daily/weekly/monthly).
+ *
+ * @param clientId - The UUID of the client
+ * @param period - The aggregation period: 'daily', 'weekly', or 'monthly'
+ * @param date - The reference date for calculating the period bounds (defaults to now)
  */
 export async function calculateReviewMetrics(
   clientId: string,
@@ -174,7 +222,7 @@ export async function calculateReviewMetrics(
   }
 
   // Get reviews in period
-  const periodReviews = await db
+  const periodReviews: Review[] = await db
     .select()
     .from(reviews)
     .where(
@@ -221,19 +269,17 @@ export async function calculateReviewMetrics(
 }
 
 /**
- * Get review summary for a client
+ * Get a high-level review summary for a client, including total counts,
+ * average rating, recent activity, and per-source breakdown.
+ *
+ * @param clientId - The UUID of the client
+ * @returns Aggregated review summary with source-level detail
  */
-export async function getReviewSummary(clientId: string): Promise<{
-  totalReviews: number;
-  averageRating: number;
-  recentReviews: number;
-  needsResponse: number;
-  sources: { source: string; count: number; rating: number }[];
-}> {
+export async function getReviewSummary(clientId: string): Promise<ReviewSummaryResult> {
   const db = getDb();
 
   // Get all review sources
-  const sources = await db
+  const sources: ReviewSource[] = await db
     .select()
     .from(reviewSources)
     .where(eq(reviewSources.clientId, clientId));

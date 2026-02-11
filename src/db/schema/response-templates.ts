@@ -9,13 +9,12 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 export const responseTemplates = pgTable(
   'response_templates',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -38,7 +37,7 @@ export const responseTemplates = pgTable(
     lastUsedAt: timestamp('last_used_at'),
 
     isActive: boolean('is_active').default(true),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_response_templates_client').on(table.clientId),

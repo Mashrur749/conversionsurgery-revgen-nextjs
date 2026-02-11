@@ -7,10 +7,15 @@ import {
   knowledgeBase,
 } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import type { Review } from '@/db/schema/reviews';
+import type { ReviewResponse } from '@/db/schema/review-responses';
+import type { ResponseTemplate } from '@/db/schema/response-templates';
+import type { Client } from '@/db/schema/clients';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
+/** Options for AI review response generation. */
 interface ResponseGenerationOptions {
   reviewId: string;
   tone?: 'professional' | 'friendly' | 'apologetic' | 'thankful';
@@ -19,7 +24,12 @@ interface ResponseGenerationOptions {
 }
 
 /**
- * Generate AI response for a review
+ * Generate an AI response for a review, using the client's knowledge base
+ * for business-specific context and tone adjustments.
+ *
+ * @param options - Generation options including review ID, tone, and length constraints
+ * @returns The generated response text
+ * @throws Error if the review is not found
  */
 export async function generateReviewResponse(
   options: ResponseGenerationOptions
@@ -29,16 +39,16 @@ export async function generateReviewResponse(
   const db = getDb();
 
   // Get review details
-  const [review] = await db
+  const [review]: Review[] = await db
     .select()
     .from(reviews)
     .where(eq(reviews.id, reviewId))
     .limit(1);
 
-  if (!review) throw new Error('Review not found');
+  if (!review) throw new Error(`[Reputation] Review not found: ${reviewId}`);
 
   // Get client info for context
-  const [client] = await db
+  const [client]: Client[] = await db
     .select()
     .from(clients)
     .where(eq(clients.id, review.clientId))
@@ -137,13 +147,19 @@ Review from ${review.authorName || 'a customer'} (${review.rating} stars):
 }
 
 /**
- * Find matching template for a review
+ * Find the best matching response template for a review based on rating
+ * range and keyword overlap scoring.
+ *
+ * @param clientId - The UUID of the client owning the templates
+ * @param rating - The review's star rating (1-5)
+ * @param reviewText - The review body text for keyword matching
+ * @returns The highest-scoring active template, or null if none match
  */
 export async function findMatchingTemplate(
   clientId: string,
   rating: number,
   reviewText: string
-): Promise<typeof responseTemplates.$inferSelect | null> {
+): Promise<ResponseTemplate | null> {
   const db = getDb();
 
   // Get all active templates for client
@@ -183,7 +199,12 @@ export async function findMatchingTemplate(
 }
 
 /**
- * Apply template with variable substitution
+ * Apply variable substitution to a template string.
+ * Replaces `{{key}}` placeholders with the corresponding values.
+ *
+ * @param templateText - The template text containing `{{variable}}` placeholders
+ * @param variables - Key-value pairs to substitute into the template
+ * @returns The template text with all matched variables replaced
  */
 export function applyTemplate(
   templateText: string,
@@ -199,24 +220,30 @@ export function applyTemplate(
 }
 
 /**
- * Create draft response for a review
+ * Create a draft response for a review, first attempting template matching
+ * and falling back to AI generation.
+ *
+ * @param reviewId - The UUID of the review to respond to
+ * @param options - Optional controls for template use and tone
+ * @returns The newly created draft review response
+ * @throws Error if the review is not found
  */
 export async function createDraftResponse(
   reviewId: string,
   options: { useTemplate?: boolean; templateId?: string; tone?: string } = {}
-): Promise<typeof reviewResponses.$inferSelect> {
+): Promise<ReviewResponse> {
   const { useTemplate = true, tone } = options;
 
   const db = getDb();
 
   // Get review
-  const [review] = await db
+  const [review]: Review[] = await db
     .select()
     .from(reviews)
     .where(eq(reviews.id, reviewId))
     .limit(1);
 
-  if (!review) throw new Error('Review not found');
+  if (!review) throw new Error(`[Reputation] Review not found: ${reviewId}`);
 
   let responseText: string | undefined;
   let responseType: 'ai_generated' | 'template' | 'custom' = 'ai_generated';
@@ -231,7 +258,7 @@ export async function createDraftResponse(
     );
 
     if (template) {
-      const [client] = await db
+      const [client]: Client[] = await db
         .select()
         .from(clients)
         .where(eq(clients.id, review.clientId))
@@ -281,7 +308,13 @@ export async function createDraftResponse(
 }
 
 /**
- * Regenerate response with different parameters
+ * Regenerate a review response with different parameters (tone, length, or
+ * custom instructions). Updates the existing response record in-place.
+ *
+ * @param responseId - The UUID of the existing review response to regenerate
+ * @param options - Regeneration controls: tone, shorter flag, or custom instructions
+ * @returns The regenerated response text
+ * @throws Error if the response is not found
  */
 export async function regenerateResponse(
   responseId: string,
@@ -289,22 +322,22 @@ export async function regenerateResponse(
 ): Promise<string> {
   const db = getDb();
 
-  const [response] = await db
+  const [existingResponse]: ReviewResponse[] = await db
     .select()
     .from(reviewResponses)
     .where(eq(reviewResponses.id, responseId))
     .limit(1);
 
-  if (!response) throw new Error('Response not found');
+  if (!existingResponse) throw new Error(`[Reputation] Response not found: ${responseId}`);
 
   const { tone = 'professional', shorter = false, custom } = options;
 
   if (custom) {
     // User provided custom instructions
-    const [review] = await db
+    const [review]: Review[] = await db
       .select()
       .from(reviews)
-      .where(eq(reviews.id, response.reviewId))
+      .where(eq(reviews.id, existingResponse.reviewId))
       .limit(1);
 
     const aiResponse = await openai.chat.completions.create({
@@ -319,7 +352,7 @@ export async function regenerateResponse(
           content: `Rewrite this response with the following changes: ${custom}
 
 Current response:
-"${response.responseText}"
+"${existingResponse.responseText}"
 
 Original review (${review?.rating} stars):
 "${review?.reviewText || 'No text'}"`,
@@ -329,7 +362,7 @@ Original review (${review?.rating} stars):
       max_tokens: 300,
     });
 
-    const newText = aiResponse.choices[0].message.content || response.responseText;
+    const newText = aiResponse.choices[0].message.content || existingResponse.responseText;
 
     await db
       .update(reviewResponses)
@@ -341,7 +374,7 @@ Original review (${review?.rating} stars):
 
   // Generate new response with different tone
   const newText = await generateReviewResponse({
-    reviewId: response.reviewId,
+    reviewId: existingResponse.reviewId,
     tone: tone as 'professional' | 'friendly' | 'apologetic' | 'thankful',
     maxLength: shorter ? 100 : 200,
   });

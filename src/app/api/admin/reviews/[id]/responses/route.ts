@@ -12,7 +12,7 @@ const generateSchema = z.object({
   tone: z.enum(['professional', 'friendly', 'apologetic', 'thankful']).optional(),
 });
 
-// GET - Get responses for a review
+/** GET - Get all responses for a specific review. */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -20,7 +20,7 @@ export async function GET(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -34,7 +34,7 @@ export async function GET(
   return NextResponse.json(responses);
 }
 
-// POST - Create new draft response (AI-generated or template-based)
+/** POST - Create a new draft response (AI-generated or template-based). */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -42,13 +42,22 @@ export async function POST(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   try {
     const body = await request.json().catch(() => ({}));
-    const data = generateSchema.parse(body);
+    const parsed = generateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const data = parsed.data;
 
     const draft = await createDraftResponse(id, {
       useTemplate: data.useTemplate,
@@ -58,13 +67,7 @@ export async function POST(
 
     return NextResponse.json(draft);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('[Review Response] Generate error:', error);
+    console.error('[Reputation] Generate response error for review', id, ':', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to generate response' },
       { status: 500 }

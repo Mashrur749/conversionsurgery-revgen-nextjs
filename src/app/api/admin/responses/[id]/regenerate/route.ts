@@ -9,7 +9,7 @@ const regenerateSchema = z.object({
   custom: z.string().optional(),
 });
 
-// POST - Regenerate response with different parameters
+/** POST - Regenerate a review response with different parameters. */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -17,13 +17,22 @@ export async function POST(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
   try {
     const body = await request.json();
-    const data = regenerateSchema.parse(body);
+    const parsed = regenerateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const data = parsed.data;
 
     const newText = await regenerateResponse(id, {
       tone: data.tone,
@@ -33,13 +42,7 @@ export async function POST(
 
     return NextResponse.json({ responseText: newText });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('[Review Response] Regenerate error:', error);
+    console.error('[Reputation] Regenerate response error for', id, ':', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to regenerate response' },
       { status: 500 }

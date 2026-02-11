@@ -5,7 +5,7 @@ import { reviews } from '@/db/schema';
 import { eq, desc, and, lte } from 'drizzle-orm';
 import { syncAllReviews, getReviewSummary } from '@/lib/services/review-monitoring';
 
-// GET - List reviews for a client
+/** GET - List reviews for a client with optional filters. */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -13,7 +13,7 @@ export async function GET(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -49,7 +49,7 @@ export async function GET(
   return NextResponse.json({ reviews: results, summary });
 }
 
-// POST - Sync reviews from all sources
+/** POST - Sync reviews from all configured sources for a client. */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -57,7 +57,7 @@ export async function POST(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -65,7 +65,7 @@ export async function POST(
     const results = await syncAllReviews(id);
     return NextResponse.json(results);
   } catch (error) {
-    console.error('Review sync error:', error);
+    console.error('[Reputation] Review sync error for client', id, ':', error);
     return NextResponse.json(
       { error: 'Failed to sync reviews' },
       { status: 500 }

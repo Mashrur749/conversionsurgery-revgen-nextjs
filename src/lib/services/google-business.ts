@@ -1,22 +1,45 @@
 import { getDb } from '@/db';
 import { reviews, reviewResponses, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import type { ReviewResponse } from '@/db/schema/review-responses';
+import type { Review } from '@/db/schema/reviews';
+import type { Client } from '@/db/schema/clients';
 
-// Note: Google Business Profile API requires OAuth 2.0
-// This is a simplified version - full implementation needs OAuth flow
+/** Result of posting a response to Google Business Profile. */
+interface PostResult {
+  success: boolean;
+  error?: string;
+}
+
+/** Shape of the Google token refresh API response. */
+interface GoogleTokenResponse {
+  access_token?: string;
+  expires_in?: number;
+}
+
+/** Shape of the Google Business Profile API error response. */
+interface GoogleApiErrorResponse {
+  error?: { message?: string };
+}
 
 /**
- * Post response to Google Business Profile
+ * Post a review response to Google Business Profile via the My Business API.
  *
- * Note: This requires the Google Business Profile API and OAuth setup
- * See: https://developers.google.com/my-business/content/review-data
+ * Handles token refresh if the access token has expired, updates the
+ * response status to 'posted' on success, and records errors on failure.
+ *
+ * Requires the client to have a connected Google Business Profile with
+ * valid OAuth tokens.
+ *
+ * @param responseId - The UUID of the review response to post
+ * @returns A result object indicating success or failure with an error message
  */
 export async function postResponseToGoogle(
   responseId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<PostResult> {
   const db = getDb();
 
-  const [response] = await db
+  const [response]: ReviewResponse[] = await db
     .select()
     .from(reviewResponses)
     .where(eq(reviewResponses.id, responseId))
@@ -26,7 +49,7 @@ export async function postResponseToGoogle(
     return { success: false, error: 'Response not found' };
   }
 
-  const [review] = await db
+  const [review]: Review[] = await db
     .select()
     .from(reviews)
     .where(eq(reviews.id, response.reviewId))
@@ -36,7 +59,7 @@ export async function postResponseToGoogle(
     return { success: false, error: 'Not a Google review' };
   }
 
-  const [client] = await db
+  const [client]: Client[] = await db
     .select()
     .from(clients)
     .where(eq(clients.id, response.clientId))
@@ -71,7 +94,7 @@ export async function postResponseToGoogle(
     });
 
     if (!res.ok) {
-      const errorData = (await res.json()) as { error?: { message?: string } };
+      const errorData = (await res.json()) as GoogleApiErrorResponse;
       throw new Error(errorData.error?.message || 'Failed to post response');
     }
 
@@ -98,6 +121,7 @@ export async function postResponseToGoogle(
     return { success: true };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`[Reputation] Failed to post response ${responseId} to Google:`, errorMessage);
 
     await db
       .update(reviewResponses)
@@ -112,7 +136,13 @@ export async function postResponseToGoogle(
 }
 
 /**
- * Refresh Google access token
+ * Refresh a Google OAuth access token using the stored refresh token,
+ * and persist the new access token and expiry to the client record.
+ *
+ * @param clientId - The UUID of the client whose token to refresh
+ * @param refreshToken - The Google OAuth refresh token
+ * @returns The new access token string
+ * @throws Error if the token refresh request fails
  */
 async function refreshGoogleToken(
   clientId: string,
@@ -129,10 +159,10 @@ async function refreshGoogleToken(
     }),
   });
 
-  const data = (await res.json()) as { access_token?: string; expires_in?: number };
+  const data = (await res.json()) as GoogleTokenResponse;
 
   if (!data.access_token) {
-    throw new Error('Failed to refresh token');
+    throw new Error(`[Reputation] Failed to refresh Google token for client ${clientId}`);
   }
 
   // Save new token

@@ -9,14 +9,13 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
 export const reviews = pgTable(
   'reviews',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -51,8 +50,8 @@ export const reviews = pgTable(
 
     // Timestamps
     reviewDate: timestamp('review_date'),
-    fetchedAt: timestamp('fetched_at').defaultNow(),
-    createdAt: timestamp('created_at').defaultNow(),
+    fetchedAt: timestamp('fetched_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_reviews_client').on(table.clientId),
