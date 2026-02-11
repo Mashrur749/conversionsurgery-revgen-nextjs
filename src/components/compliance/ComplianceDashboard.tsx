@@ -6,38 +6,54 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Download, AlertTriangle, Shield } from 'lucide-react';
 
+/** Aggregate compliance statistics for the dashboard display */
+export interface ComplianceStats {
+  activeConsents: number;
+  totalOptOuts: number;
+  optOutRate: number;
+  dncListSize: number;
+  messagesBlocked: number;
+  complianceScore: number;
+}
+
+/** Props for the ComplianceDashboard component */
 interface ComplianceDashboardProps {
-  stats: {
-    activeConsents: number;
-    totalOptOuts: number;
-    optOutRate: number;
-    dncListSize: number;
-    messagesBlocked: number;
-    complianceScore: number;
-  };
+  stats: ComplianceStats;
   risks: string[];
   onDownloadReport: () => void;
 }
 
+/** Score badge configuration returned by getScoreBadge */
+interface ScoreBadge {
+  label: string;
+  color: string;
+}
+
+/** Returns a Tailwind color class based on the compliance score threshold */
+function getScoreColor(score: number): string {
+  if (score >= 90) return 'text-green-600';
+  if (score >= 70) return 'text-yellow-600';
+  return 'text-red-600';
+}
+
+/** Returns a label and color class for the compliance score badge */
+function getScoreBadge(score: number): ScoreBadge {
+  if (score >= 90)
+    return { label: 'Excellent', color: 'bg-green-100 text-green-800' };
+  if (score >= 70)
+    return { label: 'Good', color: 'bg-yellow-100 text-yellow-800' };
+  return { label: 'Needs Attention', color: 'bg-red-100 text-red-800' };
+}
+
+/**
+ * Displays TCPA compliance metrics, score, risks, and a report download button.
+ * Used as the main visual component on the admin compliance page.
+ */
 export function ComplianceDashboard({
   stats,
   risks,
   onDownloadReport,
 }: ComplianceDashboardProps) {
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return 'text-green-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getScoreBadge = (score: number) => {
-    if (score >= 90)
-      return { label: 'Excellent', color: 'bg-green-100 text-green-800' };
-    if (score >= 70)
-      return { label: 'Good', color: 'bg-yellow-100 text-yellow-800' };
-    return { label: 'Needs Attention', color: 'bg-red-100 text-red-800' };
-  };
-
   const scoreBadge = getScoreBadge(stats.complianceScore);
 
   return (

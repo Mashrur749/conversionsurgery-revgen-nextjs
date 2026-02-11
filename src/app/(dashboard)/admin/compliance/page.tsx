@@ -11,9 +11,40 @@ import { eq, and, gte, count } from 'drizzle-orm';
 import { subDays } from 'date-fns';
 import { ComplianceDashboardClient } from './compliance-dashboard-client';
 
+/** Compliance stats displayed on the admin dashboard */
+interface ComplianceStats {
+  activeConsents: number;
+  totalOptOuts: number;
+  optOutRate: number;
+  dncListSize: number;
+  messagesBlocked: number;
+  complianceScore: number;
+}
+
+/** Calculates a compliance score (0-100) based on opt-out rate and blocked messages */
+function calculateComplianceScore(optOutRate: number, messagesBlocked: number): number {
+  let score = 100;
+  if (optOutRate > 5) score -= 20;
+  else if (optOutRate > 2) score -= 10;
+  if (messagesBlocked > 0) score -= 5;
+  return Math.max(0, score);
+}
+
+/** Generates human-readable risk descriptions from compliance metrics */
+function generateRisks(optOutRate: number, messagesBlocked: number): string[] {
+  const risks: string[] = [];
+  if (optOutRate > 5) {
+    risks.push(`High opt-out rate: ${optOutRate.toFixed(1)}% in last 30 days`);
+  }
+  if (messagesBlocked > 10) {
+    risks.push(`${messagesBlocked} messages blocked in last 30 days`);
+  }
+  return risks;
+}
+
 export default async function CompliancePage() {
   const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/dashboard');
   }
 
@@ -51,26 +82,12 @@ export default async function CompliancePage() {
   const dncListSize = dncSizeResult.count;
   const messagesBlocked = blockedMessagesResult.count;
 
-  // Calculate opt-out rate and compliance score
   const optOutRate =
     activeConsents > 0 ? (totalOptOuts / activeConsents) * 100 : 0;
+  const complianceScore = calculateComplianceScore(optOutRate, messagesBlocked);
+  const risks = generateRisks(optOutRate, messagesBlocked);
 
-  let complianceScore = 100;
-  if (optOutRate > 5) complianceScore -= 20;
-  else if (optOutRate > 2) complianceScore -= 10;
-  if (messagesBlocked > 0) complianceScore -= 5;
-  complianceScore = Math.max(0, complianceScore);
-
-  // Generate risks
-  const risks: string[] = [];
-  if (optOutRate > 5) {
-    risks.push(`High opt-out rate: ${optOutRate.toFixed(1)}% in last 30 days`);
-  }
-  if (messagesBlocked > 10) {
-    risks.push(`${messagesBlocked} messages blocked in last 30 days`);
-  }
-
-  const stats = {
+  const stats: ComplianceStats = {
     activeConsents,
     totalOptOuts,
     optOutRate,

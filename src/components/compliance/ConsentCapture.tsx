@@ -13,19 +13,25 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+/** Shape of the consent scope preferences */
+interface ConsentScope {
+  marketing: boolean;
+  transactional: boolean;
+  promotional: boolean;
+  reminders: boolean;
+}
+
+/** Props for the ConsentCapture component */
 interface ConsentCaptureProps {
   phoneNumber: string;
   businessName: string;
-  onConsent: (consent: {
-    scope: {
-      marketing: boolean;
-      transactional: boolean;
-      promotional: boolean;
-      reminders: boolean;
-    };
-  }) => Promise<void>;
+  onConsent: (consent: { scope: ConsentScope }) => Promise<void>;
 }
 
+/**
+ * Renders a TCPA-compliant consent capture form.
+ * Displays checkboxes for communication preferences and required disclosure text.
+ */
 export function ConsentCapture({
   phoneNumber,
   businessName,
@@ -37,14 +43,20 @@ export function ConsentCapture({
   const [reminders, setReminders] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setError(null);
     try {
       await onConsent({
         scope: { marketing, transactional, promotional, reminders },
       });
       setSubmitted(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save preferences';
+      console.error('[ConsentCapture] Submit failed:', message);
+      setError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -123,6 +135,12 @@ export function ConsentCapture({
           provided. Message and data rates may apply. Message frequency varies.
           Reply STOP to unsubscribe at any time.
         </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <Button
           onClick={handleSubmit}

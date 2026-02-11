@@ -9,11 +9,10 @@ import {
   index,
   pgEnum,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
-// Consent type
+/** Allowed consent types for TCPA compliance */
 export const consentTypeEnum = pgEnum('consent_type', [
   'express_written',
   'express_oral',
@@ -21,7 +20,7 @@ export const consentTypeEnum = pgEnum('consent_type', [
   'transactional',
 ]);
 
-// Consent source
+/** Source channel through which consent was obtained */
 export const consentSourceEnum = pgEnum('consent_source', [
   'web_form',
   'text_optin',
@@ -32,7 +31,7 @@ export const consentSourceEnum = pgEnum('consent_source', [
   'api_import',
 ]);
 
-// Opt-out reason
+/** Reason a contact opted out of communications */
 export const optOutReasonEnum = pgEnum('opt_out_reason', [
   'stop_keyword',
   'unsubscribe_link',
@@ -46,10 +45,11 @@ export const optOutReasonEnum = pgEnum('opt_out_reason', [
 // ============================================
 // CONSENT RECORDS
 // ============================================
+/** Stores explicit consent records for TCPA compliance tracking */
 export const consentRecords = pgTable(
   'consent_records',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id),
@@ -85,7 +85,7 @@ export const consentRecords = pgTable(
     recordingUrl: text('recording_url'),
 
     // Status
-    isActive: boolean('is_active').default(true),
+    isActive: boolean('is_active').notNull().default(true),
     revokedAt: timestamp('revoked_at'),
     revokedReason: text('revoked_reason'),
 
@@ -105,10 +105,11 @@ export const consentRecords = pgTable(
 // ============================================
 // OPT-OUT RECORDS
 // ============================================
+/** Tracks when contacts opt out of communications */
 export const optOutRecords = pgTable(
   'opt_out_records',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id),
@@ -150,10 +151,11 @@ export const optOutRecords = pgTable(
 // ============================================
 // DO NOT CONTACT LIST
 // ============================================
+/** Global and per-client do-not-contact registry */
 export const doNotContactList = pgTable(
   'do_not_contact_list',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
 
     // Scope: null = global, clientId = client-specific
     clientId: uuid('client_id').references(() => clients.id),
@@ -171,7 +173,7 @@ export const doNotContactList = pgTable(
     expiresAt: timestamp('expires_at'),
 
     // Status
-    isActive: boolean('is_active').default(true),
+    isActive: boolean('is_active').notNull().default(true),
     removedAt: timestamp('removed_at'),
     removeReason: text('remove_reason'),
 
@@ -189,8 +191,9 @@ export const doNotContactList = pgTable(
 // ============================================
 // QUIET HOURS CONFIGURATION
 // ============================================
+/** Per-client quiet hours settings to prevent sending during off-hours */
 export const quietHoursConfig = pgTable('quiet_hours_config', {
-  id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+  id: uuid('id').defaultRandom().primaryKey(),
   clientId: uuid('client_id')
     .notNull()
     .references(() => clients.id)
@@ -205,12 +208,12 @@ export const quietHoursConfig = pgTable('quiet_hours_config', {
   weekendQuietEndHour: integer('weekend_quiet_end_hour'),
 
   // Holiday handling
-  respectFederalHolidays: boolean('respect_federal_holidays').default(true),
-  holidayQuietAllDay: boolean('holiday_quiet_all_day').default(false),
+  respectFederalHolidays: boolean('respect_federal_holidays').notNull().default(true),
+  holidayQuietAllDay: boolean('holiday_quiet_all_day').notNull().default(false),
 
   // Enforcement
-  enforceQuietHours: boolean('enforce_quiet_hours').default(true),
-  queueDuringQuietHours: boolean('queue_during_quiet_hours').default(true),
+  enforceQuietHours: boolean('enforce_quiet_hours').notNull().default(true),
+  queueDuringQuietHours: boolean('queue_during_quiet_hours').notNull().default(true),
 
   // Metadata
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -220,10 +223,11 @@ export const quietHoursConfig = pgTable('quiet_hours_config', {
 // ============================================
 // COMPLIANCE AUDIT LOG
 // ============================================
+/** Immutable audit trail of all compliance-related events */
 export const complianceAuditLog = pgTable(
   'compliance_audit_log',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id').references(() => clients.id),
 
     // Event details
@@ -262,10 +266,11 @@ export const complianceAuditLog = pgTable(
 // ============================================
 // MESSAGE COMPLIANCE CHECK CACHE
 // ============================================
+/** Cached compliance check results to avoid repeated lookups */
 export const complianceCheckCache = pgTable(
   'compliance_check_cache',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id),
