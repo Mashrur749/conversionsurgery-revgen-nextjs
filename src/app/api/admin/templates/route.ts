@@ -1,13 +1,17 @@
 import { getDb } from '@/db';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { templateVariants, messageTemplates } from '@/db/schema';
+import { templateVariants } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 
+/**
+ * GET /api/admin/templates
+ * Retrieves all template variants with client usage counts
+ */
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!(session as any).user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return new Response('Unauthorized', { status: 403 });
     }
 
@@ -50,7 +54,7 @@ export async function GET(req: Request) {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[Templates List API]', error);
+    console.error('[ABTesting] GET /api/admin/templates error:', error);
     return new Response(
       JSON.stringify({
         success: false,

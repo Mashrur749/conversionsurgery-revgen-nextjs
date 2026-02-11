@@ -4,10 +4,14 @@ import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { CreateTestForm } from '../components/create-test-form';
 
+/**
+ * Create New A/B Test Page
+ * Form for creating a new A/B test for a client
+ */
 export default async function CreateTestPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

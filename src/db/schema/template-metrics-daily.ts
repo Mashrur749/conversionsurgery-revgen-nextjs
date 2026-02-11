@@ -7,14 +7,15 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { flowTemplates } from './flow-templates';
 
-// Daily rollup of template performance across all clients
+/**
+ * Daily rollup of template performance across all clients
+ */
 export const templateMetricsDaily = pgTable(
   'template_metrics_daily',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     templateId: uuid('template_id').references(() => flowTemplates.id, { onDelete: 'cascade' }),
     date: date('date').notNull(),
 
@@ -40,7 +41,7 @@ export const templateMetricsDaily = pgTable(
     // Opt-outs
     optOuts: integer('opt_outs').default(0),
 
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     uniqueIndex('template_date_idx').on(table.templateId, table.date),

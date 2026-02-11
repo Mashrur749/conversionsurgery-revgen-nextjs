@@ -3,13 +3,17 @@ import { getDb } from '@/db';
 import { abTests, abTestMetrics } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
+/**
+ * GET /api/admin/ab-tests/[id]/results
+ * Retrieves aggregated performance metrics for both variants of an A/B test
+ */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -134,10 +138,10 @@ export async function GET(
               ).toFixed(1),
       },
     });
-  } catch (error: any) {
-    console.error('[AB Tests Results] Error:', error);
+  } catch (error) {
+    console.error('[ABTesting] GET /api/admin/ab-tests/[id]/results error:', error);
     return Response.json(
-      { error: error.message || 'Failed to fetch test results' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch test results' },
       { status: 500 }
     );
   }

@@ -12,15 +12,32 @@ const createVariantSchema = z.object({
   notes: z.string().optional(),
 });
 
+/**
+ * POST /api/admin/templates/variants
+ * Creates a new template variant for A/B testing
+ */
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!(session as any).user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return new Response('Unauthorized', { status: 403 });
     }
 
     const body = await req.json();
-    const { templateType, name, content, notes } = createVariantSchema.parse(body);
+    const parsed = createVariantSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation error',
+          details: parsed.error.flatten().fieldErrors,
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { templateType, name, content, notes } = parsed.data;
 
     const db = getDb();
 
@@ -54,17 +71,6 @@ export async function POST(req: Request) {
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Validation error',
-          details: error.issues,
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Handle unique constraint violation
     if (error instanceof Error && error.message.includes('unique constraint')) {
       return new Response(
@@ -76,7 +82,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.error('[Template Variants API]', error);
+    console.error('[ABTesting] POST /api/admin/templates/variants error:', error);
     return new Response(
       JSON.stringify({
         success: false,

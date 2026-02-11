@@ -6,10 +6,14 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ABTestsList } from './components/ab-tests-list';
 
+/**
+ * A/B Testing Dashboard Page
+ * Lists all tests grouped by status with overview statistics
+ */
 export default async function ABTestsPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

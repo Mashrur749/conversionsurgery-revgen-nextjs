@@ -9,7 +9,6 @@ import {
   boolean,
   integer,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 /**
@@ -19,7 +18,7 @@ import { clients } from './clients';
 export const abTests = pgTable(
   'ab_tests',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -32,8 +31,8 @@ export const abTests = pgTable(
     winner: varchar('winner', { length: 1 }), // 'A' or 'B' - declared after test ends
     startDate: timestamp('start_date').defaultNow(),
     endDate: timestamp('end_date'),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_ab_tests_client_id').on(table.clientId),
@@ -52,7 +51,7 @@ export type NewABTest = typeof abTests.$inferInsert;
 export const abTestMetrics = pgTable(
   'ab_test_metrics',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     testId: uuid('test_id')
       .notNull()
       .references(() => abTests.id, { onDelete: 'cascade' }),
@@ -66,7 +65,7 @@ export const abTestMetrics = pgTable(
     leadsQualified: integer('leads_qualified').default(0),
     estimatesFollowedUp: integer('estimates_followed_up').default(0),
     conversionsCompleted: integer('conversions_completed').default(0),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_ab_test_metrics_test_id').on(table.testId),

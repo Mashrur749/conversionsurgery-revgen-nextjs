@@ -10,13 +10,17 @@ const updateTestSchema = z.object({
   endDate: z.string().optional(),
 });
 
+/**
+ * GET /api/admin/ab-tests/[id]
+ * Retrieves a single A/B test by ID
+ */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -34,28 +38,41 @@ export async function GET(
     }
 
     return Response.json({ success: true, test });
-  } catch (error: any) {
-    console.error('[AB Tests Get] Error:', error);
+  } catch (error) {
+    console.error('[ABTesting] GET /api/admin/ab-tests/[id] error:', error);
     return Response.json(
-      { error: error.message || 'Failed to fetch test' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch test' },
       { status: 500 }
     );
   }
 }
 
+/**
+ * PATCH /api/admin/ab-tests/[id]
+ * Updates an A/B test (status, winner, end date)
+ */
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const { id } = await params;
     const body = await req.json();
-    const { status, winner, endDate } = updateTestSchema.parse(body);
+    const parsed = updateTestSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid request', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { status, winner, endDate } = parsed.data;
 
     const db = getDb();
 
@@ -87,18 +104,10 @@ export async function PATCH(
       test: updatedTest,
       message: `Test updated: status=${status || test.status}, winner=${winner || 'none'}`,
     });
-  } catch (error: any) {
-    console.error('[AB Tests Update] Error:', error);
-
-    if (error instanceof z.ZodError) {
-      return Response.json(
-        { error: 'Invalid request', details: error.issues },
-        { status: 400 }
-      );
-    }
-
+  } catch (error) {
+    console.error('[ABTesting] PATCH /api/admin/ab-tests/[id] error:', error);
     return Response.json(
-      { error: error.message || 'Failed to update test' },
+      { error: error instanceof Error ? error.message : 'Failed to update test' },
       { status: 500 }
     );
   }

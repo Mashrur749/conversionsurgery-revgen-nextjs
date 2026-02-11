@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth';
 import { getDb } from '@/db';
 import { abTests, clients } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const createTestSchema = z.object({
@@ -13,10 +13,14 @@ const createTestSchema = z.object({
   variantB: z.record(z.string(), z.any()),
 });
 
+/**
+ * GET /api/admin/ab-tests
+ * Retrieves all A/B tests, optionally filtered by client ID
+ */
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -38,31 +42,37 @@ export async function GET(req: Request) {
       tests,
       count: tests.length,
     });
-  } catch (error: any) {
-    console.error('[AB Tests List] Error:', error);
+  } catch (error) {
+    console.error('[ABTesting] GET /api/admin/ab-tests error:', error);
     return Response.json(
-      { error: error.message || 'Failed to fetch tests' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch tests' },
       { status: 500 }
     );
   }
 }
 
+/**
+ * POST /api/admin/ab-tests
+ * Creates a new A/B test for a client
+ */
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await req.json();
-    const {
-      clientId,
-      name,
-      description,
-      testType,
-      variantA,
-      variantB,
-    } = createTestSchema.parse(body);
+    const parsed = createTestSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Invalid request', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { clientId, name, description, testType, variantA, variantB } = parsed.data;
 
     const db = getDb();
 
@@ -96,18 +106,10 @@ export async function POST(req: Request) {
       test: newTest,
       message: `Test "${name}" created for ${client.businessName}`,
     });
-  } catch (error: any) {
-    console.error('[AB Tests Create] Error:', error);
-
-    if (error instanceof z.ZodError) {
-      return Response.json(
-        { error: 'Invalid request', details: error.issues },
-        { status: 400 }
-      );
-    }
-
+  } catch (error) {
+    console.error('[ABTesting] POST /api/admin/ab-tests error:', error);
     return Response.json(
-      { error: error.message || 'Failed to create test' },
+      { error: error instanceof Error ? error.message : 'Failed to create test' },
       { status: 500 }
     );
   }

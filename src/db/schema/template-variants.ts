@@ -8,7 +8,6 @@ import {
   index,
   unique,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 /**
  * Message template variants for aggregate A/B testing
@@ -18,14 +17,14 @@ import { sql } from 'drizzle-orm';
 export const templateVariants = pgTable(
   'template_variants',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     templateType: varchar('template_type', { length: 50 }).notNull(), // missed_call, form_response, appointment_day_before, etc.
     name: varchar('name', { length: 255 }).notNull(), // "Standard", "Aggressive", "Friendly", etc.
     content: text('content').notNull(), // The actual message template with variables like {name}
     isActive: boolean('is_active').default(true), // Whether this variant is available for new clients
     notes: text('notes'), // What's different about this variant (e.g. "More urgent tone, added emoji")
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_template_variants_type').on(table.templateType),

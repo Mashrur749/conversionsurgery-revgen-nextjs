@@ -8,7 +8,6 @@ import {
   index,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { templateVariants } from './template-variants';
 
 /**
@@ -19,7 +18,7 @@ import { templateVariants } from './template-variants';
 export const templatePerformanceMetrics = pgTable(
   'template_performance_metrics',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     templateVariantId: uuid('template_variant_id')
       .notNull()
       .references(() => templateVariants.id, { onDelete: 'cascade' }),
@@ -45,8 +44,8 @@ export const templatePerformanceMetrics = pgTable(
     // Metadata
     clientsUsingVariant: integer('clients_using_variant').default(0), // How many clients are using this variant?
 
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_template_perf_variant').on(table.templateVariantId),

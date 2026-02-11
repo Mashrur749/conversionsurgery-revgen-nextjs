@@ -6,14 +6,17 @@ import {
   timestamp,
   unique,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { templateVariants } from './template-variants';
 
+/**
+ * Message templates assigned to clients
+ * Links clients to specific template variants for A/B testing
+ */
 export const messageTemplates = pgTable(
   'message_templates',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -23,8 +26,8 @@ export const messageTemplates = pgTable(
       { onDelete: 'set null' }
     ), // Links to the variant this client is using
     content: text('content').notNull(),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     unique('message_templates_client_type_unique').on(

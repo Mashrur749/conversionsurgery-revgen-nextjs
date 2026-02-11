@@ -13,10 +13,14 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * A/B Test Detail Page
+ * Displays test configuration, variant details, results, and actions
+ */
 export default async function TestDetailPage({ params }: Props) {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

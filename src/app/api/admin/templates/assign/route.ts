@@ -11,15 +11,32 @@ const assignTemplateSchema = z.object({
   templateType: z.string().min(1, 'Template type required'),
 });
 
+/**
+ * POST /api/admin/templates/assign
+ * Assigns a template variant to a client for a specific template type
+ */
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!(session as any).user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return new Response('Unauthorized', { status: 403 });
     }
 
     const body = await req.json();
-    const { clientId, templateVariantId, templateType } = assignTemplateSchema.parse(body);
+    const parsed = assignTemplateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Validation error',
+          details: parsed.error.flatten().fieldErrors,
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { clientId, templateVariantId, templateType } = parsed.data;
 
     const db = getDb();
 
@@ -68,18 +85,7 @@ export async function POST(req: Request) {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Validation error',
-          details: error.issues,
-        }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.error('[Template Assign API]', error);
+    console.error('[ABTesting] POST /api/admin/templates/assign error:', error);
     return new Response(
       JSON.stringify({
         success: false,

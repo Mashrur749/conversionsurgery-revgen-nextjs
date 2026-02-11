@@ -6,14 +6,16 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { flowTemplates } from './flow-templates';
 
-// Step-level performance (which step gets responses?)
+/**
+ * Step-level performance metrics
+ * Tracks which step gets responses in a multi-step template
+ */
 export const templateStepMetrics = pgTable(
   'template_step_metrics',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     templateId: uuid('template_id').references(() => flowTemplates.id, { onDelete: 'cascade' }),
     stepNumber: integer('step_number').notNull(),
     date: date('date').notNull(),
@@ -22,7 +24,7 @@ export const templateStepMetrics = pgTable(
     responsesReceived: integer('responses_received').default(0),
     skipped: integer('skipped').default(0),
 
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     uniqueIndex('template_step_date_idx').on(
