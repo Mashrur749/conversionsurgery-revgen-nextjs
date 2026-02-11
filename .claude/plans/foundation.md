@@ -183,21 +183,35 @@ When your module refactoring is complete:
 2. Run `npm run lint` — must be clean
 3. Verify all files are within scope: `git diff main...HEAD --name-only`
 4. Create a final commit with all changes
-5. Create the sentinel file:
+5. Create the **success** sentinel file:
    ```bash
    touch .refactor-complete
    ```
 6. The orchestrator will detect the sentinel and begin merge verification
 
+### If You Cannot Complete the Module
+
+If you hit an unrecoverable issue (persistent build errors you cannot fix, missing dependencies, blocked by a frozen file you need changed, etc.):
+
+1. Commit whatever progress you have: `refactor(<module>): partial — <reason>`
+2. Create the **failure** sentinel file with a reason:
+   ```bash
+   echo "REASON: <brief explanation>" > .refactor-failed
+   ```
+3. The orchestrator will detect the failure, log it, and move on
+
+> **CRITICAL:** You MUST create exactly one sentinel file (`.refactor-complete` OR `.refactor-failed`) before finishing. The orchestrator monitors for these files. If neither exists after 2 hours, the orchestrator will time out and kill your session.
+
 ---
 
 ## 12. If Something Goes Wrong
 
-- **Build fails**: Fix it. Do not create the sentinel file until build passes.
-- **Need a frozen file changed**: Add a note to `.refactor-notes.md` explaining what change is needed and why.
+- **Build fails**: Fix it. Do not create `.refactor-complete` until build passes. If you truly cannot fix it after exhausting all options, create `.refactor-failed` with the reason.
+- **Need a frozen file changed**: Add a note to `.refactor-notes.md` explaining what change is needed and why. If this blocks your entire module, create `.refactor-failed`.
 - **Import from another module breaks**: Check that you haven't changed a FROZEN_EXPORT. If the import was already broken, note it in `.refactor-notes.md`.
 - **Out of scope file needs changes**: Note it in `.refactor-notes.md`. Do not touch it.
 - **Rate limit hit**: The orchestrator will pause you. Do nothing — it will restart your session.
+- **Unrecoverable error**: Commit your partial progress, then `echo "REASON: <explanation>" > .refactor-failed`.
 
 ---
 

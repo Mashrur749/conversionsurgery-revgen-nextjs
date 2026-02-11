@@ -63,9 +63,16 @@ You may refactor internals. You must not rename, re-type, or relocate these expo
 - [ ] `git diff main...HEAD --name-only` — all files within scope
 - [ ] No FROZEN files modified
 - [ ] No FROZEN_EXPORTS signatures changed
-- [ ] Created `.refactor-complete` sentinel file
+- [ ] Created `.refactor-complete` OR `.refactor-failed` sentinel file
 
-**When done:**
+**When done successfully:**
 ```bash
 npm run build && npm run lint && touch .refactor-complete
 ```
+
+**If you cannot complete the module** (unrecoverable build errors, missing dependencies, blocked by frozen files, etc.):
+```bash
+echo "REASON: <brief explanation of what went wrong>" > .refactor-failed
+```
+
+> **CRITICAL:** You MUST create exactly one sentinel file before finishing. The orchestrator monitors for these files to know you are done. If neither file exists, the orchestrator assumes you are still working (and will eventually time you out after 2 hours).
