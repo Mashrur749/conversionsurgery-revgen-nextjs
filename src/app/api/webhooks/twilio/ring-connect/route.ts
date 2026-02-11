@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, callAttempts, teamMembers } from '@/db';
+import { getDb } from '@/db';
+import { callAttempts, teamMembers } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import twilio from 'twilio';
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
+/**
+ * [Voice] Twilio webhook for ring group connection
+ * Generates TwiML to ring all team members simultaneously
+ */
 export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const attemptId = url.searchParams.get('attemptId');

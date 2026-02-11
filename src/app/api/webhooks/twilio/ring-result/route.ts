@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, callAttempts, clients, leads } from '@/db';
+import { getDb } from '@/db';
+import { callAttempts, clients, leads } from '@/db/schema';
 import { handleNoAnswer } from '@/lib/services/ring-group';
 import { eq } from 'drizzle-orm';
 import twilio from 'twilio';
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
+/**
+ * [Voice] Twilio webhook for ring group dial result
+ * Handles completion status and no-answer scenarios
+ */
 export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const attemptId = url.searchParams.get('attemptId');

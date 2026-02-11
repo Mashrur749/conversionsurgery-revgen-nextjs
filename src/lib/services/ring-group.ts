@@ -17,7 +17,20 @@ interface RingGroupPayload {
   twilioNumber: string;
 }
 
-export async function initiateRingGroup(payload: RingGroupPayload) {
+interface RingGroupResult {
+  initiated: boolean;
+  callSid?: string;
+  attemptId?: string;
+  membersToRing?: number;
+  reason?: string;
+  error?: unknown;
+}
+
+/**
+ * [Voice] Initiate a ring group call to team members for a high-intent lead
+ * @param payload - The ring group configuration
+ */
+export async function initiateRingGroup(payload: RingGroupPayload): Promise<RingGroupResult> {
   const { leadId, clientId, leadPhone, twilioNumber } = payload;
   const db = getDb();
 
@@ -32,7 +45,7 @@ export async function initiateRingGroup(payload: RingGroupPayload) {
     .orderBy(teamMembers.priority);
 
   if (members.length === 0) {
-    console.log('[Ring Group] No team members configured for hot transfers');
+    console.log('[Voice] No team members configured for hot transfers');
     return { initiated: false, reason: 'No team members' };
   }
 
@@ -79,7 +92,7 @@ export async function initiateRingGroup(payload: RingGroupPayload) {
       );
     }
 
-    console.log(`[Ring Group] Initiated call ${call.sid} for lead ${leadId}, ${members.length} members to ring`);
+    console.log(`[Voice] Initiated call ${call.sid} for lead ${leadId}, ${members.length} members to ring`);
 
     return {
       initiated: true,
@@ -88,7 +101,7 @@ export async function initiateRingGroup(payload: RingGroupPayload) {
       membersToRing: members.length,
     };
   } catch (error) {
-    console.error('[Ring Group] Failed to initiate:', error);
+    console.error('[Voice] Failed to initiate:', error);
 
     await db
       .update(callAttempts)
@@ -99,7 +112,12 @@ export async function initiateRingGroup(payload: RingGroupPayload) {
   }
 }
 
-export async function handleNoAnswer(payload: RingGroupPayload) {
+/**
+ * [Voice] Handle when a ring group call receives no answer
+ * Notifies team members and updates lead status
+ * @param payload - The ring group configuration
+ */
+export async function handleNoAnswer(payload: RingGroupPayload): Promise<void> {
   const { leadId, clientId, leadPhone, twilioNumber } = payload;
   const db = getDb();
 
@@ -142,5 +160,5 @@ export async function handleNoAnswer(payload: RingGroupPayload) {
     })
     .where(eq(leads.id, leadId));
 
-  console.log(`[Ring Group] No answer for lead ${leadId}, team notified`);
+  console.log(`[Voice] No answer for lead ${leadId}, team notified`);
 }

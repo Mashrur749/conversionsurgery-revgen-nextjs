@@ -1,6 +1,5 @@
 import { getDb } from '@/db';
-import { callAttempts, teamMembers, escalationClaims } from '@/db/schema';
-import { sendSMS } from '@/lib/services/twilio';
+import { callAttempts, teamMembers } from '@/db/schema';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 import { eq, and } from 'drizzle-orm';
@@ -14,11 +13,23 @@ interface HotTransferPayload {
   timezone?: string;
 }
 
+interface HotTransferResult {
+  success?: boolean;
+  method?: string;
+  callId?: string;
+  ringing?: string[];
+  teamMemberCount?: number;
+  notified?: number;
+  escalationId?: string;
+  claimToken?: string;
+  error?: string;
+}
+
 /**
- * Determine if a lead should be routed to ring group or escalation
+ * [Voice] Determine if a lead should be routed to ring group or escalation
  * Based on business hours and team availability
  */
-export async function routeHighIntentLead(payload: HotTransferPayload) {
+export async function routeHighIntentLead(payload: HotTransferPayload): Promise<HotTransferResult> {
   const { leadId, clientId, twilioNumber, leadMessage, timezone = 'America/Edmonton' } = payload;
 
   try {
@@ -27,11 +38,11 @@ export async function routeHighIntentLead(payload: HotTransferPayload) {
     // Check if currently within business hours
     const withinHours = await isWithinBusinessHours(clientId, timezone);
 
-    console.log(`[Hot Transfer] Routing decision - within_hours=${withinHours}`);
+    console.log(`[Voice] Routing decision - within_hours=${withinHours}`);
 
     if (!withinHours) {
       // Use escalation outside business hours
-      console.log('[Hot Transfer] Outside business hours, using escalation');
+      console.log('[Voice] Outside business hours, using escalation');
       return await notifyTeamForEscalation({
         leadId,
         clientId,
@@ -54,7 +65,7 @@ export async function routeHighIntentLead(payload: HotTransferPayload) {
       );
 
     if (members.length === 0) {
-      console.log('[Hot Transfer] No team members available, using escalation');
+      console.log('[Voice] No team members available, using escalation');
       return await notifyTeamForEscalation({
         leadId,
         clientId,
@@ -75,7 +86,7 @@ export async function routeHighIntentLead(payload: HotTransferPayload) {
       })
       .returning();
 
-    console.log('[Hot Transfer] Initiating ring group to', members.length, 'team members');
+    console.log('[Voice] Initiating ring group to', members.length, 'team members');
 
     return {
       success: true,
@@ -85,7 +96,7 @@ export async function routeHighIntentLead(payload: HotTransferPayload) {
       teamMemberCount: members.length,
     };
   } catch (error) {
-    console.error('[Hot Transfer] Error routing:', error);
+    console.error('[Voice] Error routing:', error);
     return {
       success: false,
       error: 'Failed to route lead',
@@ -95,13 +106,16 @@ export async function routeHighIntentLead(payload: HotTransferPayload) {
 }
 
 /**
- * Record a team member answering a ring group call
+ * [Voice] Record a team member answering a ring group call
+ * @param callId - The call attempt ID
+ * @param teamMemberId - The team member who answered
+ * @param duration - Call duration in seconds
  */
 export async function recordCallAnswered(
   callId: string,
   teamMemberId: string,
   duration: number = 0
-) {
+): Promise<{ success: boolean; error?: string }> {
   try {
     const db = getDb();
 
@@ -115,19 +129,20 @@ export async function recordCallAnswered(
       })
       .where(eq(callAttempts.id, callId));
 
-    console.log('[Hot Transfer] Call answered by team member:', teamMemberId);
+    console.log('[Voice] Call answered by team member:', teamMemberId);
 
     return { success: true };
   } catch (error) {
-    console.error('[Hot Transfer] Error recording answer:', error);
+    console.error('[Voice] Error recording answer:', error);
     return { success: false, error: 'Failed to record answer' };
   }
 }
 
 /**
- * Record a call that was missed (no answer)
+ * [Voice] Record a call that was missed (no answer)
+ * @param callId - The call attempt ID
  */
-export async function recordCallMissed(callId: string) {
+export async function recordCallMissed(callId: string): Promise<{ success: boolean; error?: string; leadId?: string; clientId?: string }> {
   try {
     const db = getDb();
 
@@ -146,7 +161,7 @@ export async function recordCallMissed(callId: string) {
       })
       .where(eq(callAttempts.id, callId));
 
-    console.log('[Hot Transfer] Call missed for lead:', call.leadId);
+    console.log('[Voice] Call missed for lead:', call.leadId);
 
     return {
       success: true,
@@ -154,15 +169,26 @@ export async function recordCallMissed(callId: string) {
       clientId: call.clientId,
     };
   } catch (error) {
-    console.error('[Hot Transfer] Error recording missed call:', error);
+    console.error('[Voice] Error recording missed call:', error);
     return { success: false, error: 'Failed to record missed call' };
   }
 }
 
+interface CallAttemptHistory {
+  id: string;
+  status: string | null;
+  answeredBy: string | null;
+  duration: number | null;
+  createdAt: Date | null;
+  answeredAt: Date | null;
+  endedAt: Date | null;
+}
+
 /**
- * Get ring group history for a lead
+ * [Voice] Get ring group history for a lead
+ * @param leadId - The lead ID to get call attempts for
  */
-export async function getCallAttempts(leadId: string) {
+export async function getCallAttempts(leadId: string): Promise<CallAttemptHistory[]> {
   try {
     const db = getDb();
 
@@ -181,13 +207,14 @@ export async function getCallAttempts(leadId: string) {
 
     return attempts;
   } catch (error) {
-    console.error('[Hot Transfer] Error fetching call attempts:', error);
+    console.error('[Voice] Error fetching call attempts:', error);
     return [];
   }
 }
 
 /**
- * Detect if a message indicates high intent (needs immediate routing)
+ * [Voice] Detect if a message indicates high intent (needs immediate routing)
+ * @param message - The message to analyze
  */
 export function detectHighIntent(message: string): boolean {
   const highIntentPatterns = [

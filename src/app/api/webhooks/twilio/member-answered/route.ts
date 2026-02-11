@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, callAttempts, teamMembers, leads, clients } from '@/db';
+import { getDb } from '@/db';
+import { callAttempts, teamMembers, leads, clients } from '@/db/schema';
 import { sendSMS } from '@/lib/services/twilio';
 import { eq, and } from 'drizzle-orm';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 
+/**
+ * [Voice] Twilio webhook for team member answering ring group call
+ * Updates call status and notifies other team members
+ */
 export async function POST(request: NextRequest) {
   const url = new URL(request.url);
   const attemptId = url.searchParams.get('attemptId');

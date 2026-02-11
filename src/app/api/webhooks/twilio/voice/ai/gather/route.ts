@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, voiceCalls, clients, knowledgeBase } from '@/db';
+import { getDb } from '@/db';
+import { voiceCalls, clients, knowledgeBase } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import OpenAI from 'openai';
 
@@ -19,6 +20,10 @@ function escapeXml(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
+/**
+ * [Voice] Twilio webhook for AI speech gathering
+ * Processes caller speech and generates AI responses
+ */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

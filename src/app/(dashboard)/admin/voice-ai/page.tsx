@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { getDb, clients } from '@/db';
+import { getDb } from '@/db';
+import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { VoiceSettings } from '@/components/settings/voice-settings';
 import { CallHistory } from '@/components/voice/call-history';

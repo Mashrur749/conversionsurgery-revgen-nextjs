@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getDb, voiceCalls } from '@/db';
+import { getDb } from '@/db';
+import { voiceCalls } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
+/**
+ * [Voice] GET /api/admin/clients/[id]/voice-calls
+ * Retrieves voice call history for a specific client (admin only)
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -10,7 +15,8 @@ export async function GET(
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+    console.log('[Voice] Unauthorized access attempt to voice calls');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -22,5 +28,6 @@ export async function GET(
     .orderBy(desc(voiceCalls.createdAt))
     .limit(50);
 
+  console.log(`[Voice] Retrieved ${calls.length} voice calls for client ${id}`);
   return NextResponse.json(calls);
 }

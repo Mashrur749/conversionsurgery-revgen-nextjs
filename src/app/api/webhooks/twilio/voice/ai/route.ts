@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, clients, leads, voiceCalls } from '@/db';
+import { getDb } from '@/db';
+import { clients, leads, voiceCalls } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
@@ -11,6 +12,10 @@ function twimlResponse(twiml: string) {
   );
 }
 
+/**
+ * [Voice] Twilio webhook for AI-powered voice calls
+ * Handles voice AI greeting and routing logic
+ */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, voiceCalls, clients } from '@/db';
+import { getDb } from '@/db';
+import { voiceCalls, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 function twimlResponse(twiml: string) {
@@ -9,6 +10,10 @@ function twimlResponse(twiml: string) {
   );
 }
 
+/**
+ * [Voice] Twilio webhook for transferring AI calls to humans
+ * Handles hot transfer from AI to business owner
+ */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

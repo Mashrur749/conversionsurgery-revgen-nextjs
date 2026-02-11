@@ -1,8 +1,13 @@
-import { getDb, voiceCalls, clients } from '@/db';
+import { getDb } from '@/db';
+import { voiceCalls, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import OpenAI from 'openai';
 import { sendSMS } from './twilio';
 
+/**
+ * [Voice] Generate an AI summary of a voice call transcript
+ * @param callId - The voice call ID
+ */
 export async function generateCallSummary(callId: string): Promise<string> {
   const db = getDb();
 
@@ -45,6 +50,10 @@ export async function generateCallSummary(callId: string): Promise<string> {
   return summary;
 }
 
+/**
+ * [Voice] Notify the client of a completed voice call via SMS
+ * @param callId - The voice call ID
+ */
 export async function notifyClientOfCall(callId: string): Promise<void> {
   const db = getDb();
 
@@ -80,5 +89,5 @@ export async function notifyClientOfCall(callId: string): Promise<void> {
 
   await sendSMS(client.phone, twilioFrom, message);
 
-  console.log('[Voice Summary] Notification sent to:', client.phone);
+  console.log('[Voice] Notification sent to:', client.phone);
 }

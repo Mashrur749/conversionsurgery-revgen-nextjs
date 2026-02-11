@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, clients, activeCalls } from '@/db';
+import { getDb } from '@/db';
+import { clients, activeCalls } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { handleMissedCall } from '@/lib/automations/missed-call';
-import { sql } from 'drizzle-orm';
 
 const MISSED_STATUSES = new Set(['no-answer', 'busy', 'failed', 'canceled']);
 
@@ -14,6 +14,10 @@ function emptyTwiml() {
   });
 }
 
+/**
+ * [Voice] Twilio voice webhook for incoming calls
+ * Handles initial call routing and dial outcome callbacks
+ */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

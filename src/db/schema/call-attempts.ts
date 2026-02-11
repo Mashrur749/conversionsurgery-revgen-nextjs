@@ -6,7 +6,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { leads } from './leads';
 import { clients } from './clients';
 import { teamMembers } from './team-members';
@@ -17,7 +16,7 @@ import { teamMembers } from './team-members';
 export const callAttempts = pgTable(
   'call_attempts',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
@@ -29,7 +28,7 @@ export const callAttempts = pgTable(
     answeredBy: uuid('answered_by').references(() => teamMembers.id, { onDelete: 'set null' }),
     duration: integer('duration'), // seconds
     recordingUrl: varchar('recording_url', { length: 500 }),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
     answeredAt: timestamp('answered_at'),
     endedAt: timestamp('ended_at'),
   },

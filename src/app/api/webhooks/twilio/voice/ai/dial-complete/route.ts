@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, voiceCalls } from '@/db';
+import { getDb } from '@/db';
+import { voiceCalls } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 const MISSED_STATUSES = new Set(['no-answer', 'busy', 'failed', 'canceled']);
@@ -11,6 +12,10 @@ function twimlResponse(twiml: string) {
   );
 }
 
+/**
+ * [Voice] Twilio webhook for dial completion status
+ * Updates voice call records when transfer completes
+ */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

@@ -6,13 +6,12 @@ import {
   boolean,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 export const activeCalls = pgTable(
   'active_calls',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     callSid: varchar('call_sid', { length: 100 }).notNull(),
     clientId: uuid('client_id')
       .notNull()
@@ -22,7 +21,7 @@ export const activeCalls = pgTable(
     receivedAt: timestamp('received_at').notNull(),
     processed: boolean('processed').default(false).notNull(), // Whether action callback already handled it
     processedAt: timestamp('processed_at'), // When it was processed by action callback
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_active_calls_call_sid').on(table.callSid),

@@ -8,14 +8,13 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
 export const voiceCalls = pgTable(
   'voice_calls',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -50,7 +49,7 @@ export const voiceCalls = pgTable(
     // Timestamps
     startedAt: timestamp('started_at'),
     endedAt: timestamp('ended_at'),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_voice_calls_client_id').on(table.clientId),
