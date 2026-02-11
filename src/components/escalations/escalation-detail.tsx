@@ -24,10 +24,16 @@ import Link from 'next/link';
 import { formatDistanceToNow, format } from 'date-fns';
 import { toast } from 'sonner';
 
+/**
+ * Props for EscalationDetail component
+ */
 interface EscalationDetailProps {
   escalationId: string;
 }
 
+/**
+ * Escalation data returned from API
+ */
 interface EscalationData {
   escalation: {
     id: string;
@@ -61,6 +67,9 @@ interface EscalationData {
   } | null;
 }
 
+/**
+ * EscalationDetail component - displays full escalation context with conversation history and resolution interface
+ */
 export function EscalationDetail({ escalationId }: EscalationDetailProps) {
   const [data, setData] = useState<EscalationData | null>(null);
   const [loading, setLoading] = useState(true);

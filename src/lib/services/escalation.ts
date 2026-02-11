@@ -6,11 +6,14 @@ import {
   teamMembers,
   leads,
   clients,
-} from '@/db';
+} from '@/db/schema';
 import { eq, and, desc, sql, or } from 'drizzle-orm';
 import { sendTrackedSMS } from '@/lib/clients/twilio-tracked';
 import { sendEmail } from '@/lib/services/resend';
 
+/**
+ * Parameters for creating a new escalation
+ */
 interface CreateEscalationParams {
   leadId: string;
   clientId: string;
@@ -23,9 +26,42 @@ interface CreateEscalationParams {
 }
 
 /**
- * Create a new escalation and notify appropriate team members
+ * Rule trigger configuration
  */
-export async function createEscalation(params: CreateEscalationParams): Promise<string> {
+interface RuleTrigger {
+  type: string;
+  value?: string | number;
+}
+
+/**
+ * Rule conditions structure
+ */
+interface RuleConditions {
+  triggers?: RuleTrigger[];
+}
+
+/**
+ * Rule action configuration
+ */
+interface RuleAction {
+  assignTo?: string;
+  notifyVia?: string[];
+  autoResponse?: string;
+}
+
+/**
+ * Team member with pending count for round-robin assignment
+ */
+interface TeamMemberWithCount {
+  id: string;
+  name: string;
+  pendingCount: number;
+}
+
+/**
+ * Create a new escalation and notify appropriate team members (internal implementation)
+ */
+async function createEscalationInternal(params: CreateEscalationParams): Promise<string> {
   const {
     leadId,
     clientId,
@@ -76,15 +112,15 @@ export async function createEscalation(params: CreateEscalationParams): Promise<
   let autoResponse: string | null = null;
 
   for (const rule of rules) {
-    const conditions = rule.conditions as any;
-    const action = rule.action as any;
+    const conditions = rule.conditions as unknown as RuleConditions;
+    const action = rule.action as unknown as RuleAction;
 
     // Check if rule matches
-    const reasonMatches = conditions.triggers?.some((t: any) =>
-      t.type === 'keyword' && reason.toLowerCase().includes(t.value?.toString().toLowerCase())
+    const reasonMatches = conditions.triggers?.some((t) =>
+      t.type === 'keyword' && reason.toLowerCase().includes(t.value?.toString().toLowerCase() ?? '')
     );
 
-    if (reasonMatches || conditions.triggers?.some((t: any) => t.type === reason)) {
+    if (reasonMatches || conditions.triggers?.some((t) => t.type === reason)) {
       assignTo = action.assignTo || null;
       notifyVia = action.notifyVia || ['sms'];
       autoResponse = action.autoResponse || null;
@@ -114,7 +150,7 @@ export async function createEscalation(params: CreateEscalationParams): Promise<
 
     if (members.length > 0) {
       // Simple round-robin based on who has fewest pending
-      const withCounts = await Promise.all(members.map(async (m) => {
+      const withCounts: TeamMemberWithCount[] = await Promise.all(members.map(async (m) => {
         const [result] = await db
           .select({ count: sql<number>`count(*)` })
           .from(escalationQueue)
@@ -122,7 +158,7 @@ export async function createEscalation(params: CreateEscalationParams): Promise<
             eq(escalationQueue.assignedTo, m.id),
             eq(escalationQueue.status, 'pending')
           ));
-        return { ...m, pendingCount: Number(result?.count) || 0 };
+        return { id: m.id, name: m.name, pendingCount: Number(result?.count) || 0 };
       }));
 
       withCounts.sort((a, b) => a.pendingCount - b.pendingCount);
@@ -281,6 +317,8 @@ async function notifyEscalation(
 
 /**
  * Assign an escalation to a team member
+ * @param escalationId - The escalation ID to assign
+ * @param teamMemberId - The team member ID to assign to
  */
 export async function assignEscalation(
   escalationId: string,
@@ -297,6 +335,8 @@ export async function assignEscalation(
 
 /**
  * Take over a conversation (human starts responding)
+ * @param escalationId - The escalation ID to take over
+ * @param teamMemberId - The team member ID taking over
  */
 export async function takeOverConversation(
   escalationId: string,
@@ -313,6 +353,11 @@ export async function takeOverConversation(
 
 /**
  * Resolve an escalation
+ * @param escalationId - The escalation ID to resolve
+ * @param teamMemberId - The team member ID resolving the escalation
+ * @param resolution - Resolution status (handled, returned_to_ai, converted, lost, no_action)
+ * @param notes - Optional resolution notes
+ * @param returnToAi - Whether to return conversation to AI after resolution
  */
 export async function resolveEscalation(
   escalationId: string,
@@ -355,15 +400,20 @@ export async function resolveEscalation(
 }
 
 /**
- * Get escalation queue for a client
+ * Options for filtering escalation queue
+ */
+interface GetEscalationQueueOptions {
+  status?: string;
+  assignedTo?: string;
+  priority?: number;
+}
+
+/**
+ * Get escalation queue for a client with optional filters
  */
 export async function getEscalationQueue(
   clientId: string,
-  options?: {
-    status?: string;
-    assignedTo?: string;
-    priority?: number;
-  }
+  options?: GetEscalationQueueOptions
 ) {
   const db = getDb();
   const conditions = [eq(escalationQueue.clientId, clientId)];
@@ -394,9 +444,9 @@ export async function getEscalationQueue(
 }
 
 /**
- * Check for SLA breaches
+ * Internal SLA breach check implementation
  */
-export async function checkSlaBreaches(): Promise<number> {
+async function checkSlaBreachesInternal(): Promise<number> {
   const db = getDb();
   const now = new Date();
 
@@ -457,4 +507,59 @@ export async function checkSlaBreaches(): Promise<number> {
   }
 
   return breached.length;
+}
+
+// ============================================================================
+// FROZEN EXPORTS — Public API (signatures must not change)
+// ============================================================================
+
+/**
+ * Create an escalation (frozen export signature for compatibility)
+ * @param leadId - Lead identifier
+ * @param conversationId - Conversation identifier (mapped to triggerMessageId)
+ * @param reason - Escalation reason
+ * @param urgency - Urgency level (mapped to priority: critical=1, high=2, medium=3, low=4)
+ * @returns Object with escalation ID
+ */
+export async function createEscalation(
+  leadId: string,
+  conversationId: string,
+  reason: string,
+  urgency: 'low' | 'medium' | 'high' | 'critical'
+): Promise<{ id: string }> {
+  // Map urgency to priority
+  const priorityMap: Record<typeof urgency, number> = {
+    critical: 1,
+    high: 2,
+    medium: 3,
+    low: 4,
+  };
+
+  // Get client ID from lead
+  const db = getDb();
+  const [lead] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
+
+  if (!lead) {
+    throw new Error(`[Escalation] Lead not found: ${leadId}`);
+  }
+
+  const escalationId = await createEscalationInternal({
+    leadId,
+    clientId: lead.clientId,
+    reason,
+    triggerMessageId: conversationId,
+    priority: priorityMap[urgency],
+  });
+
+  return { id: escalationId };
+}
+
+/**
+ * Check for SLA breaches (frozen export signature for compatibility)
+ * @returns Object with breach counts
+ */
+export async function checkSlaBreaches(): Promise<{ breached: number; notified: number }> {
+  const breachedCount = await checkSlaBreachesInternal();
+  // notified count equals breached count since we notify all
+  return { breached: breachedCount, notified: breachedCount };
 }

@@ -9,7 +9,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { leads } from './leads';
 import { clients } from './clients';
 import { conversations } from './conversations';
@@ -22,7 +21,7 @@ import { escalationReasonEnum } from './agent-enums';
 export const escalationQueue = pgTable(
   'escalation_queue',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),

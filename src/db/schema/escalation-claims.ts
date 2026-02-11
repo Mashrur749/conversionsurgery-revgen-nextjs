@@ -6,7 +6,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { leads } from './leads';
 import { clients } from './clients';
 import { teamMembers } from './team-members';
@@ -18,7 +17,7 @@ import { teamMembers } from './team-members';
 export const escalationClaims = pgTable(
   'escalation_claims',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
@@ -30,10 +29,10 @@ export const escalationClaims = pgTable(
     escalationReason: varchar('escalation_reason', { length: 255 }),
     lastLeadMessage: text('last_lead_message'),
     status: varchar('status', { length: 20 }).default('pending'), // pending, claimed, resolved
-    notifiedAt: timestamp('notified_at').defaultNow(),
+    notifiedAt: timestamp('notified_at').defaultNow().notNull(),
     claimedAt: timestamp('claimed_at'),
     resolvedAt: timestamp('resolved_at'),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_escalation_claims_lead_id').on(table.leadId),

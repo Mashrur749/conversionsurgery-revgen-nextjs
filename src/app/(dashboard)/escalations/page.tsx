@@ -3,6 +3,19 @@ import { redirect } from 'next/navigation';
 import { getClientId } from '@/lib/get-client-id';
 import { EscalationQueue } from '@/components/escalations/escalation-queue';
 
+/**
+ * Session with admin flag
+ */
+interface SessionWithAdmin {
+  user?: {
+    id?: string;
+    isAdmin?: boolean;
+  };
+}
+
+/**
+ * Escalations page - displays the escalation queue for team members
+ */
 export default async function EscalationsPage() {
   const session = await auth();
   if (!session?.user) redirect('/login');
@@ -33,7 +46,7 @@ export default async function EscalationsPage() {
 
       <EscalationQueue
         clientId={clientId ?? undefined}
-        isAdmin={(session as any).user?.isAdmin}
+        isAdmin={(session as SessionWithAdmin).user?.isAdmin}
       />
     </div>
   );

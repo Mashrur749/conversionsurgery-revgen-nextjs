@@ -23,6 +23,9 @@ import {
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 
+/**
+ * Props for EscalationQueue component
+ */
 interface EscalationQueueProps {
   clientId?: string;
   isAdmin?: boolean;
@@ -58,11 +61,17 @@ interface Summary {
   slaBreached: number;
 }
 
+/**
+ * Client option for admin selector
+ */
 interface ClientOption {
   id: string;
   businessName: string;
 }
 
+/**
+ * EscalationQueue component - displays escalation queue with filtering and summary statistics
+ */
 export function EscalationQueue({ clientId: initialClientId, isAdmin }: EscalationQueueProps) {
   const [escalations, setEscalations] = useState<Escalation[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
