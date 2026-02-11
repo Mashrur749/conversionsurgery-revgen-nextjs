@@ -10,6 +10,10 @@ const schema = z.object({
   address: z.string().optional(),
 });
 
+/**
+ * POST /api/sequences/appointment - Schedules appointment reminders for a lead.
+ * Creates appointment record and schedules day-before and 2-hour reminder messages.
+ */
 export async function POST(request: NextRequest) {
   const authSession = await getAuthSession();
   if (!authSession?.clientId) {
@@ -18,8 +22,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { leadId, date, time, address } = schema.parse(body);
+    const parsed = schema.safeParse(body);
 
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { leadId, date, time, address } = parsed.data;
     const clientId = authSession.clientId;
 
     const result = await scheduleAppointmentReminders({
@@ -32,10 +44,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid input', details: error.issues }, { status: 400 });
-    }
-    console.error('Appointment error:', error);
+    console.error('[AppointmentSystem] Appointment error:', error);
     return NextResponse.json({ error: 'Failed to schedule' }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthSession } from '@/lib/auth-session';
 import { getDb, scheduledMessages } from '@/db';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -9,6 +9,10 @@ const schema = z.object({
   sequenceType: z.string().optional(), // Cancel specific sequence or all
 });
 
+/**
+ * POST /api/sequences/cancel - Cancels scheduled message sequences for a lead.
+ * Can cancel all sequences or specific types (appointment, estimate, review, payment).
+ */
 export async function POST(request: NextRequest) {
   const authSession = await getAuthSession();
   if (!authSession?.clientId) {
@@ -18,8 +22,16 @@ export async function POST(request: NextRequest) {
   try {
     const db = getDb();
     const body = await request.json();
-    const { leadId, sequenceType } = schema.parse(body);
+    const parsed = schema.safeParse(body);
 
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { leadId, sequenceType } = parsed.data;
     const clientId = authSession.clientId;
 
     // Map short names to actual database sequenceType values
@@ -63,10 +75,7 @@ export async function POST(request: NextRequest) {
       cancelledCount: result.length,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid input', details: error.issues }, { status: 400 });
-    }
-    console.error('Cancel sequence error:', error);
+    console.error('[AppointmentSystem] Cancel sequence error:', error);
     return NextResponse.json({ error: 'Failed to cancel' }, { status: 500 });
   }
 }

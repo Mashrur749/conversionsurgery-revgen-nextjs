@@ -11,7 +11,19 @@ interface AppointmentPayload {
   address?: string;
 }
 
-export async function scheduleAppointmentReminders(payload: AppointmentPayload) {
+interface AppointmentReminderResult {
+  success: boolean;
+  reason?: string;
+  appointmentId?: string;
+  scheduledCount?: number;
+  scheduledIds?: string[];
+}
+
+/**
+ * Schedules appointment reminders (day-before and 2-hour) for a lead.
+ * Creates an appointment record and scheduled messages for automated reminders.
+ */
+export async function scheduleAppointmentReminders(payload: AppointmentPayload): Promise<AppointmentReminderResult> {
   const db = getDb();
   const { leadId, clientId, date, time, address } = payload;
 

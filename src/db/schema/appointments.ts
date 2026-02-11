@@ -8,14 +8,13 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
 export const appointments = pgTable(
   'appointments',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
@@ -28,8 +27,8 @@ export const appointments = pgTable(
     status: varchar('status', { length: 20 }).default('scheduled'), // scheduled, confirmed, completed, no_show, cancelled
     reminderDayBeforeSent: boolean('reminder_day_before_sent').default(false),
     reminder2hrSent: boolean('reminder_2hr_sent').default(false),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_appointments_date').on(table.appointmentDate),
