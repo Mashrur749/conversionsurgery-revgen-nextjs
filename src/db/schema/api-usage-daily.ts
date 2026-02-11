@@ -8,7 +8,6 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { apiServiceEnum } from './api-usage';
 
@@ -16,7 +15,7 @@ import { apiServiceEnum } from './api-usage';
 export const apiUsageDaily = pgTable(
   'api_usage_daily',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -36,7 +35,7 @@ export const apiUsageDaily = pgTable(
       costCents: number;
     }>>(),
 
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex('api_usage_daily_unique_idx').on(table.clientId, table.date, table.service),

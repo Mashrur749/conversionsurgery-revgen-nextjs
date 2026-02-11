@@ -7,14 +7,13 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 // Monthly summaries (for billing and reports)
 export const apiUsageMonthly = pgTable(
   'api_usage_monthly',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -39,7 +38,7 @@ export const apiUsageMonthly = pgTable(
     previousMonthCostCents: integer('previous_month_cost_cents'),
     costChangePercent: integer('cost_change_percent'),
 
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex('api_usage_monthly_unique_idx').on(table.clientId, table.month),

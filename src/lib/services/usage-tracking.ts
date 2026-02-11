@@ -19,46 +19,57 @@ interface TrackUsageParams {
 }
 
 /**
- * Track a single API usage event
+ * Track a single API usage event.
+ *
+ * Records a granular usage row in `api_usage` and updates the daily
+ * rollup in `api_usage_daily`. Cost is calculated automatically from
+ * the service, operation, and token/unit counts.
+ *
+ * @param params - Details of the API call to track (service, operation, tokens, etc.)
  */
 export async function trackUsage(params: TrackUsageParams): Promise<void> {
-  const costCents = calculateCostCents({
-    service: params.service,
-    operation: params.operation,
-    model: params.model,
-    inputTokens: params.inputTokens,
-    outputTokens: params.outputTokens,
-    units: params.units,
-    amount: params.amount,
-  });
+  try {
+    const costCents = calculateCostCents({
+      service: params.service,
+      operation: params.operation,
+      model: params.model,
+      inputTokens: params.inputTokens,
+      outputTokens: params.outputTokens,
+      units: params.units,
+      amount: params.amount,
+    });
 
-  const db = getDb();
+    const db = getDb();
 
-  // Insert usage record
-  await db.insert(apiUsage).values({
-    clientId: params.clientId,
-    service: params.service,
-    operation: params.operation,
-    model: params.model,
-    inputTokens: params.inputTokens,
-    outputTokens: params.outputTokens,
-    units: params.units || 1,
-    costCents,
-    leadId: params.leadId,
-    messageId: params.messageId,
-    flowExecutionId: params.flowExecutionId,
-    externalId: params.externalId,
-    metadata: params.metadata,
-  });
+    // Insert usage record
+    await db.insert(apiUsage).values({
+      clientId: params.clientId,
+      service: params.service,
+      operation: params.operation,
+      model: params.model,
+      inputTokens: params.inputTokens,
+      outputTokens: params.outputTokens,
+      units: params.units || 1,
+      costCents,
+      leadId: params.leadId,
+      messageId: params.messageId,
+      flowExecutionId: params.flowExecutionId,
+      externalId: params.externalId,
+      metadata: params.metadata,
+    });
 
-  // Update daily rollup
-  await updateDailyRollup(db, params.clientId, params.service, params.operation, {
-    requests: 1,
-    tokensIn: params.inputTokens || 0,
-    tokensOut: params.outputTokens || 0,
-    units: params.units || 1,
-    costCents,
-  });
+    // Update daily rollup
+    await updateDailyRollup(db, params.clientId, params.service, params.operation, {
+      requests: 1,
+      tokensIn: params.inputTokens || 0,
+      tokensOut: params.outputTokens || 0,
+      units: params.units || 1,
+      costCents,
+    });
+  } catch (error) {
+    console.error(`[UsageTracking] Failed to track usage for client ${params.clientId}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -132,7 +143,15 @@ async function updateDailyRollup(
 }
 
 /**
- * Get usage summary for a client
+ * Get a usage summary for a client over a date range.
+ *
+ * Aggregates daily usage records into total cost, cost-by-service,
+ * cost-by-day, and top operations ranked by cost.
+ *
+ * @param clientId  - UUID of the client
+ * @param startDate - Start date (inclusive, YYYY-MM-DD)
+ * @param endDate   - End date (inclusive, YYYY-MM-DD)
+ * @returns Aggregated usage summary
  */
 export async function getClientUsageSummary(
   clientId: string,
@@ -202,7 +221,13 @@ export async function getClientUsageSummary(
 }
 
 /**
- * Get current month usage for a client
+ * Get the current month's usage for a client, including a projected total.
+ *
+ * Calculates the cost so far this month, the number of remaining days,
+ * and a linear projection of the full-month cost based on the daily average.
+ *
+ * @param clientId - UUID of the client
+ * @returns Current cost, days remaining, and projected cost in cents
  */
 export async function getCurrentMonthUsage(clientId: string): Promise<{
   costCents: number;
@@ -233,7 +258,12 @@ export async function getCurrentMonthUsage(clientId: string): Promise<{
 }
 
 /**
- * Update monthly summaries (run via cron)
+ * Update monthly summaries for all clients with usage this month.
+ *
+ * Intended to run as a periodic cron job. For each client that has
+ * daily usage records in the current month, it aggregates totals by
+ * service, calculates month-over-month cost change, and upserts the
+ * result into `api_usage_monthly`.
  */
 export async function updateMonthlySummaries(): Promise<void> {
   const db = getDb();
@@ -248,75 +278,59 @@ export async function updateMonthlySummaries(): Promise<void> {
     .where(gte(apiUsageDaily.date, startOfMonth));
 
   for (const { clientId } of clientsWithUsage) {
-    const today = now.toISOString().split('T')[0];
-    const summary = await getClientUsageSummary(clientId, startOfMonth, today);
+    try {
+      const today = now.toISOString().split('T')[0];
+      const summary = await getClientUsageSummary(clientId, startOfMonth, today);
 
-    // Get previous month for comparison
-    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevMonthStr = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+      // Get previous month for comparison
+      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const prevMonthStr = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
 
-    const [prevRecord] = await db
-      .select()
-      .from(apiUsageMonthly)
-      .where(and(
-        eq(apiUsageMonthly.clientId, clientId),
-        eq(apiUsageMonthly.month, prevMonthStr)
-      ))
-      .limit(1);
+      const [prevRecord] = await db
+        .select()
+        .from(apiUsageMonthly)
+        .where(and(
+          eq(apiUsageMonthly.clientId, clientId),
+          eq(apiUsageMonthly.month, prevMonthStr)
+        ))
+        .limit(1);
 
-    const previousCost = prevRecord?.totalCostCents || 0;
-    const costChange = previousCost > 0
-      ? Math.round(((summary.totalCostCents - previousCost) / previousCost) * 100)
-      : null;
+      const previousCost = prevRecord?.totalCostCents || 0;
+      const costChange = previousCost > 0
+        ? Math.round(((summary.totalCostCents - previousCost) / previousCost) * 100)
+        : null;
 
-    // Count messages and AI calls from daily records
-    const dailyRecords = await db
-      .select()
-      .from(apiUsageDaily)
-      .where(and(
-        eq(apiUsageDaily.clientId, clientId),
-        gte(apiUsageDaily.date, startOfMonth)
-      ));
+      // Count messages and AI calls from daily records
+      const dailyRecords = await db
+        .select()
+        .from(apiUsageDaily)
+        .where(and(
+          eq(apiUsageDaily.clientId, clientId),
+          gte(apiUsageDaily.date, startOfMonth)
+        ));
 
-    let totalMessages = 0;
-    let totalAiCalls = 0;
-    let totalVoiceMinutes = 0;
+      let totalMessages = 0;
+      let totalAiCalls = 0;
+      let totalVoiceMinutes = 0;
 
-    for (const record of dailyRecords) {
-      if (record.service === 'twilio_sms') {
-        totalMessages += record.totalUnits;
+      for (const record of dailyRecords) {
+        if (record.service === 'twilio_sms') {
+          totalMessages += record.totalUnits;
+        }
+        if (record.service === 'openai') {
+          totalAiCalls += record.totalRequests;
+        }
+        if (record.service === 'twilio_voice') {
+          totalVoiceMinutes += record.totalUnits;
+        }
       }
-      if (record.service === 'openai') {
-        totalAiCalls += record.totalRequests;
-      }
-      if (record.service === 'twilio_voice') {
-        totalVoiceMinutes += record.totalUnits;
-      }
-    }
 
-    // Upsert monthly record
-    await db
-      .insert(apiUsageMonthly)
-      .values({
-        clientId,
-        month: currentMonth,
-        openaiCostCents: summary.byService['openai'] || 0,
-        twilioSmsCostCents: summary.byService['twilio_sms'] || 0,
-        twilioVoiceCostCents: summary.byService['twilio_voice'] || 0,
-        twilioPhoneCostCents: summary.byService['twilio_phone'] || 0,
-        stripeCostCents: summary.byService['stripe'] || 0,
-        googlePlacesCostCents: summary.byService['google_places'] || 0,
-        storageCostCents: summary.byService['cloudflare_r2'] || 0,
-        totalCostCents: summary.totalCostCents,
-        totalMessages,
-        totalAiCalls,
-        totalVoiceMinutes,
-        previousMonthCostCents: previousCost,
-        costChangePercent: costChange,
-      })
-      .onConflictDoUpdate({
-        target: [apiUsageMonthly.clientId, apiUsageMonthly.month],
-        set: {
+      // Upsert monthly record
+      await db
+        .insert(apiUsageMonthly)
+        .values({
+          clientId,
+          month: currentMonth,
           openaiCostCents: summary.byService['openai'] || 0,
           twilioSmsCostCents: summary.byService['twilio_sms'] || 0,
           twilioVoiceCostCents: summary.byService['twilio_voice'] || 0,
@@ -330,8 +344,28 @@ export async function updateMonthlySummaries(): Promise<void> {
           totalVoiceMinutes,
           previousMonthCostCents: previousCost,
           costChangePercent: costChange,
-          updatedAt: new Date(),
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: [apiUsageMonthly.clientId, apiUsageMonthly.month],
+          set: {
+            openaiCostCents: summary.byService['openai'] || 0,
+            twilioSmsCostCents: summary.byService['twilio_sms'] || 0,
+            twilioVoiceCostCents: summary.byService['twilio_voice'] || 0,
+            twilioPhoneCostCents: summary.byService['twilio_phone'] || 0,
+            stripeCostCents: summary.byService['stripe'] || 0,
+            googlePlacesCostCents: summary.byService['google_places'] || 0,
+            storageCostCents: summary.byService['cloudflare_r2'] || 0,
+            totalCostCents: summary.totalCostCents,
+            totalMessages,
+            totalAiCalls,
+            totalVoiceMinutes,
+            previousMonthCostCents: previousCost,
+            costChangePercent: costChange,
+            updatedAt: new Date(),
+          },
+        });
+    } catch (error) {
+      console.error(`[UsageTracking] Failed to update monthly summary for client ${clientId}:`, error);
+    }
   }
 }

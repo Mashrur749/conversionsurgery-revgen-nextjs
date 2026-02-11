@@ -8,7 +8,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
@@ -26,7 +25,7 @@ export const apiServiceEnum = pgEnum('api_service', [
 export const apiUsage = pgTable(
   'api_usage',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -39,7 +38,7 @@ export const apiUsage = pgTable(
     // Usage metrics
     inputTokens: integer('input_tokens'),
     outputTokens: integer('output_tokens'),
-    units: integer('units').default(1),
+    units: integer('units').notNull().default(1),
 
     // Cost in cents (avoids floating point issues)
     costCents: integer('cost_cents').notNull().default(0),
@@ -55,7 +54,7 @@ export const apiUsage = pgTable(
     // Additional data
     metadata: jsonb('metadata').$type<Record<string, unknown>>(),
 
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
     index('api_usage_client_idx').on(table.clientId),

@@ -1,35 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { getClientUsageSummary, getCurrentMonthUsage } from '@/lib/services/usage-tracking';
 import { getUnacknowledgedAlerts } from '@/lib/services/usage-alerts';
+import { z } from 'zod';
 
-// GET - Get detailed usage for a specific client
+const querySchema = z.object({
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'startDate must be YYYY-MM-DD')
+    .optional(),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'endDate must be YYYY-MM-DD')
+    .optional(),
+});
+
+/** GET - Get detailed usage for a specific client */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!(session as any)?.user?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { clientId } = await params;
+
+    const { searchParams } = new URL(request.url);
+    const parsed = querySchema.safeParse({
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
+    });
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const startDate = parsed.data.startDate || getMonthStart();
+    const endDate = parsed.data.endDate || getToday();
+
+    const [summary, currentMonth, alerts] = await Promise.all([
+      getClientUsageSummary(clientId, startDate, endDate),
+      getCurrentMonthUsage(clientId),
+      getUnacknowledgedAlerts(clientId),
+    ]);
+
+    return NextResponse.json({
+      ...summary,
+      currentMonth,
+      alerts,
+    });
+  } catch (error) {
+    console.error('[UsageTracking] GET /api/admin/usage/[clientId] failed:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  const { clientId } = await params;
-
-  const { searchParams } = new URL(request.url);
-  const startDate = searchParams.get('startDate') || getMonthStart();
-  const endDate = searchParams.get('endDate') || getToday();
-
-  const [summary, currentMonth, alerts] = await Promise.all([
-    getClientUsageSummary(clientId, startDate, endDate),
-    getCurrentMonthUsage(clientId),
-    getUnacknowledgedAlerts(clientId),
-  ]);
-
-  return NextResponse.json({
-    ...summary,
-    currentMonth,
-    alerts,
-  });
 }
 
 function getMonthStart(): string {

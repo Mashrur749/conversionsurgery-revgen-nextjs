@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { acknowledgeAlert } from '@/lib/services/usage-alerts';
 
+/** POST - Acknowledge a usage alert */
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!(session as any)?.user?.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    const { id } = await params;
+    await acknowledgeAlert(id, (session as any).user.id);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[UsageTracking] POST /api/admin/usage/alerts/[id]/acknowledge failed:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  const { id } = await params;
-  await acknowledgeAlert(id, (session as any).user.id);
-
-  return NextResponse.json({ success: true });
 }

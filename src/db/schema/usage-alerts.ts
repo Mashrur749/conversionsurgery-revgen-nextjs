@@ -8,14 +8,13 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 // Usage alerts
 export const usageAlerts = pgTable(
   'usage_alerts',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -32,11 +31,11 @@ export const usageAlerts = pgTable(
       projectedCost?: number;
     }>(),
 
-    acknowledged: boolean('acknowledged').default(false),
+    acknowledged: boolean('acknowledged').notNull().default(false),
     acknowledgedAt: timestamp('acknowledged_at'),
     acknowledgedBy: uuid('acknowledged_by'),
 
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
     index('usage_alerts_client_idx').on(table.clientId),

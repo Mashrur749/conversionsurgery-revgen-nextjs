@@ -16,7 +16,17 @@ const DEFAULT_THRESHOLDS: AlertThresholds = {
 };
 
 /**
- * Check usage and create alerts if needed
+ * Check a client's current month usage against thresholds and create alerts.
+ *
+ * Evaluates three alert conditions:
+ * 1. Absolute cost thresholds (warning / critical)
+ * 2. Month-over-month spend spike percentage
+ * 3. Projected overage based on daily average
+ *
+ * Duplicate alerts of the same type and severity within 24 hours are skipped.
+ *
+ * @param clientId   - UUID of the client to check
+ * @param thresholds - Optional custom thresholds (defaults to $50 warning, $100 critical, 50% spike)
  */
 export async function checkUsageAlerts(
   clientId: string,
@@ -97,7 +107,8 @@ export async function checkUsageAlerts(
 }
 
 /**
- * Create an alert (with deduplication)
+ * Create a usage alert with 24-hour deduplication.
+ * Sends an SMS to the admin phone for critical-severity alerts.
  */
 async function createAlert(params: {
   clientId: string;
@@ -123,7 +134,7 @@ async function createAlert(params: {
     .limit(1);
 
   if (existing && existing.createdAt && existing.createdAt > oneDayAgo) {
-    // Skip duplicate
+    console.log(`[UsageAlerts] Skipping duplicate ${params.alertType}/${params.severity} alert for client ${params.clientId}`);
     return;
   }
 
@@ -143,7 +154,7 @@ async function createAlert(params: {
 }
 
 /**
- * Notify admin of critical alert
+ * Notify the admin via SMS about a critical usage alert.
  */
 async function notifyAdminOfAlert(clientId: string, message: string): Promise<void> {
   const db = getDb();
@@ -156,17 +167,27 @@ async function notifyAdminOfAlert(clientId: string, message: string): Promise<vo
 
   const adminPhone = process.env.ADMIN_PHONE_NUMBER;
   const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
-  if (!adminPhone || !twilioNumber) return;
+  if (!adminPhone || !twilioNumber) {
+    console.warn('[UsageAlerts] Missing ADMIN_PHONE_NUMBER or TWILIO_PHONE_NUMBER env vars, skipping SMS notification');
+    return;
+  }
 
-  await sendSMS(
-    adminPhone,
-    twilioNumber,
-    `Usage Alert for ${client?.businessName || 'Unknown'}: ${message}`
-  );
+  try {
+    await sendSMS(
+      adminPhone,
+      twilioNumber,
+      `Usage Alert for ${client?.businessName || 'Unknown'}: ${message}`
+    );
+  } catch (error) {
+    console.error(`[UsageAlerts] Failed to send SMS notification for client ${clientId}:`, error);
+  }
 }
 
 /**
- * Get unacknowledged alerts for a client
+ * Get all unacknowledged usage alerts for a client, newest first.
+ *
+ * @param clientId - UUID of the client
+ * @returns Array of unacknowledged alert records
  */
 export async function getUnacknowledgedAlerts(clientId: string) {
   const db = getDb();
@@ -181,7 +202,10 @@ export async function getUnacknowledgedAlerts(clientId: string) {
 }
 
 /**
- * Acknowledge an alert
+ * Mark a usage alert as acknowledged.
+ *
+ * @param alertId - UUID of the alert to acknowledge
+ * @param userId  - UUID of the admin user acknowledging the alert
  */
 export async function acknowledgeAlert(alertId: string, userId: string): Promise<void> {
   const db = getDb();
@@ -196,7 +220,10 @@ export async function acknowledgeAlert(alertId: string, userId: string): Promise
 }
 
 /**
- * Run alert checks for all clients (cron job)
+ * Run usage alert checks for every active client.
+ *
+ * Intended to be called from a cron job. Errors for individual
+ * clients are logged but do not stop processing of remaining clients.
  */
 export async function checkAllClientAlerts(): Promise<void> {
   const db = getDb();
@@ -209,7 +236,7 @@ export async function checkAllClientAlerts(): Promise<void> {
     try {
       await checkUsageAlerts(client.id);
     } catch (error) {
-      console.error(`Error checking alerts for client ${client.id}:`, error);
+      console.error(`[UsageAlerts] Error checking alerts for client ${client.id}:`, error);
     }
   }
 }
