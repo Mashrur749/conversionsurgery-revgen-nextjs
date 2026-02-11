@@ -6,12 +6,16 @@ import { eq } from 'drizzle-orm';
 import { getGoogleAuthUrl } from '@/lib/services/calendar';
 import { z } from 'zod';
 
+const listQuerySchema = z.object({
+  clientId: z.string().uuid('clientId must be a valid UUID'),
+});
+
 const connectSchema = z.object({
   clientId: z.string().uuid(),
   provider: z.enum(['google', 'jobber', 'servicetitan', 'housecall_pro', 'outlook']),
 });
 
-// GET - List integrations
+/** GET /api/calendar/integrations - List calendar integrations for a client */
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -19,11 +23,18 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const clientId = searchParams.get('clientId');
+  const parsed = listQuerySchema.safeParse({
+    clientId: searchParams.get('clientId'),
+  });
 
-  if (!clientId) {
-    return NextResponse.json({ error: 'clientId required' }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', fieldErrors: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    );
   }
+
+  const { clientId } = parsed.data;
 
   try {
     const db = getDb();
@@ -41,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(integrations);
   } catch (error) {
-    console.error('Calendar integrations GET error:', error);
+    console.error('[Calendar Integrations GET] Failed to fetch:', error);
     return NextResponse.json(
       { error: 'Failed to fetch integrations' },
       { status: 500 }
@@ -49,7 +60,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Start OAuth flow
+/** POST /api/calendar/integrations - Start OAuth flow for a calendar provider */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -58,8 +69,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { clientId, provider } = connectSchema.parse(body);
+    const parsed = connectSchema.safeParse(body);
 
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', fieldErrors: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { clientId, provider } = parsed.data;
     let authUrl: string;
 
     switch (provider) {
@@ -75,13 +94,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ authUrl });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('Calendar integrations POST error:', error);
+    console.error('[Calendar Integrations POST] Failed to start OAuth:', error);
     return NextResponse.json(
       { error: 'Failed to start OAuth flow' },
       { status: 500 }

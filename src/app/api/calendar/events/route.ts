@@ -4,10 +4,16 @@ import { authOptions } from '@/lib/auth';
 import { createEvent, getEvents } from '@/lib/services/calendar';
 import { z } from 'zod';
 
+const listEventsQuerySchema = z.object({
+  clientId: z.string().uuid('clientId must be a valid UUID'),
+  start: z.string().datetime().optional(),
+  end: z.string().datetime().optional(),
+});
+
 const createEventSchema = z.object({
   clientId: z.string().uuid(),
   leadId: z.string().uuid().optional(),
-  title: z.string().min(1),
+  title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   location: z.string().optional(),
   startTime: z.string().datetime(),
@@ -16,7 +22,7 @@ const createEventSchema = z.object({
   assignedTeamMemberId: z.string().uuid().optional(),
 });
 
-// GET - List events
+/** GET /api/calendar/events - List calendar events for a client within a date range */
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -24,13 +30,20 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const clientId = searchParams.get('clientId');
-  const start = searchParams.get('start');
-  const end = searchParams.get('end');
+  const parsed = listEventsQuerySchema.safeParse({
+    clientId: searchParams.get('clientId'),
+    start: searchParams.get('start') || undefined,
+    end: searchParams.get('end') || undefined,
+  });
 
-  if (!clientId) {
-    return NextResponse.json({ error: 'clientId required' }, { status: 400 });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Validation failed', fieldErrors: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    );
   }
+
+  const { clientId, start, end } = parsed.data;
 
   try {
     const startDate = start ? new Date(start) : new Date();
@@ -41,7 +54,7 @@ export async function GET(request: NextRequest) {
     const events = await getEvents(clientId, startDate, endDate);
     return NextResponse.json(events);
   } catch (error) {
-    console.error('Calendar events GET error:', error);
+    console.error('[Calendar Events GET] Failed to fetch:', error);
     return NextResponse.json(
       { error: 'Failed to fetch events' },
       { status: 500 }
@@ -49,7 +62,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create event
+/** POST /api/calendar/events - Create a new calendar event */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -58,7 +71,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const data = createEventSchema.parse(body);
+    const parsed = createEventSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', fieldErrors: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const data = parsed.data;
 
     const eventId = await createEvent({
       ...data,
@@ -68,13 +90,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ eventId });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('Calendar events POST error:', error);
+    console.error('[Calendar Events POST] Failed to create:', error);
     return NextResponse.json(
       { error: 'Failed to create event' },
       { status: 500 }

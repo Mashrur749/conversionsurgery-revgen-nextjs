@@ -8,16 +8,31 @@ import { Calendar, RefreshCw, CheckCircle, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
+/** Shape of a calendar integration returned by the API */
 interface Integration {
   id: string;
-  provider: string;
+  provider: 'google' | 'jobber' | 'servicetitan' | 'housecall_pro' | 'outlook';
   isActive: boolean;
   syncEnabled: boolean;
   lastSyncAt: string | null;
   lastError: string | null;
 }
 
-const PROVIDERS = [
+/** Provider metadata for the UI display list */
+interface ProviderInfo {
+  id: string;
+  name: string;
+  icon: string;
+  comingSoon?: boolean;
+}
+
+/** API response shape for the connect (OAuth) endpoint */
+interface ConnectResponse {
+  authUrl?: string;
+  error?: string;
+}
+
+const PROVIDERS: ProviderInfo[] = [
   { id: 'google', name: 'Google Calendar', icon: '📅' },
   { id: 'jobber', name: 'Jobber', icon: '🔧', comingSoon: true },
   { id: 'servicetitan', name: 'ServiceTitan', icon: '⚙️', comingSoon: true },
@@ -28,17 +43,26 @@ interface CalendarIntegrationsProps {
   clientId: string;
 }
 
+/**
+ * Calendar integrations management card.
+ * Displays connected and available calendar providers with connect/disconnect/sync controls.
+ */
 export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
 
+  /** Fetch the list of calendar integrations for this client */
   const fetchIntegrations = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(
         `/api/calendar/integrations?clientId=${clientId}`
       );
+      if (!res.ok) {
+        console.error('[CalendarIntegrations] Failed to fetch integrations:', res.status);
+        return;
+      }
       const data: Integration[] = await res.json();
       setIntegrations(data);
     } finally {
@@ -50,6 +74,7 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
     fetchIntegrations();
   }, [fetchIntegrations]);
 
+  /** Initiate OAuth connection for a given provider */
   const connect = async (provider: string) => {
     try {
       const res = await fetch('/api/calendar/integrations', {
@@ -57,7 +82,7 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId, provider }),
       });
-      const data = (await res.json()) as { authUrl?: string };
+      const data: ConnectResponse = await res.json();
 
       if (data.authUrl) {
         window.location.href = data.authUrl;
@@ -67,6 +92,7 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
     }
   };
 
+  /** Disconnect (soft-delete) a calendar integration */
   const disconnect = async (integrationId: string) => {
     if (!confirm('Disconnect this calendar? Events will stop syncing.'))
       return;
@@ -82,6 +108,7 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
     }
   };
 
+  /** Trigger a full sync for the client */
   const sync = async (provider: string) => {
     setSyncing(provider);
     try {
@@ -99,7 +126,8 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
     }
   };
 
-  const getIntegration = (provider: string) =>
+  /** Find an existing integration by provider id */
+  const getIntegration = (provider: string): Integration | undefined =>
     integrations.find((i) => i.provider === provider);
 
   return (

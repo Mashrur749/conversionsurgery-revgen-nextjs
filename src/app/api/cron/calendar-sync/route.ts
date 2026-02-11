@@ -3,6 +3,7 @@ import { getDb, calendarIntegrations } from '@/db';
 import { eq, and, lt, or, isNull } from 'drizzle-orm';
 import { fullSync } from '@/lib/services/calendar';
 
+/** GET /api/cron/calendar-sync - Cron job to sync all active calendar integrations */
 export async function GET(request: NextRequest) {
   // Verify cron secret
   const authHeader = request.headers.get('authorization');
@@ -39,13 +40,11 @@ export async function GET(request: NextRequest) {
     let errors = 0;
 
     for (const { clientId } of needsSync) {
-      if (!clientId) continue;
-
       try {
         await fullSync(clientId);
         synced++;
       } catch (err) {
-        console.error(`Calendar sync failed for client ${clientId}:`, err);
+        console.error(`[Calendar Sync Cron] Sync failed for client ${clientId}:`, err);
         errors++;
       }
     }
@@ -56,7 +55,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Calendar sync cron error:', error);
+    console.error('[Calendar Sync Cron] Batch sync failed:', error);
     return NextResponse.json(
       { error: 'Calendar sync failed' },
       { status: 500 }
