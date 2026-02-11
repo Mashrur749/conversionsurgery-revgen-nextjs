@@ -30,7 +30,7 @@ export default async function PhoneNumbersPage() {
   const todayStats = await db
     .select()
     .from(dailyStats)
-    .where(ne(dailyStats.date, today as any));
+    .where(ne(dailyStats.date, today));
 
   // Enhance clients with stats
   const clientsWithStats = clientsWithNumbers.map((client) => {

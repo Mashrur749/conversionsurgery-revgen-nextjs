@@ -1,23 +1,41 @@
-import { auth } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const reassignSchema = z.object({
-  phoneNumber: z.string().min(1),
-  targetClientId: z.string().uuid(),
+  phoneNumber: z.string().min(1, 'Phone number is required'),
+  targetClientId: z.string().uuid('Target client ID must be a valid UUID'),
 });
 
+/**
+ * PATCH /api/admin/phone-numbers/reassign
+ *
+ * Reassign a phone number from its current client to a different client.
+ * Releases the number from the existing holder and assigns it to the target.
+ * Requires admin authentication.
+ */
 export async function PATCH(req: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user?.isAdmin) {
+    return Response.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+
   try {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    const body = await req.json();
+    const parsed = reassignSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return Response.json(
+        { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
     }
 
-    const body = await req.json();
-    const { phoneNumber, targetClientId } = reassignSchema.parse(body);
+    const { phoneNumber, targetClientId } = parsed.data;
 
     const db = getDb();
 
@@ -55,24 +73,20 @@ export async function PATCH(req: Request) {
       })
       .where(eq(clients.id, targetClientId));
 
+    console.log(`[Twilio] Reassigned ${phoneNumber} to client ${targetClient.businessName} (${targetClientId})`);
+
     return Response.json({
       success: true,
       phoneNumber,
       clientId: targetClientId,
       message: `Phone number reassigned to ${targetClient.businessName}`,
     });
-  } catch (error: any) {
-    console.error('[Phone Reassign] Error:', error);
-
-    if (error instanceof z.ZodError) {
-      return Response.json(
-        { error: 'Invalid request', details: error.issues },
-        { status: 400 }
-      );
-    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Twilio] Phone reassign error:', message);
 
     return Response.json(
-      { error: error.message || 'Failed to reassign phone number' },
+      { error: message || 'Failed to reassign phone number' },
       { status: 500 }
     );
   }

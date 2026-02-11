@@ -10,12 +10,18 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 
-interface Client {
+// ---------------------------------------------------------------------------
+// Types (client-component-safe subset of server types)
+// ---------------------------------------------------------------------------
+
+/** Minimal client fields needed by the phone number manager. */
+interface PhoneManagerClient {
   id: string;
   businessName: string;
   twilioNumber: string | null;
 }
 
+/** Shape of a number returned by the Twilio search API. */
 interface AvailableNumber {
   phoneNumber: string;
   friendlyName: string;
@@ -28,7 +34,26 @@ interface AvailableNumber {
   };
 }
 
-export function PhoneNumberManager({ client }: { client: Client }) {
+/** Common shape for API JSON responses. */
+interface ApiErrorResponse {
+  error?: string;
+}
+
+/** Shape of the search endpoint response. */
+interface SearchResponse extends ApiErrorResponse {
+  numbers?: AvailableNumber[];
+}
+
+// ---------------------------------------------------------------------------
+// PhoneNumberManager (root component)
+// ---------------------------------------------------------------------------
+
+/**
+ * Tabbed interface for managing a client's Twilio phone number.
+ * Supports viewing/releasing the current number, searching for new numbers,
+ * and configuring an existing Twilio number.
+ */
+export function PhoneNumberManager({ client }: { client: PhoneManagerClient }) {
   const [activeTab, setActiveTab] = useState(client.twilioNumber ? 'current' : 'search');
 
   return (
@@ -56,7 +81,11 @@ export function PhoneNumberManager({ client }: { client: Client }) {
   );
 }
 
-function CurrentNumber({ client, onRelease }: { client: Client; onRelease: () => void }) {
+// ---------------------------------------------------------------------------
+// CurrentNumber tab
+// ---------------------------------------------------------------------------
+
+function CurrentNumber({ client, onRelease }: { client: PhoneManagerClient; onRelease: () => void }) {
   const router = useRouter();
   const [releasing, setReleasing] = useState(false);
   const [error, setError] = useState('');
@@ -76,7 +105,7 @@ function CurrentNumber({ client, onRelease }: { client: Client; onRelease: () =>
         body: JSON.stringify({ clientId: client.id }),
       });
 
-      const data = (await res.json()) as { error?: string };
+      const data: ApiErrorResponse = await res.json();
 
       if (!res.ok) {
         setError(data.error || 'Failed to release');
@@ -136,6 +165,10 @@ function CurrentNumber({ client, onRelease }: { client: Client; onRelease: () =>
   );
 }
 
+// ---------------------------------------------------------------------------
+// SearchNumbers tab
+// ---------------------------------------------------------------------------
+
 function SearchNumbers({ clientId }: { clientId: string }) {
   const router = useRouter();
   const [areaCode, setAreaCode] = useState('');
@@ -156,7 +189,7 @@ function SearchNumbers({ clientId }: { clientId: string }) {
 
     try {
       const res = await fetch(`/api/admin/twilio/search?areaCode=${areaCode}&country=CA`);
-      const data = (await res.json()) as { numbers?: AvailableNumber[]; error?: string };
+      const data: SearchResponse = await res.json();
 
       if (!res.ok) {
         setError(data.error || 'Failed to search');
@@ -188,7 +221,7 @@ function SearchNumbers({ clientId }: { clientId: string }) {
         body: JSON.stringify({ phoneNumber, clientId }),
       });
 
-      const data = (await res.json()) as { error?: string };
+      const data: ApiErrorResponse = await res.json();
 
       if (!res.ok) {
         setError(data.error || 'Failed to purchase');
@@ -269,6 +302,10 @@ function SearchNumbers({ clientId }: { clientId: string }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// UseExistingNumber tab
+// ---------------------------------------------------------------------------
+
 function UseExistingNumber({ clientId }: { clientId: string }) {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -294,7 +331,7 @@ function UseExistingNumber({ clientId }: { clientId: string }) {
         }),
       });
 
-      const data = (await res.json()) as { error?: string };
+      const data: ApiErrorResponse = await res.json();
 
       if (!res.ok) {
         setError(data.error || 'Failed to configure');

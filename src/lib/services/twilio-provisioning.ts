@@ -8,6 +8,10 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN!
 );
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 interface SearchParams {
   areaCode?: string;
   contains?: string;
@@ -26,11 +30,46 @@ interface AvailableNumber {
   };
 }
 
+interface PurchaseResult {
+  success: boolean;
+  sid?: string;
+  error?: string;
+}
+
+interface OperationResult {
+  success: boolean;
+  error?: string;
+}
+
+interface AccountBalance {
+  balance: string;
+  currency: string;
+}
+
+interface OwnedNumber {
+  phoneNumber: string;
+  friendlyName: string;
+  sid: string;
+}
+
+// ---------------------------------------------------------------------------
+// Exported Functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Search for available phone numbers on Twilio matching the given criteria.
+ * In development, falls back to mock numbers when the Twilio API returns no
+ * results or throws an error.
+ *
+ * @param params - Search criteria including optional area code, contains
+ *   pattern, and country code (defaults to 'CA').
+ * @returns An array of up to 10 available numbers with their capabilities.
+ */
 export async function searchAvailableNumbers(params: SearchParams): Promise<AvailableNumber[]> {
   const { areaCode, contains, country = 'CA' } = params;
 
   try {
-    const searchParams: any = {
+    const searchParams: Record<string, string | boolean> = {
       voiceEnabled: true,
       smsEnabled: true,
     };
@@ -43,17 +82,17 @@ export async function searchAvailableNumbers(params: SearchParams): Promise<Avai
       searchParams.contains = contains;
     }
 
-    console.log('Searching for numbers with params:', { areaCode, country, ...searchParams });
+    console.log('[Twilio] Searching for numbers with params:', { areaCode, country, ...searchParams });
 
     const numbers = await twilioClient.availablePhoneNumbers(country)
       .local
       .list(searchParams);
 
-    console.log(`Found ${numbers.length} available numbers`);
+    console.log(`[Twilio] Found ${numbers.length} available numbers`);
 
     if (numbers.length === 0 && process.env.NODE_ENV === 'development') {
       // In development, provide mock numbers for testing if no real results
-      console.warn('No numbers found from Twilio. Using mock data for development.');
+      console.warn('[Twilio] No numbers found from Twilio. Using mock data for development.');
       return generateMockNumbers(areaCode || '403', country);
     }
 
@@ -68,48 +107,29 @@ export async function searchAvailableNumbers(params: SearchParams): Promise<Avai
         MMS: num.capabilities.mms,
       },
     }));
-  } catch (error: any) {
-    console.error('Error searching numbers:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Twilio] Error searching numbers:', message);
 
     if (process.env.NODE_ENV === 'development') {
-      console.warn('Twilio API error. Using mock data for development.');
+      console.warn('[Twilio] Twilio API error. Using mock data for development.');
       return generateMockNumbers(params.areaCode || '403', params.country || 'CA');
     }
 
-    throw new Error(`Twilio search failed: ${error.message}`);
+    throw new Error(`Twilio search failed: ${message}`);
   }
 }
 
-function generateMockNumbers(areaCode: string, country: string): AvailableNumber[] {
-  // Generate mock numbers for development/testing
-  const mockLocalities: { [key: string]: { locality: string; region: string } } = {
-    '403': { locality: 'Calgary', region: 'AB' },
-    '780': { locality: 'Edmonton', region: 'AB' },
-    '604': { locality: 'Vancouver', region: 'BC' },
-    '416': { locality: 'Toronto', region: 'ON' },
-    '514': { locality: 'Montreal', region: 'QC' },
-  };
-
-  const location = mockLocalities[areaCode] || { locality: 'Unknown', region: 'XX' };
-
-  return Array.from({ length: 10 }, (_, i) => ({
-    phoneNumber: `+1${areaCode}555${String(i).padStart(4, '0')}`,
-    friendlyName: `Available ${location.region}`,
-    locality: location.locality,
-    region: location.region,
-    capabilities: {
-      voice: true,
-      SMS: true,
-      MMS: true,
-    },
-  }));
-}
-
-export async function purchaseNumber(phoneNumber: string, clientId: string): Promise<{
-  success: boolean;
-  sid?: string;
-  error?: string;
-}> {
+/**
+ * Purchase a phone number from Twilio and assign it to a client. Configures
+ * voice and SMS webhook URLs automatically. In development mode, mock
+ * numbers (555-prefixed) are assigned without contacting the Twilio API.
+ *
+ * @param phoneNumber - The E.164-formatted phone number to purchase.
+ * @param clientId - The UUID of the client to assign the number to.
+ * @returns A result object indicating success/failure and the Twilio SID.
+ */
+export async function purchaseNumber(phoneNumber: string, clientId: string): Promise<PurchaseResult> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   if (!baseUrl) {
@@ -119,12 +139,12 @@ export async function purchaseNumber(phoneNumber: string, clientId: string): Pro
   try {
     // Check if this is a mock number (for development)
     const isMockNumber = isMockPhoneNumber(phoneNumber);
-    let purchased: any = null;
+    let purchasedSid: string;
 
     if (!isMockNumber) {
       // Purchase the number from Twilio
-      console.log(`[Twilio Purchase] Purchasing real number: ${phoneNumber}`);
-      purchased = await twilioClient.incomingPhoneNumbers.create({
+      console.log(`[Twilio] Purchasing real number: ${phoneNumber}`);
+      const purchased = await twilioClient.incomingPhoneNumbers.create({
         phoneNumber,
         voiceUrl: `${baseUrl}/api/webhooks/twilio/voice`,
         voiceMethod: 'POST',
@@ -132,10 +152,11 @@ export async function purchaseNumber(phoneNumber: string, clientId: string): Pro
         smsMethod: 'POST',
         friendlyName: `Client: ${clientId}`,
       });
+      purchasedSid = purchased.sid;
     } else {
       // In development, mock numbers are auto-purchased
-      console.log(`[Twilio Purchase] Assigning mock number: ${phoneNumber}`);
-      purchased = { sid: `mock-${phoneNumber.replace(/\D/g, '').slice(-6)}` };
+      console.log(`[Twilio] Assigning mock number: ${phoneNumber}`);
+      purchasedSid = `mock-${phoneNumber.replace(/\D/g, '').slice(-6)}`;
     }
 
     // Update client with the new number
@@ -149,28 +170,31 @@ export async function purchaseNumber(phoneNumber: string, clientId: string): Pro
       })
       .where(eq(clients.id, clientId));
 
-    console.log(`[Twilio Purchase] Successfully assigned ${phoneNumber} to client ${clientId}`);
-    return { success: true, sid: purchased.sid };
-  } catch (error: any) {
-    console.error('[Twilio Purchase] Error:', error);
+    console.log(`[Twilio] Successfully assigned ${phoneNumber} to client ${clientId}`);
+    return { success: true, sid: purchasedSid };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Twilio] Purchase error:', message);
     return {
       success: false,
-      error: error.message || 'Failed to purchase number',
+      error: message || 'Failed to purchase number',
     };
   }
 }
 
-function isMockPhoneNumber(phoneNumber: string): boolean {
-  // Mock numbers are in format: +1XXX5550000 to +1XXX5559999
-  // where XXX is area code
-  const mockPattern = /^\+1\d{3}555\d{4}$/;
-  return mockPattern.test(phoneNumber) && process.env.NODE_ENV === 'development';
-}
-
+/**
+ * Configure an existing Twilio phone number for a client by updating its
+ * webhook URLs and assigning it in the database.
+ *
+ * @param phoneNumber - The E.164-formatted phone number already in the
+ *   Twilio account.
+ * @param clientId - The UUID of the client to assign the number to.
+ * @returns A result object indicating success or an error message.
+ */
 export async function configureExistingNumber(
   phoneNumber: string,
   clientId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<OperationResult> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   if (!baseUrl) {
@@ -209,20 +233,27 @@ export async function configureExistingNumber(
       })
       .where(eq(clients.id, clientId));
 
+    console.log(`[Twilio] Configured existing number ${phoneNumber} for client ${clientId}`);
     return { success: true };
-  } catch (error: any) {
-    console.error('Error configuring number:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Twilio] Error configuring number:', message);
     return {
       success: false,
-      error: error.message || 'Failed to configure number',
+      error: message || 'Failed to configure number',
     };
   }
 }
 
-export async function releaseNumber(clientId: string): Promise<{
-  success: boolean;
-  error?: string;
-}> {
+/**
+ * Release a phone number from a client. Clears the Twilio webhook
+ * configuration (without deleting the number) and removes the assignment
+ * from the database, setting the client status to 'paused'.
+ *
+ * @param clientId - The UUID of the client whose number should be released.
+ * @returns A result object indicating success or an error message.
+ */
+export async function releaseNumber(clientId: string): Promise<OperationResult> {
   try {
     const db = getDb();
     const [client] = await db
@@ -259,37 +290,44 @@ export async function releaseNumber(clientId: string): Promise<{
       })
       .where(eq(clients.id, clientId));
 
+    console.log(`[Twilio] Released number ${client.twilioNumber} from client ${clientId}`);
     return { success: true };
-  } catch (error: any) {
-    console.error('Error releasing number:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Twilio] Error releasing number:', message);
     return {
       success: false,
-      error: error.message || 'Failed to release number',
+      error: message || 'Failed to release number',
     };
   }
 }
 
-export async function getAccountBalance(): Promise<{
-  balance: string;
-  currency: string;
-} | null> {
+/**
+ * Fetch the current Twilio account balance.
+ *
+ * @returns The balance and currency, or `null` if the request fails.
+ */
+export async function getAccountBalance(): Promise<AccountBalance | null> {
   try {
     const balance = await twilioClient.balance.fetch();
     return {
       balance: balance.balance,
       currency: balance.currency,
     };
-  } catch (error) {
-    console.error('Error fetching balance:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Twilio] Error fetching balance:', message);
     return null;
   }
 }
 
-export async function listOwnedNumbers(): Promise<{
-  phoneNumber: string;
-  friendlyName: string;
-  sid: string;
-}[]> {
+/**
+ * List all phone numbers currently owned in the Twilio account.
+ *
+ * @returns An array of owned numbers with their SIDs and friendly names.
+ *   Returns an empty array on failure.
+ */
+export async function listOwnedNumbers(): Promise<OwnedNumber[]> {
   try {
     const numbers = await twilioClient.incomingPhoneNumbers.list();
     return numbers.map(num => ({
@@ -297,8 +335,50 @@ export async function listOwnedNumbers(): Promise<{
       friendlyName: num.friendlyName,
       sid: num.sid,
     }));
-  } catch (error) {
-    console.error('Error listing numbers:', error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Twilio] Error listing numbers:', message);
     return [];
   }
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate mock phone numbers for development/testing when the Twilio API
+ * is unavailable or returns no results.
+ */
+function generateMockNumbers(areaCode: string, _country: string): AvailableNumber[] {
+  const mockLocalities: Record<string, { locality: string; region: string }> = {
+    '403': { locality: 'Calgary', region: 'AB' },
+    '780': { locality: 'Edmonton', region: 'AB' },
+    '604': { locality: 'Vancouver', region: 'BC' },
+    '416': { locality: 'Toronto', region: 'ON' },
+    '514': { locality: 'Montreal', region: 'QC' },
+  };
+
+  const location = mockLocalities[areaCode] || { locality: 'Unknown', region: 'XX' };
+
+  return Array.from({ length: 10 }, (_, i) => ({
+    phoneNumber: `+1${areaCode}555${String(i).padStart(4, '0')}`,
+    friendlyName: `Available ${location.region}`,
+    locality: location.locality,
+    region: location.region,
+    capabilities: {
+      voice: true,
+      SMS: true,
+      MMS: true,
+    },
+  }));
+}
+
+/**
+ * Detect whether a phone number is a mock number used only in development.
+ * Mock numbers follow the pattern +1XXX555NNNN.
+ */
+function isMockPhoneNumber(phoneNumber: string): boolean {
+  const mockPattern = /^\+1\d{3}555\d{4}$/;
+  return mockPattern.test(phoneNumber) && process.env.NODE_ENV === 'development';
 }

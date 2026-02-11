@@ -3,7 +3,6 @@ import { redirect, notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PhoneNumberManager } from './phone-number-manager';
