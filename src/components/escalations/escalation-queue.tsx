@@ -148,7 +148,7 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
       {/* Admin client selector */}
       {isAdmin && clients.length > 0 && (
         <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-          <SelectTrigger className="w-64">
+          <SelectTrigger className="w-full sm:w-64">
             <SelectValue placeholder="Select a client" />
           </SelectTrigger>
           <SelectContent>
@@ -163,7 +163,7 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
 
       {/* Summary Cards */}
       {summary && (
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Active</CardTitle>
@@ -236,21 +236,21 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
                   key={escalation.id}
                   className={escalation.slaBreach ? 'border-destructive' : ''}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center gap-2 md:gap-4 flex-wrap">
                         {getPriorityBadge(escalation.priority)}
 
-                        <div>
-                          <div className="font-medium">{lead?.name || 'Unknown Lead'}</div>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{lead?.name || 'Unknown Lead'}</div>
                           <div className="text-sm text-muted-foreground">{lead?.phone}</div>
                         </div>
 
                         {getStatusBadge(escalation.status, escalation.slaBreach)}
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
+                      <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                        <div className="text-left sm:text-right">
                           <div className="text-sm font-medium capitalize">
                             {escalation.reason.replace(/_/g, ' ')}
                           </div>

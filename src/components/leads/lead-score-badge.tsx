@@ -106,7 +106,7 @@ export function LeadScoreBadge({
       </div>
 
       {factors && (
-        <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
           <div className="text-center">
             <div className="font-medium text-muted-foreground">Urgency</div>
             <div className={cn('font-semibold', text)}>{factors.urgency}/25</div>

@@ -92,10 +92,10 @@ export function DiscussionThread({
         {replies.map((reply) => (
           <div
             key={reply.id}
-            className={`rounded-lg p-4 ${
+            className={`rounded-lg p-3 md:p-4 ${
               reply.isAdmin
-                ? 'bg-amber-50 border border-amber-200 mr-4'
-                : 'bg-blue-50 border border-blue-200 ml-4'
+                ? 'bg-amber-50 border border-amber-200 sm:mr-4'
+                : 'bg-blue-50 border border-blue-200 sm:ml-4'
             }`}
           >
             <div className="flex items-center gap-2 mb-1">
@@ -112,7 +112,7 @@ export function DiscussionThread({
               <div className="mt-3 border rounded-lg overflow-hidden">
                 <iframe
                   src={reply.calcomLink}
-                  className="w-full h-[500px] border-0"
+                  className="w-full h-[350px] md:h-[500px] border-0"
                   title="Book a call"
                 />
               </div>

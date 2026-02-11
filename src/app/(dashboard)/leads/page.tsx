@@ -71,14 +71,14 @@ export default async function LeadsPage() {
                 <Link
                   key={lead.id}
                   href={`/leads/${lead.id}`}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 md:p-4 hover:bg-gray-50 transition-colors gap-2"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     {lead.actionRequired && (
-                      <span className="w-2 h-2 bg-red-500 rounded-full" />
+                      <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
                     )}
-                    <div>
-                      <p className="font-medium">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
                         {lead.name || formatPhoneNumber(lead.phone)}
                       </p>
                       {lead.name && (
@@ -87,13 +87,13 @@ export default async function LeadsPage() {
                         </p>
                       )}
                       {lead.projectType && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground truncate">
                           {lead.projectType}
                         </p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 flex-wrap pl-5 sm:pl-0">
                     <LeadScoreBadge
                       score={lead.score || 50}
                       temperature={(lead.temperature as 'hot' | 'warm' | 'cold') || 'warm'}

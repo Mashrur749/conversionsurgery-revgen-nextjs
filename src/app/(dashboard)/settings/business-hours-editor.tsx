@@ -66,8 +66,8 @@ export function BusinessHoursEditor({ clientId }: { clientId: string }) {
   return (
     <div className="space-y-4">
       {hours.map((hour) => (
-        <div key={hour.dayOfWeek} className="flex items-center gap-4">
-          <div className="w-24">
+        <div key={hour.dayOfWeek} className="flex flex-wrap items-center gap-2 md:gap-4">
+          <div className="w-20 md:w-24">
             <Label>{DAYS[hour.dayOfWeek]}</Label>
           </div>
           <Switch
@@ -80,14 +80,14 @@ export function BusinessHoursEditor({ clientId }: { clientId: string }) {
                 type="time"
                 value={hour.openTime || '08:00'}
                 onChange={(e) => updateHour(hour.dayOfWeek, 'openTime', e.target.value)}
-                className="w-32"
+                className="w-28 md:w-32"
               />
               <span>to</span>
               <Input
                 type="time"
                 value={hour.closeTime || '18:00'}
                 onChange={(e) => updateHour(hour.dayOfWeek, 'closeTime', e.target.value)}
-                className="w-32"
+                className="w-28 md:w-32"
               />
             </>
           )}

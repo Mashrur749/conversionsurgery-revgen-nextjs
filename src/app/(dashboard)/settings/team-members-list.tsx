@@ -76,15 +76,15 @@ export function TeamMembersList({ clientId }: { clientId: string }) {
           {members.map((member) => (
             <div
               key={member.id}
-              className="flex items-center justify-between p-3 border rounded-lg"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg gap-2"
             >
-              <div>
-                <p className="font-medium">{member.name}</p>
-                <p className="text-sm text-muted-foreground">
+              <div className="min-w-0">
+                <p className="font-medium truncate">{member.name}</p>
+                <p className="text-sm text-muted-foreground truncate">
                   {member.phone} {member.email && `• ${member.email}`}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {member.role && <Badge variant="outline">{member.role}</Badge>}
                 <Badge variant={member.isActive ? 'default' : 'secondary'}>
                   {member.isActive ? 'Active' : 'Inactive'}

@@ -73,17 +73,17 @@ export default async function ScheduledPage() {
                   href={`/leads/${msg.leadId}`}
                   className="block p-4 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-1">
                     <div>
                       <p className="font-medium">
                         {msg.leadName || formatPhoneNumber(msg.leadPhone || '')}
                       </p>
-                      <div className="flex gap-2 mt-1">
+                      <div className="flex gap-2 mt-1 flex-wrap">
                         <Badge variant="outline">{msg.sequenceType}</Badge>
                         <Badge variant="secondary">Step {msg.sequenceStep}</Badge>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground shrink-0">
                       {format(new Date(msg.sendAt), 'MMM d, h:mm a')}
                     </p>
                   </div>

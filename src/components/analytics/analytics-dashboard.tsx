@@ -100,7 +100,7 @@ export function AnalyticsDashboard({ clientId }: AnalyticsDashboardProps) {
       {/* Date Range Selector */}
       <div className="flex items-center justify-between">
         <Select value={dateRange} onValueChange={setDateRange}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Select period" />
           </SelectTrigger>
           <SelectContent>

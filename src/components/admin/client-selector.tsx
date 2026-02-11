@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 
 interface Client {
   id: string;
@@ -32,25 +31,20 @@ export function ClientSelector({ clients }: Props) {
   }, [clients, selectedClientId, setClients, setSelectedClientId]);
 
   return (
-    <div className="flex items-center gap-2">
-      <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-        Admin
-      </Badge>
-      <Select
-        value={selectedClientId || ''}
-        onValueChange={(value) => setSelectedClientId(value || null)}
-      >
-        <SelectTrigger className="w-[220px]">
-          <SelectValue placeholder="Select client..." />
-        </SelectTrigger>
-        <SelectContent>
-          {clients.map((client) => (
-            <SelectItem key={client.id} value={client.id}>
-              {client.businessName}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+    <Select
+      value={selectedClientId || ''}
+      onValueChange={(value) => setSelectedClientId(value || null)}
+    >
+      <SelectTrigger className="w-[180px] text-sm">
+        <SelectValue placeholder="Select client..." />
+      </SelectTrigger>
+      <SelectContent>
+        {clients.map((client) => (
+          <SelectItem key={client.id} value={client.id}>
+            {client.businessName}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

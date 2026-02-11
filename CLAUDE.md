@@ -1,6 +1,7 @@
 # ConversionSurgery Revenue Recovery
 
 ## Stack
+
 - Next.js 16 (App Router), React 19, TypeScript
 - Drizzle ORM + Neon Serverless Postgres (`@neondatabase/serverless`)
 - NextAuth v4 (email magic links via Resend)
@@ -9,6 +10,7 @@
 - Deploy: Cloudflare via OpenNext (`@opennextjs/cloudflare`)
 
 ## Key Patterns
+
 - Database: use `getDb()` from `@/db` — creates a Neon HTTP client per request. Never cache the instance.
 - Auth: use `auth()` from `@/lib/auth` for server components, `getServerSession(authOptions)` for API routes
 - Admin check: `(session as any).user?.isAdmin` — all admin API routes must return 403 if not admin
@@ -20,6 +22,7 @@
 - Services: business logic in `src/lib/services/`, automations in `src/lib/automations/`
 
 ## Commands
+
 - `npm run dev` — local dev server (port 3000)
 - `npm run build` — production build (must pass with 0 TypeScript errors)
 - `npm run lint` — ESLint check (next/core-web-vitals + next/typescript)
@@ -29,7 +32,22 @@
 - `npm run db:studio` — open Drizzle Studio for visual database browsing
 
 ## Do NOT
+
 - Read or edit `.env` files — they contain production secrets
 - Run `db:push` or `db:migrate` without explicit user confirmation
 - Modify `package-lock.json` or `node_modules/`
 - Skip admin auth checks on `/api/admin/*` routes
+
+For large features (3+ files or 2+ concerns), use the worktree workflow via slash commands:
+
+| Command                    | What                                          |
+| -------------------------- | --------------------------------------------- |
+| `/plan <feature>`          | Decompose into independently mergeable slices |
+| `/scaffold <feature>`      | Create git worktrees for each slice           |
+| `/implement <feature> <N>` | Build a slice within scope boundaries         |
+| `/review <feature> <N>`    | Code review before merge                      |
+| `/merge <feature> <N>`     | Merge to main + rebase remaining worktrees    |
+| `/status [feature]`        | Progress overview                             |
+| `/cleanup <feature>`       | Remove worktrees when done                    |
+
+Worktree manager script: `.claude/scripts/worktree-manager.sh`

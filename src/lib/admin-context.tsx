@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useTransition, ReactNode, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Client {
   id: string;
@@ -15,11 +16,14 @@ interface AdminContextType {
   clients: Client[];
   setClients: (clients: Client[]) => void;
   isLoading: boolean;
+  isSwitching: boolean;
 }
 
 const AdminContext = createContext<AdminContextType | null>(null);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [selectedClientId, setSelectedClientIdState] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
@@ -42,7 +46,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, [selectedClientId, clients]);
 
-  const setSelectedClientId = (id: string | null) => {
+  const setSelectedClientId = useCallback((id: string | null) => {
     setSelectedClientIdState(id);
     if (id) {
       localStorage.setItem('adminSelectedClientId', id);
@@ -51,7 +55,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('adminSelectedClientId');
       document.cookie = 'adminSelectedClientId=; path=/; max-age=0';
     }
-  };
+    startTransition(() => {
+      router.refresh();
+    });
+  }, [router, startTransition]);
 
   return (
     <AdminContext.Provider value={{
@@ -61,6 +68,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       clients,
       setClients,
       isLoading,
+      isSwitching: isPending,
     }}>
       {children}
     </AdminContext.Provider>

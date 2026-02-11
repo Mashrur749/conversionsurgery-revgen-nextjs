@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
 import { ClientSelector } from '@/components/admin/client-selector';
+import { AdminNav } from '@/components/admin/admin-nav';
+import { SwitchingOverlay } from '@/components/admin/switching-overlay';
 import { AdminProvider } from '@/lib/admin-context';
+import { MobileNav } from '@/components/mobile-nav';
 import SignOutButton from './signout-button';
 import { HelpButton } from '@/components/ui/help-button';
 
@@ -75,50 +78,37 @@ export default async function DashboardLayout({
       <div className="min-h-screen bg-gray-50">
         <header className="bg-white border-b sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center gap-8">
-                <Link href="/dashboard" className="font-semibold text-lg">
+            <div className="flex justify-between items-center h-14 md:h-16">
+              <div className="flex items-center gap-2 md:gap-8">
+                <MobileNav navItems={navItems} adminGroups={isAdmin ? adminNavItems : undefined} isAdmin={isAdmin} />
+                <Link href="/dashboard" className="font-semibold text-base md:text-lg">
                   Revenue Recovery
                 </Link>
-                <nav className="hidden md:flex gap-1 flex-wrap">
-                  {isAdmin && (
+                <nav className="hidden md:flex items-center gap-1">
+                  {isAdmin ? (
                     <>
-                      {adminNavItems.map((group, idx) => (
-                        <div key={group.group} className="flex items-center">
-                          {idx > 0 && <div className="border-l mx-2" />}
-                          <div className="flex gap-0.5">
-                            {group.items.map((item) => (
-                              <Link
-                                key={item.href}
-                                href={item.href}
-                                className="px-3 py-2 text-sm text-amber-700 hover:text-amber-900 hover:bg-amber-50 rounded-md transition-colors whitespace-nowrap"
-                                title={group.group}
-                              >
-                                {item.label}
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                      <div className="border-l mx-2" />
+                      <ClientSelector clients={allClients} />
+                      <AdminNav groups={[
+                        { group: 'Client View', items: navItems },
+                        ...adminNavItems,
+                      ]} />
                     </>
+                  ) : (
+                    navItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                      >
+                        {item.label}
+                      </Link>
+                    ))
                   )}
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
                 </nav>
               </div>
-              <div className="flex items-center gap-4">
-                {isAdmin ? (
-                  <ClientSelector clients={allClients} />
-                ) : (
-                  <span className="text-sm text-gray-600">
+              <div className="flex items-center gap-2 md:gap-4">
+                {!isAdmin && (
+                  <span className="hidden sm:inline text-sm text-gray-600">
                     {(session as any).client?.businessName || session.user?.email}
                   </span>
                 )}
@@ -127,8 +117,12 @@ export default async function DashboardLayout({
             </div>
           </div>
         </header>
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          {children}
+        <main className="max-w-7xl mx-auto px-3 py-4 md:px-4 md:py-8">
+          {isAdmin ? (
+            <SwitchingOverlay>{children}</SwitchingOverlay>
+          ) : (
+            children
+          )}
         </main>
         {!isAdmin && <HelpButton />}
       </div>

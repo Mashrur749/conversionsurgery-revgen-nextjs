@@ -153,20 +153,20 @@ export function EscalationDetail({ escalationId }: EscalationDetailProps) {
   const isActive = ['pending', 'assigned', 'in_progress'].includes(escalation.status);
 
   return (
-    <div className="container py-6 max-w-4xl">
+    <div className="py-4 md:py-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-2 md:gap-4 mb-4 md:mb-6">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/escalations">
             <ArrowLeft className="h-4 w-4" />
           </Link>
         </Button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{lead?.name || 'Unknown Lead'}</h1>
-          <p className="text-muted-foreground">{lead?.phone}</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold truncate">{lead?.name || 'Unknown Lead'}</h1>
+          <p className="text-muted-foreground text-sm">{lead?.phone}</p>
         </div>
         {escalation.slaBreach && (
-          <Badge variant="destructive" className="text-lg px-4 py-2">
+          <Badge variant="destructive" className="text-sm md:text-lg px-2 md:px-4 py-1 md:py-2 shrink-0">
             SLA BREACH
           </Badge>
         )}
@@ -196,7 +196,7 @@ export function EscalationDetail({ escalationId }: EscalationDetailProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="space-y-4 max-h-64 md:max-h-96 overflow-y-auto">
                 {conversation.map((msg) => (
                   <div
                     key={msg.id}

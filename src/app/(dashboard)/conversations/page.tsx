@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { getClientId } from '@/lib/get-client-id';
 import { getDb, conversations, leads } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import Link from 'next/link';
@@ -11,7 +12,18 @@ export const dynamic = 'force-dynamic';
 
 export default async function ConversationsPage() {
   const session = await auth();
-  const clientId = (session as any).client?.id;
+  const clientId = await getClientId();
+
+  if (session?.user?.isAdmin && !clientId) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">Select a Client</h2>
+        <p className="text-muted-foreground">
+          Use the dropdown in the header to select a client to view.
+        </p>
+      </div>
+    );
+  }
 
   if (!clientId) {
     return <div>No client linked</div>;
@@ -49,13 +61,13 @@ export default async function ConversationsPage() {
                 <Link
                   key={conversation.id}
                   href={`/leads/${lead.id}`}
-                  className="flex items-start justify-between p-4 hover:bg-gray-50 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-start sm:justify-between p-3 md:p-4 hover:bg-gray-50 transition-colors gap-2"
                 >
                   <div className="space-y-1 min-w-0 flex-1">
-                    <p className="font-medium">
+                    <p className="font-medium truncate">
                       {lead.name || formatPhoneNumber(lead.phone)}
                     </p>
-                    <p className="text-sm text-muted-foreground truncate pr-4">
+                    <p className="text-sm text-muted-foreground truncate">
                       {conversation.direction === 'inbound' ? '← ' : '→ '}
                       {conversation.content.substring(0, 80)}
                       {conversation.content.length > 80 ? '...' : ''}
@@ -66,13 +78,13 @@ export default async function ConversationsPage() {
                       </Badge>
                     )}
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:text-right shrink-0">
                     <Badge
                       variant={conversation.direction === 'inbound' ? 'default' : 'outline'}
                     >
                       {conversation.direction}
                     </Badge>
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-sm text-muted-foreground">
                       {format(new Date(conversation.createdAt!), 'MMM d, h:mm a')}
                     </p>
                   </div>
