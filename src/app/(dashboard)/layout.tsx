@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { ClientSelector } from '@/components/admin/client-selector';
 import { AdminProvider } from '@/lib/admin-context';
 import SignOutButton from './signout-button';
+import { HelpButton } from '@/components/ui/help-button';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview' },
@@ -15,6 +16,7 @@ const navItems = [
   { href: '/scheduled', label: 'Scheduled' },
   { href: '/analytics', label: 'Analytics' },
   { href: '/settings', label: 'Settings' },
+  { href: '/discussions', label: 'Discussions' },
 ];
 
 const adminNavItems = [
@@ -22,6 +24,7 @@ const adminNavItems = [
     { href: '/admin', label: 'All Clients' },
     { href: '/admin/clients', label: 'Clients' },
     { href: '/admin/billing', label: 'Billing' },
+    { href: '/admin/discussions', label: 'Discussions' },
   ]},
   { group: 'Optimization', items: [
     { href: '/admin/flow-templates', label: 'Flow Templates' },
@@ -127,6 +130,7 @@ export default async function DashboardLayout({
         <main className="max-w-7xl mx-auto px-4 py-8">
           {children}
         </main>
+        {!isAdmin && <HelpButton />}
       </div>
     </AdminProvider>
   );

@@ -80,6 +80,10 @@ export * from './platform-analytics';
 export * from './funnel-events';
 export * from './client-cohorts';
 
+// Support
+export * from './support-messages';
+export * from './support-replies';
+
 // Auth tables (NextAuth)
 export * from './auth';
 

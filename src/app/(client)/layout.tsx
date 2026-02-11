@@ -1,6 +1,7 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { HelpButton } from '@/components/ui/help-button';
 
 const navItems = [
   { href: '/client', label: 'Dashboard' },
@@ -8,6 +9,7 @@ const navItems = [
   { href: '/client/team', label: 'Team' },
   { href: '/client/billing', label: 'Billing' },
   { href: '/client/settings', label: 'Settings' },
+  { href: '/client/discussions', label: 'Discussions' },
 ];
 
 export default async function ClientLayout({
@@ -46,6 +48,7 @@ export default async function ClientLayout({
       <main className="max-w-3xl mx-auto px-4 py-6">
         {children}
       </main>
+      <HelpButton />
     </div>
   );
 }
