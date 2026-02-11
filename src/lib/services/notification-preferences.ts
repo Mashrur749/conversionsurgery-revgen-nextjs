@@ -33,6 +33,7 @@ const DEFAULT_PREFS: NotificationPrefs = {
   urgentOverride: true,
 };
 
+/** Fetch notification preferences for a client, creating defaults if none exist. */
 export async function getNotificationPrefs(clientId: string): Promise<NotificationPrefs> {
   const db = getDb();
   const [prefs] = await db
@@ -42,7 +43,6 @@ export async function getNotificationPrefs(clientId: string): Promise<Notificati
     .limit(1);
 
   if (!prefs) {
-    // Create default prefs
     await db.insert(notificationPreferences).values({
       clientId,
       ...DEFAULT_PREFS,
@@ -51,22 +51,23 @@ export async function getNotificationPrefs(clientId: string): Promise<Notificati
   }
 
   return {
-    smsNewLead: prefs.smsNewLead ?? true,
-    smsEscalation: prefs.smsEscalation ?? true,
-    smsWeeklySummary: prefs.smsWeeklySummary ?? true,
-    smsFlowApproval: prefs.smsFlowApproval ?? true,
-    smsNegativeReview: prefs.smsNegativeReview ?? true,
-    emailNewLead: prefs.emailNewLead ?? false,
-    emailDailySummary: prefs.emailDailySummary ?? false,
-    emailWeeklySummary: prefs.emailWeeklySummary ?? true,
-    emailMonthlyReport: prefs.emailMonthlyReport ?? true,
-    quietHoursEnabled: prefs.quietHoursEnabled ?? false,
-    quietHoursStart: prefs.quietHoursStart ?? '22:00',
-    quietHoursEnd: prefs.quietHoursEnd ?? '07:00',
-    urgentOverride: prefs.urgentOverride ?? true,
+    smsNewLead: prefs.smsNewLead,
+    smsEscalation: prefs.smsEscalation,
+    smsWeeklySummary: prefs.smsWeeklySummary,
+    smsFlowApproval: prefs.smsFlowApproval,
+    smsNegativeReview: prefs.smsNegativeReview,
+    emailNewLead: prefs.emailNewLead,
+    emailDailySummary: prefs.emailDailySummary,
+    emailWeeklySummary: prefs.emailWeeklySummary,
+    emailMonthlyReport: prefs.emailMonthlyReport,
+    quietHoursEnabled: prefs.quietHoursEnabled,
+    quietHoursStart: prefs.quietHoursStart,
+    quietHoursEnd: prefs.quietHoursEnd,
+    urgentOverride: prefs.urgentOverride,
   };
 }
 
+/** Update notification preferences for a client, upserting if none exist. */
 export async function updateNotificationPrefs(
   clientId: string,
   updates: Partial<NotificationPrefs>
@@ -92,6 +93,7 @@ export async function updateNotificationPrefs(
   }
 }
 
+/** Check if the current time falls within the client's quiet hours. */
 export function isInQuietHours(prefs: NotificationPrefs): boolean {
   if (!prefs.quietHoursEnabled) return false;
 
@@ -109,6 +111,7 @@ export function isInQuietHours(prefs: NotificationPrefs): boolean {
   return currentTime >= start && currentTime < end;
 }
 
+/** Determine whether a notification should be sent based on preferences, quiet hours, and urgency. */
 export async function shouldNotify(
   clientId: string,
   type: keyof NotificationPrefs,
@@ -116,12 +119,9 @@ export async function shouldNotify(
 ): Promise<boolean> {
   const prefs = await getNotificationPrefs(clientId);
 
-  // Check if notification type is enabled
   if (!prefs[type]) return false;
 
-  // Check quiet hours
   if (isInQuietHours(prefs)) {
-    // Allow urgent notifications if override enabled
     if (isUrgent && prefs.urgentOverride) return true;
     return false;
   }

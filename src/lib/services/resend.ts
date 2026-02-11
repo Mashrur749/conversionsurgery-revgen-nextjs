@@ -6,9 +6,10 @@ interface SendEmailOptions {
   html: string;
 }
 
+/** Send an email via Resend. Accepts an options object `{ to, subject, html }`. */
 export async function sendEmail({ to, subject, html }: SendEmailOptions) {
   if (!process.env.RESEND_API_KEY) {
-    console.error('RESEND_API_KEY is not set');
+    console.error('[Resend] RESEND_API_KEY is not set');
     return { success: false, error: 'Email service not configured' };
   }
 
@@ -23,13 +24,13 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
     });
 
     if (result.error) {
-      console.error('Resend error:', result.error);
+      console.error('[Resend] API error:', result.error);
       return { success: false, error: result.error };
     }
 
     return { success: true, id: result.data?.id };
   } catch (error) {
-    console.error('Resend error:', error);
+    console.error('[Resend] Send failed:', error instanceof Error ? error.message : error);
     return { success: false, error };
   }
 }
@@ -38,6 +39,7 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
 // EMAIL TEMPLATES
 // ============================================
 
+/** Generate a new lead notification email. Returns `{ subject, html }`. */
 export function newLeadEmail(data: {
   businessName: string;
   leadPhone: string;
@@ -60,6 +62,7 @@ export function newLeadEmail(data: {
   };
 }
 
+/** Generate an action-required escalation email. Returns `{ subject, html }`. */
 export function actionRequiredEmail(data: {
   businessName: string;
   leadName?: string;
@@ -85,6 +88,7 @@ export function actionRequiredEmail(data: {
   };
 }
 
+/** Generate a weekly summary email. Returns `{ subject, html }`. */
 export function weeklySummaryEmail(data: {
   businessName: string;
   weekStart: string;
