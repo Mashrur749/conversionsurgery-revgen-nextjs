@@ -4,6 +4,7 @@ import { getDb, supportMessages, supportReplies } from '@/db';
 import { eq, asc } from 'drizzle-orm';
 import { AdminDiscussionThread } from './admin-discussion-thread';
 
+/** Admin detail view for a single support discussion thread with reply management. */
 export default async function AdminDiscussionDetailPage({
   params,
 }: {
@@ -34,11 +35,11 @@ export default async function AdminDiscussionDetailPage({
   // Serialize dates for client component
   const serializedMessage = {
     ...message,
-    createdAt: message.createdAt?.toISOString() ?? null,
+    createdAt: message.createdAt.toISOString(),
   };
   const serializedReplies = replies.map((r) => ({
     ...r,
-    createdAt: r.createdAt?.toISOString() ?? null,
+    createdAt: r.createdAt.toISOString(),
   }));
 
   return (

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare } from 'lucide-react';
 
+/** Admin view listing all support discussion threads with status filtering. */
 export default async function AdminDiscussionsPage({
   searchParams,
 }: {
@@ -101,9 +102,7 @@ export default async function AdminDiscussionsPage({
                 <p className="text-xs text-gray-400 mt-0.5">
                   {thread.lastReplyAt
                     ? new Date(thread.lastReplyAt).toLocaleDateString()
-                    : thread.createdAt
-                    ? new Date(thread.createdAt).toLocaleDateString()
-                    : ''}
+                    : new Date(thread.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </Link>

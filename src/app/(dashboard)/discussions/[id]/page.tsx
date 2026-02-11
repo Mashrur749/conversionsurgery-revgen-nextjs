@@ -4,6 +4,7 @@ import { getDb, supportMessages, supportReplies } from '@/db';
 import { eq, asc } from 'drizzle-orm';
 import { DiscussionThread } from './discussion-thread';
 
+/** Displays a single discussion thread with its replies for the current user. */
 export default async function DiscussionDetailPage({
   params,
 }: {
@@ -35,11 +36,11 @@ export default async function DiscussionDetailPage({
   // Serialize dates for client component
   const serializedMessage = {
     ...message,
-    createdAt: message.createdAt?.toISOString() ?? null,
+    createdAt: message.createdAt.toISOString(),
   };
   const serializedReplies = replies.map((r) => ({
     ...r,
-    createdAt: r.createdAt?.toISOString() ?? null,
+    createdAt: r.createdAt.toISOString(),
   }));
 
   return (

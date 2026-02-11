@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare } from 'lucide-react';
 
+/** Displays a list of the current user's support discussion threads. */
 export default async function DiscussionsPage() {
   const session = await auth();
   if (!session) redirect('/login');
@@ -53,9 +54,7 @@ export default async function DiscussionsPage() {
                   </p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                     <span>
-                      {thread.createdAt
-                        ? new Date(thread.createdAt).toLocaleDateString()
-                        : ''}
+                      {new Date(thread.createdAt).toLocaleDateString()}
                     </span>
                     <span>{thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}</span>
                   </div>
