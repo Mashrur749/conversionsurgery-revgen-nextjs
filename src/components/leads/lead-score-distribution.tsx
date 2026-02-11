@@ -3,20 +3,29 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Flame, Thermometer, Snowflake } from 'lucide-react';
 
-interface ScoreDistributionProps {
-  distribution: {
-    temperature: string;
-    count: number;
-    avgScore: number;
-  }[];
-  hotLeads: {
-    id: string;
-    name: string | null;
-    phone: string;
-    score: number | null;
-  }[];
+/** A single temperature bucket with its count and average score. */
+interface TemperatureBucket {
+  temperature: string;
+  count: number;
+  avgScore: number;
 }
 
+/** A summarized hot lead for the priority follow-up list. */
+interface HotLeadSummary {
+  id: string;
+  name: string | null;
+  phone: string;
+  score: number | null;
+}
+
+interface ScoreDistributionProps {
+  distribution: TemperatureBucket[];
+  hotLeads: HotLeadSummary[];
+}
+
+/**
+ * Visualizes lead score distribution as a stacked bar and lists the top hot leads for priority follow-up.
+ */
 export function LeadScoreDistribution({
   distribution,
   hotLeads,

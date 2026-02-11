@@ -9,19 +9,26 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+/** Factor breakdown displayed in the score badge tooltip or expanded view. */
+interface ScoreBadgeFactors {
+  urgency: number;
+  budget: number;
+  engagement: number;
+  intent: number;
+  signals: string[];
+}
+
 interface LeadScoreBadgeProps {
   score: number;
   temperature: 'hot' | 'warm' | 'cold';
-  factors?: {
-    urgency: number;
-    budget: number;
-    engagement: number;
-    intent: number;
-    signals: string[];
-  };
+  factors?: ScoreBadgeFactors;
   compact?: boolean;
 }
 
+/**
+ * Displays a lead's score and temperature as a colored badge with an icon.
+ * In compact mode, shows a small pill with tooltip; otherwise shows an expanded card with factor breakdown.
+ */
 export function LeadScoreBadge({
   score,
   temperature,

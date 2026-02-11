@@ -9,7 +9,6 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { leads } from './leads';
 import { clients } from './clients';
 import { leadStageEnum, sentimentEnum, agentActionEnum } from './agent-enums';
@@ -21,7 +20,7 @@ import { leadStageEnum, sentimentEnum, agentActionEnum } from './agent-enums';
 export const leadContext = pgTable(
   'lead_context',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id')
       .notNull()
       .unique()

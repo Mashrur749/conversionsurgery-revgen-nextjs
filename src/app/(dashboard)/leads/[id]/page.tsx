@@ -1,5 +1,10 @@
 import { auth } from '@/lib/auth';
-import { getDb, leads, conversations, scheduledMessages, users, mediaAttachments } from '@/db';
+import { getDb } from '@/db';
+import { leads } from '@/db/schema/leads';
+import { conversations } from '@/db/schema/conversations';
+import { scheduledMessages } from '@/db/schema/scheduled-messages';
+import { users } from '@/db/schema/auth';
+import { mediaAttachments } from '@/db/schema/media-attachments';
 import { eq, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,12 +14,14 @@ import { formatPhoneNumber } from '@/lib/utils/phone';
 import { ReplyForm } from './reply-form';
 import { ActionButtons } from './action-buttons';
 import { LeadTabs } from './lead-tabs';
+
 export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+/** Server component displaying full lead details, conversation history, and scheduled messages. */
 export default async function LeadDetailPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();

@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getDb, leads, clients, conversations } from '@/db';
+import { getDb } from '@/db';
+import { leads } from '@/db/schema/leads';
+import { clients } from '@/db/schema/clients';
+import { conversations } from '@/db/schema/conversations';
 import { sendSMS } from '@/lib/services/twilio';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-const schema = z.object({
+const replySchema = z.object({
   message: z.string().min(1).max(1600),
 });
 
+/** POST /api/leads/[id]/reply - Send an SMS reply to a lead and log the conversation. */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -19,14 +23,23 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const clientId = (session as any).client?.id;
+  const clientId = (session as { client?: { id?: string } })?.client?.id;
   if (!clientId) {
     return NextResponse.json({ error: 'No client' }, { status: 403 });
   }
 
   try {
     const body = await request.json();
-    const { message } = schema.parse(body);
+    const parsed = replySchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', fieldErrors: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const { message } = parsed.data;
 
     const db = getDb();
 
@@ -83,10 +96,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, sid: result.sid });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid message' }, { status: 400 });
-    }
-    console.error('Reply error:', error);
+    console.error('[LeadManagement] Reply error:', error);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }

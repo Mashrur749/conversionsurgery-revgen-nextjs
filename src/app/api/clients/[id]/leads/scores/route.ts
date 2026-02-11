@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { scoreClientLeads, getLeadsByTemperature } from '@/lib/services/lead-scoring';
-import { getDb, leads } from '@/db';
+import { getDb } from '@/db';
+import { leads } from '@/db/schema/leads';
 import { eq, sql } from 'drizzle-orm';
 
-// GET - Get score distribution for client
+/** GET /api/clients/[id]/leads/scores - Get score distribution and top hot leads for a client. */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,25 +19,30 @@ export async function GET(
   const { id } = await params;
   const db = getDb();
 
-  const distribution = await db
-    .select({
-      temperature: leads.temperature,
-      count: sql<number>`count(*)::int`,
-      avgScore: sql<number>`coalesce(avg(${leads.score})::int, 0)`,
-    })
-    .from(leads)
-    .where(eq(leads.clientId, id))
-    .groupBy(leads.temperature);
+  try {
+    const distribution = await db
+      .select({
+        temperature: leads.temperature,
+        count: sql<number>`count(*)::int`,
+        avgScore: sql<number>`coalesce(avg(${leads.score})::int, 0)`,
+      })
+      .from(leads)
+      .where(eq(leads.clientId, id))
+      .groupBy(leads.temperature);
 
-  const hotLeads = await getLeadsByTemperature(id, 'hot');
+    const hotLeads = await getLeadsByTemperature(id, 'hot');
 
-  return NextResponse.json({
-    distribution,
-    hotLeads: hotLeads.slice(0, 10),
-  });
+    return NextResponse.json({
+      distribution,
+      hotLeads: hotLeads.slice(0, 10),
+    });
+  } catch (error) {
+    console.error('[LeadManagement] Get score distribution error:', error);
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  }
 }
 
-// POST - Batch rescore all leads
+/** POST /api/clients/[id]/leads/scores - Batch-rescore all leads for a client. */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -47,10 +53,14 @@ export async function POST(
   }
 
   const { id } = await params;
-  const body = await request.json().catch(() => ({})) as { useAI?: boolean };
+  const body = (await request.json().catch(() => ({}))) as { useAI?: boolean };
   const { useAI = false } = body;
 
-  const result = await scoreClientLeads(id, { useAI });
-
-  return NextResponse.json(result);
+  try {
+    const result = await scoreClientLeads(id, { useAI });
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('[LeadManagement] Batch rescore error:', error);
+    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+  }
 }

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { getDb, leads } from '@/db';
+import { getDb } from '@/db';
+import { leads } from '@/db/schema/leads';
+import type { NewLead } from '@/db/schema/leads';
 import { eq, and } from 'drizzle-orm';
 
+/** PATCH /api/leads/[id] - Update a lead's fields (scoped to the authenticated client). */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -13,13 +16,13 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const clientId = (session as any).client?.id;
+  const clientId = (session as { client?: { id?: string } })?.client?.id;
   if (!clientId) {
     return NextResponse.json({ error: 'No client' }, { status: 403 });
   }
 
   try {
-    const body = await request.json() as Record<string, unknown>;
+    const body = (await request.json()) as Partial<NewLead>;
 
     const db = getDb();
 
@@ -28,7 +31,7 @@ export async function PATCH(
       .set({
         ...body,
         updatedAt: new Date(),
-      } as any)
+      })
       .where(and(eq(leads.id, id), eq(leads.clientId, clientId)))
       .returning();
 
@@ -38,7 +41,7 @@ export async function PATCH(
 
     return NextResponse.json(updated[0]);
   } catch (error) {
-    console.error('Update lead error:', error);
+    console.error('[LeadManagement] Update lead error:', error);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { getClientId } from '@/lib/get-client-id';
-import { getDb, leads } from '@/db';
+import { getDb } from '@/db';
+import { leads } from '@/db/schema/leads';
 import { eq, desc } from 'drizzle-orm';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +12,7 @@ import { LeadScoreBadge } from '@/components/leads/lead-score-badge';
 
 export const dynamic = 'force-dynamic';
 
+/** Mapping of lead status values to their Tailwind color classes. */
 const statusColors: Record<string, string> = {
   new: 'bg-blue-100 text-blue-800',
   contacted: 'bg-yellow-100 text-yellow-800',
@@ -22,6 +24,7 @@ const statusColors: Record<string, string> = {
   opted_out: 'bg-gray-100 text-gray-800',
 };
 
+/** Server component that lists all leads for the authenticated client. */
 export default async function LeadsPage() {
   const session = await auth();
   const clientId = await getClientId();

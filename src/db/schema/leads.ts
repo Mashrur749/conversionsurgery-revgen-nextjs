@@ -16,7 +16,7 @@ import { clients } from './clients';
 export const leads = pgTable(
   'leads',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -47,8 +47,8 @@ export const leads = pgTable(
     stripeCustomerId: varchar('stripe_customer_id', { length: 100 }),
     optedOut: boolean('opted_out').default(false),
     optedOutAt: timestamp('opted_out_at'),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     unique('leads_client_phone_unique').on(table.clientId, table.phone),

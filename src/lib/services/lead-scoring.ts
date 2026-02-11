@@ -1,10 +1,13 @@
-import { getDb, leads, conversations } from '@/db';
+import { getDb } from '@/db';
+import { leads } from '@/db/schema/leads';
+import { conversations } from '@/db/schema/conversations';
 import { eq, desc, and, gte } from 'drizzle-orm';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-interface ScoreFactors {
+/** Individual scoring factors that compose a lead's total score (each 0-25). */
+export interface ScoreFactors {
   urgency: number;
   budget: number;
   engagement: number;
@@ -13,10 +16,17 @@ interface ScoreFactors {
   lastAnalysis: string;
 }
 
-interface ScoringResult {
+/** Result returned by the main `scoreLead` function. */
+export interface ScoringResult {
   score: number;
   temperature: 'hot' | 'warm' | 'cold';
   factors: ScoreFactors;
+}
+
+/** Result returned by `scoreClientLeads` batch scoring. */
+export interface BatchScoringResult {
+  updated: number;
+  errors: number;
 }
 
 // Signal patterns for quick scoring (no AI needed)
@@ -81,7 +91,9 @@ const FRUSTRATION_SIGNALS = [
 ];
 
 /**
- * Quick score based on pattern matching (fast, no AI)
+ * Quick-score a conversation using regex pattern matching (no AI call needed).
+ * @param conversationText - The full conversation text to analyze.
+ * @returns Partial score factors with urgency, budget, intent, and detected signals.
  */
 export function quickScore(conversationText: string): Partial<ScoreFactors> {
   const signals: string[] = [];
@@ -138,7 +150,9 @@ export function quickScore(conversationText: string): Partial<ScoreFactors> {
 }
 
 /**
- * Calculate engagement score based on response patterns
+ * Calculate an engagement score (0-25) based on message response patterns and recency.
+ * @param leadId - The UUID of the lead to evaluate.
+ * @returns A numeric engagement score between 0 and 25.
  */
 export async function calculateEngagement(leadId: string): Promise<number> {
   const db = getDb();
@@ -184,7 +198,10 @@ export async function calculateEngagement(leadId: string): Promise<number> {
 }
 
 /**
- * Full AI-powered scoring (slower, more accurate)
+ * AI-powered lead scoring using GPT-4o-mini for deeper conversation analysis.
+ * Falls back to `quickScore` if the AI response cannot be parsed.
+ * @param conversationText - The full conversation text to analyze.
+ * @returns Complete score factors with AI-determined urgency, budget, intent, and signals.
  */
 export async function aiScore(conversationText: string): Promise<ScoreFactors> {
   const response = await openai.chat.completions.create({
@@ -242,7 +259,11 @@ Return ONLY valid JSON:
 }
 
 /**
- * Main scoring function - combines all factors
+ * Score a single lead by combining pattern-matched or AI-derived factors with engagement.
+ * Updates the lead's score, temperature, and factors in the database.
+ * @param leadId - The UUID of the lead to score.
+ * @param options - Optional configuration; set `useAI` to true for AI-powered analysis.
+ * @returns The computed score, temperature classification, and individual factors.
  */
 export async function scoreLead(
   leadId: string,
@@ -307,12 +328,15 @@ export async function scoreLead(
 }
 
 /**
- * Batch score all leads for a client
+ * Batch-score all leads belonging to a client.
+ * @param clientId - The UUID of the client whose leads should be scored.
+ * @param options - Optional configuration; set `useAI` to true for AI-powered analysis.
+ * @returns Counts of successfully updated leads and errors encountered.
  */
 export async function scoreClientLeads(
   clientId: string,
   options: { useAI?: boolean } = {}
-): Promise<{ updated: number; errors: number }> {
+): Promise<BatchScoringResult> {
   const db = getDb();
   const clientLeads = await db
     .select({ id: leads.id })
@@ -327,7 +351,7 @@ export async function scoreClientLeads(
       await scoreLead(lead.id, options);
       updated++;
     } catch (err) {
-      console.error(`Error scoring lead ${lead.id}:`, err);
+      console.error(`[LeadScoring] Error scoring lead ${lead.id}:`, err);
       errors++;
     }
   }
@@ -336,7 +360,10 @@ export async function scoreClientLeads(
 }
 
 /**
- * Get leads by temperature for a client
+ * Retrieve leads for a client filtered by temperature classification, ordered by score descending.
+ * @param clientId - The UUID of the client.
+ * @param temperature - The temperature bucket to filter by ('hot', 'warm', or 'cold').
+ * @returns Array of lead records matching the specified temperature.
  */
 export async function getLeadsByTemperature(
   clientId: string,
