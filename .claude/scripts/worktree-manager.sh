@@ -62,13 +62,14 @@ cmd_create() {
         log_ok "Copied feature plan"
     fi
 
-    # Install deps
-    if [[ -f "$wt_dir/pnpm-lock.yaml" ]]; then
-        (cd "$wt_dir" && pnpm install --frozen-lockfile 2>/dev/null) || log_warn "pnpm install failed"
-    elif [[ -f "$wt_dir/yarn.lock" ]]; then
-        (cd "$wt_dir" && yarn install --frozen-lockfile 2>/dev/null) || log_warn "yarn install failed"
-    elif [[ -f "$wt_dir/package-lock.json" ]]; then
-        (cd "$wt_dir" && npm ci 2>/dev/null) || log_warn "npm ci failed"
+    # Symlink node_modules from main repo (C1: saves ~2.8GB per worktree)
+    if [[ -d "$REPO_ROOT/node_modules" && ! -e "$wt_dir/node_modules" ]]; then
+        ln -s "$REPO_ROOT/node_modules" "$wt_dir/node_modules"
+        log_ok "Symlinked node_modules (saves ~2.8GB)"
+    elif [[ -e "$wt_dir/node_modules" ]]; then
+        log_info "node_modules already exists in worktree"
+    else
+        log_warn "No node_modules in main repo — run npm install in main repo first"
     fi
 
     echo ""
@@ -174,9 +175,21 @@ cmd_merge() {
 
     log_step "Merging ${branch} → ${main_branch}..."
 
+    # Pre-merge: verify build in worktree first (M4)
+    log_step "Pre-merge build verification in worktree..."
+    if ! (cd "$wt_dir" && npm run build 2>/dev/null); then
+        log_error "Build fails in worktree — fix before merging"
+        exit 1
+    fi
+    log_ok "Worktree build passes"
+
     cd "$REPO_ROOT"
     git checkout "$main_branch"
     git pull origin "$main_branch" 2>/dev/null || true
+
+    # Pre-merge: tag for rollback (H4)
+    git tag "pre-merge-${feature}-slice-${slice_num}" HEAD 2>/dev/null || true
+    log_ok "Tagged pre-merge state for rollback"
 
     if git merge "$branch" --no-ff -m "feat: merge ${feature}/slice-${slice_num}"; then
         log_ok "✅ Merged"
@@ -184,7 +197,7 @@ cmd_merge() {
         if npm run build 2>/dev/null; then
             log_ok "Build passes"
         else
-            log_warn "Build failed! Consider: git revert -m 1 HEAD"
+            log_warn "Build failed! Rollback: git reset --hard pre-merge-${feature}-slice-${slice_num}"
             exit 1
         fi
     else
@@ -265,6 +278,8 @@ cmd_cleanup_slice() {
     wt_dir=$(worktree_dir "$feature" "$slice_num")
     branch=$(branch_name "$feature" "$slice_num")
 
+    # Clean up .next build cache before removing worktree
+    [[ -d "$wt_dir/.next" ]] && { rm -rf "$wt_dir/.next"; log_ok "Cleaned .next cache"; }
     [[ -d "$wt_dir" ]] && { git -C "$REPO_ROOT" worktree remove "$wt_dir" --force; log_ok "Worktree removed"; }
     git -C "$REPO_ROOT" show-ref --verify --quiet "refs/heads/$branch" && { git -C "$REPO_ROOT" branch -D "$branch"; log_ok "Branch deleted"; }
 }
@@ -291,16 +306,90 @@ cmd_cleanup() {
     log_ok "✅ Done"
 }
 
+# ---- create-refactor ----
+# Creates a worktree for refactoring a module (used by run-parallel.sh)
+# Usage: create-refactor <module-name> <staging-branch>
+cmd_create_refactor() {
+    local module="${1:?Usage: create-refactor <module-name> <staging-branch>}"
+    local staging_branch="${2:-claude-main}"
+    local wt_dir branch
+    wt_dir="${REPO_ROOT}/../${PROJECT_NAME}-refactor-${module}"
+    branch="refactor/${module}"
+
+    [[ -d "$wt_dir" ]] && { log_error "Worktree exists: $wt_dir"; exit 1; }
+
+    log_step "Creating refactor worktree for module: ${module}..."
+
+    # Ensure staging branch exists
+    if ! git -C "$REPO_ROOT" show-ref --verify --quiet "refs/heads/${staging_branch}"; then
+        log_step "Creating staging branch: ${staging_branch}"
+        local main_branch
+        main_branch=$(get_main_branch)
+        git -C "$REPO_ROOT" branch "$staging_branch" "$main_branch"
+    fi
+
+    # Create worktree from staging branch
+    git -C "$REPO_ROOT" worktree add "$wt_dir" -b "$branch" "$staging_branch"
+
+    # Symlink node_modules (C1)
+    if [[ -d "$REPO_ROOT/node_modules" && ! -e "$wt_dir/node_modules" ]]; then
+        ln -s "$REPO_ROOT/node_modules" "$wt_dir/node_modules"
+        log_ok "Symlinked node_modules"
+    fi
+
+    # Copy foundation doc
+    mkdir -p "$wt_dir/.claude"
+    if [[ -f "$PLANS_DIR/foundation.md" ]]; then
+        cp "$PLANS_DIR/foundation.md" "$wt_dir/.claude/feature-plan.md"
+        log_ok "Copied foundation.md"
+    fi
+
+    # Copy module plan
+    if [[ -f "$PLANS_DIR/modules/${module}.md" ]]; then
+        cp "$PLANS_DIR/modules/${module}.md" "$wt_dir/.claude/module-plan.md"
+        log_ok "Copied module plan: ${module}.md"
+    else
+        log_warn "Module plan not found: $PLANS_DIR/modules/${module}.md"
+    fi
+
+    # Generate CLAUDE.md from refactoring template
+    if [[ -f "$TEMPLATES_DIR/slice-claude-refactor.md" ]]; then
+        local file_manifest="" frozen_exports=""
+
+        # Extract file manifest from module plan
+        if [[ -f "$PLANS_DIR/modules/${module}.md" ]]; then
+            file_manifest=$(sed -n '/## FILE MANIFEST/,/## FROZEN_EXPORTS/{/## FROZEN_EXPORTS/d;p}' "$PLANS_DIR/modules/${module}.md" | tail -n +2)
+            frozen_exports=$(sed -n '/## FROZEN_EXPORTS/,/## SCOPE/{/## SCOPE/d;p}' "$PLANS_DIR/modules/${module}.md" | tail -n +2)
+        fi
+
+        sed -e "s|{{MODULE_NAME}}|$module|g" \
+            -e "s|{{BRANCH_NAME}}|$branch|g" \
+            "$TEMPLATES_DIR/slice-claude-refactor.md" | \
+            sed -e "/{{FILE_MANIFEST}}/r /dev/stdin" -e "/{{FILE_MANIFEST}}/d" <<< "$file_manifest" | \
+            sed -e "/{{FROZEN_EXPORTS}}/r /dev/stdin" -e "/{{FROZEN_EXPORTS}}/d" <<< "$frozen_exports" \
+            > "$wt_dir/CLAUDE.md"
+        log_ok "Generated refactoring CLAUDE.md"
+    fi
+
+    echo ""
+    log_ok "✅ Refactor worktree ready: $wt_dir"
+    log_info "Branch: $branch"
+    log_info "Foundation: .claude/feature-plan.md"
+    log_info "Module plan: .claude/module-plan.md"
+    log_info "Next: cd $wt_dir && claude"
+}
+
 # ---- router ----
 case "${1:-help}" in
-    create)        shift; cmd_create "$@" ;;
-    list)          shift; cmd_list "$@" ;;
-    review)        shift; cmd_review "$@" ;;
-    merge)         shift; cmd_merge "$@" ;;
-    rebase-all)    shift; cmd_rebase_all "$@" ;;
-    status)        shift; cmd_status "$@" ;;
-    cleanup-slice) shift; cmd_cleanup_slice "$@" ;;
-    cleanup)       shift; cmd_cleanup "$@" ;;
+    create)          shift; cmd_create "$@" ;;
+    create-refactor) shift; cmd_create_refactor "$@" ;;
+    list)            shift; cmd_list "$@" ;;
+    review)          shift; cmd_review "$@" ;;
+    merge)           shift; cmd_merge "$@" ;;
+    rebase-all)      shift; cmd_rebase_all "$@" ;;
+    status)          shift; cmd_status "$@" ;;
+    cleanup-slice)   shift; cmd_cleanup_slice "$@" ;;
+    cleanup)         shift; cmd_cleanup "$@" ;;
     *) echo "Usage: bash .claude/scripts/worktree-manager.sh <command> [args]"
-       echo "Commands: create, list, review, merge, rebase-all, status, cleanup-slice, cleanup" ;;
+       echo "Commands: create, create-refactor, list, review, merge, rebase-all, status, cleanup-slice, cleanup" ;;
 esac
