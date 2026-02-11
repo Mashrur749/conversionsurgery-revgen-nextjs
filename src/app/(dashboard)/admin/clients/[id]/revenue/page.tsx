@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
-import { getDb, clients } from '@/db';
+import { getDb } from '@/db';
+import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getRevenueStats, getRecentJobs } from '@/lib/services/revenue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

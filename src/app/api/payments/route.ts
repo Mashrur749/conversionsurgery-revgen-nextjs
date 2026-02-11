@@ -6,7 +6,10 @@ import { eq, and, desc } from 'drizzle-orm';
 import { createPaymentLink, createInvoiceWithLink } from '@/lib/services/stripe';
 import { z } from 'zod';
 
-// GET - List payments for a client or lead
+/**
+ * GET /api/payments - List payments for a client or lead
+ * Requires authentication. Query params: clientId or leadId (at least one required)
+ */
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) {
@@ -46,7 +49,10 @@ const createPaymentSchema = z.object({
   dueDate: z.string().optional(),
 });
 
-// POST - Create new payment link
+/**
+ * POST /api/payments - Create a new payment link
+ * Requires authentication. Optionally creates an invoice with the payment link.
+ */
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session) {
@@ -55,8 +61,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const data = createPaymentSchema.parse(body);
+    const validation = createPaymentSchema.safeParse(body);
 
+    if (!validation.success) {
+      const errors = validation.error.flatten().fieldErrors;
+      console.log('[Payments] Validation failed:', errors);
+      return NextResponse.json({ error: 'Invalid input', details: errors }, { status: 400 });
+    }
+
+    const data = validation.data;
     const amountCents = Math.round(data.amount * 100);
 
     if (data.createInvoice) {
@@ -81,12 +94,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
     console.error('[Payments] Create error:', error);
     return NextResponse.json(
       { error: 'Failed to create payment' },

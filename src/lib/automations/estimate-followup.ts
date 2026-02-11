@@ -1,4 +1,5 @@
-import { getDb, clients, leads, scheduledMessages } from '@/db';
+import { getDb } from '@/db';
+import { clients, leads, scheduledMessages } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { renderTemplate } from '@/lib/utils/templates';
 import { addDays } from 'date-fns';
@@ -15,7 +16,14 @@ const ESTIMATE_SCHEDULE = [
   { day: 14, template: 'estimate_day_14', step: 4 },
 ];
 
+/**
+ * Starts an estimate follow-up sequence for a lead.
+ * Updates lead status to 'estimate_sent' and schedules follow-up messages at days 2, 5, 10, and 14.
+ * @param payload - Lead and client IDs
+ * @returns Success status and scheduled message IDs
+ */
 export async function startEstimateFollowup({ leadId, clientId }: EstimatePayload) {
+  console.log('[Payments] Starting estimate follow-up sequence', { leadId, clientId });
   const db = getDb();
 
   // 1. Get client and lead

@@ -6,11 +6,15 @@ import { eq } from 'drizzle-orm';
 import { sendSMS } from '@/lib/services/twilio';
 import { generatePaymentMessage } from '@/lib/services/stripe';
 
-// POST - Send payment link via SMS
+/**
+ * POST /api/payments/[id]/send - Send payment link via SMS
+ * Requires authentication. Sends the payment link to the lead's phone number.
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('[Payments] Sending payment link via SMS');
   const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -62,6 +66,7 @@ export async function POST(
   const result = await sendSMS(lead.phone, client.twilioNumber, message);
 
   if (!result.success) {
+    console.error('[Payments] Failed to send SMS:', result);
     return NextResponse.json({ error: 'Failed to send SMS' }, { status: 500 });
   }
 
@@ -71,5 +76,6 @@ export async function POST(
     .set({ linkSentAt: new Date() })
     .where(eq(payments.id, id));
 
+  console.log('[Payments] Payment link sent successfully', { paymentId: id });
   return NextResponse.json({ success: true, message });
 }

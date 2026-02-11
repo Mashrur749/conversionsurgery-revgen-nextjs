@@ -8,7 +8,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 import { invoices } from './invoices';
@@ -16,7 +15,7 @@ import { invoices } from './invoices';
 export const payments = pgTable(
   'payments',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
     invoiceId: uuid('invoice_id').references(() => invoices.id, { onDelete: 'set null' }),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'set null' }),
@@ -42,7 +41,7 @@ export const payments = pgTable(
 
     // Metadata
     metadata: jsonb('metadata'),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_payments_client').on(table.clientId),

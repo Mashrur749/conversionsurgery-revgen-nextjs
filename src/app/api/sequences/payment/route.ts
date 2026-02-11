@@ -15,6 +15,10 @@ const paidSchema = z.object({
   invoiceId: z.string().uuid(),
 });
 
+/**
+ * POST /api/sequences/payment - Start a payment reminder sequence
+ * Requires authentication with clientId. Creates invoice and schedules reminders.
+ */
 export async function POST(request: NextRequest) {
   const authSession = await getAuthSession();
   if (!authSession?.clientId) {
@@ -23,22 +27,29 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const data = createSchema.parse(body);
+    const validation = createSchema.safeParse(body);
 
+    if (!validation.success) {
+      const errors = validation.error.flatten().fieldErrors;
+      console.log('[Payments] Validation failed:', errors);
+      return NextResponse.json({ error: 'Invalid input', details: errors }, { status: 400 });
+    }
+
+    const data = validation.data;
     const clientId = authSession.clientId;
 
     const result = await startPaymentReminder({ ...data, clientId });
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid input', details: error.issues }, { status: 400 });
-    }
-    console.error('Payment reminder error:', error);
+    console.error('[Payments] Payment reminder error:', error);
     return NextResponse.json({ error: 'Failed to start sequence' }, { status: 500 });
   }
 }
 
-// Mark invoice as paid
+/**
+ * PATCH /api/sequences/payment - Mark an invoice as paid
+ * Requires authentication. Cancels remaining reminders and updates payment status.
+ */
 export async function PATCH(request: NextRequest) {
   const authSession = await getAuthSession();
   if (!authSession) {
@@ -47,15 +58,19 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { invoiceId } = paidSchema.parse(body);
+    const validation = paidSchema.safeParse(body);
 
+    if (!validation.success) {
+      const errors = validation.error.flatten().fieldErrors;
+      console.log('[Payments] Validation failed:', errors);
+      return NextResponse.json({ error: 'Invalid input', details: errors }, { status: 400 });
+    }
+
+    const { invoiceId } = validation.data;
     const result = await markInvoicePaid(invoiceId);
     return NextResponse.json(result);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid input', details: error.issues }, { status: 400 });
-    }
-    console.error('Mark paid error:', error);
+    console.error('[Payments] Mark paid error:', error);
     return NextResponse.json({ error: 'Failed to mark paid' }, { status: 500 });
   }
 }

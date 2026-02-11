@@ -1,6 +1,14 @@
-import { getDb, jobs, revenueEvents, leads } from '@/db';
+import { getDb } from '@/db';
+import { jobs, revenueEvents, leads } from '@/db/schema';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 
+/**
+ * Creates a new job from a lead and records the revenue event.
+ * @param leadId - The lead ID to convert to a job
+ * @param clientId - The client ID for the job
+ * @param description - Optional job description
+ * @returns The newly created job ID
+ */
 export async function createJobFromLead(
   leadId: string,
   clientId: string,
@@ -27,6 +35,12 @@ export async function createJobFromLead(
   return job.id;
 }
 
+/**
+ * Updates a job's status and records the revenue event.
+ * @param jobId - The job ID to update
+ * @param status - The new status for the job
+ * @param data - Optional additional data (quote amount, final amount, lost reason)
+ */
 export async function updateJobStatus(
   jobId: string,
   status: 'lead' | 'quoted' | 'won' | 'lost' | 'completed',
@@ -37,7 +51,7 @@ export async function updateJobStatus(
   }
 ): Promise<void> {
   const db = getDb();
-  const updates: Record<string, unknown> = { status, updatedAt: new Date() };
+  const updates: Record<string, Date | string | number | undefined> = { status, updatedAt: new Date() };
 
   if (status === 'quoted' && data?.quoteAmount) {
     updates.quoteAmount = data.quoteAmount;
@@ -71,6 +85,12 @@ export async function updateJobStatus(
   });
 }
 
+/**
+ * Records a payment for a job and updates the paid amount.
+ * @param jobId - The job ID to record payment for
+ * @param amount - The payment amount in cents
+ * @param notes - Optional payment notes
+ */
 export async function recordPayment(
   jobId: string,
   amount: number,
@@ -116,6 +136,12 @@ export interface RevenueStats {
   avgJobValue: number;
 }
 
+/**
+ * Retrieves revenue statistics for a client within a date range.
+ * @param clientId - The client ID to get stats for
+ * @param startDate - Optional start date (defaults to 30 days ago)
+ * @returns Revenue statistics including leads, quotes, wins, and values
+ */
 export async function getRevenueStats(
   clientId: string,
   startDate?: Date
@@ -158,6 +184,12 @@ export async function getRevenueStats(
   };
 }
 
+/**
+ * Retrieves recent jobs for a client with lead information.
+ * @param clientId - The client ID to get jobs for
+ * @param limit - Maximum number of jobs to return (default 10)
+ * @returns Array of jobs with associated lead data
+ */
 export async function getRecentJobs(clientId: string, limit: number = 10) {
   const db = getDb();
 

@@ -1,9 +1,9 @@
-import { getDb, clients, leads, invoices, scheduledMessages } from '@/db';
-import { payments, paymentReminders } from '@/db/schema';
+import { getDb } from '@/db';
+import { clients, leads, invoices, scheduledMessages, payments, paymentReminders } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { renderTemplate } from '@/lib/utils/templates';
 import { addDays, isFuture, isToday } from 'date-fns';
-import { createPaymentLink, formatAmount } from '@/lib/services/stripe';
+import { createPaymentLink } from '@/lib/services/stripe';
 
 interface PaymentPayload {
   leadId: string;
@@ -14,6 +14,19 @@ interface PaymentPayload {
   paymentLink?: string;
 }
 
+interface CreatePaymentLinkParams {
+  clientId: string;
+  leadId: string;
+  invoiceId: string;
+  amount: number;
+  description: string;
+  type?: 'deposit' | 'progress' | 'final' | 'full';
+}
+
+interface CreatePaymentLinkResult {
+  paymentLinkUrl: string;
+}
+
 const PAYMENT_SCHEDULE = [
   { daysFromDue: 0, template: 'payment_due', step: 1 },
   { daysFromDue: 3, template: 'payment_day_3', step: 2 },
@@ -21,7 +34,14 @@ const PAYMENT_SCHEDULE = [
   { daysFromDue: 14, template: 'payment_day_14', step: 4 },
 ];
 
+/**
+ * Starts a payment reminder sequence for a client's invoice.
+ * Creates invoice record, generates Stripe payment link if needed, and schedules reminder messages.
+ * @param payload - Payment details including lead, client, amount, and due date
+ * @returns Success status, invoice ID, payment link, and scheduled message IDs
+ */
 export async function startPaymentReminder(payload: PaymentPayload) {
+  console.log('[Payments] Starting payment reminder sequence', { leadId: payload.leadId, clientId: payload.clientId });
   const db = getDb();
   const { leadId, clientId, invoiceNumber, amount, dueDate, paymentLink } = payload;
 
@@ -66,7 +86,7 @@ export async function startPaymentReminder(payload: PaymentPayload) {
         amount: amountCents,
         description: `Invoice ${invoice.invoiceNumber || ''} - ${client.businessName}`.trim(),
         type: 'full',
-      });
+      } as CreatePaymentLinkParams) as CreatePaymentLinkResult;
       resolvedPaymentLink = result.paymentLinkUrl;
 
       // Update invoice with the payment link
@@ -75,7 +95,7 @@ export async function startPaymentReminder(payload: PaymentPayload) {
         .set({ paymentLink: resolvedPaymentLink })
         .where(eq(invoices.id, invoice.id));
     } catch (err) {
-      console.error('[PaymentReminder] Failed to create Stripe payment link:', err);
+      console.error('[Payments] Failed to create Stripe payment link:', err);
       // Continue without a payment link
     }
   }
@@ -149,7 +169,14 @@ export async function startPaymentReminder(payload: PaymentPayload) {
   };
 }
 
+/**
+ * Marks an invoice as paid and cancels any remaining payment reminders.
+ * Also updates associated pending payments to paid status.
+ * @param invoiceId - The invoice ID to mark as paid
+ * @returns Success status
+ */
 export async function markInvoicePaid(invoiceId: string) {
+  console.log('[Payments] Marking invoice as paid', { invoiceId });
   const db = getDb();
 
   // Mark invoice as paid
