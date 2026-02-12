@@ -25,7 +25,8 @@
             "src/components/compliance/ConsentCapture.tsx",
             "src/components/compliance/ComplianceDashboard.tsx"
           ],
-          "frozen_exports": []
+          "frozen_exports": [],
+          "model": "sonnet"
         },
         {
           "name": "calendar",
@@ -41,7 +42,8 @@
             "src/app/api/cron/calendar-sync/route.ts",
             "src/components/calendar/calendar-integrations.tsx"
           ],
-          "frozen_exports": []
+          "frozen_exports": [],
+          "model": "sonnet"
         },
         {
           "name": "support-discussions",
@@ -54,7 +56,8 @@
             "src/app/(dashboard)/admin/discussions/page.tsx",
             "src/app/(dashboard)/admin/discussions/[id]/page.tsx"
           ],
-          "frozen_exports": []
+          "frozen_exports": [],
+          "model": "sonnet"
         },
         {
           "name": "media-storage",
@@ -71,7 +74,8 @@
           "frozen_exports": [
             "processIncomingMedia(messageId, mediaItems, db) — from src/lib/services/media.ts",
             "generatePhotoAcknowledgment(mediaItems) — from src/lib/services/media.ts"
-          ]
+          ],
+          "model": "sonnet"
         },
         {
           "name": "notifications",
@@ -85,14 +89,17 @@
           "frozen_exports": [
             "sendEmail(to, subject, html) — from src/lib/services/resend.ts",
             "actionRequiredEmail(to, subject, data) — from src/lib/services/resend.ts"
-          ]
+          ],
+          "model": "sonnet"
         }
       ]
     },
     {
       "wave": 2,
       "description": "Light dependencies on Wave 1 outputs",
-      "depends_on": [1],
+      "depends_on": [
+        1
+      ],
       "modules": [
         {
           "name": "team-hours",
@@ -111,7 +118,8 @@
             "isWithinBusinessHours(clientId) — from src/lib/services/business-hours.ts",
             "notifyTeamForEscalation(clientId, lead, conversation, urgency) — from src/lib/services/team-escalation.ts",
             "initializeBusinessHours(clientId) — from src/lib/services/business-hours.ts"
-          ]
+          ],
+          "model": "sonnet"
         },
         {
           "name": "twilio-provisioning",
@@ -129,7 +137,8 @@
             "src/app/(dashboard)/admin/clients/[id]/phone/page.tsx",
             "src/app/(dashboard)/admin/clients/[id]/phone/phone-number-manager.tsx"
           ],
-          "frozen_exports": []
+          "frozen_exports": [],
+          "model": "sonnet"
         },
         {
           "name": "usage-tracking",
@@ -152,7 +161,8 @@
             "updateMonthlySummaries(clientId) — from src/lib/services/usage-tracking.ts",
             "getCurrentMonthUsage(clientId) — from src/lib/services/usage-tracking.ts",
             "checkAllClientAlerts() — from src/lib/services/usage-alerts.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "review-reputation",
@@ -181,14 +191,18 @@
           "frozen_exports": [
             "syncAllReviews(clientId) — from src/lib/services/review-monitoring.ts",
             "checkAndAlertNegativeReviews(clientId) — from src/lib/services/review-monitoring.ts"
-          ]
+          ],
+          "model": "opus"
         }
       ]
     },
     {
       "wave": 3,
       "description": "Depends on W1+W2 services",
-      "depends_on": [1, 2],
+      "depends_on": [
+        1,
+        2
+      ],
       "modules": [
         {
           "name": "lead-management",
@@ -210,7 +224,8 @@
             "scoreLead(leadId, conversationHistory) — from src/lib/services/lead-scoring.ts",
             "quickScore(messageBody) — from src/lib/services/lead-scoring.ts",
             "scoreClientLeads(clientId) — from src/lib/services/lead-scoring.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "appointment-system",
@@ -221,7 +236,8 @@
             "src/app/api/sequences/appointment/route.ts",
             "src/app/api/sequences/cancel/route.ts"
           ],
-          "frozen_exports": []
+          "frozen_exports": [],
+          "model": "sonnet"
         },
         {
           "name": "ab-testing-templates",
@@ -245,7 +261,8 @@
             "src/app/(dashboard)/admin/ab-tests/[id]/page.tsx",
             "src/app/(dashboard)/admin/template-performance/page.tsx"
           ],
-          "frozen_exports": []
+          "frozen_exports": [],
+          "model": "sonnet"
         },
         {
           "name": "cron-scheduling",
@@ -264,14 +281,19 @@
           ],
           "frozen_exports": [
             "processWeeklySummaries() — from src/lib/services/weekly-summary.ts"
-          ]
+          ],
+          "model": "sonnet"
         }
       ]
     },
     {
       "wave": 4,
       "description": "Core business logic depending on W1-W3",
-      "depends_on": [1, 2, 3],
+      "depends_on": [
+        1,
+        2,
+        3
+      ],
       "modules": [
         {
           "name": "escalation-system",
@@ -293,7 +315,8 @@
           "frozen_exports": [
             "createEscalation(leadId, conversationId, reason, urgency) — from src/lib/services/escalation.ts",
             "checkSlaBreaches() — from src/lib/services/escalation.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "flow-engine",
@@ -328,7 +351,8 @@
             "checkAndSuggestFlows(clientId, leadId, conversationId) — from src/lib/services/flow-suggestions.ts",
             "handleApprovalResponse(clientId, leadId, approved) — from src/lib/services/flow-suggestions.ts",
             "startFlowExecution(flowId, leadId) — from src/lib/services/flow-execution.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "payments-reminders",
@@ -351,7 +375,8 @@
           "frozen_exports": [
             "createPaymentLink(invoiceId, amount) — from src/lib/services/revenue.ts",
             "formatAmount(cents) — from src/lib/services/revenue.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "voice-hot-transfer",
@@ -380,14 +405,20 @@
           "frozen_exports": [
             "routeHighIntentLead(callSid, clientId, leadId) — from src/lib/services/hot-transfer.ts",
             "initiateRingGroup(clientId, callSid, leadPhone) — from src/lib/services/ring-group.ts"
-          ]
+          ],
+          "model": "opus"
         }
       ]
     },
     {
       "wave": 5,
       "description": "Higher-level systems depending on W1-W4",
-      "depends_on": [1, 2, 3, 4],
+      "depends_on": [
+        1,
+        2,
+        3,
+        4
+      ],
       "modules": [
         {
           "name": "billing-subscriptions",
@@ -423,7 +454,8 @@
             "src/components/admin/billing/RevenueChart.tsx",
             "src/components/admin/billing/AdminSubscriptionTable.tsx"
           ],
-          "frozen_exports": []
+          "frozen_exports": [],
+          "model": "opus"
         },
         {
           "name": "analytics-reporting",
@@ -461,7 +493,8 @@
           ],
           "frozen_exports": [
             "runDailyAnalyticsJob() — from src/lib/services/analytics-aggregation.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "conversation-messaging",
@@ -486,14 +519,21 @@
             "normalizePhoneNumber(phone) — from src/lib/utils/phone.ts",
             "formatPhoneNumber(phone) — from src/lib/utils/phone.ts",
             "renderTemplate(template, data) — from src/lib/utils/templates.ts"
-          ]
+          ],
+          "model": "opus"
         }
       ]
     },
     {
       "wave": 6,
       "description": "Highest coupling — depends on all previous waves",
-      "depends_on": [1, 2, 3, 4, 5],
+      "depends_on": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
       "modules": [
         {
           "name": "ai-agent",
@@ -526,7 +566,8 @@
             "detectHotIntent(message, conversationHistory) — from src/lib/services/openai.ts",
             "processIncomingMessage(leadId, message, conversationId) — from src/lib/agent/orchestrator.ts",
             "buildKnowledgeContext(clientId, query) — from src/lib/services/knowledge-base.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "automation-engine",
@@ -541,7 +582,8 @@
           "frozen_exports": [
             "handleMissedCall(payload) — from src/lib/automations/missed-call.ts",
             "handleFormSubmission(payload) — from src/lib/automations/form-response.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "client-management",
@@ -583,7 +625,8 @@
           "frozen_exports": [
             "auth() — from src/lib/auth.ts",
             "authOptions — from src/lib/auth.ts"
-          ]
+          ],
+          "model": "opus"
         },
         {
           "name": "client-portal",
@@ -604,7 +647,8 @@
             "src/app/(dashboard)/escalations/[id]/page.tsx",
             "src/app/(dashboard)/settings/page.tsx"
           ],
-          "frozen_exports": []
+          "frozen_exports": [],
+          "model": "opus"
         }
       ]
     }

@@ -4,6 +4,7 @@
 **What:** {{SLICE_DESCRIPTION}}
 
 Feature plan: `.claude/feature-plan.md`
+Progress tracker: `.claude/progress.md` (created on first `/implement`, read on `/resume`)
 
 ---
 
@@ -35,12 +36,17 @@ Feature plan: `.claude/feature-plan.md`
 2. Commits: `feat(slice-{{SLICE_NUMBER}}): description`
 3. Tests alongside code, not after
 4. No console.log / TODO / commented-out code
-5. Verify before done:
+5. Update `.claude/progress.md` after every completed task
+6. Verify before done:
    ```bash
    npm run build
    npm run lint
    git diff main...HEAD --name-only  # all files in scope?
    ```
+
+## Resuming Work
+
+If a previous session was interrupted, run `/resume` — it reads `.claude/progress.md` and picks up where things left off. Do not start `/implement` again if progress already exists.
 
 ## Done
 
@@ -49,3 +55,4 @@ Feature plan: `.claude/feature-plan.md`
 - [ ] `npm run lint` — clean
 - [ ] All committed, proper messages
 - [ ] No files outside scope
+- [ ] Progress tracker marked ✅ Complete

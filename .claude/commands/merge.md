@@ -7,7 +7,6 @@ Execute the merge sequence for a completed slice. Follow every step precisely.
 
 1. **Verify readiness:**
    ```bash
-   # Check for uncommitted changes in worktree
    bash .claude/scripts/worktree-manager.sh status <feature-name>
    ```
    If the worktree has uncommitted changes, stop.
@@ -47,13 +46,24 @@ If merge conflicts occur, report them and help resolve.
    bash .claude/scripts/worktree-manager.sh cleanup-slice <feature-name> <slice-number>
    ```
 
+4. **Check cross-worktree notes.** Read the merged slice's `.claude/progress.md` "Blockers & Cross-Worktree Notes" section before the worktree is deleted. If there are notes affecting other slices, surface them to the user so remaining worktrees can account for them.
+
+5. **Update CLAUDE.md if this slice introduced new patterns.** If the merged slice established any new conventions, services, utilities, or patterns that future sessions need to know about — update the project CLAUDE.md. Examples:
+   - New service → document import path and usage
+   - New schema table → document query patterns
+   - New utility function → add to Key Patterns
+   - New API route convention → document it
+   
+   Skip if the slice purely followed existing patterns.
+
 ## Status Report
 
 ```
 ✅ Merged: feature/<feature>/slice-<N> → main
 📊 Remaining:
-   Slice X: <status>
-   Slice Y: <status>
+   Slice X: <status> (<progress>)
+   Slice Y: <status> (<progress>)
 
-Next: /implement or /merge the next slice in dependency order.
+Cross-worktree notes from merged slice: <any, or "none">
+Next: /resume or /implement the next slice in dependency order.
 ```

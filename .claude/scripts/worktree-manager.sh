@@ -356,18 +356,30 @@ cmd_create_refactor() {
     if [[ -f "$TEMPLATES_DIR/slice-claude-refactor.md" ]]; then
         local file_manifest="" frozen_exports=""
 
-        # Extract file manifest from module plan
+        # Extract file manifest from module plan (awk for macOS/Linux compat)
         if [[ -f "$PLANS_DIR/modules/${module}.md" ]]; then
-            file_manifest=$(sed -n '/## FILE MANIFEST/,/## FROZEN_EXPORTS/{/## FROZEN_EXPORTS/d;p}' "$PLANS_DIR/modules/${module}.md" | tail -n +2)
-            frozen_exports=$(sed -n '/## FROZEN_EXPORTS/,/## SCOPE/{/## SCOPE/d;p}' "$PLANS_DIR/modules/${module}.md" | tail -n +2)
+            file_manifest=$(awk '/^## FILE MANIFEST/{found=1; next} /^## /{found=0} found' "$PLANS_DIR/modules/${module}.md")
+            frozen_exports=$(awk '/^## FROZEN_EXPORTS/{found=1; next} /^## /{found=0} found' "$PLANS_DIR/modules/${module}.md")
         fi
 
-        sed -e "s|{{MODULE_NAME}}|$module|g" \
-            -e "s|{{BRANCH_NAME}}|$branch|g" \
-            "$TEMPLATES_DIR/slice-claude-refactor.md" | \
-            sed -e "/{{FILE_MANIFEST}}/r /dev/stdin" -e "/{{FILE_MANIFEST}}/d" <<< "$file_manifest" | \
-            sed -e "/{{FROZEN_EXPORTS}}/r /dev/stdin" -e "/{{FROZEN_EXPORTS}}/d" <<< "$frozen_exports" \
-            > "$wt_dir/CLAUDE.md"
+        # Generate CLAUDE.md — write multiline vars to temp files for reliable substitution
+        local tmp_files tmp_exports
+        tmp_files=$(mktemp)
+        tmp_exports=$(mktemp)
+        printf '%s\n' "$file_manifest" > "$tmp_files"
+        printf '%s\n' "$frozen_exports" > "$tmp_exports"
+
+        awk -v module="$module" -v branch="$branch" \
+            -v fmanifest="$tmp_files" -v fexports="$tmp_exports" '
+        {
+            gsub(/\{\{MODULE_NAME\}\}/, module)
+            gsub(/\{\{BRANCH_NAME\}\}/, branch)
+            if (index($0, "{{FILE_MANIFEST}}")) { while ((getline line < fmanifest) > 0) print line; next }
+            if (index($0, "{{FROZEN_EXPORTS}}")) { while ((getline line < fexports) > 0) print line; next }
+            print
+        }' "$TEMPLATES_DIR/slice-claude-refactor.md" > "$wt_dir/CLAUDE.md"
+
+        rm -f "$tmp_files" "$tmp_exports"
         log_ok "Generated refactoring CLAUDE.md"
     fi
 

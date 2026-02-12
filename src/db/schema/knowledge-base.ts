@@ -9,7 +9,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 export const knowledgeCategoryEnum = pgEnum('knowledge_category', [
@@ -24,7 +23,7 @@ export const knowledgeCategoryEnum = pgEnum('knowledge_category', [
 export const knowledgeBase = pgTable(
   'knowledge_base',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').primaryKey().defaultRandom(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -34,8 +33,8 @@ export const knowledgeBase = pgTable(
     keywords: text('keywords'), // comma-separated for search
     priority: integer('priority').default(0), // Higher = more important
     isActive: boolean('is_active').default(true),
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_knowledge_base_client_id').on(table.clientId),

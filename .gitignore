@@ -50,3 +50,7 @@ next-env.d.ts
 
 
 !.dev.vars.example
+
+# claude code worktree orchestration
+.claude-refactor/
+.worktrees/

@@ -33,12 +33,13 @@ STATE_DIR="$REPO_ROOT/.claude-refactor"
 PROGRESS_FILE="$STATE_DIR/progress.json"
 LOCKS_DIR="$STATE_DIR/locks"
 LOGS_DIR="$STATE_DIR/logs"
+MERGE_WORKTREE="$REPO_ROOT/.worktrees/claude-main-merge"  # Dedicated worktree for merge operations
 
 # Configuration
-MAX_PARALLEL=3
+MAX_PARALLEL=${MAX_PARALLEL:-1}  # Default 1 for token efficiency; override with env var
 STAGING_BRANCH="claude-main"
 HEARTBEAT_INTERVAL=10          # seconds between monitor checks
-STALE_THRESHOLD_BASE=600       # 10 min base stale threshold (W10)
+STALE_THRESHOLD_BASE=900       # 15 min base stale threshold (W10) — claude --print has slow first output
 STALE_THRESHOLD_PER_FILE=30    # +30s per file in module (W10)
 MODULE_TIMEOUT=7200            # 2 hours absolute timeout per module (B5)
 MAX_CRASHES_PER_MODULE=3       # Give up after 3 crashes (B4)
@@ -52,6 +53,34 @@ NOTIFY_EMAIL="${NOTIFY_EMAIL:-}"
 
 # Runtime state
 CAFFEINE_PID=""
+
+# macOS flock shim (flock not available on macOS by default)
+if ! command -v flock &>/dev/null; then
+    flock() {
+        # Emulate flock -x <fd> by using mkdir as an atomic lock.
+        # Only the subshell-redirect form is used: (flock -x 200; ...) 200>lockfile
+        # We intercept -x and the fd, then just proceed (the redirect already serves
+        # as our sentinel — mkdir on the .dir suffix gives mutual exclusion).
+        local mode="$1" fd="$2"
+        local lockdir
+        # Resolve lockfile from /dev/fd — we use the STATE_DIR lock path instead
+        lockdir="${LOCKS_DIR}/build.lock.dir"
+        local max_wait=600 waited=0
+        while ! mkdir "$lockdir" 2>/dev/null; do
+            sleep 1
+            waited=$((waited + 1))
+            if [[ $waited -ge $max_wait ]]; then
+                echo "[flock-shim] Timed out waiting for lock after ${max_wait}s" >&2
+                return 1
+            fi
+        done
+        # Lock acquired — register cleanup for this subshell
+        trap 'rmdir "'"$lockdir"'" 2>/dev/null' EXIT
+    }
+fi
+
+# Ensure state directories exist early (before any log/notify calls)
+mkdir -p "$STATE_DIR" "$LOCKS_DIR" "$LOGS_DIR"
 
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -259,6 +288,18 @@ get_module_file_count() {
         "$WAVES_FILE"
 }
 
+get_module_model() {
+    # If --all-opus flag was set, always use opus
+    if [[ "${FORCE_MODEL:-}" != "" ]]; then
+        echo "$FORCE_MODEL"
+        return
+    fi
+    # Get the model assigned to this module in waves.json (sonnet or opus)
+    jq -r --arg m "$1" \
+        '[.waves[].modules[] | select(.name == $m) | .model] | first // "sonnet"' \
+        "$WAVES_FILE"
+}
+
 worktree_path() {
     echo "${REPO_ROOT}/../${PROJECT_NAME}-refactor-${1}"
 }
@@ -301,6 +342,27 @@ remove_worktree() {
         git -C "$REPO_ROOT" branch -D "$branch" 2>/dev/null || true
 }
 
+setup_merge_worktree() {
+    # Create a dedicated worktree for claude-main merge operations
+    # This avoids touching the main repo (which may have uncommitted changes)
+    if [[ -d "$MERGE_WORKTREE" ]]; then
+        log_info "Merge worktree already exists at $MERGE_WORKTREE"
+        git -C "$MERGE_WORKTREE" checkout "$STAGING_BRANCH" 2>/dev/null || true
+        return
+    fi
+    log_step "Creating merge worktree for $STAGING_BRANCH..."
+    git -C "$REPO_ROOT" worktree add "$MERGE_WORKTREE" "$STAGING_BRANCH" 2>/dev/null
+    # Symlink node_modules (C1: save disk)
+    ln -sf "$REPO_ROOT/node_modules" "$MERGE_WORKTREE/node_modules" 2>/dev/null || true
+}
+
+cleanup_merge_worktree() {
+    if [[ -d "$MERGE_WORKTREE" ]]; then
+        [[ -d "$MERGE_WORKTREE/.next" ]] && rm -rf "$MERGE_WORKTREE/.next"
+        git -C "$REPO_ROOT" worktree remove "$MERGE_WORKTREE" --force 2>/dev/null || true
+    fi
+}
+
 kill_pane_process() {
     local pane_num="$1"
     [[ -z "$pane_num" || "$pane_num" == "null" ]] && return
@@ -338,7 +400,7 @@ launch_agent() {
 
     # Find a free tmux pane (1-3)
     local pane_id
-    pane_id=$(find_free_pane)
+    pane_id=$(find_free_pane) || true
     if [[ -z "$pane_id" ]]; then
         log_warn "No free tmux panes — cannot launch $module yet"
         return 1
@@ -349,38 +411,64 @@ launch_agent() {
     read -r -d '' prompt << 'AGENT_PROMPT' || true
 You are refactoring a module in a large Next.js codebase. Work autonomously — do NOT ask questions.
 
-STEP 1: Read these files FIRST:
-  - .claude/feature-plan.md  (foundation patterns — getDb, auth, frozen files, rules)
-  - .claude/module-plan.md   (this module's scope, files, frozen exports, goals)
+STEP 1 — UNDERSTAND (read before you touch anything):
+  a) Read .claude/feature-plan.md (foundation patterns, frozen files, rules)
+  b) Read .claude/module-plan.md (this module's scope, files, frozen exports, goals)
+  c) Read ALL files listed in the module plan's FILE MANIFEST — use parallel reads where possible
+  d) Understand the full picture before making any edits
 
-STEP 2: Refactor all files listed in the module plan. Follow every rule in foundation.md.
+STEP 2 — PLAN (think, then act):
+  Before editing, decide what changes each file needs. Group related changes.
+  Batch edits to the same file together — avoid re-reading and re-editing the same file.
+  If a file just needs type annotations, do all type fixes in one edit, not separate ones.
 
-STEP 3: When finished refactoring, run verification:
-  npm run build && npm run lint
+STEP 3 — REFACTOR:
+  Apply all planned changes. Follow every rule in foundation.md.
+  Commit with: refactor(<module>): description
 
-STEP 4: Based on the result:
+STEP 4 — VERIFY:
+  Run: npm run build && npm run lint
+  If errors: fix them (up to 2 fix cycles). Then re-verify.
+
+STEP 5 — SIGNAL COMPLETION:
   - If build AND lint pass: touch .refactor-complete
-  - If build OR lint fails after 2 fix attempts: touch .refactor-failed
+  - If build OR lint fails after 2 fix attempts: echo "REASON: <explanation>" > .refactor-failed
+  You MUST create exactly one sentinel file before finishing.
 
 CRITICAL RULES:
-- Do NOT modify any FROZEN files (schema/index.ts, schema/relations.ts, automations/incoming-sms.ts)
+- Do NOT modify FROZEN files (schema/index.ts, schema/relations.ts, automations/incoming-sms.ts)
 - Do NOT change FROZEN_EXPORTS function signatures
 - Do NOT run db:generate or db:migrate
 - Do NOT install new npm packages
 - Do NOT ask for clarification — make reasonable decisions
-- Commit format: refactor(<module>): description
 AGENT_PROMPT
 
-    # Launch Claude in --print mode for non-interactive operation (B2)
-    # --print reads prompt from stdin and streams output, then exits
-    tmux send-keys -t "$TMUX_SESSION:0.$pane_id" \
-        "cd '${wt_dir}' && echo '${prompt//\'/\'\\\'\'}' | claude --dangerously-skip-permissions --verbose 2>&1 | tee '${log_file}'; echo 'AGENT_EXIT_CODE='\$?" Enter
+    # Write prompt to file to avoid shell quoting/newline issues with tmux send-keys
+    local prompt_file="${wt_dir}/.agent-prompt.txt"
+    printf '%s' "$prompt" > "$prompt_file"
 
-    json_update '.modules[$m].pane = ($p | tonumber) | .modules[$m].launched_at = $t' \
-        --arg m "$module" --arg p "$pane_id" --arg t "$(date +%s)"
+    # Scale --max-turns by module size: 8 turns per file, minimum 40, no upper cap
+    # Generous to avoid cutting off mid-work — a failed partial run wastes MORE tokens than
+    # a slightly longer successful run (retry = full overhead again)
+    local file_count max_turns model
+    file_count=$(get_module_file_count "$module")
+    max_turns=$(( file_count * 8 ))
+    if [[ $max_turns -lt 40 ]]; then max_turns=40; fi
+    model=$(get_module_model "$module")
+
+    # Launch Claude in --print mode for non-interactive operation (B2)
+    # --print: reads prompt, executes, outputs result, then exits (no interactive REPL)
+    # --model: sonnet for simple modules, opus for complex ones (cost optimization)
+    # --dangerously-skip-permissions: avoids permission prompts that would block automation
+    # --max-turns: caps tool calls to prevent runaway token usage
+    tmux send-keys -t "$TMUX_SESSION:0.$pane_id" \
+        "cd '${wt_dir}' && claude --print --model ${model} --dangerously-skip-permissions --verbose --max-turns ${max_turns} \"\$(cat .agent-prompt.txt)\" 2>&1 | tee '${log_file}'; echo 'AGENT_EXIT_CODE='\$?" Enter
+
+    json_update '.modules[$m].pane = ($p | tonumber) | .modules[$m].launched_at = $t | .modules[$m].model = $model' \
+        --arg m "$module" --arg p "$pane_id" --arg t "$(date +%s)" --arg model "$model"
 
     set_module_status "$module" "running"
-    log_ok "Launched agent for: $module (pane $pane_id)"
+    log_ok "Launched agent for: $module (pane $pane_id, model: $model, max-turns: $max_turns)"
     return 0
 }
 
@@ -396,8 +484,13 @@ find_free_pane() {
                 break
             fi
         done < <(jq -r '.modules | keys[]' "$PROGRESS_FILE" 2>/dev/null)
-        [[ "$in_use" == "false" ]] && { echo "$pane"; return; }
+        if [[ "$in_use" == "false" ]]; then
+            echo "$pane"
+            return 0
+        fi
     done
+    # All panes occupied — return empty (caller checks)
+    return 1
 }
 
 # ============================================================================
@@ -427,9 +520,12 @@ check_module_timeout() {
 
 check_rate_limit() {
     local log_file="$LOGS_DIR/${1}.log"
-    [[ -f "$log_file" ]] && \
-        grep -qi "rate.limit\|429\|too many requests\|retry.after\|overloaded\|capacity" \
-        "$log_file" 2>/dev/null
+    if [[ -f "$log_file" ]]; then
+        grep -qi "rate.limit\|429\|too many requests\|retry.after\|overloaded\|capacity\|hit your limit\|usage limit\|resets.*am\|resets.*pm" \
+            "$log_file" 2>/dev/null
+        return $?
+    fi
+    return 1
 }
 
 # (W10) Dynamic stale threshold based on module file count
@@ -438,13 +534,25 @@ check_agent_stale() {
     local log_file="$LOGS_DIR/${module}.log"
     [[ ! -f "$log_file" ]] && return 1
 
-    local file_count threshold last_mod now age
+    local file_count threshold now age
     file_count=$(get_module_file_count "$module")
     threshold=$(( STALE_THRESHOLD_BASE + (file_count * STALE_THRESHOLD_PER_FILE) ))
 
-    last_mod=$(stat -f %m "$log_file" 2>/dev/null || stat -c %Y "$log_file" 2>/dev/null || echo 0)
-    now=$(date +%s)
-    age=$(( now - last_mod ))
+    # If log file is tiny (<100 bytes), agent is still initializing — use launch time
+    local log_size
+    log_size=$(wc -c < "$log_file" 2>/dev/null || echo 0)
+    if [[ $log_size -lt 100 ]]; then
+        local launched_at
+        launched_at=$(jq -r --arg m "$module" '.modules[$m].launched_at // empty' "$PROGRESS_FILE")
+        [[ -z "$launched_at" ]] && return 1
+        now=$(date +%s)
+        age=$(( now - launched_at ))
+    else
+        local last_mod
+        last_mod=$(stat -f %m "$log_file" 2>/dev/null || stat -c %Y "$log_file" 2>/dev/null || echo 0)
+        now=$(date +%s)
+        age=$(( now - last_mod ))
+    fi
     [[ $age -gt $threshold ]]
 }
 
@@ -494,11 +602,34 @@ handle_rate_limit() {
 
     json_update '.rate_limit_pauses += 1' ""
 
-    # Exponential backoff: 120 → 240 → 480 → cap at 900
+    # Check if this is a daily/account limit (not temporary rate limit)
+    local log_file="$LOGS_DIR/${module}.log"
+    local is_daily_limit=false
+    if [[ -f "$log_file" ]] && grep -qi "hit your limit\|usage limit\|resets.*am\|resets.*pm" "$log_file" 2>/dev/null; then
+        is_daily_limit=true
+    fi
+
     local retries pause
     retries=$(jq -r --arg m "$module" '.modules[$m].rate_limit_retries // 0' "$PROGRESS_FILE")
-    pause=$(( RATE_LIMIT_BACKOFF_BASE * (2 ** retries) ))
-    [[ $pause -gt $RATE_LIMIT_BACKOFF_MAX ]] && pause=$RATE_LIMIT_BACKOFF_MAX
+
+    if [[ "$is_daily_limit" == "true" ]]; then
+        # Daily limit: pause ALL agents, wait until reset (max 6 hours)
+        pause=3600  # 1 hour, re-check after
+        log_error "DAILY USAGE LIMIT HIT — all agents will be paused"
+        notify "WARNING" "Daily usage limit reached. Pausing all agents. Will retry in ${pause}s."
+
+        # Pause all running modules
+        for mod in $(jq -r '.modules | to_entries[] | select(.value.status == "running") | .key' "$PROGRESS_FILE" 2>/dev/null); do
+            local mod_pane
+            mod_pane=$(jq -r --arg m "$mod" '.modules[$m].pane // empty' "$PROGRESS_FILE")
+            kill_pane_process "$mod_pane"
+            set_module_status "$mod" "rate-limited"
+        done
+    else
+        # Temporary rate limit: exponential backoff per module
+        pause=$(( RATE_LIMIT_BACKOFF_BASE * (2 ** retries) ))
+        if [[ $pause -gt $RATE_LIMIT_BACKOFF_MAX ]]; then pause=$RATE_LIMIT_BACKOFF_MAX; fi
+    fi
 
     json_update '.modules[$m].rate_limit_retries = ((.modules[$m].rate_limit_retries // 0) + 1)' \
         --arg m "$module"
@@ -532,6 +663,11 @@ handle_stale_agent() {
         set_module_status "$module" "build-failed"
         return 0
     fi
+    # Check if rate-limited (not actually stale)
+    if check_rate_limit "$module"; then
+        handle_rate_limit "$module"
+        return 0
+    fi
 
     # Kill and maybe restart
     local pane_num
@@ -552,6 +688,11 @@ handle_crash() {
     fi
     if check_module_failed "$module"; then
         set_module_status "$module" "build-failed"
+        return 0
+    fi
+    # Check if died due to rate limit (not a real crash)
+    if check_rate_limit "$module"; then
+        handle_rate_limit "$module"
         return 0
     fi
 
@@ -626,23 +767,23 @@ merge_module() {
             return 1
         fi
 
-        # Tag for rollback (H4)
-        cd "$REPO_ROOT"
+        # Tag for rollback (H4) — operate in merge worktree, not main repo
+        cd "$MERGE_WORKTREE"
         git checkout "$STAGING_BRANCH" 2>/dev/null
         git tag "pre-merge-${module}" HEAD 2>/dev/null || true
 
         # Merge (B3: conflict = terminal, skip this module)
-        if git merge "$branch" --no-ff -m "refactor: merge module ${module}"; then
+        if git -C "$MERGE_WORKTREE" merge "$branch" --no-ff -m "refactor: merge module ${module}"; then
             log_ok "Merged: $module"
             set_module_status "$module" "merged"
         else
             log_error "Merge conflict for $module (B3: treating as terminal)"
-            git merge --abort 2>/dev/null || true
+            git -C "$MERGE_WORKTREE" merge --abort 2>/dev/null || true
             set_module_status "$module" "conflict"
             json_update '.skipped_modules += [$m]' --arg m "$module"
 
             # Write conflict details for post-mortem
-            git diff "$STAGING_BRANCH" "$branch" --stat > "$LOGS_DIR/${module}.conflict" 2>/dev/null || true
+            git -C "$MERGE_WORKTREE" diff "$STAGING_BRANCH" "$branch" --stat > "$LOGS_DIR/${module}.conflict" 2>/dev/null || true
             notify "WARNING" "Module $module merge conflict — skipped. Review $LOGS_DIR/${module}.conflict"
             return 1
         fi
@@ -697,10 +838,10 @@ cleanup_build_caches() {
     parent_dir=$(dirname "$REPO_ROOT")
     local cleaned=0
     for d in "$parent_dir/${PROJECT_NAME}-refactor-"*; do
-        [[ -d "$d/.next" ]] && { rm -rf "$d/.next"; ((cleaned++)); }
+        [[ -d "$d/.next" ]] && { rm -rf "$d/.next"; cleaned=$((cleaned + 1)); }
         [[ -f "$d/.eslintcache" ]] && rm -f "$d/.eslintcache"
     done
-    [[ $cleaned -gt 0 ]] && log_ok "Cleaned $cleaned .next caches"
+    if [[ $cleaned -gt 0 ]]; then log_ok "Cleaned $cleaned .next caches"; fi
 }
 
 # ============================================================================
@@ -839,7 +980,7 @@ run_wave() {
 
             case "$status" in
                 running)
-                    ((running_count++))
+                    running_count=$((running_count + 1))
 
                     # (B1) Check for success sentinel
                     if check_module_complete "$module"; then
@@ -892,7 +1033,7 @@ run_wave() {
                         wt_dir=$(worktree_path "$module")
                         [[ ! -d "$wt_dir" ]] && { create_worktree "$module" || continue; }
                         if launch_agent "$module"; then
-                            ((running_count++))
+                            running_count=$((running_count + 1))
                         fi
                     fi
                     ;;
@@ -945,12 +1086,15 @@ Options:
   --dry-run              Simulate without running Claude Code
   --module <name>        Run single module only
   --waves <n>            Only run waves 1 through n
+  --parallel <n>         Max parallel agents (default: 1, max: 3)
+  --model <name>         Force all modules to use this model (overrides waves.json)
   --session <name>       tmux session name (default: refactor)
   --slack <webhook-url>  Slack webhook for notifications
   --email <address>      Email for notifications (requires mail command)
   --help                 Show this help
 
 Environment variables:
+  MAX_PARALLEL           Max parallel agents (default: 1)
   NOTIFY_SLACK_WEBHOOK   Slack webhook URL for notifications
   NOTIFY_EMAIL           Email address for notifications
 
@@ -958,14 +1102,17 @@ Examples:
   # Dry run (test everything without Claude)
   ./run-parallel.sh --dry-run
 
-  # Single module test
+  # Single module test (cheapest — validate system works)
   ./run-parallel.sh --module compliance
 
-  # Wave 1 only with Slack notifications
-  ./run-parallel.sh --waves 1 --slack https://hooks.slack.com/...
+  # Wave 1 only, 1 agent at a time (token-efficient)
+  ./run-parallel.sh --waves 1
 
-  # Full hands-off run
-  ./run-parallel.sh --slack https://hooks.slack.com/...
+  # Wave 1 with 2 parallel agents (faster, 2x token burn)
+  ./run-parallel.sh --waves 1 --parallel 2
+
+  # Full run (will take multiple days at 1 agent)
+  ./run-parallel.sh
 USAGE
     exit 0
 }
@@ -976,6 +1123,8 @@ while [[ $# -gt 0 ]]; do
         --module)     SINGLE_MODULE="$2"; shift 2 ;;
         --waves)      MAX_WAVE="$2"; shift 2 ;;
         --session)    TMUX_SESSION="$2"; shift 2 ;;
+        --parallel)   MAX_PARALLEL="$2"; shift 2 ;;
+        --model)      FORCE_MODEL="$2"; shift 2 ;;
         --slack)      NOTIFY_SLACK_WEBHOOK="$2"; shift 2 ;;
         --email)      NOTIFY_EMAIL="$2"; shift 2 ;;
         --help|-h)    usage ;;
@@ -1004,6 +1153,9 @@ main() {
         log_step "Creating staging branch: $STAGING_BRANCH from $(git -C "$REPO_ROOT" branch --show-current)"
         git -C "$REPO_ROOT" branch "$STAGING_BRANCH" HEAD
     fi
+
+    # Create dedicated merge worktree (avoids checking out branches in main repo)
+    setup_merge_worktree
 
     notify "STARTED" "Refactoring started: $wave_count waves, staging branch: $STAGING_BRANCH"
 
@@ -1069,7 +1221,7 @@ main() {
 
     # ---- Final build verification ----
     log_step "Final build verification on $STAGING_BRANCH..."
-    cd "$REPO_ROOT"
+    cd "$MERGE_WORKTREE"
     git checkout "$STAGING_BRANCH" 2>/dev/null
     if npm run build 2>&1 | tail -30; then
         log_ok "FINAL BUILD PASSES on $STAGING_BRANCH"
@@ -1081,14 +1233,17 @@ main() {
 
     # ---- Cleanup ----
     log_step "Cleaning up remaining worktrees..."
+    # Return to repo root before cleanup (we may have cd'd to merge worktree)
+    cd "$REPO_ROOT"
     while IFS= read -r line; do
         local wt_path
         wt_path=$(echo "$line" | awk '{print $1}')
         [[ "$wt_path" == "$REPO_ROOT" ]] && continue
-        [[ "$wt_path" != *"refactor-"* ]] && continue
+        [[ "$wt_path" != *"refactor-"* && "$wt_path" != *"claude-main-merge"* ]] && continue
         [[ -d "${wt_path}/.next" ]] && rm -rf "${wt_path}/.next"
         git -C "$REPO_ROOT" worktree remove "$wt_path" --force 2>/dev/null || true
     done < <(git -C "$REPO_ROOT" worktree list)
+    cleanup_merge_worktree
 
     # ---- Summary ----
     display_status
