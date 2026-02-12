@@ -15,7 +15,7 @@ import { sql } from 'drizzle-orm';
 export const clients = pgTable(
   'clients',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').primaryKey().defaultRandom(),
     businessName: varchar('business_name', { length: 255 }).notNull(),
     ownerName: varchar('owner_name', { length: 255 }).notNull(),
     email: varchar('email', { length: 255 }).notNull().unique(),
@@ -85,8 +85,8 @@ export const clients = pgTable(
     voiceGreeting: text('voice_greeting'),
     voiceVoiceId: varchar('voice_voice_id', { length: 100 }), // ElevenLabs voice ID
     voiceMaxDuration: integer('voice_max_duration').default(300), // seconds
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_clients_status').on(table.status),

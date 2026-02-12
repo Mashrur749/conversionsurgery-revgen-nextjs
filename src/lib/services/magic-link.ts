@@ -2,10 +2,12 @@ import { getDb, magicLinkTokens } from '@/db';
 import { eq, and, gt } from 'drizzle-orm';
 import { randomBytes } from 'crypto';
 
+/** Generate a cryptographically secure 64-character hex token */
 export function generateToken(): string {
   return randomBytes(32).toString('hex');
 }
 
+/** Create a magic link for client dashboard access (valid 7 days) */
 export async function createMagicLink(clientId: string): Promise<string> {
   const db = getDb();
   const token = generateToken();
@@ -21,6 +23,7 @@ export async function createMagicLink(clientId: string): Promise<string> {
   return `${process.env.NEXT_PUBLIC_APP_URL}/d/${token}`;
 }
 
+/** Validate a magic link token and return the associated client ID */
 export async function validateMagicLink(token: string): Promise<{
   valid: boolean;
   clientId?: string;
@@ -51,6 +54,7 @@ export async function validateMagicLink(token: string): Promise<{
   return { valid: true, clientId: record.clientId };
 }
 
+/** Send a dashboard magic link to a client via SMS */
 export async function sendDashboardLink(clientId: string, phone: string, twilioNumber: string): Promise<void> {
   const { sendSMS } = await import('@/lib/services/twilio');
 

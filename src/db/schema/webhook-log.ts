@@ -7,13 +7,12 @@ import {
   jsonb,
   timestamp,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 export const webhookLog = pgTable(
   'webhook_log',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').primaryKey().defaultRandom(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -21,7 +20,7 @@ export const webhookLog = pgTable(
     payload: jsonb('payload'),
     responseStatus: integer('response_status'),
     responseBody: text('response_body'),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => []
 );
