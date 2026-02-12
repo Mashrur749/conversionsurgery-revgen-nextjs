@@ -9,6 +9,7 @@ import { getStripeClient } from '@/lib/clients/stripe';
 import { syncInvoiceFromStripe } from '@/lib/services/subscription-invoices';
 import { addPaymentMethod } from '@/lib/services/payment-methods';
 
+/** POST /api/webhooks/stripe */
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err) {
-    console.error('[Stripe Webhook] Signature verification failed:', err);
+    console.error('[Billing] Stripe webhook signature verification failed:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
@@ -66,8 +67,8 @@ export async function POST(request: NextRequest) {
 
             await sendSMS(
               lead.phone,
-              client.twilioNumber,
-              `Payment of ${amount} received! Thank you for your business. - ${client.businessName}`
+              `Payment of ${amount} received! Thank you for your business. - ${client.businessName}`,
+              client.twilioNumber
             );
           }
 
@@ -79,8 +80,8 @@ export async function POST(request: NextRequest) {
             if (adminNumber) {
               await sendSMS(
                 client.phone,
-                adminNumber,
-                `Payment received: ${amount} from ${session.customer_details?.name || 'customer'}`
+                `Payment received: ${amount} from ${session.customer_details?.name || 'customer'}`,
+                adminNumber
               );
             }
           }
@@ -167,7 +168,7 @@ type DB = ReturnType<typeof getDb>;
 async function handleSubscriptionUpdate(db: DB, sub: Stripe.Subscription, event: Stripe.Event) {
   const clientId = sub.metadata?.clientId;
   if (!clientId) {
-    console.error('[Stripe Webhook] No clientId in subscription metadata');
+    console.error('[Billing] No clientId in subscription metadata');
     return;
   }
 
@@ -183,7 +184,7 @@ async function handleSubscriptionUpdate(db: DB, sub: Stripe.Subscription, event:
   const firstItem = sub.items.data[0];
 
   await db.update(subscriptions).set({
-    status: sub.status as any,
+    status: sub.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused',
     currentPeriodStart: firstItem ? new Date(firstItem.current_period_start * 1000) : undefined,
     currentPeriodEnd: firstItem ? new Date(firstItem.current_period_end * 1000) : undefined,
     cancelAtPeriodEnd: sub.cancel_at_period_end,
@@ -224,7 +225,7 @@ async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe
   try {
     await syncInvoiceFromStripe(invoice.id);
   } catch (err) {
-    console.error('[Stripe Webhook] Failed to sync invoice:', err);
+    console.error('[Billing] Failed to sync invoice:', err);
   }
 
   // In Stripe v20, subscription is in parent.subscription_details

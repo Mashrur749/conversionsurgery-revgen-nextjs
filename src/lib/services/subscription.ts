@@ -1,12 +1,8 @@
 import { getDb } from '@/db';
-import {
-  subscriptions,
-  plans,
-  clients,
-  billingEvents,
-} from '@/db/schema';
+import { subscriptions, plans, clients, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
+import type Stripe from 'stripe';
 import type { Subscription } from '@/db/schema/subscriptions';
 import type { Plan } from '@/db/schema/plans';
 
@@ -88,7 +84,7 @@ export async function createSubscription(
     stripeSubParams.coupon = couponCode;
   }
 
-  const stripeSubscription = await stripe.subscriptions.create(stripeSubParams as any);
+  const stripeSubscription = await stripe.subscriptions.create(stripeSubParams as unknown as Stripe.SubscriptionCreateParams);
 
   // Calculate trial dates
   const trialStart = stripeSubscription.trial_start
@@ -111,7 +107,7 @@ export async function createSubscription(
   const [subscription] = await db.insert(subscriptions).values({
     clientId,
     planId,
-    status: stripeSubscription.status as any,
+    status: stripeSubscription.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused',
     interval,
     stripeCustomerId,
     stripeSubscriptionId: stripeSubscription.id,
@@ -301,7 +297,7 @@ export async function resumeSubscription(subscriptionId: string): Promise<Subscr
 
   // Resume in Stripe
   await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-    pause_collection: '' as any,
+    pause_collection: '' as unknown as undefined,
   });
 
   // Update local record

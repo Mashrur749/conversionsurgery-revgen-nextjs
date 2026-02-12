@@ -7,7 +7,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { subscriptions } from './subscriptions';
 import { subscriptionInvoices } from './subscription-invoices';
@@ -15,7 +14,7 @@ import { subscriptionInvoices } from './subscription-invoices';
 export const usageRecords = pgTable(
   'usage_records',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .references(() => clients.id, { onDelete: 'cascade' })
       .notNull(),
@@ -39,7 +38,7 @@ export const usageRecords = pgTable(
     // Billing
     billedOnInvoiceId: uuid('billed_on_invoice_id').references(() => subscriptionInvoices.id),
 
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     index('usage_records_client_period_idx').on(

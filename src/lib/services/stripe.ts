@@ -5,6 +5,9 @@ import { eq } from 'drizzle-orm';
 
 let _stripe: Stripe | null = null;
 
+/**
+ * Get or create Stripe client singleton
+ */
 function getStripe(): Stripe {
   if (!_stripe) {
     _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -243,7 +246,7 @@ export async function handlePaymentSuccess(
     .limit(1);
 
   if (!payment) {
-    console.error('[Stripe] Payment not found for link:', paymentLinkId);
+    console.error('[Billing] Payment not found for link:', paymentLinkId);
     return;
   }
 

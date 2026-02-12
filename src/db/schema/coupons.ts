@@ -8,12 +8,11 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 export const coupons = pgTable(
   'coupons',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
 
     code: varchar('code', { length: 50 }).notNull().unique(),
     name: varchar('name', { length: 100 }),
@@ -43,7 +42,7 @@ export const coupons = pgTable(
     stripeCouponId: varchar('stripe_coupon_id', { length: 100 }),
 
     isActive: boolean('is_active').default(true),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     uniqueIndex('coupons_code_idx').on(table.code),

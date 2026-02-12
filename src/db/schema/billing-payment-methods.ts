@@ -9,13 +9,12 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 export const billingPaymentMethods = pgTable(
   'billing_payment_methods',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .references(() => clients.id, { onDelete: 'cascade' })
       .notNull(),
@@ -49,8 +48,8 @@ export const billingPaymentMethods = pgTable(
       country?: string;
     }>(),
 
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('billing_payment_methods_client_idx').on(table.clientId),

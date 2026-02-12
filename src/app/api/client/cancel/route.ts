@@ -6,7 +6,8 @@ import {
   scheduleRetentionCall,
   confirmCancellation,
 } from '@/lib/services/cancellation';
-import { getDb, clients } from '@/db';
+import { getDb } from '@/db';
+import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendEmail } from '@/lib/services/resend';
 
@@ -16,6 +17,7 @@ const cancelSchema = z.object({
   action: z.enum(['schedule_call', 'confirm']),
 });
 
+/** POST /api/client/cancel */
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies();
   const clientId = cookieStore.get('clientSessionId')?.value;
@@ -29,7 +31,10 @@ export async function POST(request: NextRequest) {
     const parsed = cancelSchema.safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid input', details: parsed.error.issues }, { status: 400 });
+      return NextResponse.json({
+        error: 'Invalid input',
+        details: parsed.error.flatten().fieldErrors
+      }, { status: 400 });
     }
 
     const { reason, feedback, action } = parsed.data;
@@ -85,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    console.error('Cancellation error:', error);
+    console.error('[Billing] Cancellation error:', error);
     return NextResponse.json({ error: 'Failed to process cancellation' }, { status: 500 });
   }
 }

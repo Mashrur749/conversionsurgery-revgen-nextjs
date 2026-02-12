@@ -7,13 +7,12 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 export const cancellationRequests = pgTable(
   'cancellation_requests',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -23,7 +22,7 @@ export const cancellationRequests = pgTable(
     valueShown: jsonb('value_shown'), // Stats shown at cancellation
     scheduledCallAt: timestamp('scheduled_call_at'),
     gracePeriodEnds: timestamp('grace_period_ends'),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
     processedAt: timestamp('processed_at'),
     processedBy: varchar('processed_by', { length: 255 }),
   },

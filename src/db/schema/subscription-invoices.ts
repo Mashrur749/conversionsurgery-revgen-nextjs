@@ -9,7 +9,6 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { subscriptions } from './subscriptions';
 import { billingPaymentMethods } from './billing-payment-methods';
@@ -17,7 +16,7 @@ import { billingPaymentMethods } from './billing-payment-methods';
 export const subscriptionInvoices = pgTable(
   'subscription_invoices',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .references(() => clients.id, { onDelete: 'cascade' })
       .notNull(),
@@ -73,8 +72,8 @@ export const subscriptionInvoices = pgTable(
     // Metadata
     metadata: jsonb('metadata').$type<Record<string, unknown>>(),
 
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('subscription_invoices_client_idx').on(table.clientId),

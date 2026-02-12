@@ -1,4 +1,5 @@
-import { getDb, cancellationRequests, clients, dailyStats } from '@/db';
+import { getDb } from '@/db';
+import { cancellationRequests, clients, dailyStats } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 
 export interface ValueSummary {
@@ -10,6 +11,9 @@ export interface ValueSummary {
   roi: number;
 }
 
+/**
+ * Get value summary for client showing ROI and usage stats
+ */
 export async function getValueSummary(clientId: string): Promise<ValueSummary> {
   const db = getDb();
 
@@ -53,6 +57,9 @@ export async function getValueSummary(clientId: string): Promise<ValueSummary> {
   };
 }
 
+/**
+ * Initiate cancellation request with value summary
+ */
 export async function initiateCancellation(
   clientId: string,
   reason: string,
@@ -74,6 +81,9 @@ export async function initiateCancellation(
   return request.id;
 }
 
+/**
+ * Schedule retention call for cancellation request
+ */
 export async function scheduleRetentionCall(
   requestId: string,
   scheduledAt: Date
@@ -89,6 +99,9 @@ export async function scheduleRetentionCall(
     .where(eq(cancellationRequests.id, requestId));
 }
 
+/**
+ * Mark cancellation request as saved (client retained)
+ */
 export async function markAsSaved(requestId: string): Promise<void> {
   const db = getDb();
 
@@ -101,6 +114,9 @@ export async function markAsSaved(requestId: string): Promise<void> {
     .where(eq(cancellationRequests.id, requestId));
 }
 
+/**
+ * Confirm cancellation with grace period
+ */
 export async function confirmCancellation(
   requestId: string,
   gracePeriodDays: number = 7
@@ -119,6 +135,9 @@ export async function confirmCancellation(
     .where(eq(cancellationRequests.id, requestId));
 }
 
+/**
+ * Get pending cancellation request for client
+ */
 export async function getPendingCancellation(clientId: string) {
   const db = getDb();
 

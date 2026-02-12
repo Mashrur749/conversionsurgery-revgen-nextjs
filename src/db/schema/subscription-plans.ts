@@ -9,12 +9,11 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 export const subscriptionPlans = pgTable(
   'subscription_plans',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     name: varchar('name', { length: 100 }).notNull(),
     slug: varchar('slug', { length: 50 }).notNull().unique(),
     description: text('description'),
@@ -42,8 +41,8 @@ export const subscriptionPlans = pgTable(
     isPublic: boolean('is_public').default(true),
     isPopular: boolean('is_popular').default(false),
 
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_subscription_plans_slug').on(table.slug),

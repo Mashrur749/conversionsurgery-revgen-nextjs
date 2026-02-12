@@ -9,12 +9,11 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 export const plans = pgTable(
   'plans',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
 
     // Plan identity
     name: varchar('name', { length: 100 }).notNull(),
@@ -51,8 +50,8 @@ export const plans = pgTable(
     displayOrder: integer('display_order').default(0),
     isActive: boolean('is_active').default(true),
 
-    createdAt: timestamp('created_at').defaultNow(),
-    updatedAt: timestamp('updated_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_plans_slug').on(table.slug),

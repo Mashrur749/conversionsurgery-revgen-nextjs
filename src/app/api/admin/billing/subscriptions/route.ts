@@ -5,9 +5,10 @@ import { getDb } from '@/db';
 import { subscriptions, plans, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
+/** GET /api/admin/billing/subscriptions */
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session || !(session as any).user?.isAdmin) {
+  if (!session || !(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
