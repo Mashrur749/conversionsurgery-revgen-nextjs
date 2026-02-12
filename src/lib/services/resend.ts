@@ -6,8 +6,18 @@ interface SendEmailOptions {
   html: string;
 }
 
-/** Send an email via Resend. Accepts an options object `{ to, subject, html }`. */
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+interface SendEmailResult {
+  success: boolean;
+  id?: string;
+  error?: unknown;
+}
+
+/**
+ * Send an email via Resend
+ * @param options - Email options: to, subject, html
+ * @returns Result with success status and optional message ID
+ */
+export async function sendEmail({ to, subject, html }: SendEmailOptions): Promise<SendEmailResult> {
   if (!process.env.RESEND_API_KEY) {
     console.error('[Resend] RESEND_API_KEY is not set');
     return { success: false, error: 'Email service not configured' };
