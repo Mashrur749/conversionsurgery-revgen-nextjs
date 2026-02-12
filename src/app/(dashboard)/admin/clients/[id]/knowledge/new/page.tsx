@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { KnowledgeEntryForm } from '../knowledge-entry-form';
@@ -10,7 +10,7 @@ interface Props {
 export default async function NewKnowledgeEntryPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
-  if (!(session as any)?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAdmin) redirect('/dashboard');
 
   return (
     <div className="max-w-2xl mx-auto">

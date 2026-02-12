@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb, supportMessages, supportReplies } from '@/db';
 import { desc, sql, count, eq } from 'drizzle-orm';
@@ -14,7 +14,7 @@ export default async function AdminDiscussionsPage({
 }) {
   const session = await auth();
   if (!session) redirect('/login');
-  const isAdmin = (session as any).user?.isAdmin || false;
+  const isAdmin = session.user?.isAdmin || false;
   if (!isAdmin) redirect('/dashboard');
 
   const { status: statusFilter } = await searchParams;

@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -10,7 +10,7 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+    if (!session?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

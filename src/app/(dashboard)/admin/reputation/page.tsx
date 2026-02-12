@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
 import { clients, reviewSources } from '@/db/schema';
@@ -12,7 +12,7 @@ import type { ReviewSource } from '@/db/schema/review-sources';
 export default async function ReputationPage() {
   const session = await auth();
 
-  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

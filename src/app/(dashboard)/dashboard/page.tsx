@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getClientId } from '@/lib/get-client-id';
 import { getDb, leads, dailyStats, scheduledMessages } from '@/db';
 import { eq, and, desc, gte, sql } from 'drizzle-orm';

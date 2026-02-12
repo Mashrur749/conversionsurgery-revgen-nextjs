@@ -13,5 +13,5 @@ export function useClientId(): string | null {
     return selectedClientId;
   }
 
-  return (session as any)?.client?.id || null;
+  return session?.client?.id || null;
 }

@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
 import { abTests, clients } from '@/db/schema';
@@ -13,7 +13,7 @@ import { ABTestsList } from './components/ab-tests-list';
 export default async function ABTestsPage() {
   const session = await auth();
 
-  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

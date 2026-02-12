@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import {
   getClientKnowledge,
   addKnowledgeEntry,
@@ -14,7 +14,7 @@ export async function GET(
   const { id } = await params;
   const session = await auth();
 
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -47,7 +47,7 @@ export async function POST(
   const { id } = await params;
   const session = await auth();
 
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

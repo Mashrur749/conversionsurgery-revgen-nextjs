@@ -1,6 +1,5 @@
 import { getDb } from '@/db';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { messageTemplates } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
@@ -17,8 +16,8 @@ const assignTemplateSchema = z.object({
  */
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+    const session = await auth();
+    if (!session?.user?.isAdmin) {
       return new Response('Unauthorized', { status: 403 });
     }
 

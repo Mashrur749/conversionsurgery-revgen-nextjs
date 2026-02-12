@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { fullSync } from '@/lib/services/calendar';
 import { z } from 'zod';
 
@@ -10,7 +9,7 @@ const syncSchema = z.object({
 
 /** POST /api/calendar/sync - Trigger a full bidirectional sync for a client */
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

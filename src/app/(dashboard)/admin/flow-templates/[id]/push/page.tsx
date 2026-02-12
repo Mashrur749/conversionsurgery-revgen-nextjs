@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { flowTemplates, flows, clients } from '@/db/schema';

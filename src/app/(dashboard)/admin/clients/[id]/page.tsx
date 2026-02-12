@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getDb, clients, teamMembers } from '@/db';
 import { eq } from 'drizzle-orm';
@@ -69,13 +69,11 @@ export default async function ClientDetailPage({ params }: Props) {
           <Button asChild variant="outline">
             <Link href="/admin">← Back to Clients</Link>
           </Button>
-          {!client.twilioNumber && (
-            <Button asChild>
-              <Link href={`/admin/clients/${client.id}/phone`}>
-                Assign Phone Number
-              </Link>
-            </Button>
-          )}
+          <Button asChild variant={client.twilioNumber ? 'outline' : 'default'}>
+            <Link href={`/admin/clients/${client.id}/phone`}>
+              {client.twilioNumber ? 'Manage Number' : 'Assign Number'}
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -97,27 +95,28 @@ export default async function ClientDetailPage({ params }: Props) {
             </CardHeader>
             <CardContent>
               {client.twilioNumber ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-2xl font-mono">
                     {formatPhoneNumber(client.twilioNumber)}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    Webhooks configured automatically
-                  </p>
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="bg-green-50 text-green-700">Voice</Badge>
+                    <Badge variant="outline" className="bg-green-50 text-green-700">SMS</Badge>
+                  </div>
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/admin/clients/${client.id}/phone`}>
-                      Change Number
+                      Manage Number
                     </Link>
                   </Button>
                 </div>
               ) : (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground mb-3">
-                    No phone number assigned yet
+                    No phone number assigned
                   </p>
                   <Button asChild>
                     <Link href={`/admin/clients/${client.id}/phone`}>
-                      Assign Phone Number
+                      Assign Number
                     </Link>
                   </Button>
                 </div>

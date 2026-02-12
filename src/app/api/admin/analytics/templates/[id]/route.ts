@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getTemplatePerformance } from '@/lib/services/flow-metrics';
 
 /** GET /api/admin/analytics/templates/[id] */
@@ -9,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+    const session = await auth();
+    if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

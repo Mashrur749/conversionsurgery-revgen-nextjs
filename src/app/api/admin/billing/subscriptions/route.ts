@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { subscriptions, plans, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 /** GET /api/admin/billing/subscriptions */
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session || !(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

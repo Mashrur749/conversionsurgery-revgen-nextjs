@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { PlatformAnalytics } from '@/components/admin/platform-analytics';
 

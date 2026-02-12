@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getDb, supportMessages, supportReplies } from '@/db';
 import { eq, asc } from 'drizzle-orm';

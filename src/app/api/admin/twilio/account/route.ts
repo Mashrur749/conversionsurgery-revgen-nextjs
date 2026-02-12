@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getAccountBalance, listOwnedNumbers } from '@/lib/services/twilio-provisioning';
 
 /**
@@ -11,7 +10,7 @@ import { getAccountBalance, listOwnedNumbers } from '@/lib/services/twilio-provi
  * Requires admin authentication.
  */
 export async function GET(_request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });

@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
@@ -14,7 +14,7 @@ interface Props {
 export default async function KnowledgeBasePage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
-  if (!(session as any)?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAdmin) redirect('/dashboard');
 
   const db = getDb();
   const [client] = await db

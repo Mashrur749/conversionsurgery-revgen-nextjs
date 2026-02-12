@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import type { WizardData } from '../setup-wizard';
@@ -10,13 +11,24 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 interface Props {
   data: WizardData;
+  updateData: (updates: Partial<WizardData>) => void;
   onBack: () => void;
   onComplete: () => void;
+  onGoToStep: (step: number) => void;
 }
 
-export function StepReview({ data, onBack, onComplete }: Props) {
+export function StepReview({ data, updateData, onBack, onComplete, onGoToStep }: Props) {
   const [activating, setActivating] = useState(false);
   const [error, setError] = useState('');
+
+  // Inline editing state for business info
+  const [editingBusiness, setEditingBusiness] = useState(false);
+  const [editFields, setEditFields] = useState({
+    businessName: data.businessName,
+    ownerName: data.ownerName,
+    email: data.email,
+    phone: data.phone,
+  });
 
   async function handleActivate() {
     if (!data.clientId) {
@@ -28,7 +40,6 @@ export function StepReview({ data, onBack, onComplete }: Props) {
     setError('');
 
     try {
-      // Activate the client
       const res = await fetch(`/api/admin/clients/${data.clientId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -42,11 +53,24 @@ export function StepReview({ data, onBack, onComplete }: Props) {
       }
 
       onComplete();
-    } catch (err) {
+    } catch {
       setError('Something went wrong');
     } finally {
       setActivating(false);
     }
+  }
+
+  function saveBusiness() {
+    if (!editFields.businessName.trim() || !editFields.email.trim()) {
+      return;
+    }
+    updateData({
+      businessName: editFields.businessName.trim(),
+      ownerName: editFields.ownerName.trim(),
+      email: editFields.email.trim(),
+      phone: editFields.phone.trim(),
+    });
+    setEditingBusiness(false);
   }
 
   const openDays = data.businessHours.filter(h => h.isOpen);
@@ -65,48 +89,133 @@ export function StepReview({ data, onBack, onComplete }: Props) {
 
       {/* Business Info */}
       <div className="border rounded-lg p-4">
-        <h3 className="font-medium mb-3">Business Information</h3>
-        <div className="grid gap-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Business Name</span>
-            <span className="font-medium">{data.businessName}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Owner</span>
-            <span>{data.ownerName}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Email</span>
-            <span>{data.email}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Phone</span>
-            <span>{data.phone}</span>
-          </div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium">Business Information</h3>
+          {editingBusiness ? (
+            <div className="flex gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditFields({
+                    businessName: data.businessName,
+                    ownerName: data.ownerName,
+                    email: data.email,
+                    phone: data.phone,
+                  });
+                  setEditingBusiness(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button size="sm" onClick={saveBusiness}>
+                Save
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingBusiness(true)}
+            >
+              Edit
+            </Button>
+          )}
         </div>
+
+        {editingBusiness ? (
+          <div className="grid gap-3 text-sm">
+            <div className="grid grid-cols-[140px_1fr] items-center gap-2">
+              <span className="text-muted-foreground">Business Name</span>
+              <Input
+                value={editFields.businessName}
+                onChange={(e) =>
+                  setEditFields((f) => ({ ...f, businessName: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid grid-cols-[140px_1fr] items-center gap-2">
+              <span className="text-muted-foreground">Owner</span>
+              <Input
+                value={editFields.ownerName}
+                onChange={(e) =>
+                  setEditFields((f) => ({ ...f, ownerName: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid grid-cols-[140px_1fr] items-center gap-2">
+              <span className="text-muted-foreground">Email</span>
+              <Input
+                type="email"
+                value={editFields.email}
+                onChange={(e) =>
+                  setEditFields((f) => ({ ...f, email: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid grid-cols-[140px_1fr] items-center gap-2">
+              <span className="text-muted-foreground">Phone</span>
+              <Input
+                value={editFields.phone}
+                onChange={(e) =>
+                  setEditFields((f) => ({ ...f, phone: e.target.value }))
+                }
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Business Name</span>
+              <span className="font-medium">{data.businessName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Owner</span>
+              <span>{data.ownerName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Email</span>
+              <span>{data.email}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Phone</span>
+              <span>{data.phone}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Phone Number */}
       <div className="border rounded-lg p-4">
-        <h3 className="font-medium mb-3">Twilio Number</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium">Twilio Number</h3>
+          <Button variant="ghost" size="sm" onClick={() => onGoToStep(1)}>
+            {data.twilioNumber ? 'Change' : 'Assign'}
+          </Button>
+        </div>
         {data.twilioNumber ? (
           <div className="flex items-center justify-between">
             <span className="font-mono text-lg">
               {formatPhoneNumber(data.twilioNumber)}
             </span>
-            <Badge className="bg-green-100 text-green-800">Configured</Badge>
+            <Badge className="bg-green-100 text-green-800">Assigned</Badge>
           </div>
         ) : (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">No number assigned</span>
-            <Badge variant="outline" className="text-amber-600">Pending</Badge>
+            <Badge variant="outline" className="text-amber-600">Optional</Badge>
           </div>
         )}
       </div>
 
       {/* Team Members */}
       <div className="border rounded-lg p-4">
-        <h3 className="font-medium mb-3">Team Members</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium">Team Members</h3>
+          <Button variant="ghost" size="sm" onClick={() => onGoToStep(2)}>
+            Edit
+          </Button>
+        </div>
         {data.teamMembers.length > 0 ? (
           <div className="space-y-2">
             {data.teamMembers.map((member, i) => (
@@ -125,7 +234,12 @@ export function StepReview({ data, onBack, onComplete }: Props) {
 
       {/* Business Hours */}
       <div className="border rounded-lg p-4">
-        <h3 className="font-medium mb-3">Business Hours</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-medium">Business Hours</h3>
+          <Button variant="ghost" size="sm" onClick={() => onGoToStep(3)}>
+            Edit
+          </Button>
+        </div>
         {openDays.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {openDays.map((h) => (
@@ -144,13 +258,13 @@ export function StepReview({ data, onBack, onComplete }: Props) {
       {/* Warnings */}
       {(!data.twilioNumber || data.teamMembers.length === 0) && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <h4 className="font-medium text-amber-800 mb-2">Before you go live:</h4>
+          <h4 className="font-medium text-amber-800 mb-2">Heads up:</h4>
           <ul className="text-sm text-amber-700 space-y-1">
             {!data.twilioNumber && (
-              <li>Assign a phone number to receive calls and texts</li>
+              <li>No phone number assigned — you can add one later from client settings</li>
             )}
             {data.teamMembers.length === 0 && (
-              <li>Add team members to share escalation load</li>
+              <li>No team members — escalations will only go to the owner</li>
             )}
           </ul>
         </div>
@@ -159,11 +273,11 @@ export function StepReview({ data, onBack, onComplete }: Props) {
       {/* Actions */}
       <div className="flex justify-between pt-4">
         <Button variant="outline" onClick={onBack}>
-          ← Back
+          Back
         </Button>
         <Button
           onClick={handleActivate}
-          disabled={activating || !data.twilioNumber}
+          disabled={activating}
           className="min-w-32"
         >
           {activating ? 'Activating...' : 'Activate Client'}

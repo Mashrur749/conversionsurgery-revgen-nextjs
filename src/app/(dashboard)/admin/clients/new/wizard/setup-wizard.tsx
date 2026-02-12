@@ -69,6 +69,7 @@ const STEPS = [
 export function SetupWizard() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
+  const [highestStep, setHighestStep] = useState(0);
   const [data, setData] = useState<WizardData>(INITIAL_DATA);
   const [isComplete, setIsComplete] = useState(false);
 
@@ -76,9 +77,17 @@ export function SetupWizard() {
     setData(prev => ({ ...prev, ...updates }));
   }
 
+  function goToStep(step: number) {
+    if (step >= 0 && step <= highestStep) {
+      setCurrentStep(step);
+    }
+  }
+
   function nextStep() {
     if (currentStep < STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
+      const next = currentStep + 1;
+      setCurrentStep(next);
+      setHighestStep(prev => Math.max(prev, next));
     }
   }
 
@@ -130,29 +139,40 @@ export function SetupWizard() {
         <Progress value={progress} className="h-2" />
       </div>
 
-      {/* Step Indicators */}
+      {/* Step Indicators — clickable for visited steps */}
       <div className="flex justify-between">
-        {STEPS.map((s, i) => (
-          <div
-            key={s.id}
-            className={`flex flex-col items-center ${
-              i <= currentStep ? 'text-primary' : 'text-muted-foreground'
-            }`}
-          >
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                i < currentStep
-                  ? 'bg-primary text-primary-foreground'
-                  : i === currentStep
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
-              }`}
+        {STEPS.map((s, i) => {
+          const isVisited = i <= highestStep;
+          const isCurrent = i === currentStep;
+          const isCompleted = i < currentStep;
+
+          return (
+            <button
+              key={s.id}
+              type="button"
+              disabled={!isVisited}
+              onClick={() => goToStep(i)}
+              className={`flex flex-col items-center group ${
+                isVisited ? 'cursor-pointer' : 'cursor-default'
+              } ${isCurrent || isCompleted ? 'text-primary' : 'text-muted-foreground'}`}
             >
-              {i < currentStep ? '✓' : i + 1}
-            </div>
-            <span className="text-xs mt-1 hidden md:block">{s.title}</span>
-          </div>
-        ))}
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                  isCompleted
+                    ? 'bg-primary text-primary-foreground group-hover:bg-primary/80'
+                    : isCurrent
+                    ? 'bg-primary text-primary-foreground'
+                    : isVisited
+                    ? 'bg-muted group-hover:bg-muted/80 text-foreground'
+                    : 'bg-muted'
+                }`}
+              >
+                {isCompleted ? '✓' : i + 1}
+              </div>
+              <span className="text-xs mt-1 hidden md:block">{s.title}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Step Content */}
@@ -196,8 +216,10 @@ export function SetupWizard() {
           {currentStep === 4 && (
             <StepReview
               data={data}
+              updateData={updateData}
               onBack={prevStep}
               onComplete={handleComplete}
+              onGoToStep={goToStep}
             />
           )}
         </CardContent>

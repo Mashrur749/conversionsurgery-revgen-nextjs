@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
@@ -18,7 +18,7 @@ export default async function RevenuePage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
 
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

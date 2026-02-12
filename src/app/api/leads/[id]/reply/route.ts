@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { clients } from '@/db/schema/clients';
@@ -23,7 +23,7 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const clientId = (session as { client?: { id?: string } })?.client?.id;
+  const clientId = session?.client?.id;
   if (!clientId) {
     return NextResponse.json({ error: 'No client' }, { status: 403 });
   }

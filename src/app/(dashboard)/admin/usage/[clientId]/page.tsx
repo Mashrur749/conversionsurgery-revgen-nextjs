@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
@@ -10,7 +10,7 @@ interface PageProps {
 
 export default async function ClientUsagePage({ params }: PageProps) {
   const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

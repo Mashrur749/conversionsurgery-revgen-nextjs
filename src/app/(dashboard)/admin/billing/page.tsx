@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAdminBillingStats } from '@/lib/billing/queries';
@@ -13,7 +13,7 @@ export const metadata = {
 
 async function AdminBillingContent() {
   const session = await auth();
-  if (!session || !(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+  if (!session || !session?.user?.isAdmin) {
     redirect('/login');
   }
 

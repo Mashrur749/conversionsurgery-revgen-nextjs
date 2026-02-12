@@ -1,21 +1,12 @@
-import { type NextAuthOptions } from 'next-auth';
-import EmailProvider from 'next-auth/providers/email';
+import NextAuth from 'next-auth';
 import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { getDb } from '@/db';
 import { users, accounts, sessions, verificationTokens } from '@/db/schema/auth';
 import { clients } from '@/db/schema/clients';
 import { eq } from 'drizzle-orm';
-import { sendEmail } from './services/resend';
+import { sendEmail } from '@/lib/services/resend';
 
-/**
- * NextAuth Configuration
- * Uses Drizzle ORM adapter with Neon PostgreSQL for session/token storage
- * Email provider with Resend for magic link delivery
- *
- * NOTE: NextAuth v5 coming soon - this config is v5-ready
- * When v5 releases, this will move to /auth.ts with simplified exports
- */
-export const authOptions: NextAuthOptions = {
+export const { auth, handlers, signIn, signOut } = NextAuth({
   debug: process.env.NODE_ENV === 'development',
   adapter: DrizzleAdapter(getDb(), {
     usersTable: users,
@@ -25,7 +16,6 @@ export const authOptions: NextAuthOptions = {
   }),
   callbacks: {
     async session({ session, user }) {
-      // Fetch user from database to include client info and admin status
       const db = getDb();
       const [dbUser] = await db
         .select({
@@ -39,9 +29,8 @@ export const authOptions: NextAuthOptions = {
 
       if (dbUser) {
         session.user.id = dbUser.id;
-        (session as any).user.isAdmin = dbUser.isAdmin ?? false;
+        session.user.isAdmin = dbUser.isAdmin ?? false;
 
-        // Fetch full client details for non-admin users with a client association
         if (!dbUser.isAdmin && dbUser.clientId) {
           const [client] = await db
             .select({
@@ -54,7 +43,7 @@ export const authOptions: NextAuthOptions = {
             .limit(1);
 
           if (client) {
-            (session as any).client = {
+            session.client = {
               id: client.id,
               businessName: client.businessName,
               ownerName: client.ownerName,
@@ -70,27 +59,22 @@ export const authOptions: NextAuthOptions = {
 
       const db = getDb();
 
-      // Check if user exists in database
       const [dbUser] = await db
         .select()
         .from(users)
         .where(eq(users.email, user.email))
         .limit(1);
 
-      // Admins can always sign in
       if (dbUser?.isAdmin) return true;
 
-      // Check if there's a matching client for this email
       const [client] = await db
         .select()
         .from(clients)
         .where(eq(clients.email, user.email))
         .limit(1);
 
-      // No matching client = deny sign in
       if (!client) return false;
 
-      // Auto-link user to client if not already linked
       if (user.id && dbUser && !dbUser.clientId) {
         await db
           .update(users)
@@ -102,17 +86,19 @@ export const authOptions: NextAuthOptions = {
     },
   },
   providers: [
-    EmailProvider({
+    {
+      id: 'email',
+      name: 'Email',
+      type: 'email',
       from: process.env.EMAIL_FROM || 'noreply@example.com',
-      maxAge: 24 * 60 * 60, // 24 hours
-      async sendVerificationRequest({ identifier, url, expires, provider, theme }) {
+      maxAge: 24 * 60 * 60,
+      async sendVerificationRequest({ identifier, url, expires, provider }) {
         console.log(`[EmailProvider] sendVerificationRequest called!`);
         console.log(`[EmailProvider] identifier: ${identifier}`);
         console.log(`[EmailProvider] url: ${url}`);
         console.log(`[EmailProvider] provider: ${JSON.stringify(provider)}`);
 
         try {
-          // Log magic link in development mode
           if (process.env.NODE_ENV === 'development') {
             console.log(`[next-auth][info][EMAIL_VERIFICATION_SEND]`);
             console.log(`Email: ${identifier}`);
@@ -145,7 +131,7 @@ export const authOptions: NextAuthOptions = {
           throw error;
         }
       },
-    }),
+    },
   ],
   pages: {
     signIn: '/login',
@@ -154,8 +140,21 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'database',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // Update every 24 hours
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
+  },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
   },
   secret: process.env.AUTH_SECRET,
-};
+});

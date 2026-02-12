@@ -23,5 +23,6 @@ declare module 'next-auth' {
     name?: string | null;
     image?: string | null;
     isAdmin?: boolean;
+    clientId?: string | null;
   }
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { updateKnowledgeEntry, deleteKnowledgeEntry } from '@/lib/services/knowledge-base';
 import { z } from 'zod';
 
@@ -18,7 +18,7 @@ export async function PATCH(
   const { entryId } = await params;
   const session = await auth();
 
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 
@@ -50,7 +50,7 @@ export async function DELETE(
   const { entryId } = await params;
   const session = await auth();
 
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb, clients, leads, dailyStats } from '@/db';
 import { eq, gte, sql } from 'drizzle-orm';

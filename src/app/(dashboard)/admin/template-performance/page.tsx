@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { TemplatePerformanceDashboard } from './components/template-performance-dashboard';
 
@@ -9,7 +9,7 @@ import { TemplatePerformanceDashboard } from './components/template-performance-
 export default async function TemplatePerformancePage() {
   const session = await auth();
 
-  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/login');
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { escalationClaims, leads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const clientId = (session as any).client?.id;
+    const clientId = session.client?.id;
     if (!clientId) {
       return NextResponse.json({ error: 'No client associated' }, { status: 400 });
     }

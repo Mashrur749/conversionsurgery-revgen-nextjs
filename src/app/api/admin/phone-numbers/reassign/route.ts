@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -18,7 +17,7 @@ const reassignSchema = z.object({
  * Requires admin authentication.
  */
 export async function PATCH(req: Request) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user?.isAdmin) {
     return Response.json({ error: 'Unauthorized' }, { status: 403 });

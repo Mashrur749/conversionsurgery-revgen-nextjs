@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getDb, clients } from '@/db';
@@ -57,7 +57,7 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  const isAdmin = (session as any).user?.isAdmin || false;
+  const isAdmin = session.user?.isAdmin || false;
 
   let allClients: { id: string; businessName: string; ownerName: string }[] = [];
   if (isAdmin) {
@@ -109,7 +109,7 @@ export default async function DashboardLayout({
               <div className="flex items-center gap-2 md:gap-4">
                 {!isAdmin && (
                   <span className="hidden sm:inline text-sm text-gray-600">
-                    {(session as any).client?.businessName || session.user?.email}
+                    {session.client?.businessName || session.user?.email}
                   </span>
                 )}
                 <SignOutButton />

@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { conversations } from '@/db/schema/conversations';

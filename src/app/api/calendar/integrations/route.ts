@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb, calendarIntegrations } from '@/db';
 import { eq } from 'drizzle-orm';
 import { getGoogleAuthUrl } from '@/lib/services/calendar';
@@ -17,7 +16,7 @@ const connectSchema = z.object({
 
 /** GET /api/calendar/integrations - List calendar integrations for a client */
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -62,7 +61,7 @@ export async function GET(request: NextRequest) {
 
 /** POST /api/calendar/integrations - Start OAuth flow for a calendar provider */
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

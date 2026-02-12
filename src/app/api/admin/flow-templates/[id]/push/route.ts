@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { pushTemplateUpdate } from '@/lib/services/flow-templates';
 
 interface RouteContext {
@@ -12,7 +12,7 @@ interface RouteContext {
  */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+  const isAdmin = session?.user?.isAdmin;
 
   if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });

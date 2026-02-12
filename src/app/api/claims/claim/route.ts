@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { claimEscalation } from '@/lib/services/team-escalation';
 import { getDb } from '@/db';
 import { teamMembers } from '@/db/schema';
@@ -25,7 +25,11 @@ export async function POST(request: NextRequest) {
 
     // Get current user's team member ID
     const db = getDb();
-    const clientId = (session as any).client?.id;
+    const clientId = session.client?.id;
+
+    if (!clientId) {
+      return NextResponse.json({ error: 'No client associated' }, { status: 403 });
+    }
 
     const [userTeamMember] = await db
       .select()

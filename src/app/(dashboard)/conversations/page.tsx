@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getClientId } from '@/lib/get-client-id';
 import { getDb } from '@/db';
 import { conversations, leads } from '@/db/schema';

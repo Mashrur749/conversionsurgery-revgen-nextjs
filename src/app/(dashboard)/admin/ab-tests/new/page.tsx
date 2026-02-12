@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
@@ -11,7 +11,7 @@ import { CreateTestForm } from '../components/create-test-form';
 export default async function CreateTestPage() {
   const session = await auth();
 
-  if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

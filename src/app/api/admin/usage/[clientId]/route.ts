@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getClientUsageSummary, getCurrentMonthUsage } from '@/lib/services/usage-tracking';
 import { getUnacknowledgedAlerts } from '@/lib/services/usage-alerts';
 import { z } from 'zod';
@@ -22,8 +21,8 @@ export async function GET(
   { params }: { params: Promise<{ clientId: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!(session as any)?.user?.isAdmin) {
+    const session = await auth();
+    if (!session?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

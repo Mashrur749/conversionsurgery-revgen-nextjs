@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getClientSession } from '@/lib/client-auth';
 import { getDb, supportMessages, supportReplies } from '@/db';
 import { z } from 'zod';
@@ -19,7 +18,7 @@ async function getCallerIdentity(): Promise<{
   isAdmin: boolean;
 } | null> {
   // Try NextAuth first (admin/dashboard users)
-  const nextAuthSession = await getServerSession(authOptions);
+  const nextAuthSession = await auth();
   if (nextAuthSession?.user) {
     return {
       userId: (nextAuthSession.user as any).id as string,

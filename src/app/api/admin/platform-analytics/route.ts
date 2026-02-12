@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb, platformAnalytics, clients } from '@/db';
 import { eq, desc, sql } from 'drizzle-orm';
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!(session as any)?.user?.isAdmin) {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

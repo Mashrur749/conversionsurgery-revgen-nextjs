@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { cookies } from 'next/headers';
 
 export async function getClientId(): Promise<string | null> {
@@ -14,5 +14,5 @@ export async function getClientId(): Promise<string | null> {
     return adminClientId || null;
   }
 
-  return (session as any)?.client?.id || null;
+  return session?.client?.id || null;
 }

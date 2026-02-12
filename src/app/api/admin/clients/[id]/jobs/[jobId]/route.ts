@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { updateJobStatus, recordPayment } from '@/lib/services/revenue';
 import { z } from 'zod';
 
@@ -29,7 +29,7 @@ export async function PATCH(
   const { jobId } = await params;
   const session = await auth();
 
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
 

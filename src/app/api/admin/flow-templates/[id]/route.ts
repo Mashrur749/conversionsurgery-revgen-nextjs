@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { flowTemplates, flowTemplateSteps } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -14,7 +14,7 @@ interface RouteContext {
  */
 export async function GET(request: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+  const isAdmin = session?.user?.isAdmin;
 
   if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
  */
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+  const isAdmin = session?.user?.isAdmin;
 
   if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
@@ -105,7 +105,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const session = await auth();
-  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+  const isAdmin = session?.user?.isAdmin;
 
   if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });

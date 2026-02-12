@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
@@ -9,7 +9,7 @@ import { CallHistory } from '@/components/voice/call-history';
 export default async function VoiceAIPage() {
   const session = await auth();
 
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAdmin) {
     redirect('/dashboard');
   }
 

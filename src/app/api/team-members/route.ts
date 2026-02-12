@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getClientId } from '@/lib/get-client-id';
 import { getDb } from '@/db';
 import { teamMembers } from '@/db/schema';
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     // Admin can pass clientId as query param; regular users use getClientId()
     let clientId: string | null = null;
-    if ((session as any).user?.isAdmin) {
+    if (session.user?.isAdmin) {
       clientId = req.nextUrl.searchParams.get('clientId');
     }
     if (!clientId) {

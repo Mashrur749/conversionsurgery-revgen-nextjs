@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getClientSession } from '@/lib/client-auth';
 import { getDb, supportMessages, supportReplies } from '@/db';
 import { eq } from 'drizzle-orm';
@@ -17,7 +16,7 @@ async function getCallerIdentity(): Promise<{
   userEmail: string;
   isAdmin: boolean;
 } | null> {
-  const nextAuthSession = await getServerSession(authOptions);
+  const nextAuthSession = await auth();
   if (nextAuthSession?.user) {
     return {
       userEmail: nextAuthSession.user.email ?? 'unknown',

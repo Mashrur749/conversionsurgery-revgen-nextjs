@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getClientId } from '@/lib/get-client-id';
 import { redirect } from 'next/navigation';
 import { AnalyticsDashboard } from '@/components/analytics/analytics-dashboard';

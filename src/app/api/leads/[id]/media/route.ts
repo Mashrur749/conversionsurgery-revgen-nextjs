@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getLeadMedia } from '@/lib/services/media';
 import { z } from 'zod';
 

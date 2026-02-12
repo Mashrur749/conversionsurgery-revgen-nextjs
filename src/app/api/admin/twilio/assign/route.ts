@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { purchaseNumber } from '@/lib/services/twilio-provisioning';
+import { assignExistingNumber } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
 
-const purchaseSchema = z.object({
+const assignSchema = z.object({
   phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters'),
   clientId: z.string().uuid('Client ID must be a valid UUID'),
 });
 
 /**
- * POST /api/admin/twilio/purchase
+ * POST /api/admin/twilio/assign
  *
- * Purchase a phone number from Twilio and assign it to a client.
+ * Assign an existing owned Twilio number to a client without configuring
+ * webhooks. Use the configure endpoint separately to set up webhooks.
  * Requires admin authentication.
  */
 export async function POST(request: NextRequest) {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const parsed = purchaseSchema.safeParse(body);
+    const parsed = assignSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -34,25 +35,25 @@ export async function POST(request: NextRequest) {
 
     const { phoneNumber, clientId } = parsed.data;
 
-    console.log(`[Twilio] Purchase request: number=${phoneNumber}, client=${clientId}`);
+    console.log(`[Twilio] Assign request: number=${phoneNumber}, client=${clientId}`);
 
-    const result = await purchaseNumber(phoneNumber, clientId);
+    const result = await assignExistingNumber(phoneNumber, clientId);
 
     if (!result.success) {
-      console.error(`[Twilio] Purchase failed: ${result.error}`);
+      console.error(`[Twilio] Assign failed: ${result.error}`);
       return NextResponse.json(
         { error: result.error },
         { status: 400 }
       );
     }
 
-    console.log(`[Twilio] Purchase success: SID=${result.sid}`);
-    return NextResponse.json({ success: true, sid: result.sid });
+    console.log(`[Twilio] Assign success: ${phoneNumber} → ${clientId}`);
+    return NextResponse.json({ success: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error('[Twilio] Purchase API error:', message);
+    console.error('[Twilio] Assign API error:', message);
     return NextResponse.json(
-      { error: message || 'Failed to purchase number' },
+      { error: message || 'Failed to assign number' },
       { status: 500 }
     );
   }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { searchAvailableNumbers } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
 
@@ -11,16 +10,18 @@ const searchQuerySchema = z.object({
     .optional(),
   contains: z.string().optional(),
   country: z.string().length(2).default('CA'),
+  inRegion: z.string().max(10).optional(),
+  inLocality: z.string().max(100).optional(),
 });
 
 /**
  * GET /api/admin/twilio/search
  *
- * Search for available Twilio phone numbers by area code and/or pattern.
- * Requires admin authentication.
+ * Search for available Twilio phone numbers by location (region/city) or
+ * area code. Requires admin authentication.
  */
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
@@ -31,6 +32,8 @@ export async function GET(request: NextRequest) {
     areaCode: url.searchParams.get('areaCode') || undefined,
     contains: url.searchParams.get('contains') || undefined,
     country: url.searchParams.get('country') || undefined,
+    inRegion: url.searchParams.get('inRegion') || undefined,
+    inLocality: url.searchParams.get('inLocality') || undefined,
   };
 
   const parsed = searchQuerySchema.safeParse(rawParams);
@@ -42,15 +45,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { areaCode, contains, country } = parsed.data;
+  const { areaCode, contains, country, inRegion, inLocality } = parsed.data;
 
   try {
-    console.log(`[Twilio] Search request: areaCode=${areaCode ?? 'any'}, country=${country}`);
+    console.log(`[Twilio] Search request: region=${inRegion ?? 'any'}, locality=${inLocality ?? 'any'}, areaCode=${areaCode ?? 'any'}, country=${country}`);
 
     const numbers = await searchAvailableNumbers({
       areaCode,
       contains,
       country,
+      inRegion,
+      inLocality,
     });
 
     console.log(`[Twilio] Search returned ${numbers.length} numbers`);

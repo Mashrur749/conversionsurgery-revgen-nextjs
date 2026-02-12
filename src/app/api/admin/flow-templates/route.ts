@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { flowTemplates } from '@/db/schema';
 import { desc } from 'drizzle-orm';
@@ -12,7 +12,7 @@ import { z } from 'zod';
  */
 export async function GET() {
   const session = await auth();
-  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+  const isAdmin = session?.user?.isAdmin;
 
   if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
@@ -69,7 +69,7 @@ const createSchema = z.object({
  */
 export async function POST(request: NextRequest) {
   const session = await auth();
-  const isAdmin = (session as { user?: { isAdmin?: boolean } })?.user?.isAdmin;
+  const isAdmin = session?.user?.isAdmin;
 
   if (!isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });

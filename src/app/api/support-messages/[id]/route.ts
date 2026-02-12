@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { getClientSession } from '@/lib/client-auth';
 import { getDb, supportMessages, supportReplies } from '@/db';
 import { eq, asc } from 'drizzle-orm';
@@ -9,7 +8,7 @@ async function getCallerIdentity(): Promise<{
   userEmail: string;
   isAdmin: boolean;
 } | null> {
-  const nextAuthSession = await getServerSession(authOptions);
+  const nextAuthSession = await auth();
   if (nextAuthSession?.user) {
     return {
       userEmail: nextAuthSession.user.email ?? 'unknown',
@@ -76,12 +75,12 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const isAdmin = (session as any).user?.isAdmin || false;
+  const isAdmin = session.user?.isAdmin || false;
   if (!isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

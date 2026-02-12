@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/auth';
 import { createEvent, getEvents } from '@/lib/services/calendar';
 import { z } from 'zod';
 
@@ -24,7 +23,7 @@ const createEventSchema = z.object({
 
 /** GET /api/calendar/events - List calendar events for a client within a date range */
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -64,7 +63,7 @@ export async function GET(request: NextRequest) {
 
 /** POST /api/calendar/events - Create a new calendar event */
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
