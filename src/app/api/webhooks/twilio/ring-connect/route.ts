@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { callAttempts, teamMembers } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import twilio from 'twilio';
+import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
@@ -63,9 +64,11 @@ export async function POST(request: NextRequest) {
   const twiml = new VoiceResponse();
   twiml.say({ voice: 'alice' }, 'Please hold while we connect you.');
 
+  const appUrl = getWebhookBaseUrl(request);
+
   const dial = twiml.dial({
     timeout: 25,
-    action: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/ring-result?attemptId=${attemptId}`,
+    action: `${appUrl}/api/webhooks/twilio/ring-result?attemptId=${attemptId}`,
     callerId: leadPhone || undefined,
   });
 
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest) {
     dial.number(
       {
         statusCallbackEvent: ['answered'],
-        statusCallback: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/member-answered?attemptId=${attemptId}&memberId=${member.id}`,
+        statusCallback: `${appUrl}/api/webhooks/twilio/member-answered?attemptId=${attemptId}&memberId=${member.id}`,
       },
       member.phone
     );

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { voiceCalls, clients, knowledgeBase } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 import OpenAI from 'openai';
 
 function twimlResponse(twiml: string) {
@@ -34,10 +35,12 @@ export async function POST(request: NextRequest) {
 
     console.log('[Voice AI Gather] Speech result for call:', callSid, speechResult);
 
+    const appUrl = getWebhookBaseUrl(request);
+
     if (!speechResult) {
       return twimlResponse(
         '<Say voice="Polly.Matthew">I didn\'t catch that. Could you please repeat?</Say>' +
-        `<Gather input="speech" speechTimeout="auto" speechModel="phone_call" enhanced="true" action="${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/voice/ai/gather" method="POST"/>` +
+        `<Gather input="speech" speechTimeout="auto" speechModel="phone_call" enhanced="true" action="${appUrl}/api/webhooks/twilio/voice/ai/gather" method="POST"/>` +
         '<Say>I\'ll have someone call you back. Goodbye!</Say><Hangup/>'
       );
     }
@@ -150,7 +153,6 @@ Return JSON:
       })
       .where(eq(voiceCalls.id, call.id));
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const gatherAction = `${appUrl}/api/webhooks/twilio/voice/ai/gather`;
     const transferAction = `${appUrl}/api/webhooks/twilio/voice/ai/transfer`;
 

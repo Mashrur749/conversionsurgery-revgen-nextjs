@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { clients, leads, voiceCalls } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
+import { getWebhookBaseUrl, xmlAttr } from '@/lib/utils/webhook-url';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
 
 function twimlResponse(twiml: string) {
@@ -76,13 +77,13 @@ export async function POST(request: NextRequest) {
     if (!shouldUseAI) {
       // During business hours - try to connect to owner
       console.log('[Voice AI] Within business hours, forwarding to owner');
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-      const actionUrl = new URL('/api/webhooks/twilio/voice/ai/dial-complete', appUrl || 'http://localhost:3000');
+      const appUrl = getWebhookBaseUrl(request);
+      const actionUrl = new URL('/api/webhooks/twilio/voice/ai/dial-complete', appUrl);
       actionUrl.searchParams.set('origFrom', from);
       actionUrl.searchParams.set('origTo', to);
 
       return twimlResponse(
-        `<Dial timeout="20" action="${actionUrl.toString()}" method="POST">` +
+        `<Dial timeout="20" action="${xmlAttr(actionUrl.toString())}" method="POST">` +
         `<Number>${client.phone}</Number>` +
         `</Dial>`
       );
@@ -134,9 +135,9 @@ export async function POST(request: NextRequest) {
     const greeting = client.voiceGreeting ||
       `Hi! Thanks for calling ${client.businessName}. How can I help you today?`;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const gatherAction = `${appUrl}/api/webhooks/twilio/voice/ai/gather`;
-    const transferAction = `${appUrl}/api/webhooks/twilio/voice/ai/transfer`;
+    const appUrlForTwiml = getWebhookBaseUrl(request);
+    const gatherAction = `${appUrlForTwiml}/api/webhooks/twilio/voice/ai/gather`;
+    const transferAction = `${appUrlForTwiml}/api/webhooks/twilio/voice/ai/transfer`;
 
     return twimlResponse(
       `<Say voice="Polly.Matthew">${escapeXml(greeting)}</Say>` +

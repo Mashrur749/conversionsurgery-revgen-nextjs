@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { voiceCalls, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 
 function twimlResponse(twiml: string) {
   return new NextResponse(
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
         .set({ outcome: 'voicemail' })
         .where(eq(voiceCalls.id, call.id));
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const appUrl = getWebhookBaseUrl(request);
       const recordingAction = `${appUrl}/api/webhooks/twilio/voice/ai/recording`;
       const transcriptionCallback = `${appUrl}/api/webhooks/twilio/voice/ai/transcription`;
 
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[Voice AI Transfer] Transferring to:', transferTo);
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const appUrl = getWebhookBaseUrl(request);
     const dialAction = `${appUrl}/api/webhooks/twilio/voice/ai/dial-complete`;
 
     return twimlResponse(
