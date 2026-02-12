@@ -3,10 +3,11 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { compareTemplates } from '@/lib/services/flow-metrics';
 
+/** GET /api/admin/analytics/templates */
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!(session as any)?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -21,9 +22,10 @@ export async function GET(request: NextRequest) {
     const comparison = await compareTemplates(category, days);
     return NextResponse.json(comparison);
   } catch (error) {
-    console.error('[Analytics Templates]', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch template analytics';
+    console.error('[Analytics] Templates Error:', errorMessage);
     return NextResponse.json(
-      { error: 'Failed to fetch template analytics' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

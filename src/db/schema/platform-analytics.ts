@@ -7,13 +7,12 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 // Platform-wide admin analytics
 export const platformAnalytics = pgTable(
   'platform_analytics',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     date: date('date').notNull().unique(),
 
     // Client metrics

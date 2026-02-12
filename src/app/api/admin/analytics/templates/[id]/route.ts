@@ -3,13 +3,14 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getTemplatePerformance } from '@/lib/services/flow-metrics';
 
+/** GET /api/admin/analytics/templates/[id] */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!(session as any)?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -20,9 +21,10 @@ export async function GET(
     const stats = await getTemplatePerformance(id, days);
     return NextResponse.json(stats);
   } catch (error) {
-    console.error('[Analytics Template Detail]', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch template performance';
+    console.error('[Analytics] Template Detail Error:', errorMessage);
     return NextResponse.json(
-      { error: 'Failed to fetch template performance' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -1,13 +1,12 @@
-import {
-  getDb,
-  analyticsDaily,
-  analyticsMonthly,
-  funnelEvents,
-} from '@/db';
+import { getDb } from '@/db';
+import { analyticsDaily, analyticsMonthly, funnelEvents } from '@/db/schema';
 import { eq, and, gte, lte, desc, sql, count } from 'drizzle-orm';
 
 /**
  * Get dashboard summary for a client
+ * Returns monthly metrics and 7-day trend data
+ * @param clientId - Client UUID
+ * @returns Object with monthly data, daily trend, and current month string
  */
 export async function getClientDashboardSummary(clientId: string) {
   const db = getDb();
@@ -52,6 +51,11 @@ export async function getClientDashboardSummary(clientId: string) {
 
 /**
  * Get conversion funnel data
+ * Returns stage-by-stage counts, values, and conversion rates
+ * @param clientId - Client UUID
+ * @param startDate - Start date string
+ * @param endDate - End date string
+ * @returns Array of funnel stages with counts and conversion rates
  */
 export async function getConversionFunnel(
   clientId: string,
@@ -111,6 +115,11 @@ export async function getConversionFunnel(
 
 /**
  * Get lead source breakdown
+ * Returns leads, conversions, and revenue by source
+ * @param clientId - Client UUID
+ * @param startDate - Start date string
+ * @param endDate - End date string
+ * @returns Array of sources with metrics
  */
 export async function getLeadSourceBreakdown(
   clientId: string,
@@ -139,6 +148,11 @@ export async function getLeadSourceBreakdown(
 
 /**
  * Get response time distribution
+ * Returns count of days in each response time bucket
+ * @param clientId - Client UUID
+ * @param startDate - Start date string
+ * @param endDate - End date string
+ * @returns Array of time buckets with counts
  */
 export async function getResponseTimeDistribution(
   clientId: string,
@@ -176,6 +190,10 @@ export async function getResponseTimeDistribution(
 
 /**
  * Get month-over-month comparison
+ * Returns last N months of data in chronological order
+ * @param clientId - Client UUID
+ * @param months - Number of months to fetch (default 6)
+ * @returns Array of monthly analytics records
  */
 export async function getMonthlyComparison(
   clientId: string,

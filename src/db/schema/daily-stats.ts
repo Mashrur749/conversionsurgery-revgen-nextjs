@@ -7,13 +7,12 @@ import {
   index,
   unique,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 export const dailyStats = pgTable(
   'daily_stats',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
@@ -27,7 +26,7 @@ export const dailyStats = pgTable(
     referralsRequested: integer('referrals_requested').default(0),
     paymentsReminded: integer('payments_reminded').default(0),
     messagesSent: integer('messages_sent').default(0),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     unique('daily_stats_client_date_unique').on(table.clientId, table.date),

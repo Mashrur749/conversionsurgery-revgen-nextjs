@@ -1,5 +1,5 @@
+import { getDb } from '@/db';
 import {
-  getDb,
   analyticsDaily,
   analyticsWeekly,
   analyticsMonthly,
@@ -11,11 +11,14 @@ import {
   escalationQueue,
   apiUsageMonthly,
   leadContext,
-} from '@/db';
+} from '@/db/schema';
 import { eq, and, gte, lte, sql, count, sum, avg } from 'drizzle-orm';
 
 /**
  * Calculate daily analytics for a client
+ * Aggregates metrics from leads, conversations, escalations, and funnel events
+ * @param clientId - Client UUID
+ * @param date - Date string in format YYYY-MM-DD
  */
 export async function calculateDailyAnalytics(
   clientId: string,
@@ -165,6 +168,10 @@ export async function calculateDailyAnalytics(
 
 /**
  * Calculate average response time for a date range
+ * @param clientId - Client UUID
+ * @param startDate - Start date
+ * @param endDate - End date
+ * @returns Average response time in seconds, or null if no data
  */
 async function calculateAvgResponseTime(
   clientId: string,
@@ -202,10 +209,13 @@ async function calculateAvgResponseTime(
 
 /**
  * Calculate weekly analytics from daily data
+ * Aggregates daily metrics and calculates conversion rates
+ * @param clientId - Client UUID
+ * @param weekStart - Monday date in format YYYY-MM-DD
  */
 export async function calculateWeeklyAnalytics(
   clientId: string,
-  weekStart: string // Monday date
+  weekStart: string
 ): Promise<void> {
   const db = getDb();
   const weekEnd = new Date(weekStart);
@@ -304,10 +314,13 @@ export async function calculateWeeklyAnalytics(
 
 /**
  * Calculate monthly analytics
+ * Aggregates daily metrics and calculates rates, ROI, and month-over-month changes
+ * @param clientId - Client UUID
+ * @param month - Month string in format YYYY-MM
  */
 export async function calculateMonthlyAnalytics(
   clientId: string,
-  month: string // "2026-02"
+  month: string
 ): Promise<void> {
   const db = getDb();
   const startDate = `${month}-01`;
@@ -444,6 +457,8 @@ export async function calculateMonthlyAnalytics(
 
 /**
  * Calculate platform-wide analytics
+ * Aggregates metrics across all clients for admin dashboard
+ * @param date - Date string in format YYYY-MM-DD
  */
 export async function calculatePlatformAnalytics(
   date: string
@@ -521,12 +536,17 @@ export async function calculatePlatformAnalytics(
 
 /**
  * Run all analytics calculations for yesterday
+ * Processes daily, weekly (on Sundays), and monthly (on 1st) analytics
+ * @returns Promise with processed and error counts
  */
-export async function runDailyAnalyticsJob(): Promise<void> {
+export async function runDailyAnalyticsJob(): Promise<{ processed: number; errors: number }> {
   const db = getDb();
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const dateStr = yesterday.toISOString().split('T')[0];
+
+  let processed = 0;
+  let errors = 0;
 
   // Get all active clients
   const activeClients = await db
@@ -538,11 +558,13 @@ export async function runDailyAnalyticsJob(): Promise<void> {
   for (const client of activeClients) {
     try {
       await calculateDailyAnalytics(client.id, dateStr);
+      processed++;
     } catch (error) {
       console.error(
         `[Analytics] Error calculating daily analytics for ${client.id}:`,
         error
       );
+      errors++;
     }
   }
 
@@ -564,6 +586,7 @@ export async function runDailyAnalyticsJob(): Promise<void> {
           `[Analytics] Error calculating weekly analytics for ${client.id}:`,
           error
         );
+        errors++;
       }
     }
   }
@@ -582,11 +605,14 @@ export async function runDailyAnalyticsJob(): Promise<void> {
           `[Analytics] Error calculating monthly analytics for ${client.id}:`,
           error
         );
+        errors++;
       }
     }
   }
 
   console.log(
-    `[Analytics] Daily job complete: ${activeClients.length} clients processed for ${dateStr}`
+    `[Analytics] Daily job complete: ${processed} clients processed, ${errors} errors for ${dateStr}`
   );
+
+  return { processed, errors };
 }

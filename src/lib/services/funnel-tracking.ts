@@ -1,4 +1,5 @@
-import { getDb, funnelEvents } from '@/db';
+import { getDb } from '@/db';
+import { funnelEvents } from '@/db/schema';
 
 export type FunnelEventType =
   | 'lead_created'
@@ -26,6 +27,8 @@ interface TrackFunnelEventParams {
 
 /**
  * Track a funnel event
+ * Records lead progression through the conversion funnel
+ * @param params - Event parameters including clientId, leadId, eventType
  */
 export async function trackFunnelEvent(
   params: TrackFunnelEventParams
@@ -45,12 +48,25 @@ export async function trackFunnelEvent(
 /**
  * Helper functions for common events
  */
+
+/**
+ * Track lead creation event
+ * @param clientId - Client UUID
+ * @param leadId - Lead UUID
+ * @param source - Lead source (e.g., 'missed_call', 'form', 'referral')
+ */
 export const trackLeadCreated = (
   clientId: string,
   leadId: string,
   source?: string
 ) => trackFunnelEvent({ clientId, leadId, eventType: 'lead_created', source });
 
+/**
+ * Track first response to a lead
+ * @param clientId - Client UUID
+ * @param leadId - Lead UUID
+ * @param responseTimeSeconds - Time to first response in seconds
+ */
 export const trackFirstResponse = (
   clientId: string,
   leadId: string,
@@ -63,6 +79,12 @@ export const trackFirstResponse = (
     eventData: { responseTimeSeconds },
   });
 
+/**
+ * Track appointment booking
+ * @param clientId - Client UUID
+ * @param leadId - Lead UUID
+ * @param appointmentDate - Appointment date string (optional)
+ */
 export const trackAppointmentBooked = (
   clientId: string,
   leadId: string,
@@ -75,6 +97,12 @@ export const trackAppointmentBooked = (
     eventData: { appointmentDate },
   });
 
+/**
+ * Track job won
+ * @param clientId - Client UUID
+ * @param leadId - Lead UUID
+ * @param valueCents - Job value in cents
+ */
 export const trackJobWon = (
   clientId: string,
   leadId: string,
@@ -87,6 +115,12 @@ export const trackJobWon = (
     valueCents,
   });
 
+/**
+ * Track payment received
+ * @param clientId - Client UUID
+ * @param leadId - Lead UUID
+ * @param amountCents - Payment amount in cents
+ */
 export const trackPaymentReceived = (
   clientId: string,
   leadId: string,
@@ -99,6 +133,13 @@ export const trackPaymentReceived = (
     valueCents: amountCents,
   });
 
+/**
+ * Track review received
+ * @param clientId - Client UUID
+ * @param leadId - Lead UUID
+ * @param rating - Review rating (1-5)
+ * @param platform - Review platform name
+ */
 export const trackReviewReceived = (
   clientId: string,
   leadId: string,

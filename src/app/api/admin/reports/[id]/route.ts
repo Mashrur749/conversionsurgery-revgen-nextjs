@@ -3,13 +3,14 @@ import { getDb } from '@/db';
 import { reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
+/** GET /api/admin/reports/[id] */
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -27,10 +28,11 @@ export async function GET(
     }
 
     return Response.json({ success: true, report });
-  } catch (error: any) {
-    console.error('[Reports Get] Error:', error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch report';
+    console.error('[Analytics] Reports Get Error:', errorMessage);
     return Response.json(
-      { error: error.message || 'Failed to fetch report' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

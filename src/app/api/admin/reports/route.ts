@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
 import { getDb } from '@/db';
-import { reports, dailyStats, abTests, abTestMetrics, teamMembers } from '@/db/schema';
+import { reports, dailyStats, abTests, teamMembers } from '@/db/schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -12,10 +12,11 @@ const generateReportSchema = z.object({
   title: z.string().min(1).optional(),
 });
 
+/** GET /api/admin/reports */
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -37,30 +38,41 @@ export async function GET(req: Request) {
       reports: allReports,
       count: allReports.length,
     });
-  } catch (error: any) {
-    console.error('[Reports List] Error:', error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch reports';
+    console.error('[Analytics] Reports List Error:', errorMessage);
     return Response.json(
-      { error: error.message || 'Failed to fetch reports' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
 }
 
+/** POST /api/admin/reports */
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.isAdmin) {
+    if (!(session as { user?: { isAdmin?: boolean } })?.user?.isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     const body = await req.json();
+    const validation = generateReportSchema.safeParse(body);
+
+    if (!validation.success) {
+      return Response.json(
+        { error: 'Invalid request', details: validation.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
     const {
       clientId,
       startDate,
       endDate,
       reportType,
       title: customTitle,
-    } = generateReportSchema.parse(body);
+    } = validation.data;
 
     const db = getDb();
 
@@ -188,18 +200,12 @@ export async function POST(req: Request) {
       report: newReport,
       message: `Report generated for ${startDate} to ${endDate}`,
     });
-  } catch (error: any) {
-    console.error('[Reports Generate] Error:', error);
-
-    if (error instanceof z.ZodError) {
-      return Response.json(
-        { error: 'Invalid request', details: error.issues },
-        { status: 400 }
-      );
-    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate report';
+    console.error('[Analytics] Reports Generate Error:', errorMessage);
 
     return Response.json(
-      { error: error.message || 'Failed to generate report' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

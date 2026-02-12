@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
-import { getDb, flowTemplates } from '@/db';
+import { getDb } from '@/db';
+import { flowTemplates } from '@/db/schema';
 import { CategoryPerformance } from '@/components/analytics/category-performance';
 
 export const dynamic = 'force-dynamic';
