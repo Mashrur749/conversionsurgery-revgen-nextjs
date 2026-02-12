@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleIncomingSMS } from '@/lib/automations/incoming-sms';
 
+/**
+ * POST /api/webhooks/twilio/sms
+ * Handle incoming SMS webhooks from Twilio
+ */
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
 
-    console.log('Twilio SMS webhook:', payload.From, payload.Body?.substring(0, 50));
+    console.log('[Messaging] Twilio SMS webhook:', payload.From, payload.Body?.substring(0, 50));
 
     // Extract media attachments from MMS
     const numMedia = parseInt(payload.NumMedia || '0', 10);
@@ -30,13 +34,15 @@ export async function POST(request: NextRequest) {
       MediaItems: mediaItems,
     });
 
+    console.log('[Messaging] SMS webhook processed successfully');
+
     // Return empty TwiML
     return new NextResponse(
       '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
       { headers: { 'Content-Type': 'text/xml' } }
     );
   } catch (error) {
-    console.error('SMS webhook error:', error);
+    console.error('[Messaging] SMS webhook error:', error);
     return new NextResponse(
       '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
       { headers: { 'Content-Type': 'text/xml' } }

@@ -1,3 +1,6 @@
+/**
+ * Default message templates for various automation scenarios
+ */
 export const DEFAULT_TEMPLATES: Record<string, string> = {
   // Automation 1: Missed Call
   missed_call: 'Hey, this is {{ownerName}} from {{businessName}}. Sorry I missed your call — I\'m on a job site right now. What can I help you with? Reply STOP to opt out.',
@@ -32,19 +35,23 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
   opt_out_confirmation: 'You\'ve been unsubscribed. You won\'t receive further messages from {{businessName}}.',
 };
 
-export function renderTemplate(
-  templateType: string,
-  variables: Record<string, string | number | undefined>,
-  customTemplate?: string
-): string {
-  let template = customTemplate || DEFAULT_TEMPLATES[templateType] || '';
+/**
+ * Render a message template with variable substitution
+ * @param template - Template string or template type key
+ * @param data - Variables to substitute in the template
+ * @returns Rendered template with variables replaced
+ */
+export function renderTemplate(template: string, data: Record<string, any>): string {
+  // If template is a key in DEFAULT_TEMPLATES, use that template
+  let templateString = DEFAULT_TEMPLATES[template] || template;
 
-  for (const [key, value] of Object.entries(variables)) {
-    template = template.replace(
+  // Replace all {{variable}} placeholders with actual values
+  for (const [key, value] of Object.entries(data)) {
+    templateString = templateString.replace(
       new RegExp(`{{${key}}}`, 'g'),
       String(value ?? '')
     );
   }
 
-  return template;
+  return templateString;
 }

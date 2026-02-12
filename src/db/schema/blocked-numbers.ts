@@ -6,19 +6,18 @@ import {
   index,
   unique,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 export const blockedNumbers = pgTable(
   'blocked_numbers',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
     phone: varchar('phone', { length: 20 }).notNull(),
     reason: varchar('reason', { length: 50 }), // opt_out, spam, manual
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     unique('blocked_numbers_client_phone_unique').on(table.clientId, table.phone),

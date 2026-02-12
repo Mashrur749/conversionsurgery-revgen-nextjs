@@ -12,22 +12,29 @@ const formSchema = z.object({
   address: z.string().optional(),
 });
 
+/**
+ * POST /api/webhooks/form
+ * Handle form submission webhooks
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const payload = formSchema.parse(body);
+    const validation = formSchema.safeParse(body);
 
-    const result = await handleFormSubmission(payload);
-
-    return NextResponse.json(result);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (!validation.success) {
+      console.error('[Messaging] Invalid form payload:', validation.error.flatten().fieldErrors);
       return NextResponse.json(
-        { error: 'Invalid payload', details: error.issues },
+        { error: 'Invalid payload', details: validation.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
-    console.error('Form webhook error:', error);
+
+    const result = await handleFormSubmission(validation.data);
+
+    console.log('[Messaging] Form submission processed successfully:', result);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('[Messaging] Form webhook error:', error);
     return NextResponse.json(
       { error: 'Processing failed' },
       { status: 500 }

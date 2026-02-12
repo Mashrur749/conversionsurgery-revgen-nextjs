@@ -7,14 +7,13 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
 export const conversations = pgTable(
   'conversations',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),
@@ -26,7 +25,7 @@ export const conversations = pgTable(
     content: text('content').notNull(),
     twilioSid: varchar('twilio_sid', { length: 50 }),
     aiConfidence: numeric('ai_confidence', { precision: 3, scale: 2 }),
-    createdAt: timestamp('created_at').defaultNow(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_conversations_lead_id').on(table.leadId),

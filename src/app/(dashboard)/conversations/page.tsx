@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { getClientId } from '@/lib/get-client-id';
-import { getDb, conversations, leads } from '@/db';
+import { getDb } from '@/db';
+import { conversations, leads } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
