@@ -13,6 +13,7 @@ export interface KnowledgeEntry {
   priority: number | null;
 }
 
+/** Get all knowledge base entries for a client */
 export async function getClientKnowledge(clientId: string): Promise<KnowledgeEntry[]> {
   const db = getDb();
   return db
@@ -32,6 +33,7 @@ export async function getClientKnowledge(clientId: string): Promise<KnowledgeEnt
     .orderBy(desc(knowledgeBase.priority), knowledgeBase.category);
 }
 
+/** Search knowledge base entries by keyword matching */
 export async function searchKnowledge(
   clientId: string,
   query: string
@@ -68,6 +70,7 @@ export async function searchKnowledge(
   return results;
 }
 
+/** Build a formatted knowledge context string for AI prompts (FROZEN EXPORT) */
 export async function buildKnowledgeContext(clientId: string): Promise<string> {
   const knowledge = await getClientKnowledge(clientId);
   const db = getDb();
@@ -148,6 +151,7 @@ export const DEFAULT_KNOWLEDGE: Omit<NewKnowledgeBaseEntry, 'id' | 'clientId'>[]
   },
 ];
 
+/** Initialize default knowledge base entries for a new client */
 export async function initializeClientKnowledge(clientId: string): Promise<void> {
   const db = getDb();
   const existing = await db
@@ -166,6 +170,7 @@ export async function initializeClientKnowledge(clientId: string): Promise<void>
   }
 }
 
+/** Add a new knowledge base entry for a client */
 export async function addKnowledgeEntry(
   clientId: string,
   entry: { category: KnowledgeCategory; title: string; content: string; keywords?: string | null; priority?: number | null }
@@ -182,6 +187,7 @@ export async function addKnowledgeEntry(
   return created.id;
 }
 
+/** Update an existing knowledge base entry */
 export async function updateKnowledgeEntry(
   id: string,
   updates: Partial<{ category: KnowledgeCategory; title: string; content: string; keywords: string | null; priority: number | null }>
@@ -196,6 +202,7 @@ export async function updateKnowledgeEntry(
     .where(eq(knowledgeBase.id, id));
 }
 
+/** Delete a knowledge base entry by ID */
 export async function deleteKnowledgeEntry(id: string): Promise<void> {
   const db = getDb();
   await db.delete(knowledgeBase).where(eq(knowledgeBase.id, id));

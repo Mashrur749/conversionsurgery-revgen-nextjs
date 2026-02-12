@@ -7,7 +7,6 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { leads } from './leads';
 import { leadStageEnum } from './agent-enums';
 
@@ -18,7 +17,7 @@ import { leadStageEnum } from './agent-enums';
 export const conversationCheckpoints = pgTable(
   'conversation_checkpoints',
   {
-    id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+    id: uuid('id').primaryKey().defaultRandom(),
     leadId: uuid('lead_id')
       .notNull()
       .references(() => leads.id, { onDelete: 'cascade' }),

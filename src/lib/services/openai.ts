@@ -25,6 +25,7 @@ const HOT_INTENT_TRIGGERS = [
   'available tomorrow',
 ];
 
+/** Detect if a message contains hot intent signals (FROZEN EXPORT) */
 export function detectHotIntent(message: string): boolean {
   const lowerMessage = message.toLowerCase();
   return HOT_INTENT_TRIGGERS.some(trigger => lowerMessage.includes(trigger));
@@ -51,6 +52,7 @@ const ESCALATION_TRIGGERS = [
   'reschedule', 'cancel', 'change',
 ];
 
+/** Generate an AI response using OpenAI with knowledge base context (FROZEN EXPORT) */
 export async function generateAIResponse(
   incomingMessage: string,
   businessName: string,

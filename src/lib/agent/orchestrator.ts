@@ -16,7 +16,7 @@ import { sendTrackedSMS } from '@/lib/clients/twilio-tracked';
 import { trackUsage } from '@/lib/services/usage-tracking';
 import { startFlowExecution } from '@/lib/services/flow-execution';
 import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
-import type { AgentAction, EscalationReason } from '@/lib/types/agent';
+import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
 
 interface ProcessMessageResult {
   action: AgentAction;
@@ -102,12 +102,12 @@ export async function processIncomingMessage(
     leadId,
     clientId: client.id,
     messages: langChainMessages,
-    stage: context.stage as any,
+    stage: (context.stage as LeadStage) || 'new',
     signals: {
       urgency: context.urgencyScore || 50,
       budget: context.budgetScore || 50,
       intent: context.intentScore || 50,
-      sentiment: (context.currentSentiment as any) || 'neutral',
+      sentiment: (context.currentSentiment as LeadSignals['sentiment']) || 'neutral',
     },
     extractedInfo: {
       projectType: context.projectType,
@@ -115,11 +115,11 @@ export async function processIncomingMessage(
       estimatedValue: context.estimatedValue,
       preferredTimeframe: context.preferredTimeframe,
     },
-    objections: (context.objections as any[])?.map(o => o.detail) || [],
+    objections: (context.objections as Array<{ detail: string }>)?.map(o => o.detail) || [],
     bookingAttempts: context.bookingAttempts || 0,
     clientSettings: {
       businessName: client.businessName,
-      services: (client as any).metadata?.services || [],
+      services: ((client as Record<string, unknown>).metadata as Record<string, unknown>)?.services as string[] || [],
       agentName: settings?.agentName || 'Assistant',
       agentTone: settings?.agentTone || 'professional',
       maxResponseLength: settings?.maxResponseLength || 300,
@@ -151,7 +151,7 @@ export async function processIncomingMessage(
       sentiment: finalState.signals.sentiment,
       recentObjections: finalState.objections.slice(-3),
     },
-    action: finalState.lastAction as any,
+    action: finalState.lastAction as AgentAction,
     actionDetails: {
       responseText: finalState.responseToSend ?? undefined,
       flowId: finalState.flowToTrigger ?? undefined,
@@ -165,11 +165,11 @@ export async function processIncomingMessage(
 
   // Update lead context
   await db.update(leadContext).set({
-    stage: finalState.stage as any,
+    stage: finalState.stage as LeadStage,
     urgencyScore: finalState.signals.urgency,
     budgetScore: finalState.signals.budget,
     intentScore: finalState.signals.intent,
-    currentSentiment: finalState.signals.sentiment as any,
+    currentSentiment: finalState.signals.sentiment as LeadSignals['sentiment'],
     projectType: finalState.extractedInfo.projectType,
     projectSize: finalState.extractedInfo.projectSize,
     estimatedValue: finalState.extractedInfo.estimatedValue,
@@ -223,7 +223,7 @@ export async function processIncomingMessage(
     await db.insert(escalationQueue).values({
       leadId,
       clientId: client.id,
-      reason: finalState.escalationReason as any,
+      reason: finalState.escalationReason as EscalationReason,
       reasonDetails: finalState.decisionReasoning,
       triggerMessageId: messageId,
       priority: finalState.signals.sentiment === 'frustrated' ? 1 : 2,

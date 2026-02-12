@@ -7,7 +7,6 @@ import {
   time,
   timestamp,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 
 /**
@@ -15,7 +14,7 @@ import { clients } from './clients';
  * Controls personality, behavior, goals, escalation thresholds, and quiet hours
  */
 export const clientAgentSettings = pgTable('client_agent_settings', {
-  id: uuid('id').primaryKey().default(sql`uuid_generate_v4()`),
+  id: uuid('id').primaryKey().defaultRandom(),
   clientId: uuid('client_id')
     .notNull()
     .unique()
