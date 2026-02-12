@@ -196,8 +196,8 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       if (ringResult.initiated) {
         await sendSMS(
           senderPhone,
-          client.twilioNumber!,
-          `Great! We're calling you right now. Please pick up!`
+          `Great! We're calling you right now. Please pick up!`,
+          client.twilioNumber!
         );
 
         await db.insert(conversations).values({
@@ -218,8 +218,8 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     } else {
       await sendSMS(
         senderPhone,
-        client.twilioNumber!,
-        `Thanks for your interest! We're currently outside business hours, but someone will call you first thing tomorrow morning.`
+        `Thanks for your interest! We're currently outside business hours, but someone will call you first thing tomorrow morning.`,
+        client.twilioNumber!
       );
 
       await notifyTeamForEscalation({
@@ -292,16 +292,18 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       firstMedia.aiTags as string[] | null
     );
 
-    const smsResult = await sendSMS(senderPhone, client.twilioNumber!, ackMessage);
-    if (smsResult.success) {
+    try {
+      const sid = await sendSMS(senderPhone, ackMessage, client.twilioNumber!);
       await db.insert(conversations).values({
         leadId: lead.id,
         clientId: client.id,
         direction: 'outbound',
         messageType: 'ai_response',
         content: ackMessage,
-        twilioSid: smsResult.sid,
+        twilioSid: sid,
       });
+    } catch (error) {
+      console.error('[IncomingSMS] Failed to send photo acknowledgment:', error);
     }
 
     return {
@@ -350,7 +352,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       ownerName: client.ownerName,
     });
 
-    await sendSMS(senderPhone, client.twilioNumber!, ackMessage);
+    await sendSMS(senderPhone, ackMessage, client.twilioNumber!);
 
     await db.insert(conversations).values({
       leadId: lead.id,
@@ -374,8 +376,8 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       if (client.notificationSms) {
         await sendSMS(
           client.phone,
-          client.twilioNumber!,
-          `⚠️ ${lead.name || formatPhoneNumber(senderPhone)} needs you: "${messageBody.substring(0, 80)}..." ${dashboardUrl}`
+          `⚠️ ${lead.name || formatPhoneNumber(senderPhone)} needs you: "${messageBody.substring(0, 80)}..." ${dashboardUrl}`,
+          client.twilioNumber!
         );
       }
       if (client.notificationEmail) {
@@ -401,16 +403,16 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   }
 
   // 10. Send AI response
-  const smsResult = await sendSMS(senderPhone, client.twilioNumber!, aiResult.response);
+  try {
+    const sid = await sendSMS(senderPhone, aiResult.response, client.twilioNumber!);
 
-  if (smsResult.success) {
     await db.insert(conversations).values({
       leadId: lead.id,
       clientId: client.id,
       direction: 'outbound',
       messageType: 'ai_response',
       content: aiResult.response,
-      twilioSid: smsResult.sid,
+      twilioSid: sid,
       aiConfidence: String(aiResult.confidence),
     });
 
@@ -440,6 +442,8 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1`,
       })
       .where(eq(clients.id, client.id));
+  } catch (error) {
+    console.error('[IncomingSMS] Failed to send AI response:', error);
   }
 
   // 10b. After AI responds, check for flow suggestions (async, don't wait)
@@ -449,8 +453,8 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   if (client.notificationSms) {
     await sendSMS(
       client.phone,
-      client.twilioNumber!,
-      `💬 ${lead.name || formatPhoneNumber(senderPhone)}: "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}" — AI replied. ${dashboardUrl}`
+      `💬 ${lead.name || formatPhoneNumber(senderPhone)}: "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}" — AI replied. ${dashboardUrl}`,
+      client.twilioNumber!
     );
   }
 
@@ -510,7 +514,7 @@ async function handleOptOut(db: ReturnType<typeof getDb>, client: typeof clients
     businessName: client.businessName,
   });
 
-  await sendSMS(phone, client.twilioNumber!, confirmMessage);
+  await sendSMS(phone, confirmMessage, client.twilioNumber!);
 
   return { processed: true, optedOut: true };
 }

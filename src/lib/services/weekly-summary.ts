@@ -168,7 +168,7 @@ export async function sendWeeklySummary(clientId: string): Promise<void> {
   // Send SMS
   if (client.phone && client.twilioNumber) {
     const smsContent = formatWeeklySMS(client.businessName, stats, dashboardLink);
-    await sendSMS(client.phone, client.twilioNumber, smsContent);
+    await sendSMS(client.phone, smsContent, client.twilioNumber);
   }
 
   // Send Email

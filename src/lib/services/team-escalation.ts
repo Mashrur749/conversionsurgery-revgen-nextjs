@@ -89,11 +89,9 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
     for (const member of members) {
       // Send SMS notification
       try {
-        const smsResult = await sendSMS(member.phone, twilioNumber, smsBody);
-        if (smsResult.success) {
-          notifiedCount++;
-          console.log(`[Team Escalation] SMS sent to ${member.name}`);
-        }
+        await sendSMS(member.phone, smsBody, twilioNumber);
+        notifiedCount++;
+        console.log(`[Team Escalation] SMS sent to ${member.name}`);
       } catch (error) {
         console.error(`[Team Escalation] Failed to SMS ${member.name}:`, error);
       }
@@ -241,8 +239,8 @@ export async function claimEscalation(token: string, teamMemberId: string) {
         try {
           await sendSMS(
             otherMember.phone,
-            client.twilioNumber,
-            `✓ ${member.name} is handling ${leadDisplay}`
+            `✓ ${member.name} is handling ${leadDisplay}`,
+            client.twilioNumber
           );
         } catch (error) {
           console.error(

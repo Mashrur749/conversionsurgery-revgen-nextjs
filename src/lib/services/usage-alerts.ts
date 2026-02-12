@@ -175,8 +175,8 @@ async function notifyAdminOfAlert(clientId: string, message: string): Promise<vo
   try {
     await sendSMS(
       adminPhone,
-      twilioNumber,
-      `Usage Alert for ${client?.businessName || 'Unknown'}: ${message}`
+      `Usage Alert for ${client?.businessName || 'Unknown'}: ${message}`,
+      twilioNumber
     );
   } catch (error) {
     console.error(`[UsageAlerts] Failed to send SMS notification for client ${clientId}:`, error);

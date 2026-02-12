@@ -111,11 +111,12 @@ export async function handleFormSubmission(payload: FormPayload) {
     businessName: client.businessName,
   });
 
-  const smsResult = await sendSMS(normalizedPhone, client.twilioNumber, messageContent);
-
-  if (!smsResult.success) {
-    console.error('Failed to send form response SMS:', smsResult.error);
-    return { processed: false, reason: 'Failed to send SMS', error: smsResult.error };
+  let smsSid: string;
+  try {
+    smsSid = await sendSMS(normalizedPhone, messageContent, client.twilioNumber);
+  } catch (error) {
+    console.error('Failed to send form response SMS:', error);
+    return { processed: false, reason: 'Failed to send SMS', error };
   }
 
   // 5. Log conversations
@@ -135,7 +136,7 @@ export async function handleFormSubmission(payload: FormPayload) {
     direction: 'outbound',
     messageType: 'sms',
     content: messageContent,
-    twilioSid: smsResult.sid,
+    twilioSid: smsSid,
   });
 
   // 6. Update stats

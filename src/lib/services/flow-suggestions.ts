@@ -122,7 +122,7 @@ async function sendApprovalSMS(
 
   const message = `AI suggests: "${flowName}" for ${lead?.name || lead?.phone}\n\nReply:\nYES ${suggestionId.slice(0, 8)} - to approve\nNO ${suggestionId.slice(0, 8)} - to skip`;
 
-  await sendSMS(client.phone, client.twilioNumber, message);
+  await sendSMS(client.phone, message, client.twilioNumber);
 }
 
 /**

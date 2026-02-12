@@ -98,9 +98,9 @@ export async function GET(request: NextRequest) {
       }
 
       // Send SMS
-      const result = await sendSMS(lead.phone, client.twilioNumber, message.content);
+      try {
+        const sid = await sendSMS(lead.phone, message.content, client.twilioNumber);
 
-      if (result.success) {
         // Mark sent
         await db
           .update(scheduledMessages)
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
           direction: 'outbound',
           messageType: 'scheduled',
           content: message.content,
-          twilioSid: result.sid,
+          twilioSid: sid,
         });
 
         // Update daily stats
@@ -127,8 +127,8 @@ export async function GET(request: NextRequest) {
           .where(eq(clients.id, client.id));
 
         sent++;
-      } else {
-        console.error('[CronScheduling] Failed to send scheduled message:', message.id, result.error);
+      } catch (error) {
+        console.error('[CronScheduling] Failed to send scheduled message:', message.id, error);
         failed++;
       }
     }

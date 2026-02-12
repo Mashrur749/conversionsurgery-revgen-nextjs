@@ -118,8 +118,8 @@ export async function checkAndAlertNegativeReviews(clientId: string): Promise<nu
     if (twilioNumber) {
       await sendSMS(
         client.phone,
-        twilioNumber,
-        `New ${review.rating}-star review on ${review.source}!\n\n"${preview}"\n\nCheck your dashboard to respond.`
+        `New ${review.rating}-star review on ${review.source}!\n\n"${preview}"\n\nCheck your dashboard to respond.`,
+        twilioNumber
       );
     }
 

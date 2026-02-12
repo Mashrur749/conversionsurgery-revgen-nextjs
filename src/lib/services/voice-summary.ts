@@ -87,7 +87,7 @@ export async function notifyClientOfCall(callId: string): Promise<void> {
 
   const twilioFrom = client.twilioNumber || process.env.TWILIO_PHONE_NUMBER!;
 
-  await sendSMS(client.phone, twilioFrom, message);
+  await sendSMS(client.phone, message, twilioFrom);
 
   console.log('[Voice] Notification sent to:', client.phone);
 }

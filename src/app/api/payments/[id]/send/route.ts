@@ -63,10 +63,10 @@ export async function POST(
     payment.stripePaymentLinkUrl
   );
 
-  const result = await sendSMS(lead.phone, client.twilioNumber, message);
-
-  if (!result.success) {
-    console.error('[Payments] Failed to send SMS:', result);
+  try {
+    await sendSMS(lead.phone, message, client.twilioNumber);
+  } catch (error) {
+    console.error('[Payments] Failed to send SMS:', error);
     return NextResponse.json({ error: 'Failed to send SMS' }, { status: 500 });
   }
 

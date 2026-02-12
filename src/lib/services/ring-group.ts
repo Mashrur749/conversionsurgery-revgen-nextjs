@@ -87,8 +87,8 @@ export async function initiateRingGroup(payload: RingGroupPayload): Promise<Ring
     for (const member of members) {
       await sendSMS(
         member.phone,
-        twilioNumber,
-        `Hot lead calling! ${leadDisplay} wants to talk NOW. Your phone will ring shortly.`
+        `Hot lead calling! ${leadDisplay} wants to talk NOW. Your phone will ring shortly.`,
+        twilioNumber
       );
     }
 
@@ -141,15 +141,15 @@ export async function handleNoAnswer(payload: RingGroupPayload): Promise<void> {
   for (const member of members) {
     await sendSMS(
       member.phone,
-      twilioNumber,
-      `Missed hot transfer! ${leadDisplay} wanted to talk but no one answered. Call them back ASAP: ${formatPhoneNumber(leadPhone)}`
+      `Missed hot transfer! ${leadDisplay} wanted to talk but no one answered. Call them back ASAP: ${formatPhoneNumber(leadPhone)}`,
+      twilioNumber
     );
   }
 
   await sendSMS(
     leadPhone,
-    twilioNumber,
-    `Sorry we missed you! We'll call you right back. If urgent, you can also call us directly at this number.`
+    `Sorry we missed you! We'll call you right back. If urgent, you can also call us directly at this number.`,
+    twilioNumber
   );
 
   await db

@@ -67,11 +67,7 @@ export async function POST(
 
     const client = clientResult[0];
 
-    const result = await sendSMS(lead.phone, client.twilioNumber!, message);
-
-    if (!result.success) {
-      return NextResponse.json({ error: 'Failed to send' }, { status: 500 });
-    }
+    const sid = await sendSMS(lead.phone, message, client.twilioNumber!);
 
     await db.insert(conversations).values({
       leadId: lead.id,
@@ -79,7 +75,7 @@ export async function POST(
       direction: 'outbound',
       messageType: 'manual',
       content: message,
-      twilioSid: result.sid,
+      twilioSid: sid,
     });
 
     if (lead.actionRequired) {
@@ -94,7 +90,7 @@ export async function POST(
       .set({ messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1` })
       .where(eq(clients.id, clientId));
 
-    return NextResponse.json({ success: true, sid: result.sid });
+    return NextResponse.json({ success: true, sid });
   } catch (error) {
     console.error('[LeadManagement] Reply error:', error);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });

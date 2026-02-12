@@ -166,26 +166,32 @@ async function executeStep(
     return;
   }
 
-  const smsResult = await sendSMS(lead.phone, client.twilioNumber, messageContent);
+  let smsSid: string | null = null;
+  let smsError: string | null = null;
+
+  try {
+    smsSid = await sendSMS(lead.phone, messageContent, client.twilioNumber);
+  } catch (error) {
+    smsError = String(error);
+  }
 
   await db.insert(flowStepExecutions).values({
     flowExecutionId: executionId,
     flowStepId: step.id,
     stepNumber: step.stepNumber,
-    status: smsResult.success ? 'sent' : 'failed',
+    status: smsSid ? 'sent' : 'failed',
     executedAt: new Date(),
     messageContent,
-    messageSid: smsResult.sid || null,
-    error: smsResult.success ? null : String(smsResult.error),
+    messageSid: smsSid,
+    error: smsError,
   });
 
-  // Record step message sent metric
-  if (smsResult.success) {
-    console.log('[FlowEngine] Step executed successfully, message SID:', smsResult.sid);
+  if (smsSid) {
+    console.log('[FlowEngine] Step executed successfully, message SID:', smsSid);
     await recordStepMessageSent(templateId, step.stepNumber).catch((err) =>
       console.error('[FlowEngine] Failed to record step metric:', err)
     );
   } else {
-    console.error('[FlowEngine] Step execution failed:', smsResult.error);
+    console.error('[FlowEngine] Step execution failed:', smsError);
   }
 }

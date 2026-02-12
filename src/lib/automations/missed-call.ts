@@ -118,14 +118,15 @@ export async function handleMissedCall(payload: MissedCallPayload) {
 
   // 5. Send SMS
   console.log('[Missed Call Handler] Sending SMS to', callerPhone, 'from', clientData.twilioNumber);
-  const smsResult = await sendSMS(callerPhone, clientData.twilioNumber!, messageContent);
-
-  if (!smsResult.success) {
-    console.error('[Missed Call Handler] Failed to send missed call SMS:', smsResult.error);
-    return { processed: false, reason: 'Failed to send SMS', error: smsResult.error };
+  let smsSid: string;
+  try {
+    smsSid = await sendSMS(callerPhone, messageContent, clientData.twilioNumber!);
+  } catch (error) {
+    console.error('[Missed Call Handler] Failed to send missed call SMS:', error);
+    return { processed: false, reason: 'Failed to send SMS', error };
   }
 
-  console.log('[Missed Call Handler] SMS sent successfully:', smsResult.sid);
+  console.log('[Missed Call Handler] SMS sent successfully:', smsSid);
 
   // 6. Log conversation
   // Store CallSid in twilioSid for deduplication purposes

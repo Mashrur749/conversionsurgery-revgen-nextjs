@@ -58,7 +58,7 @@ export async function sendDashboardLink(clientId: string, phone: string, twilioN
 
   await sendSMS(
     phone,
-    twilioNumber,
-    `Here's your dashboard link (valid for 7 days):\n${link}`
+    `Here's your dashboard link (valid for 7 days):\n${link}`,
+    twilioNumber
   );
 }
