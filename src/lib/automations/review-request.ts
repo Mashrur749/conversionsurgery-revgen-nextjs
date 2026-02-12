@@ -8,6 +8,10 @@ interface ReviewPayload {
   clientId: string;
 }
 
+/**
+ * Start a review/referral request sequence — marks lead as won,
+ * cancels existing sequences, and schedules review + referral messages
+ */
 export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
   const db = getDb();
 

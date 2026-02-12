@@ -14,6 +14,10 @@ interface FormPayload {
   address?: string;
 }
 
+/**
+ * Handle an incoming form submission — create/update lead, send auto-response SMS,
+ * log conversation, and update daily stats (FROZEN EXPORT)
+ */
 export async function handleFormSubmission(payload: FormPayload) {
   const db = getDb();
   const { clientId, name, phone, email, message, projectType, address } = payload;

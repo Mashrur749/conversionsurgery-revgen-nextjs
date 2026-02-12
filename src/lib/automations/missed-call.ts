@@ -12,6 +12,10 @@ interface MissedCallPayload {
   answered?: boolean; // For polling-based detection
 }
 
+/**
+ * Handle a missed call — create/update lead, send auto-response SMS,
+ * log conversation, and update daily stats (FROZEN EXPORT)
+ */
 export async function handleMissedCall(payload: MissedCallPayload) {
   const db = getDb();
   const { To, From, CallStatus } = payload;
