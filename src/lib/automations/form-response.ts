@@ -1,5 +1,5 @@
 import { getDb, clients, leads, conversations, blockedNumbers, dailyStats } from '@/db';
-import { sendSMS } from '@/lib/services/twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber, isValidPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -117,7 +117,24 @@ export async function handleFormSubmission(payload: FormPayload) {
 
   let smsSid: string;
   try {
-    smsSid = await sendSMS(normalizedPhone, messageContent, client.twilioNumber);
+    const sendResult = await sendCompliantMessage({
+      clientId: client.id,
+      to: normalizedPhone,
+      from: client.twilioNumber,
+      body: messageContent,
+      messageCategory: 'transactional',
+      consentBasis: { type: 'form_submission', formSubmissionId: lead.id },
+      leadId: lead.id,
+      queueOnQuietHours: true,
+      metadata: { source: 'form_response' },
+    });
+
+    if (sendResult.blocked) {
+      console.log('[Form Response] Message blocked:', sendResult.blockReason);
+      return { processed: false, reason: `Compliance blocked: ${sendResult.blockReason}` };
+    }
+
+    smsSid = sendResult.queued ? 'queued' : sendResult.messageSid!;
   } catch (error) {
     console.error('Failed to send form response SMS:', error);
     return { processed: false, reason: 'Failed to send SMS', error };
@@ -165,13 +182,7 @@ export async function handleFormSubmission(payload: FormPayload) {
       },
     });
 
-  // 7. Increment monthly count
-  await db
-    .update(clients)
-    .set({
-      messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1`,
-    })
-    .where(eq(clients.id, client.id));
+  // 7. Monthly message count is now handled by the compliance gateway
 
   return {
     processed: true,

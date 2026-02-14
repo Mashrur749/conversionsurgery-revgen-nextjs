@@ -1,5 +1,5 @@
 import { getDb, clients, leads, conversations, blockedNumbers, dailyStats } from '@/db';
-import { sendSMS } from '@/lib/services/twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -120,11 +120,38 @@ export async function handleMissedCall(payload: MissedCallPayload) {
     businessName: clientData.businessName,
   });
 
-  // 5. Send SMS
-  console.log('[Missed Call Handler] Sending SMS to', callerPhone, 'from', clientData.twilioNumber);
+  // 5. Send SMS via compliance gateway (auto-records implied consent from inbound call)
+  console.log('[Missed Call Handler] Sending compliant SMS to', callerPhone, 'from', clientData.twilioNumber);
   let smsSid: string;
   try {
-    smsSid = await sendSMS(callerPhone, messageContent, clientData.twilioNumber!);
+    const sendResult = await sendCompliantMessage({
+      clientId: clientData.id,
+      to: callerPhone,
+      from: clientData.twilioNumber!,
+      body: messageContent,
+      messageCategory: 'transactional',
+      consentBasis: { type: 'missed_call', callSid: payload.CallSid },
+      leadId: lead.id,
+      queueOnQuietHours: true,
+      metadata: { source: 'missed_call', callSid: payload.CallSid },
+    });
+
+    if (sendResult.blocked) {
+      console.log('[Missed Call Handler] Message blocked:', sendResult.blockReason);
+      return { processed: false, reason: `Compliance blocked: ${sendResult.blockReason}` };
+    }
+
+    if (sendResult.queued) {
+      console.log('[Missed Call Handler] Message queued for quiet hours');
+      // Still log the conversation and stats — message will be sent later
+      smsSid = 'queued';
+    } else {
+      smsSid = sendResult.messageSid!;
+    }
+
+    if (sendResult.warnings.length > 0) {
+      console.log('[Missed Call Handler] Compliance warnings:', sendResult.warnings);
+    }
   } catch (error) {
     console.error('[Missed Call Handler] Failed to send missed call SMS:', error);
     return { processed: false, reason: 'Failed to send SMS', error };
@@ -167,13 +194,7 @@ export async function handleMissedCall(payload: MissedCallPayload) {
       },
     });
 
-  // 8. Increment monthly message count
-  await db
-    .update(clients)
-    .set({
-      messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1`,
-    })
-    .where(eq(clients.id, clientData.id));
+  // 8. Monthly message count is now handled by the compliance gateway
 
   return {
     processed: true,
