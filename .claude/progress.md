@@ -47,7 +47,7 @@ If picking up from a new session, read this file first, then:
 | `184f73b` | Batch 1 | Manual lead creation, CSV export, template cloning |
 | `e8ab149` | Batch 2 | Client revenue, trial reminders, AI settings, feature toggles |
 | `52a6393` | Batch 3 | Per-lead flow status, client flow management |
-| pending | Batch 4 | Plan management, system settings |
+| `b93693c` | Batch 4 | Plan management, system settings |
 
 ---
 
