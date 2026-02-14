@@ -23,25 +23,29 @@ const navItems = [
 ];
 
 const adminNavItems = [
-  { group: 'Management', items: [
-    { href: '/admin', label: 'All Clients' },
+  { group: 'Clients', items: [
+    { href: '/admin', label: 'Dashboard' },
     { href: '/admin/clients', label: 'Clients' },
-    { href: '/admin/agency', label: 'Agency' },
-    { href: '/admin/billing', label: 'Billing' },
+    { href: '/admin/users', label: 'Users' },
+    { href: '/admin/agency', label: 'Communications' },
     { href: '/admin/discussions', label: 'Discussions' },
   ]},
   { group: 'Optimization', items: [
     { href: '/admin/flow-templates', label: 'Flow Templates' },
-    { href: '/admin/analytics', label: 'Analytics' },
-    { href: '/admin/platform-analytics', label: 'Platform' },
-    { href: '/admin/template-performance', label: 'Template Performance' },
-    { href: '/admin/reports', label: 'Reports' },
+    { href: '/admin/analytics', label: 'Flow Analytics' },
+    { href: '/admin/template-performance', label: 'Variant Results' },
+    { href: '/admin/ab-tests', label: 'A/B Tests' },
     { href: '/admin/reputation', label: 'Reputation' },
-    { href: '/admin/usage', label: 'Usage' },
   ]},
-  { group: 'Configuration', items: [
+  { group: 'Reporting', items: [
+    { href: '/admin/billing', label: 'Billing' },
+    { href: '/admin/reports', label: 'Reports' },
+    { href: '/admin/platform-analytics', label: 'Platform Health' },
+    { href: '/admin/usage', label: 'Costs & Usage' },
+  ]},
+  { group: 'Settings', items: [
     { href: '/admin/phone-numbers', label: 'Phone Numbers' },
-    { href: '/admin/twilio', label: 'Twilio Settings' },
+    { href: '/admin/twilio', label: 'Twilio Account' },
     { href: '/admin/voice-ai', label: 'Voice AI' },
     { href: '/admin/compliance', label: 'Compliance' },
   ]},
