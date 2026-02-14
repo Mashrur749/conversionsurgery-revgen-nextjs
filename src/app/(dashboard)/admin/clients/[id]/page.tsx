@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
-import { getDb, clients, teamMembers } from '@/db';
-import { eq } from 'drizzle-orm';
+import { getDb, clients, teamMembers, leads, appointments, dailyStats } from '@/db';
+import { eq, and, gte, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,10 @@ import { TeamManager } from './team-manager';
 import { DeleteButton } from './delete-button';
 import { FeatureTogglesCard } from './feature-toggles';
 import { FeatureStatusList } from './feature-status';
+import { ROIDashboard } from './roi-dashboard';
 import { format } from 'date-fns';
+import { getRevenueStats, getRevenueByService } from '@/lib/services/revenue';
+import { getSpeedToLeadMetrics } from '@/lib/services/speed-to-lead';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -43,6 +46,70 @@ export default async function ClientDetailPage({ params }: Props) {
     .from(teamMembers)
     .where(eq(teamMembers.clientId, client.id))
     .orderBy(teamMembers.priority);
+
+  // Fetch ROI metrics in parallel
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+
+  const [revenueStats, prevRevenueStats, serviceBreakdown, speedMetrics, activityCounts] = await Promise.all([
+    getRevenueStats(id, thirtyDaysAgo),
+    getRevenueStats(id, sixtyDaysAgo),
+    getRevenueByService(id, thirtyDaysAgo),
+    getSpeedToLeadMetrics(id, thirtyDaysAgo),
+    // Activity counts
+    (async () => {
+      const [missedCalls] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(leads)
+        .where(and(
+          eq(leads.clientId, id),
+          eq(leads.source, 'missed_call'),
+          gte(leads.createdAt, thirtyDaysAgo)
+        ));
+      const [appts] = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(appointments)
+        .where(and(
+          eq(appointments.clientId, id),
+          gte(appointments.createdAt, thirtyDaysAgo)
+        ));
+      // Win-back re-engagements: leads that went from dormant back to contacted
+      const reengaged = 0; // Will be populated when win-back data exists
+      return {
+        missedCalls: Number(missedCalls?.count || 0),
+        appointments: Number(appts?.count || 0),
+        reengaged,
+      };
+    })(),
+  ]);
+
+  // Calculate month-over-month pipeline change
+  const prevPipeline = prevRevenueStats.totalWonValue - revenueStats.totalWonValue;
+  const pipelineChange = prevPipeline > 0
+    ? Math.round(((revenueStats.totalWonValue - prevPipeline) / prevPipeline) * 100)
+    : 0;
+
+  const monthlyInvestment = 997;
+  const roiMultiplier = revenueStats.totalWonValue > 0
+    ? Math.round((revenueStats.totalWonValue / 100) / monthlyInvestment)
+    : 0;
+
+  const roiMetrics = {
+    totalPipeline: revenueStats.totalQuoteValue + revenueStats.totalWonValue,
+    totalWonValue: revenueStats.totalWonValue,
+    serviceBreakdown: serviceBreakdown.filter(s => s.leadCount > 0),
+    avgResponseTimeSeconds: speedMetrics.avgResponseTimeSeconds,
+    previousResponseTimeMinutes: speedMetrics.previousResponseTimeMinutes,
+    industryAvgMinutes: speedMetrics.industryAvgMinutes,
+    speedMultiplier: speedMetrics.speedMultiplier,
+    improvementVsPrevious: speedMetrics.improvementVsPrevious,
+    missedCallsCaptured: activityCounts.missedCalls,
+    appointmentsBooked: activityCounts.appointments,
+    leadsReengaged: activityCounts.reengaged,
+    monthlyInvestment,
+    roiMultiplier,
+    pipelineChange,
+  };
 
   const statusColors: Record<string, string> = {
     active: 'bg-green-100 text-green-800',
@@ -76,6 +143,8 @@ export default async function ClientDetailPage({ params }: Props) {
           </Button>
         </div>
       </div>
+
+      <ROIDashboard metrics={roiMetrics} />
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
