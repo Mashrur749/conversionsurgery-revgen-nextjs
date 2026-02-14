@@ -1,8 +1,8 @@
 # ConversionSurgery Build Plan — Revenue Recovery Features + Compliance
 
-> **Status**: Planning complete. Ready to execute.
+> **Status**: I-1 Compliance Gateway IN PROGRESS (core done, 15 internal files remaining)
 > **Last updated**: 2026-02-13
-> **Session**: Feature gap analysis + compliance audit + UX refinement
+> **Session**: Feature gap analysis + compliance audit + UX refinement + execution started
 > **Nav cleanup**: ✅ DONE (committed but not pushed)
 
 ---
@@ -422,9 +422,39 @@ Week 3:
 
 ---
 
-## Files Already Modified This Session
+## Execution Progress
 
-- `src/app/(dashboard)/layout.tsx` — Admin nav restructured (4 groups, renamed labels, added missing pages)
+### Commits made this session
+1. `9c20081` — Admin nav restructured (4 groups, renamed labels, added missing pages)
+2. `04c23a4` — Compliance gateway created + missed-call + form-response migrated
+3. `273c216` — CASL consent expiry (6mo/2yr) + quiet hours fixed (10am) + Canadian holidays
+4. `89d94c1` — Flow execution + scheduled message processor migrated to gateway
+
+### I-1 Compliance Gateway — Progress
+**Core gateway**: ✅ DONE (`src/lib/compliance/compliance-gateway.ts`)
+**Lead-facing automations migrated**: ✅ 4/4
+- ✅ `missed-call.ts` — auto-records implied consent from CallSid
+- ✅ `form-response.ts` — auto-records implied consent from form submission
+- ✅ `flow-execution.ts` — uses existing_consent basis
+- ✅ `process-scheduled/route.ts` — uses existing_consent basis
+
+**CASL compliance fixes**: ✅ DONE
+- ✅ 6-month implied consent expiry for inquiries
+- ✅ 2-year implied consent expiry for existing customers
+- ✅ 30-day expiry warning
+- ✅ Quiet hours default changed to 10am (CRTC requires 9:30am)
+- ✅ Canadian federal holidays (Canada Day, Remembrance Day, etc.)
+
+**Internal/team notification files NOT YET migrated** (lower priority — these send to team members, not leads):
+- `incoming-sms.ts` (7 sendSMS calls — AI responses to leads ARE high priority)
+- `orchestrator.ts` (1 call — AI agent responses to leads)
+- `escalation.ts`, `team-escalation.ts`, `ring-group.ts` — team notifications
+- `review-monitoring.ts`, `voice-summary.ts`, `weekly-summary.ts` — admin notifications
+- `flow-suggestions.ts`, `usage-alerts.ts`, `magic-link.ts` — system messages
+- API routes: `leads/[id]/reply`, `payments/[id]/send`, `client/conversations/[id]/send`
+- Webhooks: `stripe`, `member-answered`
+
+**Next step for I-1**: Migrate `incoming-sms.ts` and `orchestrator.ts` (AI responses to leads), then mark I-1 as done. The team/admin notification files can be migrated incrementally.
 
 ## Legal Note
 
