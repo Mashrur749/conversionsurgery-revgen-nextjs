@@ -16,6 +16,7 @@ import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
 import { startFlowExecution } from '@/lib/services/flow-execution';
 import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
+import { buildGuardrailPrompt } from './guardrails';
 import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
 
 interface ProcessMessageResult {
@@ -97,6 +98,22 @@ export async function processIncomingMessage(
     console.error('[Agent] Knowledge retrieval failed:', err);
   }
 
+  // Count consecutive outbound messages (messages without response)
+  const outboundStreak = conversationHistory
+    .slice()
+    .reverse()
+    .findIndex(m => m.direction === 'inbound');
+  const messagesWithoutResponse = outboundStreak === -1 ? conversationHistory.length : outboundStreak;
+
+  // Build guardrails
+  const guardrailText = buildGuardrailPrompt({
+    ownerName: client.ownerName,
+    businessName: client.businessName,
+    agentTone: (settings?.agentTone || 'professional') as 'professional' | 'friendly' | 'casual',
+    messagesWithoutResponse,
+    canDiscussPricing: settings?.canDiscussPricing || false,
+  });
+
   // Build initial state
   const initialState: Partial<ConversationStateType> = {
     leadId,
@@ -119,6 +136,7 @@ export async function processIncomingMessage(
     bookingAttempts: context.bookingAttempts || 0,
     clientSettings: {
       businessName: client.businessName,
+      ownerName: client.ownerName,
       services: ((client as Record<string, unknown>).metadata as Record<string, unknown>)?.services as string[] || [],
       agentName: settings?.agentName || 'Assistant',
       agentTone: settings?.agentTone || 'professional',
@@ -130,6 +148,7 @@ export async function processIncomingMessage(
       canScheduleAppointments: settings?.canScheduleAppointments ?? true,
     },
     knowledgeContext: knowledge,
+    guardrailText,
   };
 
   // Run the agent graph

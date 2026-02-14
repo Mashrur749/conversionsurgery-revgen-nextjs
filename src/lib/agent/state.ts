@@ -91,6 +91,7 @@ export const ConversationState = Annotation.Root({
   // Client settings (injected at runtime)
   clientSettings: Annotation<{
     businessName: string;
+    ownerName: string;
     services: string[];
     agentName: string;
     agentTone: string;
@@ -107,6 +108,12 @@ export const ConversationState = Annotation.Root({
 
   // Knowledge context (from RAG)
   knowledgeContext: Annotation<string | null>({
+    reducer: (current, update) => update,
+    default: () => null,
+  }),
+
+  // Pre-built guardrail text (from context builder)
+  guardrailText: Annotation<string | null>({
     reducer: (current, update) => update,
     default: () => null,
   }),

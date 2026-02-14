@@ -1,5 +1,9 @@
 import OpenAI from 'openai';
 import { buildKnowledgeContext, searchKnowledge } from './knowledge-base';
+import { buildGuardrailPrompt } from '@/lib/agent/guardrails';
+import { getDb } from '@/db';
+import { clientAgentSettings } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -86,33 +90,50 @@ export async function generateAIResponse(
 
   // Build knowledge context if clientId is provided
   let knowledgeSection = '';
+  let guardrailSection = '';
+
   if (clientId) {
     const knowledgeContext = await buildKnowledgeContext(clientId);
     const relevantKnowledge = await searchKnowledge(clientId, incomingMessage);
 
     if (knowledgeContext) {
-      knowledgeSection = `\n${knowledgeContext}`;
+      knowledgeSection = `\n## BUSINESS KNOWLEDGE\n${knowledgeContext}`;
     }
 
     if (relevantKnowledge.length > 0) {
-      knowledgeSection += `\nMOST RELEVANT TO THIS QUESTION:\n${relevantKnowledge.map(k => `- ${k.title}: ${k.content}`).join('\n')}`;
+      knowledgeSection += `\n\n## MOST RELEVANT TO THIS QUESTION\n${relevantKnowledge.map(k => `- ${k.title}: ${k.content}`).join('\n')}`;
+    }
+
+    // Load agent settings for guardrails
+    try {
+      const db = getDb();
+      const [settings] = await db
+        .select()
+        .from(clientAgentSettings)
+        .where(eq(clientAgentSettings.clientId, clientId))
+        .limit(1);
+
+      // Count consecutive outbound messages (messages without response)
+      const outboundCount = conversationHistory
+        .slice()
+        .reverse()
+        .findIndex(m => m.role === 'user');
+      const messagesWithoutResponse = outboundCount === -1 ? conversationHistory.length : outboundCount;
+
+      guardrailSection = '\n\n' + buildGuardrailPrompt({
+        ownerName,
+        businessName,
+        agentTone: (settings?.agentTone || 'professional') as 'professional' | 'friendly' | 'casual',
+        messagesWithoutResponse,
+        canDiscussPricing: settings?.canDiscussPricing || false,
+      });
+    } catch (err) {
+      console.error('[OpenAI] Failed to load guardrails:', err);
     }
   }
 
-  const systemPrompt = `You are a helpful text assistant for ${businessName}.
-${knowledgeSection}
-
-GUIDELINES:
-- Be friendly, professional, and helpful
-- Answer questions using the business information provided above
-- If you don't have specific information, offer to have ${ownerName} follow up
-- Keep responses concise (1-3 sentences for simple questions)
-- For complex questions, provide helpful information and offer to schedule a call
-- Never make up information not provided above
-- If asked about pricing, refer to the pricing information or offer a free estimate
-- Always represent the business positively
-- Sound like a real text message, not a corporate bot
-- Ask ONE question at a time to keep the conversation going`;
+  const systemPrompt = `You are a helpful text assistant for ${businessName}. ${ownerName} manages the business. Your primary goal: help leads book appointments.
+${knowledgeSection}${guardrailSection}`;
 
   try {
     const completion = await openai.chat.completions.create({

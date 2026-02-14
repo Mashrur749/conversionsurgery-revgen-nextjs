@@ -7,41 +7,29 @@ const model = new ChatOpenAI({
   temperature: 0.7,
 });
 
-const RESPONSE_PROMPT = `You are {agentName}, a friendly {agentTone} assistant for {businessName}.
-Your job is to help customers with their home service needs.
+const RESPONSE_PROMPT = `You are {agentName}, a {agentTone} assistant for {businessName}. {ownerName} manages the business.
 
-SERVICES WE OFFER:
-{services}
+## BUSINESS KNOWLEDGE
+{knowledgeContext}
 
-YOUR GOAL: {primaryGoal}
-
-RULES:
-1. Keep responses under {maxLength} characters
-2. Be {agentTone} but professional
-3. {pricingRule}
-4. {schedulingRule}
-5. Always be helpful and move toward booking
-6. If you don't know something, offer to have a team member follow up
-7. Don't make promises about timing or pricing without certainty
-8. Acknowledge their concerns if they have objections
-
-CURRENT CONTEXT:
+## CURRENT CONTEXT
 - Customer Stage: {stage}
 - Customer Sentiment: {sentiment}
 - Their Project: {projectInfo}
 - Objections to Address: {objections}
 
-KNOWLEDGE CONTEXT (if relevant):
-{knowledgeContext}
-
-RECENT CONVERSATION:
+## RECENT CONVERSATION
 {conversation}
 
-STRATEGY FOR THIS RESPONSE:
-{strategy}
+{guardrails}
 
-Generate a response that follows the strategy and moves toward {primaryGoal}.
-DO NOT include any prefix like "Agent:" - just write the message text.`;
+## YOUR TASK
+Goal: {primaryGoal}
+Max response length: {maxLength} characters
+Strategy for this response: {strategy}
+{schedulingRule}
+
+Generate the response message. DO NOT include any prefix like "Agent:" — just write the message text.`;
 
 export async function generateResponse(
   state: ConversationStateType
@@ -93,21 +81,19 @@ export async function generateResponse(
     .replace('{agentName}', clientSettings.agentName)
     .replace(/{agentTone}/g, clientSettings.agentTone)
     .replace('{businessName}', clientSettings.businessName)
-    .replace('{services}', clientSettings.services.join(', '))
+    .replace('{ownerName}', clientSettings.ownerName)
     .replace(/{primaryGoal}/g, clientSettings.primaryGoal === 'book_appointment' ? 'book an appointment' : clientSettings.primaryGoal)
     .replace('{maxLength}', String(clientSettings.maxResponseLength))
-    .replace('{pricingRule}', clientSettings.canDiscussPricing
-      ? 'You can discuss general pricing ranges'
-      : 'DO NOT discuss specific pricing - offer to have someone follow up with a quote')
     .replace('{schedulingRule}', clientSettings.canScheduleAppointments
-      ? 'You can offer to schedule appointments'
-      : 'Offer to have someone call them to schedule')
+      ? 'You can offer to schedule appointments.'
+      : 'Offer to have someone call them to schedule.')
     .replace('{stage}', state.stage)
     .replace('{sentiment}', state.signals.sentiment)
     .replace('{projectInfo}', projectInfo)
     .replace('{objections}', state.objections.join(', ') || 'None')
-    .replace('{knowledgeContext}', state.knowledgeContext || 'No specific knowledge context')
+    .replace('{knowledgeContext}', state.knowledgeContext || 'No specific business knowledge configured.')
     .replace('{conversation}', conversationText)
+    .replace('{guardrails}', state.guardrailText || '')
     .replace('{strategy}', strategy);
 
   const response = await model.invoke([
