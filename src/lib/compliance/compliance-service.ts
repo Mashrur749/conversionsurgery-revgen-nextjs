@@ -281,17 +281,59 @@ export class ComplianceService {
       };
     }
 
-    // Warn if consent is old
+    // CASL consent expiry enforcement
     const consentAge = Date.now() - consent.consentTimestamp.getTime();
-    const oneYear = 365 * 24 * 60 * 60 * 1000;
-    if (consentAge > oneYear) {
-      warnings.push('Consent is over 1 year old - consider re-confirming');
+    const sixMonths = 6 * 30 * 24 * 60 * 60 * 1000;
+    const twoYears = 2 * 365 * 24 * 60 * 60 * 1000;
+
+    if (consent.consentType === 'implied') {
+      // CASL: Implied consent from inquiry expires after 6 months
+      // Implied consent from existing customer expires after 2 years
+      const isCustomerConsent =
+        consent.consentSource === 'existing_customer';
+      const expiryMs = isCustomerConsent ? twoYears : sixMonths;
+
+      if (consentAge > expiryMs) {
+        await this.logComplianceEvent(clientId, 'consent_expired', {
+          phoneNumber: normalizedPhone,
+          phoneHash,
+          consentId: consent.id,
+          consentType: consent.consentType,
+          consentSource: consent.consentSource,
+          ageMs: consentAge,
+          expiryMs,
+        });
+
+        return {
+          canSend: false,
+          canSendMarketing: false,
+          canSendTransactional: false,
+          blockReason: `Implied consent expired (${isCustomerConsent ? '2 years' : '6 months'} under CASL)`,
+          hasConsent: false,
+          isOptedOut: false,
+          isOnDnc: false,
+          isQuietHours: false,
+          warnings: ['Consent expired — re-confirmation required'],
+        };
+      }
+
+      // Warn when approaching expiry (30 days before)
+      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+      if (consentAge > expiryMs - thirtyDays) {
+        warnings.push(
+          `Implied consent expiring soon (${isCustomerConsent ? '2 years' : '6 months'} CASL limit) — consider re-confirmation`
+        );
+      }
     }
 
-    // Warn if consent type is weak
-    if (consent.consentType === 'implied') {
+    // Warn if consent is over 1 year old even for express (best practice)
+    const oneYear = 365 * 24 * 60 * 60 * 1000;
+    if (
+      consent.consentType !== 'implied' &&
+      consentAge > oneYear
+    ) {
       warnings.push(
-        'Consent is implied only - express written consent is recommended'
+        'Consent is over 1 year old - consider re-confirming as best practice'
       );
     }
 
@@ -390,12 +432,14 @@ export class ComplianceService {
     const month = date.getMonth();
     const day = date.getDate();
 
-    // Fixed holidays
+    // Canadian federal holidays (CASL/CRTC jurisdiction)
     const fixedHolidays = [
       { month: 0, day: 1 }, // New Year's Day
-      { month: 6, day: 4 }, // Independence Day
-      { month: 10, day: 11 }, // Veterans Day
-      { month: 11, day: 25 }, // Christmas
+      { month: 6, day: 1 }, // Canada Day
+      { month: 8, day: 30 }, // National Day for Truth and Reconciliation (approx)
+      { month: 10, day: 11 }, // Remembrance Day
+      { month: 11, day: 25 }, // Christmas Day
+      { month: 11, day: 26 }, // Boxing Day
     ];
 
     for (const holiday of fixedHolidays) {

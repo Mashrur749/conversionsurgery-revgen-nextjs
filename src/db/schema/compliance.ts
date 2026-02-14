@@ -201,7 +201,7 @@ export const quietHoursConfig = pgTable('quiet_hours_config', {
 
   // Standard quiet hours (recipient's local time)
   quietStartHour: integer('quiet_start_hour').notNull().default(21),
-  quietEndHour: integer('quiet_end_hour').notNull().default(8),
+  quietEndHour: integer('quiet_end_hour').notNull().default(10), // CRTC requires 9:30am, we use 10am for safety
 
   // Day-specific overrides (0 = Sunday, 6 = Saturday)
   weekendQuietStartHour: integer('weekend_quiet_start_hour'),
