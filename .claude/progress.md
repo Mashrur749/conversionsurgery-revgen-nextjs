@@ -34,10 +34,8 @@ If picking up from a new session, read this file first, then:
 - [x] **Item 12: Client Flow Management** — /client/flows page + /api/client/flows CRUD with toggle
 
 ### Batch 4 — Admin Tools
-- [ ] **Item 6+7: Plan Management + Overage Config** — Admin CRUD for subscription plans
-  - Files: `src/app/api/admin/plans/route.ts` (NEW), `src/app/api/admin/plans/[id]/route.ts` (NEW), `src/app/(dashboard)/admin/billing/plans/` (NEW)
-- [ ] **Item 13: System Settings Page** — Admin UI for system_settings table
-  - Files: `src/app/api/admin/settings/route.ts` (NEW), `src/app/(dashboard)/admin/settings/page.tsx` (NEW)
+- [x] **Item 6+7: Plan Management + Overage Config** — Full CRUD at /admin/billing/plans with features/pricing editor
+- [x] **Item 13: System Settings Page** — Key-value editor at /admin/settings with add/edit/delete
 
 ---
 
@@ -46,10 +44,10 @@ If picking up from a new session, read this file first, then:
 | Commit | Items | Description |
 |--------|-------|-------------|
 | `986caeb` | baseline | Session 12 complete |
-| | Batch 1 | |
-| | Batch 2 | |
-| | Batch 3 | |
-| | Batch 4 | |
+| `184f73b` | Batch 1 | Manual lead creation, CSV export, template cloning |
+| `e8ab149` | Batch 2 | Client revenue, trial reminders, AI settings, feature toggles |
+| `52a6393` | Batch 3 | Per-lead flow status, client flow management |
+| pending | Batch 4 | Plan management, system settings |
 
 ---
 

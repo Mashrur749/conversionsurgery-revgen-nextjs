@@ -39,6 +39,7 @@ const adminNavItems = [
   ]},
   { group: 'Reporting', items: [
     { href: '/admin/billing', label: 'Billing' },
+    { href: '/admin/billing/plans', label: 'Plans' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/platform-analytics', label: 'Platform Health' },
     { href: '/admin/usage', label: 'Costs & Usage' },
@@ -48,6 +49,7 @@ const adminNavItems = [
     { href: '/admin/twilio', label: 'Twilio Account' },
     { href: '/admin/voice-ai', label: 'Voice AI' },
     { href: '/admin/compliance', label: 'Compliance' },
+    { href: '/admin/settings', label: 'System Settings' },
   ]},
 ];
 

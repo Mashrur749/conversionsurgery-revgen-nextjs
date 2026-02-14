@@ -114,8 +114,8 @@ Each feature is marked with its current state:
 | Trial tracking | [LIVE] | Count of clients in trial period |
 | Failed payments | [LIVE] | Clients with payment issues |
 | Churn rate | [LIVE] | Percentage cancelled this month |
-| Plan management | [PLANNED] | Plans exist in DB but no admin UI to create/edit |
-| Overage configuration | [PLANNED] | Schema supports it, no admin UI |
+| Plan management | [LIVE] | Full CRUD at /admin/billing/plans with features, pricing, Stripe fields |
+| Overage configuration | [LIVE] | Plan features editor supports quotas; subscription table has overage cents fields |
 
 ### 1.7 Flow Template Management
 | Feature | Status | Behavior |
@@ -212,7 +212,7 @@ Each feature is marked with its current state:
 ### 1.17 Platform Settings
 | Feature | Status | Behavior |
 |---------|--------|----------|
-| System settings | [PLANNED] | No admin UI for app name, support email, defaults |
+| System settings | [LIVE] | Admin CRUD at /admin/settings with key-value editor |
 | API key management | [PLANNED] | Not implemented |
 | Webhook logs | [PLANNED] | Not implemented |
 | Email templates | [PLANNED] | Not implemented |
