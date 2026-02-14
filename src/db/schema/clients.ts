@@ -85,6 +85,10 @@ export const clients = pgTable(
     voiceGreeting: text('voice_greeting'),
     voiceVoiceId: varchar('voice_voice_id', { length: 100 }), // ElevenLabs voice ID
     voiceMaxDuration: integer('voice_max_duration').default(300), // seconds
+
+    // Speed-to-lead: how long it took before ConversionSurgery (minutes)
+    previousResponseTimeMinutes: integer('previous_response_time_minutes'),
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

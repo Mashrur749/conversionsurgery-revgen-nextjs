@@ -1,0 +1,1 @@
+ALTER TABLE "clients" ADD COLUMN "previous_response_time_minutes" integer;
