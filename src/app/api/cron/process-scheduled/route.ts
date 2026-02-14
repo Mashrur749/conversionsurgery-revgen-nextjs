@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, scheduledMessages, leads, clients, conversations, blockedNumbers, dailyStats } from '@/db';
-import { sendSMS } from '@/lib/services/twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { eq, and, lte, sql } from 'drizzle-orm';
 
 /**
@@ -97,9 +97,25 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      // Send SMS
+      // Send SMS via compliance gateway
       try {
-        const sid = await sendSMS(lead.phone, message.content, client.twilioNumber);
+        const sendResult = await sendCompliantMessage({
+          clientId: client.id,
+          to: lead.phone,
+          from: client.twilioNumber,
+          body: message.content,
+          messageCategory: 'marketing',
+          consentBasis: { type: 'existing_consent' },
+          leadId: lead.id,
+          queueOnQuietHours: false, // Already scheduled, don't re-queue
+          metadata: { source: 'scheduled_message', messageId: message.id, sequenceType: message.sequenceType },
+        });
+
+        if (sendResult.blocked) {
+          await markCancelled(db, message.id, `Compliance: ${sendResult.blockReason}`);
+          skipped++;
+          continue;
+        }
 
         // Mark sent
         await db
@@ -114,17 +130,11 @@ export async function GET(request: NextRequest) {
           direction: 'outbound',
           messageType: 'scheduled',
           content: message.content,
-          twilioSid: sid,
+          twilioSid: sendResult.messageSid || undefined,
         });
 
-        // Update daily stats
+        // Update daily stats (monthly count handled by gateway)
         await updateDailyStats(db, client.id, message.sequenceType);
-
-        // Increment monthly count
-        await db
-          .update(clients)
-          .set({ messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1` })
-          .where(eq(clients.id, client.id));
 
         sent++;
       } catch (error) {

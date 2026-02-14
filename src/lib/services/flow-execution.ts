@@ -2,7 +2,7 @@ import { getDb } from '@/db';
 import { flowExecutions, flowStepExecutions, flows, leads, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { resolveFlowSteps } from './flow-resolution';
-import { sendSMS } from './twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import {
   recordExecutionStart,
   recordStepMessageSent,
@@ -108,7 +108,7 @@ export async function startFlowExecution(
 
   if (firstStep.delayMinutes === 0) {
     // Execute immediately
-    await executeStep(execution.id, firstStep, messageContent, lead, client, templateId);
+    await executeStep(execution.id, firstStep, messageContent, lead, client, clientId, leadId, templateId);
   } else {
     // Schedule for later
     const scheduledAt = new Date();
@@ -147,6 +147,8 @@ async function executeStep(
   messageContent: string,
   lead: Lead | undefined,
   client: Client | undefined,
+  clientId: string,
+  leadId: string,
   templateId: string | null = null
 ): Promise<void> {
   const db = getDb();
@@ -170,7 +172,25 @@ async function executeStep(
   let smsError: string | null = null;
 
   try {
-    smsSid = await sendSMS(lead.phone, messageContent, client.twilioNumber);
+    const sendResult = await sendCompliantMessage({
+      clientId,
+      to: lead.phone,
+      from: client.twilioNumber,
+      body: messageContent,
+      messageCategory: 'marketing',
+      consentBasis: { type: 'existing_consent' },
+      leadId,
+      queueOnQuietHours: true,
+      metadata: { source: 'flow_execution', executionId, stepNumber: step.stepNumber },
+    });
+
+    if (sendResult.blocked) {
+      smsError = `Compliance blocked: ${sendResult.blockReason}`;
+    } else if (sendResult.queued) {
+      smsSid = 'queued';
+    } else {
+      smsSid = sendResult.messageSid || null;
+    }
   } catch (error) {
     smsError = String(error);
   }
