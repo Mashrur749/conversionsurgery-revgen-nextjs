@@ -26,6 +26,7 @@ const adminNavItems = [
   { group: 'Management', items: [
     { href: '/admin', label: 'All Clients' },
     { href: '/admin/clients', label: 'Clients' },
+    { href: '/admin/agency', label: 'Agency' },
     { href: '/admin/billing', label: 'Billing' },
     { href: '/admin/discussions', label: 'Discussions' },
   ]},
