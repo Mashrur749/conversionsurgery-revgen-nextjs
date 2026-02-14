@@ -12,6 +12,7 @@ const navItems = [
   { href: '/client/team', label: 'Team' },
   { href: '/client/billing', label: 'Billing' },
   { href: '/client/settings', label: 'Settings' },
+  { href: '/client/help', label: 'Help' },
   { href: '/client/discussions', label: 'Discussions' },
 ];
 

@@ -27,6 +27,8 @@ export interface SendCompliantMessageParams {
   leadId?: string;
   /** If true, queue for next available window instead of failing on quiet hours */
   queueOnQuietHours?: boolean;
+  /** Optional media URLs for MMS */
+  mediaUrl?: string[];
   /** Optional metadata for audit logging */
   metadata?: Record<string, unknown>;
 }
@@ -72,6 +74,7 @@ export async function sendCompliantMessage(
     consentBasis,
     leadId,
     queueOnQuietHours = true,
+    mediaUrl,
     metadata,
   } = params;
 
@@ -213,7 +216,7 @@ export async function sendCompliantMessage(
   // -----------------------------------------------------------
   let messageSid: string;
   try {
-    messageSid = await sendSMS(normalizedPhone, body, from);
+    messageSid = await sendSMS(normalizedPhone, body, from, mediaUrl?.length ? { mediaUrl } : undefined);
   } catch (error) {
     // Log failed send attempt
     await ComplianceService.logComplianceEvent(clientId, 'message_send_failed', {

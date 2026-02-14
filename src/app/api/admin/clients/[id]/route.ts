@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { z } from 'zod';
 import { sendOnboardingNotification } from '@/lib/services/agency-communication';
+import { isSuperAdmin } from '@/lib/utils/admin-auth';
 
 export async function GET(
   request: NextRequest,
@@ -142,6 +143,9 @@ export async function DELETE(
 
   if (!session?.user?.isAdmin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+  if (!isSuperAdmin(session)) {
+    return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
   }
 
   const db = getDb();

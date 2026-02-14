@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { clients, activeCalls } from "@/db/schema";
+import { clients, activeCalls, webhookLog, clientPhoneNumbers } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { normalizePhoneNumber } from "@/lib/utils/phone";
 import { getWebhookBaseUrl, xmlAttr } from "@/lib/utils/webhook-url";
@@ -33,6 +33,20 @@ export async function POST(request: NextRequest) {
     const from = payload.From;
     const to = payload.To;
     const callStatus = (payload.CallStatus || "").toLowerCase();
+
+    // Log webhook event
+    try {
+      const logDb = getDb();
+      const [logClient] = await logDb.select({ id: clients.id }).from(clients).where(eq(clients.twilioNumber, to)).limit(1);
+      if (logClient) {
+        await logDb.insert(webhookLog).values({
+          clientId: logClient.id,
+          eventType: 'voice_inbound',
+          payload,
+          responseStatus: 200,
+        });
+      }
+    } catch {} // Don't block voice processing
     const dialCallStatus = (payload.DialCallStatus || "").toLowerCase();
 
     // Helpful logging
@@ -144,7 +158,8 @@ export async function POST(request: NextRequest) {
     const db = getDb();
     const twilioNumber = normalizePhoneNumber(to);
 
-    const clientResult = await db
+    // Check junction table first for multi-number support, fallback to clients.twilioNumber
+    let clientResult = await db
       .select()
       .from(clients)
       .where(
@@ -154,6 +169,31 @@ export async function POST(request: NextRequest) {
         ),
       )
       .limit(1);
+
+    if (!clientResult.length) {
+      const [junctionRecord] = await db
+        .select({ clientId: clientPhoneNumbers.clientId })
+        .from(clientPhoneNumbers)
+        .where(
+          and(
+            eq(clientPhoneNumbers.phoneNumber, twilioNumber),
+            eq(clientPhoneNumbers.isActive, true),
+          ),
+        )
+        .limit(1);
+      if (junctionRecord) {
+        clientResult = await db
+          .select()
+          .from(clients)
+          .where(
+            and(
+              eq(clients.id, junctionRecord.clientId),
+              eq(clients.status, "active"),
+            ),
+          )
+          .limit(1);
+      }
+    }
 
     console.log({
       clientResult,

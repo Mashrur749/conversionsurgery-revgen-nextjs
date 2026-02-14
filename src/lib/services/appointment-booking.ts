@@ -10,7 +10,8 @@ import { appointments, businessHours, clients, leads, scheduledMessages } from '
 import { eq, and, gte, lte, not } from 'drizzle-orm';
 import { scheduleAppointmentReminders } from '@/lib/automations/appointment-reminder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
-import { format, addDays, parse, isBefore, isAfter } from 'date-fns';
+import { createEvent } from '@/lib/services/calendar';
+import { format, addDays, addHours, parse, isBefore, isAfter } from 'date-fns';
 
 export interface TimeSlot {
   date: string;        // YYYY-MM-DD
@@ -208,6 +209,19 @@ export async function bookAppointment(
       metadata: { source: 'booking_notification', appointmentId: result.appointmentId },
     }).catch(() => {}); // Don't block on contractor notification failure
   }
+
+  // Create calendar event if client has calendar integration
+  try {
+    await createEvent({
+      clientId,
+      leadId,
+      title: `${lead.projectType || 'Service Call'}: ${lead.name || 'Customer'}`,
+      startTime: appointmentDateTime,
+      endTime: addHours(appointmentDateTime, 1),
+      location: lead.address || undefined,
+      eventType: 'estimate',
+    });
+  } catch {} // Don't block booking on calendar failure
 
   return {
     success: true,

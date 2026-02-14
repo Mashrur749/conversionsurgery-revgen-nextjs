@@ -87,6 +87,17 @@ export * from './client-cohorts';
 export * from './support-messages';
 export * from './support-replies';
 
+// Help & Surveys
+export * from './help-articles';
+export * from './nps-surveys';
+
+// Email Templates & API Keys
+export * from './email-templates';
+export * from './api-keys';
+
+// Multi-number support
+export * from './client-phone-numbers';
+
 // Auth tables (NextAuth)
 export * from './auth';
 

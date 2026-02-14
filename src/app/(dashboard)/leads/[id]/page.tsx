@@ -16,6 +16,7 @@ import { ActionButtons } from './action-buttons';
 import { LeadTabs } from './lead-tabs';
 import { LeadHeader } from './lead-header';
 import { FlowStatus } from './flow-status';
+import { LeadTags } from './lead-tags';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,6 +109,7 @@ export default async function LeadDetailPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <LeadHeader lead={lead} />
+      <LeadTags leadId={lead.id} initialTags={(lead.tags as string[]) || []} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">

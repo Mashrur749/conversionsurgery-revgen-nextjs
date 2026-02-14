@@ -3,6 +3,7 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { getDb } from '@/db';
 import { users, accounts, sessions, verificationTokens } from '@/db/schema/auth';
 import { clients } from '@/db/schema/clients';
+import { adminUsers } from '@/db/schema/admin-users';
 import { eq } from 'drizzle-orm';
 import { sendEmail } from '@/lib/services/resend';
 
@@ -30,6 +31,16 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (dbUser) {
         session.user.id = dbUser.id;
         session.user.isAdmin = dbUser.isAdmin ?? false;
+
+        // Look up admin role if this is an admin user
+        if (dbUser.isAdmin) {
+          const [adminRecord] = await db
+            .select({ role: adminUsers.role })
+            .from(adminUsers)
+            .where(eq(adminUsers.email, user.email!))
+            .limit(1);
+          (session.user as any).role = adminRecord?.role || 'admin';
+        }
 
         let clientId = dbUser.clientId;
 

@@ -5,6 +5,7 @@ import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { VoiceSettings } from '@/components/settings/voice-settings';
 import { CallHistory } from '@/components/voice/call-history';
+import { VoicePicker } from './voice-picker';
 
 export default async function VoiceAIPage() {
   const session = await auth();
@@ -21,6 +22,7 @@ export default async function VoiceAIPage() {
       voiceEnabled: clients.voiceEnabled,
       voiceMode: clients.voiceMode,
       voiceGreeting: clients.voiceGreeting,
+      voiceVoiceId: clients.voiceVoiceId,
     })
     .from(clients)
     .where(eq(clients.status, 'active'))
@@ -43,14 +45,20 @@ export default async function VoiceAIPage() {
             <div key={client.id} className="space-y-4">
               <h2 className="text-lg font-semibold">{client.businessName}</h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <VoiceSettings
-                  clientId={client.id}
-                  settings={{
-                    voiceEnabled: client.voiceEnabled ?? false,
-                    voiceMode: client.voiceMode ?? 'after_hours',
-                    voiceGreeting: client.voiceGreeting ?? '',
-                  }}
-                />
+                <div className="space-y-4">
+                  <VoiceSettings
+                    clientId={client.id}
+                    settings={{
+                      voiceEnabled: client.voiceEnabled ?? false,
+                      voiceMode: client.voiceMode ?? 'after_hours',
+                      voiceGreeting: client.voiceGreeting ?? '',
+                    }}
+                  />
+                  <VoicePicker
+                    clientId={client.id}
+                    currentVoiceId={client.voiceVoiceId ?? null}
+                  />
+                </div>
                 <CallHistory clientId={client.id} />
               </div>
             </div>

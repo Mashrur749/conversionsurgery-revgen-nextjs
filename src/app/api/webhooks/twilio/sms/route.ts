@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleIncomingSMS } from '@/lib/automations/incoming-sms';
+import { getDb } from '@/db';
+import { webhookLog, clients, clientPhoneNumbers } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * POST /api/webhooks/twilio/sms
@@ -11,6 +14,31 @@ export async function POST(request: NextRequest) {
     const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
 
     console.log('[Messaging] Twilio SMS webhook:', payload.From, payload.Body?.substring(0, 50));
+
+    // Log webhook event — check junction table first, fallback to clients.twilioNumber
+    try {
+      const db = getDb();
+      let logClientId: string | null = null;
+      const [junctionRecord] = await db
+        .select({ clientId: clientPhoneNumbers.clientId })
+        .from(clientPhoneNumbers)
+        .where(and(eq(clientPhoneNumbers.phoneNumber, payload.To), eq(clientPhoneNumbers.isActive, true)))
+        .limit(1);
+      if (junctionRecord) {
+        logClientId = junctionRecord.clientId;
+      } else {
+        const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.twilioNumber, payload.To)).limit(1);
+        if (client) logClientId = client.id;
+      }
+      if (logClientId) {
+        await db.insert(webhookLog).values({
+          clientId: logClientId,
+          eventType: 'sms_inbound',
+          payload,
+          responseStatus: 200,
+        });
+      }
+    } catch {} // Don't block SMS processing on log failure
 
     // Extract media attachments from MMS
     const numMedia = parseInt(payload.NumMedia || '0', 10);

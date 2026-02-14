@@ -12,9 +12,23 @@ const client = twilio(
  * @param from - Sender phone number (Twilio number)
  * @returns Message SID from Twilio
  */
-export async function sendSMS(to: string, body: string, from: string): Promise<string> {
+export async function sendSMS(
+  to: string,
+  body: string,
+  from: string,
+  options?: { mediaUrl?: string[] }
+): Promise<string> {
   try {
-    const message = await client.messages.create({ to, from, body });
+    const statusCallback = process.env.NEXT_PUBLIC_APP_URL
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/status`
+      : undefined;
+    const message = await client.messages.create({
+      to,
+      from,
+      body,
+      statusCallback,
+      ...(options?.mediaUrl?.length ? { mediaUrl: options.mediaUrl } : {}),
+    });
     console.log('[Messaging] SMS sent:', message.sid);
     return message.sid;
   } catch (error) {

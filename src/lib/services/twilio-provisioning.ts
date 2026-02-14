@@ -1,7 +1,7 @@
 import twilio from "twilio";
 import { getDb } from "@/db";
-import { clients, systemSettings } from "@/db/schema";
-import { eq, isNotNull } from "drizzle-orm";
+import { clients, systemSettings, clientPhoneNumbers } from "@/db/schema";
+import { eq, and, isNotNull } from "drizzle-orm";
 import { sendOnboardingNotification } from "@/lib/services/agency-communication";
 
 const twilioClient = twilio(
@@ -189,6 +189,20 @@ export async function purchaseNumber(
         updatedAt: new Date(),
       })
       .where(eq(clients.id, clientId));
+
+    // Also insert into junction table for multi-number support
+    try {
+      await db.insert(clientPhoneNumbers).values({
+        clientId,
+        phoneNumber,
+        friendlyName: `Purchased: ${phoneNumber}`,
+        isPrimary: true,
+        capabilities: { sms: true, voice: true, mms: true },
+        purchasedAt: new Date(),
+      });
+    } catch (err) {
+      console.error("[Twilio] Failed to insert into junction table:", err);
+    }
 
     console.log(
       `[Twilio] Successfully purchased and assigned ${phoneNumber} to client ${clientId} (status → active)`,

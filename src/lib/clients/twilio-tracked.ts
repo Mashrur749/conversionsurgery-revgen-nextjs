@@ -21,11 +21,15 @@ interface SendSMSParams {
 export async function sendTrackedSMS(params: SendSMSParams) {
   const { clientId, to, from, body, leadId, mediaUrl } = params;
 
+  const statusCallback = process.env.NEXT_PUBLIC_APP_URL
+    ? `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/status`
+    : undefined;
   const message = await twilioClient.messages.create({
     to,
     from,
     body,
     mediaUrl,
+    statusCallback,
   });
 
   // Calculate segments (SMS = 160 chars, with special chars = 70)

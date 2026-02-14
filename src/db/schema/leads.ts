@@ -45,6 +45,7 @@ export const leads = pgTable(
     }>(),
     temperature: varchar('temperature', { length: 10 }).default('warm'),
     stripeCustomerId: varchar('stripe_customer_id', { length: 100 }),
+    tags: jsonb('tags').$type<string[]>().default([]),
     optedOut: boolean('opted_out').default(false),
     optedOutAt: timestamp('opted_out_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),

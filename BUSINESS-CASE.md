@@ -63,7 +63,7 @@ Each feature is marked with its current state:
 | Admin login | [LIVE] | Email magic link via Resend (NextAuth v4) |
 | Session management | [LIVE] | Secure sessions with `isAdmin` flag on user record |
 | Admin access check | [LIVE] | `session.user.isAdmin` checked on all admin routes, 403 if not admin |
-| Role-based access | [PARTIAL] | Admin vs non-admin only. No super admin / limited admin distinction |
+| Role-based access | [LIVE] | Super admin vs admin distinction. Sensitive routes gated with `requireSuperAdmin()` |
 
 ### 1.2 Client Management
 | Feature | Status | Behavior |
@@ -85,7 +85,7 @@ Each feature is marked with its current state:
 | View all numbers | [LIVE] | Central console at /admin/phone-numbers |
 | Reassign across clients | [LIVE] | Bulk reassignment support |
 | Twilio account overview | [LIVE] | Balance, owned numbers, assigned/available counts |
-| Number assignment | [PARTIAL] | One number per client (single `twilioNumber` field) |
+| Number assignment | [LIVE] | Multi-number support via junction table, backward-compatible with `twilioNumber` |
 | Webhook auto-config | [LIVE] | Auto-configures SMS + Voice webhook URLs on purchase and assign |
 
 ### 1.4 Admin Dashboard
@@ -126,7 +126,7 @@ Each feature is marked with its current state:
 | Push to client | [LIVE] | Assign template to specific clients |
 | Delete template | [LIVE] | Remove template |
 | Template analytics | [LIVE] | Usage across clients, performance metrics |
-| Template versioning | [PLANNED] | No version tracking or rollback |
+| Template versioning | [LIVE] | Version history, publish with change notes |
 | Clone template | [LIVE] | POST /api/admin/flow-templates/[id]/clone duplicates template + steps |
 
 ### 1.8 A/B Testing & Template Optimization
@@ -173,8 +173,8 @@ Each feature is marked with its current state:
 | Review aggregation | [LIVE] | Per-client average ratings |
 | Review source tracking | [LIVE] | Google, Yelp, Facebook, etc. |
 | Post responses to Google | [LIVE] | Google Business Profile API |
-| Auto review response | [PARTIAL] | AI drafts exist, auto-posting via feature flag |
-| Review fetching | [PLANNED] | Must be synced externally, no auto-fetch |
+| Auto review response | [LIVE] | AI drafts + auto-posting via cron every 30 min |
+| Review fetching | [LIVE] | Hourly sync via main cron route |
 
 ### 1.13 Voice AI Configuration
 | Feature | Status | Behavior |
@@ -183,7 +183,7 @@ Each feature is marked with its current state:
 | Voice mode | [LIVE] | after_hours, always, manual |
 | Custom greeting | [LIVE] | Configurable text per client |
 | Call history | [LIVE] | Voice call records with duration, status, transcript |
-| AI voice synthesis | [PLANNED] | ElevenLabs fields exist in schema, no API integration |
+| AI voice synthesis | [LIVE] | ElevenLabs TTS integration with voice picker and preview |
 
 ### 1.14 Compliance Dashboard
 | Feature | Status | Behavior |
@@ -213,9 +213,9 @@ Each feature is marked with its current state:
 | Feature | Status | Behavior |
 |---------|--------|----------|
 | System settings | [LIVE] | Admin CRUD at /admin/settings with key-value editor |
-| API key management | [PLANNED] | Not implemented |
-| Webhook logs | [PLANNED] | Not implemented |
-| Email templates | [PLANNED] | Not implemented |
+| API key management | [LIVE] | Create/revoke API keys per client with scopes, SHA-256 hashed storage |
+| Webhook logs | [LIVE] | Admin viewer with filtering, SMS/voice events logged |
+| Email templates | [LIVE] | Admin CRUD editor with variable interpolation and live preview |
 | Quiet hours defaults | [LIVE] | CRTC-compliant 9pm-10am enforced platform-wide |
 
 ---
@@ -276,10 +276,10 @@ The platform provides two client interfaces:
 | Conversation mode | [LIVE] | Switch between AI, human, paused modes |
 | Human takeover | [LIVE] | Take over from AI, hand back when done |
 | Quick replies | [LIVE] | Template picker dropdown with common responses, populates reply textarea |
-| Send photos | [PLANNED] | Can view received MMS, cannot send outbound images |
-| Read receipts | [PLANNED] | Not implemented |
+| Send photos | [LIVE] | Outbound MMS via compliance gateway with mediaUrl |
+| Read receipts | [LIVE] | Twilio delivery status callbacks tracked |
 | Conversation notes | [LIVE] | Lead-level notes field editable on lead detail page |
-| Conversation tags | [PLANNED] | Not implemented |
+| Conversation tags | [LIVE] | Add/remove tags on leads, visible in list |
 
 ### 2.5 Escalation Queue
 | Feature | Status | Behavior |
@@ -385,7 +385,7 @@ The platform provides two client interfaces:
 |---------|--------|----------|
 | Help button | [LIVE] | Floating button on all non-admin pages, opens support ticket modal |
 | Discussion threads | [LIVE] | Client creates ticket, admin responds, threaded replies |
-| Help articles | [PLANNED] | No FAQ/documentation page |
+| Help articles | [LIVE] | Admin editor + client-facing help center with search |
 
 ### 2.14 Client ROI Dashboard (Admin View per Client)
 | Feature | Status | Behavior |
@@ -406,7 +406,7 @@ The platform provides two client interfaces:
 |---------|--------|----------|
 | Google Calendar OAuth | [LIVE] | Connect/disconnect, token refresh |
 | Calendar sync cron | [LIVE] | Periodic sync job |
-| Event creation | [PLANNED] | OAuth infrastructure exists, no active event creation |
+| Event creation | [LIVE] | Calendar events created automatically on booking |
 
 ### 2.16 Payment Collection
 | Feature | Status | Behavior |
@@ -787,9 +787,9 @@ Plans support monthly and yearly billing with separate Stripe price IDs.
 ### 8.2 Optional Integrations
 | Integration | Status | Purpose | Feature Flag |
 |-------------|--------|---------|--------------|
-| **Google Calendar** | [PARTIAL] | OAuth done, sync cron exists, no event creation | `calendarSyncEnabled` |
-| **Google Business** | [PARTIAL] | Post review responses. No auto-fetch of reviews | `reputationMonitoringEnabled` |
-| **ElevenLabs** | [PLANNED] | Schema fields exist, no API integration | `voiceEnabled` |
+| **Google Calendar** | [LIVE] | OAuth done, sync cron, event creation on booking | `calendarSyncEnabled` |
+| **Google Business** | [LIVE] | Post review responses, auto-fetch + auto-response | `reputationMonitoringEnabled` |
+| **ElevenLabs** | [LIVE] | TTS service, voice picker, audio preview | `voiceEnabled` |
 
 ### 8.3 API Cost Tracking
 | Service | Tracked Costs |
@@ -871,7 +871,7 @@ Every feature can be toggled per client:
 | Churn | [LIVE] | Clients cancelling per month | <5% |
 | Cost per client | [LIVE] | API costs / clients (tracked per service) | Track margins |
 | Support load | [LIVE] | Support tickets (discussion threads) | Minimize |
-| NPS | [PLANNED] | Net promoter score | >50 |
+| NPS | [LIVE] | Post-appointment surveys via SMS, admin dashboard | >50 |
 
 ---
 

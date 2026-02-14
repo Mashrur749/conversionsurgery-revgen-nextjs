@@ -1,43 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { publishTemplate } from '@/lib/services/flow-templates';
+import { z } from 'zod';
 
-interface RouteContext {
-  params: Promise<{ id: string }>;
-}
+const publishSchema = z.object({
+  changeNotes: z.string().optional(),
+}).strict();
 
-/**
- * POST /api/admin/flow-templates/[id]/publish
- * Publish a template and create version snapshot
- */
-export async function POST(request: NextRequest, { params }: RouteContext) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await auth();
-  const isAdmin = session?.user?.isAdmin;
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  if (!(session as any)?.user?.isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const { id } = await params;
 
   try {
-    const body = (await request.json().catch(() => ({}))) as {
-      changeNotes?: string;
-    };
-    const userId = session?.user?.id;
-    const version = await publishTemplate(
+    const parsed = publishSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const newVersion = await publishTemplate(
       id,
-      body.changeNotes,
-      userId
+      parsed.data.changeNotes,
+      session?.user?.id
     );
 
-    console.log('[FlowEngine] Published template:', id, 'version:', version);
-    return NextResponse.json({ version });
+    return NextResponse.json({ success: true, version: newVersion });
   } catch (error) {
-    console.error('[FlowEngine] Template publish error:', error);
-    return NextResponse.json(
-      { error: 'Failed to publish template' },
-      { status: 500 }
-    );
+    console.error('[FlowTemplates] Publish error:', error);
+    return NextResponse.json({ error: 'Failed to publish' }, { status: 500 });
   }
 }

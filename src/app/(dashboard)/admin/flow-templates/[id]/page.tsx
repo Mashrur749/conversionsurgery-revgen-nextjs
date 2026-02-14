@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { flowTemplates, flowTemplateSteps } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { TemplateEditor } from '@/components/flows/template-editor';
+import { VersionHistory, PublishButton } from './version-history';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -38,8 +39,19 @@ export default async function TemplateEditorPage({ params }: PageProps) {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <TemplateEditor template={template} steps={steps} isNew={isNew} />
+      {!isNew && template && (
+        <>
+          <div className="flex items-center gap-4">
+            <PublishButton templateId={id} />
+            <span className="text-sm text-muted-foreground">
+              Current version: v{template.version ?? 1}
+            </span>
+          </div>
+          <VersionHistory templateId={id} />
+        </>
+      )}
     </div>
   );
 }

@@ -49,6 +49,9 @@ const adminNavItems = [
     { href: '/admin/twilio', label: 'Twilio Account' },
     { href: '/admin/voice-ai', label: 'Voice AI' },
     { href: '/admin/compliance', label: 'Compliance' },
+    { href: '/admin/webhook-logs', label: 'Webhook Logs' },
+    { href: '/admin/email-templates', label: 'Email Templates' },
+    { href: '/admin/api-keys', label: 'API Keys' },
     { href: '/admin/settings', label: 'System Settings' },
   ]},
 ];

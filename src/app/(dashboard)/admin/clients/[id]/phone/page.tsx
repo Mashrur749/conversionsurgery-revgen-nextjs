@@ -42,7 +42,7 @@ export default async function PhoneNumberPage({ params }: Props) {
         </Button>
       </div>
 
-      <PhoneNumberManager client={client} />
+      <PhoneNumberManager clientId={client.id} />
     </div>
   );
 }
