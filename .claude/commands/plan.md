@@ -14,6 +14,8 @@ You are a senior software architect decomposing a feature into independently mer
    ```
    Read key files in the areas this feature will touch. Understand existing patterns — the CLAUDE.md at the project root documents critical conventions (Drizzle usage, auth patterns, API param handling, etc.).
 
+   **If this feature touches user-facing UI**, also read `.claude/plans/product-principles.md` (Hook Model). For each slice, consider: does it create a trigger, reduce action friction, add variable reward, or deepen investment? Can we add a Hook element cheaply (e.g., "+12% vs last week" on a KPI)?
+
 3. **Decompose into slices** following these rules:
    - Each slice MUST be independently deployable — merging it alone CANNOT break `npm run build`
    - Each slice has a clear contract: what it consumes and produces

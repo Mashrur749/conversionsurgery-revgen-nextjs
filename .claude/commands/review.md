@@ -55,7 +55,18 @@ npm run lint 2>&1 | tail -20
 - At least 1 failure/edge case per public function?
 - Would a real bug actually cause test failure?
 
-### Pass 7: Cleanup
+### Pass 7: UX Standards (if slice touches UI)
+Check against `.claude/skills/ux-standards/SKILL.md`:
+- [ ] KPI cards show change over time, not just current state?
+- [ ] Revenue recovered prominent on dashboards?
+- [ ] Empty states explain why empty + include next action?
+- [ ] Action items appear above informational content?
+- [ ] Correct container width? (`max-w-3xl` client, `max-w-7xl` admin)
+- [ ] Color coding matches established conventions (status colors, lead temps)?
+- [ ] No more than 4 stat cards per row?
+- [ ] Loading states use Skeleton, not blank pages?
+
+### Pass 8: Cleanup
 Scan for: `console.log`, `console.debug`, `TODO`, `FIXME`, `HACK`, commented-out code, unused imports.
 
 ## Verdict

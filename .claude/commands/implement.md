@@ -21,6 +21,7 @@ You are an implementation agent working inside a slice worktree. You operate und
 4. **Read relevant skills before starting:**
    - If this slice touches database schema → read `.claude/skills/create-migration/SKILL.md` first
    - If this slice touches Neon/Postgres queries → read `.claude/skills/neon-postgres/SKILL.md` first
+   - If this slice touches UI pages or components → read `.claude/skills/ux-standards/SKILL.md` first
 
 5. **Study existing patterns.** Read 3 similar files before writing anything. Match naming, error handling, and structure.
 
