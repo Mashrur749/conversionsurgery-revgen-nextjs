@@ -1,7 +1,8 @@
 import twilio from "twilio";
 import { getDb } from "@/db";
-import { clients } from "@/db/schema";
+import { clients, systemSettings } from "@/db/schema";
 import { eq, isNotNull } from "drizzle-orm";
+import { sendOnboardingNotification } from "@/lib/services/agency-communication";
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
@@ -161,37 +162,43 @@ export async function purchaseNumber(
   clientId: string,
 ): Promise<PurchaseResult> {
   try {
-    // Check if this is a mock number (for development)
     const isMockNumber = isMockPhoneNumber(phoneNumber);
     let purchasedSid: string;
 
     if (!isMockNumber) {
-      // Purchase the number from Twilio (no webhook config — done separately)
       console.log(`[Twilio] Purchasing real number: ${phoneNumber}`);
       const purchased = await twilioClient.incomingPhoneNumbers.create({
         phoneNumber,
         friendlyName: `Client: ${clientId}`,
       });
       purchasedSid = purchased.sid;
+
+      // Configure webhooks on the newly purchased number
+      await configureWebhooks(purchasedSid, clientId);
     } else {
-      // In development, mock numbers are auto-purchased
       console.log(`[Twilio] Assigning mock number: ${phoneNumber}`);
       purchasedSid = `mock-${phoneNumber.replace(/\D/g, "").slice(-6)}`;
     }
 
-    // Update client with the new number
     const db = getDb();
     await db
       .update(clients)
       .set({
         twilioNumber: phoneNumber,
+        status: "active",
         updatedAt: new Date(),
       })
       .where(eq(clients.id, clientId));
 
     console.log(
-      `[Twilio] Successfully purchased and assigned ${phoneNumber} to client ${clientId}`,
+      `[Twilio] Successfully purchased and assigned ${phoneNumber} to client ${clientId} (status → active)`,
     );
+
+    // Fire onboarding notification (fire-and-forget)
+    sendOnboardingNotification(clientId).catch((err) =>
+      console.error("[Twilio] Onboarding notification failed:", err),
+    );
+
     return { success: true, sid: purchasedSid };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -204,9 +211,8 @@ export async function purchaseNumber(
 }
 
 /**
- * Assign an existing owned Twilio number to a client without configuring
- * webhooks. Webhooks should be configured separately (e.g. during deployment
- * or from the phone management page).
+ * Assign an existing owned Twilio number to a client. Configures voice and
+ * SMS webhook URLs automatically and updates the database.
  *
  * @param phoneNumber - The E.164-formatted phone number already in the account.
  * @param clientId - The UUID of the client to assign the number to.
@@ -217,7 +223,6 @@ export async function assignExistingNumber(
   clientId: string,
 ): Promise<OperationResult> {
   try {
-    // Verify the number exists in the Twilio account
     const numbers = await twilioClient.incomingPhoneNumbers.list({
       phoneNumber,
     });
@@ -229,24 +234,28 @@ export async function assignExistingNumber(
       };
     }
 
-    // Update friendly name to associate with client
-    await twilioClient.incomingPhoneNumbers(numbers[0].sid).update({
-      friendlyName: `Client: ${clientId}`,
-    });
+    // Configure webhooks on the number
+    await configureWebhooks(numbers[0].sid, clientId);
 
-    // Update client in database
     const db = getDb();
     await db
       .update(clients)
       .set({
         twilioNumber: phoneNumber,
+        status: "active",
         updatedAt: new Date(),
       })
       .where(eq(clients.id, clientId));
 
     console.log(
-      `[Twilio] Assigned existing number ${phoneNumber} to client ${clientId}`,
+      `[Twilio] Assigned existing number ${phoneNumber} to client ${clientId} (status → active)`,
     );
+
+    // Fire onboarding notification (fire-and-forget)
+    sendOnboardingNotification(clientId).catch((err) =>
+      console.error("[Twilio] Onboarding notification failed:", err),
+    );
+
     return { success: true };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -281,79 +290,21 @@ export async function listUnassignedNumbers(): Promise<OwnedNumber[]> {
         .filter((n): n is string => n !== null),
     );
 
+    // Also exclude the agency number
+    const [agencySetting] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, "agency_twilio_number"))
+      .limit(1);
+    if (agencySetting?.value) {
+      assignedSet.add(agencySetting.value);
+    }
+
     return ownedNumbers.filter((n) => !assignedSet.has(n.phoneNumber));
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[Twilio] Error listing unassigned numbers:", message);
     return [];
-  }
-}
-
-/**
- * Configure an existing Twilio phone number for a client by updating its
- * webhook URLs and assigning it in the database.
- *
- * @param phoneNumber - The E.164-formatted phone number already in the
- *   Twilio account.
- * @param clientId - The UUID of the client to assign the number to.
- * @returns A result object indicating success or an error message.
- */
-export async function configureExistingNumber(
-  phoneNumber: string,
-  clientId: string,
-): Promise<OperationResult> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-
-  if (!baseUrl) {
-    return { success: false, error: "NEXT_PUBLIC_APP_URL not configured" };
-  }
-
-  try {
-    // Find the number in Twilio
-    const numbers = await twilioClient.incomingPhoneNumbers.list({
-      phoneNumber,
-    });
-
-    if (numbers.length === 0) {
-      return {
-        success: false,
-        error: "Number not found in your Twilio account",
-      };
-    }
-
-    const number = numbers[0];
-
-    // Update webhooks
-    await twilioClient.incomingPhoneNumbers(number.sid).update({
-      voiceUrl: `${baseUrl}/api/webhooks/twilio/voice`,
-      voiceMethod: "POST",
-      smsUrl: `${baseUrl}/api/webhooks/twilio/sms`,
-      smsMethod: "POST",
-      friendlyName: `Client: ${clientId}`,
-    });
-
-    // Update client
-    const db = getDb();
-    await db
-      .update(clients)
-      .set({
-        twilioNumber: phoneNumber,
-        status: "active",
-        updatedAt: new Date(),
-      })
-      .where(eq(clients.id, clientId));
-
-    console.log(
-      `[Twilio] Configured existing number ${phoneNumber} for client ${clientId}`,
-    );
-    return { success: true };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("[Twilio] Error configuring number:", message);
-    return {
-      success: false,
-      error: message || "Failed to configure number",
-    };
   }
 }
 
@@ -458,9 +409,66 @@ export async function listOwnedNumbers(): Promise<OwnedNumber[]> {
   }
 }
 
+/**
+ * Configure the agency Twilio number's SMS webhook to point at the
+ * agency-sms endpoint. Voice is left unconfigured (agency number is SMS only).
+ */
+export async function configureAgencyWebhooks(
+  numberSid: string,
+): Promise<void> {
+  const baseUrl =
+    process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
+
+  if (!baseUrl) {
+    console.warn(
+      "[Twilio] No base URL set — skipping agency webhook configuration",
+    );
+    return;
+  }
+
+  await twilioClient.incomingPhoneNumbers(numberSid).update({
+    smsUrl: `${baseUrl}/api/webhooks/twilio/agency-sms`,
+    smsMethod: "POST",
+    friendlyName: "ConversionSurgery Agency Number",
+  });
+
+  console.log(
+    `[Twilio] Agency webhooks configured for ${numberSid} → ${baseUrl}/api/webhooks/twilio/agency-sms`,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Configure voice and SMS webhook URLs on a Twilio phone number.
+ * Uses TWILIO_WEBHOOK_BASE_URL (falls back to NEXT_PUBLIC_APP_URL).
+ */
+async function configureWebhooks(
+  numberSid: string,
+  clientId: string,
+): Promise<void> {
+  const baseUrl =
+    process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
+
+  if (!baseUrl) {
+    console.warn(
+      "[Twilio] Neither TWILIO_WEBHOOK_BASE_URL nor NEXT_PUBLIC_APP_URL set — skipping webhook configuration",
+    );
+    return;
+  }
+
+  await twilioClient.incomingPhoneNumbers(numberSid).update({
+    voiceUrl: `${baseUrl}/api/webhooks/twilio/voice`,
+    voiceMethod: "POST",
+    smsUrl: `${baseUrl}/api/webhooks/twilio/sms`,
+    smsMethod: "POST",
+    friendlyName: `Client: ${clientId}`,
+  });
+
+  console.log(`[Twilio] Webhooks configured for number ${numberSid} → ${baseUrl}`);
+}
 
 /**
  * Generate mock phone numbers for development/testing when the Twilio API

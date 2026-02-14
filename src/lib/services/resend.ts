@@ -98,6 +98,90 @@ export function actionRequiredEmail(data: {
   };
 }
 
+/** Generate an onboarding welcome email for new clients. Returns `{ subject, html }`. */
+export function onboardingWelcomeEmail(data: {
+  ownerName: string;
+  businessName: string;
+  loginUrl: string;
+}) {
+  return {
+    subject: `Welcome to ConversionSurgery — ${data.businessName} is Live!`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1a1a1a;">Welcome, ${data.ownerName}!</h2>
+        <p>Your account for <strong>${data.businessName}</strong> is now active on ConversionSurgery.</p>
+        <p>Here's what we're handling for you:</p>
+        <ul style="color: #374151; line-height: 1.8;">
+          <li>Missed call recovery — instant text to every caller</li>
+          <li>Lead follow-ups — automated sequences that book appointments</li>
+          <li>Review requests — grow your Google reviews on autopilot</li>
+          <li>Weekly performance digests — know exactly what's working</li>
+        </ul>
+        <a href="${data.loginUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Log In to Your Dashboard</a>
+        <p style="color: #9ca3af; margin-top: 24px; font-size: 14px;">Reply to this email or text us anytime for support.</p>
+      </div>
+    `,
+  };
+}
+
+/** Generate an agency weekly digest email. Returns `{ subject, html }`. */
+export function agencyWeeklyDigestEmail(data: {
+  ownerName: string;
+  businessName: string;
+  weekStart: string;
+  weekEnd: string;
+  stats: {
+    totalLeads: number;
+    totalMessages: number;
+    totalAppointments: number;
+    conversionRate: string;
+    missedCalls: number;
+    formsResponded: number;
+    estimatesFollowed: number;
+    reviewsRequested: number;
+  };
+  trend: string;
+  hasActionItems: boolean;
+  dashboardUrl: string;
+}) {
+  const actionSection = data.hasActionItems
+    ? `<div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+        <p style="margin: 0; color: #92400e; font-weight: 600;">Action Needed</p>
+        <p style="margin: 8px 0 0 0; color: #78350f;">You have leads without automated follow-up sequences. Reply YES to the SMS we sent to start them.</p>
+      </div>`
+    : '';
+
+  return {
+    subject: `${data.businessName} — Weekly Digest (${data.weekStart} - ${data.weekEnd})`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1a1a1a;">Weekly Performance Digest</h2>
+        <p style="color: #666;">${data.weekStart} — ${data.weekEnd} for ${data.businessName}</p>
+
+        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">Overview</h3>
+          <p style="margin: 8px 0;">Leads captured: <strong>${data.stats.totalLeads}</strong>${data.trend}</p>
+          <p style="margin: 8px 0;">Messages sent: <strong>${data.stats.totalMessages}</strong></p>
+          <p style="margin: 8px 0;">Appointments: <strong>${data.stats.totalAppointments}</strong></p>
+          <p style="margin: 8px 0;">Conversion rate: <strong>${data.stats.conversionRate}%</strong></p>
+        </div>
+
+        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #374151;">Breakdown</h3>
+          <p style="margin: 8px 0;">Missed calls recovered: <strong>${data.stats.missedCalls}</strong></p>
+          <p style="margin: 8px 0;">Forms responded: <strong>${data.stats.formsResponded}</strong></p>
+          <p style="margin: 8px 0;">Estimate follow-ups: <strong>${data.stats.estimatesFollowed}</strong></p>
+          <p style="margin: 8px 0;">Review requests: <strong>${data.stats.reviewsRequested}</strong></p>
+        </div>
+
+        ${actionSection}
+
+        <a href="${data.dashboardUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Full Dashboard</a>
+      </div>
+    `,
+  };
+}
+
 /** Generate a weekly summary email. Returns `{ subject, html }`. */
 export function weeklySummaryEmail(data: {
   businessName: string;

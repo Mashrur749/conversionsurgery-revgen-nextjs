@@ -50,6 +50,7 @@ export * from './voice-calls';
 export * from './subscription-plans';
 export * from './admin-users';
 export * from './system-settings';
+export * from './agency-messages';
 
 export * from './compliance';
 

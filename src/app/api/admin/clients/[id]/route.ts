@@ -5,6 +5,7 @@ import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { z } from 'zod';
+import { sendOnboardingNotification } from '@/lib/services/agency-communication';
 
 export async function GET(
   request: NextRequest,
@@ -88,6 +89,14 @@ export async function PATCH(
     }
 
     const db = getDb();
+
+    // Check previous status to detect activation
+    const [existing] = await db
+      .select({ status: clients.status })
+      .from(clients)
+      .where(eq(clients.id, id))
+      .limit(1);
+
     const [updated] = await db
       .update(clients)
       .set({
@@ -99,6 +108,13 @@ export async function PATCH(
 
     if (!updated) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    // Fire onboarding notification when status changes to 'active'
+    if (data.status === 'active' && existing?.status !== 'active') {
+      sendOnboardingNotification(id).catch((err) =>
+        console.error('[Admin] Onboarding notification failed:', err)
+      );
     }
 
     return NextResponse.json({ client: updated });
