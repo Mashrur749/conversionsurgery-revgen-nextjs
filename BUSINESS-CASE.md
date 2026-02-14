@@ -45,11 +45,7 @@
 
 ## Implementation Status Key
 
-Each feature is marked with its current state:
-
-- **[LIVE]** — Fully implemented and working
-- **[PARTIAL]** — Built but incomplete or has known gaps
-- **[PLANNED]** — Specified but not yet built
+All features are marked **[LIVE]** — fully implemented and working.
 
 ---
 
@@ -886,7 +882,7 @@ Every feature can be toggled per client:
 [x] Sessions expire appropriately
 [x] Logout clears session
 [x] Team member claim flow (token-based escalation)
-[ ] Role-based admin access (super admin vs limited)
+[x] Role-based admin access (super admin vs limited)
 ```
 
 ### Client Management
@@ -910,8 +906,8 @@ Every feature can be toggled per client:
 [x] Reassign across clients
 [x] Central phone number console
 [x] Twilio account balance display
-[ ] Multiple numbers per client (single twilioNumber field)
-[ ] Automatic webhook configuration on purchase
+[x] Multiple numbers per client (junction table, backward-compatible)
+[x] Automatic webhook configuration on purchase
 ```
 
 ### SMS - Inbound
@@ -973,8 +969,8 @@ Every feature can be toggled per client:
 [x] Estimate follow-up
 [x] Payment reminders
 [x] Review requests
-[ ] Client can activate/pause/customize flows
-[ ] Per-lead flow status UI
+[x] Client can activate/pause/customize flows
+[x] Per-lead flow status UI
 ```
 
 ### Lead Management
@@ -989,8 +985,8 @@ Every feature can be toggled per client:
 [x] Lead advanced filters (status, source, temperature, client, date range)
 [x] Lead editing (status, temperature, notes, project type, quote value — inline)
 [x] Lead bulk actions (multi-select + bulk status change)
-[ ] Lead CSV export
-[ ] Manual lead creation
+[x] Lead CSV export
+[x] Manual lead creation
 ```
 
 ### Compliance
@@ -1100,36 +1096,43 @@ Every feature can be toggled per client:
 ## 13. ADMIN NAVIGATION STRUCTURE
 
 ```
-Management (7):
+Clients (5):
   Dashboard          /admin
   Clients            /admin/clients
   Users              /admin/users
-  Agency             /admin/agency
-  Billing            /admin/billing
+  Communications     /admin/agency
   Discussions        /admin/discussions
+
+Optimization (5):
+  Flow Templates     /admin/flow-templates
+  Flow Analytics     /admin/analytics
+  Variant Results    /admin/template-performance
+  A/B Tests          /admin/ab-tests
   Reputation         /admin/reputation
 
-Optimization (7):
-  Flow Templates     /admin/flow-templates
-  Template Analytics /admin/analytics
-  Template Perf.     /admin/template-performance
-  A/B Tests          /admin/ab-tests
+Reporting (5):
+  Billing            /admin/billing
+  Plans              /admin/billing/plans
   Reports            /admin/reports
   Platform Health    /admin/platform-analytics
   Costs & Usage      /admin/usage
 
-Configuration (4):
+Settings (8):
   Phone Numbers      /admin/phone-numbers
   Twilio Account     /admin/twilio
   Voice AI           /admin/voice-ai
   Compliance         /admin/compliance
+  Webhook Logs       /admin/webhook-logs
+  Email Templates    /admin/email-templates
+  API Keys           /admin/api-keys
+  System Settings    /admin/settings
 ```
 
 ---
 
 ## APPENDIX: Database Tables
 
-85+ tables organized by domain:
+95+ tables organized by domain:
 
 ```
 --- Core ---
@@ -1140,26 +1143,30 @@ business_hours              media_attachments
 --- AI Agent ---
 lead_context                agent_decisions             escalation_queue
 conversation_checkpoints    client_agent_settings       agent_enums
+escalation_rules            escalation_claims
 
 --- Knowledge ---
 knowledge_base              knowledge_gaps              client_services
 
 --- Flows & Templates ---
 flows                       flow_steps                  flow_executions
-flow_templates              flow_template_steps
+flow_templates              flow_template_steps         flow_template_versions
 template_variants           template_performance_metrics
+template_metrics_daily      template_step_metrics       client_flow_outcomes
 
 --- Auth ---
 users                       accounts                    sessions
-verification_tokens         authenticators
+verification_tokens         authenticators              magic_link_tokens
+otp_codes                   admin_users
 
 --- Team ---
-team_members                team_invites                magic_link_tokens
+team_members                team_invites
 
 --- Billing ---
-subscriptions               subscription_plans          subscription_invoices
-payments                    payment_reminders           billing_payment_methods
-billing_events              coupons
+plans                       subscriptions               subscription_plans
+subscription_invoices       payments                    payment_reminders
+billing_payment_methods     billing_events              coupons
+usage_records               cancellation_requests
 
 --- Compliance ---
 consent_records             blocked_numbers             do_not_contact_list
@@ -1168,33 +1175,39 @@ quiet_hours_config          compliance_audit_log
 --- Analytics ---
 daily_stats                 analytics_daily             analytics_weekly
 analytics_monthly           platform_analytics          funnel_events
-reports
+reports                     client_cohorts              revenue_events
 
 --- A/B Testing ---
 ab_tests                    ab_test_metrics             ab_test_daily_metrics
 
 --- Reviews ---
 reviews                     review_sources              review_responses
-review_metrics
+review_metrics              response_templates
 
 --- Voice ---
 voice_calls                 call_attempts               active_calls
 
 --- Communication ---
 support_messages            support_replies             agency_messages
+notification_preferences
 
 --- Usage ---
 api_usage                   api_usage_daily             api_usage_monthly
 usage_records               usage_alerts
 
 --- Calendar ---
-calendar_integrations
+calendar_integrations       calendar_events
 
 --- Invoices ---
 invoices
 
+--- Phone ---
+client_phone_numbers
+
 --- System ---
-system_settings
+system_settings             webhook_log                 error_log
+message_templates           email_templates             api_keys
+help_articles               nps_surveys
 ```
 
 ---
@@ -1212,9 +1225,11 @@ system_settings
 | `/api/webhooks/twilio/ring-connect` | Ring group notification |
 | `/api/webhooks/twilio/ring-result` | Ring group result |
 | `/api/webhooks/twilio/agency-sms` | Agency client SMS |
+| `/api/webhooks/twilio/status` | SMS delivery status callbacks |
 | `/api/webhooks/form` | Web form submission |
 | `/api/webhooks/stripe` | Stripe payment/subscription events |
+| `/api/webhooks/nps` | NPS survey SMS responses |
 
 ---
 
-*This document serves as the complete specification for ConversionSurgery. Features marked [PLANNED] are specified but not yet built. Features marked [PARTIAL] have known gaps noted in their description. Any other gap between this spec and the implementation is a bug.*
+*This document serves as the complete specification for ConversionSurgery. All features are marked [LIVE] — fully implemented and working. Any gap between this spec and the implementation is a bug.*

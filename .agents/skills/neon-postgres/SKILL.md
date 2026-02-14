@@ -1,72 +1,163 @@
 ---
 name: neon-postgres
-description: Guides and best practices for working with Neon Serverless Postgres. Covers getting started, local development with Neon, choosing a connection method, Neon features, authentication (@neondatabase/auth), PostgREST-style data API (@neondatabase/neon-js), Neon CLI, and Neon's Platform API/SDKs. Use for any Neon-related questions.
+description: Guides and best practices for working with Neon Serverless Postgres in this project
 ---
 
-# Neon Serverless Postgres
+# Neon Serverless Postgres — Project Patterns
 
-Neon is a serverless Postgres platform that separates compute and storage to offer autoscaling, branching, instant restore, and scale-to-zero. It's fully compatible with Postgres and works with any language, framework, or ORM that supports Postgres.
+This skill documents how this project uses Neon Postgres via Drizzle ORM.
 
-## Neon Documentation
+## Architecture
 
-Always reference the Neon documentation before making Neon-related claims. The documentation is the source of truth for all Neon-related information.
+- **Driver**: `@neondatabase/serverless` (HTTP mode via `neon()`)
+- **ORM**: `drizzle-orm/neon-http` — HTTP-based, stateless, Cloudflare Workers compatible
+- **Schema management**: `drizzle-kit` with migrations in `./drizzle/`
+- **Config**: `drizzle.config.ts` points to `./src/db/schema/index.ts`
 
-Below you'll find a list of resources organized by area of concern. This is meant to support you find the right documentation pages to fetch and add a bit of additional context.
+## Database Access Pattern
 
-You can use the `curl` commands to fetch the documentation page as markdown:
+```typescript
+import { getDb, tableName } from '@/db';
 
-**Documentation:**
+// ALWAYS create a new instance per request — never cache
+const db = getDb();
 
-```bash
-# Get list of all Neon docs
-curl https://neon.com/llms.txt
-
-# Fetch any doc page as markdown
-curl -H "Accept: text/markdown" https://neon.com/docs/<path>
+// Query with Drizzle
+const results = await db.select().from(tableName).where(eq(tableName.col, value));
 ```
 
-Don't guess docs pages. Use the `llms.txt` index to find the relevant URL or follow the links in the resources below.
+**Critical rule**: `getDb()` creates a fresh Neon HTTP client each time. This is intentional — the HTTP driver is stateless and designed for serverless/edge. Never store `db` in a module-level variable, singleton, or cache.
 
-## Overview of Resources
+## Common Query Patterns
 
-Reference the appropriate resource file based on the user's needs:
+### Select with filters
+```typescript
+import { eq, and, gt, desc, isNull } from 'drizzle-orm';
 
-### Core Guides
+const rows = await db
+  .select()
+  .from(leads)
+  .where(and(eq(leads.clientId, clientId), eq(leads.status, 'active')))
+  .orderBy(desc(leads.createdAt))
+  .limit(20);
+```
 
-| Area               | Resource                           | When to Use                                                    |
-| ------------------ | ---------------------------------- | -------------------------------------------------------------- |
-| What is Neon       | `references/what-is-neon.md`       | Understanding Neon concepts, architecture, core resources      |
-| Referencing Docs   | `references/referencing-docs.md`   | Looking up official documentation, verifying information       |
-| Features           | `references/features.md`           | Branching, autoscaling, scale-to-zero, instant restore         |
-| Getting Started    | `references/getting-started.md`    | Setting up a project, connection strings, dependencies, schema |
-| Connection Methods | `references/connection-methods.md` | Choosing drivers based on platform and runtime                 |
-| Developer Tools    | `references/devtools.md`           | VSCode extension, MCP server, Neon CLI (`neon init`)           |
+### Select specific columns
+```typescript
+const [client] = await db
+  .select({ id: clients.id, name: clients.businessName })
+  .from(clients)
+  .where(eq(clients.id, clientId))
+  .limit(1);
+```
 
-### Database Drivers & ORMs
+### Insert
+```typescript
+const [newRow] = await db
+  .insert(leads)
+  .values({ clientId, name, phone, status: 'new' })
+  .returning();
+```
 
-HTTP/WebSocket queries for serverless/edge functions.
+### Update
+```typescript
+await db
+  .update(leads)
+  .set({ status: 'contacted', updatedAt: new Date() })
+  .where(eq(leads.id, leadId));
+```
 
-| Area              | Resource                        | When to Use                                         |
-| ----------------- | ------------------------------- | --------------------------------------------------- |
-| Serverless Driver | `references/neon-serverless.md` | `@neondatabase/serverless` - HTTP/WebSocket queries |
-| Drizzle ORM       | `references/neon-drizzle.md`    | Drizzle ORM integration with Neon                   |
+### Delete (prefer soft deletes)
+```typescript
+// Soft delete — set status or deletedAt
+await db.update(leads).set({ status: 'archived' }).where(eq(leads.id, leadId));
 
-### Auth & Data API SDKs
+// Hard delete — only when appropriate (e.g., OTP codes, temp records)
+await db.delete(otpCodes).where(eq(otpCodes.id, id));
+```
 
-Authentication and PostgREST-style data API for Neon.
+### Joins
+```typescript
+const rows = await db
+  .select({
+    lead: leads,
+    conversation: conversations,
+  })
+  .from(leads)
+  .leftJoin(conversations, eq(conversations.leadId, leads.id))
+  .where(eq(leads.clientId, clientId));
+```
 
-| Area        | Resource                  | When to Use                                                         |
-| ----------- | ------------------------- | ------------------------------------------------------------------- |
-| Neon Auth   | `references/neon-auth.md` | `@neondatabase/auth` - Authentication only                          |
-| Neon JS SDK | `references/neon-js.md`   | `@neondatabase/neon-js` - Auth + Data API (PostgREST-style queries) |
+### Count / aggregation
+```typescript
+import { count, sql } from 'drizzle-orm';
 
-### Neon Platform API & CLI
+const [{ total }] = await db
+  .select({ total: count() })
+  .from(leads)
+  .where(eq(leads.clientId, clientId));
+```
 
-Managing Neon resources programmatically via REST API, SDKs, or CLI.
+## Schema Conventions
 
-| Area                  | Resource                            | When to Use                                  |
-| --------------------- | ----------------------------------- | -------------------------------------------- |
-| Platform API Overview | `references/neon-platform-api.md`   | Managing Neon resources via REST API         |
-| Neon CLI              | `references/neon-cli.md`            | Terminal workflows, scripts, CI/CD pipelines |
-| TypeScript SDK        | `references/neon-typescript-sdk.md` | `@neondatabase/api-client`                   |
-| Python SDK            | `references/neon-python-sdk.md`     | `neon-api` package                           |
+- One table per file: `src/db/schema/<table-name>.ts`
+- Re-export from `src/db/schema/index.ts`
+- Use `pgTable` with these standard columns:
+  ```typescript
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  ```
+- Foreign keys reference parent with `onDelete: 'cascade'` or `'set null'` as appropriate
+- Add indexes for columns used in WHERE clauses and JOINs
+- Export inferred types: `export type Foo = typeof foos.$inferSelect;`
+
+## Neon-Specific Considerations
+
+### HTTP driver limitations
+- No transactions (HTTP mode is stateless) — use `db.batch()` for multi-statement atomicity if needed
+- No persistent connections, no connection pooling needed
+- Each query is an independent HTTP request to Neon
+- Cold starts are fast (~50ms) — Neon's serverless architecture handles this
+
+### Performance
+- Use `.limit()` on all queries — never fetch unbounded result sets
+- Use `select({ col1, col2 })` instead of `select()` to reduce data transfer
+- Add indexes via the schema definition, not raw SQL
+- For paginated lists, use offset/limit or cursor-based pagination
+
+### Branching (for safe migrations)
+- Create a test branch before destructive migrations: `neonctl branches create --name migration-test`
+- Test the migration on the branch first
+- Delete the branch after verification: `neonctl branches delete migration-test`
+
+## Type Safety
+
+```typescript
+import type { Lead, NewLead } from '@/db/schema';
+
+// Use inferred types — never inline interfaces for DB rows
+async function createLead(data: NewLead): Promise<Lead> {
+  const db = getDb();
+  const [lead] = await db.insert(leads).values(data).returning();
+  return lead;
+}
+```
+
+## Error Handling
+
+```typescript
+try {
+  const db = getDb();
+  const [result] = await db.select().from(table).where(condition);
+  if (!result) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  return NextResponse.json(result);
+} catch (error) {
+  console.error('Database error:', error);
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+}
+```
+
+Never expose raw database errors to the client. Log them server-side and return a generic message.
