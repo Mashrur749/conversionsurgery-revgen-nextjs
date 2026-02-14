@@ -1,6 +1,6 @@
 # ConversionSurgery Platform Use Cases
 
-A comprehensive operations guide covering every workflow for every user type. Each use case describes **who** performs it, **when** it happens, **what** steps are involved, and **what** the expected outcome is.
+A comprehensive operations guide covering every workflow for every user type — **81 use cases** across 5 user categories. Each use case describes **who** performs it, **when** it happens, **what** steps are involved, and **what** the expected outcome is.
 
 ---
 
@@ -28,6 +28,17 @@ A comprehensive operations guide covering every workflow for every user type. Ea
   - [A18: Manage Users and Admin Access](#a18-manage-users-and-admin-access)
   - [A19: Review AI Response Quality](#a19-review-ai-response-quality)
   - [A20: Investigate a Lead's Full Journey](#a20-investigate-a-leads-full-journey)
+  - [A21: Create a Lead Manually](#a21-create-a-lead-manually)
+  - [A22: Export Leads to CSV](#a22-export-leads-to-csv)
+  - [A23: Clone a Flow Template](#a23-clone-a-flow-template)
+  - [A24: Manage Template Versions](#a24-manage-template-versions)
+  - [A25: Manage Email Templates](#a25-manage-email-templates)
+  - [A26: Manage API Keys](#a26-manage-api-keys)
+  - [A27: View Webhook Logs](#a27-view-webhook-logs)
+  - [A28: Manage Help Articles](#a28-manage-help-articles)
+  - [A29: Manage Subscription Plans](#a29-manage-subscription-plans)
+  - [A30: Configure System Settings](#a30-configure-system-settings)
+  - [A31: Manage Multiple Numbers per Client](#a31-manage-multiple-numbers-per-client)
 - [Client User (Business Owner) Use Cases](#client-user-business-owner-use-cases)
   - [C1: First Login and Dashboard Orientation](#c1-first-login-and-dashboard-orientation)
   - [C2: View and Manage Leads](#c2-view-and-manage-leads)
@@ -40,13 +51,27 @@ A comprehensive operations guide covering every workflow for every user type. Ea
   - [C9: Use Discussions for Support](#c9-use-discussions-for-support)
   - [C10: Approve an AI-Suggested Flow](#c10-approve-an-ai-suggested-flow)
   - [C11: View Scheduled Messages](#c11-view-scheduled-messages)
+  - [C12: Create a Lead Manually](#c12-create-a-lead-manually)
+  - [C13: Export Leads to CSV](#c13-export-leads-to-csv)
+  - [C14: Tag and Categorize Leads](#c14-tag-and-categorize-leads)
+  - [C15: Send Photos (MMS) to a Lead](#c15-send-photos-mms-to-a-lead)
+  - [C16: Manage Automation Flows](#c16-manage-automation-flows)
 - [Client Portal User Use Cases](#client-portal-user-use-cases)
-  - [P1: Access the Portal via Link](#p1-access-the-portal-via-link)
+  - [P1: Access the Portal via Link or OTP](#p1-access-the-portal-via-link-or-otp)
   - [P2: Review Weekly Performance Summary](#p2-review-weekly-performance-summary)
   - [P3: View Conversation History](#p3-view-conversation-history)
   - [P4: Manage Billing and Subscription](#p4-manage-billing-and-subscription)
   - [P5: Configure Weekly Summary Preferences](#p5-configure-weekly-summary-preferences)
   - [P6: Cancel Subscription](#p6-cancel-subscription)
+  - [P7: Login via OTP](#p7-login-via-otp)
+  - [P8: View Revenue Dashboard](#p8-view-revenue-dashboard)
+  - [P9: Manage Knowledge Base](#p9-manage-knowledge-base)
+  - [P10: Manage Automation Flows](#p10-manage-automation-flows)
+  - [P11: Configure AI Settings](#p11-configure-ai-settings)
+  - [P12: Configure Feature Toggles](#p12-configure-feature-toggles)
+  - [P13: Configure Notification Preferences](#p13-configure-notification-preferences)
+  - [P14: Browse Help Articles](#p14-browse-help-articles)
+  - [P15: Use Discussions for Support](#p15-use-discussions-for-support)
 - [Team Member Use Cases](#team-member-use-cases)
   - [T1: Receive and Claim an Escalation](#t1-receive-and-claim-an-escalation)
   - [T2: Receive a Hot Transfer Call](#t2-receive-a-hot-transfer-call)
@@ -62,6 +87,12 @@ A comprehensive operations guide covering every workflow for every user type. Ea
   - [S8: Voice AI Call Handling](#s8-voice-ai-call-handling)
   - [S9: Daily Stats Aggregation](#s9-daily-stats-aggregation)
   - [S10: Opt-Out Processing](#s10-opt-out-processing)
+  - [S11: Auto Review Response Generation](#s11-auto-review-response-generation)
+  - [S12: NPS Survey Sending](#s12-nps-survey-sending)
+  - [S13: Trial Reminder Emails](#s13-trial-reminder-emails)
+  - [S14: Calendar Event Creation on Booking](#s14-calendar-event-creation-on-booking)
+  - [S15: SMS Delivery Status Tracking](#s15-sms-delivery-status-tracking)
+  - [S16: Agency Digest Email](#s16-agency-digest-email)
 
 ---
 
@@ -71,7 +102,7 @@ A comprehensive operations guide covering every workflow for every user type. Ea
 |-----------|---------------|--------------|-----------------|
 | **Admin** | Magic link email (NextAuth) | Full platform + all clients | Manage the agency, onboard clients, optimize templates |
 | **Client User** | Magic link email (NextAuth) | Own client dashboard only | View leads, conversations, escalations, analytics |
-| **Client Portal** | Cookie-based link (no login) | Limited read-only portal | View stats, billing, configure preferences |
+| **Client Portal** | OTP login (email code) or cookie-based link | Self-service portal | Revenue, KB, flows, billing, AI settings, help |
 | **Team Member** | None (SMS/phone only) | Escalation claim links only | Receive escalation SMS, claim and resolve leads |
 
 ---
@@ -127,6 +158,8 @@ A comprehensive operations guide covering every workflow for every user type. Ea
 **Outcome**: Client has a dedicated phone number. All calls and SMS to that number route through the platform's webhooks. Missed calls trigger automated follow-up. Incoming SMS trigger AI responses.
 
 **If the number needs to change later**: Use the phone number manager to release the old number and purchase a new one, or use the reassignment console at `/admin/phone-numbers`.
+
+**Multiple numbers**: Clients can have multiple numbers via the junction table (`client_phone_numbers`). The first number is marked as primary and synced to `clients.twilioNumber` for backward compatibility. Additional numbers can be added at `/admin/clients/[id]/phone`. See A31 for details.
 
 ---
 
@@ -415,10 +448,20 @@ A comprehensive operations guide covering every workflow for every user type. Ea
    connect you with {ownerName}. How can I help?
    ```
 5. Set **max call duration** (default: 5 minutes).
-6. Ensure business hours are configured (used by `after_hours` mode).
-7. Verify team members have "Receive Hot Transfers" enabled (for when the AI needs to transfer).
+6. **Select a voice** (optional): Use the ElevenLabs voice picker to choose a custom AI voice:
+   - Browse available voices from the ElevenLabs library (labels show language and style).
+   - Click **Preview** to hear a sample of each voice.
+   - Select and save — the `voiceVoiceId` is stored on the client record.
+   - When set, the Voice AI uses ElevenLabs TTS instead of Twilio's default TTS.
+7. Ensure business hours are configured (used by `after_hours` mode).
+8. Verify team members have "Receive Hot Transfers" enabled (for when the AI needs to transfer).
 
-**Outcome**: When leads call the client's number and the configured condition is met, the AI answers, engages in conversation, and either resolves the query or transfers to a human. A post-call summary is generated with intent, sentiment, and transcript.
+**Outcome**: When leads call the client's number and the configured condition is met, the AI answers (optionally in a custom ElevenLabs voice), engages in conversation, and either resolves the query or transfers to a human. A post-call summary is generated with intent, sentiment, and transcript.
+
+**Key API calls**:
+- `GET /api/admin/voice/voices` (list ElevenLabs voices)
+- `POST /api/admin/voice/preview` (preview voice with sample text)
+- `PATCH /api/admin/clients/[id]` (save voiceVoiceId)
 
 ---
 
@@ -552,10 +595,11 @@ A comprehensive operations guide covering every workflow for every user type. Ea
    - "View All Clients" → client list
    - "View Reports" → report list
    - "Twilio Settings" → account dashboard
-4. Navigation is organized into three groups:
-   - **Management**: Clients, billing, discussions
-   - **Optimization**: Flow templates, analytics, platform analytics, template performance, reports, reputation, usage
-   - **Configuration**: Phone numbers, Twilio, Voice AI, compliance
+4. Navigation is organized into four groups:
+   - **Clients**: Dashboard, Clients, Users, Communications, Discussions
+   - **Optimization**: Flow Templates, Flow Analytics, Variant Results, A/B Tests, Reputation
+   - **Reporting**: Billing, Plans, Reports, Platform Health, Costs & Usage
+   - **Settings**: Phone Numbers, Twilio Account, Voice AI, Compliance, Webhook Logs, Email Templates, API Keys, System Settings
 
 **Outcome**: Efficient multi-client management from a single dashboard. Switch between client views seamlessly while always having admin tools accessible.
 
@@ -637,6 +681,279 @@ A comprehensive operations guide covering every workflow for every user type. Ea
 
 ---
 
+### A21: Create a Lead Manually
+
+**When**: A lead comes in through an offline channel (phone call to personal number, walk-in, referral) and needs to be tracked in the system.
+
+**Steps**:
+
+1. Select the client using the Client Selector.
+2. Navigate to `/leads`.
+3. Click "Add Lead" to open the Create Lead dialog.
+4. Fill in the details:
+   - **Name** (required)
+   - **Phone number** (required, auto-normalized)
+   - **Email** (optional)
+   - **Project type** (optional, e.g., "Bathroom Renovation")
+   - **Notes** (optional, context about the lead)
+5. Click "Create." The system creates a new lead with `source: manual`.
+
+**Outcome**: The lead appears in the leads list and is eligible for all automations (flow sequences, AI responses, scoring). Useful for capturing leads that bypass the phone/SMS system.
+
+**Key API calls**:
+- `POST /api/leads` (create lead with clientId, name, phone, email, projectType, notes)
+
+---
+
+### A22: Export Leads to CSV
+
+**When**: Generating a report, importing into another CRM, or backing up lead data.
+
+**Steps**:
+
+1. Navigate to `/leads`.
+2. Apply any desired filters (status, source, temperature, date range).
+3. Click "Export" (CSV icon).
+4. A CSV file downloads with all matching leads including: name, phone, email, status, source, temperature, score, project type, quote value, created date, and last activity.
+
+**Outcome**: Filtered lead data exported in standard CSV format for external use.
+
+**Key API calls**:
+- `GET /api/leads/export?status=won&source=missed_call` (filters passed as query params)
+
+---
+
+### A23: Clone a Flow Template
+
+**When**: Creating a variation of an existing template without starting from scratch.
+
+**Steps**:
+
+1. Navigate to `/admin/flow-templates`.
+2. Find the template to clone.
+3. Click "Clone."
+4. The system creates a duplicate including all steps and conditions, with "(Copy)" appended to the name.
+5. Edit the cloned template as needed.
+
+**Outcome**: A new independent template pre-populated with the original's configuration. Saves time when creating variations for A/B testing or client-specific customizations.
+
+**Key API calls**:
+- `POST /api/admin/flow-templates/[id]/clone`
+
+---
+
+### A24: Manage Template Versions
+
+**When**: Publishing a template update and reviewing version history.
+
+**Steps**:
+
+1. Navigate to `/admin/flow-templates/[id]`.
+2. Make changes to the template steps or configuration.
+3. Click "Publish" to create a versioned snapshot:
+   - Enter optional **change notes** describing the update.
+   - The system creates a `flow_template_versions` record with: version number, full snapshot of the template, change notes, timestamp, and who published it.
+4. View the **Version History** panel to see:
+   - All published versions in reverse chronological order.
+   - Change notes for each version.
+   - Who published and when.
+
+**Outcome**: Complete audit trail of template changes. Enables safe iterative improvements knowing you can reference previous versions.
+
+**Key API calls**:
+- `POST /api/admin/flow-templates/[id]/publish` (create version with changeNotes)
+- `GET /api/admin/flow-templates/[id]/versions` (list version history)
+
+---
+
+### A25: Manage Email Templates
+
+**When**: Customizing the system's email communications (magic link emails, weekly summaries, trial reminders, etc.).
+
+**Steps**:
+
+1. Navigate to `/admin/email-templates`.
+2. View the list of templates showing name, slug, and last updated date.
+3. Click a template or "Create Template" to open the editor:
+   - **Name**: Display name (e.g., "Weekly Summary Email")
+   - **Slug**: Unique identifier (e.g., `weekly-summary`)
+   - **Subject**: Email subject line with `{{variable}}` support
+   - **HTML Body**: Rich text editor with variable interpolation
+   - **Variables**: Available template variables (e.g., `{{businessName}}`, `{{ownerName}}`, `{{leadCount}}`)
+4. Use the **Preview** panel to see the rendered email with sample data.
+5. Save the template.
+
+**Template lookup**: When the system sends an email, it checks the database for a matching template by slug. If none found, it falls back to the hardcoded default. This means the system works without any templates configured.
+
+**Outcome**: Customizable email communications without code changes. Brand the emails to match the agency's style.
+
+**Key API calls**:
+- `GET /api/admin/email-templates` (list)
+- `POST /api/admin/email-templates` (create)
+- `GET /api/admin/email-templates/[id]` (get)
+- `PATCH /api/admin/email-templates/[id]` (update)
+- `DELETE /api/admin/email-templates/[id]` (delete)
+
+---
+
+### A26: Manage API Keys
+
+**When**: A client needs programmatic access to the platform's API, or you need to generate keys for integrations.
+
+**Steps**:
+
+1. Navigate to `/admin/api-keys`.
+2. Enter a **Client ID** and click "Load Keys" to see existing keys.
+3. To create a new key:
+   - Enter a **Label** (e.g., "Zapier Integration").
+   - Select **Scopes**: `leads:read`, `leads:write`, `conversations:read`, `conversations:write`.
+   - Click "Create."
+4. The system generates a key with prefix `cs_` and displays it **once** in a green banner.
+   - **Copy the key immediately** — it cannot be retrieved later.
+   - The key is stored as a SHA-256 hash in the database.
+5. The key list shows:
+   - Label, prefix (first 8 chars), scopes as badges, creation date, last used date.
+6. To revoke a key, click "Revoke" on its row.
+
+**API key authentication**: External callers use `Authorization: Bearer cs_...` or `X-API-Key: cs_...` headers. The middleware validates the hash, checks scopes, and returns the associated clientId.
+
+**Key API calls**:
+- `GET /api/admin/api-keys?clientId=xxx` (list keys for client)
+- `POST /api/admin/api-keys` (create key with clientId, label, scopes)
+- `DELETE /api/admin/api-keys/[id]` (revoke key)
+
+---
+
+### A27: View Webhook Logs
+
+**When**: Debugging inbound webhook issues, verifying Twilio events are arriving, or investigating a missing message.
+
+**Steps**:
+
+1. Navigate to `/admin/webhook-logs`.
+2. View the log table showing recent webhook events:
+   - **Event type** (e.g., `sms_inbound`, `voice_inbound`, `stripe_event`)
+   - **Client ID** (which client the event relates to)
+   - **Timestamp**
+   - **Response status** (200, 400, 500)
+3. **Filter** by client ID or event type using the dropdowns.
+4. **Expand** any row to see the full payload (JSON viewer).
+5. Pagination: 50 events per page.
+
+**How events are logged**: The SMS and voice webhook handlers insert a log entry on every inbound event, including the raw payload and response status.
+
+**Key API calls**:
+- `GET /api/admin/webhook-logs?clientId=xxx&eventType=sms_inbound&page=1`
+
+---
+
+### A28: Manage Help Articles
+
+**When**: Creating FAQ content for the client-facing help center.
+
+**Steps**:
+
+1. Navigate to `/admin/help-articles` (if a dedicated page exists) or manage via the API.
+2. Create a new article:
+   - **Title**: "How do I change my business hours?"
+   - **Slug**: `change-business-hours` (auto-generated, unique)
+   - **Content**: Detailed instructions in rich text.
+   - **Category**: `getting-started`, `billing`, `features`, `troubleshooting`.
+   - **Sort order**: Controls display position within category.
+   - **Published**: Toggle to make visible to clients.
+3. Edit or delete existing articles.
+4. Published articles appear at `/client/help` for all client portal users.
+
+**Outcome**: A self-service help center that reduces support tickets. Clients can search and browse articles by category.
+
+**Key API calls**:
+- `GET /api/admin/help-articles` (list)
+- `POST /api/admin/help-articles` (create)
+- `PATCH /api/admin/help-articles/[id]` (update)
+- `DELETE /api/admin/help-articles/[id]` (delete)
+
+---
+
+### A29: Manage Subscription Plans
+
+**When**: Creating or modifying the pricing tiers offered to clients.
+
+**Steps**:
+
+1. Navigate to `/admin/billing/plans`.
+2. View existing plans with name, price, billing cycle, and feature details.
+3. To create a new plan:
+   - **Name**: "Growth Plan"
+   - **Price**: $997/month
+   - **Stripe Price ID**: Link to Stripe pricing
+   - **Features**: JSON editor for included features and quotas (message limits, AI credits, etc.)
+   - **Trial days**: Number of free trial days
+4. Edit existing plans (name, features, pricing).
+5. Delete plans that are no longer offered (won't affect existing subscribers).
+
+**Outcome**: Full control over plan tiers without touching code. Changes are reflected in the client billing portal.
+
+**Key API calls**:
+- `GET /api/admin/plans` (list plans)
+- `POST /api/admin/plans` (create plan)
+- `PATCH /api/admin/plans/[id]` (update plan)
+- `DELETE /api/admin/plans/[id]` (delete plan)
+
+---
+
+### A30: Configure System Settings
+
+**When**: Adjusting platform-wide configuration (default behaviors, feature flags, limits).
+
+**Preconditions**: Must be a **super admin** (`requireSuperAdmin()` — regular admins get 403).
+
+**Steps**:
+
+1. Navigate to `/admin/settings`.
+2. View the key-value settings table showing all system configuration.
+3. Add or edit settings:
+   - **Key**: Unique identifier (e.g., `default_trial_days`, `max_message_length`)
+   - **Value**: The setting value (string, stored as JSON if complex)
+4. Save changes.
+
+**Role gating**: This page and the underlying API are restricted to super admins. Other sensitive routes (plan management, client deletion) are similarly gated.
+
+**Key API calls**:
+- `GET /api/admin/system-settings` (list all settings)
+- `POST /api/admin/system-settings` (create/update setting)
+- `PUT /api/admin/system-settings/[key]` (update specific setting)
+
+---
+
+### A31: Manage Multiple Numbers per Client
+
+**When**: A client needs more than one phone number (e.g., separate numbers for different service areas or marketing campaigns).
+
+**Steps**:
+
+1. Navigate to `/admin/clients/[id]/phone`.
+2. View the phone number manager showing all assigned numbers:
+   - Phone number, friendly name, primary badge, active status.
+3. To add a number:
+   - Enter the phone number and optional friendly name.
+   - Click "Add." The system inserts into `client_phone_numbers` and marks it primary if it's the first number.
+4. To set a different number as primary:
+   - Click the star icon on the desired number.
+   - The system updates `isPrimary` and syncs to `clients.twilioNumber` for backward compatibility.
+5. To remove a number:
+   - Click "Remove" on the number.
+   - If the removed number was primary, the next number is auto-promoted.
+
+**Backward compatibility**: The `clients.twilioNumber` field always reflects the primary number. Existing code that reads `twilioNumber` continues to work. The junction table (`client_phone_numbers`) enables multi-number lookup in SMS and voice webhooks.
+
+**Key API calls**:
+- `GET /api/admin/clients/[id]/phone-numbers` (list numbers)
+- `POST /api/admin/clients/[id]/phone-numbers` (add number)
+- `PATCH /api/admin/clients/[id]/phone-numbers/[phoneId]` (set primary)
+- `DELETE /api/admin/clients/[id]/phone-numbers/[phoneId]` (remove number)
+
+---
+
 ## Client User (Business Owner) Use Cases
 
 ### C1: First Login and Dashboard Orientation
@@ -681,14 +998,23 @@ A comprehensive operations guide covering every workflow for every user type. Ea
    - Status (new, contacted, estimate sent, won, lost)
    - Temperature indicator (cold, warm, hot)
    - Lead score (0-100)
+   - Tags (color-coded badges)
    - Last activity timestamp
-3. Filter leads by status or source.
-4. Click into a lead to see:
+3. **Search and filter**:
+   - Debounced search by name, phone, or email (case-insensitive)
+   - Filter by status, source, temperature, and tags
+   - Sort by updated date, created date, or score (ascending/descending)
+4. **Bulk actions**: Select multiple leads via checkboxes, then apply bulk status changes.
+5. **Create a lead manually**: Click "Add Lead" to open the dialog (see C12).
+6. **Export to CSV**: Click "Export" to download filtered leads (see C13).
+7. Click into a lead to see:
    - Full contact info
    - Score breakdown with contributing factors
    - Complete conversation history
+   - Tags (add/remove)
+   - Active flow executions with progress
    - Notes and project type
-5. Update lead status as you work with them:
+8. Update lead status as you work with them:
    - Mark as "Estimate Sent" after quoting
    - Mark as "Won" after closing
    - Mark as "Lost" if they chose a competitor
@@ -904,22 +1230,122 @@ A comprehensive operations guide covering every workflow for every user type. Ea
 
 ---
 
-## Client Portal User Use Cases
+### C12: Create a Lead Manually
 
-### P1: Access the Portal via Link
-
-**When**: Client receives a weekly summary email or a direct link to the portal.
+**When**: A lead contacts you outside the system (walk-in, personal phone call, referral) and you want to track them.
 
 **Steps**:
 
+1. Navigate to `/leads`.
+2. Click "Add Lead."
+3. Fill in the dialog:
+   - **Name** (required)
+   - **Phone** (required — auto-normalized to E.164 format)
+   - **Email** (optional)
+   - **Project type** (optional)
+   - **Notes** (optional)
+4. Click "Create."
+5. The lead appears in your list with `source: manual`.
+
+**Outcome**: The lead is now tracked in the system and eligible for all automations. If you send them a message, the AI can continue the conversation.
+
+---
+
+### C13: Export Leads to CSV
+
+**When**: You need a spreadsheet of your leads for offline analysis, sharing with a partner, or importing into another tool.
+
+**Steps**:
+
+1. Navigate to `/leads`.
+2. Apply any filters you want (status, source, temperature).
+3. Click the "Export" button.
+4. A CSV file downloads with all matching leads.
+
+**Outcome**: Filtered lead data in CSV format including name, phone, email, status, source, temperature, score, project type, and dates.
+
+---
+
+### C14: Tag and Categorize Leads
+
+**When**: You want to organize leads beyond the built-in status/temperature categories (e.g., "VIP", "referral", "repeat customer").
+
+**Steps**:
+
+1. Navigate to a lead's detail page at `/leads/[id]`.
+2. Find the **Tags** section in the header area.
+3. Type a tag name and press Enter to add it (e.g., "VIP", "insurance-job").
+4. Click the × on any tag to remove it.
+5. Tags appear as colored badges in the leads list.
+6. Use the tag filter on the leads page to find all leads with a specific tag.
+
+**Outcome**: Custom categorization system that works alongside status and temperature. Useful for client-specific workflows.
+
+**Key API calls**:
+- `PATCH /api/leads/[id]/tags` (update tags array)
+
+---
+
+### C15: Send Photos (MMS) to a Lead
+
+**When**: You want to send a photo of completed work, a product image, or a document to a lead via MMS.
+
+**Steps**:
+
+1. Navigate to the lead's conversation at `/leads/[id]`.
+2. In the reply area, click the photo/attachment icon.
+3. Select an image file from your device.
+4. Preview the image and add an optional text message.
+5. Click "Send."
+6. The system sends the image as MMS through the compliance gateway (opt-out and quiet hours checks still apply).
+
+**Outcome**: The lead receives the photo via MMS from your business number. The attachment is stored in the conversation history.
+
+---
+
+### C16: Manage Automation Flows
+
+**When**: You want to see which automation sequences are active for your business and toggle them on or off.
+
+**Steps**:
+
+1. Navigate to `/client/flows` (portal) or check per-lead flow status on `/leads/[id]`.
+2. View all assigned flows with:
+   - Flow name and description
+   - Category (missed_call, appointment_reminder, win_back, etc.)
+   - Trigger event
+   - Active/inactive status
+3. Toggle a flow on or off. For example, turn off "Win-Back" during a busy season when you don't need re-engagement.
+4. On a lead's detail page, view the **Flow Executions** sidebar showing:
+   - Active and paused flows
+   - Current step progress
+   - Next scheduled message time
+
+**Outcome**: Self-service control over which automations run for your business, plus visibility into flow progress per lead.
+
+---
+
+## Client Portal User Use Cases
+
+### P1: Access the Portal via Link or OTP
+
+**When**: Client receives a weekly summary email, a direct link, or navigates to the login page.
+
+**Option A — Link access**:
 1. Click the portal link in your email (e.g., `https://app.conversionsurgery.com/d/[token]`).
 2. The system sets a `clientSessionId` cookie and redirects to `/client`.
-3. No password or email verification needed - the link contains the session token.
-4. You're now in the simplified client portal with 6 navigation items.
+3. No password needed — the link contains the session token.
 
-**Security note**: Portal links expire and are unique per client. They provide read-heavy access without the full dashboard capabilities.
+**Option B — OTP login** (see P7):
+1. Navigate to `/client-login`.
+2. Enter your email address.
+3. Receive a 6-digit code via email.
+4. Enter the code to authenticate.
 
-**Outcome**: Quick, frictionless access to your account overview.
+**Portal navigation** (10 items):
+Dashboard, Conversations, Revenue, Knowledge Base, Flows, Team, Billing, Settings, Help, Discussions
+
+**Outcome**: Access to the full self-service client portal with revenue tracking, KB management, flow control, billing, AI settings, and more.
 
 ---
 
@@ -934,7 +1360,8 @@ A comprehensive operations guide covering every workflow for every user type. Ea
    - **Monthly stats**: Leads captured, messages sent, appointments booked
    - **Recent leads**: Name, source, and status of the latest leads
    - **Upcoming appointments**: Next scheduled events
-3. Compare with previous periods to gauge performance.
+3. For deeper revenue insights, visit `/client/revenue` (see P8).
+4. Compare with previous periods to gauge performance.
 
 **Outcome**: At-a-glance understanding of what the service has done for you this week.
 
@@ -1008,6 +1435,220 @@ A comprehensive operations guide covering every workflow for every user type. Ea
 6. If you confirmed, you'll see `/client/cancel/confirmed`.
 
 **Outcome**: The subscription is marked for cancellation. Service continues until the end of the current billing period. Admin is notified.
+
+---
+
+### P7: Login via OTP
+
+**When**: Accessing the client portal for the first time, or when the session cookie has expired.
+
+**Steps**:
+
+1. Navigate to `/client-login`.
+2. Enter your business email address.
+3. Click "Send Code."
+4. Check your inbox for a 6-digit verification code (sent via Resend).
+5. Enter the code within 10 minutes.
+6. The system verifies the code against `otp_codes` table, looks up the client by email, sets a session cookie, and redirects to `/client`.
+
+**Security notes**:
+- OTP codes expire after 10 minutes.
+- Used codes are marked as consumed and cannot be reused.
+- Rate limiting prevents brute-force attempts.
+
+**Outcome**: Authenticated access to the full client portal without passwords.
+
+**Key API calls**:
+- `POST /api/client/auth/send-otp` (send code to email)
+- `POST /api/client/auth/verify-otp` (verify code, create session)
+
+---
+
+### P8: View Revenue Dashboard
+
+**When**: Checking the business impact of the platform — how much revenue is being recovered.
+
+**Steps**:
+
+1. Navigate to `/client/revenue`.
+2. View the 30-day ROI dashboard:
+   - **Revenue pipeline**: Total pipeline value + confirmed (won) value
+   - **Month-over-month change**: Pipeline trend vs. previous period
+   - **Response time**: Average first-response time with industry benchmark (42 minutes) comparison
+   - **Speed multiplier**: "54x faster than industry average"
+   - **Missed calls captured**: 30-day count of leads recovered from missed calls
+   - **Appointments booked**: 30-day booking count
+   - **Leads re-engaged**: Win-back re-engagement count
+   - **ROI multiplier**: Won value divided by subscription cost
+   - **Revenue by service**: Per-service breakdown when multi-service catalog is populated
+
+**Outcome**: Data-driven proof of ROI. See exactly how much revenue the platform has generated compared to the subscription cost.
+
+**Key API calls**:
+- `GET /api/client/revenue` (pipeline, speed, activity, service breakdown)
+
+---
+
+### P9: Manage Knowledge Base
+
+**When**: Adding or updating information the AI should know about your business.
+
+**Steps**:
+
+1. Navigate to `/client/knowledge`.
+2. View existing KB entries grouped by category (services, pricing, FAQ, policies, about, custom).
+3. Click "Add Entry" to create a new one:
+   - Select a **category**
+   - Enter a **title** and **content**
+   - Add **keywords** for AI search matching
+4. Click "Edit" on existing entries to update information.
+5. Click "Delete" to remove outdated entries.
+
+**How it's used**: When leads text your number, the AI searches these entries to give accurate, business-specific answers. The more complete your KB, the better the AI performs.
+
+**Outcome**: Direct control over what the AI knows about your business. Update pricing, add new services, or correct information without contacting the admin.
+
+**Key API calls**:
+- `GET /api/client/knowledge` (list entries)
+- `POST /api/client/knowledge` (create entry)
+- `PATCH /api/client/knowledge/[id]` (update entry)
+- `DELETE /api/client/knowledge/[id]` (delete entry)
+
+---
+
+### P10: Manage Automation Flows
+
+**When**: Controlling which automation sequences are active for your business.
+
+**Steps**:
+
+1. Navigate to `/client/flows`.
+2. View all assigned flows:
+   - Flow name, description, and category
+   - Trigger event (e.g., missed_call, appointment_reminder)
+   - Active/inactive toggle
+3. Toggle flows on or off based on your needs:
+   - Turn off "Win-Back" if you're too busy for new leads
+   - Turn on "Review Request" after completing a job
+4. Changes take effect immediately — the next trigger event will respect the new setting.
+
+**Outcome**: Self-service control over which automations run, without needing to contact the admin.
+
+**Key API calls**:
+- `GET /api/client/flows` (list assigned flows)
+- `PATCH /api/client/flows/[id]` (toggle active/inactive)
+
+---
+
+### P11: Configure AI Settings
+
+**When**: Customizing how the AI communicates with your leads.
+
+**Steps**:
+
+1. Navigate to `/client/settings/ai`.
+2. Configure the AI assistant:
+   - **Tone**: Professional, Friendly, or Casual
+   - **Emojis**: Enable/disable emoji usage in AI messages
+   - **Signature**: Custom text appended to AI messages
+   - **Primary goal**: What the AI should aim for (book appointment, get estimate, etc.)
+   - **Quiet hours**: When the AI should not send messages (separate from system quiet hours)
+3. Save changes.
+
+**Outcome**: The AI communicates in your preferred style. A plumber might want "friendly + casual" while a law firm wants "professional + no emojis."
+
+**Key API calls**:
+- `GET /api/client/ai-settings` (fetch settings)
+- `POST /api/client/ai-settings` (update settings)
+
+---
+
+### P12: Configure Feature Toggles
+
+**When**: Enabling or disabling specific platform features for your business.
+
+**Steps**:
+
+1. Navigate to `/client/settings/features`.
+2. View the safe subset of feature toggles available to clients:
+   - **Missed call SMS**: Auto-text when calls go unanswered
+   - **AI responses**: AI auto-responds to incoming SMS
+   - **Photo requests**: AI can request photos from leads
+   - **Email notifications**: Receive email alerts
+   - **SMS notifications**: Receive SMS alerts
+3. Toggle each feature on or off.
+4. Save changes.
+
+**Note**: Some features (voice AI, hot transfers, calendar sync) are admin-only and cannot be self-configured.
+
+**Outcome**: Control over which features are active without contacting the admin.
+
+**Key API calls**:
+- `GET /api/client/features` (fetch toggle state)
+- `POST /api/client/features` (update toggles)
+
+---
+
+### P13: Configure Notification Preferences
+
+**When**: Controlling what notifications you receive and when.
+
+**Steps**:
+
+1. Navigate to `/client/settings/notifications`.
+2. Configure per-notification toggles:
+   - **New leads** (SMS / Email)
+   - **Escalations** (SMS / Email)
+   - **Weekly summaries** (Email)
+   - **Daily summaries** (Email)
+   - **Flow approvals** (SMS)
+   - **Negative reviews** (SMS / Email)
+3. Set **quiet hours**: Start time, end time, and urgent override toggle.
+4. Save preferences.
+
+**Outcome**: Only receive the notifications you want, at the times you want.
+
+**Key API calls**:
+- `GET /api/client/notifications` (fetch preferences)
+- `POST /api/client/notifications` (update preferences)
+
+---
+
+### P14: Browse Help Articles
+
+**When**: Looking for answers to common questions about the platform.
+
+**Steps**:
+
+1. Navigate to `/client/help`.
+2. Browse articles organized by category.
+3. Use the **search bar** to find specific topics.
+4. Click an article to expand it and read the full content.
+
+**Outcome**: Self-service answers without submitting a support ticket. Reduces admin workload.
+
+**Key API calls**:
+- `GET /api/client/help-articles` (fetch published articles)
+
+---
+
+### P15: Use Discussions for Support
+
+**When**: You have a question or issue that the help articles don't cover.
+
+**Steps**:
+
+1. Navigate to `/client/discussions`.
+2. View existing discussion threads with status (open/resolved) and reply counts.
+3. Click "New Discussion" to create a support ticket:
+   - Write your question or describe the issue.
+   - Submit.
+4. Check back for admin replies in the thread.
+5. Continue the conversation until resolved.
+
+**Alternative**: Use the floating help button (visible on all non-admin pages) to open a quick support ticket modal.
+
+**Outcome**: Direct support channel with the admin team, with full conversation history.
 
 ---
 
@@ -1332,54 +1973,203 @@ These happen without any user action. Understanding them is essential for operat
 
 ---
 
+### S11: Auto Review Response Generation
+
+**Trigger**: Cron job runs `/api/cron/auto-review-response` every 30 minutes.
+
+**Flow**:
+
+1. **Query clients** → Find all active clients with `autoReviewResponseEnabled = true`.
+2. **Find unresponded reviews** → Query reviews without responses (`hasResponse = false`).
+3. **Generate drafts** → For each review, call `createDraftResponse(reviewId)`:
+   - AI analyzes the review text, star rating, and client's business context.
+   - Generates a professional, personalized response.
+   - Stores as `status: draft` in `review_responses`.
+4. **Auto-post approved** → Find responses with `status: approved`:
+   - Call `postResponseToGoogle(responseId)` to publish via Google Business API.
+   - Update status to `posted`.
+
+**Outcome**: Reviews get AI-drafted responses automatically. Approved responses are posted without manual intervention. Negative reviews get timely, professional replies.
+
+---
+
+### S12: NPS Survey Sending
+
+**Trigger**: Cron job runs `/api/cron/send-nps` periodically.
+
+**Flow**:
+
+1. **Find eligible leads** → Query completed appointments that are 4+ hours old and haven't been surveyed.
+2. **Create survey** → Insert `nps_surveys` record with status `sent`.
+3. **Send SMS** → Text the lead: "How would you rate your experience with {businessName}? Reply with a number 1-10."
+4. **Receive response** → Webhook at `/api/webhooks/nps` processes the reply:
+   - Parse the score (1-10) from the SMS body.
+   - Store in `nps_surveys.score`.
+   - If the lead includes a comment, store in `nps_surveys.comment`.
+   - Update status to `responded`.
+
+**Outcome**: Post-service satisfaction data collected automatically. NPS scores visible on the admin dashboard.
+
+---
+
+### S13: Trial Reminder Emails
+
+**Trigger**: Cron job runs `/api/cron/trial-reminders` daily.
+
+**Flow**:
+
+1. **Query trial clients** → Find subscriptions with `status: trialing` and active trial periods.
+2. **Check milestones** → For each trial:
+   - Day 7: Send "You're halfway through your trial" email.
+   - Day 12: Send "Only 2 days left" email.
+   - Day 14 (or trial end): Send "Your trial ends today" email.
+3. **Render email** → Use the email template system (DB template or hardcoded fallback).
+4. **Send via Resend** → Deliver to the client's email.
+
+**Outcome**: Clients are reminded of trial progress and encouraged to convert. Higher trial-to-paid conversion rate.
+
+---
+
+### S14: Calendar Event Creation on Booking
+
+**Trigger**: A lead books an appointment through the conversational AI.
+
+**Flow**:
+
+1. **Appointment confirmed** → `bookAppointment()` creates the appointment record.
+2. **Calendar check** → Verify client has `calendarSyncEnabled = true` and an active calendar integration.
+3. **Create event** → Call `createEvent()` with:
+   - Client ID and lead ID
+   - Title: `"{projectType}: {leadName}"` (or "Service Call: Customer")
+   - Start time and end time (defaults to 1 hour)
+   - Location (from lead's address if available)
+   - Event type: `estimate`
+4. **Calendar API** → Push to Google Calendar via OAuth.
+5. **Failure handling** → Calendar errors are caught silently — the booking succeeds regardless.
+
+**Outcome**: Appointments automatically appear on the client's Google Calendar. No manual calendar entry needed.
+
+---
+
+### S15: SMS Delivery Status Tracking
+
+**Trigger**: Twilio sends a status callback after each outbound SMS.
+
+**Flow**:
+
+1. **Send SMS** → Outbound messages include a `statusCallback` URL pointing to `/api/webhooks/twilio/status`.
+2. **Status update** → Twilio POSTs status changes:
+   - `queued` → Message accepted by Twilio
+   - `sent` → Message handed to carrier
+   - `delivered` → Message confirmed delivered to device
+   - `failed` → Message failed to send
+   - `undelivered` → Message could not be delivered
+3. **Database update** → Webhook handler matches by `MessageSid` and updates `conversations.deliveryStatus`.
+4. **Error tracking** → Failed/undelivered messages include an `ErrorCode` for diagnosis.
+
+**Outcome**: Real-time delivery status visible on each message in the conversation UI. Failed messages are flagged for attention.
+
+---
+
+### S16: Agency Digest Email
+
+**Trigger**: Cron job runs `/api/cron/agency-digest` weekly.
+
+**Flow**:
+
+1. **Compile metrics** → For each active client, aggregate the week's performance:
+   - Messages sent, leads captured, appointments booked
+   - Conversion rate, response time
+   - Active flows, escalation count
+2. **Render digest** → Build a formatted email with per-client summaries.
+3. **Send via Resend** → Deliver to all opted-in clients.
+
+**Outcome**: Clients receive a weekly performance snapshot email. Reinforces the value of the service and keeps clients engaged.
+
+---
+
 ## Appendix: Quick Reference
 
 ### Key URLs by User Type
 
-**Admin**:
+**Admin** (Clients group):
 | URL | Purpose |
 |-----|---------|
 | `/admin` | Agency dashboard |
 | `/admin/clients` | Client list |
 | `/admin/clients/new/wizard` | Onboard new client |
-| `/admin/clients/[id]` | Client detail |
+| `/admin/clients/[id]` | Client detail + ROI |
 | `/admin/clients/[id]/knowledge` | Knowledge base |
+| `/admin/clients/[id]/phone` | Phone number manager (multi-number) |
+| `/admin/clients/[id]/revenue` | Client revenue metrics |
 | `/admin/clients/[id]/reviews` | Reputation monitoring |
-| `/admin/flow-templates` | Flow template management |
-| `/admin/template-performance` | Aggregate A/B testing |
-| `/admin/ab-tests` | Per-client A/B tests |
-| `/admin/reports` | Report generation |
-| `/admin/phone-numbers` | Phone number console |
-| `/admin/twilio` | Twilio account settings |
-| `/admin/voice-ai` | Voice AI config |
-| `/admin/platform-analytics` | Platform metrics |
-| `/admin/usage` | Usage monitoring |
-| `/admin/billing` | Subscription management |
-| `/admin/compliance` | Compliance dashboard |
-| `/admin/discussions` | Support threads |
 | `/admin/users` | User management |
+| `/admin/agency` | Communications / agency messages |
+| `/admin/discussions` | Support threads |
 
-**Client User**:
+**Admin** (Optimization group):
 | URL | Purpose |
 |-----|---------|
-| `/dashboard` | Overview |
-| `/leads` | Lead management |
-| `/leads/[id]` | Lead detail + conversation |
+| `/admin/flow-templates` | Flow template management |
+| `/admin/flow-templates/[id]` | Template editor + version history + publish |
+| `/admin/analytics` | Flow analytics |
+| `/admin/template-performance` | Variant results / aggregate A/B testing |
+| `/admin/ab-tests` | Per-client A/B tests |
+| `/admin/reputation` | Reputation monitoring (all clients) |
+
+**Admin** (Reporting group):
+| URL | Purpose |
+|-----|---------|
+| `/admin/billing` | Billing / subscription management |
+| `/admin/billing/plans` | Plan management (CRUD) |
+| `/admin/reports` | Report generation |
+| `/admin/platform-analytics` | Platform health metrics |
+| `/admin/usage` | Costs & usage monitoring |
+
+**Admin** (Settings group):
+| URL | Purpose |
+|-----|---------|
+| `/admin/phone-numbers` | Phone number console |
+| `/admin/twilio` | Twilio account settings |
+| `/admin/voice-ai` | Voice AI config + ElevenLabs voice picker |
+| `/admin/compliance` | Compliance dashboard |
+| `/admin/webhook-logs` | Webhook log viewer |
+| `/admin/email-templates` | Email template editor |
+| `/admin/email-templates/[id]` | Edit individual template |
+| `/admin/api-keys` | API key management |
+| `/admin/settings` | System settings (super admin only) |
+
+**Client User** (NextAuth dashboard):
+| URL | Purpose |
+|-----|---------|
+| `/dashboard` | Overview (7-day stats + action items) |
+| `/leads` | Lead management (create, export, tags, bulk actions) |
+| `/leads/[id]` | Lead detail + conversation + flow status |
 | `/conversations` | All conversations |
 | `/escalations` | Escalation queue |
 | `/scheduled` | Scheduled messages |
-| `/analytics` | Performance analytics |
-| `/settings` | Configuration |
+| `/analytics` | Performance analytics + ROI |
+| `/settings` | Configuration (team, hours, notifications) |
 | `/discussions` | Support threads |
 
-**Client Portal**:
+**Client Portal** (OTP / cookie auth):
 | URL | Purpose |
 |-----|---------|
+| `/client-login` | OTP login page |
 | `/client` | Portal dashboard |
 | `/client/conversations` | Conversation history |
+| `/client/revenue` | Revenue / ROI dashboard |
+| `/client/knowledge` | Knowledge base (self-service CRUD) |
+| `/client/flows` | Automation flow management |
 | `/client/billing` | Billing & subscription |
-| `/client/settings` | Preferences |
-| `/client/cancel` | Cancellation flow |
+| `/client/billing/upgrade` | Plan upgrade |
+| `/client/settings` | Settings hub |
+| `/client/settings/ai` | AI assistant configuration |
+| `/client/settings/features` | Feature toggles (safe subset) |
+| `/client/settings/notifications` | Notification preferences |
+| `/client/help` | Help articles / FAQ |
+| `/client/discussions` | Support discussions |
+| `/client/cancel` | Cancellation flow (3-step) |
 
 **Team Member**:
 | URL | Purpose |
@@ -1392,8 +2182,34 @@ These happen without any user action. Understanding them is essential for operat
 |---------|-----|--------|
 | Twilio SMS | `/api/webhooks/twilio/sms` | Incoming text messages |
 | Twilio Voice | `/api/webhooks/twilio/voice` | Incoming phone calls |
-| Stripe | `/api/webhooks/stripe` | Payment events |
+| Twilio Voice AI | `/api/webhooks/twilio/voice/ai` | AI voice agent |
+| Twilio Ring Group | `/api/webhooks/twilio/ring-connect` | Ring group notification |
+| Twilio Ring Result | `/api/webhooks/twilio/ring-result` | Ring group outcome |
+| Twilio SMS Status | `/api/webhooks/twilio/status` | Delivery status callbacks |
+| Twilio Agency SMS | `/api/webhooks/twilio/agency-sms` | Agency client SMS |
+| Stripe | `/api/webhooks/stripe` | Payment/subscription events |
 | Form | `/api/webhooks/form` | Website form submissions |
+| NPS | `/api/webhooks/nps` | NPS survey SMS responses |
+
+### Cron Jobs
+
+| Endpoint | Frequency | Purpose |
+|----------|-----------|---------|
+| `/api/cron` | Every 5 min | Master orchestrator (schedules all jobs) |
+| `/api/cron/process-scheduled` | Every 5 min | Send due scheduled messages |
+| `/api/cron/check-missed-calls` | Periodic | Backup missed call detection |
+| `/api/cron/no-show-recovery` | Daily | Detect no-shows, send AI follow-ups |
+| `/api/cron/win-back` | Daily 10am | Re-engage stale leads (25-35 days) |
+| `/api/cron/daily` | Daily | Aggregate daily stats |
+| `/api/cron/daily-summary` | Daily 7am | Send daily summary email |
+| `/api/cron/weekly-summary` | Weekly | Send weekly performance reports |
+| `/api/cron/agency-digest` | Weekly | Agency performance summaries |
+| `/api/cron/calendar-sync` | Periodic | Sync appointments with calendars |
+| `/api/cron/agent-check` | Periodic | Health check on conversation agent |
+| `/api/cron/expire-prompts` | Periodic | Expire old agency prompts |
+| `/api/cron/trial-reminders` | Daily | Trial reminder emails (day 7, 12, 14) |
+| `/api/cron/auto-review-response` | Every 30 min | AI draft + auto-post review responses |
+| `/api/cron/send-nps` | Periodic | Send NPS surveys post-appointment |
 
 ### Feature Flags (per client, admin-controlled)
 
@@ -1401,13 +2217,20 @@ These happen without any user action. Understanding them is essential for operat
 |------|---------|-----------------|
 | `missedCallSmsEnabled` | true | Auto-SMS after missed calls |
 | `aiResponseEnabled` | true | AI auto-response to incoming SMS |
-| `aiAgentMode` | off | Autonomous agent (off/assist/autonomous) |
+| `aiAgentEnabled` | true | AI conversation agent active |
+| `aiAgentMode` | assist | Autonomous agent (off/assist/autonomous) |
 | `autoEscalationEnabled` | true | Auto-escalate based on AI confidence |
 | `flowsEnabled` | true | Automation flow execution |
 | `leadScoringEnabled` | true | Lead score calculation |
 | `calendarSyncEnabled` | false | Google Calendar integration |
-| `hotTransferEnabled` | true | Live call transfer to team |
+| `hotTransferEnabled` | false | Live call transfer to team |
 | `voiceEnabled` | false | Voice AI answering |
-| `voiceMode` | after_hours | When Voice AI answers |
-| `complianceEnabled` | true | TCPA compliance checks |
-| `reputationEnabled` | false | Review monitoring |
+| `voiceMode` | after_hours | When Voice AI answers (after_hours/always/manual) |
+| `reputationMonitoringEnabled` | false | Google review tracking |
+| `autoReviewResponseEnabled` | false | AI writes review responses |
+| `paymentLinksEnabled` | false | Send payment links to leads |
+| `photoRequestsEnabled` | true | Request photos from leads |
+| `multiLanguageEnabled` | false | Non-English support |
+| `notificationEmail` | true | Email notifications |
+| `notificationSms` | true | SMS notifications |
+| `weeklySummaryEnabled` | true | Weekly summary emails |
