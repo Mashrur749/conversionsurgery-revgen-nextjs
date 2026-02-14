@@ -51,6 +51,9 @@ next-env.d.ts
 
 !.dev.vars.example
 
+# local testing guides with credentials
+LOCAL_PRODUCTION_TESTING.md
+
 # claude code worktree orchestration
 .claude-refactor/
 .worktrees/
