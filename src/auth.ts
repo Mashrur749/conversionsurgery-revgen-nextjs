@@ -31,7 +31,31 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.id = dbUser.id;
         session.user.isAdmin = dbUser.isAdmin ?? false;
 
-        if (!dbUser.isAdmin && dbUser.clientId) {
+        let clientId = dbUser.clientId;
+
+        // Auto-link: if user has no clientId, try to find a matching client
+        // by email. This handles the first-login race condition where the
+        // signIn callback runs before the adapter creates the user record.
+        if (!dbUser.isAdmin && !clientId) {
+          const [matchingClient] = await db
+            .select({ id: clients.id })
+            .from(clients)
+            .where(eq(clients.email, user.email!))
+            .limit(1);
+
+          if (matchingClient) {
+            clientId = matchingClient.id;
+            await db
+              .update(users)
+              .set({ clientId })
+              .where(eq(users.id, dbUser.id));
+            console.log(
+              `[Auth] Auto-linked user ${dbUser.id} to client ${clientId}`,
+            );
+          }
+        }
+
+        if (!dbUser.isAdmin && clientId) {
           const [client] = await db
             .select({
               id: clients.id,
@@ -39,7 +63,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               ownerName: clients.ownerName,
             })
             .from(clients)
-            .where(eq(clients.id, dbUser.clientId))
+            .where(eq(clients.id, clientId))
             .limit(1);
 
           if (client) {
@@ -75,11 +99,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       if (!client) return false;
 
-      if (user.id && dbUser && !dbUser.clientId) {
+      // Link user to client if not already linked.
+      // On first login the adapter may not have created the user yet,
+      // so we also handle this in the session callback below.
+      if (dbUser && !dbUser.clientId) {
         await db
           .update(users)
           .set({ clientId: client.id })
-          .where(eq(users.id, user.id));
+          .where(eq(users.id, dbUser.id));
       }
 
       return true;

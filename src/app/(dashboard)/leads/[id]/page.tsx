@@ -3,7 +3,6 @@ import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { conversations } from '@/db/schema/conversations';
 import { scheduledMessages } from '@/db/schema/scheduled-messages';
-import { users } from '@/db/schema/auth';
 import { mediaAttachments } from '@/db/schema/media-attachments';
 import { eq, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -11,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
+import { getClientId } from '@/lib/get-client-id';
 import { ReplyForm } from './reply-form';
 import { ActionButtons } from './action-buttons';
 import { LeadTabs } from './lead-tabs';
@@ -30,20 +30,13 @@ export default async function LeadDetailPage({ params }: Props) {
     return <div>Not authenticated</div>;
   }
 
-  const db = getDb();
+  const clientId = await getClientId();
 
-  // Fetch user to get clientId
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, session.user.email))
-    .limit(1);
-
-  if (!userRecord.length || !userRecord[0].clientId) {
-    return <div>No client linked</div>;
+  if (!clientId) {
+    return <div>No client linked to your account. Please contact your administrator.</div>;
   }
 
-  const clientId = userRecord[0].clientId;
+  const db = getDb();
 
   const leadResult = await db
     .select()

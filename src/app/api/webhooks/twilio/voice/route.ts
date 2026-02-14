@@ -8,6 +8,9 @@ import { handleMissedCall } from "@/lib/automations/missed-call";
 
 const MISSED_STATUSES = new Set(["no-answer", "busy", "failed", "canceled"]);
 
+/** Max call duration (seconds) to treat a "completed" call as voicemail/missed. */
+const VOICEMAIL_DURATION_THRESHOLD = 45;
+
 function emptyTwiml() {
   return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response/>', {
     status: 200,
@@ -58,20 +61,36 @@ export async function POST(request: NextRequest) {
       const db = getDb();
       const originalFrom = request.nextUrl.searchParams.get("origFrom") || from;
       const originalTo = request.nextUrl.searchParams.get("origTo") || to;
+      const dialDuration = parseInt(payload.DialCallDuration || "0", 10);
+      const dialBridged = payload.DialBridged === "true";
 
       console.log("[Voice Phase 2] Dial outcome received:", {
         dialCallStatus,
+        dialDuration,
+        dialBridged,
         originalFrom,
         originalTo,
         CallSid: payload.CallSid,
       });
 
-      if (MISSED_STATUSES.has(dialCallStatus)) {
+      // Detect missed calls — explicit missed statuses OR voicemail pickup
+      // (carrier voicemail answers the call, so Twilio reports "completed"
+      // even though the human never picked up)
+      const isExplicitMiss = MISSED_STATUSES.has(dialCallStatus);
+      const isVoicemailPickup =
+        dialCallStatus === "completed" &&
+        dialDuration > 0 &&
+        dialDuration <= VOICEMAIL_DURATION_THRESHOLD;
+      const isMissed = isExplicitMiss || isVoicemailPickup;
+
+      if (isMissed) {
+        const reason = isVoicemailPickup
+          ? `voicemail pickup (${dialDuration}s)`
+          : dialCallStatus;
         console.log(
-          "[Voice Phase 2] Missed call detected - processing immediately",
+          `[Voice Phase 2] Missed call detected (${reason}) - processing`,
         );
 
-        // Process missed call
         await handleMissedCall({
           From: originalFrom,
           To: originalTo,
@@ -79,7 +98,6 @@ export async function POST(request: NextRequest) {
           CallSid: payload.CallSid,
         });
 
-        // Mark as processed in database so polling doesn't reprocess it
         await db
           .update(activeCalls)
           .set({
@@ -95,11 +113,10 @@ export async function POST(request: NextRequest) {
           });
       } else {
         console.log(
-          "[Voice Phase 2] Dial ended successfully (answered):",
+          `[Voice Phase 2] Call answered by human (${dialDuration}s):`,
           dialCallStatus,
         );
 
-        // Still mark as processed since the call was answered
         await db
           .update(activeCalls)
           .set({
@@ -115,7 +132,6 @@ export async function POST(request: NextRequest) {
           });
       }
 
-      // Callbacks don't need call-control TwiML, empty response is fine
       return emptyTwiml();
     }
 
@@ -138,6 +154,12 @@ export async function POST(request: NextRequest) {
         ),
       )
       .limit(1);
+
+    console.log({
+      clientResult,
+      clientsTwilioNumber: clients.twilioNumber,
+      twilioNumber,
+    });
 
     if (!clientResult.length) {
       console.log("[Voice] No client found for Twilio number:", twilioNumber);
@@ -179,7 +201,7 @@ export async function POST(request: NextRequest) {
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial timeout="30" answerOnBridge="true" action="${xmlAttr(actionUrl.toString())}" method="POST">
+  <Dial timeout="18" answerOnBridge="true" action="${xmlAttr(actionUrl.toString())}" method="POST">
     <Number>${client.phone}</Number>
   </Dial>
 </Response>`;

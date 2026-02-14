@@ -30,7 +30,7 @@ export function MobileNav({ navItems, adminGroups, isAdmin }: MobileNavProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden">
+        <Button variant="ghost" size="icon" className="lg:hidden">
           <Menu className="size-5" />
           <span className="sr-only">Menu</span>
         </Button>

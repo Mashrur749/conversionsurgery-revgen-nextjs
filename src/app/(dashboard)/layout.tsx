@@ -78,13 +78,13 @@ export default async function DashboardLayout({
       <div className="min-h-screen bg-gray-50">
         <header className="bg-white border-b sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4">
-            <div className="flex justify-between items-center h-14 md:h-16">
-              <div className="flex items-center gap-2 md:gap-8">
+            <div className="flex justify-between items-center h-14 lg:h-16">
+              <div className="flex items-center gap-2 lg:gap-8">
                 <MobileNav navItems={navItems} adminGroups={isAdmin ? adminNavItems : undefined} isAdmin={isAdmin} />
-                <Link href="/dashboard" className="font-semibold text-base md:text-lg">
+                <Link href="/dashboard" className="font-semibold text-base lg:text-lg">
                   Revenue Recovery
                 </Link>
-                <nav className="hidden md:flex items-center gap-1">
+                <nav className="hidden lg:flex items-center gap-1">
                   {isAdmin ? (
                     <>
                       <ClientSelector clients={allClients} />
@@ -106,9 +106,9 @@ export default async function DashboardLayout({
                   )}
                 </nav>
               </div>
-              <div className="flex items-center gap-2 md:gap-4">
+              <div className="flex items-center gap-2 lg:gap-4">
                 {!isAdmin && (
-                  <span className="hidden sm:inline text-sm text-gray-600">
+                  <span className="hidden lg:inline text-sm text-gray-600">
                     {session.client?.businessName || session.user?.email}
                   </span>
                 )}
@@ -117,7 +117,7 @@ export default async function DashboardLayout({
             </div>
           </div>
         </header>
-        <main className="max-w-7xl mx-auto px-3 py-4 md:px-4 md:py-8">
+        <main className="max-w-7xl mx-auto px-3 py-4 lg:px-4 lg:py-8">
           {isAdmin ? (
             <SwitchingOverlay>{children}</SwitchingOverlay>
           ) : (

@@ -126,7 +126,7 @@ const PROVINCES: Record<string, { code: string; name: string }[]> = {
 export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
   // Shared state
   const [error, setError] = useState('');
-  const [processing, setProcessing] = useState(false);
+  const [processingNumber, setProcessingNumber] = useState<string | null>(null);
 
   // "Your Numbers" tab state
   const [unassigned, setUnassigned] = useState<OwnedNumber[]>([]);
@@ -169,7 +169,7 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
       return;
     }
 
-    setProcessing(true);
+    setProcessingNumber(phoneNumber);
     setError('');
 
     try {
@@ -192,7 +192,7 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
       console.error('Assign error:', err);
       setError('Failed to assign number. Check console for details.');
     } finally {
-      setProcessing(false);
+      setProcessingNumber(null);
     }
   }
 
@@ -250,7 +250,7 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
       return;
     }
 
-    setProcessing(true);
+    setProcessingNumber(phoneNumber);
     setError('');
 
     try {
@@ -273,7 +273,7 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
       console.error('Purchase error:', err);
       setError('Failed to purchase number. Check console for details.');
     } finally {
-      setProcessing(false);
+      setProcessingNumber(null);
     }
   }
 
@@ -367,9 +367,9 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
                     <Button
                       size="sm"
                       onClick={() => handleAssign(num.phoneNumber)}
-                      disabled={processing}
+                      disabled={processingNumber !== null}
                     >
-                      {processing ? 'Assigning...' : 'Assign'}
+                      {processingNumber === num.phoneNumber ? 'Assigning...' : 'Assign'}
                     </Button>
                   </div>
                 ))}
@@ -468,9 +468,9 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
                   <Button
                     size="sm"
                     onClick={() => handlePurchase(num.phoneNumber)}
-                    disabled={processing}
+                    disabled={processingNumber !== null}
                   >
-                    {processing ? 'Purchasing...' : 'Purchase'}
+                    {processingNumber === num.phoneNumber ? 'Purchasing...' : 'Purchase'}
                   </Button>
                 </div>
               ))}

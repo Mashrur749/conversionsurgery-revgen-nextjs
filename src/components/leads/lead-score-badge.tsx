@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { cn } from '@/lib/utils';
-import { Flame, Thermometer, Snowflake } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { Flame, Thermometer, Snowflake } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
+} from "@/components/ui/tooltip";
 
 /** Factor breakdown displayed in the score badge tooltip or expanded view. */
 interface ScoreBadgeFactors {
@@ -20,7 +20,7 @@ interface ScoreBadgeFactors {
 
 interface LeadScoreBadgeProps {
   score: number;
-  temperature: 'hot' | 'warm' | 'cold';
+  temperature: "hot" | "warm" | "cold";
   factors?: ScoreBadgeFactors;
   compact?: boolean;
 }
@@ -38,24 +38,24 @@ export function LeadScoreBadge({
   const config = {
     hot: {
       icon: Flame,
-      bg: 'bg-red-100 dark:bg-red-900/30',
-      text: 'text-red-700 dark:text-red-400',
-      border: 'border-red-200 dark:border-red-800',
-      label: 'Hot',
+      bg: "bg-red-100 dark:bg-red-900/30",
+      text: "text-red-700 dark:text-red-400",
+      border: "border-red-200 dark:border-red-800",
+      label: "Hot",
     },
     warm: {
       icon: Thermometer,
-      bg: 'bg-yellow-100 dark:bg-yellow-900/30',
-      text: 'text-yellow-700 dark:text-yellow-400',
-      border: 'border-yellow-200 dark:border-yellow-800',
-      label: 'Warm',
+      bg: "bg-yellow-100 dark:bg-yellow-900/30",
+      text: "text-yellow-700 dark:text-yellow-400",
+      border: "border-yellow-200 dark:border-yellow-800",
+      label: "Warm",
     },
     cold: {
       icon: Snowflake,
-      bg: 'bg-blue-100 dark:bg-blue-900/30',
-      text: 'text-blue-700 dark:text-blue-400',
-      border: 'border-blue-200 dark:border-blue-800',
-      label: 'Cold',
+      bg: "bg-blue-100 dark:bg-blue-900/30",
+      text: "text-blue-700 dark:text-blue-400",
+      border: "border-blue-200 dark:border-blue-800",
+      label: "Cold",
     },
   };
 
@@ -68,10 +68,10 @@ export function LeadScoreBadge({
           <TooltipTrigger asChild>
             <div
               className={cn(
-                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border',
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border",
                 bg,
                 text,
-                border
+                border,
               )}
             >
               <Icon className="h-3 w-3" />
@@ -80,7 +80,9 @@ export function LeadScoreBadge({
           </TooltipTrigger>
           <TooltipContent>
             <div className="text-sm">
-              <p className="font-medium">{label} Lead - Score: {score}/100</p>
+              <p className="font-medium">
+                {label} Lead - Score: {score}/100
+              </p>
               {factors && (
                 <div className="mt-1 text-xs space-y-0.5">
                   <p>Urgency: {factors.urgency}/25</p>
@@ -97,38 +99,36 @@ export function LeadScoreBadge({
   }
 
   return (
-    <div
-      className={cn(
-        'rounded-lg border p-3',
-        bg,
-        border
-      )}
-    >
+    <div className={cn("rounded-lg border p-3", bg, border)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className={cn('h-5 w-5', text)} />
-          <span className={cn('font-semibold', text)}>{label}</span>
+          <Icon className={cn("h-5 w-5", text)} />
+          <span className={cn("font-semibold", text)}>{label}</span>
         </div>
-        <span className={cn('text-2xl font-bold', text)}>{score}</span>
+        <span className={cn("text-2xl font-bold", text)}>{score}</span>
       </div>
 
       {factors && (
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
           <div className="text-center">
             <div className="font-medium text-muted-foreground">Urgency</div>
-            <div className={cn('font-semibold', text)}>{factors.urgency}/25</div>
+            <div className={cn("font-semibold", text)}>
+              {factors.urgency}/25
+            </div>
           </div>
           <div className="text-center">
             <div className="font-medium text-muted-foreground">Budget</div>
-            <div className={cn('font-semibold', text)}>{factors.budget}/25</div>
+            <div className={cn("font-semibold", text)}>{factors.budget}/25</div>
           </div>
           <div className="text-center">
             <div className="font-medium text-muted-foreground">Intent</div>
-            <div className={cn('font-semibold', text)}>{factors.intent}/25</div>
+            <div className={cn("font-semibold", text)}>{factors.intent}/25</div>
           </div>
           <div className="text-center">
             <div className="font-medium text-muted-foreground">Engage</div>
-            <div className={cn('font-semibold', text)}>{factors.engagement}/25</div>
+            <div className={cn("font-semibold", text)}>
+              {factors.engagement}/25
+            </div>
           </div>
         </div>
       )}
@@ -139,11 +139,11 @@ export function LeadScoreBadge({
             <span
               key={signal}
               className={cn(
-                'inline-flex items-center px-1.5 py-0.5 rounded text-xs',
-                'bg-white/50 dark:bg-black/20'
+                "inline-flex items-center px-1.5 py-0.5 rounded text-xs",
+                "bg-white/50 dark:bg-black/20",
               )}
             >
-              {signal.replace(/_/g, ' ')}
+              {signal.replace(/_/g, " ")}
             </span>
           ))}
         </div>
