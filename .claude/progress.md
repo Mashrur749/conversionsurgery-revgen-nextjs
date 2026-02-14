@@ -23,15 +23,11 @@ If picking up from a new session, read this file first, then:
 - [x] **Item 8: Clone Template** — POST /api/admin/flow-templates/[id]/clone + Duplicate menu item wired
 
 ### Batch 2 — Client Experience
-- [ ] **Item 5: Client Revenue Dashboard** — Port ROI metrics to client portal
-  - Files: `src/app/(client)/client/page.tsx` (enhance), `src/app/(client)/client/revenue-card.tsx` (NEW)
-- [ ] **Item 3: Trial Reminders** — Cron + email at day 7/12/14
-  - Files: `src/lib/services/trial-reminders.ts` (NEW), `src/app/api/cron/trial-reminders/route.ts` (NEW)
-- [ ] **Item 10: Conversation Notes** — Verify if existing notes field is sufficient, or add per-conversation notes
-- [ ] **Item 19: AI Settings (Client)** — Subset of AI config for client self-service
-  - Files: `src/app/(client)/client/settings/` (enhance), `src/app/api/client/settings/ai/route.ts` (NEW)
-- [ ] **Item 20: Feature Toggles (Client)** — Safe toggle subset for clients
-  - Files: `src/app/(client)/client/settings/` (enhance), `src/app/api/client/settings/features/route.ts` (NEW)
+- [x] **Item 5: Client Revenue Dashboard** — /client/revenue page + /api/client/revenue API, reuses ROIDashboard
+- [x] **Item 3: Trial Reminders** — Service + cron, emails at day 7/12/14 using createdAt (no migration)
+- [x] **Item 10: Conversation Notes** — Already implemented via lead notes field on LeadHeader
+- [x] **Item 19: AI Settings (Client)** — /client/settings/ai + /api/client/ai-settings (tone, emojis, goals, quiet hours)
+- [x] **Item 20: Feature Toggles (Client)** — /client/settings/features + /api/client/features (safe subset)
 
 ### Batch 3 — CRM Depth
 - [ ] **Item 9: Per-Lead Flow Status** — Show active flows on lead detail

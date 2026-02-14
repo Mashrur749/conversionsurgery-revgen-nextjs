@@ -6,6 +6,7 @@ import { HelpButton } from '@/components/ui/help-button';
 const navItems = [
   { href: '/client', label: 'Dashboard' },
   { href: '/client/conversations', label: 'Conversations' },
+  { href: '/client/revenue', label: 'Revenue' },
   { href: '/client/knowledge', label: 'Knowledge Base' },
   { href: '/client/team', label: 'Team' },
   { href: '/client/billing', label: 'Billing' },

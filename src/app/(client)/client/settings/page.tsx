@@ -39,6 +39,32 @@ export default async function ClientSettingsPage() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Assistant</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/client/settings/ai">
+              Configure AI Settings
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Features</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/client/settings/features">
+              Manage Features
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card className="border-red-200">
         <CardHeader>
           <CardTitle className="text-red-600">Danger Zone</CardTitle>

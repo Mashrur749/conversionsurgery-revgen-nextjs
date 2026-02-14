@@ -246,7 +246,7 @@ The platform provides two client interfaces:
 | Agency dashboard | [LIVE] | 7-day metrics: missed calls, forms, messages, follow-ups, scheduled |
 | Solo dashboard | [LIVE] | Month-to-date: leads, messages, appointments, upcoming appointments |
 | Action items | [LIVE] | Leads needing attention with links |
-| Revenue recovered | [PARTIAL] | ROI dashboard on admin client detail, not on client-facing dashboard |
+| Revenue recovered | [LIVE] | ROI dashboard on admin client detail + client /revenue page with pipeline, speed, service breakdown |
 
 ### 2.3 Lead Management (CRM)
 | Feature | Status | Behavior |
@@ -278,7 +278,7 @@ The platform provides two client interfaces:
 | Quick replies | [LIVE] | Template picker dropdown with common responses, populates reply textarea |
 | Send photos | [PLANNED] | Can view received MMS, cannot send outbound images |
 | Read receipts | [PLANNED] | Not implemented |
-| Conversation notes | [PLANNED] | Not implemented |
+| Conversation notes | [LIVE] | Lead-level notes field editable on lead detail page |
 | Conversation tags | [PLANNED] | Not implemented |
 
 ### 2.5 Escalation Queue
@@ -355,8 +355,8 @@ The platform provides two client interfaces:
 | Notification preferences | [LIVE] | Full SMS/email toggle configuration |
 | Business hours | [LIVE] | Per-day on/off with open/close times |
 | Weekly summary settings | [LIVE] | Enable/disable, preferred day and time |
-| AI settings | [PARTIAL] | Admin configures tone/mode. Client cannot change AI settings |
-| Feature toggles | [PARTIAL] | Admin-only. Client cannot toggle their own features |
+| AI settings | [LIVE] | Admin + client self-service: tone, emojis, goals, quiet hours at /client/settings/ai |
+| Feature toggles | [LIVE] | Admin full control + client self-service safe subset at /client/settings/features |
 
 ### 2.11 Billing (Solo Contractor View)
 | Feature | Status | Behavior |
@@ -767,7 +767,7 @@ Plans support monthly and yearly billing with separate Stripe price IDs.
 | Trial length | [LIVE] | Configurable days per plan |
 | Trial limits | [LIVE] | Full access to plan features |
 | Trial end | [LIVE] | Convert to paid or service stops |
-| Trial reminders | [PLANNED] | No automated email reminders |
+| Trial reminders | [LIVE] | Automated emails at day 7, 12, 14 via /api/cron/trial-reminders |
 
 ---
 
