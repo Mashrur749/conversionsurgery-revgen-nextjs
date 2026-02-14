@@ -17,6 +17,7 @@ import { trackUsage } from '@/lib/services/usage-tracking';
 import { startFlowExecution } from '@/lib/services/flow-execution';
 import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
 import { buildGuardrailPrompt } from './guardrails';
+import { classifyService, updateLeadServiceMatch } from '@/lib/services/service-classification';
 import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
 
 interface ProcessMessageResult {
@@ -182,6 +183,20 @@ export async function processIncomingMessage(
   };
   await db.insert(agentDecisions).values(decisionValues);
 
+  // Classify service from extracted projectType
+  let matchedServiceId: string | undefined;
+  const extractedProjectType = finalState.extractedInfo.projectType;
+  if (extractedProjectType && extractedProjectType !== context.projectType) {
+    const classified = await classifyService(client.id, extractedProjectType);
+    if (classified) {
+      matchedServiceId = classified.serviceId;
+      // Set estimatedValue from service catalog if AI didn't extract one
+      if (!finalState.extractedInfo.estimatedValue && classified.avgValueCents) {
+        finalState.extractedInfo.estimatedValue = classified.avgValueCents;
+      }
+    }
+  }
+
   // Update lead context
   await db.update(leadContext).set({
     stage: finalState.stage as LeadStage,
@@ -193,6 +208,7 @@ export async function processIncomingMessage(
     projectSize: finalState.extractedInfo.projectSize,
     estimatedValue: finalState.extractedInfo.estimatedValue,
     preferredTimeframe: finalState.extractedInfo.preferredTimeframe,
+    ...(matchedServiceId ? { matchedServiceId } : {}),
     bookingAttempts: finalState.bookingAttempts,
     totalMessages: (context.totalMessages || 0) + 1,
     leadMessages: (context.leadMessages || 0) + 1,

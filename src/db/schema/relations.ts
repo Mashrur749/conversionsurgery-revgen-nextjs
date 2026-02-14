@@ -19,6 +19,7 @@ import { flows, flowSteps } from './flows';
 import { flowExecutions, flowStepExecutions, suggestedActions } from './flow-executions';
 import { knowledgeBase } from './knowledge-base';
 import { notificationPreferences } from './notification-preferences';
+import { clientServices } from './client-services';
 import { jobs } from './jobs';
 import { revenueEvents } from './revenue-events';
 import { mediaAttachments } from './media-attachments';
@@ -55,6 +56,7 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   suggestedActions: many(suggestedActions),
   knowledgeBase: many(knowledgeBase),
   notificationPreferences: many(notificationPreferences),
+  clientServices: many(clientServices),
   jobs: many(jobs),
   revenueEvents: many(revenueEvents),
   mediaAttachments: many(mediaAttachments),
@@ -342,10 +344,17 @@ export const notificationPreferencesRelations = relations(notificationPreference
   }),
 }));
 
+// Client Services
+export const clientServicesRelations = relations(clientServices, ({ one, many }) => ({
+  client: one(clients, { fields: [clientServices.clientId], references: [clients.id] }),
+  jobs: many(jobs),
+}));
+
 // Jobs (Revenue Attribution)
 export const jobsRelations = relations(jobs, ({ one, many }) => ({
   lead: one(leads, { fields: [jobs.leadId], references: [leads.id] }),
   client: one(clients, { fields: [jobs.clientId], references: [clients.id] }),
+  service: one(clientServices, { fields: [jobs.serviceId], references: [clientServices.id] }),
   events: many(revenueEvents),
 }));
 
@@ -419,6 +428,10 @@ export const leadContextRelations = relations(leadContext, ({ one }) => ({
   client: one(clients, {
     fields: [leadContext.clientId],
     references: [clients.id],
+  }),
+  matchedService: one(clientServices, {
+    fields: [leadContext.matchedServiceId],
+    references: [clientServices.id],
   }),
 }));
 

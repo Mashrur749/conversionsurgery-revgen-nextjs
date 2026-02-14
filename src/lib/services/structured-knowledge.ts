@@ -6,7 +6,7 @@
  */
 
 import { getDb } from '@/db';
-import { knowledgeBase } from '@/db/schema';
+import { knowledgeBase, clientServices } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 
 export interface StructuredKnowledgeData {
@@ -225,6 +225,27 @@ export async function saveStructuredKnowledge(
   // ---- Bulk insert ----
   if (entries.length > 0) {
     await db.insert(knowledgeBase).values(entries);
+  }
+
+  // ---- Sync to client_services table ----
+  // Soft-delete existing services, then insert fresh from form data
+  await db
+    .update(clientServices)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(eq(clientServices.clientId, clientId));
+
+  if (data.services.length > 0) {
+    const serviceRecords = data.services.map((s, i) => ({
+      clientId,
+      name: s.name,
+      priceRangeMinCents: s.priceRangeMin * 100,
+      priceRangeMaxCents: s.priceRangeMax * 100,
+      avgValueCents: Math.round(((s.priceRangeMin + s.priceRangeMax) / 2) * 100),
+      canDiscussPrice: s.canDiscussPrice,
+      sortOrder: i,
+      isActive: true,
+    }));
+    await db.insert(clientServices).values(serviceRecords);
   }
 
   return { entriesCreated: entries.length };

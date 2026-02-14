@@ -35,6 +35,7 @@ export * from './knowledge-base';
 export * from './knowledge-gaps';
 export * from './notification-preferences';
 export * from './cancellation-requests';
+export * from './client-services';
 export * from './jobs';
 export * from './revenue-events';
 export * from './media-attachments';

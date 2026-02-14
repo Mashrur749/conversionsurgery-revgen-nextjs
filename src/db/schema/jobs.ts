@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 import { leads } from './leads';
+import { clientServices } from './client-services';
 
 export const jobStatusEnum = pgEnum('job_status', [
   'lead',
@@ -26,6 +27,7 @@ export const jobs = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'set null' }),
     clientId: uuid('client_id').references(() => clients.id, { onDelete: 'cascade' }),
+    serviceId: uuid('service_id').references(() => clientServices.id, { onDelete: 'set null' }),
     status: jobStatusEnum('status').default('lead'),
 
     // Financial tracking (cents)

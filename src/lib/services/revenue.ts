@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { jobs, revenueEvents, leads } from '@/db/schema';
+import { jobs, revenueEvents, leads, clientServices } from '@/db/schema';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 
 /**
@@ -12,7 +12,8 @@ import { eq, and, gte, sql, desc } from 'drizzle-orm';
 export async function createJobFromLead(
   leadId: string,
   clientId: string,
-  description?: string
+  description?: string,
+  serviceId?: string
 ): Promise<string> {
   const db = getDb();
 
@@ -21,6 +22,7 @@ export async function createJobFromLead(
     .values({
       leadId,
       clientId,
+      serviceId: serviceId || undefined,
       status: 'lead',
       description,
     })
@@ -204,4 +206,51 @@ export async function getRecentJobs(clientId: string, limit: number = 10) {
     .where(eq(jobs.clientId, clientId))
     .orderBy(desc(jobs.createdAt))
     .limit(limit);
+}
+
+export interface ServiceRevenueBreakdown {
+  serviceId: string | null;
+  serviceName: string;
+  leadCount: number;
+  wonCount: number;
+  totalPipeline: number;
+  totalWonValue: number;
+}
+
+/**
+ * Revenue breakdown by service type for a client.
+ * Groups jobs by their matched service and computes pipeline + won values.
+ */
+export async function getRevenueByService(
+  clientId: string,
+  startDate?: Date
+): Promise<ServiceRevenueBreakdown[]> {
+  const db = getDb();
+  const dateFilter = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const rows = await db
+    .select({
+      serviceId: jobs.serviceId,
+      serviceName: clientServices.name,
+      leadCount: sql<number>`count(*)`,
+      wonCount: sql<number>`count(*) filter (where ${jobs.status} = 'won' or ${jobs.status} = 'completed')`,
+      totalPipeline: sql<number>`coalesce(sum(coalesce(${jobs.finalAmount}, ${jobs.quoteAmount}, 0)), 0)`,
+      totalWonValue: sql<number>`coalesce(sum(coalesce(${jobs.finalAmount}, ${jobs.quoteAmount}, 0)) filter (where ${jobs.status} = 'won' or ${jobs.status} = 'completed'), 0)`,
+    })
+    .from(jobs)
+    .leftJoin(clientServices, eq(jobs.serviceId, clientServices.id))
+    .where(and(
+      eq(jobs.clientId, clientId),
+      gte(jobs.createdAt, dateFilter)
+    ))
+    .groupBy(jobs.serviceId, clientServices.name);
+
+  return rows.map(r => ({
+    serviceId: r.serviceId,
+    serviceName: r.serviceName || 'Unclassified',
+    leadCount: Number(r.leadCount),
+    wonCount: Number(r.wonCount),
+    totalPipeline: Number(r.totalPipeline),
+    totalWonValue: Number(r.totalWonValue),
+  }));
 }

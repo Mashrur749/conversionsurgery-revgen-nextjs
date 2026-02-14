@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { leads } from './leads';
 import { clients } from './clients';
+import { clientServices } from './client-services';
 import { leadStageEnum, sentimentEnum, agentActionEnum } from './agent-enums';
 
 /**
@@ -58,6 +59,10 @@ export const leadContext = pgTable(
     estimatedValue: integer('estimated_value'),
     preferredTimeframe: varchar('preferred_timeframe', { length: 50 }),
     propertyType: varchar('property_type', { length: 50 }),
+
+    // Matched service from client catalog (set by AI classification)
+    matchedServiceId: uuid('matched_service_id')
+      .references(() => clientServices.id, { onDelete: 'set null' }),
 
     // Objections and concerns
     objections: jsonb('objections')
