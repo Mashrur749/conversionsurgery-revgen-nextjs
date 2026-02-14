@@ -9,6 +9,7 @@ import {
 } from '@/db/schema';
 import { eq, and, desc, sql, or } from 'drizzle-orm';
 import { sendTrackedSMS } from '@/lib/clients/twilio-tracked';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail } from '@/lib/services/resend';
 
 /**
@@ -205,12 +206,16 @@ async function createEscalationInternal(params: CreateEscalationParams): Promise
 
     if (lead && client?.twilioNumber) {
       try {
-        await sendTrackedSMS({
+        await sendCompliantMessage({
           clientId,
           to: lead.phone,
           from: client.twilioNumber,
           body: autoResponse,
+          messageCategory: 'transactional',
+          consentBasis: { type: 'existing_consent' },
           leadId,
+          queueOnQuietHours: false,
+          metadata: { source: 'escalation_auto_response' },
         });
       } catch (error) {
         console.error('[Escalation] Failed to send auto-response:', error);

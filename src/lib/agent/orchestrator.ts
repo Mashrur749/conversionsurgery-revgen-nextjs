@@ -12,7 +12,7 @@ import {
   clients,
 } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { sendTrackedSMS } from '@/lib/clients/twilio-tracked';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
 import { startFlowExecution } from '@/lib/services/flow-execution';
 import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
@@ -196,26 +196,33 @@ export async function processIncomingMessage(
   let responseSent = false;
   let escalated = false;
 
-  // Handle response
+  // Handle response via compliance gateway
   if (finalState.responseToSend && !finalState.needsEscalation) {
-    await sendTrackedSMS({
+    const sendResult = await sendCompliantMessage({
       clientId: client.id,
       to: lead.phone,
       from: client.twilioNumber!,
       body: finalState.responseToSend,
+      messageCategory: 'marketing',
+      consentBasis: { type: 'lead_reply' },
       leadId,
+      queueOnQuietHours: false,
+      metadata: { source: 'conversation_agent', action: finalState.lastAction },
     });
 
-    // Save outbound message
-    await db.insert(conversations).values({
-      leadId,
-      clientId: client.id,
-      direction: 'outbound',
-      messageType: 'ai_response',
-      content: finalState.responseToSend,
-    });
-
-    responseSent = true;
+    if (sendResult.sent) {
+      await db.insert(conversations).values({
+        leadId,
+        clientId: client.id,
+        direction: 'outbound',
+        messageType: 'ai_response',
+        content: finalState.responseToSend,
+        twilioSid: sendResult.messageSid || undefined,
+      });
+      responseSent = true;
+    } else {
+      console.log('[Agent] Message blocked by compliance:', sendResult.blockReason);
+    }
   }
 
   // Handle escalation

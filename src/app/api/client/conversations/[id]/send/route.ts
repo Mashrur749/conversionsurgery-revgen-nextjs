@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { getDb } from '@/db';
 import { leads, conversations, clients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { sendSMS } from '@/lib/services/twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { z } from 'zod';
 
 const sendMessageSchema = z.object({
@@ -68,10 +68,25 @@ export async function POST(
   }
 
   try {
-    // Send SMS
-    const twilioSid = await sendSMS(lead.phone, message, client.twilioNumber);
+    const sendResult = await sendCompliantMessage({
+      clientId,
+      to: lead.phone,
+      from: client.twilioNumber,
+      body: message,
+      messageCategory: 'transactional',
+      consentBasis: { type: 'existing_consent' },
+      leadId: lead.id,
+      queueOnQuietHours: false,
+      metadata: { source: 'client_dashboard_send' },
+    });
 
-    // Save to database
+    if (sendResult.blocked) {
+      return NextResponse.json(
+        { error: `Message blocked: ${sendResult.blockReason}` },
+        { status: 422 }
+      );
+    }
+
     const [saved] = await db
       .insert(conversations)
       .values({
@@ -80,7 +95,7 @@ export async function POST(
         direction: 'outbound',
         messageType: 'contractor_response',
         content: message,
-        twilioSid,
+        twilioSid: sendResult.messageSid || undefined,
       })
       .returning();
 

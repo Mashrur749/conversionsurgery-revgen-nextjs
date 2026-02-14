@@ -4,8 +4,8 @@ import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { clients } from '@/db/schema/clients';
 import { conversations } from '@/db/schema/conversations';
-import { sendSMS } from '@/lib/services/twilio';
-import { eq, and, sql } from 'drizzle-orm';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 
 const replySchema = z.object({
@@ -67,7 +67,24 @@ export async function POST(
 
     const client = clientResult[0];
 
-    const sid = await sendSMS(lead.phone, message, client.twilioNumber!);
+    const sendResult = await sendCompliantMessage({
+      clientId,
+      to: lead.phone,
+      from: client.twilioNumber!,
+      body: message,
+      messageCategory: 'transactional',
+      consentBasis: { type: 'existing_consent' },
+      leadId: lead.id,
+      queueOnQuietHours: false,
+      metadata: { source: 'lead_manual_reply' },
+    });
+
+    if (sendResult.blocked) {
+      return NextResponse.json(
+        { error: `Message blocked: ${sendResult.blockReason}` },
+        { status: 422 }
+      );
+    }
 
     await db.insert(conversations).values({
       leadId: lead.id,
@@ -75,7 +92,7 @@ export async function POST(
       direction: 'outbound',
       messageType: 'manual',
       content: message,
-      twilioSid: sid,
+      twilioSid: sendResult.messageSid || undefined,
     });
 
     if (lead.actionRequired) {
@@ -85,12 +102,9 @@ export async function POST(
         .where(eq(leads.id, lead.id));
     }
 
-    await db
-      .update(clients)
-      .set({ messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1` })
-      .where(eq(clients.id, clientId));
+    // Monthly message count handled by compliance gateway
 
-    return NextResponse.json({ success: true, sid });
+    return NextResponse.json({ success: true, sid: sendResult.messageSid });
   } catch (error) {
     console.error('[LeadManagement] Reply error:', error);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });

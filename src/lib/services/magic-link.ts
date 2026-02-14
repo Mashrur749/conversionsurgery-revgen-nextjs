@@ -56,13 +56,18 @@ export async function validateMagicLink(token: string): Promise<{
 
 /** Send a dashboard magic link to a client via SMS */
 export async function sendDashboardLink(clientId: string, phone: string, twilioNumber: string): Promise<void> {
-  const { sendSMS } = await import('@/lib/services/twilio');
+  const { sendCompliantMessage } = await import('@/lib/compliance/compliance-gateway');
 
   const link = await createMagicLink(clientId);
 
-  await sendSMS(
-    phone,
-    `Here's your dashboard link (valid for 7 days):\n${link}`,
-    twilioNumber
-  );
+  await sendCompliantMessage({
+    clientId,
+    to: phone,
+    from: twilioNumber,
+    body: `Here's your dashboard link (valid for 7 days):\n${link}`,
+    messageCategory: 'transactional',
+    consentBasis: { type: 'lead_reply' },
+    queueOnQuietHours: false,
+    metadata: { source: 'dashboard_magic_link' },
+  });
 }

@@ -1,5 +1,6 @@
 import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats, clientAgentSettings } from '@/db';
 import { sendSMS } from '@/lib/services/twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
 import { generateAIResponse, detectHotIntent } from '@/lib/services/openai';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
@@ -194,11 +195,17 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       });
 
       if (ringResult.initiated) {
-        await sendSMS(
-          senderPhone,
-          `Great! We're calling you right now. Please pick up!`,
-          client.twilioNumber!
-        );
+        await sendCompliantMessage({
+          clientId: client.id,
+          to: senderPhone,
+          from: client.twilioNumber!,
+          body: `Great! We're calling you right now. Please pick up!`,
+          messageCategory: 'transactional',
+          consentBasis: { type: 'lead_reply', messageId: MessageSid },
+          leadId: lead.id,
+          queueOnQuietHours: false,
+          metadata: { source: 'hot_intent_ack' },
+        });
 
         await db.insert(conversations).values({
           leadId: lead.id,
@@ -216,11 +223,17 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         };
       }
     } else {
-      await sendSMS(
-        senderPhone,
-        `Thanks for your interest! We're currently outside business hours, but someone will call you first thing tomorrow morning.`,
-        client.twilioNumber!
-      );
+      await sendCompliantMessage({
+        clientId: client.id,
+        to: senderPhone,
+        from: client.twilioNumber!,
+        body: `Thanks for your interest! We're currently outside business hours, but someone will call you first thing tomorrow morning.`,
+        messageCategory: 'transactional',
+        consentBasis: { type: 'lead_reply', messageId: MessageSid },
+        leadId: lead.id,
+        queueOnQuietHours: false,
+        metadata: { source: 'outside_hours_ack' },
+      });
 
       await notifyTeamForEscalation({
         leadId: lead.id,
@@ -293,15 +306,27 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     );
 
     try {
-      const sid = await sendSMS(senderPhone, ackMessage, client.twilioNumber!);
-      await db.insert(conversations).values({
-        leadId: lead.id,
+      const sendResult = await sendCompliantMessage({
         clientId: client.id,
-        direction: 'outbound',
-        messageType: 'ai_response',
-        content: ackMessage,
-        twilioSid: sid,
+        to: senderPhone,
+        from: client.twilioNumber!,
+        body: ackMessage,
+        messageCategory: 'transactional',
+        consentBasis: { type: 'lead_reply', messageId: MessageSid },
+        leadId: lead.id,
+        queueOnQuietHours: false,
+        metadata: { source: 'photo_ack' },
       });
+      if (sendResult.sent) {
+        await db.insert(conversations).values({
+          leadId: lead.id,
+          clientId: client.id,
+          direction: 'outbound',
+          messageType: 'ai_response',
+          content: ackMessage,
+          twilioSid: sendResult.messageSid || undefined,
+        });
+      }
     } catch (error) {
       console.error('[IncomingSMS] Failed to send photo acknowledgment:', error);
     }
@@ -352,7 +377,17 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       ownerName: client.ownerName,
     });
 
-    await sendSMS(senderPhone, ackMessage, client.twilioNumber!);
+    const escalationSendResult = await sendCompliantMessage({
+      clientId: client.id,
+      to: senderPhone,
+      from: client.twilioNumber!,
+      body: ackMessage,
+      messageCategory: 'transactional',
+      consentBasis: { type: 'lead_reply', messageId: MessageSid },
+      leadId: lead.id,
+      queueOnQuietHours: false,
+      metadata: { source: 'escalation_ack' },
+    });
 
     await db.insert(conversations).values({
       leadId: lead.id,
@@ -360,6 +395,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       direction: 'outbound',
       messageType: 'escalation',
       content: ackMessage,
+      twilioSid: escalationSendResult.messageSid || undefined,
     });
 
     // Notify team (new behavior)
@@ -402,46 +438,51 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     };
   }
 
-  // 10. Send AI response
+  // 10. Send AI response via compliance gateway
   try {
-    const sid = await sendSMS(senderPhone, aiResult.response, client.twilioNumber!);
-
-    await db.insert(conversations).values({
-      leadId: lead.id,
+    const sendResult = await sendCompliantMessage({
       clientId: client.id,
-      direction: 'outbound',
-      messageType: 'ai_response',
-      content: aiResult.response,
-      twilioSid: sid,
-      aiConfidence: String(aiResult.confidence),
+      to: senderPhone,
+      from: client.twilioNumber!,
+      body: aiResult.response,
+      messageCategory: 'marketing',
+      consentBasis: { type: 'lead_reply', messageId: MessageSid },
+      leadId: lead.id,
+      queueOnQuietHours: false, // Responding to inbound message
+      metadata: { source: 'ai_response', confidence: aiResult.confidence },
     });
 
-    // Update stats
-    const today = new Date().toISOString().split('T')[0];
-    await db
-      .insert(dailyStats)
-      .values({
+    if (sendResult.sent) {
+      await db.insert(conversations).values({
+        leadId: lead.id,
         clientId: client.id,
-        date: today,
-        messagesSent: 1,
-        conversationsStarted: isNewLead ? 1 : 0,
-      })
-      .onConflictDoUpdate({
-        target: [dailyStats.clientId, dailyStats.date],
-        set: {
-          messagesSent: sql`${dailyStats.messagesSent} + 1`,
-          conversationsStarted: isNewLead
-            ? sql`${dailyStats.conversationsStarted} + 1`
-            : dailyStats.conversationsStarted,
-        },
+        direction: 'outbound',
+        messageType: 'ai_response',
+        content: aiResult.response,
+        twilioSid: sendResult.messageSid || undefined,
+        aiConfidence: String(aiResult.confidence),
       });
 
-    await db
-      .update(clients)
-      .set({
-        messagesSentThisMonth: sql`${clients.messagesSentThisMonth} + 1`,
-      })
-      .where(eq(clients.id, client.id));
+      // Update daily stats (monthly count handled by gateway)
+      const today = new Date().toISOString().split('T')[0];
+      await db
+        .insert(dailyStats)
+        .values({
+          clientId: client.id,
+          date: today,
+          messagesSent: 1,
+          conversationsStarted: isNewLead ? 1 : 0,
+        })
+        .onConflictDoUpdate({
+          target: [dailyStats.clientId, dailyStats.date],
+          set: {
+            messagesSent: sql`${dailyStats.messagesSent} + 1`,
+            conversationsStarted: isNewLead
+              ? sql`${dailyStats.conversationsStarted} + 1`
+              : dailyStats.conversationsStarted,
+          },
+        });
+    }
   } catch (error) {
     console.error('[IncomingSMS] Failed to send AI response:', error);
   }
