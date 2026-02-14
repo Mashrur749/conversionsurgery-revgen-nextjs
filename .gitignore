@@ -57,3 +57,7 @@ LOCAL_PRODUCTION_TESTING.md
 # claude code worktree orchestration
 .claude-refactor/
 .worktrees/
+
+# testing artifacts
+.playwright-mcp/
+*.png
