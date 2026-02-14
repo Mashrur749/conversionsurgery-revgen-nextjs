@@ -85,6 +85,29 @@ Each worktree maintains `.claude/progress.md` — a task-level tracker that pers
 - **Database slices:** Use the `neon-postgres` skill at `.claude/skills/neon-postgres` for Neon-specific patterns and queries.
 - **Review phase:** After running `/review`, also invoke the `security-reviewer` agent at `.claude/agents/security-reviewer.md` on any slice that touches API routes, auth, or user input.
 
+## Twilio Documentation (Context7)
+
+When working on Twilio-related features (SMS, Voice, webhooks, TwiML), always fetch the latest docs using Context7's `query-docs` tool before implementing. This ensures you use current APIs, not stale training data.
+
+### Library IDs
+
+| Library ID | Use For |
+|---|---|
+| `/twilio/twilio-node` | Node.js SDK usage — sending SMS, making calls, client initialization |
+| `/websites/twilio_voice` | Programmable Voice — TwiML, call flows, conferencing, recording, IVR |
+| `/twilio/twilio-voice.js` | Client-side JavaScript Voice SDK — browser-based calling |
+| `/llmstxt/twilio_llms_txt` | General Twilio platform — Conversations API, webhooks, auth, pricing |
+
+### How to Use
+
+1. Call `resolve-library-id` with `libraryName: "twilio"` if you need to discover additional libraries
+2. Call `query-docs` with the appropriate library ID and a specific question:
+   ```
+   query-docs(libraryId: "/twilio/twilio-node", query: "How to handle incoming SMS webhook")
+   query-docs(libraryId: "/websites/twilio_voice", query: "TwiML Gather input with speech recognition")
+   ```
+3. Prefer `/twilio/twilio-node` for SDK-specific code and `/websites/twilio_voice` for Voice feature docs
+
 ### Terminal Setup for Parallel Worktrees
 
 Use GhostTTY (`ghostty`) for running multiple Claude Code instances across worktrees. `Cmd+D` splits horizontal, `Cmd+Shift+D` splits vertical, `Cmd+Arrow` jumps between panes. Lighter than iTerm for high pane counts.
