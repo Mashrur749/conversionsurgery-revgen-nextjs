@@ -24,6 +24,7 @@ export * from './api-usage-daily';
 export * from './api-usage-monthly';
 export * from './usage-alerts';
 export * from './magic-link-tokens';
+export * from './otp-codes';
 export * from './flow-enums';
 export * from './flow-templates';
 export * from './flows';

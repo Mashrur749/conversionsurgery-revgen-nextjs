@@ -24,7 +24,7 @@ export default async function ClientLayout({
   const session = await getClientSession();
 
   if (!session) {
-    redirect('/link-expired');
+    redirect('/client-login');
   }
 
   return (

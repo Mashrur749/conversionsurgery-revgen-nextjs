@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export default function LinkExpiredPage() {
   return (
@@ -10,9 +12,9 @@ export default function LinkExpiredPage() {
         <p className="text-muted-foreground">
           This dashboard link has expired or is invalid.
         </p>
-        <p className="text-sm text-muted-foreground">
-          Text <strong>DASHBOARD</strong> to your business number to get a new link.
-        </p>
+        <Button asChild className="w-full">
+          <Link href="/client-login">Log In to Your Dashboard</Link>
+        </Button>
       </CardContent>
     </Card>
   );
