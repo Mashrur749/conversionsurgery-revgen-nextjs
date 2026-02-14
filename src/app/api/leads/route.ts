@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { eq, and, or, ilike, sql, desc, asc, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
+import { normalizePhoneNumber } from '@/lib/utils/phone';
 
 const querySchema = z.object({
   search: z.string().optional(),
@@ -125,4 +126,73 @@ export async function GET(request: NextRequest) {
     page,
     totalPages: Math.ceil(total / limit),
   });
+}
+
+const createLeadSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  phone: z.string().min(10, 'Phone number is required'),
+  email: z.string().email().optional().or(z.literal('')),
+  clientId: z.string().uuid().optional(),
+  notes: z.string().optional(),
+  projectType: z.string().optional(),
+  address: z.string().optional(),
+}).strict();
+
+/** POST /api/leads - Create a lead manually. */
+export async function POST(request: NextRequest) {
+  const session = await auth();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const isAdmin = session.user?.isAdmin || false;
+  const sessionClientId = session?.client?.id;
+
+  if (!isAdmin && !sessionClientId) {
+    return NextResponse.json({ error: 'No client' }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const parsed = createLeadSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid input', fieldErrors: parsed.error.flatten().fieldErrors },
+      { status: 400 }
+    );
+  }
+
+  const data = parsed.data;
+
+  // Non-admins cannot create leads for other clients
+  if (data.clientId && !isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const effectiveClientId = isAdmin ? (data.clientId || sessionClientId) : sessionClientId;
+
+  if (!effectiveClientId) {
+    return NextResponse.json({ error: 'clientId is required' }, { status: 400 });
+  }
+
+  const db = getDb();
+  const normalizedPhone = normalizePhoneNumber(data.phone);
+
+  const [newLead] = await db
+    .insert(leads)
+    .values({
+      clientId: effectiveClientId,
+      name: data.name,
+      phone: normalizedPhone,
+      email: data.email || null,
+      notes: data.notes || null,
+      projectType: data.projectType || null,
+      address: data.address || null,
+      source: 'manual',
+      status: 'new',
+      temperature: 'warm',
+    })
+    .returning();
+
+  return NextResponse.json({ lead: newLead }, { status: 201 });
 }

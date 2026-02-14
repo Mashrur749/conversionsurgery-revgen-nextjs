@@ -86,7 +86,7 @@ Each feature is marked with its current state:
 | Reassign across clients | [LIVE] | Bulk reassignment support |
 | Twilio account overview | [LIVE] | Balance, owned numbers, assigned/available counts |
 | Number assignment | [PARTIAL] | One number per client (single `twilioNumber` field) |
-| Webhook auto-config | [PLANNED] | Numbers need manual webhook configuration |
+| Webhook auto-config | [LIVE] | Auto-configures SMS + Voice webhook URLs on purchase and assign |
 
 ### 1.4 Admin Dashboard
 | Feature | Status | Behavior |
@@ -127,7 +127,7 @@ Each feature is marked with its current state:
 | Delete template | [LIVE] | Remove template |
 | Template analytics | [LIVE] | Usage across clients, performance metrics |
 | Template versioning | [PLANNED] | No version tracking or rollback |
-| Clone template | [PLANNED] | No duplicate functionality |
+| Clone template | [LIVE] | POST /api/admin/flow-templates/[id]/clone duplicates template + steps |
 
 ### 1.8 A/B Testing & Template Optimization
 | Feature | Status | Behavior |
@@ -258,10 +258,10 @@ The platform provides two client interfaces:
 | Lead source tracking | [LIVE] | Missed call, inbound SMS, web form, manual |
 | Lead filters | [LIVE] | Status, source, temperature, client (admin), date range |
 | Lead search | [LIVE] | Debounced search by name, phone, email (case-insensitive) |
-| Create lead manually | [PLANNED] | Not in client UI |
+| Create lead manually | [LIVE] | POST /api/leads + CreateLeadDialog on leads page |
 | Edit lead details | [LIVE] | Inline editing: status, temperature, notes, project type, quote value |
 | Bulk actions | [LIVE] | Multi-select checkboxes with bulk status change |
-| Export leads CSV | [PLANNED] | Not implemented |
+| Export leads CSV | [LIVE] | GET /api/leads/export with filter passthrough |
 
 ### 2.4 Conversation View
 | Feature | Status | Behavior |

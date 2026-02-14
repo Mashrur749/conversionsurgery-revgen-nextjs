@@ -11,8 +11,9 @@ import { formatDistanceToNow } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { LeadScoreBadge } from '@/components/leads/lead-score-badge';
 import { LeadFilters } from './lead-filters';
-import { ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowUpDown, Download } from 'lucide-react';
 import { STATUS_COLORS, BULK_UPDATE_STATUSES } from '@/lib/constants/leads';
+import { CreateLeadDialog } from './create-lead-dialog';
 import type { Lead } from '@/db/schema/leads';
 
 interface LeadsResponse {
@@ -111,18 +112,38 @@ export function LeadsTable() {
 
   const leads = data?.leads || [];
 
+  const exportCsv = () => {
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (status) params.set('status', status);
+    if (source) params.set('source', source);
+    if (temperature) params.set('temperature', temperature);
+    window.open(`/api/leads/export?${params.toString()}`, '_blank');
+  };
+
   return (
     <div className="space-y-4">
-      <LeadFilters
-        search={search}
-        onSearchChange={setSearch}
-        status={status}
-        onStatusChange={setStatus}
-        source={source}
-        onSourceChange={setSource}
-        temperature={temperature}
-        onTemperatureChange={setTemperature}
-      />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <LeadFilters
+            search={search}
+            onSearchChange={setSearch}
+            status={status}
+            onStatusChange={setStatus}
+            source={source}
+            onSourceChange={setSource}
+            temperature={temperature}
+            onTemperatureChange={setTemperature}
+          />
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={exportCsv}>
+            <Download className="h-4 w-4 mr-1" />
+            Export
+          </Button>
+          <CreateLeadDialog onCreated={fetchLeads} />
+        </div>
+      </div>
 
       {selected.size > 0 && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">

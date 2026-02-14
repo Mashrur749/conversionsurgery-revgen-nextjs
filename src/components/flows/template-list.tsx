@@ -24,6 +24,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Template {
@@ -65,7 +66,19 @@ const categoryColors: Record<string, string> = {
   custom: 'bg-gray-100 text-gray-800',
 };
 
+async function cloneTemplate(id: string): Promise<boolean> {
+  const res = await fetch(`/api/admin/flow-templates/${id}/clone`, { method: 'POST' });
+  return res.ok;
+}
+
 export function TemplateList({ templates }: TemplateListProps) {
+  const router = useRouter();
+
+  const handleDuplicate = async (id: string) => {
+    const ok = await cloneTemplate(id);
+    if (ok) router.refresh();
+  };
+
   if (templates.length === 0) {
     return (
       <Card>
@@ -137,7 +150,7 @@ export function TemplateList({ templates }: TemplateListProps) {
                               Push Update
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDuplicate(template.id)}>
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicate
                           </DropdownMenuItem>
