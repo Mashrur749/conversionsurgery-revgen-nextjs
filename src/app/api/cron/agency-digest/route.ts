@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processAgencyWeeklyDigests } from '@/lib/services/agency-communication';
-
-function verifyCronSecret(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return false;
-  return authHeader === `Bearer ${cronSecret}`;
-}
+import { verifyCronSecret } from '@/lib/utils/cron';
 
 /**
  * Weekly cron to send agency digests to all active clients.

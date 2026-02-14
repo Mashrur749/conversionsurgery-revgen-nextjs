@@ -10,6 +10,7 @@ import { checkAndSuggestFlows, handleApprovalResponse } from '@/lib/services/flo
 import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
 import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/services/media';
 import { processIncomingMessage } from '@/lib/agent/orchestrator';
+import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -252,6 +253,71 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     }
   }
 
+  // 6.6 Fetch conversation history once (reused by booking, agent, and AI response)
+  const conversationHistory = (await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.leadId, lead.id))
+    .orderBy(conversations.createdAt)
+    .limit(20)
+  ).map(msg => ({
+    role: msg.direction === 'inbound' ? 'user' as const : 'assistant' as const,
+    content: msg.content,
+  }));
+
+  // 6.6a Check for booking intent (works for all clients, not just autonomous)
+  const bookingIntent = await detectBookingIntent(messageBody, conversationHistory);
+
+  if (bookingIntent !== 'none') {
+    try {
+      const bookingResult = await handleBookingConversation(
+        client.id,
+        lead.id,
+        lead.name || '',
+        messageBody,
+        conversationHistory,
+        client.businessName,
+        client.ownerName,
+        bookingIntent
+      );
+
+      if (bookingResult.responseMessage) {
+        const sendResult = await sendCompliantMessage({
+          clientId: client.id,
+          to: senderPhone,
+          from: client.twilioNumber!,
+          body: bookingResult.responseMessage,
+          messageCategory: 'transactional',
+          consentBasis: { type: 'lead_reply', messageId: MessageSid },
+          leadId: lead.id,
+          queueOnQuietHours: false,
+          metadata: { source: 'booking_conversation', intent: bookingIntent },
+        });
+
+        if (sendResult.sent) {
+          await db.insert(conversations).values({
+            leadId: lead.id,
+            clientId: client.id,
+            direction: 'outbound',
+            messageType: 'ai_response',
+            content: bookingResult.responseMessage,
+            twilioSid: sendResult.messageSid || undefined,
+          });
+        }
+
+        return {
+          processed: true,
+          leadId: lead.id,
+          bookingIntent,
+          appointmentCreated: bookingResult.appointmentCreated,
+          appointmentId: bookingResult.appointmentId,
+        };
+      }
+    } catch (err) {
+      console.error('[Booking] Conversation handling failed, falling back:', err);
+    }
+  }
+
   // 6.7 Check if LangGraph conversation agent is enabled
   if (client.aiAgentMode === 'autonomous') {
     const [agentSettings] = await db
@@ -283,20 +349,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     }
   }
 
-  // 7. Get conversation history
-  const history = await db
-    .select()
-    .from(conversations)
-    .where(eq(conversations.leadId, lead.id))
-    .orderBy(conversations.createdAt)
-    .limit(20);
-
-  const conversationHistory = history.map(msg => ({
-    role: msg.direction === 'inbound' ? 'user' as const : 'assistant' as const,
-    content: msg.content,
-  }));
-
-  // 8. Generate AI response (with knowledge base context)
+  // 7. Generate AI response (with knowledge base context, using history from step 6.6)
   // If media-only message (no text), send photo acknowledgment instead of AI response
   if (savedMedia.length > 0 && !messageBody) {
     const firstMedia = savedMedia[0];

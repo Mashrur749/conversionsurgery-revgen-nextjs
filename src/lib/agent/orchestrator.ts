@@ -18,6 +18,7 @@ import { startFlowExecution } from '@/lib/services/flow-execution';
 import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
 import { buildGuardrailPrompt } from './guardrails';
 import { classifyService, updateLeadServiceMatch } from '@/lib/services/service-classification';
+import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
 import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
 
 interface ProcessMessageResult {
@@ -90,6 +91,98 @@ export async function processIncomingMessage(
 
   // Add the new message
   langChainMessages.push(new HumanMessage(messageText));
+
+  // Check for booking intent before running the full agent graph
+  const chatHistory = conversationHistory
+    .slice()
+    .reverse()
+    .map(m => ({
+      role: m.direction === 'inbound' ? 'user' as const : 'assistant' as const,
+      content: m.content,
+    }));
+
+  const bookingIntent = await detectBookingIntent(messageText, chatHistory);
+
+  if (bookingIntent !== 'none') {
+    const bookingResult = await handleBookingConversation(
+      client.id,
+      leadId,
+      lead.name || 'there',
+      messageText,
+      chatHistory,
+      client.businessName,
+      client.ownerName,
+      bookingIntent
+    );
+
+    if (bookingResult.responseMessage) {
+      // Send the booking response via compliance gateway
+      const sendResult = await sendCompliantMessage({
+        clientId: client.id,
+        to: lead.phone,
+        from: client.twilioNumber!,
+        body: bookingResult.responseMessage,
+        messageCategory: 'transactional',
+        consentBasis: { type: 'lead_reply' },
+        leadId,
+        queueOnQuietHours: false,
+        metadata: { source: 'booking_conversation', intent: bookingIntent },
+      });
+
+      let responseSent = false;
+      if (sendResult.sent) {
+        await db.insert(conversations).values({
+          leadId,
+          clientId: client.id,
+          direction: 'outbound',
+          messageType: 'ai_response',
+          content: bookingResult.responseMessage,
+          twilioSid: sendResult.messageSid || undefined,
+        });
+        responseSent = true;
+      }
+
+      // Update lead context stage if appointment was created
+      if (bookingResult.appointmentCreated) {
+        await db.update(leadContext).set({
+          stage: 'booked',
+          updatedAt: new Date(),
+        }).where(eq(leadContext.id, context.id));
+      }
+
+      // Log the booking decision
+      const bookingDecisionValues: typeof agentDecisions.$inferInsert = {
+        leadId,
+        clientId: client.id,
+        messageId,
+        triggerType: 'inbound_message',
+        stageAtDecision: context.stage,
+        contextSnapshot: {
+          urgencyScore: context.urgencyScore || 50,
+          budgetScore: context.budgetScore || 50,
+          intentScore: context.intentScore || 50,
+          sentiment: context.currentSentiment || 'neutral',
+          recentObjections: [],
+        },
+        action: 'book_appointment' as AgentAction,
+        actionDetails: {
+          responseText: bookingResult.responseMessage,
+        },
+        reasoning: `Booking intent detected: ${bookingIntent}`,
+        confidence: 90,
+        processingTimeMs: Date.now() - startTime,
+      };
+      await db.insert(agentDecisions).values(bookingDecisionValues);
+
+      return {
+        action: 'book_appointment' as AgentAction,
+        responseSent,
+        responseText: bookingResult.responseMessage,
+        escalated: false,
+        newStage: bookingResult.appointmentCreated ? 'booked' : context.stage,
+      };
+    }
+  }
 
   // Retrieve relevant knowledge
   let knowledge: string | null = null;

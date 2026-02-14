@@ -6,30 +6,15 @@ import { LeadMediaTab } from '@/components/leads/lead-media-tab';
 import { MessageMedia } from './message-media';
 import { format } from 'date-fns';
 import { ImageIcon, MessageSquare } from 'lucide-react';
-
-interface Message {
-  id: string;
-  content: string;
-  direction: string | null;
-  messageType: string | null;
-  createdAt: Date | null;
-}
-
-interface MediaItem {
-  id: string;
-  type: string;
-  publicUrl: string | null;
-  thumbnailUrl: string | null;
-  aiDescription: string | null;
-  messageId: string | null;
-}
+import type { Conversation } from '@/db/schema/conversations';
+import type { MediaAttachment } from '@/db/schema/media-attachments';
 
 interface LeadTabsProps {
   leadId: string;
-  messages: Message[];
-  mediaByMessage: Record<string, MediaItem[]>;
+  messages: Conversation[];
+  mediaByMessage: Record<string, MediaAttachment[]>;
   mediaCount: number;
-  children?: React.ReactNode; // For reply form / opt-out card
+  children?: React.ReactNode;
 }
 
 export function LeadTabs({ leadId, messages, mediaByMessage, mediaCount, children }: LeadTabsProps) {

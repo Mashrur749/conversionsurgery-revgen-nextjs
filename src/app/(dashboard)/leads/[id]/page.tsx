@@ -9,11 +9,11 @@ import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { formatPhoneNumber } from '@/lib/utils/phone';
 import { getClientId } from '@/lib/get-client-id';
 import { ReplyForm } from './reply-form';
 import { ActionButtons } from './action-buttons';
 import { LeadTabs } from './lead-tabs';
+import { LeadHeader } from './lead-header';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +21,6 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-/** Server component displaying full lead details, conversation history, and scheduled messages. */
 export default async function LeadDetailPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
@@ -56,7 +55,6 @@ export default async function LeadDetailPage({ params }: Props) {
     .where(eq(conversations.leadId, lead.id))
     .orderBy(conversations.createdAt);
 
-  // Fetch media for this lead, grouped by messageId
   const media = await db
     .select()
     .from(mediaAttachments)
@@ -84,21 +82,7 @@ export default async function LeadDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {lead.name || formatPhoneNumber(lead.phone)}
-          </h1>
-          <p className="text-muted-foreground">{formatPhoneNumber(lead.phone)}</p>
-          {lead.email && <p className="text-muted-foreground">{lead.email}</p>}
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge>{lead.status}</Badge>
-          {lead.actionRequired && (
-            <Badge variant="destructive">Action Required</Badge>
-          )}
-        </div>
-      </div>
+      <LeadHeader lead={lead} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
@@ -125,42 +109,6 @@ export default async function LeadDetailPage({ params }: Props) {
         </div>
 
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <p className="text-muted-foreground">Source</p>
-                <p className="font-medium">{lead.source || 'Unknown'}</p>
-              </div>
-              {lead.projectType && (
-                <div>
-                  <p className="text-muted-foreground">Project Type</p>
-                  <p className="font-medium">{lead.projectType}</p>
-                </div>
-              )}
-              {lead.address && (
-                <div>
-                  <p className="text-muted-foreground">Address</p>
-                  <p className="font-medium">{lead.address}</p>
-                </div>
-              )}
-              {lead.notes && (
-                <div>
-                  <p className="text-muted-foreground">Notes</p>
-                  <p className="font-medium whitespace-pre-wrap">{lead.notes}</p>
-                </div>
-              )}
-              <div>
-                <p className="text-muted-foreground">Created</p>
-                <p className="font-medium">
-                  {format(new Date(lead.createdAt!), 'MMM d, yyyy h:mm a')}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
           <ActionButtons lead={lead} />
 
           {scheduled.length > 0 && (

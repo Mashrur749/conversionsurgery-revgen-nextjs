@@ -3,19 +3,7 @@ import { getDb, activeCalls, clients } from '@/db';
 import { eq, and, lte, sql } from 'drizzle-orm';
 import { handleMissedCall } from '@/lib/automations/missed-call';
 import twilio from 'twilio';
-
-/**
- * Verifies cron secret to prevent unauthorized access.
- * @param request - The incoming Next.js request
- * @returns True if the request is authorized, false otherwise
- */
-function verifyCronSecret(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) return false;
-  return authHeader === `Bearer ${cronSecret}`;
-}
+import { verifyCronSecret } from '@/lib/utils/cron';
 
 /**
  * GET handler to check for missed calls via Twilio API polling fallback.

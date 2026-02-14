@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, scheduledMessages, leads, clients, conversations, blockedNumbers, dailyStats } from '@/db';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
+import { processNoShowFollowUp } from '@/lib/automations/no-show-recovery';
+import { processWinBackFollowUp } from '@/lib/automations/win-back';
 import { eq, and, lte, sql } from 'drizzle-orm';
-
-/**
- * Verifies cron secret to prevent unauthorized access.
- * @param request - The incoming Next.js request
- * @returns True if the request is authorized, false otherwise
- */
-function verifyCronSecret(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret) return false;
-  return authHeader === `Bearer ${cronSecret}`;
-}
+import { verifyCronSecret } from '@/lib/utils/cron';
 
 /**
  * GET handler to process scheduled messages.
@@ -99,11 +89,30 @@ export async function GET(request: NextRequest) {
 
       // Send SMS via compliance gateway
       try {
+        // Resolve __AI_GENERATE__ placeholder to real AI-generated content
+        let messageBody = message.content;
+        if (message.content === '__AI_GENERATE__') {
+          let generated: string | null = null;
+
+          if (message.sequenceType === 'no_show_followup') {
+            generated = await processNoShowFollowUp(lead.id, client.id);
+          } else if (message.sequenceType === 'win_back') {
+            generated = await processWinBackFollowUp(lead.id, client.id);
+          }
+
+          if (!generated) {
+            await markCancelled(db, message.id, `AI generation failed for ${message.sequenceType}`);
+            skipped++;
+            continue;
+          }
+          messageBody = generated;
+        }
+
         const sendResult = await sendCompliantMessage({
           clientId: client.id,
           to: lead.phone,
           from: client.twilioNumber,
-          body: message.content,
+          body: messageBody,
           messageCategory: 'marketing',
           consentBasis: { type: 'existing_consent' },
           leadId: lead.id,
@@ -123,13 +132,13 @@ export async function GET(request: NextRequest) {
           .set({ sent: true, sentAt: new Date() })
           .where(eq(scheduledMessages.id, message.id));
 
-        // Log conversation
+        // Log conversation (use resolved messageBody, not the placeholder)
         await db.insert(conversations).values({
           leadId: lead.id,
           clientId: client.id,
           direction: 'outbound',
           messageType: 'scheduled',
-          content: message.content,
+          content: messageBody,
           twilioSid: sendResult.messageSid || undefined,
         });
 
