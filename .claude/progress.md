@@ -30,10 +30,8 @@ If picking up from a new session, read this file first, then:
 - [x] **Item 20: Feature Toggles (Client)** — /client/settings/features + /api/client/features (safe subset)
 
 ### Batch 3 — CRM Depth
-- [ ] **Item 9: Per-Lead Flow Status** — Show active flows on lead detail
-  - Files: `src/app/api/leads/[id]/flows/route.ts` (NEW), `src/app/(dashboard)/leads/[id]/lead-flows.tsx` (NEW), lead detail page (add section)
-- [ ] **Item 12: Client Flow Management** — Toggle on/off for assigned flows
-  - Files: `src/app/api/client/flows/route.ts` (NEW), `src/app/api/client/flows/[id]/route.ts` (NEW), `src/app/(client)/client/flows/page.tsx` (NEW)
+- [x] **Item 9: Per-Lead Flow Status** — FlowStatus component in lead detail sidebar + /api/leads/[id]/flows
+- [x] **Item 12: Client Flow Management** — /client/flows page + /api/client/flows CRUD with toggle
 
 ### Batch 4 — Admin Tools
 - [ ] **Item 6+7: Plan Management + Overage Config** — Admin CRUD for subscription plans

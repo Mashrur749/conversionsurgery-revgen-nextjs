@@ -300,8 +300,8 @@ The platform provides two client interfaces:
 | Cron processing | [LIVE] | Scheduled messages sent by cron every 5 minutes |
 | Exit on reply | [LIVE] | Flow paused when lead replies |
 | Exit on opt-out | [LIVE] | Flow cancelled on STOP |
-| Client flow management | [PLANNED] | Clients cannot activate/pause/customize flows (admin-only) |
-| Per-lead flow status | [PLANNED] | No UI showing which flows run for which lead |
+| Client flow management | [LIVE] | Client self-service at /client/flows with toggle on/off per flow |
+| Per-lead flow status | [LIVE] | Lead detail sidebar shows active/paused flow executions with progress |
 
 **Flow Types Implemented:**
 | Flow | Trigger | Status | Steps |

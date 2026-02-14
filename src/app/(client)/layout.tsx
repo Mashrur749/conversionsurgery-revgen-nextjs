@@ -8,6 +8,7 @@ const navItems = [
   { href: '/client/conversations', label: 'Conversations' },
   { href: '/client/revenue', label: 'Revenue' },
   { href: '/client/knowledge', label: 'Knowledge Base' },
+  { href: '/client/flows', label: 'Flows' },
   { href: '/client/team', label: 'Team' },
   { href: '/client/billing', label: 'Billing' },
   { href: '/client/settings', label: 'Settings' },

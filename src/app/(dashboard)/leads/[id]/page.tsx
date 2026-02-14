@@ -4,7 +4,8 @@ import { leads } from '@/db/schema/leads';
 import { conversations } from '@/db/schema/conversations';
 import { scheduledMessages } from '@/db/schema/scheduled-messages';
 import { mediaAttachments } from '@/db/schema/media-attachments';
-import { eq, and } from 'drizzle-orm';
+import { flowExecutions, flows } from '@/db/schema';
+import { eq, and, or } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ import { ReplyForm } from './reply-form';
 import { ActionButtons } from './action-buttons';
 import { LeadTabs } from './lead-tabs';
 import { LeadHeader } from './lead-header';
+import { FlowStatus } from './flow-status';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,15 +72,38 @@ export default async function LeadDetailPage({ params }: Props) {
     }
   }
 
-  const scheduled = await db
-    .select()
-    .from(scheduledMessages)
-    .where(and(
-      eq(scheduledMessages.leadId, lead.id),
-      eq(scheduledMessages.sent, false),
-      eq(scheduledMessages.cancelled, false)
-    ))
-    .orderBy(scheduledMessages.sendAt);
+  const [scheduled, activeFlows] = await Promise.all([
+    db
+      .select()
+      .from(scheduledMessages)
+      .where(and(
+        eq(scheduledMessages.leadId, lead.id),
+        eq(scheduledMessages.sent, false),
+        eq(scheduledMessages.cancelled, false)
+      ))
+      .orderBy(scheduledMessages.sendAt),
+    db
+      .select({
+        id: flowExecutions.id,
+        flowName: flows.name,
+        category: flows.category,
+        status: flowExecutions.status,
+        currentStep: flowExecutions.currentStep,
+        totalSteps: flowExecutions.totalSteps,
+        startedAt: flowExecutions.startedAt,
+        nextStepAt: flowExecutions.nextStepAt,
+      })
+      .from(flowExecutions)
+      .leftJoin(flows, eq(flowExecutions.flowId, flows.id))
+      .where(and(
+        eq(flowExecutions.leadId, lead.id),
+        or(
+          eq(flowExecutions.status, 'active'),
+          eq(flowExecutions.status, 'paused')
+        )
+      ))
+      .orderBy(flowExecutions.startedAt),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -110,6 +135,19 @@ export default async function LeadDetailPage({ params }: Props) {
 
         <div className="space-y-4">
           <ActionButtons lead={lead} />
+
+          <FlowStatus
+            executions={activeFlows.map((f) => ({
+              id: f.id,
+              flowName: f.flowName || 'Unknown Flow',
+              category: f.category || 'custom',
+              status: f.status || 'active',
+              currentStep: f.currentStep || 1,
+              totalSteps: f.totalSteps || 1,
+              startedAt: f.startedAt.toISOString(),
+              nextStepAt: f.nextStepAt?.toISOString() || null,
+            }))}
+          />
 
           {scheduled.length > 0 && (
             <Card>
