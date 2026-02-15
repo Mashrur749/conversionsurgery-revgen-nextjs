@@ -67,29 +67,26 @@ export async function sendTrackedSMS(
 }
 
 /**
- * Validate a Twilio webhook request signature
- * @param request - The incoming HTTP request
+ * Validate a Twilio webhook request signature.
+ * Must be called with the parsed form body params for accurate HMAC verification.
+ * @param url - The full URL Twilio sent the request to
+ * @param params - The parsed form body parameters (key-value pairs from the POST body)
+ * @param signature - The X-Twilio-Signature header value
  * @returns True if the signature is valid
  */
-export function validateTwilioWebhook(request: Request): boolean {
+export function validateTwilioWebhook(
+  url: string,
+  params: Record<string, string>,
+  signature: string
+): boolean {
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  if (!authToken) {
+    console.error('[Messaging] TWILIO_AUTH_TOKEN not set — cannot validate webhook');
+    return false;
+  }
+
   try {
-    const signature = request.headers.get('X-Twilio-Signature');
-    if (!signature) {
-      console.error('[Messaging] Missing Twilio signature header');
-      return false;
-    }
-
-    const url = request.url;
-    // For form data, we'd need to parse the body, but this is a simplified version
-    // In production, you'd extract params from the request body
-    const params: Record<string, string> = {};
-
-    const isValid = twilio.validateRequest(
-      process.env.TWILIO_AUTH_TOKEN!,
-      signature,
-      url,
-      params
-    );
+    const isValid = twilio.validateRequest(authToken, signature, url, params);
 
     if (!isValid) {
       console.error('[Messaging] Invalid Twilio webhook signature');
@@ -100,4 +97,40 @@ export function validateTwilioWebhook(request: Request): boolean {
     console.error('[Messaging] Webhook validation error:', error);
     return false;
   }
+}
+
+/**
+ * Helper to extract and validate a Twilio webhook from a NextRequest.
+ * Parses the form body, validates the signature, and returns the params if valid.
+ * Returns null if validation fails.
+ */
+export async function validateAndParseTwilioWebhook(
+  request: Request
+): Promise<Record<string, string> | null> {
+  const signature = request.headers.get('X-Twilio-Signature');
+  if (!signature) {
+    console.error('[Messaging] Missing Twilio signature header');
+    return null;
+  }
+
+  // Twilio sends application/x-www-form-urlencoded
+  const body = await request.text();
+  const urlParams = new URLSearchParams(body);
+  const params: Record<string, string> = {};
+  urlParams.forEach((value, key) => {
+    params[key] = value;
+  });
+
+  // Use the public-facing URL for validation (Twilio signs against the URL it sends to)
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const requestUrl = new URL(request.url);
+  const validationUrl = appUrl
+    ? `${appUrl}${requestUrl.pathname}${requestUrl.search}`
+    : request.url;
+
+  if (!validateTwilioWebhook(validationUrl, params, signature)) {
+    return null;
+  }
+
+  return params;
 }

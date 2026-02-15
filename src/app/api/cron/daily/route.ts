@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runDailyAnalyticsJob } from '@/lib/services/analytics-aggregation';
+import { verifyCronSecret } from '@/lib/utils/cron';
 
 /**
  * GET handler to run daily analytics aggregation job.
  * Aggregates analytics data for all active clients.
  */
 export async function GET(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = request.headers.get('Authorization');
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

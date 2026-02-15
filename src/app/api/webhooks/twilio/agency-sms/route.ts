@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleAgencyInboundSMS } from '@/lib/services/agency-communication';
+import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 
 /**
  * Twilio SMS webhook for the agency number.
@@ -8,8 +9,10 @@ import { handleAgencyInboundSMS } from '@/lib/services/agency-communication';
  */
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
+    const payload = await validateAndParseTwilioWebhook(request);
+    if (!payload) {
+      return emptyTwiml();
+    }
 
     const from = payload.From;
     const to = payload.To;

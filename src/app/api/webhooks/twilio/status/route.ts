@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { conversations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 
 /**
  * Twilio message status callback handler.
@@ -9,9 +10,12 @@ import { eq } from 'drizzle-orm';
  */
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const messageSid = formData.get('MessageSid') as string;
-    const messageStatus = formData.get('MessageStatus') as string;
+    const payload = await validateAndParseTwilioWebhook(request);
+    if (!payload) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+    const messageSid = payload.MessageSid;
+    const messageStatus = payload.MessageStatus;
 
     if (!messageSid || !messageStatus) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });

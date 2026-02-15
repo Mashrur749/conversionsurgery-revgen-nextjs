@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { getClientSession } from '@/lib/client-auth';
 
 /**
  * POST /api/client/conversations/[id]/handback
@@ -12,13 +12,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const clientId = cookieStore.get('clientSessionId')?.value;
-
-  if (!clientId) {
+  const session = await getClientSession();
+  if (!session) {
     console.error('[Messaging] Unauthorized handback attempt');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { clientId } = session;
 
   const { id } = await params;
   const db = getDb();

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { getClientSession } from '@/lib/client-auth';
 
 const updateSchema = z.object({
   enabled: z.boolean(),
@@ -11,12 +11,11 @@ const updateSchema = z.object({
 });
 
 export async function PUT(request: NextRequest) {
-  const cookieStore = await cookies();
-  const clientId = cookieStore.get('clientSessionId')?.value;
-
-  if (!clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { clientId } = session;
 
   try {
     const body = await request.json();

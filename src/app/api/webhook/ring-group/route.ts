@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recordCallAnswered, recordCallMissed } from '@/lib/services/hot-transfer';
+import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 
 /**
  * [Voice] POST /api/webhook/ring-group
@@ -8,13 +9,15 @@ import { recordCallAnswered, recordCallMissed } from '@/lib/services/hot-transfe
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.text();
-    const params = new URLSearchParams(body);
+    const params = await validateAndParseTwilioWebhook(request);
+    if (!params) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
 
-    const callId = params.get('CallId');
-    const callStatus = params.get('CallStatus'); // ringing, answered, completed, failed
-    const answeredBy = params.get('AnsweredBy');
-    const duration = params.get('CallDuration') ? parseInt(params.get('CallDuration')!) : 0;
+    const callId = params.CallId;
+    const callStatus = params.CallStatus; // ringing, answered, completed, failed
+    const answeredBy = params.AnsweredBy;
+    const duration = params.CallDuration ? parseInt(params.CallDuration) : 0;
 
     console.log('[Voice] Ring Group Webhook Event:', {
       callId,

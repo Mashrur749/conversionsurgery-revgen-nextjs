@@ -4,6 +4,7 @@ import { callAttempts, teamMembers } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import twilio from 'twilio';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
+import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
@@ -12,6 +13,16 @@ const VoiceResponse = twilio.twiml.VoiceResponse;
  * Generates TwiML to ring all team members simultaneously
  */
 export async function POST(request: NextRequest) {
+  const payload = await validateAndParseTwilioWebhook(request);
+  if (!payload) {
+    const twiml = new VoiceResponse();
+    twiml.say('Request validation failed.');
+    twiml.hangup();
+    return new NextResponse(twiml.toString(), {
+      headers: { 'Content-Type': 'text/xml' },
+    });
+  }
+
   const url = new URL(request.url);
   const attemptId = url.searchParams.get('attemptId');
   const leadPhone = url.searchParams.get('leadPhone');

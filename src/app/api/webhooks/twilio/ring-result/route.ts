@@ -4,6 +4,7 @@ import { callAttempts, clients, leads } from '@/db/schema';
 import { handleNoAnswer } from '@/lib/services/ring-group';
 import { eq } from 'drizzle-orm';
 import twilio from 'twilio';
+import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
@@ -12,11 +13,19 @@ const VoiceResponse = twilio.twiml.VoiceResponse;
  * Handles completion status and no-answer scenarios
  */
 export async function POST(request: NextRequest) {
+  const payload = await validateAndParseTwilioWebhook(request);
+  if (!payload) {
+    const twiml = new VoiceResponse();
+    twiml.hangup();
+    return new NextResponse(twiml.toString(), {
+      headers: { 'Content-Type': 'text/xml' },
+    });
+  }
+
   const url = new URL(request.url);
   const attemptId = url.searchParams.get('attemptId');
 
-  const formData = await request.formData();
-  const dialCallStatus = formData.get('DialCallStatus') as string;
+  const dialCallStatus = payload.DialCallStatus;
 
   if (!attemptId) {
     const twiml = new VoiceResponse();

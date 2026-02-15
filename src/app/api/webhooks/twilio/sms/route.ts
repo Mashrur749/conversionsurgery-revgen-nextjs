@@ -3,6 +3,7 @@ import { handleIncomingSMS } from '@/lib/automations/incoming-sms';
 import { getDb } from '@/db';
 import { webhookLog, clients, clientPhoneNumbers } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 
 /**
  * POST /api/webhooks/twilio/sms
@@ -10,8 +11,10 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
+    const payload = await validateAndParseTwilioWebhook(request);
+    if (!payload) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
 
     console.log('[Messaging] Twilio SMS webhook:', payload.From, payload.Body?.substring(0, 50));
 

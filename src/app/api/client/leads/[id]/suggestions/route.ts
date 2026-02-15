@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getDb, suggestedActions, flows } from '@/db';
 import { eq, and, desc } from 'drizzle-orm';
+import { getClientSession } from '@/lib/client-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const clientId = cookieStore.get('clientSessionId')?.value;
-
-  if (!clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { clientId } = session;
 
   const { id: leadId } = await params;
   const db = getDb();
@@ -42,12 +41,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const clientId = cookieStore.get('clientSessionId')?.value;
-
-  if (!clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { clientId } = session;
 
   const { id: leadId } = await params;
   const body = await request.json() as { suggestionId?: string; action?: string };

@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { normalizePhoneNumber } from "@/lib/utils/phone";
 import { getWebhookBaseUrl, xmlAttr } from "@/lib/utils/webhook-url";
 import { handleMissedCall } from "@/lib/automations/missed-call";
+import { validateAndParseTwilioWebhook } from "@/lib/services/twilio";
 
 const MISSED_STATUSES = new Set(["no-answer", "busy", "failed", "canceled"]);
 
@@ -24,11 +25,10 @@ function emptyTwiml() {
  */
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const payload = Object.fromEntries(formData.entries()) as Record<
-      string,
-      string
-    >;
+    const payload = await validateAndParseTwilioWebhook(request);
+    if (!payload) {
+      return emptyTwiml();
+    }
 
     const from = payload.From;
     const to = payload.To;

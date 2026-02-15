@@ -4,6 +4,7 @@ import { voiceCalls, clients, knowledgeBase } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 import OpenAI from 'openai';
+import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 
 function twimlResponse(twiml: string) {
   return new NextResponse(
@@ -27,8 +28,10 @@ function escapeXml(str: string): string {
  */
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const payload = Object.fromEntries(formData.entries()) as Record<string, string>;
+    const payload = await validateAndParseTwilioWebhook(request);
+    if (!payload) {
+      return twimlResponse('<Say>Request validation failed.</Say>');
+    }
 
     const callSid = payload.CallSid;
     const speechResult = payload.SpeechResult;

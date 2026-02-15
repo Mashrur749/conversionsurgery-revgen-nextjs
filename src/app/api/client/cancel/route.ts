@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { z } from 'zod';
 import {
   initiateCancellation,
@@ -10,6 +9,7 @@ import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendEmail } from '@/lib/services/resend';
+import { getClientSession } from '@/lib/client-auth';
 
 const cancelSchema = z.object({
   reason: z.string().min(1),
@@ -19,12 +19,11 @@ const cancelSchema = z.object({
 
 /** POST /api/client/cancel */
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const clientId = cookieStore.get('clientSessionId')?.value;
-
-  if (!clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { clientId } = session;
 
   try {
     const body = await request.json();

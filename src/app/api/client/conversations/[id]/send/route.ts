@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getDb } from '@/db';
 import { leads, conversations, clients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { z } from 'zod';
+import { getClientSession } from '@/lib/client-auth';
 
 const sendMessageSchema = z.object({
   message: z.string().min(1, 'Message is required'),
@@ -18,13 +18,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const cookieStore = await cookies();
-  const clientId = cookieStore.get('clientSessionId')?.value;
-
-  if (!clientId) {
+  const session = await getClientSession();
+  if (!session) {
     console.error('[Messaging] Unauthorized send attempt');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const { clientId } = session;
 
   const body = await request.json();
   const validation = sendMessageSchema.safeParse(body);

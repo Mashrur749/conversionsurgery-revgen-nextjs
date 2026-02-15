@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { cookies } from 'next/headers';
 import { verifyOTP } from '@/lib/services/otp';
+import { setClientSessionCookie } from '@/lib/client-auth';
 
 const verifyOtpSchema = z
   .object({
@@ -54,15 +54,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Set client session cookie — 30 days
-    const cookieStore = await cookies();
-    cookieStore.set('clientSessionId', result.clientId!, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30,
-      path: '/',
-    });
+    // Set signed client session cookie — 30 days
+    await setClientSessionCookie(result.clientId!);
 
     return NextResponse.json({ success: true });
   } catch (error) {
