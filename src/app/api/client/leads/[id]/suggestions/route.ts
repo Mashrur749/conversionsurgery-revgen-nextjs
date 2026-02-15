@@ -65,13 +65,13 @@ export async function POST(
         respondedAt: new Date(),
         respondedBy: 'crm',
       })
-      .where(eq(suggestedActions.id, suggestionId));
+      .where(and(eq(suggestedActions.id, suggestionId), eq(suggestedActions.clientId, clientId)));
 
     // Get suggestion to start flow
     const [suggestion] = await db
       .select()
       .from(suggestedActions)
-      .where(eq(suggestedActions.id, suggestionId))
+      .where(and(eq(suggestedActions.id, suggestionId), eq(suggestedActions.clientId, clientId)))
       .limit(1);
 
     if (suggestion?.flowId && suggestion.leadId) {
@@ -88,7 +88,7 @@ export async function POST(
         respondedAt: new Date(),
         respondedBy: 'crm',
       })
-      .where(eq(suggestedActions.id, suggestionId));
+      .where(and(eq(suggestedActions.id, suggestionId), eq(suggestedActions.clientId, clientId)));
 
     return NextResponse.json({ success: true, action: 'rejected' });
   }

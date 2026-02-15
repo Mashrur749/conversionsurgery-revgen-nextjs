@@ -46,7 +46,7 @@ export async function PATCH(
   await db
     .update(flows)
     .set({ isActive: parsed.data.isActive, updatedAt: new Date() })
-    .where(eq(flows.id, id));
+    .where(and(eq(flows.id, id), eq(flows.clientId, session.clientId)));
 
   return NextResponse.json({ ok: true });
 }
