@@ -391,6 +391,8 @@ A comprehensive operations guide covering every workflow for every user type —
 
 **Outcome**: Quick identification of clients that need attention. Catch issues like disconnected phone numbers, inactive clients, or unusual message patterns before clients notice.
 
+> **Known Gap (GAP-20)**: MRR and churn metrics on `/admin/platform-analytics` are currently hardcoded to $0. The aggregation TODO in `analytics-aggregation.ts` needs real subscription queries.
+
 ---
 
 ### A9: Reassign a Phone Number Between Clients
@@ -1228,6 +1230,8 @@ A comprehensive operations guide covering every workflow for every user type —
 5. Delete coupons that are no longer needed.
 
 **Validation**: When a client uses a coupon during checkout, the system validates: active status, date range, redemption limits, applicable plans, and first-time eligibility.
+
+> **Known Gap (GAP-18)**: `validateCoupon()` service exists but is not yet wired into `createSubscription()`. Coupon CRUD works, but checkout doesn't validate codes yet.
 
 **Outcome**: Flexible promotional pricing without touching Stripe directly. Track redemption counts and manage code lifecycle.
 

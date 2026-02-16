@@ -1198,6 +1198,15 @@ All jobs are dispatched by the master orchestrator at `/api/cron` (POST, Cloudfl
 [x] Google Business OAuth connect/disconnect/reconnect
 ```
 
+### Known Gaps (see docs/GAPS.md for details)
+
+```
+[ ] GAP-17: Orphaned utility functions — delete dead code (getStepMessage, formatDelay, getSignedDownloadUrl)
+[ ] GAP-18: Coupon validation not wired to checkout — validateCoupon() exists but never called from createSubscription()
+[ ] GAP-19: Webhook dispatch missing lead.qualified event — only lead.created + appointment.booked fire
+[ ] GAP-20: Platform analytics MRR + churn hardcoded to $0 — TODO placeholders in analytics-aggregation.ts
+```
+
 ### UI/UX
 
 ```

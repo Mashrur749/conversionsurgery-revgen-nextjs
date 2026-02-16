@@ -1,8 +1,11 @@
 # Feature Gaps — Execution Reference
 
 Gaps where code is partially built but missing a key piece to work end-to-end.
-Discovered via full codebase audit (Feb 2026). This document contains exact file paths,
-function signatures, and schema references so execution requires zero re-research.
+Discovered via full codebase audit (Feb 2026), updated Feb 14 with post-fix audit.
+This document contains exact file paths, function signatures, and schema references
+so execution requires zero re-research.
+
+**Status**: 14 of 20 gaps FIXED, 2 FALSE POSITIVES, 4 OPEN (GAP-17, 18, 19, 20)
 
 ---
 
@@ -476,15 +479,90 @@ Currently review source setup at `/admin/clients/[id]/reviews` requires manually
 
 **Issue**: Need to verify that the cancel API route stores `reason` in `subscriptions.cancelReason`. The field exists and the UI collects it — the wiring may or may not be complete.
 
-### GAP-17: Orphaned Utility Functions [DEFERRED — needs Stripe Elements frontend]
+### GAP-17: Orphaned Utility Functions [OPEN — cleanup or wire]
 
-These functions exist but are never called:
-- `getStepMessage()` in `src/lib/services/flow-resolution.ts`
-- `formatDelay()` in `src/lib/services/flow-resolution.ts`
-- `getSignedDownloadUrl()` in `src/lib/services/storage.ts`
-- `createSetupIntent()` in `src/lib/services/payment-methods.ts` (may be called from frontend)
+These functions exist but are never called from anywhere:
 
-**Fix**: Either wire into existing UI or delete. `createSetupIntent()` is likely needed for the "Add Payment Method" flow and may just need an API route.
+| Function | File | Verdict |
+|----------|------|---------|
+| `getStepMessage()` | `src/lib/services/flow-resolution.ts` | Dead code — delete |
+| `formatDelay()` | `src/lib/services/flow-resolution.ts` | Dead code — separate copy in `sequence-view.tsx` is used instead. Delete. |
+| `getSignedDownloadUrl()` | `src/lib/services/storage.ts` | Dead code — rest of storage.ts IS used by media.ts, but this function is not. Delete. |
+| `createSetupIntent()` | `src/lib/services/payment-methods.ts` | Needed for "Add Payment Method" flow, but requires Stripe Elements frontend (not built). Keep if Stripe Elements planned, otherwise delete. |
+
+**Fix**: Delete `getStepMessage`, `formatDelay`, `getSignedDownloadUrl`. Keep `createSetupIntent` only if Stripe Elements frontend is planned.
+
+**Effort**: S — delete dead functions
+
+---
+
+### GAP-18: Coupon Validation Not Wired to Checkout [OPEN]
+
+**What exists:**
+
+- Service — `src/lib/services/coupon-validation.ts`:
+  - `validateCoupon(code, planId, clientId)` — checks coupon exists, is active, not expired, within redemption limit, applicable to plan, first-time-only constraint
+- Schema — `src/db/schema/coupons.ts` — full coupon table with all fields
+- Admin UI — `/admin/billing/coupons` — full CRUD for creating/managing coupons
+- Service — `src/lib/services/subscription.ts`:
+  - `createSubscription(clientId, planId, interval?, couponCode?)` — accepts coupon param but **never validates it**
+
+**What's missing:**
+1. `createSubscription()` accepts `couponCode` but never calls `validateCoupon()` — invalid/expired codes are silently accepted
+2. No coupon code input field on any checkout/upgrade UI
+3. No Stripe coupon sync — `stripeCouponId` field is never populated
+
+**Fix approach:**
+- Call `validateCoupon()` inside `createSubscription()` before Stripe API call
+- Add coupon code input to client billing upgrade page
+- Create Stripe coupon when admin creates a local coupon (or sync on first use)
+
+**Severity**: HIGH — coupons can be created but never validated or applied correctly
+**Effort**: S — wire validation + add UI input
+
+---
+
+### GAP-19: Webhook Dispatch — `lead.qualified` Event Never Fired [OPEN]
+
+**What exists:**
+
+- Client schema defaults support 3 events: `["lead.created", "lead.qualified", "appointment.booked"]`
+- `dispatchWebhook()` is called from:
+  - `form-response.ts` → `lead.created` ✅
+  - `missed-call.ts` → `lead.created` ✅
+  - `appointment-booking.ts` → `appointment.booked` ✅
+
+**What's missing:**
+- `lead.qualified` event is never dispatched — no code calls `dispatchWebhook(*, 'lead.qualified', *)`
+- Lead qualification happens in `src/lib/services/lead-scoring.ts` but doesn't trigger webhook
+
+**Fix approach:**
+- In `scoreClientLeads()` or wherever lead temperature changes to "hot", dispatch `lead.qualified` webhook
+
+**Severity**: LOW — 2 of 3 default events work; this is a nice-to-have
+**Effort**: S — add one `dispatchWebhook()` call in lead scoring
+
+---
+
+### GAP-20: Analytics Aggregation — Churn + MRR Hardcoded to Zero [OPEN]
+
+**What exists:**
+
+- `src/lib/services/analytics-aggregation.ts` — `runDailyAnalyticsJob()` runs daily from master cron
+- Line 516-517:
+  ```typescript
+  churnedClients: 0, // TODO: Calculate from subscription events
+  mrrCents: 0, // TODO: Calculate from subscriptions table
+  ```
+- These values feed into the admin platform analytics dashboard — churn and MRR always display as $0
+
+**Fix approach:**
+- Query `subscriptions` table: `SUM(plan.priceCents) WHERE status IN ('active', 'trialing')` for MRR
+- Query `subscriptions` table: `COUNT WHERE status = 'canceled' AND canceledAt > periodStart` for churned
+- Both queries are straightforward
+
+**Severity**: MEDIUM — platform analytics dashboard shows wrong financial data
+**Effort**: S — 2 SQL queries replacing hardcoded zeros
 
 ---
 
@@ -496,11 +574,11 @@ These functions exist but are never called:
 | 02 | ~~HIGH~~ | ~~Overage pricing not operationalized~~ FIXED | M | `plans.ts`, `plan-list.tsx`, `UsageDisplay.tsx`, `queries.ts` |
 | 03 | ~~HIGH~~ | ~~Coupons system non-functional~~ FIXED | M | `coupons.ts`, `subscription.ts` |
 | 04 | ~~HIGH~~ | ~~Client cohort analysis never populated~~ FIXED | M | `client-cohorts.ts` |
-| 05 | HIGH | Google OAuth no admin management | M | `google-business.ts`, `clients.ts` |
+| 05 | ~~HIGH~~ | ~~Google OAuth no admin management~~ FIXED | M | `google-business.ts`, `clients.ts` |
 | 06 | ~~HIGH~~ | ~~Client webhook config schema only~~ FIXED | M | `clients.ts` |
 | 07 | ~~MEDIUM~~ | ~~Subscription pause/resume no UI~~ FALSE POSITIVE | S | Already wired in SubscriptionCard |
 | 08 | ~~MEDIUM~~ | ~~Review metrics not displayed~~ FIXED | S | `review-metrics.ts`, `review-monitoring.ts` |
-| 09 | MEDIUM | Funnel analytics no visualization | M | `funnel-events.ts`, `funnel-tracking.ts` |
+| 09 | ~~MEDIUM~~ | ~~Funnel analytics no visualization~~ FIXED | M | `funnel-events.ts`, `funnel-tracking.ts` |
 | 10 | ~~MEDIUM~~ | ~~Feature access gating never enforced~~ FIXED | S | `subscription.ts` |
 | 11 | ~~MEDIUM~~ | ~~Invoice operations no routes~~ FIXED | S | `subscription-invoices.ts` |
 | 12 | ~~MEDIUM~~ | ~~Subscription creation no entry point~~ FIXED | S | `subscription.ts` |
@@ -509,3 +587,6 @@ These functions exist but are never called:
 | 15 | ~~LOW~~ | ~~isTest flag never enforced~~ FIXED | S | `clients.ts` |
 | 16 | ~~LOW~~ | ~~Cancellation reason wiring unclear~~ FALSE POSITIVE | S | Wired at subscription.ts:167 |
 | 17 | LOW | Orphaned utility functions | S | Various |
+| 18 | **HIGH** | **Coupon validation not wired to checkout** | S | `coupon-validation.ts`, `subscription.ts` |
+| 19 | LOW | Webhook `lead.qualified` event never fired | S | `lead-scoring.ts`, `webhook-dispatch.ts` |
+| 20 | **MEDIUM** | **Analytics churn + MRR hardcoded to 0** | S | `analytics-aggregation.ts` |
