@@ -1,12 +1,13 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
-import { clients, reviewSources } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { Card, CardContent } from '@/components/ui/card';
+import { clients, reviewSources, reviewMetrics } from '@/db/schema';
+import { eq, desc, sql, sum } from 'drizzle-orm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Star, MessageSquare, TrendingUp, BarChart3 } from 'lucide-react';
 import type { ReviewSource } from '@/db/schema/review-sources';
 
 export default async function ReputationPage() {
@@ -26,6 +27,26 @@ export default async function ReputationPage() {
 
   const allSources: ReviewSource[] = await db.select().from(reviewSources);
 
+  // Platform-wide review metrics (latest weekly period per client, then aggregate)
+  const latestMetrics = await db
+    .select({
+      totalReviews: sum(reviewMetrics.totalReviews),
+      avgRating: sql<number>`round(avg(${reviewMetrics.averageRating})::numeric, 1)`,
+      respondedCount: sum(reviewMetrics.respondedCount),
+      fiveStarCount: sum(reviewMetrics.fiveStarCount),
+      oneStarCount: sum(reviewMetrics.oneStarCount),
+    })
+    .from(reviewMetrics)
+    .where(eq(reviewMetrics.period, 'weekly'));
+
+  const metrics = latestMetrics[0];
+  const platformTotalReviews = Number(metrics?.totalReviews ?? 0);
+  const platformAvgRating = Number(metrics?.avgRating ?? 0);
+  const platformResponded = Number(metrics?.respondedCount ?? 0);
+  const platformResponseRate = platformTotalReviews > 0
+    ? Math.round((platformResponded / platformTotalReviews) * 100)
+    : 0;
+
   // Group sources by client
   const sourcesByClient = new Map<string, ReviewSource[]>();
   for (const source of allSources) {
@@ -43,6 +64,51 @@ export default async function ReputationPage() {
           Track reviews across all clients
         </p>
       </div>
+
+      {platformTotalReviews > 0 && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Star className="h-4 w-4" /> Avg Rating
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{platformAvgRating} / 5.0</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <BarChart3 className="h-4 w-4" /> Total Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{platformTotalReviews.toLocaleString()}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <MessageSquare className="h-4 w-4" /> Response Rate
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{platformResponseRate}%</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="h-4 w-4" /> Responded
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{platformResponded.toLocaleString()}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid gap-4">
         {allClients.map((client) => {

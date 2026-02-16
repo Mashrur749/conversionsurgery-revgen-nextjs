@@ -278,7 +278,7 @@ Schema — `src/db/schema/subscriptions.ts`:
 
 ---
 
-### GAP-08: Review Metrics — Collected but Not Displayed
+### ~~GAP-08: Review Metrics — Collected but Not Displayed~~ [FIXED]
 
 **What exists:**
 
@@ -405,7 +405,7 @@ Service — `src/lib/services/subscription-invoices.ts`:
 
 ---
 
-### GAP-12: Subscription Creation — No Entry Point
+### ~~GAP-12: Subscription Creation — No Entry Point~~ [FIXED]
 
 **What exists:**
 
@@ -499,11 +499,11 @@ These functions exist but are never called:
 | 05 | HIGH | Google OAuth no admin management | M | `google-business.ts`, `clients.ts` |
 | 06 | HIGH | Client webhook config schema only | M | `clients.ts` |
 | 07 | ~~MEDIUM~~ | ~~Subscription pause/resume no UI~~ FALSE POSITIVE | S | Already wired in SubscriptionCard |
-| 08 | MEDIUM | Review metrics not displayed | S | `review-metrics.ts`, `review-monitoring.ts` |
+| 08 | ~~MEDIUM~~ | ~~Review metrics not displayed~~ FIXED | S | `review-metrics.ts`, `review-monitoring.ts` |
 | 09 | MEDIUM | Funnel analytics no visualization | M | `funnel-events.ts`, `funnel-tracking.ts` |
 | 10 | ~~MEDIUM~~ | ~~Feature access gating never enforced~~ FIXED | S | `subscription.ts` |
 | 11 | ~~MEDIUM~~ | ~~Invoice operations no routes~~ FIXED | S | `subscription-invoices.ts` |
-| 12 | MEDIUM | Subscription creation no entry point | S | `subscription.ts` |
+| 12 | ~~MEDIUM~~ | ~~Subscription creation no entry point~~ FIXED | S | `subscription.ts` |
 | 13 | ~~MEDIUM~~ | ~~Google Place ID search no setup flow~~ FIXED | S | `google-places.ts` |
 | 14 | ~~LOW~~ | ~~Message counter stale~~ FALSE POSITIVE | S | Wired in compliance-gateway |
 | 15 | ~~LOW~~ | ~~isTest flag never enforced~~ FIXED | S | `clients.ts` |
