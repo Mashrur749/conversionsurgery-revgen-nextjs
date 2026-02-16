@@ -427,7 +427,7 @@ Stripe webhook — `src/app/api/webhooks/stripe/route.ts`:
 
 ---
 
-### GAP-13: Google Place ID Search — No Setup Flow
+### ~~GAP-13: Google Place ID Search — No Setup Flow~~ [FIXED]
 
 **What exists:**
 
@@ -504,7 +504,7 @@ These functions exist but are never called:
 | 10 | ~~MEDIUM~~ | ~~Feature access gating never enforced~~ FIXED | S | `subscription.ts` |
 | 11 | ~~MEDIUM~~ | ~~Invoice operations no routes~~ FIXED | S | `subscription-invoices.ts` |
 | 12 | MEDIUM | Subscription creation no entry point | S | `subscription.ts` |
-| 13 | MEDIUM | Google Place ID search no setup flow | S | `google-places.ts` |
+| 13 | ~~MEDIUM~~ | ~~Google Place ID search no setup flow~~ FIXED | S | `google-places.ts` |
 | 14 | LOW | Message counter stale | S | `clients.ts` |
 | 15 | LOW | isTest flag never enforced | S | `clients.ts` |
 | 16 | LOW | Cancellation reason wiring unclear | S | `cancellation-flow.tsx`, cancel API |
