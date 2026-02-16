@@ -225,7 +225,7 @@ Service — `src/lib/services/google-places.ts`:
 
 ---
 
-### GAP-06: Client Webhook Config — Schema Only
+### ~~GAP-06: Client Webhook Config — Schema Only~~ [FIXED]
 
 **What exists:**
 
@@ -497,7 +497,7 @@ These functions exist but are never called:
 | 03 | ~~HIGH~~ | ~~Coupons system non-functional~~ FIXED | M | `coupons.ts`, `subscription.ts` |
 | 04 | HIGH | Client cohort analysis never populated | M | `client-cohorts.ts` |
 | 05 | HIGH | Google OAuth no admin management | M | `google-business.ts`, `clients.ts` |
-| 06 | HIGH | Client webhook config schema only | M | `clients.ts` |
+| 06 | ~~HIGH~~ | ~~Client webhook config schema only~~ FIXED | M | `clients.ts` |
 | 07 | ~~MEDIUM~~ | ~~Subscription pause/resume no UI~~ FALSE POSITIVE | S | Already wired in SubscriptionCard |
 | 08 | ~~MEDIUM~~ | ~~Review metrics not displayed~~ FIXED | S | `review-metrics.ts`, `review-monitoring.ts` |
 | 09 | MEDIUM | Funnel analytics no visualization | M | `funnel-events.ts`, `funnel-tracking.ts` |

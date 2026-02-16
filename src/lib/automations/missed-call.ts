@@ -196,6 +196,17 @@ export async function handleMissedCall(payload: MissedCallPayload) {
 
   // 8. Monthly message count is now handled by the compliance gateway
 
+  // 9. Dispatch webhook
+  try {
+    const { dispatchWebhook } = await import('@/lib/services/webhook-dispatch');
+    await dispatchWebhook(clientData.id, 'lead.created', {
+      leadId: lead.id,
+      phone: payload.From,
+      source: 'missed_call',
+      isNew: isNewLead,
+    });
+  } catch {}
+
   return {
     processed: true,
     leadId: lead.id,

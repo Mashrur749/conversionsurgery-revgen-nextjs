@@ -223,6 +223,16 @@ export async function bookAppointment(
     });
   } catch {} // Don't block booking on calendar failure
 
+  // Dispatch webhook
+  try {
+    const { dispatchWebhook } = await import('@/lib/services/webhook-dispatch');
+    await dispatchWebhook(clientId, 'appointment.booked', {
+      appointmentId: result.appointmentId,
+      leadId,
+      date: appointmentDateTime.toISOString(),
+    });
+  } catch {}
+
   return {
     success: true,
     appointmentId: result.appointmentId,

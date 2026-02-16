@@ -184,6 +184,18 @@ export async function handleFormSubmission(payload: FormPayload) {
 
   // 7. Monthly message count is now handled by the compliance gateway
 
+  // 8. Dispatch webhook
+  try {
+    const { dispatchWebhook } = await import('@/lib/services/webhook-dispatch');
+    await dispatchWebhook(client.id, 'lead.created', {
+      leadId: lead.id,
+      name,
+      phone: normalizedPhone,
+      source: 'form',
+      isNew: isNewLead,
+    });
+  } catch {}
+
   return {
     processed: true,
     leadId: lead.id,
