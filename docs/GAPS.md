@@ -8,7 +8,7 @@ function signatures, and schema references so execution requires zero re-researc
 
 ## CRITICAL
 
-### GAP-01: 10 Cron Jobs Never Triggered
+### ~~GAP-01: 10 Cron Jobs Never Triggered~~ [FIXED]
 
 The master orchestrator at `src/app/api/cron/route.ts` (POST handler, authenticated via `cf-cron` header from Cloudflare) dispatches 7 jobs based on time conditions. `wrangler.toml` only has 2 cron triggers:
 
@@ -492,7 +492,7 @@ These functions exist but are never called:
 
 | ID | Severity | Gap | Effort | Key Files |
 |----|----------|-----|--------|-----------|
-| 01 | CRITICAL | 10 cron jobs never triggered | S | `src/app/api/cron/route.ts` |
+| 01 | ~~CRITICAL~~ | ~~10 cron jobs never triggered~~ FIXED | S | `src/app/api/cron/route.ts` |
 | 02 | HIGH | Overage pricing not operationalized | M | `plans.ts`, `plan-list.tsx`, `UsageDisplay.tsx`, `queries.ts` |
 | 03 | HIGH | Coupons system non-functional | M | `coupons.ts`, `subscription.ts` |
 | 04 | HIGH | Client cohort analysis never populated | M | `client-cohorts.ts` |
