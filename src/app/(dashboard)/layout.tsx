@@ -40,6 +40,7 @@ const adminNavItems = [
   { group: 'Reporting', items: [
     { href: '/admin/billing', label: 'Billing' },
     { href: '/admin/billing/plans', label: 'Plans' },
+    { href: '/admin/billing/coupons', label: 'Coupons' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/platform-analytics', label: 'Platform Health' },
     { href: '/admin/usage', label: 'Costs & Usage' },

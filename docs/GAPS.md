@@ -121,7 +121,7 @@ Only submits `maxLeadsPerMonth`, `maxTeamMembers`, `maxPhoneNumbers` — no over
 
 ---
 
-### GAP-03: Coupons System Non-Functional
+### ~~GAP-03: Coupons System Non-Functional~~ [FIXED]
 
 **What exists:**
 
@@ -494,7 +494,7 @@ These functions exist but are never called:
 |----|----------|-----|--------|-----------|
 | 01 | ~~CRITICAL~~ | ~~10 cron jobs never triggered~~ FIXED | S | `src/app/api/cron/route.ts` |
 | 02 | ~~HIGH~~ | ~~Overage pricing not operationalized~~ FIXED | M | `plans.ts`, `plan-list.tsx`, `UsageDisplay.tsx`, `queries.ts` |
-| 03 | HIGH | Coupons system non-functional | M | `coupons.ts`, `subscription.ts` |
+| 03 | ~~HIGH~~ | ~~Coupons system non-functional~~ FIXED | M | `coupons.ts`, `subscription.ts` |
 | 04 | HIGH | Client cohort analysis never populated | M | `client-cohorts.ts` |
 | 05 | HIGH | Google OAuth no admin management | M | `google-business.ts`, `clients.ts` |
 | 06 | HIGH | Client webhook config schema only | M | `clients.ts` |
