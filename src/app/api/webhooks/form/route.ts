@@ -15,8 +15,15 @@ const formSchema = z.object({
 /**
  * POST /api/webhooks/form
  * Handle form submission webhooks
+ * Requires Authorization: Bearer <FORM_WEBHOOK_SECRET>
  */
 export async function POST(request: NextRequest) {
+  const authHeader = request.headers.get('authorization');
+  const secret = process.env.FORM_WEBHOOK_SECRET;
+  if (!secret || authHeader !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const validation = formSchema.safeParse(body);
