@@ -159,7 +159,7 @@ Service — `src/lib/services/subscription.ts`:
 
 ---
 
-### GAP-04: Client Cohort Analysis Never Populated
+### ~~GAP-04: Client Cohort Analysis Never Populated~~ [FIXED]
 
 **What exists:**
 
@@ -495,7 +495,7 @@ These functions exist but are never called:
 | 01 | ~~CRITICAL~~ | ~~10 cron jobs never triggered~~ FIXED | S | `src/app/api/cron/route.ts` |
 | 02 | ~~HIGH~~ | ~~Overage pricing not operationalized~~ FIXED | M | `plans.ts`, `plan-list.tsx`, `UsageDisplay.tsx`, `queries.ts` |
 | 03 | ~~HIGH~~ | ~~Coupons system non-functional~~ FIXED | M | `coupons.ts`, `subscription.ts` |
-| 04 | HIGH | Client cohort analysis never populated | M | `client-cohorts.ts` |
+| 04 | ~~HIGH~~ | ~~Client cohort analysis never populated~~ FIXED | M | `client-cohorts.ts` |
 | 05 | HIGH | Google OAuth no admin management | M | `google-business.ts`, `clients.ts` |
 | 06 | ~~HIGH~~ | ~~Client webhook config schema only~~ FIXED | M | `clients.ts` |
 | 07 | ~~MEDIUM~~ | ~~Subscription pause/resume no UI~~ FALSE POSITIVE | S | Already wired in SubscriptionCard |

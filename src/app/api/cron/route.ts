@@ -5,6 +5,7 @@ import { scoreClientLeads } from '@/lib/services/lead-scoring';
 import { syncAllReviews, checkAndAlertNegativeReviews } from '@/lib/services/review-monitoring';
 import { checkSlaBreaches } from '@/lib/services/escalation';
 import { runDailyAnalyticsJob } from '@/lib/services/analytics-aggregation';
+import { updateCohortMetrics } from '@/lib/services/cohort-analysis';
 import { getDb, clients, reviewSources } from '@/db';
 import { eq, and, or, isNull, lt } from 'drizzle-orm';
 
@@ -150,6 +151,17 @@ export async function POST(request: NextRequest) {
 
       results.trialReminders = await dispatch(baseUrl, '/api/cron/trial-reminders', cronSecret!, 'POST');
       results.noShowRecovery = await dispatch(baseUrl, '/api/cron/no-show-recovery', cronSecret!);
+
+      // Monthly: update cohort retention (1st of month)
+      if (now.getUTCDate() === 1) {
+        try {
+          const cohortResult = await updateCohortMetrics();
+          results.cohortUpdate = { success: true, ...cohortResult };
+        } catch (error) {
+          console.error('[Cron] Cohort analysis error:', error);
+          results.cohortUpdate = { error: 'Failed' };
+        }
+      }
     }
 
     // ── Daily 7am UTC ────────────────────────────────────────
