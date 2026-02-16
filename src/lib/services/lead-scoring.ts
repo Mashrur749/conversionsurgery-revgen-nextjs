@@ -271,6 +271,13 @@ export async function scoreLead(
 ): Promise<ScoringResult> {
   const db = getDb();
 
+  // Get current lead state for temperature transition detection
+  const [currentLead] = await db
+    .select({ temperature: leads.temperature, clientId: leads.clientId, name: leads.name })
+    .from(leads)
+    .where(eq(leads.id, leadId))
+    .limit(1);
+
   // Get recent conversation
   const recentMessages = await db
     .select()
@@ -323,6 +330,23 @@ export async function scoreLead(
       scoreUpdatedAt: new Date(),
     })
     .where(eq(leads.id, leadId));
+
+  // Dispatch lead.qualified webhook when temperature transitions to 'hot'
+  if (temperature === 'hot' && currentLead?.temperature !== 'hot' && currentLead?.clientId) {
+    try {
+      const { dispatchWebhook } = await import('@/lib/services/webhook-dispatch');
+      await dispatchWebhook(currentLead.clientId, 'lead.qualified', {
+        leadId,
+        leadName: currentLead.name,
+        score,
+        temperature,
+        previousTemperature: currentLead.temperature,
+        factors,
+      });
+    } catch {
+      // Don't block scoring on webhook failure
+    }
+  }
 
   return { score, temperature, factors };
 }

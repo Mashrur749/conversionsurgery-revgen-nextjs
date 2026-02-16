@@ -5,7 +5,7 @@ Discovered via full codebase audit (Feb 2026), updated Feb 14 with post-fix audi
 This document contains exact file paths, function signatures, and schema references
 so execution requires zero re-research.
 
-**Status**: 14 of 20 gaps FIXED, 2 FALSE POSITIVES, 4 OPEN (GAP-17, 18, 19, 20)
+**Status**: ALL 20 GAPS RESOLVED — 18 FIXED, 2 FALSE POSITIVES
 
 ---
 
@@ -479,7 +479,7 @@ Currently review source setup at `/admin/clients/[id]/reviews` requires manually
 
 **Issue**: Need to verify that the cancel API route stores `reason` in `subscriptions.cancelReason`. The field exists and the UI collects it — the wiring may or may not be complete.
 
-### GAP-17: Orphaned Utility Functions [OPEN — cleanup or wire]
+### ~~GAP-17: Orphaned Utility Functions~~ [FIXED]
 
 These functions exist but are never called from anywhere:
 
@@ -490,13 +490,14 @@ These functions exist but are never called from anywhere:
 | `getSignedDownloadUrl()` | `src/lib/services/storage.ts` | Dead code — rest of storage.ts IS used by media.ts, but this function is not. Delete. |
 | `createSetupIntent()` | `src/lib/services/payment-methods.ts` | Needed for "Add Payment Method" flow, but requires Stripe Elements frontend (not built). Keep if Stripe Elements planned, otherwise delete. |
 
-**Fix**: Delete `getStepMessage`, `formatDelay`, `getSignedDownloadUrl`. Keep `createSetupIntent` only if Stripe Elements frontend is planned.
+**Fix**: Deleted `getStepMessage`, `formatDelay`, `getSignedDownloadUrl`. Kept `createSetupIntent` (needed for future Stripe Elements).
+Also removed unused `GetObjectCommand` and `@aws-sdk/s3-request-presigner` imports from storage.ts.
 
-**Effort**: S — delete dead functions
+**Status**: FIXED
 
 ---
 
-### GAP-18: Coupon Validation Not Wired to Checkout [OPEN]
+### ~~GAP-18: Coupon Validation Not Wired to Checkout~~ [FIXED]
 
 **What exists:**
 
@@ -517,12 +518,11 @@ These functions exist but are never called from anywhere:
 - Add coupon code input to client billing upgrade page
 - Create Stripe coupon when admin creates a local coupon (or sync on first use)
 
-**Severity**: HIGH — coupons can be created but never validated or applied correctly
-**Effort**: S — wire validation + add UI input
+**Status**: FIXED — `createSubscription()` now calls `validateCoupon()` before Stripe, throws on invalid. `redeemCoupon()` increments count after success. Discount fields stored on subscription record.
 
 ---
 
-### GAP-19: Webhook Dispatch — `lead.qualified` Event Never Fired [OPEN]
+### ~~GAP-19: Webhook Dispatch — `lead.qualified` Event Never Fired~~ [FIXED]
 
 **What exists:**
 
@@ -539,12 +539,11 @@ These functions exist but are never called from anywhere:
 **Fix approach:**
 - In `scoreClientLeads()` or wherever lead temperature changes to "hot", dispatch `lead.qualified` webhook
 
-**Severity**: LOW — 2 of 3 default events work; this is a nice-to-have
-**Effort**: S — add one `dispatchWebhook()` call in lead scoring
+**Status**: FIXED — `scoreLead()` now dispatches `lead.qualified` webhook when temperature transitions to `hot`. Includes lead details, score, and previous temperature in payload.
 
 ---
 
-### GAP-20: Analytics Aggregation — Churn + MRR Hardcoded to Zero [OPEN]
+### ~~GAP-20: Analytics Aggregation — Churn + MRR Hardcoded to Zero~~ [FIXED]
 
 **What exists:**
 
@@ -561,8 +560,7 @@ These functions exist but are never called from anywhere:
 - Query `subscriptions` table: `COUNT WHERE status = 'canceled' AND canceledAt > periodStart` for churned
 - Both queries are straightforward
 
-**Severity**: MEDIUM — platform analytics dashboard shows wrong financial data
-**Effort**: S — 2 SQL queries replacing hardcoded zeros
+**Status**: FIXED — `calculatePlatformAnalytics()` now queries subscriptions joined with plans for MRR (`SUM(priceMonthly) WHERE status IN active/trialing`), counts churn (`canceledAt` in last 30 days), and calculates new MRR from recent subscriptions.
 
 ---
 
@@ -586,7 +584,7 @@ These functions exist but are never called from anywhere:
 | 14 | ~~LOW~~ | ~~Message counter stale~~ FALSE POSITIVE | S | Wired in compliance-gateway |
 | 15 | ~~LOW~~ | ~~isTest flag never enforced~~ FIXED | S | `clients.ts` |
 | 16 | ~~LOW~~ | ~~Cancellation reason wiring unclear~~ FALSE POSITIVE | S | Wired at subscription.ts:167 |
-| 17 | LOW | Orphaned utility functions | S | Various |
-| 18 | **HIGH** | **Coupon validation not wired to checkout** | S | `coupon-validation.ts`, `subscription.ts` |
-| 19 | LOW | Webhook `lead.qualified` event never fired | S | `lead-scoring.ts`, `webhook-dispatch.ts` |
-| 20 | **MEDIUM** | **Analytics churn + MRR hardcoded to 0** | S | `analytics-aggregation.ts` |
+| 17 | ~~LOW~~ | ~~Orphaned utility functions~~ FIXED | S | Various |
+| 18 | ~~HIGH~~ | ~~Coupon validation not wired to checkout~~ FIXED | S | `coupon-validation.ts`, `subscription.ts` |
+| 19 | ~~LOW~~ | ~~Webhook `lead.qualified` event never fired~~ FIXED | S | `lead-scoring.ts`, `webhook-dispatch.ts` |
+| 20 | ~~MEDIUM~~ | ~~Analytics churn + MRR hardcoded to 0~~ FIXED | S | `analytics-aggregation.ts` |

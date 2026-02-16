@@ -1,5 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import sharp from 'sharp';
 
 /** Create a new S3-compatible client configured for Cloudflare R2 */
@@ -129,27 +128,6 @@ export async function deleteFile(key: string): Promise<void> {
       Key: key,
     })
   );
-}
-
-/**
- * Generate a time-limited signed URL for downloading a private file from R2.
- *
- * @param key - The storage key of the file
- * @param expiresIn - URL validity period in seconds (default: 3600)
- * @returns A signed download URL
- */
-export async function getSignedDownloadUrl(
-  key: string,
-  expiresIn = 3600
-): Promise<string> {
-  const client = getS3Client();
-
-  const command = new GetObjectCommand({
-    Bucket: getBucket(),
-    Key: key,
-  });
-
-  return getSignedUrl(client, command, { expiresIn });
 }
 
 /**

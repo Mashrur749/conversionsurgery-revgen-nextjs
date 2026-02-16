@@ -11,8 +11,10 @@ import {
   escalationQueue,
   apiUsageMonthly,
   leadContext,
+  subscriptions,
+  plans,
 } from '@/db/schema';
-import { eq, and, gte, lte, sql, count, sum, avg } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, count, sum, avg, inArray } from 'drizzle-orm';
 
 /**
  * Calculate daily analytics for a client
@@ -508,14 +510,50 @@ export async function calculatePlatformAnalytics(
   const totalApiCosts = Number(apiCosts?.total) || 0;
   const activeClients = Number(clientCounts?.active) || 1;
 
+  // Calculate MRR from active/trialing subscriptions joined with plan prices
+  const [mrrResult] = await db
+    .select({
+      totalMrr: sum(plans.priceMonthly),
+    })
+    .from(subscriptions)
+    .innerJoin(plans, eq(subscriptions.planId, plans.id))
+    .where(inArray(subscriptions.status, ['active', 'trialing']));
+
+  // Count churned clients (canceled in the last 30 days)
+  const thirtyDaysAgo = new Date(date);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const [churnResult] = await db
+    .select({ count: count() })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.status, 'canceled'),
+        gte(subscriptions.canceledAt, thirtyDaysAgo)
+      )
+    );
+
+  // New MRR: subscriptions created in the last 30 days that are still active
+  const [newMrrResult] = await db
+    .select({
+      totalNewMrr: sum(plans.priceMonthly),
+    })
+    .from(subscriptions)
+    .innerJoin(plans, eq(subscriptions.planId, plans.id))
+    .where(
+      and(
+        inArray(subscriptions.status, ['active', 'trialing']),
+        gte(subscriptions.createdAt, thirtyDaysAgo)
+      )
+    );
+
   const values = {
     date,
     totalClients: Number(clientCounts?.total) || 0,
     activeClients,
     newClients: Number(newClients?.count) || 0,
-    churnedClients: 0, // TODO: Calculate from subscription events
-    mrrCents: 0, // TODO: Calculate from subscriptions table
-    newMrrCents: 0,
+    churnedClients: Number(churnResult?.count) || 0,
+    mrrCents: Number(mrrResult?.totalMrr) || 0,
+    newMrrCents: Number(newMrrResult?.totalNewMrr) || 0,
     churnedMrrCents: 0,
     expansionMrrCents: 0,
     totalLeads: Number(totalUsage?.leads) || 0,

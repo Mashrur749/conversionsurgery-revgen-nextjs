@@ -389,9 +389,7 @@ A comprehensive operations guide covering every workflow for every user type —
    - Total messages, AI responses, escalations
    - API costs per client
 
-**Outcome**: Quick identification of clients that need attention. Catch issues like disconnected phone numbers, inactive clients, or unusual message patterns before clients notice.
-
-> **Known Gap (GAP-20)**: MRR and churn metrics on `/admin/platform-analytics` are currently hardcoded to $0. The aggregation TODO in `analytics-aggregation.ts` needs real subscription queries.
+**Outcome**: Quick identification of clients that need attention. Catch issues like disconnected phone numbers, inactive clients, or unusual message patterns before clients notice. MRR is calculated from active/trialing subscriptions joined with plan prices; churn counts cancellations in the last 30 days.
 
 ---
 
@@ -1229,9 +1227,7 @@ A comprehensive operations guide covering every workflow for every user type —
 4. Activate or deactivate coupons from the table.
 5. Delete coupons that are no longer needed.
 
-**Validation**: When a client uses a coupon during checkout, the system validates: active status, date range, redemption limits, applicable plans, and first-time eligibility.
-
-> **Known Gap (GAP-18)**: `validateCoupon()` service exists but is not yet wired into `createSubscription()`. Coupon CRUD works, but checkout doesn't validate codes yet.
+**Validation**: When a client uses a coupon during checkout, `createSubscription()` calls `validateCoupon()` before the Stripe API call. Validates: active status, date range, redemption limits, applicable plans, and first-time eligibility. On success, `redeemCoupon()` increments the usage count and discount fields are stored on the subscription record.
 
 **Outcome**: Flexible promotional pricing without touching Stripe directly. Track redemption counts and manage code lifecycle.
 
@@ -2620,18 +2616,18 @@ These happen without any user action. Understanding them is essential for operat
 
 ### S20: Client Webhook Dispatch
 
-**Trigger**: Automated events — lead creation (form submission, missed call), appointment booking.
+**Trigger**: Automated events — lead creation (form submission, missed call), lead qualification (scoring), appointment booking.
 
 **Flow**:
 
-1. **Event fires** → An automation (form response, missed call, appointment booking) completes.
+1. **Event fires** → An automation (form response, missed call, lead scoring, appointment booking) completes.
 2. **Client lookup** → Check if the client has a `webhookUrl` configured and `webhookEvents` includes this event type.
-3. **Payload construction** → Build JSON payload with event type, timestamp, and event-specific data (lead details, appointment details, etc.).
+3. **Payload construction** → Build JSON payload with event type, timestamp, and event-specific data (lead details, score/temperature for qualification, appointment details, etc.).
 4. **HMAC signing** → Sign the payload with `X-Webhook-Signature` header using HMAC-SHA256 with the client's webhook secret.
 5. **Dispatch with retry** → POST to the client's webhook URL with 3 attempts and exponential backoff (1s, 2s, 4s). 10-second timeout per attempt.
 6. **Log delivery** → Insert into `webhook_log` table with event type, payload, response status, and response body.
 
-**Supported events**: `lead.created`, `appointment.booked`
+**Supported events**: `lead.created`, `lead.qualified`, `appointment.booked`
 
 **Outcome**: Clients can integrate their own systems (CRMs, project management tools, Zapier) by receiving real-time webhook notifications for key events. HMAC signatures ensure payload authenticity.
 

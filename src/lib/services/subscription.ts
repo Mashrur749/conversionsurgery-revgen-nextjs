@@ -2,6 +2,7 @@ import { getDb } from '@/db';
 import { subscriptions, plans, clients, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
+import { validateCoupon, redeemCoupon } from '@/lib/services/coupon-validation';
 import type Stripe from 'stripe';
 import type { Subscription } from '@/db/schema/subscriptions';
 import type { Plan } from '@/db/schema/plans';
@@ -80,7 +81,18 @@ export async function createSubscription(
     },
   };
 
+  // Validate coupon if provided
+  let validatedDiscount: { discountValue?: number; duration?: string; durationMonths?: number | null } | undefined;
   if (couponCode) {
+    const couponResult = await validateCoupon(couponCode, planId, clientId);
+    if (!couponResult.valid) {
+      throw new Error(couponResult.error || 'Invalid coupon code');
+    }
+    validatedDiscount = {
+      discountValue: couponResult.discountValue,
+      duration: couponResult.duration,
+      durationMonths: couponResult.durationMonths,
+    };
     stripeSubParams.coupon = couponCode;
   }
 
@@ -116,8 +128,17 @@ export async function createSubscription(
     currentPeriodEnd,
     trialStart,
     trialEnd,
-    couponCode,
+    couponCode: couponCode?.toUpperCase(),
+    discountPercent: validatedDiscount?.discountValue,
+    discountEndsAt: validatedDiscount?.duration === 'repeating' && validatedDiscount.durationMonths
+      ? new Date(Date.now() + validatedDiscount.durationMonths * 30 * 24 * 60 * 60 * 1000)
+      : undefined,
   }).returning();
+
+  // Increment coupon redemption count
+  if (couponCode) {
+    await redeemCoupon(couponCode);
+  }
 
   // Log event
   await db.insert(billingEvents).values({
