@@ -26,6 +26,9 @@ interface PlanFeatures {
   includesWhiteLabel: boolean;
   supportLevel: 'email' | 'priority' | 'dedicated';
   apiAccess: boolean;
+  overagePerLeadCents?: number;
+  overagePerSmsCents?: number;
+  allowOverages?: boolean;
 }
 
 interface Plan {
@@ -95,6 +98,9 @@ export function PlanList({ plans: initialPlans }: PlanListProps) {
         includesWhiteLabel: form.get('whiteLabel') === 'on',
         supportLevel: (form.get('supportLevel') || 'email') as 'email' | 'priority' | 'dedicated',
         apiAccess: form.get('apiAccess') === 'on',
+        allowOverages: form.get('allowOverages') === 'on',
+        overagePerLeadCents: form.get('overagePerLead') ? Math.round(Number(form.get('overagePerLead')) * 100) : undefined,
+        overagePerSmsCents: form.get('overagePerSms') ? Math.round(Number(form.get('overagePerSms')) * 100) : undefined,
       },
     };
 
@@ -205,6 +211,22 @@ export function PlanList({ plans: initialPlans }: PlanListProps) {
           Mark as Popular
         </label>
       </div>
+      <div className="grid grid-cols-3 gap-4">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" name="allowOverages" defaultChecked={plan?.features.allowOverages ?? false} />
+          Allow Overages
+        </label>
+        <div className="space-y-2">
+          <Label htmlFor="overagePerLead">Overage $/Lead</Label>
+          <Input id="overagePerLead" name="overagePerLead" type="number" step="0.01" placeholder="e.g. 1.50"
+            defaultValue={plan?.features.overagePerLeadCents ? (plan.features.overagePerLeadCents / 100).toFixed(2) : ''} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="overagePerSms">Overage $/SMS</Label>
+          <Input id="overagePerSms" name="overagePerSms" type="number" step="0.01" placeholder="e.g. 0.05"
+            defaultValue={plan?.features.overagePerSmsCents ? (plan.features.overagePerSmsCents / 100).toFixed(2) : ''} />
+        </div>
+      </div>
       <div className="flex justify-end gap-2">
         <Button type="submit" disabled={saving}>
           {saving ? 'Saving...' : plan ? 'Update Plan' : 'Create Plan'}
@@ -254,6 +276,15 @@ export function PlanList({ plans: initialPlans }: PlanListProps) {
                 <p>Phones: {plan.features.maxPhoneNumbers}</p>
                 <p>Trial: {plan.trialDays} days</p>
                 <p>Support: {plan.features.supportLevel}</p>
+                {plan.features.allowOverages && (
+                  <p className="text-muted-foreground">
+                    Overages: {plan.features.overagePerLeadCents ? `$${(plan.features.overagePerLeadCents / 100).toFixed(2)}/lead` : '—'}
+                    {plan.features.overagePerSmsCents ? `, $${(plan.features.overagePerSmsCents / 100).toFixed(2)}/SMS` : ''}
+                  </p>
+                )}
+                {plan.features.allowOverages === false && plan.features.maxLeadsPerMonth && (
+                  <p className="text-muted-foreground">Hard cap at limit</p>
+                )}
               </div>
               <div className="flex flex-wrap gap-1">
                 {plan.features.includesVoiceAi && <Badge variant="outline">Voice AI</Badge>}

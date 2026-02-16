@@ -40,6 +40,10 @@ export const plans = pgTable(
       includesWhiteLabel: boolean;
       supportLevel: 'email' | 'priority' | 'dedicated';
       apiAccess: boolean;
+      // Overage pricing (cents per unit above limit)
+      overagePerLeadCents?: number;
+      overagePerSmsCents?: number;
+      allowOverages?: boolean; // false = hard cap at limit
     }>().notNull(),
 
     // Trial settings

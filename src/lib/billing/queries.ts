@@ -149,7 +149,13 @@ async function getUsageForPeriod(clientId: string) {
     );
 
   const usage = usageData[0] || { totalLeads: 0 };
-  const features = plan.features as { maxLeadsPerMonth: number | null; maxTeamMembers: number | null; maxPhoneNumbers: number };
+  const features = plan.features as {
+    maxLeadsPerMonth: number | null;
+    maxTeamMembers: number | null;
+    maxPhoneNumbers: number;
+    overagePerLeadCents?: number;
+    allowOverages?: boolean;
+  };
 
   // Get team member count
   const teamMemberResult = await db
@@ -168,11 +174,17 @@ async function getUsageForPeriod(clientId: string) {
     ? Math.max(0, usage.totalLeads - features.maxLeadsPerMonth)
     : 0;
 
+  const overageCostCents = leadsOverage > 0 && features.overagePerLeadCents
+    ? leadsOverage * features.overagePerLeadCents
+    : 0;
+
   return {
     leads: {
       used: usage.totalLeads,
       included: features.maxLeadsPerMonth,
       overage: leadsOverage,
+      overageCostCents,
+      allowOverages: features.allowOverages ?? true,
     },
     teamMembers: {
       used: teamMemberResult[0]?.count ?? 0,

@@ -12,6 +12,8 @@ interface UsageDisplayProps {
       used: number;
       included: number | null;
       overage: number;
+      overageCostCents?: number;
+      allowOverages?: boolean;
     };
     teamMembers: {
       used: number;
@@ -49,7 +51,9 @@ export function UsageDisplay({ usage, periodStart, periodEnd }: UsageDisplayProp
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               You have {usage.leads.overage} overage leads this period.
-              Consider upgrading your plan for more capacity.
+              {usage.leads.overageCostCents
+                ? ` Estimated overage charge: $${(usage.leads.overageCostCents / 100).toFixed(2)}.`
+                : ' Consider upgrading your plan for more capacity.'}
             </AlertDescription>
           </Alert>
         )}
