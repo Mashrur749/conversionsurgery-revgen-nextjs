@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ReviewDashboard } from '@/components/reviews/review-dashboard';
 import { ReviewSourceConfig } from './review-source-config';
+import { GoogleConnectionCard } from './google-connection';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -46,6 +47,18 @@ export default async function ClientReviewsPage({ params }: Props) {
           <Link href={`/admin/clients/${id}`}>Back to Client</Link>
         </Button>
       </div>
+
+      <GoogleConnectionCard
+        clientId={id}
+        status={
+          client.googleAccessToken
+            ? client.googleTokenExpiresAt && new Date(client.googleTokenExpiresAt) < new Date()
+              ? 'expired'
+              : 'connected'
+            : 'not_connected'
+        }
+        accountId={client.googleBusinessAccountId}
+      />
 
       <ReviewSourceConfig clientId={id} businessName={client.businessName} />
       <ReviewDashboard clientId={id} />

@@ -188,7 +188,7 @@ Index on `cohortMonth`.
 
 ---
 
-### GAP-05: Google Business OAuth — No Admin Management
+### ~~GAP-05: Google Business OAuth — No Admin Management~~ [FIXED]
 
 **What exists:**
 
