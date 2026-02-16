@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDb, platformAnalytics, clients } from '@/db';
 import { eq, desc, sql } from 'drizzle-orm';
+import { getFunnelMetrics } from '@/lib/services/funnel-queries';
 
 export async function GET() {
   const session = await auth();
@@ -34,6 +35,9 @@ export async function GET() {
       ? (churned / (totalActive + churned)) * 100
       : 0;
 
+    // Get funnel metrics (platform-wide, last 30 days)
+    const funnelStages = await getFunnelMetrics(undefined, 30);
+
     return NextResponse.json({
       mrrCents: latest?.mrrCents || 0,
       activeClients: totalActive || Number(clientStats?.activeClients) || 0,
@@ -47,6 +51,7 @@ export async function GET() {
       avgCostPerClientCents: latest?.avgCostPerClientCents || 0,
       avgClientSatisfaction: latest?.avgClientSatisfaction,
       churnRate,
+      funnelStages,
     });
   } catch (error) {
     console.error('[Platform Analytics] Error:', error);

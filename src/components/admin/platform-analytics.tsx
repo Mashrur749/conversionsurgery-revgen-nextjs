@@ -7,6 +7,7 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
+  ArrowDown,
 } from 'lucide-react';
 
 export function PlatformAnalytics() {
@@ -175,6 +176,66 @@ export function PlatformAnalytics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Lead Funnel (30 days) */}
+      {data?.funnelStages && data.funnelStages.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Lead Funnel (Last 30 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {data.funnelStages.map(
+                (
+                  stage: {
+                    stage: string;
+                    label: string;
+                    count: number;
+                    conversionFromPrevious: number | null;
+                  },
+                  i: number
+                ) => {
+                  const maxCount = Math.max(
+                    ...data.funnelStages.map(
+                      (s: { count: number }) => s.count
+                    ),
+                    1
+                  );
+                  const widthPct = Math.max(
+                    (stage.count / maxCount) * 100,
+                    8
+                  );
+                  return (
+                    <div key={stage.stage}>
+                      {i > 0 && (
+                        <div className="flex items-center gap-2 py-1 pl-4 text-xs text-muted-foreground">
+                          <ArrowDown className="h-3 w-3" />
+                          {stage.conversionFromPrevious !== null
+                            ? `${stage.conversionFromPrevious}% conversion`
+                            : '—'}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <span className="w-28 text-sm font-medium shrink-0">
+                          {stage.label}
+                        </span>
+                        <div className="flex-1 bg-muted rounded-full h-7 overflow-hidden">
+                          <div
+                            className="bg-primary h-full rounded-full flex items-center justify-end pr-3 text-xs font-semibold text-primary-foreground transition-all"
+                            style={{ width: `${widthPct}%` }}
+                          >
+                            {stage.count.toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
