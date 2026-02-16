@@ -11,21 +11,21 @@
 
 ## Autonomy Policy
 
-**Default: just do the work.** Do not ask clarifying questions unless you are genuinely blocked — meaning you cannot proceed without information that is impossible to infer from the codebase, the task description, or this file.
+**Default: just do the work.** Don't ask clarifying questions for things you can resolve by reading the codebase or following the checklists below.
 
 Resolve ambiguity yourself by:
 1. Reading the codebase (grep for existing patterns, check similar files)
 2. Following the checklists below (they answer most "which approach?" questions)
 3. Picking the simplest approach that fits existing patterns
 
-**Only ask when:** the user's intent is truly unclear (e.g., "should this be admin-only or client-facing?" when both are plausible and the answer changes the architecture). Even then, prefer asking one precise question over multiple.
+**Do ask when:** you genuinely cannot determine the user's intent — e.g., "should this be admin-only or client-facing?" when both are plausible and the answer changes the architecture, or when requirements are contradictory. Ask one precise question, not a list of five.
 
 ## Key Patterns
 
 - Database: use `getDb()` from `@/db` — creates a Neon HTTP client per request. Never cache the instance.
 - Auth (admin): use `auth()` from `@/lib/auth` for server components, `getServerSession(authOptions)` for API routes
 - Auth (client portal): use `getClientSession()` from `@/lib/client-auth` — cookie-based, returns `{ clientId, userId }`
-- Admin check: `(session as any).user?.isAdmin` — all admin API routes must return 403 if not admin
+- Admin check: use `requireAdmin(session)` from `@/lib/utils/admin-auth` — all admin API routes must return 403 if not admin
 - API route params: Next.js 16 uses `Promise<{ id: string }>` for async params — always `await` them
 - Phone numbers: normalize with `normalizePhoneNumber()` from `@/lib/utils/phone`
 - Validation: Zod schemas for all API input, return validation error details on 400
@@ -36,7 +36,7 @@ Resolve ambiguity yourself by:
 ## Auto-Checklists (follow these — don't ask)
 
 ### New API Route
-1. Auth: `/api/admin/*` → `getServerSession(authOptions)` + isAdmin check + 403. `/api/client/*` → `getClientSession()` + 401. `/api/cron/*` → `verifyCronSecret()`. `/api/webhooks/*` → signature verification (no auth).
+1. Auth: `/api/admin/*` → `getServerSession(authOptions)` + `requireAdmin(session)` + 403. `/api/client/*` → `getClientSession()` + 401. `/api/cron/*` → `verifyCronSecret()`. `/api/webhooks/*` → signature verification (no auth).
 2. Validation: Zod schema with `.strict()`, return `{ error, details }` on 400
 3. Params: `await` all route params (`Promise<{ id: string }>` in Next.js 16)
 4. Response: return typed JSON, 404 for missing resources, 500 with `console.error` (never expose raw DB errors)
@@ -75,13 +75,17 @@ This avoids stale patterns from training data. Always do this — don't rely on 
 - `npm run db:generate` — generate Drizzle migrations after schema changes
 - `npm run db:push` — push schema directly to database (use with caution)
 - `npm run db:migrate` — run generated migrations
+- `npm run typecheck` — fast TypeScript type-check only (~13s, no build output)
 - `npm run db:studio` — open Drizzle Studio for visual database browsing
 
 ## After Making Changes
 
-- **MANDATORY**: Run `npm run build` after completing any task. Fix errors before reporting done.
-- For UI-only changes, at minimum run `npm run lint`
-- Never leave a session with a broken build — the next session shouldn't start debugging your leftovers
+Two-tier verification — use the fast check often, full build at milestones:
+
+1. **After each file change**: run `npm run typecheck` (~13s) to catch type errors immediately. Fix before moving on.
+2. **After completing a task or major chunk**: run `npm run build` (full production build). Fix all errors before reporting done.
+3. For UI-only changes, at minimum run `npm run lint`
+4. Never leave a session with a broken build — the next session shouldn't start debugging your leftovers
 
 ## Session Discipline
 
@@ -91,12 +95,27 @@ This avoids stale patterns from training data. Always do this — don't rely on 
 
 ## File Organization
 
-- **`.scratch/`** — Temporary working files (drafts, research, intermediate outputs). Gitignored. Use this for anything that doesn't belong in the final commit: temp curl output, debug logs, draft content, exploration notes
-- **`docs/`** — Committed documentation (guides, use cases, ops reference)
-- **`src/`** — All application source code
-- **Root level** — Only config files, README.md, CLAUDE.md, BUSINESS-CASE.md, DEPLOYMENT.md
-- **Never create** loose .md files, screenshots, or log files at the project root
-- **Cleanup**: Run `bash .claude/scripts/cleanup.sh` to purge scratch files and stale artifacts
+### Where to write files
+
+| What you're doing | Write to | Why |
+|---|---|---|
+| Research notes, exploration output, agent summaries | `.scratch/` | Temporary — gets auto-cleaned |
+| Drafting a doc before it's ready for review | `.scratch/drafts/` | Move to `docs/` when finalized |
+| Comparing options, dumping API responses, debug output | `.scratch/` | Never belongs in repo |
+| Migration SQL review (before user confirms) | `.scratch/migrations/` | Only commit after `db:generate` |
+| Curl output, webhook test payloads, log captures | `.scratch/` | Ephemeral test data |
+| New application code (routes, services, components) | `src/` | **Always write directly** — never draft in scratch |
+| Schema changes | `src/db/schema/` | **Always write directly** — then run `db:generate` |
+| Finalized documentation | `docs/` | After content is complete and accurate |
+| Config files, project-level docs | Root (`./`) | Only: README.md, CLAUDE.md, BUSINESS-CASE.md, DEPLOYMENT.md |
+
+### Rules
+
+1. **Code goes straight to `src/`** — never draft source code in `.scratch/`. Code is validated by `npm run build`, not by staging it.
+2. **Docs start in `.scratch/drafts/` if large** (50+ lines) — move to `docs/` when done. Small edits go directly to `docs/`.
+3. **Never create files at root** — no loose `.md`, `.png`, `.log`, or `.json` files in the project root. If it's not config or one of the 4 root docs, it doesn't belong there.
+4. **Cleanup is automatic** — the Stop hook runs `.claude/scripts/cleanup.sh` on session end. It purges `.scratch/`, stale artifacts, `.DS_Store` files, and warns about untracked root files.
+5. **Manual cleanup**: `bash .claude/scripts/cleanup.sh`
 
 ## Do NOT
 
@@ -104,6 +123,12 @@ This avoids stale patterns from training data. Always do this — don't rely on 
 - Run `db:push` or `db:migrate` without explicit user confirmation
 - Modify `package-lock.json` or `node_modules/`
 - Skip admin auth checks on `/api/admin/*` routes
+- Use `any` TypeScript type — always use proper types. Use schema-inferred types (`Lead`, `Client`, etc.), generic parameters, `unknown` with type guards, or explicit interfaces. Zero tolerance for `any`.
+- Use literal quotes in JSX text content — use HTML character entity references instead:
+  - `'` → `&apos;` (or `&rsquo;` for curly)
+  - `"` → `&quot;` (or `&ldquo;`/`&rdquo;` for curly)
+  - `&` → `&amp;`
+  - `<` → `&lt;`, `>` → `&gt;`
 
 ## Parallel Worktree Workflow
 
