@@ -465,13 +465,14 @@ export async function calculatePlatformAnalytics(
 ): Promise<void> {
   const db = getDb();
 
-  // Count clients
+  // Count clients (exclude test clients from platform metrics)
   const [clientCounts] = await db
     .select({
       total: count(),
       active: sql<number>`count(*) filter (where ${clients.status} = 'active')`,
     })
-    .from(clients);
+    .from(clients)
+    .where(eq(clients.isTest, false));
 
   // New clients today
   const [newClients] = await db
@@ -548,11 +549,11 @@ export async function runDailyAnalyticsJob(): Promise<{ processed: number; error
   let processed = 0;
   let errors = 0;
 
-  // Get all active clients
+  // Get all active non-test clients
   const activeClients = await db
     .select({ id: clients.id })
     .from(clients)
-    .where(eq(clients.status, 'active'));
+    .where(and(eq(clients.status, 'active'), eq(clients.isTest, false)));
 
   // Calculate daily analytics for each client
   for (const client of activeClients) {

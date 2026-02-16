@@ -91,6 +91,7 @@ export async function sendCompliantMessage(
       messagesSentThisMonth: clients.messagesSentThisMonth,
       monthlyMessageLimit: clients.monthlyMessageLimit,
       timezone: clients.timezone,
+      isTest: clients.isTest,
     })
     .from(clients)
     .where(eq(clients.id, clientId))
@@ -98,6 +99,19 @@ export async function sendCompliantMessage(
 
   if (!clientData) {
     return blocked('Client not found', normalizedPhone, phoneHash, clientId, metadata);
+  }
+
+  // Test clients: skip actual SMS, return simulated success
+  if (clientData.isTest) {
+    console.log(`[Compliance] Test client ${clientId} — SMS simulated to ${normalizedPhone}`);
+    return {
+      sent: true,
+      queued: false,
+      blocked: false,
+      messageSid: `TEST_${Date.now()}`,
+      consentId: undefined,
+      warnings: ['Test mode — no SMS sent'],
+    };
   }
 
   if (

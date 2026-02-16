@@ -452,7 +452,7 @@ Currently review source setup at `/admin/clients/[id]/reviews` requires manually
 
 ## LOW
 
-### GAP-14: Message Counter Possibly Stale
+### ~~GAP-14: Message Counter Possibly Stale~~ [FALSE POSITIVE — Compliance gateway increments, process-scheduled resets monthly]
 
 **Where**: `src/db/schema/clients.ts` — `messagesSentThisMonth: integer('messages_sent_this_month').default(0)`
 
@@ -460,7 +460,7 @@ Currently review source setup at `/admin/clients/[id]/reviews` requires manually
 
 **Fix**: Either wire counter into SMS send path, or remove the field and rely exclusively on `usage_records` / `daily_stats`.
 
-### GAP-15: isTest Flag — Defined, Never Enforced
+### ~~GAP-15: isTest Flag — Defined, Never Enforced~~ [FIXED]
 
 **Where**: `src/db/schema/clients.ts` — `isTest: boolean('is_test').default(false)`
 
@@ -468,7 +468,7 @@ Currently review source setup at `/admin/clients/[id]/reviews` requires manually
 
 **Fix**: Add `isTest` check to SMS sending (skip Twilio for test clients) and analytics aggregation (exclude from platform metrics).
 
-### GAP-16: Cancellation Reason — Partially Captured
+### ~~GAP-16: Cancellation Reason — Partially Captured~~ [FALSE POSITIVE — subscription.ts:167 stores cancelReason]
 
 **Where**: `src/db/schema/subscriptions.ts` — `cancelReason: text('cancel_reason')`
 
@@ -476,7 +476,7 @@ Currently review source setup at `/admin/clients/[id]/reviews` requires manually
 
 **Issue**: Need to verify that the cancel API route stores `reason` in `subscriptions.cancelReason`. The field exists and the UI collects it — the wiring may or may not be complete.
 
-### GAP-17: Orphaned Utility Functions
+### GAP-17: Orphaned Utility Functions [DEFERRED — needs Stripe Elements frontend]
 
 These functions exist but are never called:
 - `getStepMessage()` in `src/lib/services/flow-resolution.ts`
@@ -505,7 +505,7 @@ These functions exist but are never called:
 | 11 | ~~MEDIUM~~ | ~~Invoice operations no routes~~ FIXED | S | `subscription-invoices.ts` |
 | 12 | MEDIUM | Subscription creation no entry point | S | `subscription.ts` |
 | 13 | ~~MEDIUM~~ | ~~Google Place ID search no setup flow~~ FIXED | S | `google-places.ts` |
-| 14 | LOW | Message counter stale | S | `clients.ts` |
-| 15 | LOW | isTest flag never enforced | S | `clients.ts` |
-| 16 | LOW | Cancellation reason wiring unclear | S | `cancellation-flow.tsx`, cancel API |
+| 14 | ~~LOW~~ | ~~Message counter stale~~ FALSE POSITIVE | S | Wired in compliance-gateway |
+| 15 | ~~LOW~~ | ~~isTest flag never enforced~~ FIXED | S | `clients.ts` |
+| 16 | ~~LOW~~ | ~~Cancellation reason wiring unclear~~ FALSE POSITIVE | S | Wired at subscription.ts:167 |
 | 17 | LOW | Orphaned utility functions | S | Various |
