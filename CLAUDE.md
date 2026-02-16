@@ -9,18 +9,16 @@
 - shadcn/ui + Tailwind 4 + Radix UI
 - Deploy: Cloudflare via OpenNext (`@opennextjs/cloudflare`)
 
-## Before Starting Work
+## Autonomy Policy
 
-Before implementing any non-trivial task, think through the request and identify:
-- Ambiguous requirements or missing details
-- Multiple valid approaches where user preference matters
-- Edge cases or scope boundaries that aren't specified
-- Assumptions you're about to make
+**Default: just do the work.** Do not ask clarifying questions unless you are genuinely blocked — meaning you cannot proceed without information that is impossible to infer from the codebase, the task description, or this file.
 
-If any of these exist, use AskUserQuestion to clarify BEFORE writing code.
-Do NOT ask about things you can resolve by reading the codebase.
-Do NOT ask when the user has given explicit, detailed instructions.
-For simple, unambiguous tasks — just do them.
+Resolve ambiguity yourself by:
+1. Reading the codebase (grep for existing patterns, check similar files)
+2. Following the checklists below (they answer most "which approach?" questions)
+3. Picking the simplest approach that fits existing patterns
+
+**Only ask when:** the user's intent is truly unclear (e.g., "should this be admin-only or client-facing?" when both are plausible and the answer changes the architecture). Even then, prefer asking one precise question over multiple.
 
 ## Key Patterns
 
@@ -35,6 +33,40 @@ For simple, unambiguous tasks — just do them.
 - UI components: shadcn/ui in `src/components/ui/`, install new ones with `npx shadcn@latest add <component>`
 - Services: business logic in `src/lib/services/`, automations in `src/lib/automations/`
 
+## Auto-Checklists (follow these — don't ask)
+
+### New API Route
+1. Auth: `/api/admin/*` → `getServerSession(authOptions)` + isAdmin check + 403. `/api/client/*` → `getClientSession()` + 401. `/api/cron/*` → `verifyCronSecret()`. `/api/webhooks/*` → signature verification (no auth).
+2. Validation: Zod schema with `.strict()`, return `{ error, details }` on 400
+3. Params: `await` all route params (`Promise<{ id: string }>` in Next.js 16)
+4. Response: return typed JSON, 404 for missing resources, 500 with `console.error` (never expose raw DB errors)
+5. Phone numbers: always `normalizePhoneNumber()` before DB lookup
+
+### New Schema Table
+1. One file: `src/db/schema/<table-name>.ts`
+2. Standard columns: `id` (uuid, primaryKey, defaultRandom), `createdAt` (timestamp, defaultNow), `updatedAt` if mutable
+3. Foreign keys: `onDelete: 'cascade'` or `'set null'`
+4. Indexes: add on columns used in WHERE/JOIN
+5. Export types: `export type Foo = typeof foos.$inferSelect; export type NewFoo = typeof foos.$inferInsert;`
+6. Re-export from `src/db/schema/index.ts`
+7. Run `npm run db:generate` → review SQL → ask user before `db:push`/`db:migrate`
+
+### New UI Page
+1. Layout: client portal = `max-w-3xl`, admin = `max-w-7xl`
+2. Components: shadcn/ui from `src/components/ui/`, install missing with `npx shadcn@latest add <name>`
+3. Stat cards: max 4 per row, always include context line ("+12% vs last week")
+4. Empty states: explanation + next action button
+5. Loading: Skeleton fallbacks matching content shape (use Suspense)
+6. Colors: green=active, yellow=pending, gray=inactive, red=error, blue=info
+7. Destructive actions: always AlertDialog confirmation
+
+### External API Integration (Twilio, Stripe, OpenAI)
+Before writing integration code, query Context7 for current API patterns:
+- Twilio: resolve `/twilio/twilio-node`, then query for the specific API
+- Stripe: resolve the Stripe library, then query
+- OpenAI: resolve the OpenAI library, then query
+This avoids stale patterns from training data. Always do this — don't rely on memory.
+
 ## Commands
 
 - `npm run dev` — local dev server (port 3000)
@@ -47,9 +79,24 @@ For simple, unambiguous tasks — just do them.
 
 ## After Making Changes
 
-- Run `npm run build` after completing work to catch TypeScript errors before the user sees them
-- If build fails, fix the errors — do not leave broken builds
+- **MANDATORY**: Run `npm run build` after completing any task. Fix errors before reporting done.
 - For UI-only changes, at minimum run `npm run lint`
+- Never leave a session with a broken build — the next session shouldn't start debugging your leftovers
+
+## Session Discipline
+
+- Commit working code frequently — small commits, not one giant commit at the end
+- Before stopping (for any reason): ensure the build passes and all changes are committed
+- When using worktrees: update `.claude/progress.md` before the session ends
+
+## File Organization
+
+- **`.scratch/`** — Temporary working files (drafts, research, intermediate outputs). Gitignored. Use this for anything that doesn't belong in the final commit: temp curl output, debug logs, draft content, exploration notes
+- **`docs/`** — Committed documentation (guides, use cases, ops reference)
+- **`src/`** — All application source code
+- **Root level** — Only config files, README.md, CLAUDE.md, BUSINESS-CASE.md, DEPLOYMENT.md
+- **Never create** loose .md files, screenshots, or log files at the project root
+- **Cleanup**: Run `bash .claude/scripts/cleanup.sh` to purge scratch files and stale artifacts
 
 ## Do NOT
 

@@ -11,5 +11,8 @@ cat <<'REMINDER'
 - Schema: one table per file in `src/db/schema/`, re-export from index.ts
 - Validation: Zod `.strict()` on all API input
 - Dialog: custom DialogTrigger does NOT support `asChild` — use className directly
-- After changes: run `npm run build` to verify 0 TypeScript errors
+- After changes: run `npm run build` — MANDATORY, fix errors before reporting done
+- External APIs: query Context7 BEFORE writing Twilio/Stripe/OpenAI code
+- Autonomy: do NOT ask clarifying questions — follow the auto-checklists in CLAUDE.md
+- Session end: commit all working code, ensure build passes, update progress.md if in worktree
 REMINDER

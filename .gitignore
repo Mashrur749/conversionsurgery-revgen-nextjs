@@ -54,9 +54,17 @@ next-env.d.ts
 # local testing guides with credentials
 LOCAL_PRODUCTION_TESTING.md
 
-# claude code worktree orchestration
+# claude code artifacts
 .claude-refactor/
+.claude-logs/
+.claude-progress*
 .worktrees/
+.agents/
+run-claude-implementations/
+external-backups/
+
+# claude code scratch (temporary working files)
+.scratch/
 
 # testing artifacts
 .playwright-mcp/
