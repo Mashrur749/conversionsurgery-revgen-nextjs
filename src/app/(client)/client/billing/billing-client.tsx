@@ -149,7 +149,19 @@ export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
         </div>
       </div>
 
-      <InvoiceList invoices={invoices} />
+      <InvoiceList
+        invoices={invoices}
+        onRetryPayment={async (invoiceId) => {
+          const res = await fetch(`/api/client/billing/invoices/${invoiceId}/retry`, {
+            method: 'POST',
+          });
+          if (!res.ok) {
+            const data = (await res.json()) as { error?: string };
+            throw new Error(data.error || 'Retry failed');
+          }
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

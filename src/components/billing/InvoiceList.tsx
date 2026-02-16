@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { Download, FileText, ExternalLink } from 'lucide-react';
+import { Download, FileText, ExternalLink, RotateCw } from 'lucide-react';
 
 interface Invoice {
   id: string;
@@ -37,6 +37,7 @@ interface InvoiceListProps {
   invoices: Invoice[];
   onLoadMore?: () => void;
   hasMore?: boolean;
+  onRetryPayment?: (invoiceId: string) => Promise<void>;
 }
 
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -47,8 +48,9 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   uncollectible: { label: 'Uncollectible', color: 'bg-red-100 text-red-800' },
 };
 
-export function InvoiceList({ invoices, onLoadMore, hasMore }: InvoiceListProps) {
+export function InvoiceList({ invoices, onLoadMore, hasMore, onRetryPayment }: InvoiceListProps) {
   const [expandedInvoice, setExpandedInvoice] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState<string | null>(null);
 
   return (
     <Card>
@@ -104,6 +106,25 @@ export function InvoiceList({ invoices, onLoadMore, hasMore }: InvoiceListProps)
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            {onRetryPayment && (invoice.status === 'open' || invoice.status === 'uncollectible') && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={retrying === invoice.id}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setRetrying(invoice.id);
+                                  try {
+                                    await onRetryPayment(invoice.id);
+                                  } finally {
+                                    setRetrying(null);
+                                  }
+                                }}
+                              >
+                                <RotateCw className={`h-4 w-4 mr-1 ${retrying === invoice.id ? 'animate-spin' : ''}`} />
+                                Retry
+                              </Button>
+                            )}
                             {invoice.pdfUrl && (
                               <Button
                                 variant="ghost"

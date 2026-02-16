@@ -381,7 +381,7 @@ Plan features include: `includesVoiceAi`, `includesCalendarSync`, `includesAdvan
 
 ---
 
-### GAP-11: Invoice Operations — Service Functions Without Routes
+### ~~GAP-11: Invoice Operations — Service Functions Without Routes~~ [FIXED]
 
 **What exists:**
 
@@ -502,7 +502,7 @@ These functions exist but are never called:
 | 08 | MEDIUM | Review metrics not displayed | S | `review-metrics.ts`, `review-monitoring.ts` |
 | 09 | MEDIUM | Funnel analytics no visualization | M | `funnel-events.ts`, `funnel-tracking.ts` |
 | 10 | ~~MEDIUM~~ | ~~Feature access gating never enforced~~ FIXED | S | `subscription.ts` |
-| 11 | MEDIUM | Invoice operations no routes | S | `subscription-invoices.ts` |
+| 11 | ~~MEDIUM~~ | ~~Invoice operations no routes~~ FIXED | S | `subscription-invoices.ts` |
 | 12 | MEDIUM | Subscription creation no entry point | S | `subscription.ts` |
 | 13 | MEDIUM | Google Place ID search no setup flow | S | `google-places.ts` |
 | 14 | LOW | Message counter stale | S | `clients.ts` |
