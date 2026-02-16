@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { getClientId } from '@/lib/get-client-id';
 import { getDb } from '@/db';
 import { teamMembers } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { z } from 'zod';
 import { NextRequest } from 'next/server';
@@ -69,7 +69,22 @@ export async function POST(req: Request) {
     }
 
     const validated = parsed.data;
+
+    // Check usage limit for team members
+    const { checkUsageLimit } = await import('@/lib/services/subscription');
     const db = getDb();
+    const teamCount = await db
+      .select({ count: count() })
+      .from(teamMembers)
+      .where(eq(teamMembers.clientId, validated.clientId));
+    const usageCheck = await checkUsageLimit(validated.clientId, 'team_members', teamCount[0]?.count ?? 0);
+    if (!usageCheck.allowed) {
+      return Response.json(
+        { error: `Team member limit reached (${usageCheck.current}/${usageCheck.limit}). Upgrade your plan for more capacity.` },
+        { status: 403 }
+      );
+    }
+
     const [member] = await db
       .insert(teamMembers)
       .values({

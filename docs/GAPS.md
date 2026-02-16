@@ -251,7 +251,7 @@ Schema — `src/db/schema/clients.ts`:
 
 ## MEDIUM
 
-### GAP-07: Subscription Pause/Resume — No UI
+### ~~GAP-07: Subscription Pause/Resume — No UI~~ [FALSE POSITIVE — Already wired in SubscriptionCard]
 
 **What exists:**
 
@@ -339,7 +339,7 @@ Event types defined: `lead_created`, `first_response`, `qualified`, `appointment
 
 ---
 
-### GAP-10: Feature Access Gating — Never Enforced
+### ~~GAP-10: Feature Access Gating — Never Enforced~~ [FIXED]
 
 **What exists:**
 
@@ -498,10 +498,10 @@ These functions exist but are never called:
 | 04 | HIGH | Client cohort analysis never populated | M | `client-cohorts.ts` |
 | 05 | HIGH | Google OAuth no admin management | M | `google-business.ts`, `clients.ts` |
 | 06 | HIGH | Client webhook config schema only | M | `clients.ts` |
-| 07 | MEDIUM | Subscription pause/resume no UI | S | `subscription.ts`, `actions.ts` |
+| 07 | ~~MEDIUM~~ | ~~Subscription pause/resume no UI~~ FALSE POSITIVE | S | Already wired in SubscriptionCard |
 | 08 | MEDIUM | Review metrics not displayed | S | `review-metrics.ts`, `review-monitoring.ts` |
 | 09 | MEDIUM | Funnel analytics no visualization | M | `funnel-events.ts`, `funnel-tracking.ts` |
-| 10 | MEDIUM | Feature access gating never enforced | S | `subscription.ts` |
+| 10 | ~~MEDIUM~~ | ~~Feature access gating never enforced~~ FIXED | S | `subscription.ts` |
 | 11 | MEDIUM | Invoice operations no routes | S | `subscription-invoices.ts` |
 | 12 | MEDIUM | Subscription creation no entry point | S | `subscription.ts` |
 | 13 | MEDIUM | Google Place ID search no setup flow | S | `google-places.ts` |

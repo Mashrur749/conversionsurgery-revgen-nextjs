@@ -34,6 +34,26 @@ export async function POST(request: NextRequest) {
 
     const { phoneNumber, clientId } = parsed.data;
 
+    // Check phone number usage limit
+    const { checkUsageLimit } = await import('@/lib/services/subscription');
+    const { clientPhoneNumbers } = await import('@/db/schema');
+    const { eq: eqOp, count: countFn } = await import('drizzle-orm');
+    const { getDb: getDatabase } = await import('@/db');
+    const phoneDb = getDatabase();
+    const phoneCount = await phoneDb
+      .select({ count: countFn() })
+      .from(clientPhoneNumbers)
+      .where(eqOp(clientPhoneNumbers.clientId, clientId));
+    // +1 for the primary twilioNumber on clients table
+    const currentPhoneCount = (phoneCount[0]?.count ?? 0) + 1;
+    const usageCheck = await checkUsageLimit(clientId, 'phone_numbers', currentPhoneCount);
+    if (!usageCheck.allowed) {
+      return NextResponse.json(
+        { error: `Phone number limit reached (${usageCheck.current}/${usageCheck.limit}). Upgrade plan for more numbers.` },
+        { status: 403 }
+      );
+    }
+
     console.log(`[Twilio] Purchase request: number=${phoneNumber}, client=${clientId}`);
 
     const result = await purchaseNumber(phoneNumber, clientId);

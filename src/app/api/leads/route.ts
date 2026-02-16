@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
-import { eq, and, or, ilike, sql, desc, asc, gte, lte } from 'drizzle-orm';
+import { eq, and, or, ilike, sql, desc, asc, gte, lte, count } from 'drizzle-orm';
 import { z } from 'zod';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 
@@ -173,6 +173,22 @@ export async function POST(request: NextRequest) {
 
   if (!effectiveClientId) {
     return NextResponse.json({ error: 'clientId is required' }, { status: 400 });
+  }
+
+  // Check usage limit (skip for admins creating leads on behalf of clients)
+  if (!isAdmin) {
+    const { checkUsageLimit } = await import('@/lib/services/subscription');
+    const leadCount = await getDb()
+      .select({ count: count() })
+      .from(leads)
+      .where(eq(leads.clientId, effectiveClientId));
+    const usageCheck = await checkUsageLimit(effectiveClientId, 'leads', leadCount[0]?.count ?? 0);
+    if (!usageCheck.allowed) {
+      return NextResponse.json(
+        { error: `Lead limit reached (${usageCheck.current}/${usageCheck.limit}). Upgrade your plan for more capacity.` },
+        { status: 403 }
+      );
+    }
   }
 
   const db = getDb();
