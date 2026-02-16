@@ -1,6 +1,6 @@
 # ConversionSurgery Platform Use Cases
 
-A comprehensive operations guide covering every workflow for every user type — **98 use cases** across 6 user categories. Each use case describes **who** performs it, **when** it happens, **what** steps are involved, and **what** the expected outcome is.
+A comprehensive operations guide covering every workflow for every user type — **104 use cases** across 6 user categories. Each use case describes **who** performs it, **when** it happens, **what** steps are involved, and **what** the expected outcome is.
 
 ---
 
@@ -47,6 +47,9 @@ A comprehensive operations guide covering every workflow for every user type —
   - [A37: Define Client Service Catalog](#a37-define-client-service-catalog)
   - [A38: Send Agency Messages to Clients](#a38-send-agency-messages-to-clients)
   - [A39: View NPS Dashboard](#a39-view-nps-dashboard)
+  - [A40: Manage Coupons](#a40-manage-coupons)
+  - [A41: Connect Google Business OAuth](#a41-connect-google-business-oauth)
+  - [A42: View Funnel Analytics](#a42-view-funnel-analytics)
 - [Client User (Business Owner) Use Cases](#client-user-business-owner-use-cases)
   - [C1: First Login and Dashboard Orientation](#c1-first-login-and-dashboard-orientation)
   - [C2: View and Manage Leads](#c2-view-and-manage-leads)
@@ -84,6 +87,7 @@ A comprehensive operations guide covering every workflow for every user type —
   - [P14: Browse Help Articles](#p14-browse-help-articles)
   - [P15: Use Discussions for Support](#p15-use-discussions-for-support)
   - [P16: Approve AI-Suggested Actions](#p16-approve-ai-suggested-actions)
+  - [P17: Retry a Failed Invoice Payment](#p17-retry-a-failed-invoice-payment)
 - [Lead (Homeowner) Use Cases](#lead-homeowner-use-cases)
   - [L1: Book an Appointment via SMS](#l1-book-an-appointment-via-sms)
   - [L2: Receive and Respond to Automated Messages](#l2-receive-and-respond-to-automated-messages)
@@ -111,6 +115,8 @@ A comprehensive operations guide covering every workflow for every user type —
   - [S16: Agency Digest Email](#s16-agency-digest-email)
   - [S17: No-Show Recovery Automation](#s17-no-show-recovery-automation)
   - [S18: Win-Back Re-engagement Automation](#s18-win-back-re-engagement-automation)
+  - [S19: Cohort Retention Analysis](#s19-cohort-retention-analysis)
+  - [S20: Client Webhook Dispatch](#s20-client-webhook-dispatch)
 
 ---
 
@@ -491,9 +497,13 @@ A comprehensive operations guide covering every workflow for every user type —
 **Steps**:
 
 1. Navigate to `/admin/clients/[id]/reviews`.
-2. Click "Add Review Source."
-3. Connect a **review platform**:
-   - Google Business: Enter the Google Place ID
+2. **Connect Google Business Profile** (optional, for auto-posting responses):
+   - Click "Connect Google" on the Google Business Profile card.
+   - Complete the OAuth flow (see A41 for full details).
+   - Once connected, the status badge shows green "Connected."
+3. Click "Add Review Source."
+4. Connect a **review platform**:
+   - Google Business: Enter the Google Place ID (use the built-in search to find it by business name)
    - Yelp: Enter the business URL
    - Facebook: Enter the page URL
 4. The system begins polling for new reviews.
@@ -557,7 +567,7 @@ A comprehensive operations guide covering every workflow for every user type —
 3. For past-due accounts:
    - Review payment failure details
    - Contact client if needed
-   - Stripe handles retry logic automatically
+   - Stripe handles automatic retry, and clients can also retry failed invoices from their billing page (see P17)
 4. To view a specific client's billing:
    - Navigate to their client detail page
    - See subscription status, plan, and payment history
@@ -1195,6 +1205,97 @@ A comprehensive operations guide covering every workflow for every user type —
 4. Identify clients with low NPS scores for follow-up.
 
 **Outcome**: Visibility into customer satisfaction across all clients. Identify which clients' customers are happiest and which need attention.
+
+---
+
+### A40: Manage Coupons
+
+**When**: Creating discount codes for promotions, referral incentives, or client retention.
+
+**Steps**:
+
+1. Navigate to `/admin/billing/coupons`.
+2. View existing coupons with code, discount %, duration, usage count, and status.
+3. Click "Create Coupon" to open the dialog:
+   - **Code**: Unique discount code (e.g., `WELCOME20`)
+   - **Discount %**: Percentage off (e.g., 20)
+   - **Duration**: How long the discount applies (`once`, `repeating`, `forever`)
+   - **Max Redemptions**: Limit how many times the code can be used (optional)
+   - **Valid From / Valid Until**: Date range (optional)
+   - **Applicable Plans**: Restrict to specific plans (optional)
+   - **First-time only**: Only available to clients without prior subscriptions
+4. Activate or deactivate coupons from the table.
+5. Delete coupons that are no longer needed.
+
+**Validation**: When a client uses a coupon during checkout, the system validates: active status, date range, redemption limits, applicable plans, and first-time eligibility.
+
+**Outcome**: Flexible promotional pricing without touching Stripe directly. Track redemption counts and manage code lifecycle.
+
+**Key API calls**:
+- `GET /api/admin/coupons` (list all)
+- `POST /api/admin/coupons` (create with Zod validation)
+- `PATCH /api/admin/coupons/[id]` (update name, active status, limits)
+- `DELETE /api/admin/coupons/[id]` (delete)
+
+---
+
+### A41: Connect Google Business OAuth
+
+**When**: Connecting a client's Google Business Profile to enable auto-posting review responses.
+
+**Preconditions**: `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` environment variables configured.
+
+**Steps**:
+
+1. Navigate to `/admin/clients/[id]/reviews`.
+2. View the **Google Business Profile** card showing connection status:
+   - **Connected** (green badge) — OAuth tokens are valid
+   - **Token Expired** (yellow badge) — Tokens need refresh, click "Reconnect"
+   - **Not Connected** (gray badge) — No OAuth tokens stored
+3. To connect:
+   - Click "Connect Google."
+   - Browser redirects to Google consent screen requesting `business.manage` scope.
+   - Approve access. Google redirects back to `/api/auth/callback/google-business`.
+   - The callback exchanges the authorization code for access + refresh tokens.
+   - Tokens and the business account ID are stored on the client record.
+   - Redirects back to the reviews page with `?google=connected`.
+4. To disconnect:
+   - Click "Disconnect."
+   - Confirm in the dialog.
+   - All Google tokens are cleared from the client record.
+
+**Token refresh**: When posting a review response, the system checks token expiry and auto-refreshes using the stored refresh token. If refresh fails, the status shows as "Token Expired."
+
+**Outcome**: Enables `postResponseToGoogle()` to work, allowing AI-drafted review responses to be posted directly to Google Business Profile.
+
+**Key API calls**:
+- `GET /api/admin/clients/[id]/google` (initiates OAuth redirect)
+- `GET /api/auth/callback/google-business` (handles OAuth callback)
+- `DELETE /api/admin/clients/[id]/google` (disconnect, clears tokens)
+
+---
+
+### A42: View Funnel Analytics
+
+**When**: Reviewing platform-wide lead conversion funnel to identify drop-off points.
+
+**Steps**:
+
+1. Navigate to `/admin/platform-analytics`.
+2. Scroll to the **Lead Funnel (Last 30 Days)** section.
+3. View the horizontal bar chart showing stages:
+   - **Leads** — Total leads created
+   - **Contacted** — Leads that received a first response
+   - **Appointments** — Leads that booked an appointment
+   - **Jobs Won** — Leads marked as won
+   - **Paid** — Payment received
+   - **Reviews** — Review received from customer
+4. Between each stage, the conversion percentage is shown (e.g., "65% conversion").
+5. Identify the weakest conversion step and focus optimization there.
+
+**Data source**: Queries `funnel_events` table, grouped by `eventType` with counts and stage-to-stage conversion rates.
+
+**Outcome**: Data-driven insight into where leads drop off in the pipeline. If "Contacted → Appointments" is low, focus on booking flow improvements. If "Won → Paid" is low, focus on payment collection.
 
 ---
 
@@ -1900,6 +2001,27 @@ Same workflow as C9 but accessed via the client portal at `/client/discussions`.
 
 ---
 
+### P17: Retry a Failed Invoice Payment
+
+**When**: An invoice payment has failed and you want to retry it.
+
+**Steps**:
+
+1. Navigate to `/client/billing`.
+2. View the invoice history. Failed or uncollectible invoices show a "Retry" button.
+3. Click "Retry" on the failed invoice.
+4. The system calls Stripe to retry the payment using the card on file.
+5. If successful, the invoice status updates to `paid`.
+6. If it fails again, update your payment method first, then retry.
+
+**Outcome**: Self-service payment recovery without contacting the admin. Reduces involuntary churn from payment failures.
+
+**Key API calls**:
+- `POST /api/client/billing/invoices/[id]/retry` (retry payment)
+- `GET /api/client/billing/upcoming` (view upcoming invoice)
+
+---
+
 ## Lead (Homeowner) Use Cases
 
 Leads interact with the platform entirely through SMS and phone calls. They never see a dashboard. Understanding their experience is critical for testing.
@@ -2288,7 +2410,7 @@ These happen without any user action. Understanding them is essential for operat
 - Each appointment reminder → `appointmentsReminded++`
 - Each payment requested → `paymentsRequested++`
 
-**Daily cron** (`/api/cron/daily`):
+**Daily cron** (runs at midnight UTC via master orchestrator):
 1. Roll up daily stats into weekly aggregation.
 2. Roll up weekly into monthly aggregation.
 3. Calculate platform-wide analytics.
@@ -2475,6 +2597,42 @@ These happen without any user action. Understanding them is essential for operat
 
 ---
 
+### S19: Cohort Retention Analysis
+
+**Trigger**: Cron job runs monthly (1st of each month) via the master orchestrator.
+
+**Flow**:
+
+1. **Query all clients** → Fetch non-test clients with their signup date and status.
+2. **Calculate cohort month** → Format signup date as `YYYY-MM` cohort.
+3. **Check activity at milestones** → For each client, check if they had leads created during the month corresponding to each milestone:
+   - Month 1, Month 2, Month 3, Month 6, Month 12
+4. **Upsert cohort record** → Store/update the `client_cohorts` table with activity flags per milestone.
+5. **Result** → Returns count of processed clients.
+
+**Outcome**: Retention visibility by signup cohort. Answer questions like "What % of clients who signed up in January are still active at month 6?" to identify churn patterns and improve onboarding.
+
+---
+
+### S20: Client Webhook Dispatch
+
+**Trigger**: Automated events — lead creation (form submission, missed call), appointment booking.
+
+**Flow**:
+
+1. **Event fires** → An automation (form response, missed call, appointment booking) completes.
+2. **Client lookup** → Check if the client has a `webhookUrl` configured and `webhookEvents` includes this event type.
+3. **Payload construction** → Build JSON payload with event type, timestamp, and event-specific data (lead details, appointment details, etc.).
+4. **HMAC signing** → Sign the payload with `X-Webhook-Signature` header using HMAC-SHA256 with the client's webhook secret.
+5. **Dispatch with retry** → POST to the client's webhook URL with 3 attempts and exponential backoff (1s, 2s, 4s). 10-second timeout per attempt.
+6. **Log delivery** → Insert into `webhook_log` table with event type, payload, response status, and response body.
+
+**Supported events**: `lead.created`, `appointment.booked`
+
+**Outcome**: Clients can integrate their own systems (CRMs, project management tools, Zapier) by receiving real-time webhook notifications for key events. HMAC signatures ensure payload authenticity.
+
+---
+
 ## Appendix: Quick Reference
 
 ### Key URLs by User Type
@@ -2510,8 +2668,9 @@ These happen without any user action. Understanding them is essential for operat
 |-----|---------|
 | `/admin/billing` | Billing / subscription management |
 | `/admin/billing/plans` | Plan management (CRUD) |
+| `/admin/billing/coupons` | Coupon management (create, activate, deactivate) |
 | `/admin/reports` | Report generation |
-| `/admin/platform-analytics` | Platform health metrics |
+| `/admin/platform-analytics` | Platform health metrics + funnel visualization |
 | `/admin/usage` | Costs & usage monitoring |
 
 **Admin** (Settings group):
@@ -2577,26 +2736,32 @@ These happen without any user action. Understanding them is essential for operat
 | Twilio Agency SMS | `/api/webhooks/twilio/agency-sms` | Agency client SMS |
 | Stripe | `/api/webhooks/stripe` | Payment/subscription events |
 | Form | `/api/webhooks/form` | Website form submissions |
+| Google OAuth | `/api/auth/callback/google-business` | Google Business OAuth callback |
 
 ### Cron Jobs
 
 | Endpoint | Frequency | Purpose |
 |----------|-----------|---------|
-| `/api/cron` | Every 5 min | Master orchestrator (schedules all jobs) |
+| `/api/cron` | Every 5 min | Master orchestrator (dispatches all jobs below) |
 | `/api/cron/process-scheduled` | Every 5 min | Send due scheduled messages |
-| `/api/cron/check-missed-calls` | Periodic | Backup missed call detection |
-| `/api/cron/no-show-recovery` | Daily | Detect no-shows, send AI follow-ups |
-| `/api/cron/win-back` | Daily 10am | Re-engage stale leads (25-35 days) |
-| `/api/cron/daily` | Daily | Aggregate daily stats |
-| `/api/cron/daily-summary` | Daily 7am | Send daily summary email |
-| `/api/cron/weekly-summary` | Weekly | Send weekly performance reports |
-| `/api/cron/agency-digest` | Weekly | Agency performance summaries |
-| `/api/cron/calendar-sync` | Periodic | Sync appointments with calendars |
-| `/api/cron/agent-check` | Periodic | Health check on conversation agent |
-| `/api/cron/expire-prompts` | Periodic | Expire old agency prompts |
-| `/api/cron/trial-reminders` | Daily | Trial reminder emails (day 7, 12, 14) |
+| `/api/cron/check-missed-calls` | Every 5 min | Backup missed call detection |
 | `/api/cron/auto-review-response` | Every 30 min | AI draft + auto-post review responses |
-| `/api/cron/send-nps` | Periodic | Send NPS surveys post-appointment |
+| `/api/cron/calendar-sync` | Every 30 min | Sync appointments with calendars |
+| (inline) usage-tracking | Hourly | Update monthly summaries, check usage alerts |
+| (inline) sla-breach-check | Hourly | Detect and alert on SLA breaches |
+| (inline) review-sync | Hourly | Fetch new reviews, alert on negatives |
+| `/api/cron/expire-prompts` | Hourly | Expire old agency prompts |
+| `/api/cron/send-nps` | Hourly | Send NPS surveys 4h after completed appointments |
+| `/api/cron/agent-check` | Hourly | Health check on conversation agent |
+| (inline) lead-scoring | Daily midnight | Re-score all active client leads |
+| (inline) analytics | Daily midnight | Aggregate daily stats into analytics tables |
+| `/api/cron/trial-reminders` | Daily midnight | Trial reminder emails (day 7, 12, 14) |
+| `/api/cron/no-show-recovery` | Daily midnight | Detect no-shows, send AI follow-ups |
+| (inline) cohort-update | Monthly (1st) | Update client cohort retention metrics |
+| `/api/cron/daily-summary` | Daily 7am | Send daily summary email |
+| `/api/cron/win-back` | Daily 10am | Re-engage stale leads (25-35 days) |
+| `/api/cron/weekly-summary` | Weekly Mon 7am | Send weekly performance reports |
+| `/api/cron/agency-digest` | Weekly Mon 7am | Agency performance summaries |
 
 ### Feature Flags (per client, admin-controlled)
 

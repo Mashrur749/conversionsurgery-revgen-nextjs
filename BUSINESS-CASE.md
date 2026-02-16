@@ -107,6 +107,8 @@ All features are marked **[LIVE]** — fully implemented and working.
 | Active client count | [LIVE] | Subscriptions by status              |
 | Gross margin        | [LIVE] | Revenue vs API costs                 |
 | Health indicators   | [LIVE] | Platform-wide performance dashboard  |
+| Funnel visualization | [LIVE] | Lead funnel with per-stage conversion rates (30 days) |
+| Cohort retention     | [LIVE] | Monthly cohort analysis at 1/2/3/6/12 month milestones |
 
 ### 1.6 Billing Administration
 
@@ -119,7 +121,10 @@ All features are marked **[LIVE]** — fully implemented and working.
 | Failed payments         | [LIVE] | Clients with payment issues                                                       |
 | Churn rate              | [LIVE] | Percentage cancelled this month                                                   |
 | Plan management         | [LIVE] | Full CRUD at /admin/billing/plans with features, pricing, Stripe fields           |
-| Overage configuration   | [LIVE] | Plan features editor supports quotas; subscription table has overage cents fields |
+| Overage configuration   | [LIVE] | Plan features editor supports quotas, per-lead/per-SMS overage pricing            |
+| Coupon management       | [LIVE] | Create/edit/deactivate coupons with % discount, date limits, usage caps           |
+| Invoice retry           | [LIVE] | Client-initiated retry for failed/uncollectible invoice payments                  |
+| Usage enforcement       | [LIVE] | Lead, team member, and phone number creation gated by plan limits                 |
 
 ### 1.7 Flow Template Management
 
@@ -183,8 +188,10 @@ All features are marked **[LIVE]** — fully implemented and working.
 | Review aggregation       | [LIVE] | Per-client average ratings                     |
 | Review source tracking   | [LIVE] | Google, Yelp, Facebook, etc.                   |
 | Post responses to Google | [LIVE] | Google Business Profile API                    |
-| Auto review response     | [LIVE] | AI drafts + auto-posting via cron every 30 min |
-| Review fetching          | [LIVE] | Hourly sync via main cron route                |
+| Auto review response     | [LIVE] | AI drafts + auto-posting via cron every 30 min       |
+| Review fetching          | [LIVE] | Hourly sync via main cron route                      |
+| Google OAuth management  | [LIVE] | Connect/disconnect/reconnect with status indicator   |
+| Google Place ID search   | [LIVE] | Admin endpoint for searching Google Places by name   |
 
 ### 1.13 Voice AI Configuration
 
@@ -231,6 +238,7 @@ All features are marked **[LIVE]** — fully implemented and working.
 | API key management   | [LIVE] | Create/revoke API keys per client with scopes, SHA-256 hashed storage |
 | Webhook logs         | [LIVE] | Admin viewer with filtering, SMS/voice events logged                  |
 | Email templates      | [LIVE] | Admin CRUD editor with variable interpolation and live preview        |
+| Client webhooks      | [LIVE] | HMAC-signed webhook dispatch to client URLs with retry and logging    |
 | Quiet hours defaults | [LIVE] | CRTC-compliant 9pm-10am enforced platform-wide                        |
 
 ---
@@ -810,7 +818,7 @@ Plans support monthly and yearly billing with separate Stripe price IDs.
 | ---------------- | ------ | ---------------------------------------------------------------- |
 | New subscription | [LIVE] | Stripe checkout, immediate charge                                |
 | Monthly renewal  | [LIVE] | Auto-charge on billing date                                      |
-| Failed payment   | [LIVE] | Retry via Stripe, tracked in billing events                      |
+| Failed payment   | [LIVE] | Stripe auto-retry + client-initiated retry from billing page     |
 | Upgrade          | [LIVE] | Prorated charge via Stripe                                       |
 | Downgrade        | [LIVE] | Applied at next billing cycle                                    |
 | Cancellation     | [LIVE] | Multi-step flow with value retention, continues until period end |
@@ -907,19 +915,29 @@ Every feature can be toggled per client:
 
 ## 10. CRON JOBS
 
-| Job                | Schedule    | Status | Purpose                                      |
-| ------------------ | ----------- | ------ | -------------------------------------------- |
-| process-scheduled  | Every 5 min | [LIVE] | Send due scheduled messages (50 per batch)   |
-| check-missed-calls | Periodic    | [LIVE] | Backup missed call detection                 |
-| no-show-recovery   | Daily       | [LIVE] | Detect no-shows, send AI follow-ups          |
-| win-back           | Daily 10am  | [LIVE] | Re-engage stale leads (25-35 days)           |
-| daily              | Daily       | [LIVE] | Aggregate daily stats                        |
-| daily-summary      | Daily 7am   | [LIVE] | Send daily summary email to opted-in clients |
-| weekly-summary     | Weekly      | [LIVE] | Compile and send weekly reports              |
-| agency-digest      | Weekly      | [LIVE] | Agency performance summaries                 |
-| calendar-sync      | Periodic    | [LIVE] | Sync appointments with calendars             |
-| agent-check        | Periodic    | [LIVE] | Health check on conversation agent           |
-| expire-prompts     | Periodic    | [LIVE] | Expire old agency prompts                    |
+All jobs are dispatched by the master orchestrator at `/api/cron` (POST, Cloudflare Workers cron).
+
+| Job                  | Schedule       | Status | Purpose                                           |
+| -------------------- | -------------- | ------ | ------------------------------------------------- |
+| process-scheduled    | Every 5 min    | [LIVE] | Send due scheduled messages (50 per batch)        |
+| check-missed-calls   | Every 5 min    | [LIVE] | Backup missed call detection                      |
+| auto-review-response | Every 30 min   | [LIVE] | AI draft + auto-post review responses             |
+| calendar-sync        | Every 30 min   | [LIVE] | Sync appointments with calendars                  |
+| usage-tracking       | Hourly         | [LIVE] | Update monthly summaries, check usage alerts      |
+| sla-breach-check     | Hourly         | [LIVE] | Detect and alert on SLA breaches                  |
+| review-sync          | Hourly         | [LIVE] | Fetch new reviews, alert on negatives             |
+| expire-prompts       | Hourly         | [LIVE] | Expire old agency prompts                         |
+| send-nps             | Hourly         | [LIVE] | Send NPS surveys 4h after completed appointments  |
+| agent-check          | Hourly         | [LIVE] | Health check on conversation agent                |
+| lead-scoring         | Daily midnight | [LIVE] | Re-score all active client leads                  |
+| analytics            | Daily midnight | [LIVE] | Aggregate daily stats into analytics tables       |
+| trial-reminders      | Daily midnight | [LIVE] | Trial reminder emails (day 7, 12, 14)             |
+| no-show-recovery     | Daily midnight | [LIVE] | Detect no-shows, send AI follow-ups               |
+| daily-summary        | Daily 7am      | [LIVE] | Send daily summary email to opted-in clients      |
+| win-back             | Daily 10am     | [LIVE] | Re-engage stale leads (25-35 days)                |
+| weekly-summary       | Weekly Mon 7am | [LIVE] | Compile and send weekly reports                   |
+| agency-digest        | Weekly Mon 7am | [LIVE] | Agency performance summaries                      |
+| cohort-update        | Monthly (1st)  | [LIVE] | Update client cohort retention metrics             |
 
 ---
 
@@ -1087,6 +1105,7 @@ Every feature can be toggled per client:
 [x] Audit trail logged for every compliance decision
 [x] Compliance dashboard with score and metrics
 [x] Message queue for quiet hours delivery
+[x] Test client flag (isTest) skips real SMS and excludes from analytics
 ```
 
 ### Booking & Appointments
@@ -1128,8 +1147,11 @@ Every feature can be toggled per client:
 [x] Invoice history with status
 [x] Cancellation flow with value retention
 [x] Pause/resume support
-[x] Coupon code support
+[x] Coupon code support (admin CRUD, validation, redemption tracking)
 [x] Payment link generation for invoices
+[x] Invoice retry (client-initiated from billing page)
+[x] Usage limit enforcement on lead/team/phone creation
+[x] Overage pricing (per-lead and per-SMS rates on plans)
 ```
 
 ### A/B Testing & Optimization
@@ -1170,6 +1192,10 @@ Every feature can be toggled per client:
 [x] Analytics export (CSV/JSON)
 [x] Platform health (MRR, churn, margins)
 [x] Cost per client tracking
+[x] Funnel visualization on platform analytics (conversion rates per stage)
+[x] Cohort retention analysis (monthly, per-client milestones)
+[x] Client webhook dispatch (HMAC-signed, retry, delivery logging)
+[x] Google Business OAuth connect/disconnect/reconnect
 ```
 
 ### UI/UX
@@ -1203,9 +1229,10 @@ Optimization (5):
   A/B Tests          /admin/ab-tests
   Reputation         /admin/reputation
 
-Reporting (5):
+Reporting (6):
   Billing            /admin/billing
   Plans              /admin/billing/plans
+  Coupons            /admin/billing/coupons
   Reports            /admin/reports
   Platform Health    /admin/platform-analytics
   Costs & Usage      /admin/usage
@@ -1322,6 +1349,7 @@ help_articles               nps_surveys
 | `/api/webhooks/form`                          | Web form submission                |
 | `/api/webhooks/stripe`                        | Stripe payment/subscription events |
 | `/api/webhooks/nps`                           | NPS survey SMS responses           |
+| `/api/auth/callback/google-business`          | Google Business OAuth callback     |
 
 ---
 
