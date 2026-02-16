@@ -57,13 +57,14 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
 - Optimizes flows based on aggregate data
 - Provides "tested across 50,000 messages" competitive advantage
 
-### Three User Types
+### User Types
 
 | Role                        | What They See                                  | How They Log In                           |
 | --------------------------- | ---------------------------------------------- | ----------------------------------------- |
 | **Admin** (you, the agency) | All clients, A/B tests, reports, analytics     | Magic link to admin@conversionsurgery.com |
 | **Team Member**             | Dashboard scoped to their client               | Magic link to their email                 |
-| **Client** (contractor)     | Self-service portal for conversations, billing | Magic link SMS → /client/\* pages         |
+| **Client** (contractor)     | Self-service portal for conversations, billing | OTP login (email code) or cookie-based link |
+| **Lead** (homeowner)        | SMS interactions, booking, opt-out              | No login — interacts via SMS              |
 
 ---
 
@@ -97,7 +98,7 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
 │  └──────────────────────────────────────────────────────────┘│
 │                                                              │
 │  ┌──────────────────────────────────────────────────────────┐│
-│  │               Service Layer (41 modules)                  ││
+│  │               Service Layer (50+ modules)                 ││
 │  │  openai.ts │ twilio.ts │ stripe.ts │ resend.ts           ││
 │  │  lead-scoring.ts │ flow-execution.ts │ team-escalation.ts││
 │  └──────────────────────────────────────────────────────────┘│
@@ -112,7 +113,7 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
                        │
 ┌──────────────────────▼───────────────────────────────────────┐
 │         Drizzle ORM → Neon Serverless Postgres               │
-│         78+ tables │ HTTP driver │ Per-request instances      │
+│         95+ tables │ HTTP driver │ Per-request instances      │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -287,9 +288,14 @@ src/
 │   │   ├── layout.tsx            # Minimal header
 │   │   └── client/               # Client pages
 │   │       ├── conversations/
+│   │       ├── revenue/
+│   │       ├── knowledge-base/
+│   │       ├── flows/
 │   │       ├── team/
 │   │       ├── billing/
-│   │       └── settings/
+│   │       ├── settings/
+│   │       ├── help/
+│   │       └── discussions/
 │   ├── api/                      # API routes
 │   │   ├── admin/                # Admin endpoints (auth required)
 │   │   ├── client/               # Client-scoped endpoints
@@ -301,7 +307,7 @@ src/
 │   ├── layout.tsx                # Root layout (providers, fonts)
 │   └── globals.css               # Tailwind + shadcn theme
 ├── components/                   # React components
-│   ├── ui/                       # shadcn/ui components (21)
+│   ├── ui/                       # shadcn/ui components (21+)
 │   ├── admin/                    # Admin-specific components
 │   ├── analytics/                # Charts, KPI cards
 │   ├── billing/                  # Subscription, payment
@@ -309,11 +315,12 @@ src/
 │   ├── escalations/              # Escalation queue/detail
 │   ├── leads/                    # Lead score, media
 │   ├── reviews/                  # Review dashboard
+│   ├── revenue/                  # Revenue attribution
 │   └── providers.tsx             # SessionProvider + AdminProvider
 ├── db/                           # Database layer
 │   ├── index.ts                  # getDb() factory
 │   ├── client.ts                 # Neon HTTP client
-│   └── schema/                   # 78+ schema files (1 per table)
+│   └── schema/                   # 95+ schema files (1 per table)
 │       ├── clients.ts
 │       ├── leads.ts
 │       ├── conversations.ts
@@ -361,7 +368,7 @@ src/
 
 ## 6. Database Schema Guide
 
-The database has **78+ tables** organized into logical groups. Every table uses UUIDs as primary keys with `uuid_generate_v4()`.
+The database has **95+ tables** organized into logical groups. Every table uses UUIDs as primary keys with `uuid_generate_v4()`.
 
 ### Core CRM Tables
 
@@ -771,15 +778,18 @@ RootLayout (providers, fonts, toaster)
 ### Admin Navigation Structure
 
 ```
-Management:
-  All Clients, Client Detail, Billing, Discussions
+Clients:
+  Dashboard, Clients, Users, Communications, Discussions
 
 Optimization:
-  Flow Templates, Analytics, Platform Analytics,
-  Template Performance, Reports, Reputation, Usage
+  Flow Templates, Flow Analytics, Variant Results, A/B Tests, Reputation
 
-Configuration:
-  Phone Numbers, Twilio Settings, Voice AI, Compliance
+Reporting:
+  Billing, Plans, Reports, Platform Health, Costs & Usage
+
+Settings:
+  Phone Numbers, Twilio Account, Voice AI, Compliance,
+  Webhook Logs, Email Templates, API Keys, System Settings
 ```
 
 ### Page Pattern (Server Component)

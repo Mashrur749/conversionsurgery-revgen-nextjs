@@ -1,6 +1,6 @@
 # ConversionSurgery Platform Use Cases
 
-A comprehensive operations guide covering every workflow for every user type — **81 use cases** across 5 user categories. Each use case describes **who** performs it, **when** it happens, **what** steps are involved, and **what** the expected outcome is.
+A comprehensive operations guide covering every workflow for every user type — **98 use cases** across 6 user categories. Each use case describes **who** performs it, **when** it happens, **what** steps are involved, and **what** the expected outcome is.
 
 ---
 
@@ -39,6 +39,14 @@ A comprehensive operations guide covering every workflow for every user type —
   - [A29: Manage Subscription Plans](#a29-manage-subscription-plans)
   - [A30: Configure System Settings](#a30-configure-system-settings)
   - [A31: Manage Multiple Numbers per Client](#a31-manage-multiple-numbers-per-client)
+  - [A32: Send Payment Link to a Lead](#a32-send-payment-link-to-a-lead)
+  - [A33: Review Voice Call History](#a33-review-voice-call-history)
+  - [A34: Configure Escalation Rules](#a34-configure-escalation-rules)
+  - [A35: Review and Resolve Knowledge Gaps](#a35-review-and-resolve-knowledge-gaps)
+  - [A36: Manage Review Response Templates](#a36-manage-review-response-templates)
+  - [A37: Define Client Service Catalog](#a37-define-client-service-catalog)
+  - [A38: Send Agency Messages to Clients](#a38-send-agency-messages-to-clients)
+  - [A39: View NPS Dashboard](#a39-view-nps-dashboard)
 - [Client User (Business Owner) Use Cases](#client-user-business-owner-use-cases)
   - [C1: First Login and Dashboard Orientation](#c1-first-login-and-dashboard-orientation)
   - [C2: View and Manage Leads](#c2-view-and-manage-leads)
@@ -56,6 +64,10 @@ A comprehensive operations guide covering every workflow for every user type —
   - [C14: Tag and Categorize Leads](#c14-tag-and-categorize-leads)
   - [C15: Send Photos (MMS) to a Lead](#c15-send-photos-mms-to-a-lead)
   - [C16: Manage Automation Flows](#c16-manage-automation-flows)
+  - [C17: Send Payment Link to a Lead](#c17-send-payment-link-to-a-lead)
+  - [C18: Configure Escalation Rules](#c18-configure-escalation-rules)
+  - [C19: View Message Delivery Status](#c19-view-message-delivery-status)
+  - [C20: Receive and View Photos from Leads](#c20-receive-and-view-photos-from-leads)
 - [Client Portal User Use Cases](#client-portal-user-use-cases)
   - [P1: Access the Portal via Link or OTP](#p1-access-the-portal-via-link-or-otp)
   - [P2: Review Weekly Performance Summary](#p2-review-weekly-performance-summary)
@@ -63,7 +75,6 @@ A comprehensive operations guide covering every workflow for every user type —
   - [P4: Manage Billing and Subscription](#p4-manage-billing-and-subscription)
   - [P5: Configure Weekly Summary Preferences](#p5-configure-weekly-summary-preferences)
   - [P6: Cancel Subscription](#p6-cancel-subscription)
-  - [P7: Login via OTP](#p7-login-via-otp)
   - [P8: View Revenue Dashboard](#p8-view-revenue-dashboard)
   - [P9: Manage Knowledge Base](#p9-manage-knowledge-base)
   - [P10: Manage Automation Flows](#p10-manage-automation-flows)
@@ -72,6 +83,11 @@ A comprehensive operations guide covering every workflow for every user type —
   - [P13: Configure Notification Preferences](#p13-configure-notification-preferences)
   - [P14: Browse Help Articles](#p14-browse-help-articles)
   - [P15: Use Discussions for Support](#p15-use-discussions-for-support)
+  - [P16: Approve AI-Suggested Actions](#p16-approve-ai-suggested-actions)
+- [Lead (Homeowner) Use Cases](#lead-homeowner-use-cases)
+  - [L1: Book an Appointment via SMS](#l1-book-an-appointment-via-sms)
+  - [L2: Receive and Respond to Automated Messages](#l2-receive-and-respond-to-automated-messages)
+  - [L3: Opt Out of Messages](#l3-opt-out-of-messages)
 - [Team Member Use Cases](#team-member-use-cases)
   - [T1: Receive and Claim an Escalation](#t1-receive-and-claim-an-escalation)
   - [T2: Receive a Hot Transfer Call](#t2-receive-a-hot-transfer-call)
@@ -93,6 +109,8 @@ A comprehensive operations guide covering every workflow for every user type —
   - [S14: Calendar Event Creation on Booking](#s14-calendar-event-creation-on-booking)
   - [S15: SMS Delivery Status Tracking](#s15-sms-delivery-status-tracking)
   - [S16: Agency Digest Email](#s16-agency-digest-email)
+  - [S17: No-Show Recovery Automation](#s17-no-show-recovery-automation)
+  - [S18: Win-Back Re-engagement Automation](#s18-win-back-re-engagement-automation)
 
 ---
 
@@ -104,6 +122,7 @@ A comprehensive operations guide covering every workflow for every user type —
 | **Client User** | Magic link email (NextAuth) | Own client dashboard only | View leads, conversations, escalations, analytics |
 | **Client Portal** | OTP login (email code) or cookie-based link | Self-service portal | Revenue, KB, flows, billing, AI settings, help |
 | **Team Member** | None (SMS/phone only) | Escalation claim links only | Receive escalation SMS, claim and resolve leads |
+| **Lead** | None (SMS/phone only) | No dashboard access | Receive automated messages, book appointments, send photos, opt out |
 
 ---
 
@@ -954,6 +973,231 @@ A comprehensive operations guide covering every workflow for every user type —
 
 ---
 
+### A32: Send Payment Link to a Lead
+
+**When**: A lead has agreed to a quote and needs to pay, or an invoice is outstanding.
+
+**Steps**:
+
+1. Navigate to the lead's detail page at `/leads/[id]`.
+2. Click "Send Payment" or use the payment button in the conversation area.
+3. Fill in payment details:
+   - **Amount** (full invoice amount or deposit percentage)
+   - **Description** (e.g., "Bathroom Renovation Deposit - 50%")
+   - **Invoice reference** (optional, links to an existing invoice)
+4. Click "Generate & Send."
+5. The system:
+   - Creates a Stripe payment link with the specified amount.
+   - Sends the link to the lead via SMS: "Here's your payment link for {description}: {stripeLink}"
+   - Records the payment request in the `payments` table.
+6. When the lead pays:
+   - Stripe webhook fires `checkout.session.completed`.
+   - Invoice status updated to `paid`.
+   - Both the lead and client/team are notified.
+   - The payment success page is shown to the lead.
+
+**Outcome**: Seamless payment collection via SMS. No need for the lead to visit a website or call to pay.
+
+**Key API calls**:
+- `POST /api/payments` (create payment link)
+- `POST /api/payments/[id]/send` (send link via SMS)
+
+---
+
+### A33: Review Voice Call History
+
+**When**: Checking what happened on voice AI calls, reviewing call quality, or debugging voice issues.
+
+**Steps**:
+
+1. Select a client using the Client Selector.
+2. Navigate to the client detail page or use the voice AI section.
+3. View the call history list showing:
+   - Caller phone number and lead name
+   - Call duration
+   - Call status (completed, missed, transferred)
+   - AI-generated summary
+   - Timestamp
+4. Click into a call to see:
+   - Full **transcript** of the AI-lead conversation
+   - **Summary**: AI-generated overview of what was discussed
+   - **Intent**: What the caller wanted (booking, pricing, info, etc.)
+   - **Sentiment**: Positive, neutral, negative, frustrated
+   - **Outcome**: Whether the call led to a booking, transfer, or drop-off
+   - **Recording URL** (if configured)
+
+**Outcome**: Quality assurance on voice AI interactions. Identify when the AI handles calls well vs. when it needs improvement.
+
+**Key API calls**:
+- `GET /api/admin/clients/[id]/voice-calls` (list calls with pagination)
+
+---
+
+### A34: Configure Escalation Rules
+
+**When**: Setting up or modifying what triggers an escalation for a specific client.
+
+**Steps**:
+
+1. Navigate to escalation configuration for the client (via settings or client detail).
+2. View existing escalation rules:
+   - **Trigger type**: pricing_request, complaint, high_intent, low_confidence, stuck, explicit_request
+   - **Conditions**: Thresholds (e.g., confidence < 60%, sentiment < 30, 3+ exchanges without progress)
+   - **Priority**: 1-5 (determines notification urgency)
+   - **Active/inactive** toggle
+3. Create a new rule:
+   - Select trigger type and configure conditions.
+   - Set priority level.
+   - Choose notification targets (which team members).
+4. Edit or delete existing rules.
+
+**Default rules**: The system includes built-in escalation logic (pricing requests, complaints, high intent, low confidence, stuck conversations, explicit "talk to a person" requests). Custom rules supplement these defaults.
+
+**Outcome**: Fine-tuned escalation behavior per client. A high-end contractor might escalate on any pricing mention, while a high-volume shop only escalates on explicit requests.
+
+**Key API calls**:
+- `GET /api/clients/[id]/escalation-rules` (list rules)
+- `POST /api/clients/[id]/escalation-rules` (create rule)
+- `PATCH /api/clients/[id]/escalation-rules/[ruleId]` (update rule)
+- `DELETE /api/clients/[id]/escalation-rules` (delete rule)
+
+---
+
+### A35: Review and Resolve Knowledge Gaps
+
+**When**: Periodically reviewing what questions the AI couldn't answer confidently, to improve the knowledge base.
+
+**Steps**:
+
+1. Navigate to the client's knowledge base at `/admin/clients/[id]/knowledge`.
+2. Look for the **Knowledge Gaps** section showing:
+   - Questions the AI was asked but couldn't answer confidently
+   - Number of occurrences (how many times this gap appeared)
+   - Confidence level at the time
+   - Category (pricing, services, scheduling, etc.)
+   - Resolution status (open vs. resolved)
+3. For each gap:
+   - Read the question that stumped the AI.
+   - Create a new knowledge base entry that answers it (see A3).
+   - Mark the gap as resolved — it links to the KB entry that fixed it (`resolvedByKbId`).
+4. Over time, the gap list shrinks as the KB becomes more comprehensive.
+
+**Outcome**: Continuous improvement cycle. The AI gets smarter for each client as gaps are identified and filled. "Why does the AI keep escalating on bathroom questions?" → add a KB entry about bathroom services → AI handles it next time.
+
+---
+
+### A36: Manage Review Response Templates
+
+**When**: Creating reusable response templates for different types of reviews (positive, negative, complaint).
+
+**Steps**:
+
+1. Navigate to the review response management section.
+2. View existing templates categorized by:
+   - **Rating range**: Which star ratings this template applies to (e.g., 1-2 stars, 4-5 stars)
+   - **Category**: positive, negative, complaint, neutral
+   - **Keywords**: Trigger words that match this template (e.g., "late", "expensive", "great work")
+3. Create a new template:
+   - Set the rating range and category.
+   - Write the response body with `{{variables}}`:
+     ```
+     Thank you for your feedback, {{reviewerName}}! We're sorry to hear
+     about your experience with {{serviceType}}. {{ownerName}} would love
+     to discuss this further — please call us at {{businessPhone}}.
+     ```
+   - Add keywords for matching.
+4. Templates are used by the auto-review-response cron (S11) to generate AI-drafted responses.
+
+**Outcome**: Consistent, on-brand review responses. The AI uses these templates as a starting point and personalizes them for each review.
+
+**Key API calls**:
+- `GET /api/admin/responses/[id]` (get template)
+- `PUT /api/admin/responses/[id]` (update template)
+- `DELETE /api/admin/responses/[id]` (delete template)
+
+---
+
+### A37: Define Client Service Catalog
+
+**When**: Setting up the services a client offers, which drives AI classification and revenue tracking.
+
+**Steps**:
+
+1. Navigate to `/admin/clients/[id]/knowledge` or the structured interview form.
+2. Use the **Service Catalog** section (synced to `client_services` table):
+   - Add each service the client offers:
+     - **Service name**: "Bathroom Renovation"
+     - **Category**: "renovation", "plumbing", "electrical", etc.
+     - **Description**: What's included in this service
+     - **Price range**: Min and max (e.g., $5,000 - $25,000)
+     - **Average value**: Typical job value (used for revenue estimation)
+     - **AI disclosure rules**: What the AI can/cannot say about pricing
+3. The catalog is used for:
+   - **AI service classification**: When a lead mentions a project, the AI fuzzy-matches to the catalog and sets `lead.projectType`.
+   - **Revenue by service**: Per-service pipeline and won value breakdown on the revenue dashboard.
+   - **Estimated value auto-fill**: When the AI can't extract a dollar amount, it uses the service's average value.
+   - **Knowledge base context**: Services are injected into AI prompts for accurate responses.
+
+**Outcome**: The AI understands what the client offers, can classify leads by service type, and estimates revenue accurately.
+
+**Key API calls**:
+- `GET /api/admin/clients/[id]/services` (list services)
+- Knowledge base structured form handles CRUD
+
+---
+
+### A38: Send Agency Messages to Clients
+
+**When**: Sending important communications to clients that require urgency or categorization (different from support discussions).
+
+**Steps**:
+
+1. Navigate to `/admin/agency`.
+2. View the agency communications dashboard:
+   - **Pending action prompts**: Messages requiring client response
+   - **Weekly digests**: Scheduled performance summaries
+   - **Custom messages**: Free-form communications
+3. Click "Send Message" to compose:
+   - Select the **target client** (or all clients).
+   - Choose a **category**: `custom`, `action_prompt`, `alert`, `digest`.
+   - Set **urgency**: normal, high, critical.
+   - Set **expiration** (optional, up to 168 hours for action prompts).
+   - Write the message content.
+4. Click "Send."
+5. The message appears in the client's portal and/or triggers an email/SMS notification based on urgency.
+
+**Difference from Discussions (A11)**: Discussions are two-way support threads. Agency messages are one-way communications with urgency levels, categories, and optional expiration. Think "announcement" vs. "support ticket."
+
+**Outcome**: Proactive client communication. Alert a client about a billing issue, send a performance milestone notification, or prompt them to update their knowledge base.
+
+**Key API calls**:
+- `GET /api/admin/agency/messages` (list messages)
+- `POST /api/admin/agency/messages` (send message)
+- `POST /api/admin/agency/send-digest` (trigger weekly digest)
+
+---
+
+### A39: View NPS Dashboard
+
+**When**: Reviewing customer satisfaction scores collected from post-service NPS surveys.
+
+**Preconditions**: NPS surveys have been sent (see S12) and some responses received.
+
+**Steps**:
+
+1. Navigate to `/admin/nps`.
+2. View the NPS dashboard:
+   - **Average NPS score** across all clients
+   - **Score distribution**: Breakdown of responses by score (1-10)
+   - **Trend over time**: NPS score trend chart
+   - **Recent responses**: Latest survey responses with score, comment, lead name, and client
+3. Filter by client or date range.
+4. Identify clients with low NPS scores for follow-up.
+
+**Outcome**: Visibility into customer satisfaction across all clients. Identify which clients' customers are happiest and which need attention.
+
+---
+
 ## Client User (Business Owner) Use Cases
 
 ### C1: First Login and Dashboard Orientation
@@ -1232,37 +1476,13 @@ A comprehensive operations guide covering every workflow for every user type —
 
 ### C12: Create a Lead Manually
 
-**When**: A lead contacts you outside the system (walk-in, personal phone call, referral) and you want to track them.
-
-**Steps**:
-
-1. Navigate to `/leads`.
-2. Click "Add Lead."
-3. Fill in the dialog:
-   - **Name** (required)
-   - **Phone** (required — auto-normalized to E.164 format)
-   - **Email** (optional)
-   - **Project type** (optional)
-   - **Notes** (optional)
-4. Click "Create."
-5. The lead appears in your list with `source: manual`.
-
-**Outcome**: The lead is now tracked in the system and eligible for all automations. If you send them a message, the AI can continue the conversation.
+Same workflow as A21 but accessed from the client dashboard at `/leads` → "Add Lead." Client users see the same dialog and create leads with `source: manual`.
 
 ---
 
 ### C13: Export Leads to CSV
 
-**When**: You need a spreadsheet of your leads for offline analysis, sharing with a partner, or importing into another tool.
-
-**Steps**:
-
-1. Navigate to `/leads`.
-2. Apply any filters you want (status, source, temperature).
-3. Click the "Export" button.
-4. A CSV file downloads with all matching leads.
-
-**Outcome**: Filtered lead data in CSV format including name, phone, email, status, source, temperature, score, project type, and dates.
+Same workflow as A22 but accessed from the client dashboard at `/leads` → "Export" button. Exports the same CSV format with all filtered lead data.
 
 ---
 
@@ -1325,6 +1545,53 @@ A comprehensive operations guide covering every workflow for every user type —
 
 ---
 
+### C17: Send Payment Link to a Lead
+
+Same workflow as A32 but accessed from the client dashboard at `/leads/[id]` → payment button. See A32 for full steps including Stripe integration and payment confirmation flow.
+
+---
+
+### C18: Configure Escalation Rules
+
+Same workflow as A34 but accessed from the client dashboard settings. Client users can view, toggle, and adjust thresholds on their own escalation rules. See A34 for full details on trigger types, conditions, and priority levels.
+
+---
+
+### C19: View Message Delivery Status
+
+**When**: Checking whether a message you sent actually reached the lead.
+
+**Steps**:
+
+1. Navigate to a conversation at `/leads/[id]`.
+2. Each outbound message shows a delivery status indicator:
+   - **Queued** — Message accepted by Twilio
+   - **Sent** — Handed to carrier
+   - **Delivered** — Confirmed delivered to device
+   - **Failed** — Message failed to send (check number validity)
+   - **Undelivered** — Carrier could not deliver
+3. Failed/undelivered messages are highlighted for attention.
+
+**Outcome**: Confidence that your messages are reaching leads. Quick identification of bad phone numbers or carrier issues.
+
+---
+
+### C20: Receive and View Photos from Leads
+
+**When**: A lead sends photos of their project (damage, current state, measurements) via MMS.
+
+**Steps**:
+
+1. Navigate to the conversation at `/leads/[id]`.
+2. Inbound MMS photos appear inline in the message thread.
+3. Click on a photo to view it full-size.
+4. Media attachments are also accessible from the lead's media tab.
+5. The AI can reference received photos in its responses (e.g., "Thanks for the photos! I can see the water damage — let me get {ownerName} to take a look and send you an estimate.").
+
+**Outcome**: Visual context for estimates and quotes. Leads can show you the job before you visit.
+
+---
+
 ## Client Portal User Use Cases
 
 ### P1: Access the Portal via Link or OTP
@@ -1336,16 +1603,27 @@ A comprehensive operations guide covering every workflow for every user type —
 2. The system sets a `clientSessionId` cookie and redirects to `/client`.
 3. No password needed — the link contains the session token.
 
-**Option B — OTP login** (see P7):
+**Option B — OTP login**:
 1. Navigate to `/client-login`.
-2. Enter your email address.
-3. Receive a 6-digit code via email.
-4. Enter the code to authenticate.
+2. Enter your business email address.
+3. Click "Send Code."
+4. Check your inbox for a 6-digit verification code (sent via Resend).
+5. Enter the code within 10 minutes.
+6. The system verifies the code against the `otp_codes` table, looks up the client by email, sets a session cookie, and redirects to `/client`.
 
-**Portal navigation** (10 items):
-Dashboard, Conversations, Revenue, Knowledge Base, Flows, Team, Billing, Settings, Help, Discussions
+**OTP security notes**:
+- OTP codes expire after 10 minutes.
+- Used codes are marked as consumed and cannot be reused.
+- Rate limiting prevents brute-force attempts.
+
+**Portal navigation** (9 items):
+Dashboard, Conversations, Revenue, Knowledge Base, Flows, Billing, Settings, Help, Discussions
 
 **Outcome**: Access to the full self-service client portal with revenue tracking, KB management, flow control, billing, AI settings, and more.
+
+**Key API calls** (OTP):
+- `POST /api/client/auth/send-otp` (send code to email)
+- `POST /api/client/auth/verify-otp` (verify code, create session)
 
 ---
 
@@ -1438,32 +1716,6 @@ Dashboard, Conversations, Revenue, Knowledge Base, Flows, Team, Billing, Setting
 
 ---
 
-### P7: Login via OTP
-
-**When**: Accessing the client portal for the first time, or when the session cookie has expired.
-
-**Steps**:
-
-1. Navigate to `/client-login`.
-2. Enter your business email address.
-3. Click "Send Code."
-4. Check your inbox for a 6-digit verification code (sent via Resend).
-5. Enter the code within 10 minutes.
-6. The system verifies the code against `otp_codes` table, looks up the client by email, sets a session cookie, and redirects to `/client`.
-
-**Security notes**:
-- OTP codes expire after 10 minutes.
-- Used codes are marked as consumed and cannot be reused.
-- Rate limiting prevents brute-force attempts.
-
-**Outcome**: Authenticated access to the full client portal without passwords.
-
-**Key API calls**:
-- `POST /api/client/auth/send-otp` (send code to email)
-- `POST /api/client/auth/verify-otp` (verify code, create session)
-
----
-
 ### P8: View Revenue Dashboard
 
 **When**: Checking the business impact of the platform — how much revenue is being recovered.
@@ -1518,21 +1770,7 @@ Dashboard, Conversations, Revenue, Knowledge Base, Flows, Team, Billing, Setting
 
 ### P10: Manage Automation Flows
 
-**When**: Controlling which automation sequences are active for your business.
-
-**Steps**:
-
-1. Navigate to `/client/flows`.
-2. View all assigned flows:
-   - Flow name, description, and category
-   - Trigger event (e.g., missed_call, appointment_reminder)
-   - Active/inactive toggle
-3. Toggle flows on or off based on your needs:
-   - Turn off "Win-Back" if you're too busy for new leads
-   - Turn on "Review Request" after completing a job
-4. Changes take effect immediately — the next trigger event will respect the new setting.
-
-**Outcome**: Self-service control over which automations run, without needing to contact the admin.
+Same workflow as C16 but accessed via the client portal at `/client/flows`. See C16 for full details on viewing flows, toggling active/inactive, and per-lead flow status.
 
 **Key API calls**:
 - `GET /api/client/flows` (list assigned flows)
@@ -1634,21 +1872,127 @@ Dashboard, Conversations, Revenue, Knowledge Base, Flows, Team, Billing, Setting
 
 ### P15: Use Discussions for Support
 
-**When**: You have a question or issue that the help articles don't cover.
+Same workflow as C9 but accessed via the client portal at `/client/discussions`. Portal users can create support threads, view admin replies, and continue conversations. The floating help button (visible on all non-admin pages) also opens a quick support ticket modal.
+
+---
+
+### P16: Approve AI-Suggested Actions
+
+**When**: The AI has identified an opportunity (e.g., a lead asking about pricing should trigger an estimate follow-up flow) and suggests it in-app.
 
 **Steps**:
 
-1. Navigate to `/client/discussions`.
-2. View existing discussion threads with status (open/resolved) and reply counts.
-3. Click "New Discussion" to create a support ticket:
-   - Write your question or describe the issue.
-   - Submit.
-4. Check back for admin replies in the thread.
-5. Continue the conversation until resolved.
+1. Navigate to `/client/conversations/[id]`.
+2. When the AI detects an opportunity, a **suggestion card** appears below the conversation:
+   - Suggested action (e.g., "Start Estimate Follow-Up sequence")
+   - Reason (e.g., "Lead asked about pricing in last message")
+   - Status: pending
+3. Choose an action:
+   - **Approve** → The flow starts immediately. Step 1 sends within minutes.
+   - **Reject** → The suggestion is dismissed.
+4. Approved suggestions are tracked with timestamp and outcome.
 
-**Alternative**: Use the floating help button (visible on all non-admin pages) to open a quick support ticket modal.
+**Difference from C10**: C10 is SMS-based approval (reply YES/NO to a text). P16 is the in-app portal version with richer context and one-click approval.
 
-**Outcome**: Direct support channel with the admin team, with full conversation history.
+**Key API calls**:
+- `GET /api/client/leads/[id]/suggestions` (list pending suggestions)
+- `POST /api/client/leads/[id]/suggestions` (approve/reject)
+
+---
+
+## Lead (Homeowner) Use Cases
+
+Leads interact with the platform entirely through SMS and phone calls. They never see a dashboard. Understanding their experience is critical for testing.
+
+### L1: Book an Appointment via SMS
+
+**When**: A lead wants to schedule a service call or estimate visit.
+
+**Flow**:
+
+1. Lead texts something indicating booking intent:
+   ```
+   "Can you come out this week to look at my bathroom?"
+   ```
+2. The AI detects booking intent using keyword + context analysis.
+3. AI checks the client's **business hours** and **existing appointments** for the next 7 days.
+4. AI suggests 2-3 available time slots spread across different days, preferring mid-morning:
+   ```
+   "I'd love to set that up! Here are some available times:
+   - Tuesday at 10:00 AM
+   - Wednesday at 2:00 PM
+   - Thursday at 10:30 AM
+   Which works best for you?"
+   ```
+5. Lead replies with a preference:
+   ```
+   "Tuesday works"
+   ```
+6. AI matches "Tuesday" to the available slot and confirms:
+   ```
+   "Great! You're booked for Tuesday at 10:00 AM.
+   {ownerName} will be there. You'll get a reminder
+   the day before. See you then!"
+   ```
+7. The system:
+   - Creates an **appointment** record
+   - Schedules **reminders** (day-before at 10am, 2 hours before)
+   - Creates a **calendar event** (if Google Calendar connected)
+   - Sends **contractor notification** SMS to the team
+   - Updates lead status to `scheduled`
+
+**Rescheduling**: Lead can text "Can we reschedule?" → AI cancels old appointment, offers new slots.
+
+**Cancellation**: Lead can text "I need to cancel" → AI cancels with a grace message.
+
+---
+
+### L2: Receive and Respond to Automated Messages
+
+**When**: A lead receives automated messages from flow sequences (missed call follow-up, appointment reminders, win-back, etc.).
+
+**Flow**:
+
+1. Lead receives an automated SMS:
+   ```
+   "Hi! This is Dave from Dave's Plumbing. I noticed you tried
+   to call - how can I help you today?"
+   ```
+2. If the lead **replies**, the system:
+   - Pauses any active flow (stops further automated messages)
+   - Routes the reply to the AI for a conversational response
+   - Updates lead status and engagement score
+3. If the lead **doesn't reply**, the flow continues:
+   - Step 2 sends after the configured delay (e.g., 60 minutes)
+   - Step 3 sends after a longer delay (e.g., 24 hours)
+   - Flow stops after all steps complete or max attempts reached
+4. At any point, the lead can text **STOP** to opt out (see L3).
+
+**Key behavior**: Automated messages sound human-like and reference the lead's specific situation. They're personalized by the AI using context from the conversation history and knowledge base.
+
+---
+
+### L3: Opt Out of Messages
+
+**When**: A lead wants to stop receiving messages.
+
+**Flow**:
+
+1. Lead sends any opt-out keyword: STOP, UNSUBSCRIBE, CANCEL, END, QUIT, STOPALL, OPT OUT, REMOVE.
+2. Immediate confirmation:
+   ```
+   "You've been unsubscribed from {businessName} messages.
+   Reply START to re-subscribe."
+   ```
+3. The system:
+   - Adds to blocked numbers
+   - Sets `lead.optedOut = true`
+   - Cancels ALL scheduled messages
+   - Stops ALL active flows
+   - Logs to compliance audit trail
+4. No further messages are sent — every compliance check blocks this number.
+
+**Re-subscription**: Lead texts START, YES, UNSTOP, SUBSCRIBE, or OPTIN → opt-out reversed, messaging resumes.
 
 ---
 
@@ -2002,13 +2346,13 @@ These happen without any user action. Understanding them is essential for operat
 1. **Find eligible leads** → Query completed appointments that are 4+ hours old and haven't been surveyed.
 2. **Create survey** → Insert `nps_surveys` record with status `sent`.
 3. **Send SMS** → Text the lead: "How would you rate your experience with {businessName}? Reply with a number 1-10."
-4. **Receive response** → Webhook at `/api/webhooks/nps` processes the reply:
+4. **Receive response** → The lead's reply arrives via the main SMS webhook (`/api/webhooks/twilio/sms`). The NPS service processes it:
    - Parse the score (1-10) from the SMS body.
    - Store in `nps_surveys.score`.
    - If the lead includes a comment, store in `nps_surveys.comment`.
    - Update status to `responded`.
 
-**Outcome**: Post-service satisfaction data collected automatically. NPS scores visible on the admin dashboard.
+**Outcome**: Post-service satisfaction data collected automatically. NPS scores visible on the admin NPS dashboard (see A39).
 
 ---
 
@@ -2088,6 +2432,49 @@ These happen without any user action. Understanding them is essential for operat
 
 ---
 
+### S17: No-Show Recovery Automation
+
+**Trigger**: Cron job runs `/api/cron/no-show-recovery` daily.
+
+**Flow**:
+
+1. **Find no-shows** → Query appointments where the scheduled time has passed and the lead's status indicates they didn't show up (no check-in, no follow-up activity).
+2. **Eligibility check** → Verify the lead hasn't opted out, isn't blocked, and the client has flows enabled.
+3. **Send recovery message** → AI generates a personalized follow-up:
+   ```
+   Hi {leadName}! We missed you at your appointment today with
+   {businessName}. Things happen! Would you like to reschedule?
+   We'd love to help with your {projectType}.
+   ```
+4. **Update lead** → Mark as no-show in the system, update status.
+5. **Start recovery flow** → If a "No-Show Recovery" flow template is assigned, begin the multi-step sequence (initial message → follow-up in 24h → final attempt in 3 days).
+6. **Stats updated** → Track no-show recovery attempts and re-engagement rate.
+
+**Outcome**: Leads who miss appointments get a friendly follow-up instead of being lost. Recovers revenue that would otherwise be written off.
+
+---
+
+### S18: Win-Back Re-engagement Automation
+
+**Trigger**: Cron job runs `/api/cron/win-back` daily at 10am.
+
+**Flow**:
+
+1. **Find stale leads** → Query leads with last activity 25-35 days ago who were never marked as `won` or `lost`, and haven't opted out.
+2. **Client check** → Verify the client has flows enabled and win-back automation is active.
+3. **Send re-engagement message** → AI generates a contextual win-back message:
+   ```
+   Hi {leadName}! It's been a while since we chatted about your
+   {projectType}. {ownerName} from {businessName} here — just
+   checking in to see if you still need help. No pressure at all!
+   ```
+4. **Start win-back flow** → If a "Win-Back" flow template is assigned, begin the multi-step sequence with escalating urgency and optional special offers.
+5. **Update lead** → Mark as win-back attempted, update engagement tracking.
+
+**Outcome**: Stale leads get a second chance before going completely cold. Even a 5-10% re-engagement rate from win-back sequences generates significant recovered revenue.
+
+---
+
 ## Appendix: Quick Reference
 
 ### Key URLs by User Type
@@ -2116,6 +2503,7 @@ These happen without any user action. Understanding them is essential for operat
 | `/admin/template-performance` | Variant results / aggregate A/B testing |
 | `/admin/ab-tests` | Per-client A/B tests |
 | `/admin/reputation` | Reputation monitoring (all clients) |
+| `/admin/nps` | NPS survey results dashboard |
 
 **Admin** (Reporting group):
 | URL | Purpose |
@@ -2189,7 +2577,6 @@ These happen without any user action. Understanding them is essential for operat
 | Twilio Agency SMS | `/api/webhooks/twilio/agency-sms` | Agency client SMS |
 | Stripe | `/api/webhooks/stripe` | Payment/subscription events |
 | Form | `/api/webhooks/form` | Website form submissions |
-| NPS | `/api/webhooks/nps` | NPS survey SMS responses |
 
 ### Cron Jobs
 
