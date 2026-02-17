@@ -592,8 +592,8 @@ Send "STOP" from your test phone to the Twilio number.
 
 ### 7.1 Configure Voice AI (A12)
 
-1. Navigate to `/admin/voice-ai`
-2. Select a client
+1. Navigate to `/admin/voice-ai` — all active clients are shown as collapsible sections
+2. Expand the client section you want to configure (click the row to toggle)
 3. Toggle `voiceEnabled` on
 4. Set `voiceMode` to "always" for testing
 5. If ElevenLabs configured: select a voice from the picker and test preview

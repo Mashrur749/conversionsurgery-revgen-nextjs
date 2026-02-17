@@ -460,8 +460,8 @@ A comprehensive operations guide covering every workflow for every user type —
 
 **Steps**:
 
-1. Navigate to `/admin/voice-ai`.
-2. Select the client to configure.
+1. Navigate to `/admin/voice-ai`. All active clients are shown as collapsible sections.
+2. Expand the client section you want to configure (click the client name row).
 3. Enable Voice AI and choose the **mode**:
    - `always` - AI answers every call
    - `after_hours` - AI only answers outside business hours
