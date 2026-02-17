@@ -58,7 +58,7 @@ function LoginContent() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Revenue Recovery</CardTitle>
+        <CardTitle className="text-2xl">ConversionSurgery</CardTitle>
         <p className="text-muted-foreground">
           Enter your email to receive a login link
         </p>

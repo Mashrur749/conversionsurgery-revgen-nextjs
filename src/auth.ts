@@ -146,12 +146,12 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
           const emailResult = await sendEmail({
             to: identifier,
-            subject: `Sign in to Revenue Recovery`,
+            subject: `Sign in to ConversionSurgery`,
             html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #1a1a1a;">Sign in to Revenue Recovery</h2>
+              <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #1B2F26;">Sign in to ConversionSurgery</h2>
                 <p>Click the link below to sign in with your email address:</p>
-                <a href="${url}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Sign In</a>
+                <a href="${url}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Sign In</a>
                 <p style="color: #666; font-size: 12px;">This link expires at ${new Date(expires).toLocaleString()}</p>
                 <p style="color: #999; font-size: 12px;">If you didn't request this, please ignore this email.</p>
               </div>

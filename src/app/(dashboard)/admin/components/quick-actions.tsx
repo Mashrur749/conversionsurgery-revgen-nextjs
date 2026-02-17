@@ -54,7 +54,7 @@ export function QuickActions() {
       label: 'Twilio Settings',
       description: 'Configure Twilio account',
       href: '/admin/twilio',
-      color: 'bg-slate-500 hover:bg-slate-600',
+      color: 'bg-sage hover:bg-forest-light',
     },
   ];
 

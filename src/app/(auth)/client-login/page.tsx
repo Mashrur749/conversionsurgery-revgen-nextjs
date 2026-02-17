@@ -154,7 +154,7 @@ export default function ClientLoginPage() {
   return (
     <Card className="mx-auto max-w-md">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Revenue Recovery</CardTitle>
+        <CardTitle className="text-2xl">ConversionSurgery</CardTitle>
         <p className="text-sm text-muted-foreground">Sign in to your dashboard</p>
       </CardHeader>
       <CardContent>

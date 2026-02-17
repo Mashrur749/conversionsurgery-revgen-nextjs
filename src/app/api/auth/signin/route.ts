@@ -61,12 +61,12 @@ export async function POST(req: NextRequest) {
     // Send email
     await sendEmail({
       to: email,
-      subject: 'Sign in to Revenue Recovery',
+      subject: 'Sign in to ConversionSurgery',
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #1a1a1a;">Sign in to Revenue Recovery</h2>
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #1B2F26;">Sign in to ConversionSurgery</h2>
           <p>Click below to sign in:</p>
-          <a href="${verifyUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Sign In</a>
+          <a href="${verifyUrl}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Sign In</a>
           <p style="color: #666; font-size: 12px;">Link expires in 24 hours</p>
         </div>
       `,

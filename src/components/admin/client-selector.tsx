@@ -35,7 +35,7 @@ export function ClientSelector({ clients }: Props) {
       value={selectedClientId || ''}
       onValueChange={(value) => setSelectedClientId(value || null)}
     >
-      <SelectTrigger className="w-[180px] text-sm">
+      <SelectTrigger className="w-[180px] text-sm bg-forest-light border-forest-light text-white [&>svg]:text-white/70">
         <SelectValue placeholder="Select client..." />
       </SelectTrigger>
       <SelectContent>

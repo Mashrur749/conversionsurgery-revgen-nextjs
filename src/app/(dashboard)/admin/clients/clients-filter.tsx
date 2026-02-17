@@ -27,7 +27,7 @@ export function ClientsFilter({ allClients }: Props) {
     { value: 'active', label: 'Active', color: 'bg-[#E8F5E9] text-[#3D7A50] hover:bg-[#C8E6C9]' },
     { value: 'pending', label: 'Pending', color: 'bg-[#FFF3E0] text-sienna hover:bg-[#FFE0B2]' },
     { value: 'cancelled', label: 'Cancelled', color: 'bg-muted text-foreground hover:bg-muted' },
-    { value: 'all', label: 'All', color: 'bg-slate-100 text-slate-800 hover:bg-slate-200' },
+    { value: 'all', label: 'All', color: 'bg-muted text-foreground hover:bg-accent' },
   ];
 
   return (
