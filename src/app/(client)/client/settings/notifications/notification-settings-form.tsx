@@ -152,9 +152,11 @@ export function NotificationSettingsForm({ initialPrefs }: Props) {
         </CardContent>
       </Card>
 
-      <Button onClick={handleSave} disabled={saving} className="w-full">
-        {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Preferences'}
-      </Button>
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Preferences'}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -38,7 +38,7 @@ export default async function ConversationsPage() {
     })
     .from(leads)
     .where(eq(leads.clientId, session.clientId))
-    .orderBy(desc(leads.createdAt))
+    .orderBy(desc(leads.actionRequired), desc(leads.createdAt))
     .limit(50);
 
   const modeColors: Record<string, string> = {
@@ -50,7 +50,7 @@ export default async function ConversationsPage() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold">Conversations</h1>
+        <h1 className="text-2xl font-bold">Conversations</h1>
         <div className="flex gap-2 text-sm">
           <Badge variant="outline" className={modeColors.ai}>AI</Badge>
           <Badge variant="outline" className={modeColors.human}>Human</Badge>
@@ -94,8 +94,9 @@ export default async function ConversationsPage() {
 
         {allLeads.length === 0 && (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No conversations yet
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground mb-2">No conversations yet</p>
+              <p className="text-sm text-muted-foreground">Conversations will appear here when leads respond to your automated messages.</p>
             </CardContent>
           </Card>
         )}

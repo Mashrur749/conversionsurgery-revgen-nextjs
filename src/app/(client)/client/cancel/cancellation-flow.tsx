@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ValueSummary {
   monthsActive: number;
@@ -38,6 +42,7 @@ export function CancellationFlow({ clientId, valueSummary }: Props) {
   const [reason, setReason] = useState('');
   const [feedback, setFeedback] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
 
   async function handleScheduleCall() {
     setSubmitting(true);
@@ -129,7 +134,7 @@ export function CancellationFlow({ clientId, valueSummary }: Props) {
           </Button>
           <Button
             variant="outline"
-            onClick={handleConfirmCancel}
+            onClick={() => setShowConfirmCancel(true)}
             disabled={submitting}
           >
             Cancel Anyway
@@ -140,6 +145,23 @@ export function CancellationFlow({ clientId, valueSummary }: Props) {
           If you cancel, you&apos;ll have 7 days to reactivate before losing your data
         </p>
       </CardContent>
+
+      <AlertDialog open={showConfirmCancel} onOpenChange={setShowConfirmCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Cancellation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel your subscription? You&apos;ll have 7 days to reactivate before your data is removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleConfirmCancel} disabled={submitting}>
+              {submitting ? 'Cancelling...' : 'Yes, Cancel My Subscription'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

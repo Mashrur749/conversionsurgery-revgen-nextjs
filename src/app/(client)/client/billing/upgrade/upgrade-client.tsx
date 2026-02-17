@@ -42,7 +42,7 @@ export function UpgradePageClient({
   return (
     <div className="space-y-6">
       <div className="text-center max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold">Choose Your Plan</h1>
+        <h1 className="text-2xl font-bold">Choose Your Plan</h1>
         <p className="text-muted-foreground mt-2">
           Upgrade or downgrade your subscription at any time. Changes take effect
           at the start of your next billing cycle.

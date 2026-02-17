@@ -86,11 +86,11 @@ export function FeatureTogglesForm({ defaults }: Props) {
         </Card>
       ))}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end gap-3">
+        {saved && <span className="text-sm text-green-600">Saved</span>}
         <Button onClick={save} disabled={saving}>
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
-        {saved && <span className="text-sm text-green-600">Saved</span>}
       </div>
     </div>
   );

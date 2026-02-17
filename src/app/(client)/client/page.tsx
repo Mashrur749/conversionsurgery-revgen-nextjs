@@ -3,7 +3,10 @@ import { redirect } from 'next/navigation';
 import { getDb, leads, dailyStats, appointments } from '@/db';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { getRevenueStats } from '@/lib/services/revenue';
+import { DollarSign } from 'lucide-react';
 
 export default async function ClientDashboardPage() {
   const session = await getClientSession();
@@ -30,6 +33,9 @@ export default async function ClientDashboardPage() {
     ));
 
   const stats = monthStats[0] || {};
+
+  // Revenue stats (last 30 days)
+  const revenueStats = await getRevenueStats(clientId);
 
   // Recent activity
   const recentLeads = await db
@@ -60,18 +66,42 @@ export default async function ClientDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Value Summary */}
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+
+      {/* Revenue Hero */}
+      <Card className="bg-green-50 border-green-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-green-800">Revenue Recovered</CardTitle>
+          <DollarSign className="h-5 w-5 text-green-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-green-900">
+            ${(revenueStats.totalWonValue / 100).toLocaleString()}
+          </div>
+          <p className="text-xs text-green-700">
+            ${(revenueStats.totalPaid / 100).toLocaleString()} collected &bull; {revenueStats.totalWon} jobs won
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Activity Summary */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-3xl font-bold">{Number(stats.leadsCapture) || 0}</div>
-            <p className="text-sm text-muted-foreground">Leads This Month</p>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Leads This Month</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{Number(stats.leadsCapture) || 0}</div>
+            <p className="text-xs text-muted-foreground">{revenueStats.conversionRate}% conversion rate</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-3xl font-bold">{Number(stats.messagesSent) || 0}</div>
-            <p className="text-sm text-muted-foreground">Messages Sent</p>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Messages Sent</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{Number(stats.messagesSent) || 0}</div>
+            <p className="text-xs text-muted-foreground">Automated responses</p>
           </CardContent>
         </Card>
       </div>
@@ -83,7 +113,10 @@ export default async function ClientDashboardPage() {
         </CardHeader>
         <CardContent>
           {upcomingAppointments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No upcoming appointments</p>
+            <div className="py-4 text-center">
+              <p className="text-muted-foreground mb-1">No upcoming appointments</p>
+              <p className="text-sm text-muted-foreground">Appointments will be scheduled automatically through lead follow-up sequences.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {upcomingAppointments.map((apt) => (
@@ -108,11 +141,14 @@ export default async function ClientDashboardPage() {
         </CardHeader>
         <CardContent>
           {recentLeads.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No leads yet</p>
+            <div className="py-4 text-center">
+              <p className="text-muted-foreground mb-1">No leads yet</p>
+              <p className="text-sm text-muted-foreground">Leads will appear here when someone calls or submits a form.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {recentLeads.map((lead) => (
-                <div key={lead.id} className="flex justify-between items-center">
+                <Link key={lead.id} href={`/client/conversations/${lead.id}`} className="flex justify-between items-center hover:bg-gray-50 transition-colors rounded-md px-2 py-1 -mx-2">
                   <div>
                     <p className="font-medium">{lead.name || lead.phone}</p>
                     <p className="text-sm text-muted-foreground">{lead.source}</p>
@@ -120,7 +156,7 @@ export default async function ClientDashboardPage() {
                   <span className="text-xs text-muted-foreground">
                     {formatDistanceToNow(new Date(lead.createdAt!), { addSuffix: true })}
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           )}

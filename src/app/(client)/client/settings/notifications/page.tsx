@@ -14,7 +14,7 @@ export default async function NotificationSettingsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold">Notification Settings</h1>
+        <h1 className="text-2xl font-bold">Notification Settings</h1>
         <Button asChild variant="outline" size="sm">
           <Link href="/client/settings">Back</Link>
         </Button>

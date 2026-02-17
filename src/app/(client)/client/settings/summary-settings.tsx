@@ -95,9 +95,11 @@ export function SummarySettings({ enabled, day, time }: Props) {
         </>
       )}
 
-      <Button onClick={handleSave} disabled={saving}>
-        {saving ? 'Saving...' : saved ? 'Saved!' : 'Save'}
-      </Button>
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save'}
+        </Button>
+      </div>
     </div>
   );
 }

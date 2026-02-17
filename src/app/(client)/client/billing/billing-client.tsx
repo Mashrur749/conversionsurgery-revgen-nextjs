@@ -77,7 +77,7 @@ export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Billing</h1>
+        <h1 className="text-2xl font-bold">Billing</h1>
         <p className="text-muted-foreground">
           Manage your subscription, payment methods, and invoices.
         </p>

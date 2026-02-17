@@ -26,7 +26,7 @@ export default async function ClientFlowsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold">Automation Flows</h1>
+        <h1 className="text-2xl font-bold">Automation Flows</h1>
         <p className="text-sm text-muted-foreground">
           Manage which automated follow-up sequences are active for your account
         </p>

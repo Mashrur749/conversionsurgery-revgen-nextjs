@@ -73,8 +73,8 @@ export function DiscussionThread({
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-xl font-bold flex-1">Discussion</h1>
-        <Badge variant={message.status === 'open' ? 'default' : 'secondary'}>
+        <h1 className="text-2xl font-bold flex-1">Discussion</h1>
+        <Badge className={message.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
           {message.status}
         </Badge>
       </div>

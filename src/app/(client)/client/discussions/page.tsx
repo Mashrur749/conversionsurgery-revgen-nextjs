@@ -60,7 +60,7 @@ export default async function ClientDiscussionsPage() {
                     <span>{thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}</span>
                   </div>
                 </div>
-                <Badge variant={thread.status === 'open' ? 'default' : 'secondary'}>
+                <Badge className={thread.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                   {thread.status}
                 </Badge>
               </div>

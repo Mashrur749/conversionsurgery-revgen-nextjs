@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { KbEntryForm } from './kb-entry-form';
 
 interface KbEntry {
@@ -46,16 +50,20 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<KbEntry | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this entry? The AI will no longer use this information.')) return;
-    setDeleting(id);
+  async function handleDelete() {
+    if (!deleteId) return;
+    setDeleting(deleteId);
+    setDeleteError(null);
     try {
-      const res = await fetch(`/api/client/knowledge/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/client/knowledge/${deleteId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
+      setDeleteId(null);
       router.refresh();
     } catch {
-      alert('Failed to delete entry. Please try again.');
+      setDeleteError('Failed to delete entry. Please try again.');
     } finally {
       setDeleting(null);
     }
@@ -143,7 +151,7 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(entry.id)}
+                        onClick={() => setDeleteId(entry.id)}
                         disabled={deleting === entry.id}
                       >
                         <Trash2 className="h-3 w-3 text-red-500" />
@@ -156,6 +164,27 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
           </Card>
         );
       })}
+
+      {deleteError && (
+        <div className="p-3 text-sm text-red-600 bg-red-100 rounded">
+          {deleteError}
+        </div>
+      )}
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Knowledge Entry</AlertDialogTitle>
+            <AlertDialogDescription>
+              The AI will no longer use this information when responding to customers. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
