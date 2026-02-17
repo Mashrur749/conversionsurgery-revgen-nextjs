@@ -102,5 +102,8 @@ export * from './client-phone-numbers';
 // Auth tables (NextAuth)
 export * from './auth';
 
+// Public tools
+export * from './roi-calculator-leads';
+
 // Export all relations for type-safe queries
 export * from './relations';
