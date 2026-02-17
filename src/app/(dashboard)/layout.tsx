@@ -8,6 +8,7 @@ import { AdminNav } from '@/components/admin/admin-nav';
 import { SwitchingOverlay } from '@/components/admin/switching-overlay';
 import { AdminProvider } from '@/lib/admin-context';
 import { MobileNav } from '@/components/mobile-nav';
+import { DashboardNavLinks } from '@/components/dashboard-nav-links';
 import SignOutButton from './signout-button';
 import { HelpButton } from '@/components/ui/help-button';
 
@@ -105,15 +106,7 @@ export default async function DashboardLayout({
                       ]} />
                     </>
                   ) : (
-                    navItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-                      >
-                        {item.label}
-                      </Link>
-                    ))
+                    <DashboardNavLinks items={navItems} />
                   )}
                 </nav>
               </div>

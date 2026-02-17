@@ -71,6 +71,7 @@ export function HelpButton() {
             setMessage('');
           }}
           className="text-muted-foreground hover:text-foreground"
+          aria-label="Close help"
         >
           <X className="h-4 w-4" />
         </button>

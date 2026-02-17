@@ -115,6 +115,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
                 {renderStars(Math.round(summary.averageRating))}
                 <span>avg rating</span>
               </div>
+              <p className="text-xs text-muted-foreground">Across all sources</p>
             </CardContent>
           </Card>
 
@@ -122,6 +123,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
             <CardContent className="pt-6">
               <div className="text-2xl font-bold">{summary.totalReviews}</div>
               <div className="text-sm text-muted-foreground">total reviews</div>
+              <p className="text-xs text-muted-foreground">All time</p>
             </CardContent>
           </Card>
 
@@ -131,6 +133,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
                 {summary.recentReviews}
               </div>
               <div className="text-sm text-muted-foreground">last 30 days</div>
+              <p className="text-xs text-muted-foreground">New reviews this month</p>
             </CardContent>
           </Card>
 
@@ -140,6 +143,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
                 {summary.needsResponse}
               </div>
               <div className="text-sm text-muted-foreground">needs response</div>
+              <p className="text-xs text-muted-foreground">Awaiting response</p>
             </CardContent>
           </Card>
         </div>

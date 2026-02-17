@@ -138,7 +138,7 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
     }
     switch (status) {
       case 'pending':
-        return <Badge variant="outline">Pending</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
       case 'assigned':
         return <Badge variant="secondary">Assigned</Badge>;
       case 'in_progress':

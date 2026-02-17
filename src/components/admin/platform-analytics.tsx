@@ -53,6 +53,7 @@ export function PlatformAnalytics() {
             <div className="text-2xl font-bold">
               {formatCurrency(data?.mrrCents || 0)}
             </div>
+            <p className="text-xs text-muted-foreground">Monthly recurring revenue</p>
           </CardContent>
         </Card>
 
@@ -63,6 +64,7 @@ export function PlatformAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data?.activeClients || 0}</div>
+            <p className="text-xs text-muted-foreground">With active subscriptions</p>
           </CardContent>
         </Card>
 
@@ -75,6 +77,7 @@ export function PlatformAnalytics() {
             <div className="text-2xl font-bold text-green-600">
               +{data?.newClients || 0}
             </div>
+            <p className="text-xs text-muted-foreground">Signed up this month</p>
           </CardContent>
         </Card>
 
@@ -87,6 +90,7 @@ export function PlatformAnalytics() {
             <div className="text-2xl font-bold text-red-600">
               -{data?.churnedClients || 0}
             </div>
+            <p className="text-xs text-muted-foreground">Cancelled this month</p>
           </CardContent>
         </Card>
       </div>
