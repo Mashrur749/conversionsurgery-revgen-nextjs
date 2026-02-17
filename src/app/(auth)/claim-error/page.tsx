@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -21,11 +21,14 @@ export default async function ClaimErrorPage({ searchParams }: Props) {
   }
 
   return (
-    <Card className="max-w-md mx-auto text-center border-destructive/30">
-      <CardHeader>
-        <CardTitle className="text-destructive">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card className="max-w-md mx-auto overflow-hidden border-0 shadow-2xl text-center">
+      <div className="bg-forest px-6 py-5 text-center">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 mb-2">
+          <span className="text-lg font-bold text-white">C</span>
+        </div>
+        <h1 className="text-lg font-semibold text-white">{title}</h1>
+      </div>
+      <CardContent className="p-6 space-y-4">
         <p className="text-muted-foreground">{message}</p>
         <Button asChild variant="outline">
           <Link href="/login">Back to Login</Link>

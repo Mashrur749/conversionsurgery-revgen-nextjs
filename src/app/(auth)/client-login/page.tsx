@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 type Method = 'phone' | 'email';
 type Phase = 'identifier' | 'otp';
@@ -152,12 +152,15 @@ export default function ClientLoginPage() {
     method === 'phone' ? formatPhoneDisplay(identifier) : identifier;
 
   return (
-    <Card className="mx-auto max-w-md">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">ConversionSurgery</CardTitle>
-        <p className="text-sm text-muted-foreground">Sign in to your dashboard</p>
-      </CardHeader>
-      <CardContent>
+    <Card className="mx-auto max-w-md overflow-hidden border-0 shadow-2xl">
+      <div className="bg-forest px-6 py-6 text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 mb-3">
+          <span className="text-xl font-bold text-white">C</span>
+        </div>
+        <h1 className="text-xl font-semibold text-white">ConversionSurgery</h1>
+        <p className="text-sm text-white/60 mt-1">Sign in to your dashboard</p>
+      </div>
+      <CardContent className="p-6">
         {phase === 'identifier' ? (
           <form onSubmit={handleSendOTP} className="space-y-4">
             {method === 'phone' ? (

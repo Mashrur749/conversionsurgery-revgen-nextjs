@@ -1,7 +1,7 @@
 import { getDb, escalationClaims, leads, teamMembers } from '@/db';
 import { eq, and } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { ClaimForm } from './claim-form';
 
@@ -53,14 +53,17 @@ export default async function ClaimPage({ searchParams }: Props) {
     ));
 
   return (
-    <Card className="max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Claim This Lead</CardTitle>
-        <CardDescription>
+    <Card className="max-w-md mx-auto overflow-hidden border-0 shadow-2xl">
+      <div className="bg-forest px-6 py-5 text-center">
+        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 mb-2">
+          <span className="text-lg font-bold text-white">C</span>
+        </div>
+        <h1 className="text-lg font-semibold text-white">Claim This Lead</h1>
+        <p className="text-sm text-white/60 mt-1">
           Select your name to claim and respond to this lead
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+        </p>
+      </div>
+      <CardContent className="p-6 space-y-4">
         <div className="p-3 bg-[#F8F9FA] rounded-lg">
           <p className="font-medium">{lead?.name || formatPhoneNumber(lead?.phone || '')}</p>
           <p className="text-sm text-muted-foreground mt-1">

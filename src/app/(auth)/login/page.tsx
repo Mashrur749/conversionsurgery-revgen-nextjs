@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -56,14 +56,17 @@ function LoginContent() {
   }
 
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">ConversionSurgery</CardTitle>
-        <p className="text-muted-foreground">
+    <Card className="overflow-hidden border-0 shadow-2xl">
+      <div className="bg-forest px-6 py-6 text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 mb-3">
+          <span className="text-xl font-bold text-white">C</span>
+        </div>
+        <h1 className="text-xl font-semibold text-white">ConversionSurgery</h1>
+        <p className="text-sm text-white/60 mt-1">
           Enter your email to receive a login link
         </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </div>
+      <CardContent className="p-6 space-y-4">
         {errorParam && (
           <div className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
             <p className="text-sienna text-sm">
@@ -134,12 +137,13 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <Card>
-        <CardHeader className="text-center space-y-2">
-          <Skeleton className="h-7 w-48 mx-auto" />
-          <Skeleton className="h-4 w-64 mx-auto" />
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <Card className="overflow-hidden border-0 shadow-2xl">
+        <div className="bg-forest px-6 py-6 text-center">
+          <Skeleton className="h-12 w-12 rounded-xl mx-auto mb-3 bg-white/10" />
+          <Skeleton className="h-6 w-48 mx-auto bg-white/10" />
+          <Skeleton className="h-4 w-64 mx-auto mt-2 bg-white/10" />
+        </div>
+        <CardContent className="p-6 space-y-4">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </CardContent>
