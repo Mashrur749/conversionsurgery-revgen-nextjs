@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, CheckCircle2, ExternalLink, Unplug } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Props {
   clientId: string;
@@ -15,9 +19,9 @@ interface Props {
 export function GoogleConnectionCard({ clientId, status, accountId }: Props) {
   const [disconnecting, setDisconnecting] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(status);
+  const [showDisconnect, setShowDisconnect] = useState(false);
 
   const handleDisconnect = async () => {
-    if (!confirm('Disconnect Google Business Profile? Review auto-responses will stop working.')) return;
     setDisconnecting(true);
     try {
       const res = await fetch(`/api/admin/clients/${clientId}/google`, { method: 'DELETE' });
@@ -28,9 +32,25 @@ export function GoogleConnectionCard({ clientId, status, accountId }: Props) {
       console.error('Failed to disconnect:', err);
     }
     setDisconnecting(false);
+    setShowDisconnect(false);
   };
 
   return (
+    <>
+    <AlertDialog open={showDisconnect} onOpenChange={setShowDisconnect}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Disconnect Google Business Profile</AlertDialogTitle>
+          <AlertDialogDescription>
+            Review auto-responses will stop working. You can reconnect later.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" onClick={handleDisconnect}>Disconnect</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base">Google Business Profile</CardTitle>
@@ -87,7 +107,7 @@ export function GoogleConnectionCard({ clientId, status, accountId }: Props) {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDisconnect}
+              onClick={() => setShowDisconnect(true)}
               disabled={disconnecting}
             >
               <Unplug className="h-4 w-4 mr-2" />
@@ -97,5 +117,6 @@ export function GoogleConnectionCard({ clientId, status, accountId }: Props) {
         )}
       </CardContent>
     </Card>
+    </>
   );
 }

@@ -149,12 +149,12 @@ export function CreateClientForm() {
         />
       </div>
 
-      <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Client'}
-        </Button>
+      <div className="flex gap-2 pt-4 justify-end">
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
+        </Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? 'Creating...' : 'Create Client'}
         </Button>
       </div>
     </form>

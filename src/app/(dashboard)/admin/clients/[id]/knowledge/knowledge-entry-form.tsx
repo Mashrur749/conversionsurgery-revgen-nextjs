@@ -126,16 +126,16 @@ export function KnowledgeEntryForm({ clientId, entry }: Props) {
         </p>
       </div>
 
-      <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={saving}>
-          {saving ? 'Saving...' : entry ? 'Save Changes' : 'Add Entry'}
-        </Button>
+      <div className="flex gap-2 pt-4 justify-end">
         <Button
           type="button"
           variant="outline"
           onClick={() => router.push(`/admin/clients/${clientId}/knowledge`)}
         >
           Cancel
+        </Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? 'Saving...' : entry ? 'Save Changes' : 'Add Entry'}
         </Button>
       </div>
     </form>

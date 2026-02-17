@@ -4,6 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Trash2, RotateCcw } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Props {
   clientId: string;
@@ -48,108 +52,62 @@ export function DeleteButton({ clientId, clientName, status }: Props) {
     }
   }
 
-  if (showConfirm) {
-    if (isCancelled) {
-      return (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
-          {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-100 rounded">
-              {error}
-            </div>
-          )}
-          <div>
-            <p className="font-semibold text-sm">Reactivate {clientName}?</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This will restore the client to active status. They will resume receiving calls
-              and messages.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowConfirm(false);
-                setError('');
-              }}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
+  return (
+    <>
+      {error && (
+        <div className="p-3 text-sm text-red-600 bg-red-100 rounded">
+          {error}
+        </div>
+      )}
+
+      {isCancelled ? (
+        <Button
+          variant="outline"
+          className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
+          onClick={() => setShowConfirm(true)}
+          disabled={isLoading}
+        >
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Reactivate Client
+        </Button>
+      ) : (
+        <Button
+          variant="destructive"
+          className="w-full"
+          onClick={() => setShowConfirm(true)}
+          disabled={isLoading}
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Delete Client
+        </Button>
+      )}
+
+      <AlertDialog open={showConfirm} onOpenChange={(open) => { setShowConfirm(open); if (!open) setError(''); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isCancelled ? `Reactivate ${clientName}?` : `Delete ${clientName}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isCancelled
+                ? 'This will restore the client to active status. They will resume receiving calls and messages.'
+                : 'This will mark the client as cancelled. They will no longer receive calls or messages. You can reactivate them later if needed.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant={isCancelled ? 'default' : 'destructive'}
               onClick={handleAction}
               disabled={isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
             >
-              {isLoading ? 'Reactivating...' : 'Reactivate Client'}
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    // Delete confirmation
-    return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg space-y-4">
-        {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-100 rounded">
-            {error}
-          </div>
-        )}
-        <div>
-          <p className="font-semibold text-sm">Delete {clientName}?</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            This will mark the client as cancelled. They will no longer receive calls or
-            messages. You can reactivate them later if needed.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowConfirm(false);
-              setError('');
-            }}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleAction}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Deleting...' : 'Delete Client'}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Reactivate button for cancelled clients
-  if (isCancelled) {
-    return (
-      <Button
-        variant="outline"
-        className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
-        onClick={() => setShowConfirm(true)}
-        disabled={isLoading}
-      >
-        <RotateCcw className="w-4 h-4 mr-2" />
-        Reactivate Client
-      </Button>
-    );
-  }
-
-  // Delete button for active/pending clients
-  return (
-    <Button
-      variant="destructive"
-      className="w-full"
-      onClick={() => setShowConfirm(true)}
-      disabled={isLoading}
-    >
-      <Trash2 className="w-4 h-4 mr-2" />
-      Delete Client
-    </Button>
+              {isLoading
+                ? (isCancelled ? 'Reactivating...' : 'Deleting...')
+                : (isCancelled ? 'Reactivate Client' : 'Delete Client')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

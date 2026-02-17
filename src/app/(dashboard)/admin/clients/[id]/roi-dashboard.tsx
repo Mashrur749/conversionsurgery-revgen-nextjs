@@ -99,18 +99,21 @@ export function ROIDashboard({ metrics }: ROIDashboardProps) {
           <CardContent className="pt-4 pb-4">
             <p className="text-sm text-muted-foreground">Missed Calls Captured</p>
             <p className="text-2xl font-bold">{metrics.missedCallsCaptured}</p>
+            <p className="text-xs text-muted-foreground">Auto-responded via SMS</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
             <p className="text-sm text-muted-foreground">Appointments Booked</p>
             <p className="text-2xl font-bold">{metrics.appointmentsBooked}</p>
+            <p className="text-xs text-muted-foreground">Via follow-up sequences</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-4">
             <p className="text-sm text-muted-foreground">Leads Re-engaged</p>
             <p className="text-2xl font-bold">{metrics.leadsReengaged}</p>
+            <p className="text-xs text-muted-foreground">Cold leads revived</p>
           </CardContent>
         </Card>
         <Card>

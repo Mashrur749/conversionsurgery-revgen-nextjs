@@ -1,11 +1,13 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb, clients, leads, dailyStats } from '@/db';
+import { jobs } from '@/db/schema';
 import { eq, gte, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { DollarSign } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +49,18 @@ export default async function AdminPage() {
 
   const actionMap = new Map(actionCounts.map(a => [a.clientId, a.count]));
 
+  // Aggregate revenue across all clients (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const [revenueAgg] = await db
+    .select({
+      totalWonValue: sql<number>`coalesce(sum(coalesce(${jobs.finalAmount}, ${jobs.quoteAmount})) filter (where ${jobs.status} = 'won' or ${jobs.status} = 'completed'), 0)`,
+      totalPaid: sql<number>`coalesce(sum(${jobs.paidAmount}), 0)`,
+      jobsWon: sql<number>`count(*) filter (where ${jobs.status} = 'won' or ${jobs.status} = 'completed')`,
+    })
+    .from(jobs)
+    .where(gte(jobs.createdAt, thirtyDaysAgo));
+
   const statusColors: Record<string, string> = {
     active: 'bg-green-100 text-green-800',
     pending: 'bg-yellow-100 text-yellow-800',
@@ -70,6 +84,22 @@ export default async function AdminPage() {
           </Button>
         </div>
       </div>
+
+      {/* Revenue Hero */}
+      <Card className="bg-green-50 border-green-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-green-800">Revenue Recovered (All Clients)</CardTitle>
+          <DollarSign className="h-5 w-5 text-green-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-green-900">
+            ${(Number(revenueAgg?.totalWonValue || 0) / 100).toLocaleString()}
+          </div>
+          <p className="text-xs text-green-700">
+            ${(Number(revenueAgg?.totalPaid || 0) / 100).toLocaleString()} collected &bull; {Number(revenueAgg?.jobsWon || 0)} jobs won &bull; Last 30 days
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
@@ -95,6 +125,9 @@ export default async function AdminPage() {
             <div className="text-2xl font-bold">
               {clientStats.reduce((sum, s) => sum + Number(s.missedCalls) + Number(s.forms), 0)}
             </div>
+            <p className="text-xs text-muted-foreground">
+              {clientStats.reduce((sum, s) => sum + Number(s.missedCalls), 0)} calls, {clientStats.reduce((sum, s) => sum + Number(s.forms), 0)} forms
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -107,6 +140,7 @@ export default async function AdminPage() {
             <div className="text-2xl font-bold">
               {clientStats.reduce((sum, s) => sum + Number(s.messages), 0)}
             </div>
+            <p className="text-xs text-muted-foreground">Across all clients</p>
           </CardContent>
         </Card>
         <Card>
@@ -119,6 +153,9 @@ export default async function AdminPage() {
             <div className="text-2xl font-bold text-red-600">
               {Array.from(actionMap.values()).reduce((sum, count) => sum + Number(count), 0)}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Across {actionMap.size} client{actionMap.size !== 1 ? 's' : ''}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -173,8 +210,12 @@ export default async function AdminPage() {
               );
             })}
             {allClients.length === 0 && (
-              <div className="p-8 text-center text-muted-foreground">
-                No clients yet. Create your first client to get started.
+              <div className="py-12 text-center">
+                <p className="text-muted-foreground mb-2">No clients yet</p>
+                <p className="text-sm text-muted-foreground mb-4">Create your first client to start recovering revenue.</p>
+                <Button asChild>
+                  <Link href="/admin/clients/new/wizard">+ New Client</Link>
+                </Button>
               </div>
             )}
           </div>

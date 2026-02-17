@@ -5,6 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Star } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface PhoneNumber {
   id: string;
@@ -22,6 +27,7 @@ export function PhoneNumberManager({ clientId }: { clientId: string }) {
   const [showAdd, setShowAdd] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [friendlyName, setFriendlyName] = useState('');
+  const [removeId, setRemoveId] = useState<string | null>(null);
 
   async function fetchNumbers() {
     const res = await fetch(`/api/admin/clients/${clientId}/phone-numbers`);
@@ -54,14 +60,34 @@ export function PhoneNumberManager({ clientId }: { clientId: string }) {
     fetchNumbers();
   }
 
-  async function handleRemove(phoneId: string) {
-    await fetch(`/api/admin/clients/${clientId}/phone-numbers/${phoneId}`, {
+  async function handleRemove() {
+    if (!removeId) return;
+    await fetch(`/api/admin/clients/${clientId}/phone-numbers/${removeId}`, {
       method: 'DELETE',
     });
+    setRemoveId(null);
     fetchNumbers();
   }
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading numbers...</p>;
+  if (loading) return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-8 w-28" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="flex items-center justify-between border rounded p-2">
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <Skeleton className="h-8 w-8" />
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Card>
@@ -121,7 +147,7 @@ export function PhoneNumberManager({ clientId }: { clientId: string }) {
                       <Star className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm" onClick={() => handleRemove(n.id)} title="Remove">
+                  <Button variant="ghost" size="sm" onClick={() => setRemoveId(n.id)} title="Remove">
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
@@ -130,6 +156,21 @@ export function PhoneNumberManager({ clientId }: { clientId: string }) {
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={!!removeId} onOpenChange={() => setRemoveId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Phone Number</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove this phone number from the client. Any active automations using it will be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleRemove}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

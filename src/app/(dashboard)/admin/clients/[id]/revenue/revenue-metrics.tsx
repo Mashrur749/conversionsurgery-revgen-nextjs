@@ -48,49 +48,56 @@ export function RevenueMetrics({ stats, roi }: Props) {
       </Card>
 
       {/* Pipeline Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold">{stats.totalLeads}</p>
+            <p className="text-2xl font-bold">{stats.totalLeads}</p>
             <p className="text-sm text-muted-foreground">Leads</p>
+            <p className="text-xs text-muted-foreground">Total in pipeline</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold">{stats.totalQuotes}</p>
+            <p className="text-2xl font-bold">{stats.totalQuotes}</p>
             <p className="text-sm text-muted-foreground">Quoted</p>
-            <p className="text-xs text-muted-foreground">{formatMoney(stats.totalQuoteValue)}</p>
+            <p className="text-xs text-muted-foreground">{formatMoney(stats.totalQuoteValue)} total</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-green-600">{stats.totalWon}</p>
+            <p className="text-2xl font-bold text-green-600">{stats.totalWon}</p>
             <p className="text-sm text-muted-foreground">Won</p>
+            <p className="text-xs text-muted-foreground">{formatMoney(stats.totalWonValue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold text-red-600">{stats.totalLost}</p>
+            <p className="text-2xl font-bold text-red-600">{stats.totalLost}</p>
             <p className="text-sm text-muted-foreground">Lost</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <p className="text-3xl font-bold">{stats.conversionRate}%</p>
-            <p className="text-sm text-muted-foreground">Win Rate</p>
+            <p className="text-xs text-muted-foreground">{stats.totalLeads > 0 ? Math.round((stats.totalLost / stats.totalLeads) * 100) : 0}% of leads</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Average Job Value */}
-      <Card>
-        <CardContent className="py-4">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Average Job Value</span>
-            <span className="text-2xl font-bold">{formatMoney(stats.avgJobValue)}</span>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Summary Row */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Win Rate</span>
+              <span className="text-2xl font-bold">{stats.conversionRate}%</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="py-4">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Average Job Value</span>
+              <span className="text-2xl font-bold">{formatMoney(stats.avgJobValue)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

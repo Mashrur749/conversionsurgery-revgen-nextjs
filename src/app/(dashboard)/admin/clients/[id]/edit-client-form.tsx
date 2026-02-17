@@ -226,9 +226,11 @@ export function EditClientForm({ client }: { client: Client }) {
         </div>
       </div>
 
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? 'Saving...' : 'Save Changes'}
-      </Button>
+      <div className="flex justify-end">
+        <Button type="submit" disabled={loading}>
+          {loading ? 'Saving...' : 'Save Changes'}
+        </Button>
+      </div>
     </form>
   );
 }

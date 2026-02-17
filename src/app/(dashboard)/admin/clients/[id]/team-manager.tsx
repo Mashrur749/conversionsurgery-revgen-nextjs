@@ -196,9 +196,11 @@ export function TeamManager({ clientId }: Props) {
             </div>
           </div>
 
-          <Button type="submit" disabled={adding}>
-            {adding ? 'Adding...' : '+ Add Member'}
-          </Button>
+          <div className="flex justify-end">
+            <Button type="submit" disabled={adding}>
+              {adding ? 'Adding...' : '+ Add Member'}
+            </Button>
+          </div>
         </form>
 
         {/* Members List */}

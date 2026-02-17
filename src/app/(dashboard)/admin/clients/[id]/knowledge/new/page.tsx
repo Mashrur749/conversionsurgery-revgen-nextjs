@@ -13,10 +13,11 @@ export default async function NewKnowledgeEntryPage({ params }: Props) {
   if (!session?.user?.isAdmin) redirect('/dashboard');
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold">Add Knowledge Entry</h1>
       <Card>
         <CardHeader>
-          <CardTitle>Add Knowledge Entry</CardTitle>
+          <CardTitle>Entry Details</CardTitle>
         </CardHeader>
         <CardContent>
           <KnowledgeEntryForm clientId={id} />

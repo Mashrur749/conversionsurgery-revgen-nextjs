@@ -25,7 +25,7 @@ export function ClientsFilter({ allClients }: Props) {
 
   const filters: { value: FilterStatus; label: string; color: string }[] = [
     { value: 'active', label: 'Active', color: 'bg-green-100 text-green-800 hover:bg-green-200' },
-    { value: 'pending', label: 'Pending', color: 'bg-blue-100 text-blue-800 hover:bg-blue-200' },
+    { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' },
     { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800 hover:bg-gray-200' },
     { value: 'all', label: 'All', color: 'bg-slate-100 text-slate-800 hover:bg-slate-200' },
   ];
@@ -74,7 +74,7 @@ export function ClientsFilter({ allClients }: Props) {
                     key={client.id}
                     className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex-1">
+                    <Link href={`/admin/clients/${client.id}`} className="flex-1 min-w-0">
                       <p className="font-semibold">{client.businessName}</p>
                       <p className="text-sm text-muted-foreground">{client.email}</p>
                       {client.twilioNumber && (
@@ -82,7 +82,7 @@ export function ClientsFilter({ allClients }: Props) {
                           {formatPhoneNumber(client.twilioNumber)}
                         </p>
                       )}
-                    </div>
+                    </Link>
 
                     <div className="flex items-center gap-2">
                       <Badge
@@ -99,9 +99,6 @@ export function ClientsFilter({ allClients }: Props) {
                     </div>
 
                     <div className="flex gap-2 ml-4">
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={`/admin/clients/${client.id}`}>View</Link>
-                      </Button>
                       <Button asChild size="sm">
                         <Link href={`/admin/clients/${client.id}/phone`}>Phone</Link>
                       </Button>

@@ -252,6 +252,14 @@ export default async function ClientDetailPage({ params }: Props) {
                   Reputation Monitoring
                 </Link>
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-red-200">
+            <CardHeader>
+              <CardTitle className="text-red-600">Danger Zone</CardTitle>
+            </CardHeader>
+            <CardContent>
               <DeleteButton clientId={client.id} clientName={client.businessName} status={client.status} />
             </CardContent>
           </Card>

@@ -3,11 +3,9 @@ import { redirect } from 'next/navigation';
 import { getDb, users, clients } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { UserActions } from './user-actions';
+import { UserList } from './user-list';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,34 +55,11 @@ export default async function UsersPage() {
           <CardTitle>All Users</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y">
-            {allUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4">
-                <div>
-                  <p className="font-medium">{user.name || 'No name'}</p>
-                  <p className="text-sm text-muted-foreground">{user.email}</p>
-                  {user.clientName && (
-                    <p className="text-xs text-muted-foreground">
-                      → {user.clientName}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground">
-                    {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : '—'}
-                  </span>
-                  {user.isAdmin && (
-                    <Badge className="bg-amber-100 text-amber-800">Admin</Badge>
-                  )}
-                  <UserActions
-                    user={user}
-                    clients={allClients}
-                    currentUserId={session.user!.id!}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <UserList
+            users={allUsers}
+            clients={allClients}
+            currentUserId={session.user!.id!}
+          />
         </CardContent>
       </Card>
     </div>

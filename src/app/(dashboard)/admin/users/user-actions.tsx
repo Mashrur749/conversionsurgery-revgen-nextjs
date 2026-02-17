@@ -24,6 +24,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface User {
   id: string;
@@ -46,14 +50,13 @@ interface Props {
 export function UserActions({ user, clients, currentUserId }: Props) {
   const router = useRouter();
   const [showAssign, setShowAssign] = useState(false);
+  const [showToggleAdmin, setShowToggleAdmin] = useState(false);
   const [selectedClient, setSelectedClient] = useState(user.clientId || 'none');
   const [loading, setLoading] = useState(false);
 
   const isCurrentUser = user.id === currentUserId;
 
   async function toggleAdmin() {
-    if (isCurrentUser) return;
-
     setLoading(true);
     await fetch(`/api/admin/users/${user.id}`, {
       method: 'PATCH',
@@ -61,6 +64,7 @@ export function UserActions({ user, clients, currentUserId }: Props) {
       body: JSON.stringify({ isAdmin: !user.isAdmin }),
     });
     setLoading(false);
+    setShowToggleAdmin(false);
     router.refresh();
   }
 
@@ -90,7 +94,7 @@ export function UserActions({ user, clients, currentUserId }: Props) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={toggleAdmin}
+            onClick={() => setShowToggleAdmin(true)}
             disabled={isCurrentUser || loading}
             className={user.isAdmin ? 'text-red-600' : ''}
           >
@@ -132,6 +136,31 @@ export function UserActions({ user, clients, currentUserId }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showToggleAdmin} onOpenChange={setShowToggleAdmin}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {user.isAdmin ? 'Remove Admin Access' : 'Grant Admin Access'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {user.isAdmin
+                ? `This will remove admin privileges from ${user.email}. They will lose access to all admin features.`
+                : `This will grant admin privileges to ${user.email}. They will have full access to all admin features.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant={user.isAdmin ? 'destructive' : 'default'}
+              onClick={toggleAdmin}
+              disabled={loading}
+            >
+              {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

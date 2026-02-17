@@ -1,10 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface KnowledgeEntry {
   id: string;
@@ -31,13 +36,14 @@ const categoryLabels: Record<string, { label: string; color: string }> = {
 
 export function KnowledgeList({ clientId, entries }: Props) {
   const router = useRouter();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this entry?')) return;
-
-    await fetch(`/api/admin/clients/${clientId}/knowledge/${id}`, {
+  async function handleDelete() {
+    if (!deleteId) return;
+    await fetch(`/api/admin/clients/${clientId}/knowledge/${deleteId}`, {
       method: 'DELETE',
     });
+    setDeleteId(null);
     router.refresh();
   }
 
@@ -97,7 +103,7 @@ export function KnowledgeList({ clientId, entries }: Props) {
                         size="sm"
                         variant="ghost"
                         className="text-red-600"
-                        onClick={() => handleDelete(entry.id)}
+                        onClick={() => setDeleteId(entry.id)}
                       >
                         Delete
                       </Button>
@@ -117,6 +123,21 @@ export function KnowledgeList({ clientId, entries }: Props) {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Knowledge Entry</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this entry. The AI will no longer use this information when responding to customers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
