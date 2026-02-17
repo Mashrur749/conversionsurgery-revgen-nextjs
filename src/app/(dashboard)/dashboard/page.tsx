@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { getRevenueStats } from '@/lib/services/revenue';
+import { DollarSign } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +27,14 @@ export default async function DashboardPage() {
   }
 
   if (!clientId) {
-    return <div>No client linked to account</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">No Client Linked</h2>
+        <p className="text-muted-foreground">
+          Your account is not linked to a client. Contact your admin to get assigned.
+        </p>
+      </div>
+    );
   }
 
   const db = getDb();
@@ -58,14 +67,17 @@ export default async function DashboardPage() {
     .orderBy(desc(leads.updatedAt))
     .limit(5);
 
-  const pendingCount = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(scheduledMessages)
-    .where(and(
-      eq(scheduledMessages.clientId, clientId),
-      eq(scheduledMessages.sent, false),
-      eq(scheduledMessages.cancelled, false)
-    ));
+  const [pendingCount, revenueStats] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(scheduledMessages)
+      .where(and(
+        eq(scheduledMessages.clientId, clientId),
+        eq(scheduledMessages.sent, false),
+        eq(scheduledMessages.cancelled, false)
+      )),
+    getRevenueStats(clientId),
+  ]);
 
   return (
     <div className="space-y-8">
@@ -73,6 +85,22 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">Last 7 days overview</p>
       </div>
+
+      {/* Revenue Hero */}
+      <Card className="bg-green-50 border-green-200">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-green-800">Revenue Recovered</CardTitle>
+          <DollarSign className="h-5 w-5 text-green-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-3xl font-bold text-green-900">
+            ${(revenueStats.totalWonValue / 100).toLocaleString()}
+          </div>
+          <p className="text-xs text-green-700">
+            ${(revenueStats.totalPaid / 100).toLocaleString()} collected &bull; {revenueStats.totalWon} jobs won &bull; Last 30 days
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -143,14 +171,17 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           {actionLeads.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No actions needed</p>
+            <div className="py-4 text-center">
+              <p className="text-muted-foreground mb-1">No actions needed</p>
+              <p className="text-sm text-muted-foreground">All leads are being handled automatically. Check back later for items needing attention.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {actionLeads.map((lead) => (
                 <Link
                   key={lead.id}
                   href={`/leads/${lead.id}`}
-                  className="block p-3 rounded-lg border hover:bg-gray-50 transition-colors"
+                  className="block p-3 rounded-lg border border-l-4 border-l-red-500 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex justify-between items-start">
                     <div>

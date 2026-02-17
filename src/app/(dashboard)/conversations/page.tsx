@@ -54,8 +54,9 @@ export default async function ConversationsPage() {
         <CardContent className="p-0">
           <div className="divide-y">
             {allConversations.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                No conversations yet
+              <div className="py-12 text-center">
+                <p className="text-muted-foreground mb-2">No conversations yet</p>
+                <p className="text-sm text-muted-foreground">Conversations will appear here when leads respond to automated messages.</p>
               </div>
             ) : (
               allConversations.map(({ conversation, lead }) => (

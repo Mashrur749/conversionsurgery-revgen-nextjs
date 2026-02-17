@@ -112,7 +112,7 @@ export default async function LeadDetailPage({ params }: Props) {
       <LeadTags leadId={lead.id} initialTags={(lead.tags as string[]) || []} />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
           <LeadTabs
             leadId={lead.id}
             messages={messages}
@@ -135,7 +135,7 @@ export default async function LeadDetailPage({ params }: Props) {
           </LeadTabs>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 order-1 lg:order-2">
           <ActionButtons lead={lead} />
 
           <FlowStatus

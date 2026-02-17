@@ -10,10 +10,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDistanceToNow } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { LeadScoreBadge } from '@/components/leads/lead-score-badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { LeadFilters } from './lead-filters';
 import { ChevronLeft, ChevronRight, ArrowUpDown, Download } from 'lucide-react';
 import { STATUS_COLORS, BULK_UPDATE_STATUSES } from '@/lib/constants/leads';
 import { CreateLeadDialog } from './create-lead-dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Lead } from '@/db/schema/leads';
 
 interface LeadsResponse {
@@ -35,6 +40,7 @@ export function LeadsTable() {
   const [sortBy, setSortBy] = useState<'updatedAt' | 'createdAt' | 'score'>('updatedAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -96,17 +102,18 @@ export function LeadsTable() {
     }
   };
 
-  const bulkUpdateStatus = async (newStatus: string) => {
-    if (selected.size === 0) return;
+  const bulkUpdateStatus = async () => {
+    if (selected.size === 0 || !bulkStatus) return;
     const promises = Array.from(selected).map((id) =>
       fetch(`/api/leads/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: bulkStatus }),
       })
     );
     await Promise.all(promises);
     setSelected(new Set());
+    setBulkStatus(null);
     fetchLeads();
   };
 
@@ -148,7 +155,7 @@ export function LeadsTable() {
       {selected.size > 0 && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
           <span className="text-sm font-medium">{selected.size} selected</span>
-          <Select onValueChange={bulkUpdateStatus}>
+          <Select onValueChange={setBulkStatus}>
             <SelectTrigger className="w-[180px] h-8">
               <SelectValue placeholder="Change status to..." />
             </SelectTrigger>
@@ -167,7 +174,20 @@ export function LeadsTable() {
       <Card>
         <CardContent className="p-0">
           {loading && !data ? (
-            <div className="p-8 text-center text-muted-foreground">Loading leads...</div>
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-2">
+                  <Skeleton className="h-4 w-4" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <Skeleton className="h-6 w-16 rounded-full" />
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              ))}
+            </div>
           ) : leads.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               {search || status || source || temperature
@@ -277,6 +297,20 @@ export function LeadsTable() {
           </div>
         </div>
       )}
+      <AlertDialog open={!!bulkStatus} onOpenChange={() => setBulkStatus(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Update {selected.size} Lead{selected.size > 1 ? 's' : ''}</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will change the status of {selected.size} selected lead{selected.size > 1 ? 's' : ''} to &ldquo;{bulkStatus?.replace(/_/g, ' ')}&rdquo;. This may affect active automations.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={bulkUpdateStatus}>Update Status</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

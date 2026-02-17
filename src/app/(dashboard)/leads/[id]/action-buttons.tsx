@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Lead } from '@/db/schema/leads';
 
 interface Props {
@@ -18,9 +22,12 @@ export function ActionButtons({ lead }: Props) {
   const [showAppointment, setShowAppointment] = useState(false);
   const [appointmentDate, setAppointmentDate] = useState('');
   const [appointmentTime, setAppointmentTime] = useState('');
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function startSequence(type: string, data: Record<string, any> = {}) {
+  async function startSequence(type: string, data: Record<string, string> = {}) {
     setLoading(type);
+    setError(null);
     try {
       const res = await fetch(`/api/sequences/${type}`, {
         method: 'POST',
@@ -31,29 +38,29 @@ export function ActionButtons({ lead }: Props) {
       if (res.ok) {
         router.refresh();
       } else {
-        alert('Failed to start sequence');
+        setError('Failed to start sequence. Please try again.');
       }
     } finally {
       setLoading(null);
     }
   }
 
-  async function cancelSequence(sequenceType: string) {
-    setLoading(`cancel-${sequenceType}`);
+  async function cancelSequence() {
+    if (!cancelTarget) return;
+    setLoading(`cancel-${cancelTarget}`);
     try {
       const res = await fetch('/api/sequences/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: lead.id, sequenceType }),
+        body: JSON.stringify({ leadId: lead.id, sequenceType: cancelTarget }),
       });
 
       if (res.ok) {
         router.refresh();
-      } else {
-        alert('Failed to cancel sequence');
       }
     } finally {
       setLoading(null);
+      setCancelTarget(null);
     }
   }
 
@@ -77,6 +84,11 @@ export function ActionButtons({ lead }: Props) {
         <CardTitle>Actions</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {error && (
+          <div className="p-2 text-sm text-red-600 bg-red-50 rounded">
+            {error}
+          </div>
+        )}
         {lead.actionRequired && (
           <Button
             variant="outline"
@@ -162,48 +174,63 @@ export function ActionButtons({ lead }: Props) {
           {loading === 'payment' ? 'Starting...' : '💳 Start Payment Reminder'}
         </Button>
 
-        <div className="border-t pt-3 mt-3">
-          <p className="text-xs text-muted-foreground mb-2">Cancel Sequences</p>
+        <div className="border-t border-red-200 pt-3 mt-3">
+          <p className="text-xs font-medium text-red-600 mb-2">Danger Zone</p>
           <div className="space-y-2">
             <Button
               variant="ghost"
               size="sm"
               className="w-full text-xs"
-              onClick={() => cancelSequence('appointment')}
+              onClick={() => setCancelTarget('appointment')}
               disabled={loading === 'cancel-appointment'}
             >
-              {loading === 'cancel-appointment' ? 'Cancelling...' : '❌ Cancel Appointment'}
+              {loading === 'cancel-appointment' ? 'Cancelling...' : 'Cancel Appointment'}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="w-full text-xs"
-              onClick={() => cancelSequence('estimate')}
+              onClick={() => setCancelTarget('estimate')}
               disabled={loading === 'cancel-estimate'}
             >
-              {loading === 'cancel-estimate' ? 'Cancelling...' : '❌ Cancel Estimate'}
+              {loading === 'cancel-estimate' ? 'Cancelling...' : 'Cancel Estimate'}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="w-full text-xs"
-              onClick={() => cancelSequence('review')}
+              onClick={() => setCancelTarget('review')}
               disabled={loading === 'cancel-review'}
             >
-              {loading === 'cancel-review' ? 'Cancelling...' : '❌ Cancel Review'}
+              {loading === 'cancel-review' ? 'Cancelling...' : 'Cancel Review'}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               className="w-full text-xs"
-              onClick={() => cancelSequence('payment')}
+              onClick={() => setCancelTarget('payment')}
               disabled={loading === 'cancel-payment'}
             >
-              {loading === 'cancel-payment' ? 'Cancelling...' : '❌ Cancel Payment'}
+              {loading === 'cancel-payment' ? 'Cancelling...' : 'Cancel Payment'}
             </Button>
           </div>
         </div>
       </CardContent>
+
+      <AlertDialog open={!!cancelTarget} onOpenChange={() => setCancelTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel {cancelTarget} Sequence</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will stop all scheduled messages for this {cancelTarget} sequence. Any messages already sent will not be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Running</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={cancelSequence}>Cancel Sequence</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
