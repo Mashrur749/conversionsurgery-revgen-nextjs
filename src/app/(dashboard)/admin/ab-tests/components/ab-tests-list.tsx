@@ -33,7 +33,7 @@ export function ABTestsList({ title, tests, status }: Props) {
   const getStatusColor = (s: string) => {
     switch (s) {
       case 'active':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-green-100 text-green-800';
       case 'paused':
         return 'bg-amber-100 text-amber-800';
       case 'completed':

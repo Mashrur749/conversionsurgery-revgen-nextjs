@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Article {
   id: string;
@@ -21,6 +25,7 @@ export function ArticleEditor() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', slug: '', content: '', category: '', isPublished: false });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchArticles();
@@ -52,8 +57,10 @@ export function ArticleEditor() {
     }
   }
 
-  async function handleDelete(id: string) {
-    await fetch(`/api/admin/help-articles/${id}`, { method: 'DELETE' });
+  async function handleDelete() {
+    if (!deleteId) return;
+    await fetch(`/api/admin/help-articles/${deleteId}`, { method: 'DELETE' });
+    setDeleteId(null);
     fetchArticles();
   }
 
@@ -112,8 +119,8 @@ export function ArticleEditor() {
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             className="border rounded px-3 py-2 text-sm w-full min-h-[200px]"
           />
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm">
+          <div className="flex items-center justify-end gap-3">
+            <label className="flex items-center gap-2 text-sm mr-auto">
               <input
                 type="checkbox"
                 checked={form.isPublished}
@@ -121,9 +128,6 @@ export function ArticleEditor() {
               />
               Published
             </label>
-            <Button size="sm" onClick={handleSave}>
-              {editing ? 'Update' : 'Create'}
-            </Button>
             {editing && (
               <Button variant="ghost" size="sm" onClick={() => {
                 setEditing(null);
@@ -132,6 +136,9 @@ export function ArticleEditor() {
                 Cancel
               </Button>
             )}
+            <Button size="sm" onClick={handleSave}>
+              {editing ? 'Update' : 'Create'}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -159,7 +166,7 @@ export function ArticleEditor() {
                 <Button variant="ghost" size="sm" onClick={() => startEdit(article)}>
                   <Edit2 className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(article.id)}>
+                <Button variant="ghost" size="sm" onClick={() => setDeleteId(article.id)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
@@ -167,6 +174,21 @@ export function ArticleEditor() {
           </Card>
         ))}
       </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Help Article</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this help article. It will no longer be visible to clients.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

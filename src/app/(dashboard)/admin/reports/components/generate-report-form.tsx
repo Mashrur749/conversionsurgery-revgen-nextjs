@@ -182,7 +182,7 @@ export default function GenerateReportForm({ clients }: Props) {
         </div>
 
         {/* Submit Button */}
-        <div className="flex gap-3 pt-4">
+        <div className="flex gap-3 pt-4 justify-end">
           <Button type="submit" disabled={loading}>
             {loading ? 'Generating...' : 'Generate Report'}
           </Button>

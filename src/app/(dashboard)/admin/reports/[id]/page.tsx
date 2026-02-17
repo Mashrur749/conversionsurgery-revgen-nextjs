@@ -9,6 +9,41 @@ import ReportDetailCard from '../components/report-detail-card';
 import ReportMetricsGrid from '../components/report-metrics-grid';
 import ReportPerformanceChart from '../components/report-performance-chart';
 
+interface ReportMetrics {
+  messagesSent?: number;
+  conversationsStarted?: number;
+  appointmentsReminded?: number;
+  formsResponded?: number;
+  estimatesFollowedUp?: number;
+  missedCallsCaptured?: number;
+  days?: number;
+}
+
+interface ReportRoiSummary {
+  averagePerDay?: string;
+}
+
+interface ReportTeamPerformance {
+  totalMembers?: number;
+  activeMembers?: number;
+}
+
+interface ReportTestResult {
+  name?: string;
+  description?: string;
+  testType?: string;
+}
+
+interface ReportDailyStats {
+  date: string;
+  messagesSent?: number;
+  conversationsStarted?: number;
+  appointmentsReminded?: number;
+  formsResponded?: number;
+  estimatesFollowedUp?: number;
+  missedCallsCaptured?: number;
+}
+
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -31,7 +66,7 @@ export default async function ReportDetailPage({ params }: Props) {
   if (!report) {
     return (
       <div className="space-y-4">
-        <h1 className="text-3xl font-bold">Report Not Found</h1>
+        <h1 className="text-2xl font-bold">Report Not Found</h1>
         <p className="text-gray-600">
           The report you're looking for doesn't exist.
         </p>
@@ -48,18 +83,18 @@ export default async function ReportDetailPage({ params }: Props) {
     .where(eq(clients.id, report.clientId))
     .limit(1);
 
-  const metrics = (report.metrics as any) || {};
-  const roiSummary = (report.roiSummary as any) || {};
-  const teamPerformance = (report.teamPerformance as any) || {};
-  const performanceData = (report.performanceData as any) || [];
-  const testResults = (report.testResults as any) || [];
+  const metrics = (report.metrics as ReportMetrics) || {};
+  const roiSummary = (report.roiSummary as ReportRoiSummary) || {};
+  const teamPerformance = (report.teamPerformance as ReportTeamPerformance) || {};
+  const performanceData = (report.performanceData as ReportDailyStats[]) || [];
+  const testResults = (report.testResults as ReportTestResult[]) || [];
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">{report.title}</h1>
+          <h1 className="text-2xl font-bold">{report.title}</h1>
           <p className="text-gray-600 mt-1">
             {client?.businessName || 'Unknown Client'}
           </p>
@@ -125,7 +160,7 @@ export default async function ReportDetailPage({ params }: Props) {
       {testResults.length > 0 && (
         <ReportDetailCard title="A/B Tests Running During Period">
           <div className="space-y-4">
-            {testResults.map((test: any, idx: number) => (
+            {testResults.map((test: ReportTestResult, idx: number) => (
               <div
                 key={idx}
                 className="p-3 rounded-md bg-gray-50 border"

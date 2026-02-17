@@ -103,10 +103,10 @@ export function AdminDiscussionThread({
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-xl font-bold">Thread with {message.userEmail}</h1>
+          <h1 className="text-2xl font-bold">Thread with {message.userEmail}</h1>
           <p className="text-xs text-gray-500">Page: {message.page}</p>
         </div>
-        <Badge variant={status === 'open' ? 'default' : 'secondary'}>
+        <Badge className={status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
           {status}
         </Badge>
         {status === 'open' && (

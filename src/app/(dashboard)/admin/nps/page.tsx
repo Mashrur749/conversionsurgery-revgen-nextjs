@@ -75,11 +75,14 @@ export default async function NpsDashboardPage() {
         </CardHeader>
         <CardContent>
           {recentResponses.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No responses yet.</p>
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground mb-2">No responses yet</p>
+              <p className="text-sm text-muted-foreground">NPS responses will appear here after surveys are sent to clients.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {recentResponses.map((r) => (
-                <div key={r.id} className="flex items-center justify-between border-b pb-2 last:border-0">
+                <div key={r.id} className="flex items-center justify-between border-b pb-2 last:border-0 hover:bg-gray-50 transition-colors rounded-md px-2 -mx-2">
                   <div>
                     <div className="flex items-center gap-2">
                       <Badge variant={

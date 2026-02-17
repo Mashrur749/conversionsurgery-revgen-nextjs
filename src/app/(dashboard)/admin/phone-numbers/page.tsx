@@ -47,7 +47,7 @@ export default async function PhoneNumbersPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Phone Number Management</h1>
+          <h1 className="text-2xl font-bold">Phone Number Management</h1>
           <p className="text-muted-foreground mt-2">
             Manage all your Twilio phone numbers and client assignments
           </p>

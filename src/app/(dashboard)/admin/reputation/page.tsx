@@ -75,6 +75,7 @@ export default async function ReputationPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{platformAvgRating} / 5.0</p>
+              <p className="text-xs text-muted-foreground">Platform-wide average</p>
             </CardContent>
           </Card>
           <Card>
@@ -85,6 +86,7 @@ export default async function ReputationPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{platformTotalReviews.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Across all clients</p>
             </CardContent>
           </Card>
           <Card>
@@ -95,6 +97,7 @@ export default async function ReputationPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{platformResponseRate}%</p>
+              <p className="text-xs text-muted-foreground">{platformResponded} of {platformTotalReviews} responded</p>
             </CardContent>
           </Card>
           <Card>
@@ -105,6 +108,7 @@ export default async function ReputationPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold">{platformResponded.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">Reviews with responses</p>
             </CardContent>
           </Card>
         </div>
@@ -127,7 +131,7 @@ export default async function ReputationPage() {
               : null;
 
           return (
-            <Card key={client.id}>
+            <Card key={client.id} className="hover:bg-gray-50 transition-colors">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

@@ -54,9 +54,12 @@ export default async function TwilioAdminPage() {
           </CardHeader>
           <CardContent>
             {balance ? (
-              <div className="text-3xl font-bold">
-                {balance.currency} {parseFloat(balance.balance).toFixed(2)}
-              </div>
+              <>
+                <div className="text-3xl font-bold">
+                  {balance.currency} {parseFloat(balance.balance).toFixed(2)}
+                </div>
+                <p className="text-xs text-muted-foreground">Current Twilio balance</p>
+              </>
             ) : (
               <p className="text-muted-foreground">Unable to fetch balance</p>
             )}
@@ -93,7 +96,7 @@ export default async function TwilioAdminPage() {
               return (
                 <div
                   key={num.sid}
-                  className="flex items-center justify-between p-4"
+                  className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div>
                     <p className="font-mono font-medium">

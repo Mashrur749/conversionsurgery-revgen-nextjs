@@ -24,6 +24,10 @@ import {
 } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { Ticket, Trash2 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Coupon } from '@/db/schema/coupons';
 
 interface CouponManagerProps {
@@ -35,6 +39,7 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
   const [coupons, setCoupons] = useState(initialCoupons);
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const createCoupon = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,11 +82,13 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
     }
   };
 
-  const deleteCoupon = async (id: string) => {
-    const res = await fetch(`/api/admin/coupons/${id}`, { method: 'DELETE' });
+  const deleteCoupon = async () => {
+    if (!deleteId) return;
+    const res = await fetch(`/api/admin/coupons/${deleteId}`, { method: 'DELETE' });
     if (res.ok) {
-      setCoupons(prev => prev.filter(c => c.id !== id));
+      setCoupons(prev => prev.filter(c => c.id !== deleteId));
     }
+    setDeleteId(null);
   };
 
   return (
@@ -217,7 +224,7 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
                           variant="ghost"
                           size="sm"
                           className="text-red-600"
-                          onClick={() => deleteCoupon(coupon.id)}
+                          onClick={() => setDeleteId(coupon.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -230,6 +237,20 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
           )}
         </CardContent>
       </Card>
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Coupon</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this coupon. It will no longer be usable by clients.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={deleteCoupon}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { VoiceSettings } from '@/components/settings/voice-settings';
 import { CallHistory } from '@/components/voice/call-history';
 import { VoicePicker } from './voice-picker';
+import { ChevronDown } from 'lucide-react';
 
 export default async function VoiceAIPage() {
   const session = await auth();
@@ -40,11 +41,19 @@ export default async function VoiceAIPage() {
       {allClients.length === 0 ? (
         <p className="text-muted-foreground">No active clients found.</p>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-4">
           {allClients.map((client) => (
-            <div key={client.id} className="space-y-4">
-              <h2 className="text-lg font-semibold">{client.businessName}</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <details key={client.id} className="group rounded-lg border bg-card">
+              <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-lg font-semibold list-none [&::-webkit-details-marker]:hidden">
+                <span className="flex items-center gap-3">
+                  {client.businessName}
+                  {client.voiceEnabled && (
+                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-green-100 text-green-800">Enabled</span>
+                  )}
+                </span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
+              </summary>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-6 pb-6">
                 <div className="space-y-4">
                   <VoiceSettings
                     clientId={client.id}
@@ -61,7 +70,7 @@ export default async function VoiceAIPage() {
                 </div>
                 <CallHistory clientId={client.id} />
               </div>
-            </div>
+            </details>
           ))}
         </div>
       )}

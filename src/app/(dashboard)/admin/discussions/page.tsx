@@ -85,8 +85,7 @@ export default async function AdminDiscussionsPage({
                     {thread.userEmail}
                   </span>
                   <Badge
-                    variant={thread.status === 'open' ? 'default' : 'secondary'}
-                    className="text-xs"
+                    className={`text-xs ${thread.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
                   >
                     {thread.status}
                   </Badge>

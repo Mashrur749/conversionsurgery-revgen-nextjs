@@ -43,7 +43,7 @@ export default async function ABTestsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">A/B Testing</h1>
+          <h1 className="text-2xl font-bold">A/B Testing</h1>
           <p className="text-muted-foreground mt-2">
             Run and track experiments to optimize client performance
           </p>
@@ -63,14 +63,17 @@ export default async function ABTestsPage() {
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <p className="text-sm text-blue-600 font-medium">Active Tests</p>
           <p className="text-3xl font-bold mt-2">{activeTests.length}</p>
+          <p className="text-xs text-blue-500 mt-1">Currently running</p>
         </div>
         <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
           <p className="text-sm text-amber-600 font-medium">Paused</p>
           <p className="text-3xl font-bold mt-2">{pausedTests.length}</p>
+          <p className="text-xs text-amber-500 mt-1">Ready to resume</p>
         </div>
         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
           <p className="text-sm text-green-600 font-medium">Completed</p>
           <p className="text-3xl font-bold mt-2">{completedTests.length}</p>
+          <p className="text-xs text-green-500 mt-1">Results available</p>
         </div>
       </div>
 

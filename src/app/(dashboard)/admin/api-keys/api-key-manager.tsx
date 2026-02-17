@@ -5,6 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Copy, Check } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ApiKey {
   id: string;
@@ -26,6 +31,7 @@ export function ApiKeyManager() {
   const [scopes, setScopes] = useState('');
   const [newKey, setNewKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [revokeId, setRevokeId] = useState<string | null>(null);
 
   async function fetchKeys() {
     if (!clientId) return;
@@ -59,8 +65,10 @@ export function ApiKeyManager() {
     }
   }
 
-  async function handleRevoke(id: string) {
-    await fetch(`/api/admin/api-keys/${id}`, { method: 'DELETE' });
+  async function handleRevoke() {
+    if (!revokeId) return;
+    await fetch(`/api/admin/api-keys/${revokeId}`, { method: 'DELETE' });
+    setRevokeId(null);
     fetchKeys();
   }
 
@@ -133,19 +141,33 @@ export function ApiKeyManager() {
               onChange={(e) => setScopes(e.target.value)}
               className="border rounded px-3 py-2 text-sm w-full"
             />
-            <div className="flex gap-2">
-              <Button size="sm" onClick={handleCreate} disabled={!label}>
-                Create
-              </Button>
+            <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>
                 Cancel
+              </Button>
+              <Button size="sm" onClick={handleCreate} disabled={!label}>
+                Create
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {loading && <p className="text-muted-foreground text-sm">Loading...</p>}
+      {loading && (
+        <div className="space-y-2">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="py-3 flex items-center justify-between">
+                <div className="space-y-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <Skeleton className="h-8 w-8" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-2">
         {keys.map((k) => (
@@ -181,7 +203,7 @@ export function ApiKeyManager() {
                 )}
               </div>
               {k.isActive && (
-                <Button variant="ghost" size="sm" onClick={() => handleRevoke(k.id)}>
+                <Button variant="ghost" size="sm" onClick={() => setRevokeId(k.id)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               )}
@@ -194,6 +216,20 @@ export function ApiKeyManager() {
           </p>
         )}
       </div>
+      <AlertDialog open={!!revokeId} onOpenChange={() => setRevokeId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke API Key</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently revoke this API key. Any integrations using it will immediately stop working.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleRevoke}>Revoke</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

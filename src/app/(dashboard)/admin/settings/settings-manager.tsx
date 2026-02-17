@@ -8,6 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, Plus, Pencil, Check, X } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Setting {
   id: string;
@@ -32,6 +36,7 @@ export function SystemSettingsManager({ settings: initialSettings }: Props) {
   const [newValue, setNewValue] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleteKey, setDeleteKey] = useState<string | null>(null);
 
   const startEdit = (setting: Setting) => {
     setEditingKey(setting.key);
@@ -81,13 +86,15 @@ export function SystemSettingsManager({ settings: initialSettings }: Props) {
     setSaving(false);
   };
 
-  const deleteSetting = async (key: string) => {
-    const res = await fetch(`/api/admin/system-settings/${encodeURIComponent(key)}`, {
+  const deleteSetting = async () => {
+    if (!deleteKey) return;
+    const res = await fetch(`/api/admin/system-settings/${encodeURIComponent(deleteKey)}`, {
       method: 'DELETE',
     });
     if (res.ok) {
-      setSettings((prev) => prev.filter((s) => s.key !== key));
+      setSettings((prev) => prev.filter((s) => s.key !== deleteKey));
     }
+    setDeleteKey(null);
   };
 
   return (
@@ -137,7 +144,7 @@ export function SystemSettingsManager({ settings: initialSettings }: Props) {
           <CardContent className="p-0">
             <div className="divide-y">
               {settings.map((setting) => (
-                <div key={setting.key} className="px-4 py-3">
+                <div key={setting.key} className="px-4 py-3 hover:bg-gray-50 transition-colors">
                   {editingKey === setting.key ? (
                     <div className="space-y-2">
                       <p className="font-mono text-sm font-medium">{setting.key}</p>
@@ -176,7 +183,7 @@ export function SystemSettingsManager({ settings: initialSettings }: Props) {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(setting)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => deleteSetting(setting.key)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => setDeleteKey(setting.key)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
@@ -188,6 +195,20 @@ export function SystemSettingsManager({ settings: initialSettings }: Props) {
           </CardContent>
         </Card>
       )}
+      <AlertDialog open={!!deleteKey} onOpenChange={() => setDeleteKey(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete System Setting</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the setting &ldquo;{deleteKey}&rdquo;. Features depending on it may stop working.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={deleteSetting}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

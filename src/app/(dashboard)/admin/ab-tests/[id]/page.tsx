@@ -9,6 +9,11 @@ import { TestResultsCard } from '../components/test-results-card';
 import { TestActions } from '../components/test-actions';
 import { format } from 'date-fns';
 
+interface ABTestVariant {
+  name?: string;
+  description?: string;
+}
+
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -50,7 +55,7 @@ export default async function TestDetailPage({ params }: Props) {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">{test.name}</h1>
+          <h1 className="text-2xl font-bold">{test.name}</h1>
           <p className="text-muted-foreground mt-2">
             {client?.businessName} • Started{' '}
             {format(test.startDate as Date, 'MMM d, yyyy')}
@@ -101,21 +106,21 @@ export default async function TestDetailPage({ params }: Props) {
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
           <h3 className="font-semibold text-lg mb-2">
-            Variant A: {(test.variantA as any)?.name}
+            Variant A: {(test.variantA as ABTestVariant)?.name}
           </h3>
-          {(test.variantA as any)?.description && (
+          {(test.variantA as ABTestVariant)?.description && (
             <p className="text-sm text-muted-foreground">
-              {(test.variantA as any)?.description}
+              {(test.variantA as ABTestVariant)?.description}
             </p>
           )}
         </div>
         <div className="bg-amber-50 p-6 rounded-lg border border-amber-200">
           <h3 className="font-semibold text-lg mb-2">
-            Variant B: {(test.variantB as any)?.name}
+            Variant B: {(test.variantB as ABTestVariant)?.name}
           </h3>
-          {(test.variantB as any)?.description && (
+          {(test.variantB as ABTestVariant)?.description && (
             <p className="text-sm text-muted-foreground">
-              {(test.variantB as any)?.description}
+              {(test.variantB as ABTestVariant)?.description}
             </p>
           )}
         </div>

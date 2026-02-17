@@ -5,6 +5,14 @@ import { Button } from '@/components/ui/button';
 import { getDb } from '@/db';
 import { reports, clients } from '@/db/schema';
 
+interface ReportListMetrics {
+  messagesSent?: number;
+}
+
+interface ReportListRoiSummary {
+  conversionRate?: number;
+}
+
 export default async function ReportsPage() {
   const session = await auth();
   if (!session?.user?.isAdmin) {
@@ -33,7 +41,7 @@ export default async function ReportsPage() {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Reports</h1>
+          <h1 className="text-2xl font-bold">Reports</h1>
           <p className="text-gray-600 mt-2">
             Generate and manage client reports
           </p>
@@ -48,14 +56,17 @@ export default async function ReportsPage() {
         <div className="bg-white rounded-lg border p-4">
           <p className="text-gray-600 text-sm font-medium">Total Reports</p>
           <p className="text-3xl font-bold mt-2">{totalReports}</p>
+          <p className="text-xs text-muted-foreground mt-1">All time</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-gray-600 text-sm font-medium">Bi-Weekly</p>
           <p className="text-3xl font-bold mt-2">{biWeeklyCount}</p>
+          <p className="text-xs text-muted-foreground mt-1">Sent every 2 weeks</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-gray-600 text-sm font-medium">Monthly</p>
           <p className="text-3xl font-bold mt-2">{monthlyCount}</p>
+          <p className="text-xs text-muted-foreground mt-1">Sent every month</p>
         </div>
       </div>
 
@@ -96,8 +107,8 @@ export default async function ReportsPage() {
               <tbody className="divide-y">
                 {allReports.map((report) => {
                   const client = clientMap.get(report.clientId);
-                  const metrics = (report.metrics as any) || {};
-                  const roiSummary = (report.roiSummary as any) || {};
+                  const metrics = (report.metrics as ReportListMetrics) || {};
+                  const roiSummary = (report.roiSummary as ReportListRoiSummary) || {};
 
                   return (
                     <tr key={report.id} className="hover:bg-gray-50">
