@@ -104,12 +104,12 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+          <div className="p-3 text-sm text-destructive bg-[#FDEAE4] rounded-lg">
             {error}
           </div>
         )}
         {success && (
-          <div className="p-3 text-sm text-green-600 bg-green-50 rounded-lg">
+          <div className="p-3 text-sm text-[#3D7A50] bg-[#E8F5E9] rounded-lg">
             Features updated successfully
           </div>
         )}

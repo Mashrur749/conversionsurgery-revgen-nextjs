@@ -150,7 +150,7 @@ export function AiSettingsForm({ defaults }: Props) {
       </Card>
 
       <div className="flex items-center justify-end gap-3">
-        {saved && <span className="text-sm text-green-600">Saved</span>}
+        {saved && <span className="text-sm text-[#3D7A50]">Saved</span>}
         <Button onClick={save} disabled={saving}>
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>

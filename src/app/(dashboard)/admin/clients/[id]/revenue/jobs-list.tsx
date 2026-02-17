@@ -30,11 +30,11 @@ interface Props {
 }
 
 const statusColors: Record<string, string> = {
-  lead: 'bg-gray-100 text-gray-800',
-  quoted: 'bg-blue-100 text-blue-800',
-  won: 'bg-green-100 text-green-800',
-  lost: 'bg-red-100 text-red-800',
-  completed: 'bg-purple-100 text-purple-800',
+  lead: 'bg-muted text-foreground',
+  quoted: 'bg-sage-light text-forest',
+  won: 'bg-[#E8F5E9] text-[#3D7A50]',
+  lost: 'bg-[#FDEAE4] text-sienna',
+  completed: 'bg-moss-light text-olive',
 };
 
 export function JobsList({ clientId, jobs }: Props) {
@@ -80,7 +80,7 @@ export function JobsList({ clientId, jobs }: Props) {
                 </span>
               )}
               {job.finalAmount && (
-                <span className="text-sm text-green-600">
+                <span className="text-sm text-[#3D7A50]">
                   Won: {formatMoney(job.finalAmount)}
                 </span>
               )}

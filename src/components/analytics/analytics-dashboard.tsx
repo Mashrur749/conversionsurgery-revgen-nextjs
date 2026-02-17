@@ -150,27 +150,27 @@ export function AnalyticsDashboard({ clientId }: AnalyticsDashboardProps) {
 
       {/* ROI Highlight Card */}
       {monthly && (
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-[#3D7A50]/30">
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-green-700 font-medium">
+                <p className="text-sm text-[#3D7A50] font-medium">
                   Your ROI This Month
                 </p>
-                <p className="text-3xl font-bold text-green-800">
+                <p className="text-3xl font-bold text-[#3D7A50]">
                   {monthly.roiMultiple
                     ? `${monthly.roiMultiple.toFixed(1)}x`
                     : 'Calculating...'}
                 </p>
-                <p className="text-sm text-green-600 mt-1">
+                <p className="text-sm text-[#3D7A50] mt-1">
                   {formatCurrency(monthly.revenueAttributedCents)} revenue /{' '}
                   {formatCurrency(monthly.platformCostCents || 99700)} platform
                   cost
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-green-700">Net Gain</p>
-                <p className="text-2xl font-bold text-green-800">
+                <p className="text-sm text-[#3D7A50]">Net Gain</p>
+                <p className="text-2xl font-bold text-[#3D7A50]">
                   {formatCurrency(
                     (monthly.revenueAttributedCents || 0) -
                       (monthly.platformCostCents || 99700)
@@ -256,7 +256,7 @@ export function AnalyticsDashboard({ clientId }: AnalyticsDashboardProps) {
                     {monthly?.reviewsReceived || 0}
                   </div>
                   {monthly?.avgRating && (
-                    <div className="flex items-center text-yellow-500">
+                    <div className="flex items-center text-sienna">
                       <Star className="h-4 w-4 fill-current" />
                       <span className="ml-1 text-sm">
                         {monthly.avgRating.toFixed(1)}

@@ -12,8 +12,8 @@ export default function VerifyPage() {
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-900">
+        <div className="bg-sage-light border border-forest-light/30 rounded-lg p-4">
+          <p className="text-sm text-forest">
             Click the link in your email to sign in. The link will expire in 24 hours.
           </p>
         </div>

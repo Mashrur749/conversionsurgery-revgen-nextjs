@@ -34,7 +34,7 @@ export default async function KnowledgeBasePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Knowledge Base</h1>
-        <p className="text-gray-500 text-sm">
+        <p className="text-muted-foreground text-sm">
           Manage what your AI assistant knows about your business. The more detail you add, the better it can answer customer questions.
         </p>
       </div>

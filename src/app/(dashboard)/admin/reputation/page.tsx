@@ -131,7 +131,7 @@ export default async function ReputationPage() {
               : null;
 
           return (
-            <Card key={client.id} className="hover:bg-gray-50 transition-colors">
+            <Card key={client.id} className="hover:bg-[#F8F9FA] transition-colors">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

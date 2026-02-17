@@ -41,11 +41,11 @@ interface InvoiceListProps {
 }
 
 const statusConfig: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800' },
-  open: { label: 'Open', color: 'bg-blue-100 text-blue-800' },
-  paid: { label: 'Paid', color: 'bg-green-100 text-green-800' },
-  void: { label: 'Void', color: 'bg-gray-100 text-gray-800' },
-  uncollectible: { label: 'Uncollectible', color: 'bg-red-100 text-red-800' },
+  draft: { label: 'Draft', color: 'bg-muted text-foreground' },
+  open: { label: 'Open', color: 'bg-sage-light text-forest' },
+  paid: { label: 'Paid', color: 'bg-[#E8F5E9] text-[#3D7A50]' },
+  void: { label: 'Void', color: 'bg-muted text-foreground' },
+  uncollectible: { label: 'Uncollectible', color: 'bg-[#FDEAE4] text-sienna' },
 };
 
 export function InvoiceList({ invoices, onLoadMore, hasMore, onRetryPayment }: InvoiceListProps) {

@@ -84,7 +84,7 @@ export function CreateLeadDialog({ onCreated }: CreateLeadDialogProps) {
             <Label htmlFor="notes">Notes</Label>
             <Textarea id="notes" name="notes" rows={3} placeholder="Any additional context..." />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={saving}>

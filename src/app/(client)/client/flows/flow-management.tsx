@@ -18,14 +18,14 @@ interface FlowManagementProps {
 }
 
 const categoryColors: Record<string, string> = {
-  estimate: 'bg-blue-100 text-blue-800',
-  payment: 'bg-green-100 text-green-800',
-  review: 'bg-yellow-100 text-yellow-800',
-  referral: 'bg-purple-100 text-purple-800',
-  appointment: 'bg-orange-100 text-orange-800',
-  missed_call: 'bg-red-100 text-red-800',
+  estimate: 'bg-sage-light text-forest',
+  payment: 'bg-[#E8F5E9] text-[#3D7A50]',
+  review: 'bg-[#FFF3E0] text-sienna',
+  referral: 'bg-moss-light text-olive',
+  appointment: 'bg-[#FFF3E0] text-terracotta-dark',
+  missed_call: 'bg-[#FDEAE4] text-sienna',
   form_response: 'bg-cyan-100 text-cyan-800',
-  custom: 'bg-gray-100 text-gray-800',
+  custom: 'bg-muted text-foreground',
 };
 
 export function FlowManagement({ flows: initialFlows }: FlowManagementProps) {
@@ -84,7 +84,7 @@ export function FlowManagement({ flows: initialFlows }: FlowManagementProps) {
               disabled={toggling === flow.id}
               onClick={() => toggleFlow(flow.id, !flow.isActive)}
               className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors disabled:opacity-50 ${
-                flow.isActive ? 'bg-primary' : 'bg-gray-200'
+                flow.isActive ? 'bg-primary' : 'bg-muted'
               }`}
             >
               <span

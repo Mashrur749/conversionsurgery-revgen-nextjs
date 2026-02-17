@@ -119,7 +119,7 @@ export function CreateTestForm({ clients }: Props) {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="p-4 text-sm text-red-600 bg-red-100 rounded-lg">
+            <div className="p-4 text-sm text-destructive bg-[#FDEAE4] rounded-lg">
               {error}
             </div>
           )}
@@ -196,7 +196,7 @@ export function CreateTestForm({ clients }: Props) {
             <h3 className="font-semibold mb-4">Variants</h3>
 
             {/* Variant A */}
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="mb-6 p-4 bg-sage-light rounded-lg border border-forest-light/30">
               <h4 className="font-medium mb-3">Variant A</h4>
               <div className="space-y-3">
                 <div>
@@ -229,7 +229,7 @@ export function CreateTestForm({ clients }: Props) {
             </div>
 
             {/* Variant B */}
-            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <div className="p-4 bg-accent rounded-lg border border-olive/30">
               <h4 className="font-medium mb-3">Variant B</h4>
               <div className="space-y-3">
                 <div>

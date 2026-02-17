@@ -91,15 +91,15 @@ export function SettingsDialog({
 
           <div className="space-y-4 px-6 py-4">
             {error && (
-              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <div className="rounded-md border border-destructive/30 bg-[#FDEAE4] p-3 text-sm text-sienna">
                 {error}
               </div>
             )}
 
             {loading ? (
               <div className="space-y-3">
-                <div className="h-10 animate-pulse rounded bg-gray-100" />
-                <div className="h-10 animate-pulse rounded bg-gray-100" />
+                <div className="h-10 animate-pulse rounded bg-muted" />
+                <div className="h-10 animate-pulse rounded bg-muted" />
               </div>
             ) : (
               <>
@@ -115,7 +115,7 @@ export function SettingsDialog({
                     className="w-full rounded-md border px-3 py-2 text-sm"
                     required
                   />
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     E.164 format (e.g. +14031234567)
                   </p>
                 </div>
@@ -132,7 +132,7 @@ export function SettingsDialog({
                     className="w-full rounded-md border px-3 py-2 text-sm font-mono"
                     required
                   />
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Twilio Phone Number SID (starts with PN)
                   </p>
                 </div>
@@ -142,7 +142,7 @@ export function SettingsDialog({
                     type="checkbox"
                     checked={configureWebhooks}
                     onChange={(e) => setConfigureWebhooks(e.target.checked)}
-                    className="rounded border-gray-300"
+                    className="rounded border-border"
                   />
                   Configure webhooks automatically
                 </label>

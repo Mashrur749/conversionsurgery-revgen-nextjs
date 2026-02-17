@@ -42,8 +42,8 @@ export function KpiCard({
             <span
               className={cn(
                 'flex items-center text-xs font-medium',
-                isPositive && 'text-green-600',
-                isNegative && 'text-red-600',
+                isPositive && 'text-[#3D7A50]',
+                isNegative && 'text-destructive',
                 !isPositive && !isNegative && 'text-muted-foreground'
               )}
             >

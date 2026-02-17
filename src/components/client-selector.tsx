@@ -43,7 +43,7 @@ export function ClientSelector() {
 
   return (
     <div className="mb-4">
-      <label htmlFor="client-select" className="block text-sm font-medium text-gray-700 mb-2">
+      <label htmlFor="client-select" className="block text-sm font-medium text-foreground mb-2">
         Select Client
       </label>
       <select
@@ -51,7 +51,7 @@ export function ClientSelector() {
         value={selectedClientId || ''}
         onChange={(e) => setSelectedClientId(e.target.value || null)}
         disabled={loading}
-        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+        className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-forest-light"
       >
         <option value="">-- Select a client --</option>
         {availableClients.map((client) => (

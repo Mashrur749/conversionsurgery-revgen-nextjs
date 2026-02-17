@@ -159,8 +159,8 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
                     <p className="font-medium">{provider.name}</p>
                     {isConnected ? (
                       <div className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-3 w-3 text-green-500" />
-                        <span className="text-green-600">Connected</span>
+                        <CheckCircle className="h-3 w-3 text-[#3D7A50]" />
+                        <span className="text-[#3D7A50]">Connected</span>
                         {integration.lastSyncAt && (
                           <span className="text-muted-foreground">
                             · Synced{' '}
@@ -179,7 +179,7 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
                       </span>
                     )}
                     {integration?.lastError && (
-                      <p className="text-xs text-red-500 mt-1">
+                      <p className="text-xs text-destructive mt-1">
                         Error: {integration.lastError}
                       </p>
                     )}

@@ -55,8 +55,8 @@ export default async function AdminDiscussionsPage({
               href={f === 'all' ? '/admin/discussions' : `/admin/discussions?status=${f}`}
               className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                 currentFilter === f
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-forest text-white'
+                  : 'bg-muted text-foreground hover:bg-muted'
               }`}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -66,7 +66,7 @@ export default async function AdminDiscussionsPage({
       </div>
 
       {threads.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">No discussions</p>
           <p className="text-sm mt-1">Support messages from users will appear here.</p>
@@ -77,28 +77,28 @@ export default async function AdminDiscussionsPage({
             <Link
               key={thread.id}
               href={`/admin/discussions/${thread.id}`}
-              className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-4 p-4 hover:bg-[#F8F9FA] transition-colors"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-foreground">
                     {thread.userEmail}
                   </span>
                   <Badge
-                    className={`text-xs ${thread.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                    className={`text-xs ${thread.status === 'open' ? 'bg-[#E8F5E9] text-[#3D7A50]' : 'bg-muted text-foreground'}`}
                   >
                     {thread.status}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600 line-clamp-1">
+                <p className="text-sm text-muted-foreground line-clamp-1">
                   {thread.message}
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {thread.lastReplyAt
                     ? new Date(thread.lastReplyAt).toLocaleDateString()
                     : new Date(thread.createdAt).toLocaleDateString()}

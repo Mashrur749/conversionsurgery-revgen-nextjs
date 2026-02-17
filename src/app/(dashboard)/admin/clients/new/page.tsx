@@ -35,12 +35,12 @@ export default async function NewClientPage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-sage-light border-forest-light/30">
         <CardContent className="py-6">
           <div className="flex items-start gap-4">
             <div>
-              <h3 className="font-medium text-blue-900">Prefer guided setup?</h3>
-              <p className="text-sm text-blue-700 mb-3">
+              <h3 className="font-medium text-forest">Prefer guided setup?</h3>
+              <p className="text-sm text-forest mb-3">
                 The Setup Wizard walks you through business info, phone number assignment,
                 team members, and business hours in one smooth flow.
               </p>

@@ -82,7 +82,7 @@ export default async function NpsDashboardPage() {
           ) : (
             <div className="space-y-3">
               {recentResponses.map((r) => (
-                <div key={r.id} className="flex items-center justify-between border-b pb-2 last:border-0 hover:bg-gray-50 transition-colors rounded-md px-2 -mx-2">
+                <div key={r.id} className="flex items-center justify-between border-b pb-2 last:border-0 hover:bg-[#F8F9FA] transition-colors rounded-md px-2 -mx-2">
                   <div>
                     <div className="flex items-center gap-2">
                       <Badge variant={

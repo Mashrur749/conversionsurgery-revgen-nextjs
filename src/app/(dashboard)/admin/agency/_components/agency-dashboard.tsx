@@ -63,12 +63,12 @@ const categories = [
 ];
 
 const categoryColors: Record<string, string> = {
-  onboarding: 'bg-blue-100 text-blue-800',
-  weekly_digest: 'bg-purple-100 text-purple-800',
-  action_prompt: 'bg-amber-100 text-amber-800',
-  alert: 'bg-red-100 text-red-800',
-  custom: 'bg-gray-100 text-gray-800',
-  reply: 'bg-green-100 text-green-800',
+  onboarding: 'bg-sage-light text-forest',
+  weekly_digest: 'bg-moss-light text-olive',
+  action_prompt: 'bg-[#FFF3E0] text-forest',
+  alert: 'bg-[#FDEAE4] text-sienna',
+  custom: 'bg-muted text-foreground',
+  reply: 'bg-[#E8F5E9] text-[#3D7A50]',
 };
 
 export function AgencyDashboard({
@@ -140,7 +140,7 @@ export function AgencyDashboard({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Agency Communication</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Manage client notifications and prompts
           </p>
         </div>
@@ -163,22 +163,22 @@ export function AgencyDashboard({
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
-          icon={<MessageSquare className="size-5 text-blue-600" />}
+          icon={<MessageSquare className="size-5 text-forest" />}
           label="Messages"
           value={stats.totalMessages}
         />
         <StatCard
-          icon={<Clock className="size-5 text-amber-600" />}
+          icon={<Clock className="size-5 text-olive" />}
           label="Pending"
           value={stats.pendingPrompts}
         />
         <StatCard
-          icon={<BarChart3 className="size-5 text-purple-600" />}
+          icon={<BarChart3 className="size-5 text-olive" />}
           label="Digests"
           value={stats.weeklyDigests}
         />
         <StatCard
-          icon={<Users className="size-5 text-green-600" />}
+          icon={<Users className="size-5 text-[#3D7A50]" />}
           label="Active Clients"
           value={stats.activeClients}
         />
@@ -186,9 +186,9 @@ export function AgencyDashboard({
 
       {/* Agency Number Warning */}
       {!agencyNumber && (
-        <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <AlertTriangle className="size-5 text-amber-600 shrink-0" />
-          <p className="text-sm text-amber-800">
+        <div className="flex items-center gap-3 rounded-lg border border-olive/30 bg-accent p-4">
+          <AlertTriangle className="size-5 text-olive shrink-0" />
+          <p className="text-sm text-forest">
             Agency number not configured. You won&apos;t be able to send messages.
           </p>
           <Button
@@ -211,8 +211,8 @@ export function AgencyDashboard({
               onClick={() => setSelectedCategory(cat.value)}
               className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
                 selectedCategory === cat.value
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-forest text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted'
               }`}
             >
               {cat.label}
@@ -246,7 +246,7 @@ export function AgencyDashboard({
 
       {/* Error */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="rounded-lg border border-destructive/30 bg-[#FDEAE4] p-4 text-sm text-sienna">
           {error}
         </div>
       )}
@@ -257,14 +257,14 @@ export function AgencyDashboard({
           {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="h-14 animate-pulse rounded-lg bg-gray-100"
+              className="h-14 animate-pulse rounded-lg bg-muted"
             />
           ))}
         </div>
       ) : messages.length === 0 ? (
         <div className="rounded-lg border bg-white p-8 text-center">
-          <MessageSquare className="mx-auto size-10 text-gray-300" />
-          <p className="mt-3 text-sm text-gray-500">No messages found</p>
+          <MessageSquare className="mx-auto size-10 text-muted-foreground" />
+          <p className="mt-3 text-sm text-muted-foreground">No messages found</p>
           <Button
             size="sm"
             className="mt-4"
@@ -278,7 +278,7 @@ export function AgencyDashboard({
           <div className="overflow-hidden rounded-lg border bg-white">
             <table className="w-full">
               <thead>
-                <tr className="bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
+                <tr className="bg-[#F8F9FA] text-left text-xs font-medium uppercase text-muted-foreground">
                   <th className="px-4 py-3">Direction</th>
                   <th className="px-4 py-3">Client</th>
                   <th className="px-4 py-3">Category</th>
@@ -289,12 +289,12 @@ export function AgencyDashboard({
               </thead>
               <tbody className="divide-y">
                 {messages.map((msg) => (
-                  <tr key={msg.id} className="hover:bg-gray-50">
+                  <tr key={msg.id} className="hover:bg-[#F8F9FA]">
                     <td className="px-4 py-3">
                       {msg.direction === 'outbound' ? (
-                        <ArrowUpRight className="size-4 text-blue-500" />
+                        <ArrowUpRight className="size-4 text-forest-light" />
                       ) : (
-                        <ArrowDownLeft className="size-4 text-green-500" />
+                        <ArrowDownLeft className="size-4 text-[#3D7A50]" />
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium">
@@ -304,19 +304,19 @@ export function AgencyDashboard({
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
                           categoryColors[msg.category] ||
-                          'bg-gray-100 text-gray-800'
+                          'bg-muted text-foreground'
                         }`}
                       >
                         {msg.category.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3 text-sm text-gray-600">
+                    <td className="max-w-xs truncate px-4 py-3 text-sm text-muted-foreground">
                       {msg.content}
                     </td>
                     <td className="px-4 py-3">
                       <MessageStatus msg={msg} />
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500">
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
                       {new Date(msg.createdAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -333,7 +333,7 @@ export function AgencyDashboard({
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {pagination.total} total messages
               </p>
               <div className="flex gap-1">
@@ -347,14 +347,14 @@ export function AgencyDashboard({
                   .map((p, idx, arr) => (
                     <span key={p} className="flex items-center">
                       {idx > 0 && arr[idx - 1] !== p - 1 && (
-                        <span className="px-1 text-gray-400">...</span>
+                        <span className="px-1 text-muted-foreground">...</span>
                       )}
                       <button
                         onClick={() => fetchMessages(p)}
                         className={`min-w-[2rem] rounded px-2 py-1 text-sm ${
                           p === pagination.page
-                            ? 'bg-gray-900 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-forest text-white'
+                            : 'bg-muted text-muted-foreground hover:bg-muted'
                         }`}
                       >
                         {p}
@@ -398,7 +398,7 @@ function StatCard({
         {icon}
         <div>
           <p className="text-2xl font-bold">{value}</p>
-          <p className="text-sm text-gray-500">{label}</p>
+          <p className="text-sm text-muted-foreground">{label}</p>
         </div>
       </div>
     </div>
@@ -408,21 +408,21 @@ function StatCard({
 function MessageStatus({ msg }: { msg: Message }) {
   if (msg.actionStatus) {
     const statusStyles: Record<string, string> = {
-      pending: 'bg-amber-100 text-amber-800',
-      replied: 'bg-blue-100 text-blue-800',
-      executed: 'bg-green-100 text-green-800',
-      expired: 'bg-gray-100 text-gray-500',
+      pending: 'bg-[#FFF3E0] text-forest',
+      replied: 'bg-sage-light text-forest',
+      executed: 'bg-[#E8F5E9] text-[#3D7A50]',
+      expired: 'bg-muted text-muted-foreground',
     };
     return (
       <Badge
-        className={statusStyles[msg.actionStatus] || 'bg-gray-100 text-gray-800'}
+        className={statusStyles[msg.actionStatus] || 'bg-muted text-foreground'}
       >
         {msg.actionStatus}
       </Badge>
     );
   }
   if (msg.delivered) {
-    return <Badge className="bg-green-100 text-green-800">Delivered</Badge>;
+    return <Badge className="bg-[#E8F5E9] text-[#3D7A50]">Delivered</Badge>;
   }
-  return <Badge className="bg-gray-100 text-gray-500">--</Badge>;
+  return <Badge className="bg-muted text-muted-foreground">--</Badge>;
 }

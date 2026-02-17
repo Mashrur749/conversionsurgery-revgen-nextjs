@@ -81,7 +81,7 @@ export function TestResultsCard({ testId, status }: Props) {
   if (error || !results) {
     return (
       <Card>
-        <CardContent className="p-8 text-center text-red-600">
+        <CardContent className="p-8 text-center text-destructive">
           {error || 'Failed to load results'}
         </CardContent>
       </Card>
@@ -110,17 +110,17 @@ export function TestResultsCard({ testId, status }: Props) {
         <div className="flex justify-between items-center mb-2">
           <p className="text-sm font-medium">{label}</p>
           {isB && (
-            <Badge className="bg-green-100 text-green-800">
+            <Badge className="bg-[#E8F5E9] text-[#3D7A50]">
               <TrendingUp className="w-3 h-3 mr-1" /> Variant B wins
             </Badge>
           )}
           {!isB && aNum > 0 && (
-            <Badge className="bg-blue-100 text-blue-800">Variant A leads</Badge>
+            <Badge className="bg-sage-light text-forest">Variant A leads</Badge>
           )}
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-blue-50 p-3 rounded">
-            <p className="text-xs text-blue-600 font-medium mb-1">Variant A</p>
+          <div className="bg-sage-light p-3 rounded">
+            <p className="text-xs text-forest font-medium mb-1">Variant A</p>
             <p className="font-semibold">
               {typeof valueA === 'number'
                 ? valueA.toFixed(1)
@@ -128,8 +128,8 @@ export function TestResultsCard({ testId, status }: Props) {
               {typeof valueA === 'string' ? '%' : ''}
             </p>
           </div>
-          <div className="bg-amber-50 p-3 rounded">
-            <p className="text-xs text-amber-600 font-medium mb-1">Variant B</p>
+          <div className="bg-accent p-3 rounded">
+            <p className="text-xs text-olive font-medium mb-1">Variant B</p>
             <p className="font-semibold">
               {typeof valueB === 'number'
                 ? valueB.toFixed(1)
@@ -151,12 +151,12 @@ export function TestResultsCard({ testId, status }: Props) {
             Test Results
           </CardTitle>
           {status === 'completed' && (
-            <Badge className="bg-green-100 text-green-800">
+            <Badge className="bg-[#E8F5E9] text-[#3D7A50]">
               Completed • Winner: {performance.winner}
             </Badge>
           )}
           {status === 'active' && (
-            <Badge className="bg-blue-100 text-blue-800">
+            <Badge className="bg-sage-light text-forest">
               {performance.improvement.includes('-') ? '−' : '+'}
               {Math.abs(parseFloat(performance.improvement))}% Improvement
             </Badge>
@@ -212,13 +212,13 @@ export function TestResultsCard({ testId, status }: Props) {
           valueB={variantB.appointmentRate}
         />
 
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+        <div className="mt-6 p-4 bg-[#F8F9FA] rounded-lg border">
           <p className="text-sm text-muted-foreground mb-2">
             Overall Performance
           </p>
           <p className="text-lg font-semibold">
             Variant {performance.winner} is winning with{' '}
-            <span className="text-green-600">
+            <span className="text-[#3D7A50]">
               +{Math.abs(parseFloat(performance.improvement))}%
             </span>{' '}
             improvement in conversion rate

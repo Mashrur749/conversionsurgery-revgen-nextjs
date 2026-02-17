@@ -124,9 +124,9 @@ export default async function LeadDetailPage({ params }: Props) {
             )}
 
             {lead.optedOut && (
-              <Card className="border-yellow-200 bg-yellow-50">
+              <Card className="border-sienna/30 bg-[#FFF3E0]">
                 <CardContent className="py-4">
-                  <p className="text-yellow-800">
+                  <p className="text-sienna">
                     This lead has opted out of messages.
                   </p>
                 </CardContent>
@@ -158,7 +158,7 @@ export default async function LeadDetailPage({ params }: Props) {
               </CardHeader>
               <CardContent className="space-y-3">
                 {scheduled.map((msg) => (
-                  <div key={msg.id} className="text-sm border-l-2 border-blue-200 pl-3">
+                  <div key={msg.id} className="text-sm border-l-2 border-forest-light/30 pl-3">
                     <p className="text-muted-foreground">
                       {format(new Date(msg.sendAt), 'MMM d, h:mm a')}
                     </p>

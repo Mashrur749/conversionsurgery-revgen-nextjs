@@ -98,15 +98,15 @@ export function AdminDiscussionThread({
       <div className="flex items-center gap-3 mb-6">
         <Link
           href="/admin/discussions"
-          className="text-gray-500 hover:text-gray-900"
+          className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">Thread with {message.userEmail}</h1>
-          <p className="text-xs text-gray-500">Page: {message.page}</p>
+          <p className="text-xs text-muted-foreground">Page: {message.page}</p>
         </div>
-        <Badge className={status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+        <Badge className={status === 'open' ? 'bg-[#E8F5E9] text-[#3D7A50]' : 'bg-muted text-foreground'}>
           {status}
         </Badge>
         {status === 'open' && (
@@ -124,14 +124,14 @@ export function AdminDiscussionThread({
       </div>
 
       {/* Original message */}
-      <div className="border rounded-lg p-4 mb-4 bg-blue-50">
+      <div className="border rounded-lg p-4 mb-4 bg-sage-light">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-medium">{message.userEmail}</span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {message.createdAt ? new Date(message.createdAt).toLocaleString() : ''}
           </span>
         </div>
-        <p className="text-sm text-gray-900 whitespace-pre-wrap">{message.message}</p>
+        <p className="text-sm text-foreground whitespace-pre-wrap">{message.message}</p>
       </div>
 
       {/* Replies */}
@@ -141,15 +141,15 @@ export function AdminDiscussionThread({
             key={reply.id}
             className={`rounded-lg p-4 ${
               reply.isAdmin
-                ? 'bg-amber-50 border border-amber-200 ml-4'
-                : 'bg-blue-50 border border-blue-200 mr-4'
+                ? 'bg-accent border border-olive/30 ml-4'
+                : 'bg-sage-light border border-forest-light/30 mr-4'
             }`}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-medium">
                 {reply.isAdmin ? `Admin (${reply.authorEmail})` : reply.authorEmail}
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {reply.createdAt ? new Date(reply.createdAt).toLocaleString() : ''}
               </span>
             </div>
@@ -190,7 +190,7 @@ export function AdminDiscussionThread({
               checked={includeCalcom}
               onCheckedChange={setIncludeCalcom}
             />
-            <span className="text-sm text-gray-700">Include Cal.com link</span>
+            <span className="text-sm text-foreground">Include Cal.com link</span>
           </div>
 
           {includeCalcom && (

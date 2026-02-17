@@ -139,7 +139,7 @@ export function TeamManager({ clientId }: Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">{error}</div>
+          <div className="p-3 text-sm text-destructive bg-[#FDEAE4] rounded-lg">{error}</div>
         )}
 
         {/* Add Member Form */}
@@ -235,7 +235,7 @@ export function TeamManager({ clientId }: Props) {
                     variant="ghost"
                     size="sm"
                     onClick={() => handleRemoveMember(member.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-destructive hover:text-sienna hover:bg-[#FDEAE4]"
                   >
                     <X className="w-4 h-4" />
                   </Button>

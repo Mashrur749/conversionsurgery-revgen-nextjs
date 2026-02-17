@@ -20,10 +20,10 @@ interface FlowStatusProps {
 }
 
 const statusColors: Record<string, string> = {
-  active: 'bg-green-100 text-green-800',
-  paused: 'bg-yellow-100 text-yellow-800',
-  completed: 'bg-blue-100 text-blue-800',
-  cancelled: 'bg-gray-100 text-gray-800',
+  active: 'bg-[#E8F5E9] text-[#3D7A50]',
+  paused: 'bg-[#FFF3E0] text-sienna',
+  completed: 'bg-sage-light text-forest',
+  cancelled: 'bg-muted text-foreground',
 };
 
 export function FlowStatus({ executions }: FlowStatusProps) {
@@ -55,7 +55,7 @@ export function FlowStatus({ executions }: FlowStatusProps) {
               </div>
 
               {/* Progress bar */}
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div className="w-full bg-muted rounded-full h-1.5">
                 <div
                   className="bg-primary rounded-full h-1.5 transition-all"
                   style={{ width: `${progress}%` }}

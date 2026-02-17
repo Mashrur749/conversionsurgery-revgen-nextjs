@@ -70,9 +70,9 @@ export default async function KnowledgeBasePage({ params, searchParams }: Props)
 
       {activeTab === 'interview' ? (
         <div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 className="font-medium text-blue-900">Structured Knowledge Interview</h3>
-            <p className="text-sm text-blue-700 mt-1">
+          <div className="bg-sage-light border border-forest-light/30 rounded-lg p-4 mb-6">
+            <h3 className="font-medium text-forest">Structured Knowledge Interview</h3>
+            <p className="text-sm text-forest mt-1">
               Answer these questions about the business. The AI will use this to respond
               accurately to leads. Start with an industry preset to save time.
             </p>

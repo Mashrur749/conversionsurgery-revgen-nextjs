@@ -31,18 +31,18 @@ interface ScoreBadge {
 
 /** Returns a Tailwind color class based on the compliance score threshold */
 function getScoreColor(score: number): string {
-  if (score >= 90) return 'text-green-600';
-  if (score >= 70) return 'text-yellow-600';
-  return 'text-red-600';
+  if (score >= 90) return 'text-[#3D7A50]';
+  if (score >= 70) return 'text-sienna';
+  return 'text-destructive';
 }
 
 /** Returns a label and color class for the compliance score badge */
 function getScoreBadge(score: number): ScoreBadge {
   if (score >= 90)
-    return { label: 'Excellent', color: 'bg-green-100 text-green-800' };
+    return { label: 'Excellent', color: 'bg-[#E8F5E9] text-[#3D7A50]' };
   if (score >= 70)
-    return { label: 'Good', color: 'bg-yellow-100 text-yellow-800' };
-  return { label: 'Needs Attention', color: 'bg-red-100 text-red-800' };
+    return { label: 'Good', color: 'bg-[#FFF3E0] text-sienna' };
+  return { label: 'Needs Attention', color: 'bg-[#FDEAE4] text-sienna' };
 }
 
 /**
@@ -135,9 +135,9 @@ export function ComplianceDashboard({
 
       {/* Risks */}
       {risks.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-olive/30 bg-accent">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-800">
+            <CardTitle className="flex items-center gap-2 text-forest">
               <AlertTriangle className="h-5 w-5" />
               Compliance Risks
             </CardTitle>
@@ -147,7 +147,7 @@ export function ComplianceDashboard({
               {risks.map((risk, idx) => (
                 <li
                   key={idx}
-                  className="flex items-start gap-2 text-amber-800"
+                  className="flex items-start gap-2 text-forest"
                 >
                   <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   {risk}

@@ -62,10 +62,10 @@ export default async function AdminPage() {
     .where(gte(jobs.createdAt, thirtyDaysAgo));
 
   const statusColors: Record<string, string> = {
-    active: 'bg-green-100 text-green-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    paused: 'bg-gray-100 text-gray-800',
-    cancelled: 'bg-red-100 text-red-800',
+    active: 'bg-[#E8F5E9] text-[#3D7A50]',
+    pending: 'bg-[#FFF3E0] text-sienna',
+    paused: 'bg-muted text-foreground',
+    cancelled: 'bg-[#FDEAE4] text-sienna',
   };
 
   return (
@@ -86,16 +86,16 @@ export default async function AdminPage() {
       </div>
 
       {/* Revenue Hero */}
-      <Card className="bg-green-50 border-green-200">
+      <Card className="bg-[#E8F5E9] border-[#3D7A50]/30">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-green-800">Revenue Recovered (All Clients)</CardTitle>
-          <DollarSign className="h-5 w-5 text-green-600" />
+          <CardTitle className="text-sm font-medium text-[#3D7A50]">Revenue Recovered (All Clients)</CardTitle>
+          <DollarSign className="h-5 w-5 text-[#3D7A50]" />
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-green-900">
+          <div className="text-3xl font-bold text-[#3D7A50]">
             ${(Number(revenueAgg?.totalWonValue || 0) / 100).toLocaleString()}
           </div>
-          <p className="text-xs text-green-700">
+          <p className="text-xs text-[#3D7A50]">
             ${(Number(revenueAgg?.totalPaid || 0) / 100).toLocaleString()} collected &bull; {Number(revenueAgg?.jobsWon || 0)} jobs won &bull; Last 30 days
           </p>
         </CardContent>
@@ -150,7 +150,7 @@ export default async function AdminPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-destructive">
               {Array.from(actionMap.values()).reduce((sum, count) => sum + Number(count), 0)}
             </div>
             <p className="text-xs text-muted-foreground">
@@ -174,11 +174,11 @@ export default async function AdminPage() {
                 <Link
                   key={client.id}
                   href={`/admin/clients/${client.id}`}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-4 hover:bg-[#F8F9FA] transition-colors"
                 >
                   <div className="flex items-center gap-4">
                     {actionCount > 0 && (
-                      <span className="w-2 h-2 bg-red-500 rounded-full" />
+                      <span className="w-2 h-2 bg-destructive rounded-full" />
                     )}
                     <div>
                       <p className="font-medium">{client.businessName}</p>
@@ -186,7 +186,7 @@ export default async function AdminPage() {
                         {client.ownerName} &bull; {client.email}
                       </p>
                       {!client.twilioNumber && (
-                        <p className="text-xs text-amber-600">No phone number</p>
+                        <p className="text-xs text-olive">No phone number</p>
                       )}
                     </div>
                   </div>

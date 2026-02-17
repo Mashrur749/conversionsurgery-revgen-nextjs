@@ -97,11 +97,11 @@ export function PhoneNumbersTable({ clients, unassignedClients }: Props) {
               </div>
             ) : (
               clients.map((client) => (
-                <div key={client.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div key={client.id} className="p-4 hover:bg-[#F8F9FA] transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <Phone className="w-5 h-5 text-blue-600" />
+                        <Phone className="w-5 h-5 text-forest" />
                         <p className="font-mono font-semibold text-lg">
                           {formatPhoneNumber(client.twilioNumber!)}
                         </p>
@@ -173,13 +173,13 @@ export function PhoneNumbersTable({ clients, unassignedClients }: Props) {
 
           <div className="space-y-4 py-4">
             {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-100 rounded-md">
+              <div className="p-3 text-sm text-destructive bg-[#FDEAE4] rounded-md">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="p-3 text-sm text-green-600 bg-green-100 rounded-md">
+              <div className="p-3 text-sm text-[#3D7A50] bg-[#E8F5E9] rounded-md">
                 {success}
               </div>
             )}

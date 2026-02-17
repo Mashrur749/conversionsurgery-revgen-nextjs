@@ -82,7 +82,7 @@ export function StepReview({ data, updateData, onBack, onComplete, onGoToStep }:
       </p>
 
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+        <div className="p-3 text-sm text-destructive bg-[#FDEAE4] rounded-lg">
           {error}
         </div>
       )}
@@ -198,12 +198,12 @@ export function StepReview({ data, updateData, onBack, onComplete, onGoToStep }:
             <span className="font-mono text-lg">
               {formatPhoneNumber(data.twilioNumber)}
             </span>
-            <Badge className="bg-green-100 text-green-800">Assigned</Badge>
+            <Badge className="bg-[#E8F5E9] text-[#3D7A50]">Assigned</Badge>
           </div>
         ) : (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">No number assigned</span>
-            <Badge variant="outline" className="text-amber-600">Optional</Badge>
+            <Badge variant="outline" className="text-olive">Optional</Badge>
           </div>
         )}
       </div>
@@ -257,9 +257,9 @@ export function StepReview({ data, updateData, onBack, onComplete, onGoToStep }:
 
       {/* Warnings */}
       {(!data.twilioNumber || data.teamMembers.length === 0) && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <h4 className="font-medium text-amber-800 mb-2">Heads up:</h4>
-          <ul className="text-sm text-amber-700 space-y-1">
+        <div className="bg-accent border border-olive/30 rounded-lg p-4">
+          <h4 className="font-medium text-forest mb-2">Heads up:</h4>
+          <ul className="text-sm text-olive space-y-1">
             {!data.twilioNumber && (
               <li>No phone number assigned — you can add one later from client settings</li>
             )}

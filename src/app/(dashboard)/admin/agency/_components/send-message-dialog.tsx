@@ -97,7 +97,7 @@ export function SendMessageDialog({
 
           <div className="space-y-4 px-6 py-4">
             {error && (
-              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+              <div className="rounded-md border border-destructive/30 bg-[#FDEAE4] p-3 text-sm text-sienna">
                 {error}
               </div>
             )}
@@ -129,8 +129,8 @@ export function SendMessageDialog({
                     onClick={() => setType(t)}
                     className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
                       type === t
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-forest text-white'
+                        : 'bg-muted text-muted-foreground hover:bg-muted'
                     }`}
                   >
                     {t}
@@ -179,7 +179,7 @@ export function SendMessageDialog({
                   type="checkbox"
                   checked={isUrgent}
                   onChange={(e) => setIsUrgent(e.target.checked)}
-                  className="rounded border-gray-300"
+                  className="rounded border-border"
                 />
                 Mark as urgent (bypasses quiet hours)
               </label>

@@ -44,12 +44,12 @@ export function LeadTabs({ leadId, messages, mediaByMessage, mediaCount, childre
                 const msgMedia = msg.id ? (mediaByMessage[msg.id] || []) : [];
                 return (
                   <div key={msg.id} className={`flex ${msg.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-lg p-3 ${msg.direction === 'outbound' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-900'}`}>
+                    <div className={`max-w-[80%] rounded-lg p-3 ${msg.direction === 'outbound' ? 'bg-forest text-white' : 'bg-muted text-foreground'}`}>
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       {msgMedia.length > 0 && (
                         <MessageMedia items={msgMedia} />
                       )}
-                      <p className={`text-xs mt-1 ${msg.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'}`}>
+                      <p className={`text-xs mt-1 ${msg.direction === 'outbound' ? 'text-white/60' : 'text-muted-foreground'}`}>
                         {msg.createdAt && format(new Date(msg.createdAt), 'MMM d, h:mm a')}
                         {msg.messageType === 'ai_response' && ' • AI'}
                         {msg.messageType === 'escalation' && ' • Escalation'}

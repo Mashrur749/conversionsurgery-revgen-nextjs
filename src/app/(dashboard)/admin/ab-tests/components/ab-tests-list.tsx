@@ -33,13 +33,13 @@ export function ABTestsList({ title, tests, status }: Props) {
   const getStatusColor = (s: string) => {
     switch (s) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-[#E8F5E9] text-[#3D7A50]';
       case 'paused':
-        return 'bg-amber-100 text-amber-800';
+        return 'bg-[#FFF3E0] text-forest';
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-[#E8F5E9] text-[#3D7A50]';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -51,7 +51,7 @@ export function ABTestsList({ title, tests, status }: Props) {
       <CardContent>
         <div className="space-y-0 divide-y">
           {tests.map((test) => (
-            <div key={test.id} className="p-4 hover:bg-gray-50 transition-colors">
+            <div key={test.id} className="p-4 hover:bg-[#F8F9FA] transition-colors">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -63,7 +63,7 @@ export function ABTestsList({ title, tests, status }: Props) {
                       {getTestTypeLabel(test.testType)}
                     </Badge>
                     {test.winner && (
-                      <Badge className="bg-green-100 text-green-800">
+                      <Badge className="bg-[#E8F5E9] text-[#3D7A50]">
                         Winner: {test.winner}
                       </Badge>
                     )}

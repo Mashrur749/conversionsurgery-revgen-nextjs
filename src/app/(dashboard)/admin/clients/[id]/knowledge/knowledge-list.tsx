@@ -26,12 +26,12 @@ interface Props {
 }
 
 const categoryLabels: Record<string, { label: string; color: string }> = {
-  services: { label: 'Services', color: 'bg-blue-100 text-blue-800' },
-  pricing: { label: 'Pricing', color: 'bg-green-100 text-green-800' },
-  faq: { label: 'FAQ', color: 'bg-purple-100 text-purple-800' },
-  policies: { label: 'Policies', color: 'bg-yellow-100 text-yellow-800' },
-  about: { label: 'About', color: 'bg-gray-100 text-gray-800' },
-  custom: { label: 'Custom', color: 'bg-orange-100 text-orange-800' },
+  services: { label: 'Services', color: 'bg-sage-light text-forest' },
+  pricing: { label: 'Pricing', color: 'bg-[#E8F5E9] text-[#3D7A50]' },
+  faq: { label: 'FAQ', color: 'bg-moss-light text-olive' },
+  policies: { label: 'Policies', color: 'bg-[#FFF3E0] text-sienna' },
+  about: { label: 'About', color: 'bg-muted text-foreground' },
+  custom: { label: 'Custom', color: 'bg-[#FFF3E0] text-terracotta-dark' },
 };
 
 export function KnowledgeList({ clientId, entries }: Props) {
@@ -64,7 +64,7 @@ export function KnowledgeList({ clientId, entries }: Props) {
         const categoryEntries = byCategory[category];
         if (!categoryEntries?.length) return null;
 
-        const catInfo = categoryLabels[category] || { label: category, color: 'bg-gray-100' };
+        const catInfo = categoryLabels[category] || { label: category, color: 'bg-muted' };
 
         return (
           <Card key={category}>
@@ -102,7 +102,7 @@ export function KnowledgeList({ clientId, entries }: Props) {
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="text-red-600"
+                        className="text-destructive"
                         onClick={() => setDeleteId(entry.id)}
                       >
                         Delete

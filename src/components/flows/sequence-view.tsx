@@ -118,8 +118,8 @@ export function SequenceView({
                 className={cn(
                   'transition-all',
                   isExpanded && 'ring-2 ring-primary',
-                  step.source === 'template' && 'border-blue-200 bg-blue-50/50',
-                  step.source === 'mixed' && 'border-yellow-200 bg-yellow-50/50'
+                  step.source === 'template' && 'border-forest-light/30 bg-sage-light/50',
+                  step.source === 'mixed' && 'border-sienna/30 bg-[#FFF3E0]/50'
                 )}
               >
                 <CollapsibleTrigger asChild>
@@ -137,7 +137,7 @@ export function SequenceView({
                         </span>
                         {step.source === 'template' && (
                           <span title="From template">
-                            <LinkIcon className="h-3 w-3 text-blue-500" />
+                            <LinkIcon className="h-3 w-3 text-forest-light" />
                           </span>
                         )}
                       </div>

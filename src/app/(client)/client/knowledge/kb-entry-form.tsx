@@ -129,7 +129,7 @@ export function KbEntryForm({ entry, onSaved, onCancel }: KbEntryFormProps) {
             />
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>

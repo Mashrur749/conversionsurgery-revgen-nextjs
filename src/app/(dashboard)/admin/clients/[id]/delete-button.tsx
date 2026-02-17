@@ -55,7 +55,7 @@ export function DeleteButton({ clientId, clientName, status }: Props) {
   return (
     <>
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-100 rounded">
+        <div className="p-3 text-sm text-destructive bg-[#FDEAE4] rounded">
           {error}
         </div>
       )}
@@ -63,7 +63,7 @@ export function DeleteButton({ clientId, clientName, status }: Props) {
       {isCancelled ? (
         <Button
           variant="outline"
-          className="w-full border-blue-200 text-blue-600 hover:bg-blue-50"
+          className="w-full border-forest-light/30 text-forest hover:bg-sage-light"
           onClick={() => setShowConfirm(true)}
           disabled={isLoading}
         >

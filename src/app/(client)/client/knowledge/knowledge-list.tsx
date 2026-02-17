@@ -32,11 +32,11 @@ const categoryLabels: Record<string, string> = {
 };
 
 const categoryColors: Record<string, string> = {
-  services: 'bg-blue-100 text-blue-800',
-  pricing: 'bg-green-100 text-green-800',
-  faq: 'bg-purple-100 text-purple-800',
-  policies: 'bg-orange-100 text-orange-800',
-  about: 'bg-gray-100 text-gray-800',
+  services: 'bg-sage-light text-forest',
+  pricing: 'bg-[#E8F5E9] text-[#3D7A50]',
+  faq: 'bg-moss-light text-olive',
+  policies: 'bg-[#FFF3E0] text-terracotta-dark',
+  about: 'bg-muted text-foreground',
   custom: 'bg-pink-100 text-pink-800',
 };
 
@@ -82,7 +82,7 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
     <>
       <div className="flex gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search entries..."
             value={search}
@@ -106,7 +106,7 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
 
       {categories.length === 0 && !showForm && (
         <Card>
-          <CardContent className="py-12 text-center text-gray-500">
+          <CardContent className="py-12 text-center text-muted-foreground">
             <p>No knowledge base entries yet.</p>
             <p className="text-sm mt-1">Add information about your services, pricing, and FAQs so the AI can answer customer questions accurately.</p>
           </CardContent>
@@ -129,7 +129,7 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
                 <Badge className={categoryColors[category] || categoryColors.custom}>
                   {categoryLabels[category] || category}
                 </Badge>
-                <span className="text-sm text-gray-500">{entries.length} entries</span>
+                <span className="text-sm text-muted-foreground">{entries.length} entries</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -138,7 +138,7 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <h4 className="font-medium text-sm">{entry.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap line-clamp-3">{entry.content}</p>
+                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap line-clamp-3">{entry.content}</p>
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <Button
@@ -154,7 +154,7 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
                         onClick={() => setDeleteId(entry.id)}
                         disabled={deleting === entry.id}
                       >
-                        <Trash2 className="h-3 w-3 text-red-500" />
+                        <Trash2 className="h-3 w-3 text-destructive" />
                       </Button>
                     </div>
                   </div>
@@ -166,7 +166,7 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
       })}
 
       {deleteError && (
-        <div className="p-3 text-sm text-red-600 bg-red-100 rounded">
+        <div className="p-3 text-sm text-destructive bg-[#FDEAE4] rounded">
           {deleteError}
         </div>
       )}

@@ -112,10 +112,10 @@ export default async function ClientDetailPage({ params }: Props) {
   };
 
   const statusColors: Record<string, string> = {
-    active: 'bg-green-100 text-green-800',
-    pending: 'bg-yellow-100 text-yellow-800',
-    paused: 'bg-gray-100 text-gray-800',
-    cancelled: 'bg-red-100 text-red-800',
+    active: 'bg-[#E8F5E9] text-[#3D7A50]',
+    pending: 'bg-[#FFF3E0] text-sienna',
+    paused: 'bg-muted text-foreground',
+    cancelled: 'bg-[#FDEAE4] text-sienna',
   };
 
   return (
@@ -169,8 +169,8 @@ export default async function ClientDetailPage({ params }: Props) {
                     {formatPhoneNumber(client.twilioNumber)}
                   </p>
                   <div className="flex gap-2">
-                    <Badge variant="outline" className="bg-green-50 text-green-700">Voice</Badge>
-                    <Badge variant="outline" className="bg-green-50 text-green-700">SMS</Badge>
+                    <Badge variant="outline" className="bg-[#E8F5E9] text-[#3D7A50]">Voice</Badge>
+                    <Badge variant="outline" className="bg-[#E8F5E9] text-[#3D7A50]">SMS</Badge>
                   </div>
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/admin/clients/${client.id}/phone`}>
@@ -255,9 +255,9 @@ export default async function ClientDetailPage({ params }: Props) {
             </CardContent>
           </Card>
 
-          <Card className="border-red-200">
+          <Card className="border-destructive/30">
             <CardHeader>
-              <CardTitle className="text-red-600">Danger Zone</CardTitle>
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
             </CardHeader>
             <CardContent>
               <DeleteButton clientId={client.id} clientName={client.businessName} status={client.status} />

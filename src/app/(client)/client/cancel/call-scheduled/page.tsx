@@ -5,7 +5,7 @@ import Link from 'next/link';
 export default function CallScheduledPage() {
   return (
     <div className="max-w-md mx-auto text-center space-y-6">
-      <Card className="border-green-500">
+      <Card className="border-[#3D7A50]">
         <CardHeader>
           <CardTitle>Call Scheduled!</CardTitle>
         </CardHeader>

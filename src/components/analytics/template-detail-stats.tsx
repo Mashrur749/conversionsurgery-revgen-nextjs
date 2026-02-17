@@ -98,9 +98,9 @@ export function TemplateDetailStats({ templateId }: TemplateDetailStatsProps) {
                   <span className="text-sm text-muted-foreground w-16 shrink-0">
                     Step {step.stepNumber}
                   </span>
-                  <div className="flex-1 h-8 bg-gray-100 rounded-md overflow-hidden relative">
+                  <div className="flex-1 h-8 bg-muted rounded-md overflow-hidden relative">
                     <div
-                      className="h-full bg-blue-500 rounded-md transition-all"
+                      className="h-full bg-forest rounded-md transition-all"
                       style={{
                         width: `${(step.responseRate / maxResponseRate) * 100}%`,
                       }}
@@ -133,32 +133,32 @@ export function TemplateDetailStats({ templateId }: TemplateDetailStatsProps) {
           {stats.stepPerformance.length > 0 && (
             <>
               {stats.stepPerformance[0].responseRate > 20 && (
-                <div className="p-3 bg-green-50 rounded-lg text-green-800 text-sm">
+                <div className="p-3 bg-[#E8F5E9] rounded-lg text-[#3D7A50] text-sm">
                   Strong first message -{' '}
                   {stats.stepPerformance[0].responseRate.toFixed(0)}% respond to
                   Step 1
                 </div>
               )}
               {stats.stepPerformance[0].responseRate < 10 && (
-                <div className="p-3 bg-yellow-50 rounded-lg text-yellow-800 text-sm">
+                <div className="p-3 bg-[#FFF3E0] rounded-lg text-sienna text-sm">
                   Low initial response - consider revising Step 1 message
                 </div>
               )}
             </>
           )}
           {stats.optOutRate > 3 && (
-            <div className="p-3 bg-red-50 rounded-lg text-red-800 text-sm">
+            <div className="p-3 bg-[#FDEAE4] rounded-lg text-sienna text-sm">
               High opt-out rate ({stats.optOutRate.toFixed(1)}%) - messages may
               be too aggressive
             </div>
           )}
           {stats.conversionRate > 15 && (
-            <div className="p-3 bg-green-50 rounded-lg text-green-800 text-sm">
+            <div className="p-3 bg-[#E8F5E9] rounded-lg text-[#3D7A50] text-sm">
               Above average conversion rate - consider rolling out more widely
             </div>
           )}
           {stats.executions === 0 && (
-            <div className="p-3 bg-gray-50 rounded-lg text-gray-600 text-sm">
+            <div className="p-3 bg-[#F8F9FA] rounded-lg text-muted-foreground text-sm">
               No executions yet. Data will appear once flows start running.
             </div>
           )}

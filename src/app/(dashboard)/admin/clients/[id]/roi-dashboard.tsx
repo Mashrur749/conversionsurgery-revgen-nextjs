@@ -52,13 +52,13 @@ export function ROIDashboard({ metrics }: ROIDashboardProps) {
     <div className="space-y-4">
       {/* Hero stats row */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border-green-200 bg-green-50/50">
+        <Card className="border-[#3D7A50]/30 bg-[#E8F5E9]/50">
           <CardContent className="pt-6">
-            <p className="text-sm font-medium text-green-700">Revenue Pipeline</p>
-            <p className="text-3xl font-bold text-green-900">
+            <p className="text-sm font-medium text-[#3D7A50]">Revenue Pipeline</p>
+            <p className="text-3xl font-bold text-[#3D7A50]">
               {formatCents(metrics.totalPipeline)}
             </p>
-            <p className="text-sm text-green-600 mt-1">
+            <p className="text-sm text-[#3D7A50] mt-1">
               {metrics.totalWonValue > 0 && (
                 <span>{formatCents(metrics.totalWonValue)} confirmed</span>
               )}
@@ -71,13 +71,13 @@ export function ROIDashboard({ metrics }: ROIDashboardProps) {
           </CardContent>
         </Card>
 
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-forest-light/30 bg-sage-light/50">
           <CardContent className="pt-6">
-            <p className="text-sm font-medium text-blue-700">Response Time</p>
-            <p className="text-3xl font-bold text-blue-900">
+            <p className="text-sm font-medium text-forest">Response Time</p>
+            <p className="text-3xl font-bold text-forest">
               {formatSeconds(metrics.avgResponseTimeSeconds)}
             </p>
-            <p className="text-sm text-blue-600 mt-1">
+            <p className="text-sm text-forest mt-1">
               {metrics.speedMultiplier && metrics.speedMultiplier > 1 ? (
                 <span>{metrics.speedMultiplier}x faster than industry avg ({metrics.industryAvgMinutes} min)</span>
               ) : (
@@ -85,7 +85,7 @@ export function ROIDashboard({ metrics }: ROIDashboardProps) {
               )}
             </p>
             {metrics.improvementVsPrevious && (
-              <p className="text-xs text-blue-500 mt-0.5">
+              <p className="text-xs text-forest-light mt-0.5">
                 Before CS: {metrics.improvementVsPrevious}
               </p>
             )}

@@ -21,9 +21,9 @@ export default async function ClaimErrorPage({ searchParams }: Props) {
   }
 
   return (
-    <Card className="max-w-md mx-auto text-center border-red-200">
+    <Card className="max-w-md mx-auto text-center border-destructive/30">
       <CardHeader>
-        <CardTitle className="text-red-600">{title}</CardTitle>
+        <CardTitle className="text-destructive">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-muted-foreground">{message}</p>

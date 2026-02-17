@@ -55,19 +55,19 @@ export function GoogleConnectionCard({ clientId, status, accountId }: Props) {
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base">Google Business Profile</CardTitle>
         {currentStatus === 'connected' && (
-          <Badge variant="outline" className="bg-green-50 text-green-700">
+          <Badge variant="outline" className="bg-[#E8F5E9] text-[#3D7A50]">
             <CheckCircle2 className="h-3 w-3 mr-1" />
             Connected
           </Badge>
         )}
         {currentStatus === 'expired' && (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+          <Badge variant="outline" className="bg-[#FFF3E0] text-sienna">
             <AlertCircle className="h-3 w-3 mr-1" />
             Token Expired
           </Badge>
         )}
         {currentStatus === 'not_connected' && (
-          <Badge variant="outline" className="bg-gray-50 text-gray-600">
+          <Badge variant="outline" className="bg-[#F8F9FA] text-muted-foreground">
             Not Connected
           </Badge>
         )}
@@ -94,7 +94,7 @@ export function GoogleConnectionCard({ clientId, status, accountId }: Props) {
             )}
             {currentStatus === 'expired' && (
               <div className="space-y-2">
-                <p className="text-sm text-yellow-700">
+                <p className="text-sm text-sienna">
                   OAuth token has expired. Reconnect to restore review response posting.
                 </p>
                 <Button asChild variant="outline" size="sm">

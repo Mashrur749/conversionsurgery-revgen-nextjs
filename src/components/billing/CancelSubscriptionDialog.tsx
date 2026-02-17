@@ -67,7 +67,7 @@ export function CancelSubscriptionDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          <div className="rounded-lg bg-accent p-3 text-sm text-forest">
             <strong>Before you cancel:</strong> Would a pause work better? You can pause
             for up to 3 months and keep your data intact.
           </div>

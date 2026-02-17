@@ -113,9 +113,9 @@ export function ConversationView({ lead, messages }: Props) {
   }
 
   const modeColors: Record<string, string> = {
-    ai: 'bg-blue-100 text-blue-800',
-    human: 'bg-green-100 text-green-800',
-    paused: 'bg-gray-100 text-gray-800',
+    ai: 'bg-sage-light text-forest',
+    human: 'bg-[#E8F5E9] text-[#3D7A50]',
+    paused: 'bg-muted text-foreground',
   };
 
   return (
@@ -157,13 +157,13 @@ export function ConversationView({ lead, messages }: Props) {
             <div
               className={`max-w-[80%] rounded-lg px-4 py-2 ${
                 msg.direction === 'outbound'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-900'
+                  ? 'bg-forest text-white'
+                  : 'bg-muted text-foreground'
               }`}
             >
               <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
               <p className={`text-xs mt-1 ${
-                msg.direction === 'outbound' ? 'text-blue-200' : 'text-gray-500'
+                msg.direction === 'outbound' ? 'text-white/70' : 'text-muted-foreground'
               }`}>
                 {msg.messageType === 'ai_response' && 'AI '}
                 {msg.createdAt && formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
@@ -178,12 +178,12 @@ export function ConversationView({ lead, messages }: Props) {
       {suggestions.length > 0 && (
         <div className="border-t pt-4 space-y-2">
           {suggestions.map((suggestion) => (
-            <Card key={suggestion.id} className="bg-blue-50 border-blue-200">
+            <Card key={suggestion.id} className="bg-sage-light border-forest-light/30">
               <CardContent className="py-3">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="font-medium text-blue-900">AI Suggests: {suggestion.flowName}</p>
-                    <p className="text-sm text-blue-700">{suggestion.reason}</p>
+                    <p className="font-medium text-forest">AI Suggests: {suggestion.flowName}</p>
+                    <p className="text-sm text-forest">{suggestion.reason}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => handleSuggestion(suggestion.id, 'approve')}>
@@ -217,8 +217,8 @@ export function ConversationView({ lead, messages }: Props) {
         </div>
       ) : (
         <div className="border-t pt-4">
-          <Card className="bg-blue-50 border-blue-200">
-            <div className="p-3 text-sm text-blue-700 text-center">
+          <Card className="bg-sage-light border-forest-light/30">
+            <div className="p-3 text-sm text-forest text-center">
               AI is handling this conversation. Click &quot;Take Over&quot; to respond manually.
             </div>
           </Card>

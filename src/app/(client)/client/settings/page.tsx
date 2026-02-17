@@ -65,9 +65,9 @@ export default async function ClientSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-red-200">
+      <Card className="border-destructive/30">
         <CardHeader>
-          <CardTitle className="text-red-600">Danger Zone</CardTitle>
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
         </CardHeader>
         <CardContent>
           <Button asChild variant="destructive">

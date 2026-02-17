@@ -60,20 +60,20 @@ export default async function ABTestsPage() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-600 font-medium">Active Tests</p>
+        <div className="bg-sage-light p-4 rounded-lg border border-forest-light/30">
+          <p className="text-sm text-forest font-medium">Active Tests</p>
           <p className="text-3xl font-bold mt-2">{activeTests.length}</p>
-          <p className="text-xs text-blue-500 mt-1">Currently running</p>
+          <p className="text-xs text-forest-light mt-1">Currently running</p>
         </div>
-        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-          <p className="text-sm text-amber-600 font-medium">Paused</p>
+        <div className="bg-accent p-4 rounded-lg border border-olive/30">
+          <p className="text-sm text-olive font-medium">Paused</p>
           <p className="text-3xl font-bold mt-2">{pausedTests.length}</p>
-          <p className="text-xs text-amber-500 mt-1">Ready to resume</p>
+          <p className="text-xs text-olive mt-1">Ready to resume</p>
         </div>
-        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-          <p className="text-sm text-green-600 font-medium">Completed</p>
+        <div className="bg-[#E8F5E9] p-4 rounded-lg border border-[#3D7A50]/30">
+          <p className="text-sm text-[#3D7A50] font-medium">Completed</p>
           <p className="text-3xl font-bold mt-2">{completedTests.length}</p>
-          <p className="text-xs text-green-500 mt-1">Results available</p>
+          <p className="text-xs text-[#3D7A50] mt-1">Results available</p>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export default async function ABTestsPage() {
       )}
 
       {testsWithClients.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border">
+        <div className="text-center py-12 bg-[#F8F9FA] rounded-lg border">
           <p className="text-muted-foreground mb-4">No tests yet</p>
           <Button asChild>
             <Link href="/admin/ab-tests/new">Create your first test</Link>

@@ -24,12 +24,12 @@ interface SubscriptionRow {
 }
 
 const statusColors: Record<string, string> = {
-  trialing: 'bg-blue-100 text-blue-800',
-  active: 'bg-green-100 text-green-800',
-  past_due: 'bg-red-100 text-red-800',
-  canceled: 'bg-gray-100 text-gray-800',
-  unpaid: 'bg-red-100 text-red-800',
-  paused: 'bg-yellow-100 text-yellow-800',
+  trialing: 'bg-sage-light text-forest',
+  active: 'bg-[#E8F5E9] text-[#3D7A50]',
+  past_due: 'bg-[#FDEAE4] text-sienna',
+  canceled: 'bg-muted text-foreground',
+  unpaid: 'bg-[#FDEAE4] text-sienna',
+  paused: 'bg-[#FFF3E0] text-sienna',
 };
 
 export function AdminSubscriptionTable() {
@@ -84,7 +84,7 @@ export function AdminSubscriptionTable() {
                   <TableCell className="font-medium">{sub.clientName}</TableCell>
                   <TableCell>{sub.planName}</TableCell>
                   <TableCell>
-                    <Badge className={statusColors[sub.status] || 'bg-gray-100 text-gray-800'}>
+                    <Badge className={statusColors[sub.status] || 'bg-muted text-foreground'}>
                       {sub.status}
                     </Badge>
                   </TableCell>

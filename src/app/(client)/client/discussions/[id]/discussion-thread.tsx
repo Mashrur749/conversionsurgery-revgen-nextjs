@@ -69,20 +69,20 @@ export function DiscussionThread({
       <div className="flex items-center gap-3 mb-6">
         <Link
           href="/client/discussions"
-          className="text-gray-500 hover:text-gray-900"
+          className="text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold flex-1">Discussion</h1>
-        <Badge className={message.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+        <Badge className={message.status === 'open' ? 'bg-[#E8F5E9] text-[#3D7A50]' : 'bg-muted text-foreground'}>
           {message.status}
         </Badge>
       </div>
 
       {/* Original message */}
-      <div className="border rounded-lg p-4 mb-4 bg-blue-50">
-        <p className="text-sm text-gray-900 whitespace-pre-wrap">{message.message}</p>
-        <p className="text-xs text-gray-500 mt-2">
+      <div className="border rounded-lg p-4 mb-4 bg-sage-light">
+        <p className="text-sm text-foreground whitespace-pre-wrap">{message.message}</p>
+        <p className="text-xs text-muted-foreground mt-2">
           {message.createdAt ? new Date(message.createdAt).toLocaleString() : ''} — {message.page}
         </p>
       </div>
@@ -94,15 +94,15 @@ export function DiscussionThread({
             key={reply.id}
             className={`rounded-lg p-4 ${
               reply.isAdmin
-                ? 'bg-amber-50 border border-amber-200 mr-4'
-                : 'bg-blue-50 border border-blue-200 ml-4'
+                ? 'bg-accent border border-olive/30 mr-4'
+                : 'bg-sage-light border border-forest-light/30 ml-4'
             }`}
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-medium">
                 {reply.isAdmin ? 'Support Team' : 'You'}
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {reply.createdAt ? new Date(reply.createdAt).toLocaleString() : ''}
               </span>
             </div>

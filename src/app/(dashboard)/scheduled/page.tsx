@@ -72,7 +72,7 @@ export default async function ScheduledPage() {
                 <Link
                   key={msg.id}
                   href={`/leads/${msg.leadId}`}
-                  className="block p-4 hover:bg-gray-50 transition-colors"
+                  className="block p-4 hover:bg-[#F8F9FA] transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-1">
                     <div>

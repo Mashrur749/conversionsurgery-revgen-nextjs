@@ -46,7 +46,7 @@ export default async function KnowledgePreviewPage({ params }: Props) {
             <CardTitle>Knowledge Context (What AI Sees)</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="text-xs whitespace-pre-wrap bg-gray-50 p-4 rounded max-h-[500px] overflow-auto">
+            <pre className="text-xs whitespace-pre-wrap bg-[#F8F9FA] p-4 rounded max-h-[500px] overflow-auto">
               {knowledgeContext || 'No knowledge entries found. Add entries to the knowledge base first.'}
             </pre>
           </CardContent>

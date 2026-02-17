@@ -24,9 +24,9 @@ export function ClientsFilter({ allClients }: Props) {
   }, [allClients, statusFilter]);
 
   const filters: { value: FilterStatus; label: string; color: string }[] = [
-    { value: 'active', label: 'Active', color: 'bg-green-100 text-green-800 hover:bg-green-200' },
-    { value: 'pending', label: 'Pending', color: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' },
-    { value: 'cancelled', label: 'Cancelled', color: 'bg-gray-100 text-gray-800 hover:bg-gray-200' },
+    { value: 'active', label: 'Active', color: 'bg-[#E8F5E9] text-[#3D7A50] hover:bg-[#C8E6C9]' },
+    { value: 'pending', label: 'Pending', color: 'bg-[#FFF3E0] text-sienna hover:bg-[#FFE0B2]' },
+    { value: 'cancelled', label: 'Cancelled', color: 'bg-muted text-foreground hover:bg-muted' },
     { value: 'all', label: 'All', color: 'bg-slate-100 text-slate-800 hover:bg-slate-200' },
   ];
 
@@ -41,7 +41,7 @@ export function ClientsFilter({ allClients }: Props) {
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               statusFilter === filter.value
                 ? filter.color
-                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                : 'bg-[#F8F9FA] text-foreground hover:bg-muted'
             }`}
           >
             {filter.label}
@@ -66,13 +66,13 @@ export function ClientsFilter({ allClients }: Props) {
               </div>
             ) : (
               <>
-                <div className="px-4 py-3 bg-gray-50 text-sm font-medium text-gray-700">
+                <div className="px-4 py-3 bg-[#F8F9FA] text-sm font-medium text-foreground">
                   {filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}
                 </div>
                 {filteredClients.map((client) => (
                   <div
                     key={client.id}
-                    className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                    className="flex items-center justify-between p-4 hover:bg-[#F8F9FA] transition-colors"
                   >
                     <Link href={`/admin/clients/${client.id}`} className="flex-1 min-w-0">
                       <p className="font-semibold">{client.businessName}</p>

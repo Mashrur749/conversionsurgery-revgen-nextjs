@@ -56,14 +56,14 @@ const categoryIcons: Record<string, React.ComponentType<{ className?: string }>>
 };
 
 const categoryColors: Record<string, string> = {
-  estimate: 'bg-blue-100 text-blue-800',
-  payment: 'bg-green-100 text-green-800',
-  review: 'bg-yellow-100 text-yellow-800',
-  referral: 'bg-purple-100 text-purple-800',
-  appointment: 'bg-orange-100 text-orange-800',
-  missed_call: 'bg-red-100 text-red-800',
+  estimate: 'bg-sage-light text-forest',
+  payment: 'bg-[#E8F5E9] text-[#3D7A50]',
+  review: 'bg-[#FFF3E0] text-sienna',
+  referral: 'bg-moss-light text-olive',
+  appointment: 'bg-[#FFF3E0] text-terracotta-dark',
+  missed_call: 'bg-[#FDEAE4] text-sienna',
   form_response: 'bg-cyan-100 text-cyan-800',
-  custom: 'bg-gray-100 text-gray-800',
+  custom: 'bg-muted text-foreground',
 };
 
 async function cloneTemplate(id: string): Promise<boolean> {
@@ -167,7 +167,7 @@ export function TemplateList({ templates }: TemplateListProps) {
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">v{template.version ?? 1}</Badge>
                         {template.isPublished ? (
-                          <Badge className="bg-green-100 text-green-800">Published</Badge>
+                          <Badge className="bg-[#E8F5E9] text-[#3D7A50]">Published</Badge>
                         ) : (
                           <Badge variant="secondary">Draft</Badge>
                         )}

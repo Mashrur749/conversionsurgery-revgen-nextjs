@@ -87,16 +87,16 @@ export default async function DashboardPage() {
       </div>
 
       {/* Revenue Hero */}
-      <Card className="bg-green-50 border-green-200">
+      <Card className="bg-[#E8F5E9] border-[#3D7A50]/30">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-green-800">Revenue Recovered</CardTitle>
-          <DollarSign className="h-5 w-5 text-green-600" />
+          <CardTitle className="text-sm font-medium text-[#3D7A50]">Revenue Recovered</CardTitle>
+          <DollarSign className="h-5 w-5 text-[#3D7A50]" />
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-green-900">
+          <div className="text-3xl font-bold text-[#3D7A50]">
             ${(revenueStats.totalWonValue / 100).toLocaleString()}
           </div>
-          <p className="text-xs text-green-700">
+          <p className="text-xs text-[#3D7A50]">
             ${(revenueStats.totalPaid / 100).toLocaleString()} collected &bull; {revenueStats.totalWon} jobs won &bull; Last 30 days
           </p>
         </CardContent>
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
                 <Link
                   key={lead.id}
                   href={`/leads/${lead.id}`}
-                  className="block p-3 rounded-lg border border-l-4 border-l-red-500 hover:bg-gray-50 transition-colors"
+                  className="block p-3 rounded-lg border border-l-4 border-l-red-500 hover:bg-[#F8F9FA] transition-colors"
                 >
                   <div className="flex justify-between items-start">
                     <div>

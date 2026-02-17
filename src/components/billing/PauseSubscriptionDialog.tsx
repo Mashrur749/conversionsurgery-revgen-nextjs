@@ -66,7 +66,7 @@ export function PauseSubscriptionDialog({
             </Select>
           </div>
 
-          <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
+          <div className="rounded-lg bg-sage-light p-3 text-sm text-forest">
             <p><strong>What happens when paused:</strong></p>
             <ul className="mt-2 list-inside list-disc space-y-1">
               <li>No charges during pause period</li>

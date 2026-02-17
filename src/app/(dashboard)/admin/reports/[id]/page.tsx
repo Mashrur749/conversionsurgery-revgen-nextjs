@@ -67,7 +67,7 @@ export default async function ReportDetailPage({ params }: Props) {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Report Not Found</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           The report you're looking for doesn't exist.
         </p>
         <Link href="/admin/reports">
@@ -95,14 +95,14 @@ export default async function ReportDetailPage({ params }: Props) {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold">{report.title}</h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-muted-foreground mt-1">
             {client?.businessName || 'Unknown Client'}
           </p>
-          <p className="text-gray-500 text-sm mt-2">
+          <p className="text-muted-foreground text-sm mt-2">
             {report.startDate} to {report.endDate}
           </p>
         </div>
-        <span className="px-3 py-1 rounded-md bg-blue-100 text-blue-800 text-sm font-medium">
+        <span className="px-3 py-1 rounded-md bg-sage-light text-forest text-sm font-medium">
           {report.reportType === 'bi-weekly'
             ? 'Bi-Weekly'
             : report.reportType === 'monthly'
@@ -125,13 +125,13 @@ export default async function ReportDetailPage({ params }: Props) {
         <ReportDetailCard title="Team Performance">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Members</span>
+              <span className="text-muted-foreground">Total Members</span>
               <span className="font-semibold">
                 {teamPerformance.totalMembers || 0}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Active Members</span>
+              <span className="text-muted-foreground">Active Members</span>
               <span className="font-semibold">
                 {teamPerformance.activeMembers || 0}
               </span>
@@ -143,11 +143,11 @@ export default async function ReportDetailPage({ params }: Props) {
         <ReportDetailCard title="Period Summary">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Days in Period</span>
+              <span className="text-muted-foreground">Days in Period</span>
               <span className="font-semibold">{metrics.days || 0}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Avg Messages/Day</span>
+              <span className="text-muted-foreground">Avg Messages/Day</span>
               <span className="font-semibold">
                 {roiSummary.averagePerDay || '0'}
               </span>
@@ -163,13 +163,13 @@ export default async function ReportDetailPage({ params }: Props) {
             {testResults.map((test: ReportTestResult, idx: number) => (
               <div
                 key={idx}
-                className="p-3 rounded-md bg-gray-50 border"
+                className="p-3 rounded-md bg-[#F8F9FA] border"
               >
-                <h4 className="font-semibold text-gray-900">{test.name}</h4>
-                <p className="text-sm text-gray-600 mt-1">
+                <h4 className="font-semibold text-foreground">{test.name}</h4>
+                <p className="text-sm text-muted-foreground mt-1">
                   {test.description}
                 </p>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   Type: {test.testType}
                 </p>
               </div>
@@ -182,37 +182,37 @@ export default async function ReportDetailPage({ params }: Props) {
       <ReportDetailCard title="Detailed Metrics">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
-            <p className="text-gray-600 text-sm">Messages Sent</p>
+            <p className="text-muted-foreground text-sm">Messages Sent</p>
             <p className="text-2xl font-bold mt-1">
               {metrics.messagesSent || 0}
             </p>
           </div>
           <div>
-            <p className="text-gray-600 text-sm">Conversations</p>
+            <p className="text-muted-foreground text-sm">Conversations</p>
             <p className="text-2xl font-bold mt-1">
               {metrics.conversationsStarted || 0}
             </p>
           </div>
           <div>
-            <p className="text-gray-600 text-sm">Appointments Reminded</p>
+            <p className="text-muted-foreground text-sm">Appointments Reminded</p>
             <p className="text-2xl font-bold mt-1">
               {metrics.appointmentsReminded || 0}
             </p>
           </div>
           <div>
-            <p className="text-gray-600 text-sm">Forms Responded</p>
+            <p className="text-muted-foreground text-sm">Forms Responded</p>
             <p className="text-2xl font-bold mt-1">
               {metrics.formsResponded || 0}
             </p>
           </div>
           <div>
-            <p className="text-gray-600 text-sm">Estimates Followed Up</p>
+            <p className="text-muted-foreground text-sm">Estimates Followed Up</p>
             <p className="text-2xl font-bold mt-1">
               {metrics.estimatesFollowedUp || 0}
             </p>
           </div>
           <div>
-            <p className="text-gray-600 text-sm">Missed Calls Captured</p>
+            <p className="text-muted-foreground text-sm">Missed Calls Captured</p>
             <p className="text-2xl font-bold mt-1">
               {metrics.missedCallsCaptured || 0}
             </p>
@@ -223,7 +223,7 @@ export default async function ReportDetailPage({ params }: Props) {
       {/* Notes */}
       {report.notes && (
         <ReportDetailCard title="Notes">
-          <p className="text-gray-700 whitespace-pre-wrap">{report.notes}</p>
+          <p className="text-foreground whitespace-pre-wrap">{report.notes}</p>
         </ReportDetailCard>
       )}
 

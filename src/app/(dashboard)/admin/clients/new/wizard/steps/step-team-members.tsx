@@ -74,7 +74,7 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
       </p>
 
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+        <div className="p-3 text-sm text-destructive bg-[#FDEAE4] rounded-lg">
           {error}
         </div>
       )}
@@ -97,7 +97,7 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-red-600"
+                  className="text-destructive"
                   onClick={() => removeMember(index)}
                 >
                   Remove
@@ -161,7 +161,7 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
       )}
 
       {data.teamMembers.length === 0 && (
-        <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+        <p className="text-sm text-olive bg-accent p-3 rounded-lg">
           Without team members, escalations will only go to the business owner.
           You can add team members later from the settings page.
         </p>

@@ -92,7 +92,7 @@ export default function GenerateReportForm({ clients }: Props) {
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-lg border p-6">
       {error && (
-        <div className="mb-6 p-3 rounded-md bg-red-50 text-red-800 text-sm">
+        <div className="mb-6 p-3 rounded-md bg-[#FDEAE4] text-sienna text-sm">
           {error}
         </div>
       )}
@@ -100,7 +100,7 @@ export default function GenerateReportForm({ clients }: Props) {
       <div className="space-y-6">
         {/* Client Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Client
           </label>
           <select
@@ -122,7 +122,7 @@ export default function GenerateReportForm({ clients }: Props) {
         {/* Date Range */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Start Date
             </label>
             <input
@@ -135,7 +135,7 @@ export default function GenerateReportForm({ clients }: Props) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               End Date
             </label>
             <input
@@ -151,7 +151,7 @@ export default function GenerateReportForm({ clients }: Props) {
 
         {/* Report Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Report Type
           </label>
           <select
@@ -168,7 +168,7 @@ export default function GenerateReportForm({ clients }: Props) {
 
         {/* Custom Title (optional) */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Custom Title (optional)
           </label>
           <input

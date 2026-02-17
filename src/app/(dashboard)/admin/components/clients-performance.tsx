@@ -35,11 +35,11 @@ export function ClientsPerformance({ clients }: Props) {
   const getStatusIcon = (status: string | null) => {
     switch (status) {
       case 'active':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-[#3D7A50]" />;
       case 'pending':
-        return <Clock className="w-4 h-4 text-yellow-600" />;
+        return <Clock className="w-4 h-4 text-sienna" />;
       case 'cancelled':
-        return <AlertCircle className="w-4 h-4 text-gray-400" />;
+        return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
       default:
         return null;
     }
@@ -83,7 +83,7 @@ export function ClientsPerformance({ clients }: Props) {
             sortedClients.map((client) => (
               <div
                 key={client.id}
-                className="p-4 hover:bg-gray-50 transition-colors"
+                className="p-4 hover:bg-[#F8F9FA] transition-colors"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -116,13 +116,13 @@ export function ClientsPerformance({ clients }: Props) {
                     </p>
                     {client.hasPhoneNumber ? (
                       <div className="flex items-center gap-1">
-                        <Phone className="w-4 h-4 text-green-600" />
+                        <Phone className="w-4 h-4 text-[#3D7A50]" />
                         <span className="font-mono font-medium text-xs">
                           {formatPhoneNumber(client.twilioNumber!)}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-xs text-orange-600 font-medium">
+                      <span className="text-xs text-terracotta font-medium">
                         Not assigned
                       </span>
                     )}

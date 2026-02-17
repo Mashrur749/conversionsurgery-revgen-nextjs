@@ -85,7 +85,7 @@ export function ActionButtons({ lead }: Props) {
       </CardHeader>
       <CardContent className="space-y-3">
         {error && (
-          <div className="p-2 text-sm text-red-600 bg-red-50 rounded">
+          <div className="p-2 text-sm text-destructive bg-[#FDEAE4] rounded">
             {error}
           </div>
         )}
@@ -174,8 +174,8 @@ export function ActionButtons({ lead }: Props) {
           {loading === 'payment' ? 'Starting...' : '💳 Start Payment Reminder'}
         </Button>
 
-        <div className="border-t border-red-200 pt-3 mt-3">
-          <p className="text-xs font-medium text-red-600 mb-2">Danger Zone</p>
+        <div className="border-t border-destructive/30 pt-3 mt-3">
+          <p className="text-xs font-medium text-destructive mb-2">Danger Zone</p>
           <div className="space-y-2">
             <Button
               variant="ghost"

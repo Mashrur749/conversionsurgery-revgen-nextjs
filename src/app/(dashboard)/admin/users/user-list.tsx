@@ -55,7 +55,7 @@ export function UserList({ users, clients, currentUserId }: Props) {
 
       <div className="divide-y">
         {filtered.map((user) => (
-          <div key={user.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+          <div key={user.id} className="flex items-center justify-between p-4 hover:bg-[#F8F9FA] transition-colors">
             <div>
               <p className="font-medium">{user.name || 'No name'}</p>
               <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -70,7 +70,7 @@ export function UserList({ users, clients, currentUserId }: Props) {
                 {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : '\u2014'}
               </span>
               {user.isAdmin && (
-                <Badge className="bg-amber-100 text-amber-800">Admin</Badge>
+                <Badge className="bg-[#FFF3E0] text-forest">Admin</Badge>
               )}
               <UserActions
                 user={user}

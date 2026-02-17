@@ -28,36 +28,36 @@ export default async function CancelPage() {
       </div>
 
       {/* Value Summary Card */}
-      <Card className="border-2 border-green-500 bg-green-50">
+      <Card className="border-2 border-[#3D7A50] bg-[#E8F5E9]">
         <CardHeader>
-          <CardTitle className="text-green-800">Your Results So Far</CardTitle>
+          <CardTitle className="text-[#3D7A50]">Your Results So Far</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <p className="text-3xl font-bold text-green-700">{valueSummary.totalLeads}</p>
-              <p className="text-sm text-green-600">Leads Captured</p>
+              <p className="text-3xl font-bold text-[#3D7A50]">{valueSummary.totalLeads}</p>
+              <p className="text-sm text-[#3D7A50]">Leads Captured</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-green-700">{valueSummary.totalMessages}</p>
-              <p className="text-sm text-green-600">Messages Sent</p>
+              <p className="text-3xl font-bold text-[#3D7A50]">{valueSummary.totalMessages}</p>
+              <p className="text-sm text-[#3D7A50]">Messages Sent</p>
             </div>
           </div>
 
-          <div className="border-t border-green-200 pt-4">
+          <div className="border-t border-[#3D7A50]/30 pt-4">
             <div className="text-center">
-              <p className="text-4xl font-bold text-green-700">
+              <p className="text-4xl font-bold text-[#3D7A50]">
                 ${valueSummary.estimatedRevenue.toLocaleString()}
               </p>
-              <p className="text-sm text-green-600">Estimated Revenue Generated</p>
+              <p className="text-sm text-[#3D7A50]">Estimated Revenue Generated</p>
             </div>
           </div>
 
-          <div className="bg-green-100 rounded-lg p-3 text-center">
-            <p className="text-lg font-semibold text-green-800">
+          <div className="bg-[#E8F5E9] rounded-lg p-3 text-center">
+            <p className="text-lg font-semibold text-[#3D7A50]">
               {valueSummary.roi}% ROI
             </p>
-            <p className="text-xs text-green-600">
+            <p className="text-xs text-[#3D7A50]">
               ${valueSummary.monthlyCost}/mo investment → ${valueSummary.estimatedRevenue.toLocaleString()} return
             </p>
           </div>

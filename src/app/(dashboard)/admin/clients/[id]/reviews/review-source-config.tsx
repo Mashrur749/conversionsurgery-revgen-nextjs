@@ -111,10 +111,10 @@ export function ReviewSourceConfig({ clientId, businessName }: ReviewSourceConfi
           </p>
 
           {error && (
-            <p className="text-xs text-red-600 mt-1">{error}</p>
+            <p className="text-xs text-destructive mt-1">{error}</p>
           )}
           {success && (
-            <p className="text-xs text-green-600 mt-1">
+            <p className="text-xs text-[#3D7A50] mt-1">
               Google Business linked successfully!
             </p>
           )}
@@ -148,7 +148,7 @@ export function ReviewSourceConfig({ clientId, businessName }: ReviewSourceConfi
                 </div>
                 <div className="flex items-center gap-2">
                   {source.lastError && (
-                    <span className="text-xs text-red-500">Error</span>
+                    <span className="text-xs text-destructive">Error</span>
                   )}
                   {source.lastFetchedAt && (
                     <span className="text-xs text-muted-foreground">

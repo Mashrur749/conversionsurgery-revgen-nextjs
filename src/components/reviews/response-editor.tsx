@@ -232,7 +232,7 @@ export function ResponseEditor({
         <div className="flex gap-2 pt-2 border-t">
           <Button variant="outline" onClick={copyToClipboard} disabled={!responseText}>
             {copied ? (
-              <Check className="h-4 w-4 mr-1 text-green-500" />
+              <Check className="h-4 w-4 mr-1 text-[#3D7A50]" />
             ) : (
               <Copy className="h-4 w-4 mr-1" />
             )}

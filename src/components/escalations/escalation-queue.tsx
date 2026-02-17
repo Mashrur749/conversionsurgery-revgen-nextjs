@@ -126,7 +126,7 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
       case 1:
         return <Badge variant="destructive">Urgent</Badge>;
       case 2:
-        return <Badge className="bg-orange-500 text-white">High</Badge>;
+        return <Badge className="bg-terracotta text-white">High</Badge>;
       default:
         return <Badge variant="secondary">Normal</Badge>;
     }
@@ -138,13 +138,13 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
     }
     switch (status) {
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return <Badge className="bg-[#FFF3E0] text-sienna">Pending</Badge>;
       case 'assigned':
         return <Badge variant="secondary">Assigned</Badge>;
       case 'in_progress':
-        return <Badge className="bg-blue-500 text-white">In Progress</Badge>;
+        return <Badge className="bg-forest text-white">In Progress</Badge>;
       case 'resolved':
-        return <Badge className="bg-green-500 text-white">Resolved</Badge>;
+        return <Badge className="bg-[#3D7A50] text-white">Resolved</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -234,7 +234,7 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
           ) : escalations.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
-                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-[#3D7A50]" />
                 <p>No escalations in this queue</p>
               </CardContent>
             </Card>

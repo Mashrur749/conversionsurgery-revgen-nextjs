@@ -71,10 +71,10 @@ export function PlatformAnalytics() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">New This Month</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
+            <TrendingUp className="h-4 w-4 text-[#3D7A50]" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-[#3D7A50]">
               +{data?.newClients || 0}
             </div>
             <p className="text-xs text-muted-foreground">Signed up this month</p>
@@ -84,10 +84,10 @@ export function PlatformAnalytics() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Churned</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-500" />
+            <TrendingDown className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-destructive">
               -{data?.churnedClients || 0}
             </div>
             <p className="text-xs text-muted-foreground">Cancelled this month</p>
@@ -144,7 +144,7 @@ export function PlatformAnalytics() {
             </div>
             <div className="flex justify-between">
               <span>Gross Margin</span>
-              <span className="font-bold text-green-600">
+              <span className="font-bold text-[#3D7A50]">
                 {data?.mrrCents && data?.totalApiCostsCents
                   ? (
                       ((data.mrrCents - data.totalApiCostsCents) /
@@ -172,7 +172,7 @@ export function PlatformAnalytics() {
             <div className="flex justify-between items-center">
               <span>Churn Rate</span>
               <span
-                className={`font-bold ${(data?.churnRate || 0) > 5 ? 'text-red-600' : 'text-green-600'}`}
+                className={`font-bold ${(data?.churnRate || 0) > 5 ? 'text-destructive' : 'text-[#3D7A50]'}`}
               >
                 {data?.churnRate?.toFixed(1) || 0}%
               </span>

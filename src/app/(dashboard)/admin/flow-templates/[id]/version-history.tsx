@@ -72,7 +72,7 @@ export function VersionHistory({ templateId }: { templateId: string }) {
                   {v.snapshot.steps.length} steps
                 </p>
                 {v.snapshot.steps.map((step) => (
-                  <div key={step.stepNumber} className="text-xs bg-gray-50 rounded p-2">
+                  <div key={step.stepNumber} className="text-xs bg-[#F8F9FA] rounded p-2">
                     <span className="font-medium">Step {step.stepNumber}</span>
                     {step.delayMinutes > 0 && (
                       <span className="text-muted-foreground ml-2">

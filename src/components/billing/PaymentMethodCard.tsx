@@ -73,7 +73,7 @@ export function PaymentMethodCard({
         </CardHeader>
         <CardContent className="space-y-4">
           {hasFailedPayment && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+            <div className="rounded-lg bg-[#FDEAE4] p-3 text-sm text-sienna">
               <AlertTriangle className="mr-2 inline h-4 w-4" />
               Your last payment failed. Please update your payment method.
             </div>
@@ -133,7 +133,7 @@ export function PaymentMethodCard({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-red-600"
+                        className="text-destructive"
                         onClick={() => setDeleteId(method.id)}
                       >
                         <Trash2 className="h-4 w-4" />

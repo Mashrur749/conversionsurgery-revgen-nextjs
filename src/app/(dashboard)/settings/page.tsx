@@ -126,7 +126,7 @@ export default async function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <code className="block p-3 bg-gray-100 rounded text-sm break-all">
+            <code className="block p-3 bg-muted rounded text-sm break-all">
               {process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/form
             </code>
             <p className="text-sm text-muted-foreground mt-2">

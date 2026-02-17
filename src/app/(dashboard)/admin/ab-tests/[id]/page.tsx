@@ -68,15 +68,15 @@ export default async function TestDetailPage({ params }: Props) {
 
       {/* Test Info */}
       <div className="grid grid-cols-4 gap-4 text-sm">
-        <div className="bg-gray-50 p-4 rounded-lg border">
+        <div className="bg-[#F8F9FA] p-4 rounded-lg border">
           <p className="text-muted-foreground font-medium">Test Type</p>
           <p className="font-semibold mt-1 capitalize">{test.testType}</p>
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border">
+        <div className="bg-[#F8F9FA] p-4 rounded-lg border">
           <p className="text-muted-foreground font-medium">Status</p>
           <p className="font-semibold mt-1 capitalize">{test.status}</p>
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border">
+        <div className="bg-[#F8F9FA] p-4 rounded-lg border">
           <p className="text-muted-foreground font-medium">Duration</p>
           <p className="font-semibold mt-1">
             {test.endDate
@@ -88,7 +88,7 @@ export default async function TestDetailPage({ params }: Props) {
             days
           </p>
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border">
+        <div className="bg-[#F8F9FA] p-4 rounded-lg border">
           <p className="text-muted-foreground font-medium">Current Winner</p>
           <p className="font-semibold mt-1">
             {test.winner ? `Variant ${test.winner}` : 'TBD'}
@@ -97,14 +97,14 @@ export default async function TestDetailPage({ params }: Props) {
       </div>
 
       {test.description && (
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-900">{test.description}</p>
+        <div className="bg-sage-light p-4 rounded-lg border border-forest-light/30">
+          <p className="text-sm text-forest">{test.description}</p>
         </div>
       )}
 
       {/* Variant Details */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+        <div className="bg-sage-light p-6 rounded-lg border border-forest-light/30">
           <h3 className="font-semibold text-lg mb-2">
             Variant A: {(test.variantA as ABTestVariant)?.name}
           </h3>
@@ -114,7 +114,7 @@ export default async function TestDetailPage({ params }: Props) {
             </p>
           )}
         </div>
-        <div className="bg-amber-50 p-6 rounded-lg border border-amber-200">
+        <div className="bg-accent p-6 rounded-lg border border-olive/30">
           <h3 className="font-semibold text-lg mb-2">
             Variant B: {(test.variantB as ABTestVariant)?.name}
           </h3>

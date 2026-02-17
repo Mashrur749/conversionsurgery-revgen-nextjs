@@ -62,15 +62,15 @@ export function KnowledgePreviewChat({ clientId }: Props) {
             key={i}
             className={`p-3 rounded-lg text-sm ${
               msg.role === 'user'
-                ? 'bg-blue-600 text-white ml-8'
-                : 'bg-gray-100 mr-8'
+                ? 'bg-forest text-white ml-8'
+                : 'bg-muted mr-8'
             }`}
           >
             {msg.content}
           </div>
         ))}
         {loading && (
-          <div className="bg-gray-100 mr-8 p-3 rounded-lg text-sm">
+          <div className="bg-muted mr-8 p-3 rounded-lg text-sm">
             <span className="animate-pulse">Thinking...</span>
           </div>
         )}

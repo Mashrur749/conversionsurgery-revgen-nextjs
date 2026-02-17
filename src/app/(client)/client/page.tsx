@@ -69,16 +69,16 @@ export default async function ClientDashboardPage() {
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
       {/* Revenue Hero */}
-      <Card className="bg-green-50 border-green-200">
+      <Card className="bg-[#E8F5E9] border-[#3D7A50]/30">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-green-800">Revenue Recovered</CardTitle>
-          <DollarSign className="h-5 w-5 text-green-600" />
+          <CardTitle className="text-sm font-medium text-[#3D7A50]">Revenue Recovered</CardTitle>
+          <DollarSign className="h-5 w-5 text-[#3D7A50]" />
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold text-green-900">
+          <div className="text-3xl font-bold text-[#3D7A50]">
             ${(revenueStats.totalWonValue / 100).toLocaleString()}
           </div>
-          <p className="text-xs text-green-700">
+          <p className="text-xs text-[#3D7A50]">
             ${(revenueStats.totalPaid / 100).toLocaleString()} collected &bull; {revenueStats.totalWon} jobs won
           </p>
         </CardContent>
@@ -148,7 +148,7 @@ export default async function ClientDashboardPage() {
           ) : (
             <div className="space-y-3">
               {recentLeads.map((lead) => (
-                <Link key={lead.id} href={`/client/conversations/${lead.id}`} className="flex justify-between items-center hover:bg-gray-50 transition-colors rounded-md px-2 py-1 -mx-2">
+                <Link key={lead.id} href={`/client/conversations/${lead.id}`} className="flex justify-between items-center hover:bg-[#F8F9FA] transition-colors rounded-md px-2 py-1 -mx-2">
                   <div>
                     <p className="font-medium">{lead.name || lead.phone}</p>
                     <p className="text-sm text-muted-foreground">{lead.source}</p>

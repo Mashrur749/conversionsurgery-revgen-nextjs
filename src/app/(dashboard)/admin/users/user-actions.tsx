@@ -96,7 +96,7 @@ export function UserActions({ user, clients, currentUserId }: Props) {
           <DropdownMenuItem
             onClick={() => setShowToggleAdmin(true)}
             disabled={isCurrentUser || loading}
-            className={user.isAdmin ? 'text-red-600' : ''}
+            className={user.isAdmin ? 'text-destructive' : ''}
           >
             {user.isAdmin ? 'Remove Admin' : 'Make Admin'}
           </DropdownMenuItem>

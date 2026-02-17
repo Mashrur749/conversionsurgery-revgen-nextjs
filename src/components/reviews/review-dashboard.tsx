@@ -94,8 +94,8 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
             key={star}
             className={`h-4 w-4 ${
               star <= rating
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300'
+                ? 'fill-terracotta text-terracotta'
+                : 'text-muted-foreground'
             }`}
           />
         ))}
@@ -129,7 +129,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-2xl font-bold text-[#3D7A50]">
                 {summary.recentReviews}
               </div>
               <div className="text-sm text-muted-foreground">last 30 days</div>
@@ -139,7 +139,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
 
           <Card>
             <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-orange-600">
+              <div className="text-2xl font-bold text-terracotta">
                 {summary.needsResponse}
               </div>
               <div className="text-sm text-muted-foreground">needs response</div>
@@ -179,7 +179,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
                   key={review.id}
                   className={`p-4 rounded-lg border ${
                     review.rating <= 2
-                      ? 'border-red-200 bg-red-50 dark:bg-red-950/20'
+                      ? 'border-destructive/30 bg-[#FDEAE4] dark:bg-red-950/20'
                       : 'border-border'
                   }`}
                 >
@@ -210,7 +210,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
                   {review.rating <= 3 && !review.hasResponse && (
                     <div className="mt-3 p-3 bg-muted rounded-lg">
                       <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                        <AlertTriangle className="h-4 w-4 text-orange-500" />
+                        <AlertTriangle className="h-4 w-4 text-terracotta" />
                         Suggested Response
                       </div>
                       <p className="text-sm text-muted-foreground">

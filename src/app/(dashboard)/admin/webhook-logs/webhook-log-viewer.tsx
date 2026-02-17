@@ -82,7 +82,7 @@ export function WebhookLogViewer() {
                   </Button>
                 </div>
                 {expanded === log.id && (
-                  <pre className="mt-2 text-xs bg-gray-50 rounded p-3 overflow-auto max-h-64">
+                  <pre className="mt-2 text-xs bg-[#F8F9FA] rounded p-3 overflow-auto max-h-64">
                     {JSON.stringify(log.payload, null, 2)}
                   </pre>
                 )}

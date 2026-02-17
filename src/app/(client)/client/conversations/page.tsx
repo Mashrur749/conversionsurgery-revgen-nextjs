@@ -42,9 +42,9 @@ export default async function ConversationsPage() {
     .limit(50);
 
   const modeColors: Record<string, string> = {
-    ai: 'bg-blue-100 text-blue-800',
-    human: 'bg-green-100 text-green-800',
-    paused: 'bg-gray-100 text-gray-800',
+    ai: 'bg-sage-light text-forest',
+    human: 'bg-[#E8F5E9] text-[#3D7A50]',
+    paused: 'bg-muted text-foreground',
   };
 
   return (
@@ -60,7 +60,7 @@ export default async function ConversationsPage() {
       <div className="space-y-2">
         {allLeads.map((lead) => (
           <Link key={lead.id} href={`/client/conversations/${lead.id}`}>
-            <Card className={`hover:bg-gray-50 transition-colors ${
+            <Card className={`hover:bg-[#F8F9FA] transition-colors ${
               lead.actionRequired ? 'border-l-4 border-l-red-500' : ''
             }`}>
               <CardContent className="py-3">

@@ -86,7 +86,7 @@ export function PlanSelector({
             <Label htmlFor="billing-toggle" className={cn(billingCycle === 'yearly' && 'font-bold')}>
               Yearly
             </Label>
-            <Badge variant="secondary" className="bg-green-100 text-green-800">
+            <Badge variant="secondary" className="bg-[#E8F5E9] text-[#3D7A50]">
               Save {yearlySavingsPercent}%
             </Badge>
           </div>
@@ -142,24 +142,24 @@ export function PlanSelector({
               <CardContent className="space-y-4">
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-[#3D7A50]" />
                     {plan.features.maxLeadsPerMonth
                       ? `${plan.features.maxLeadsPerMonth.toLocaleString()} leads/month`
                       : 'Unlimited leads'}
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-[#3D7A50]" />
                     {plan.features.maxTeamMembers
                       ? `${plan.features.maxTeamMembers} team members`
                       : 'Unlimited team members'}
                   </li>
                   <li className="flex items-center gap-2 text-sm">
-                    <Check className="h-4 w-4 text-green-600" />
+                    <Check className="h-4 w-4 text-[#3D7A50]" />
                     {plan.features.maxPhoneNumbers} phone number{plan.features.maxPhoneNumbers > 1 ? 's' : ''}
                   </li>
                   {featureList.map((feature, idx) => (
                     <li key={idx} className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-600" />
+                      <Check className="h-4 w-4 text-[#3D7A50]" />
                       {feature}
                     </li>
                   ))}

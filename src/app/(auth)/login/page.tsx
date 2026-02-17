@@ -65,8 +65,8 @@ function LoginContent() {
       </CardHeader>
       <CardContent className="space-y-4">
         {errorParam && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
-            <p className="text-red-800 text-sm">
+          <div className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
+            <p className="text-sienna text-sm">
               {errorMessages[errorParam] ||
                 "An error occurred. Please try again."}
             </p>
@@ -75,9 +75,9 @@ function LoginContent() {
 
         {submitted ? (
           <div className="text-center space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-md p-4">
-              <p className="text-green-800 font-medium">Check your email!</p>
-              <p className="text-green-700 text-sm mt-2">
+            <div className="bg-[#E8F5E9] border border-[#3D7A50]/30 rounded-md p-4">
+              <p className="text-[#3D7A50] font-medium">Check your email!</p>
+              <p className="text-[#3D7A50] text-sm mt-2">
                 We&apos;ve sent a sign-in link to <strong>{submittedEmail}</strong>
               </p>
             </div>
@@ -108,8 +108,8 @@ function LoginContent() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                <p className="text-red-800 text-sm">{error}</p>
+              <div className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
+                <p className="text-sienna text-sm">{error}</p>
               </div>
             )}
 

@@ -33,7 +33,7 @@ export default async function ClientDiscussionsPage() {
       <h1 className="text-2xl font-bold mb-6">Discussions</h1>
 
       {threads.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">No discussions yet</p>
           <p className="text-sm mt-1">Use the help button to start a conversation.</p>
@@ -44,14 +44,14 @@ export default async function ClientDiscussionsPage() {
             <Link
               key={thread.id}
               href={`/client/discussions/${thread.id}`}
-              className="block border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+              className="block border rounded-lg p-4 hover:bg-[#F8F9FA] transition-colors"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-gray-900 line-clamp-2">
+                  <p className="text-sm text-foreground line-clamp-2">
                     {thread.message}
                   </p>
-                  <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                     <span>
                       {thread.createdAt
                         ? new Date(thread.createdAt).toLocaleDateString()
@@ -60,7 +60,7 @@ export default async function ClientDiscussionsPage() {
                     <span>{thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}</span>
                   </div>
                 </div>
-                <Badge className={thread.status === 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                <Badge className={thread.status === 'open' ? 'bg-[#E8F5E9] text-[#3D7A50]' : 'bg-muted text-foreground'}>
                   {thread.status}
                 </Badge>
               </div>

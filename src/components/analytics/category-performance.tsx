@@ -100,7 +100,7 @@ export function CategoryPerformance({ category }: CategoryPerformanceProps) {
       </CardHeader>
       <CardContent>
         {totalExecutions < 100 && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+          <div className="mb-4 p-3 bg-[#FFF3E0] border border-sienna/30 rounded-lg text-sm text-sienna">
             Low volume ({totalExecutions} executions). Results may not be
             statistically significant.
           </div>
@@ -128,7 +128,7 @@ export function CategoryPerformance({ category }: CategoryPerformanceProps) {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {isBest && (
-                        <Crown className="h-4 w-4 text-yellow-500" />
+                        <Crown className="h-4 w-4 text-sienna" />
                       )}
                       <span className="font-medium">
                         {template.templateName}
@@ -173,14 +173,14 @@ export function CategoryPerformance({ category }: CategoryPerformanceProps) {
         </Table>
 
         {totalExecutions >= 100 && templates.length > 1 && (
-          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center gap-2 text-green-800">
+          <div className="mt-4 p-4 bg-[#E8F5E9] border border-[#3D7A50]/30 rounded-lg">
+            <div className="flex items-center gap-2 text-[#3D7A50]">
               <Crown className="h-5 w-5" />
               <span className="font-medium">
                 &quot;{bestPerformer.templateName}&quot; is performing best
               </span>
             </div>
-            <p className="text-sm text-green-700 mt-1">
+            <p className="text-sm text-[#3D7A50] mt-1">
               {bestPerformer.conversionRate.toFixed(1)}% conversion rate vs
               category average of{' '}
               {(
@@ -211,14 +211,14 @@ function MetricCell({
   return (
     <div className="flex items-center justify-end gap-1">
       <span
-        className={isBad ? 'text-red-600' : isGood ? 'text-green-600' : ''}
+        className={isBad ? 'text-destructive' : isGood ? 'text-[#3D7A50]' : ''}
       >
         {value.toFixed(1)}%
       </span>
       {isGood && !inverse && (
-        <TrendingUp className="h-3 w-3 text-green-500" />
+        <TrendingUp className="h-3 w-3 text-[#3D7A50]" />
       )}
-      {isBad && <TrendingDown className="h-3 w-3 text-red-500" />}
+      {isBad && <TrendingDown className="h-3 w-3 text-destructive" />}
     </div>
   );
 }

@@ -79,7 +79,7 @@ export function HelpButton() {
 
       {status === 'sent' ? (
         <div className="flex flex-col items-center gap-2 p-6">
-          <Check className="h-8 w-8 text-green-500" />
+          <Check className="h-8 w-8 text-[#3D7A50]" />
           <p className="text-sm text-muted-foreground">Message sent!</p>
         </div>
       ) : (

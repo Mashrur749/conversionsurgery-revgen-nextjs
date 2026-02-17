@@ -107,7 +107,7 @@ export function SystemSettingsManager({ settings: initialSettings }: Props) {
       </div>
 
       {showAdd && (
-        <Card className="border-blue-200">
+        <Card className="border-forest-light/30">
           <CardContent className="pt-4 space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -144,7 +144,7 @@ export function SystemSettingsManager({ settings: initialSettings }: Props) {
           <CardContent className="p-0">
             <div className="divide-y">
               {settings.map((setting) => (
-                <div key={setting.key} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                <div key={setting.key} className="px-4 py-3 hover:bg-[#F8F9FA] transition-colors">
                   {editingKey === setting.key ? (
                     <div className="space-y-2">
                       <p className="font-mono text-sm font-medium">{setting.key}</p>
@@ -183,7 +183,7 @@ export function SystemSettingsManager({ settings: initialSettings }: Props) {
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(setting)}>
                           <Pencil className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => setDeleteKey(setting.key)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteKey(setting.key)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>

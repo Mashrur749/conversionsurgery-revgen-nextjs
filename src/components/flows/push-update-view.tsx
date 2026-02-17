@@ -115,19 +115,19 @@ export function PushUpdateView({ template, usage }: PushUpdateViewProps) {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-600">{inherit.length}</div>
+            <div className="text-2xl font-bold text-[#3D7A50]">{inherit.length}</div>
             <p className="text-sm text-muted-foreground">Will update (inherit)</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-600">{override.length}</div>
+            <div className="text-2xl font-bold text-sienna">{override.length}</div>
             <p className="text-sm text-muted-foreground">Partial update (override)</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-gray-400">{detached.length}</div>
+            <div className="text-2xl font-bold text-muted-foreground">{detached.length}</div>
             <p className="text-sm text-muted-foreground">Won&apos;t update (detached)</p>
           </CardContent>
         </Card>
@@ -156,9 +156,9 @@ export function PushUpdateView({ template, usage }: PushUpdateViewProps) {
                   >
                     <div className="flex items-center gap-3">
                       {willUpdate ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <CheckCircle className="h-5 w-5 text-[#3D7A50]" />
                       ) : (
-                        <XCircle className="h-5 w-5 text-gray-400" />
+                        <XCircle className="h-5 w-5 text-muted-foreground" />
                       )}
                       <div>
                         <p className="font-medium">{u.clientName}</p>
@@ -201,10 +201,10 @@ export function PushUpdateView({ template, usage }: PushUpdateViewProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p className="text-green-600">
+              <p className="text-[#3D7A50]">
                 &#10003; {result.affected} flows updated
               </p>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 &#10007; {result.skipped} flows skipped
               </p>
             </div>

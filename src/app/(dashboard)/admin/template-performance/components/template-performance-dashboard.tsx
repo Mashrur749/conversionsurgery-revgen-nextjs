@@ -69,7 +69,7 @@ export function TemplatePerformanceDashboard() {
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium text-foreground hover:bg-[#F8F9FA]"
           >
             <option value="last_7_days">Last 7 days</option>
             <option value="last_30_days">Last 30 days</option>
@@ -83,10 +83,10 @@ export function TemplatePerformanceDashboard() {
       </div>
 
       {error && (
-        <Card className="border-red-200 bg-red-50 p-4">
+        <Card className="border-destructive/30 bg-[#FDEAE4] p-4">
           <div className="flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <p className="text-sm text-red-700">{error}</p>
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <p className="text-sm text-sienna">{error}</p>
           </div>
         </Card>
       )}
@@ -94,15 +94,15 @@ export function TemplatePerformanceDashboard() {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="h-48 animate-pulse bg-gray-100" />
+            <Card key={i} className="h-48 animate-pulse bg-muted" />
           ))}
         </div>
       ) : templateTypes.length === 0 ? (
         <Card className="p-12 text-center">
           <div className="space-y-2">
-            <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="text-lg font-medium text-gray-900">No template variants yet</p>
-            <p className="text-sm text-gray-600">
+            <TrendingUp className="mx-auto h-12 w-12 text-muted-foreground" />
+            <p className="text-lg font-medium text-foreground">No template variants yet</p>
+            <p className="text-sm text-muted-foreground">
               Create your first template variant to start tracking performance
             </p>
             <Button onClick={() => setShowCreateModal(true)} className="mt-4">
@@ -115,7 +115,7 @@ export function TemplatePerformanceDashboard() {
           {templateTypes.map((templateType) => (
             <div key={templateType} className="space-y-4">
               <div className="flex items-center gap-3">
-                <h2 className="text-xl font-semibold text-gray-900 capitalize">
+                <h2 className="text-xl font-semibold text-foreground capitalize">
                   {templateType.replace(/_/g, ' ')} Templates
                 </h2>
                 <Badge variant="secondary">{groupedByType[templateType].length}</Badge>

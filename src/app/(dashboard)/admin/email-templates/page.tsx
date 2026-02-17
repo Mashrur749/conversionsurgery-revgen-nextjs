@@ -108,7 +108,7 @@ export default function EmailTemplatesPage() {
           const q = search.toLowerCase();
           return t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q) || t.subject.toLowerCase().includes(q);
         }).map((t) => (
-          <Card key={t.id} className="hover:bg-gray-50 transition-colors">
+          <Card key={t.id} className="hover:bg-[#F8F9FA] transition-colors">
             <CardContent className="py-3 flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">

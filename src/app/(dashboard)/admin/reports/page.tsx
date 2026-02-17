@@ -42,7 +42,7 @@ export default async function ReportsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Reports</h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Generate and manage client reports
           </p>
         </div>
@@ -54,17 +54,17 @@ export default async function ReportsPage() {
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg border p-4">
-          <p className="text-gray-600 text-sm font-medium">Total Reports</p>
+          <p className="text-muted-foreground text-sm font-medium">Total Reports</p>
           <p className="text-3xl font-bold mt-2">{totalReports}</p>
           <p className="text-xs text-muted-foreground mt-1">All time</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
-          <p className="text-gray-600 text-sm font-medium">Bi-Weekly</p>
+          <p className="text-muted-foreground text-sm font-medium">Bi-Weekly</p>
           <p className="text-3xl font-bold mt-2">{biWeeklyCount}</p>
           <p className="text-xs text-muted-foreground mt-1">Sent every 2 weeks</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
-          <p className="text-gray-600 text-sm font-medium">Monthly</p>
+          <p className="text-muted-foreground text-sm font-medium">Monthly</p>
           <p className="text-3xl font-bold mt-2">{monthlyCount}</p>
           <p className="text-xs text-muted-foreground mt-1">Sent every month</p>
         </div>
@@ -74,7 +74,7 @@ export default async function ReportsPage() {
       <div className="bg-white rounded-lg border overflow-hidden">
         {allReports.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-gray-600">No reports generated yet.</p>
+            <p className="text-muted-foreground">No reports generated yet.</p>
             <Link href="/admin/reports/new" className="mt-4 inline-block">
               <Button>Generate Your First Report</Button>
             </Link>
@@ -82,24 +82,24 @@ export default async function ReportsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-[#F8F9FA] border-b">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Title
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Client
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Period
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Metrics
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
                     Action
                   </th>
                 </tr>
@@ -111,15 +111,15 @@ export default async function ReportsPage() {
                   const roiSummary = (report.roiSummary as ReportListRoiSummary) || {};
 
                   return (
-                    <tr key={report.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    <tr key={report.id} className="hover:bg-[#F8F9FA]">
+                      <td className="px-6 py-4 text-sm font-medium text-foreground">
                         {report.title}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {client?.businessName || 'Unknown'}
                       </td>
                       <td className="px-6 py-4 text-sm">
-                        <span className="px-2 py-1 rounded-md bg-blue-100 text-blue-800 text-xs font-medium">
+                        <span className="px-2 py-1 rounded-md bg-sage-light text-forest text-xs font-medium">
                           {report.reportType === 'bi-weekly'
                             ? 'Bi-Weekly'
                             : report.reportType === 'monthly'
@@ -127,10 +127,10 @@ export default async function ReportsPage() {
                               : 'Custom'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         {report.startDate} to {report.endDate}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
                         <div className="text-xs">
                           <div>
                             {metrics.messagesSent || 0} messages

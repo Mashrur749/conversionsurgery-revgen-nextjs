@@ -261,7 +261,7 @@ export function PlanList({ plans: initialPlans }: PlanListProps) {
                   <p className="text-2xl font-bold mt-1">{formatCents(plan.priceMonthly)}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
                 </div>
                 <div className="flex gap-1">
-                  {plan.isPopular && <Badge className="bg-blue-100 text-blue-800">Popular</Badge>}
+                  {plan.isPopular && <Badge className="bg-sage-light text-forest">Popular</Badge>}
                   {!plan.isActive && <Badge variant="secondary">Inactive</Badge>}
                 </div>
               </div>

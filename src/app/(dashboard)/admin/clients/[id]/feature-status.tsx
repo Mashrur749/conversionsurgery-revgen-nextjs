@@ -78,14 +78,14 @@ export function FeatureStatusList({ client }: { client: FeatureFlags }) {
               className={cn(
                 'p-3 rounded-lg border flex items-center gap-3',
                 feature.enabled
-                  ? 'bg-green-50 border-green-200'
-                  : 'bg-gray-50 border-gray-200'
+                  ? 'bg-[#E8F5E9] border-[#3D7A50]/30'
+                  : 'bg-[#F8F9FA] border-border'
               )}
             >
               <feature.icon
                 className={cn(
                   'h-5 w-5 shrink-0',
-                  feature.enabled ? 'text-green-600' : 'text-gray-400'
+                  feature.enabled ? 'text-[#3D7A50]' : 'text-muted-foreground'
                 )}
               />
               <div className="min-w-0">

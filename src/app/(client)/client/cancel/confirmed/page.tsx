@@ -13,8 +13,8 @@ export default function CancellationConfirmedPage() {
           <p className="text-muted-foreground">
             Your subscription has been cancelled.
           </p>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-sm text-yellow-800">
+          <div className="bg-[#FFF3E0] border border-sienna/30 rounded-lg p-4">
+            <p className="text-sm text-sienna">
               <strong>7-day grace period:</strong> Your account remains active for 7 more days.
               You can reactivate anytime before then.
             </p>

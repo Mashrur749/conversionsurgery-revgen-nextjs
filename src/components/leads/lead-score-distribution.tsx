@@ -47,7 +47,7 @@ export function LeadScoreDistribution({
             <div className="flex h-8 rounded-full overflow-hidden mb-4">
               {hot && hot.count > 0 && (
                 <div
-                  className="bg-red-500 flex items-center justify-center text-white text-xs font-medium"
+                  className="bg-destructive flex items-center justify-center text-white text-xs font-medium"
                   style={{ width: `${(hot.count / total) * 100}%` }}
                 >
                   {hot.count}
@@ -55,7 +55,7 @@ export function LeadScoreDistribution({
               )}
               {warm && warm.count > 0 && (
                 <div
-                  className="bg-yellow-500 flex items-center justify-center text-white text-xs font-medium"
+                  className="bg-sienna flex items-center justify-center text-white text-xs font-medium"
                   style={{ width: `${(warm.count / total) * 100}%` }}
                 >
                   {warm.count}
@@ -63,7 +63,7 @@ export function LeadScoreDistribution({
               )}
               {cold && cold.count > 0 && (
                 <div
-                  className="bg-blue-500 flex items-center justify-center text-white text-xs font-medium"
+                  className="bg-forest flex items-center justify-center text-white text-xs font-medium"
                   style={{ width: `${(cold.count / total) * 100}%` }}
                 >
                   {cold.count}
@@ -79,15 +79,15 @@ export function LeadScoreDistribution({
           {/* Legend */}
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <Flame className="h-4 w-4 text-red-500" />
+              <Flame className="h-4 w-4 text-destructive" />
               <span>Hot ({hot?.count || 0})</span>
             </div>
             <div className="flex items-center gap-2">
-              <Thermometer className="h-4 w-4 text-yellow-500" />
+              <Thermometer className="h-4 w-4 text-sienna" />
               <span>Warm ({warm?.count || 0})</span>
             </div>
             <div className="flex items-center gap-2">
-              <Snowflake className="h-4 w-4 text-blue-500" />
+              <Snowflake className="h-4 w-4 text-forest-light" />
               <span>Cold ({cold?.count || 0})</span>
             </div>
           </div>
@@ -99,7 +99,7 @@ export function LeadScoreDistribution({
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Flame className="h-5 w-5 text-red-500" />
+              <Flame className="h-5 w-5 text-destructive" />
               Hot Leads - Priority Follow-up
             </CardTitle>
           </CardHeader>
@@ -108,7 +108,7 @@ export function LeadScoreDistribution({
               {hotLeads.map((lead) => (
                 <div
                   key={lead.id}
-                  className="flex items-center justify-between p-2 rounded bg-red-50 dark:bg-red-900/20"
+                  className="flex items-center justify-between p-2 rounded bg-[#FDEAE4] dark:bg-red-900/20"
                 >
                   <div>
                     <p className="font-medium">{lead.name || lead.phone}</p>
@@ -116,7 +116,7 @@ export function LeadScoreDistribution({
                       <p className="text-sm text-muted-foreground">{lead.phone}</p>
                     )}
                   </div>
-                  <div className="text-lg font-bold text-red-600">
+                  <div className="text-lg font-bold text-destructive">
                     {lead.score}
                   </div>
                 </div>

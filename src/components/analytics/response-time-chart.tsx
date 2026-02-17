@@ -56,11 +56,11 @@ export function ResponseTimeChart({
   );
 
   const bucketColors: Record<string, string> = {
-    'Under 1 min': 'bg-green-500',
-    '1-5 min': 'bg-green-400',
-    '5-15 min': 'bg-yellow-400',
-    '15-60 min': 'bg-orange-400',
-    'Over 1 hour': 'bg-red-400',
+    'Under 1 min': 'bg-[#3D7A50]',
+    '1-5 min': 'bg-[#3D7A50]',
+    '5-15 min': 'bg-terracotta',
+    '15-60 min': 'bg-terracotta',
+    'Over 1 hour': 'bg-destructive',
   };
 
   return (

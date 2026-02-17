@@ -153,7 +153,7 @@ export function LeadsTable() {
       </div>
 
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+        <div className="flex items-center gap-3 p-3 bg-sage-light rounded-lg">
           <span className="text-sm font-medium">{selected.size} selected</span>
           <Select onValueChange={setBulkStatus}>
             <SelectTrigger className="w-[180px] h-8">
@@ -218,7 +218,7 @@ export function LeadsTable() {
                 {leads.map((lead) => (
                   <div
                     key={lead.id}
-                    className="grid grid-cols-1 md:grid-cols-[auto_1fr_120px_100px_100px_120px] gap-2 md:gap-3 px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer items-center"
+                    className="grid grid-cols-1 md:grid-cols-[auto_1fr_120px_100px_100px_120px] gap-2 md:gap-3 px-4 py-3 hover:bg-[#F8F9FA] transition-colors cursor-pointer items-center"
                     onClick={() => router.push(`/leads/${lead.id}`)}
                   >
                     <div className="hidden md:flex items-center" onClick={(e) => e.stopPropagation()}>
@@ -229,7 +229,7 @@ export function LeadsTable() {
                     </div>
                     <div className="flex items-center gap-3 min-w-0">
                       {lead.actionRequired && (
-                        <span className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
+                        <span className="w-2 h-2 bg-destructive rounded-full shrink-0" />
                       )}
                       <div className="min-w-0">
                         <p className="font-medium truncate">

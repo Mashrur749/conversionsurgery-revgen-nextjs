@@ -47,20 +47,20 @@ export function CallHistory({ clientId }: CallHistoryProps) {
   };
 
   const intentColors: Record<string, string> = {
-    quote: 'bg-green-100 text-green-800',
-    schedule: 'bg-blue-100 text-blue-800',
-    question: 'bg-purple-100 text-purple-800',
-    complaint: 'bg-red-100 text-red-800',
-    transfer: 'bg-orange-100 text-orange-800',
-    other: 'bg-gray-100 text-gray-800',
+    quote: 'bg-[#E8F5E9] text-[#3D7A50]',
+    schedule: 'bg-sage-light text-forest',
+    question: 'bg-moss-light text-olive',
+    complaint: 'bg-[#FDEAE4] text-sienna',
+    transfer: 'bg-[#FFF3E0] text-terracotta-dark',
+    other: 'bg-muted text-foreground',
   };
 
   const outcomeColors: Record<string, string> = {
-    qualified: 'bg-green-100 text-green-800',
-    scheduled: 'bg-blue-100 text-blue-800',
-    transferred: 'bg-orange-100 text-orange-800',
-    voicemail: 'bg-yellow-100 text-yellow-800',
-    dropped: 'bg-red-100 text-red-800',
+    qualified: 'bg-[#E8F5E9] text-[#3D7A50]',
+    scheduled: 'bg-sage-light text-forest',
+    transferred: 'bg-[#FFF3E0] text-terracotta-dark',
+    voicemail: 'bg-[#FFF3E0] text-sienna',
+    dropped: 'bg-[#FDEAE4] text-sienna',
   };
 
   return (
@@ -147,7 +147,7 @@ export function CallHistory({ clientId }: CallHistoryProps) {
                 </div>
 
                 {expandedTranscript === call.id && call.transcript && (
-                  <div className="mt-2 p-3 bg-gray-50 rounded text-sm whitespace-pre-wrap">
+                  <div className="mt-2 p-3 bg-[#F8F9FA] rounded text-sm whitespace-pre-wrap">
                     {call.transcript}
                   </div>
                 )}

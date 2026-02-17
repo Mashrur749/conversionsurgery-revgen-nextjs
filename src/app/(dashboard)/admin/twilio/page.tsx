@@ -96,7 +96,7 @@ export default async function TwilioAdminPage() {
               return (
                 <div
                   key={num.sid}
-                  className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-4 hover:bg-[#F8F9FA] transition-colors"
                 >
                   <div>
                     <p className="font-mono font-medium">
@@ -107,7 +107,7 @@ export default async function TwilioAdminPage() {
                     </p>
                   </div>
                   {assignedTo ? (
-                    <span className="text-sm text-green-600">
+                    <span className="text-sm text-[#3D7A50]">
                       → {assignedTo.businessName}
                     </span>
                   ) : (

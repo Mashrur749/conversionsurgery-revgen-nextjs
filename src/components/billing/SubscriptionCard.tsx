@@ -50,12 +50,12 @@ export function SubscriptionCard({
   const [showPauseDialog, setShowPauseDialog] = useState(false);
 
   const statusConfig = {
-    trialing: { label: 'Trial', color: 'bg-blue-100 text-blue-800', icon: Calendar },
-    active: { label: 'Active', color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    past_due: { label: 'Past Due', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
-    canceled: { label: 'Canceled', color: 'bg-gray-100 text-gray-800', icon: X },
-    unpaid: { label: 'Unpaid', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
-    paused: { label: 'Paused', color: 'bg-yellow-100 text-yellow-800', icon: Pause },
+    trialing: { label: 'Trial', color: 'bg-sage-light text-forest', icon: Calendar },
+    active: { label: 'Active', color: 'bg-[#E8F5E9] text-[#3D7A50]', icon: CheckCircle },
+    past_due: { label: 'Past Due', color: 'bg-[#FDEAE4] text-sienna', icon: AlertTriangle },
+    canceled: { label: 'Canceled', color: 'bg-muted text-foreground', icon: X },
+    unpaid: { label: 'Unpaid', color: 'bg-[#FDEAE4] text-sienna', icon: AlertTriangle },
+    paused: { label: 'Paused', color: 'bg-[#FFF3E0] text-sienna', icon: Pause },
   };
 
   const status = statusConfig[subscription.status];
@@ -88,7 +88,7 @@ export function SubscriptionCard({
               <CardDescription>
                 ${(effectivePrice / 100).toFixed(2)}/month
                 {subscription.discountPercent && (
-                  <span className="ml-2 text-green-600">
+                  <span className="ml-2 text-[#3D7A50]">
                     ({subscription.discountPercent}% discount applied)
                   </span>
                 )}
@@ -103,8 +103,8 @@ export function SubscriptionCard({
         <CardContent className="space-y-6">
           {/* Trial Banner */}
           {subscription.status === 'trialing' && trialDaysRemaining !== null && (
-            <div className="rounded-lg bg-blue-50 p-4">
-              <p className="text-sm text-blue-800">
+            <div className="rounded-lg bg-sage-light p-4">
+              <p className="text-sm text-forest">
                 <strong>{trialDaysRemaining} days</strong> remaining in your trial.
                 Your card will be charged on {format(subscription.trialEnd!, 'MMM d, yyyy')}.
               </p>
@@ -113,8 +113,8 @@ export function SubscriptionCard({
 
           {/* Past Due Warning */}
           {subscription.status === 'past_due' && (
-            <div className="rounded-lg bg-red-50 p-4">
-              <p className="text-sm text-red-800">
+            <div className="rounded-lg bg-[#FDEAE4] p-4">
+              <p className="text-sm text-sienna">
                 <AlertTriangle className="mr-2 inline h-4 w-4" />
                 Your payment is past due. Please update your payment method to avoid service interruption.
               </p>
@@ -123,8 +123,8 @@ export function SubscriptionCard({
 
           {/* Cancellation Pending */}
           {subscription.cancelAtPeriodEnd && (
-            <div className="rounded-lg bg-yellow-50 p-4">
-              <p className="text-sm text-yellow-800">
+            <div className="rounded-lg bg-[#FFF3E0] p-4">
+              <p className="text-sm text-sienna">
                 Your subscription will cancel on {format(subscription.currentPeriodEnd, 'MMM d, yyyy')}.
                 You can still use all features until then.
               </p>
@@ -153,7 +153,7 @@ export function SubscriptionCard({
               </div>
               <Progress value={leadsUsagePercent} className="h-2" />
               {leadsUsagePercent >= 80 && (
-                <p className="mt-1 text-xs text-amber-600">
+                <p className="mt-1 text-xs text-olive">
                   Approaching lead limit. Consider upgrading for more capacity.
                 </p>
               )}
@@ -179,7 +179,7 @@ export function SubscriptionCard({
             {!subscription.cancelAtPeriodEnd && subscription.status !== 'canceled' && (
               <Button
                 variant="ghost"
-                className="text-red-600 hover:text-red-700"
+                className="text-destructive hover:text-sienna"
                 onClick={() => setShowCancelDialog(true)}
               >
                 Cancel Subscription

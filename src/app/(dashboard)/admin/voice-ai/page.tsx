@@ -48,7 +48,7 @@ export default async function VoiceAIPage() {
                 <span className="flex items-center gap-3">
                   {client.businessName}
                   {client.voiceEnabled && (
-                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-green-100 text-green-800">Enabled</span>
+                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-[#E8F5E9] text-[#3D7A50]">Enabled</span>
                   )}
                 </span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />

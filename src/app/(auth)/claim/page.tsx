@@ -61,7 +61,7 @@ export default async function ClaimPage({ searchParams }: Props) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-[#F8F9FA] rounded-lg">
           <p className="font-medium">{lead?.name || formatPhoneNumber(lead?.phone || '')}</p>
           <p className="text-sm text-muted-foreground mt-1">
             &ldquo;{escalation.lastLeadMessage}&rdquo;

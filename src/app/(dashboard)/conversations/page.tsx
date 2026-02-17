@@ -63,7 +63,7 @@ export default async function ConversationsPage() {
                 <Link
                   key={conversation.id}
                   href={`/leads/${lead.id}`}
-                  className="flex flex-col sm:flex-row sm:items-start sm:justify-between p-3 md:p-4 hover:bg-gray-50 transition-colors gap-2"
+                  className="flex flex-col sm:flex-row sm:items-start sm:justify-between p-3 md:p-4 hover:bg-[#F8F9FA] transition-colors gap-2"
                 >
                   <div className="space-y-1 min-w-0 flex-1">
                     <p className="font-medium truncate">

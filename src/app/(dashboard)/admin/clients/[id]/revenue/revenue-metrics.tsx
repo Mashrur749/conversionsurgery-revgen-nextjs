@@ -28,20 +28,20 @@ export function RevenueMetrics({ stats, roi }: Props) {
   return (
     <div className="space-y-4">
       {/* ROI Banner */}
-      <Card className="border-2 border-green-500 bg-green-50">
+      <Card className="border-2 border-[#3D7A50] bg-[#E8F5E9]">
         <CardContent className="py-6">
           <div className="grid md:grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-4xl font-bold text-green-700">{roi}%</p>
-              <p className="text-sm text-green-600">Return on Investment</p>
+              <p className="text-4xl font-bold text-[#3D7A50]">{roi}%</p>
+              <p className="text-sm text-[#3D7A50]">Return on Investment</p>
             </div>
             <div>
-              <p className="text-4xl font-bold text-green-700">{formatMoney(stats.totalWonValue)}</p>
-              <p className="text-sm text-green-600">Revenue Attributed</p>
+              <p className="text-4xl font-bold text-[#3D7A50]">{formatMoney(stats.totalWonValue)}</p>
+              <p className="text-sm text-[#3D7A50]">Revenue Attributed</p>
             </div>
             <div>
-              <p className="text-4xl font-bold text-green-700">{formatMoney(stats.totalPaid)}</p>
-              <p className="text-sm text-green-600">Collected</p>
+              <p className="text-4xl font-bold text-[#3D7A50]">{formatMoney(stats.totalPaid)}</p>
+              <p className="text-sm text-[#3D7A50]">Collected</p>
             </div>
           </div>
         </CardContent>
@@ -65,14 +65,14 @@ export function RevenueMetrics({ stats, roi }: Props) {
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-2xl font-bold text-green-600">{stats.totalWon}</p>
+            <p className="text-2xl font-bold text-[#3D7A50]">{stats.totalWon}</p>
             <p className="text-sm text-muted-foreground">Won</p>
             <p className="text-xs text-muted-foreground">{formatMoney(stats.totalWonValue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 text-center">
-            <p className="text-2xl font-bold text-red-600">{stats.totalLost}</p>
+            <p className="text-2xl font-bold text-destructive">{stats.totalLost}</p>
             <p className="text-sm text-muted-foreground">Lost</p>
             <p className="text-xs text-muted-foreground">{stats.totalLeads > 0 ? Math.round((stats.totalLost / stats.totalLeads) * 100) : 0}% of leads</p>
           </CardContent>

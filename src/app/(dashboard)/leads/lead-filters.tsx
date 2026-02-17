@@ -71,7 +71,7 @@ export function LeadFilters({
         {LEAD_TEMPERATURES.map((t) => (
           <Badge
             key={t.value}
-            className={`cursor-pointer ${temperature === t.value ? t.color : 'bg-gray-100 text-gray-500'}`}
+            className={`cursor-pointer ${temperature === t.value ? t.color : 'bg-muted text-muted-foreground'}`}
             onClick={() => onTemperatureChange(temperature === t.value ? '' : t.value)}
           >
             {t.label}

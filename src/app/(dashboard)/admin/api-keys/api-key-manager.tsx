@@ -101,9 +101,9 @@ export function ApiKeyManager() {
       </div>
 
       {newKey && (
-        <Card className="border-green-300 bg-green-50">
+        <Card className="border-[#3D7A50]/30 bg-[#E8F5E9]">
           <CardContent className="py-3">
-            <p className="text-sm font-medium text-green-800 mb-1">
+            <p className="text-sm font-medium text-[#3D7A50] mb-1">
               API key created. Copy it now — it won&apos;t be shown again.
             </p>
             <div className="flex items-center gap-2">

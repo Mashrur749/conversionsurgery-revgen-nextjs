@@ -192,7 +192,7 @@ export default function ClientLoginPage() {
               </div>
             )}
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             <Button
               type="submit"
@@ -234,7 +234,7 @@ export default function ClientLoginPage() {
               className="py-3 text-center text-2xl tracking-[0.5em]"
             />
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
             {loading && code.length === 6 && (
               <p className="text-center text-sm text-muted-foreground">Verifying...</p>

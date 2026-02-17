@@ -201,7 +201,7 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
                       {coupon.maxRedemptions ? ` / ${coupon.maxRedemptions}` : ''}
                     </TableCell>
                     <TableCell>
-                      <Badge className={coupon.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                      <Badge className={coupon.isActive ? 'bg-[#E8F5E9] text-[#3D7A50]' : 'bg-muted text-foreground'}>
                         {coupon.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                       {coupon.validUntil && new Date(coupon.validUntil) < new Date() && (
@@ -223,7 +223,7 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-600"
+                          className="text-destructive"
                           onClick={() => setDeleteId(coupon.id)}
                         >
                           <Trash2 className="h-4 w-4" />

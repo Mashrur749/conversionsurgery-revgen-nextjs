@@ -64,7 +64,7 @@ export function CreateClientForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg">
+        <div className="p-3 text-sm text-destructive bg-[#FDEAE4] rounded-lg">
           {error}
         </div>
       )}

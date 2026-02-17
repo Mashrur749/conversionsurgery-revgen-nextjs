@@ -98,9 +98,9 @@ export function RolloutModal({
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <Card className="w-full max-w-md p-6 text-center">
-          <CheckCircle className="mx-auto h-12 w-12 text-green-600" />
-          <h3 className="mt-4 text-lg font-semibold text-gray-900">Success!</h3>
-          <p className="mt-2 text-gray-600">
+          <CheckCircle className="mx-auto h-12 w-12 text-[#3D7A50]" />
+          <h3 className="mt-4 text-lg font-semibold text-foreground">Success!</h3>
+          <p className="mt-2 text-muted-foreground">
             {selectedClients.size} client{selectedClients.size !== 1 ? 's' : ''} updated
           </p>
         </Card>
@@ -112,30 +112,30 @@ export function RolloutModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <Card className="w-full max-w-2xl p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Roll Out Template Variant</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <h2 className="text-2xl font-bold text-foreground">Roll Out Template Variant</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-6 w-6" />
           </button>
         </div>
 
-        <div className="mb-6 space-y-2 rounded-lg bg-blue-50 p-4">
-          <p className="text-sm font-medium text-blue-900">
+        <div className="mb-6 space-y-2 rounded-lg bg-sage-light p-4">
+          <p className="text-sm font-medium text-forest">
             Assigning <strong>{variantName}</strong> to selected clients
           </p>
-          <p className="text-xs text-blue-700">{clientsAlreadyUsing} client(s) already using this variant</p>
+          <p className="text-xs text-forest">{clientsAlreadyUsing} client(s) already using this variant</p>
         </div>
 
         {error && (
-          <div className="mb-6 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="mb-6 flex items-center gap-3 rounded-lg border border-destructive/30 bg-[#FDEAE4] p-4">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <p className="text-sm text-sienna">{error}</p>
           </div>
         )}
 
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-100" />
+              <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />
             ))}
           </div>
         ) : (
@@ -143,7 +143,7 @@ export function RolloutModal({
             {clients.map((client) => (
               <label
                 key={client.id}
-                className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50"
+                className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 hover:bg-[#F8F9FA]"
               >
                 <input
                   type="checkbox"
@@ -157,11 +157,11 @@ export function RolloutModal({
                     }
                     setSelectedClients(newSelected);
                   }}
-                  className="h-4 w-4 rounded border-gray-300"
+                  className="h-4 w-4 rounded border-border"
                 />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{client.businessName}</p>
-                  <p className="text-xs text-gray-600">{client.ownerEmail}</p>
+                  <p className="text-sm font-medium text-foreground">{client.businessName}</p>
+                  <p className="text-xs text-muted-foreground">{client.ownerEmail}</p>
                 </div>
                 <Badge variant={client.status === 'active' ? 'default' : 'outline'}>
                   {client.status}
@@ -172,7 +172,7 @@ export function RolloutModal({
         )}
 
         <div className="flex items-center justify-between pt-6">
-          <p className="text-sm font-medium text-gray-700">
+          <p className="text-sm font-medium text-foreground">
             {selectedClients.size} client{selectedClients.size !== 1 ? 's' : ''} selected
           </p>
           <div className="flex gap-3">
