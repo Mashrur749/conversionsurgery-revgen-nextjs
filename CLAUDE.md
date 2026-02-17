@@ -130,33 +130,11 @@ Two-tier verification — use the fast check often, full build at milestones:
   - `&` → `&amp;`
   - `<` → `&lt;`, `>` → `&gt;`
 
-## Parallel Worktree Workflow
+## Worktree Workflow
 
-For large features (3+ files or 2+ concerns), use the worktree workflow via slash commands:
+For large features (3+ files), use slash commands: `/plan`, `/scaffold`, `/implement`, `/resume`, `/review`, `/merge`, `/status`, `/cleanup`. Script: `.claude/scripts/worktree-manager.sh`. Each worktree tracks progress in `.claude/progress.md`.
 
-| Command                    | What                                          |
-| -------------------------- | --------------------------------------------- |
-| `/plan <feature>`          | Decompose into independently mergeable slices |
-| `/scaffold <feature>`      | Create git worktrees for each slice           |
-| `/implement <feature> <N>` | Build a slice within scope boundaries         |
-| `/resume <feature> <N>`    | Pick up where a previous session left off     |
-| `/review <feature> <N>`    | Code review before merge                      |
-| `/merge <feature> <N>`     | Merge to main + rebase remaining worktrees    |
-| `/status [feature]`        | Progress overview with cross-worktree notes   |
-| `/cleanup <feature>`       | Remove worktrees when done                    |
-
-Worktree manager script: `.claude/scripts/worktree-manager.sh`
-
-### Progress Tracking
-
-Each worktree maintains `.claude/progress.md` — a task-level tracker that persists across sessions. When Claude Code hits a usage limit or a session ends, progress is saved automatically. The next session runs `/resume` to pick up exactly where things stopped. The `/status` command reads progress from all worktrees and surfaces cross-worktree notes.
-
-### Integration with Existing Tools
-
-- **Schema slices:** Use the `create-migration` skill at `.claude/skills/create-migration/SKILL.md` for any Drizzle schema changes. Read it before generating migrations.
-- **Database slices:** Use the `neon-postgres` skill at `.claude/skills/neon-postgres` for Neon-specific patterns and queries.
-- **Review phase:** After running `/review`, also invoke the `security-reviewer` agent at `.claude/agents/security-reviewer.md` on any slice that touches API routes, auth, or user input.
-
-### Terminal Setup for Parallel Worktrees
-
-Use GhostTTY (`ghostty`) for running multiple Claude Code instances across worktrees. `Cmd+D` splits horizontal, `Cmd+Shift+D` splits vertical, `Cmd+Arrow` jumps between panes. Lighter than iTerm for high pane counts.
+Skills to use during worktree work:
+- Schema changes: read `.claude/skills/create-migration/SKILL.md` first
+- Neon queries: read `.claude/skills/neon-postgres/` for patterns
+- Security review: run on any slice touching API routes, auth, or user input
