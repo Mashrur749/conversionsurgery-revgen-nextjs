@@ -87,14 +87,14 @@ export default async function DashboardLayout({
 
   return (
     <AdminProvider>
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b sticky top-0 z-10">
+      <div className="min-h-screen bg-[#F8F9FA]">
+        <header className="bg-forest text-white sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center h-14 lg:h-16">
               <div className="flex items-center gap-2 lg:gap-8">
                 <MobileNav navItems={navItems} adminGroups={isAdmin ? adminNavItems : undefined} isAdmin={isAdmin} />
-                <Link href="/dashboard" className="font-semibold text-base lg:text-lg">
-                  Revenue Recovery
+                <Link href="/dashboard" className="font-semibold text-base lg:text-lg text-white">
+                  ConversionSurgery
                 </Link>
                 <nav className="hidden lg:flex items-center gap-1">
                   {isAdmin ? (
@@ -112,7 +112,7 @@ export default async function DashboardLayout({
               </div>
               <div className="flex items-center gap-2 lg:gap-4">
                 {!isAdmin && (
-                  <span className="hidden lg:inline text-sm text-gray-600">
+                  <span className="hidden lg:inline text-sm text-white/70">
                     {session.client?.businessName || session.user?.email}
                   </span>
                 )}

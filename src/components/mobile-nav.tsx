@@ -30,14 +30,14 @@ export function MobileNav({ navItems, adminGroups, isAdmin }: MobileNavProps) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden">
+        <Button variant="ghost" size="icon" className="lg:hidden text-white hover:bg-forest-light">
           <Menu className="size-5" />
           <span className="sr-only">Menu</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-72 p-0">
-        <SheetHeader className="px-4 py-4 border-b">
-          <SheetTitle className="text-left">Revenue Recovery</SheetTitle>
+        <SheetHeader className="px-4 py-4 bg-forest text-white border-b border-forest-light">
+          <SheetTitle className="text-left text-white">ConversionSurgery</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col overflow-y-auto h-[calc(100%-65px)]">
           <div className="p-2">
@@ -49,8 +49,8 @@ export function MobileNav({ navItems, adminGroups, isAdmin }: MobileNavProps) {
                 className={cn(
                   'block px-3 py-2.5 text-sm rounded-md transition-colors',
                   pathname === item.href
-                    ? 'bg-gray-100 text-gray-900 font-medium'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-accent text-foreground font-medium'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                 )}
               >
                 {item.label}
@@ -63,7 +63,7 @@ export function MobileNav({ navItems, adminGroups, isAdmin }: MobileNavProps) {
               <div className="border-t mx-4 my-2" />
               {adminGroups.map((group) => (
                 <div key={group.group} className="p-2">
-                  <p className="px-3 py-1 text-xs font-semibold text-amber-700 uppercase tracking-wider">
+                  <p className="px-3 py-1 text-xs font-semibold text-olive uppercase tracking-wider">
                     {group.group}
                   </p>
                   {group.items.map((item) => (
@@ -74,8 +74,8 @@ export function MobileNav({ navItems, adminGroups, isAdmin }: MobileNavProps) {
                       className={cn(
                         'block px-3 py-2.5 text-sm rounded-md transition-colors',
                         pathname === item.href
-                          ? 'bg-amber-50 text-amber-900 font-medium'
-                          : 'text-amber-700 hover:text-amber-900 hover:bg-amber-50'
+                          ? 'bg-accent text-forest font-medium'
+                          : 'text-forest-light hover:text-forest hover:bg-accent'
                       )}
                     >
                       {item.label}

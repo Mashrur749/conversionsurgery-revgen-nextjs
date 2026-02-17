@@ -15,7 +15,7 @@ export default async function ClientLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F8F9FA]">
       <ClientNav businessName={session.client.businessName} />
       <main className="max-w-3xl mx-auto px-4 py-6">
         {children}

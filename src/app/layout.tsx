@@ -1,21 +1,21 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { Toaster } from 'sonner';
 
-const geistSans = Geist({
-	variable: '--font-geist-sans',
+const inter = Inter({
+	variable: '--font-inter',
 	subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-	variable: '--font-geist-mono',
+const jetbrainsMono = JetBrains_Mono({
+	variable: '--font-jetbrains-mono',
 	subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-	title: 'Revenue Recovery',
+	title: 'ConversionSurgery',
 	description: 'SMS automation for contractors',
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({
 			<head>
 				<link rel="icon" href="/favicon.svg" type="image/svg+xml"></link>
 			</head>
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+			<body className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}>
 				<Providers>{children}</Providers>
 				<Toaster richColors />
 			</body>

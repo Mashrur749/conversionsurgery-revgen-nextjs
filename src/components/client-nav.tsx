@@ -40,21 +40,21 @@ export function ClientNav({ businessName }: ClientNavProps) {
   };
 
   return (
-    <header className="bg-white border-b sticky top-0 z-10">
+    <header className="bg-forest text-white sticky top-0 z-10">
       <div className="max-w-3xl mx-auto px-4">
         <div className="flex justify-between items-center h-14">
           <div className="flex items-center gap-3">
             {/* Mobile hamburger */}
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
+                <Button variant="ghost" size="icon" className="lg:hidden text-white hover:bg-forest-light">
                   <Menu className="size-5" />
                   <span className="sr-only">Menu</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-0">
-                <SheetHeader className="px-4 py-4 border-b">
-                  <SheetTitle className="text-left">{businessName}</SheetTitle>
+                <SheetHeader className="px-4 py-4 bg-forest text-white border-b border-forest-light">
+                  <SheetTitle className="text-left text-white">{businessName}</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col overflow-y-auto h-[calc(100%-65px)] p-2">
                   {navItems.map((item) => (
@@ -65,8 +65,8 @@ export function ClientNav({ businessName }: ClientNavProps) {
                       className={cn(
                         'block px-3 py-2.5 text-sm rounded-md transition-colors',
                         isActive(item.href)
-                          ? 'bg-gray-100 text-gray-900 font-medium'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          ? 'bg-accent text-foreground font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                       )}
                     >
                       {item.label}
@@ -76,7 +76,7 @@ export function ClientNav({ businessName }: ClientNavProps) {
               </SheetContent>
             </Sheet>
 
-            <span className="font-semibold text-sm truncate max-w-[200px]">
+            <span className="font-semibold text-sm truncate max-w-[200px] text-white">
               {businessName}
             </span>
           </div>
@@ -90,8 +90,8 @@ export function ClientNav({ businessName }: ClientNavProps) {
                 className={cn(
                   'px-3 py-2 text-sm rounded-md transition-colors',
                   isActive(item.href)
-                    ? 'bg-gray-100 text-gray-900 font-medium'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    ? 'bg-forest-light text-white font-medium'
+                    : 'text-white/70 hover:text-white hover:bg-forest-light'
                 )}
               >
                 {item.label}

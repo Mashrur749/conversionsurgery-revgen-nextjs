@@ -17,26 +17,26 @@ export const LEAD_SOURCES = [
 ] as const;
 
 export const LEAD_TEMPERATURES = [
-  { value: 'hot', label: 'Hot', color: 'bg-red-100 text-red-800' },
-  { value: 'warm', label: 'Warm', color: 'bg-orange-100 text-orange-800' },
-  { value: 'cold', label: 'Cold', color: 'bg-blue-100 text-blue-800' },
+  { value: 'hot', label: 'Hot', color: 'bg-[#FDEAE4] text-sienna' },
+  { value: 'warm', label: 'Warm', color: 'bg-[#FFF3E0] text-terracotta-dark' },
+  { value: 'cold', label: 'Cold', color: 'bg-sage-light text-forest' },
 ] as const;
 
 export const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-blue-100 text-blue-800',
-  contacted: 'bg-yellow-100 text-yellow-800',
-  estimate_sent: 'bg-purple-100 text-purple-800',
-  appointment_scheduled: 'bg-indigo-100 text-indigo-800',
-  action_required: 'bg-red-100 text-red-800',
-  won: 'bg-green-100 text-green-800',
-  lost: 'bg-gray-100 text-gray-800',
-  opted_out: 'bg-gray-100 text-gray-800',
+  new: 'bg-sage-light text-forest',
+  contacted: 'bg-[#FFF3E0] text-sienna',
+  estimate_sent: 'bg-moss-light text-olive',
+  appointment_scheduled: 'bg-[#E8F0E8] text-forest',
+  action_required: 'bg-[#FDEAE4] text-sienna',
+  won: 'bg-[#E8F5E9] text-[#3D7A50]',
+  lost: 'bg-muted text-muted-foreground',
+  opted_out: 'bg-muted text-muted-foreground',
 };
 
 export const TEMPERATURE_COLORS: Record<string, string> = {
-  hot: 'bg-red-100 text-red-800',
-  warm: 'bg-orange-100 text-orange-800',
-  cold: 'bg-blue-100 text-blue-800',
+  hot: 'bg-[#FDEAE4] text-sienna',
+  warm: 'bg-[#FFF3E0] text-terracotta-dark',
+  cold: 'bg-sage-light text-forest',
 };
 
 /** Bulk update targets — statuses that make sense for bulk operations. */

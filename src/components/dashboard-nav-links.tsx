@@ -26,8 +26,8 @@ export function DashboardNavLinks({ items }: { items: NavItem[] }) {
           className={cn(
             'px-3 py-2 text-sm rounded-md transition-colors',
             isActive(item.href)
-              ? 'bg-gray-100 text-gray-900 font-medium'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              ? 'bg-forest-light text-white font-medium'
+              : 'text-white/70 hover:text-white hover:bg-forest-light'
           )}
         >
           {item.label}
