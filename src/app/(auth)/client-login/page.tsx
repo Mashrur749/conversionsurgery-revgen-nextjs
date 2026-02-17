@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type Method = 'phone' | 'email';
@@ -160,27 +161,35 @@ export default function ClientLoginPage() {
         {phase === 'identifier' ? (
           <form onSubmit={handleSendOTP} className="space-y-4">
             {method === 'phone' ? (
-              <Input
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
-                placeholder="Phone number"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className="py-3 text-lg"
-                autoFocus
-              />
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  placeholder="(555) 123-4567"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="py-3 text-lg"
+                  autoFocus
+                />
+              </div>
             ) : (
-              <Input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                placeholder="Email address"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className="py-3 text-lg"
-                autoFocus
-              />
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="py-3 text-lg"
+                  autoFocus
+                />
+              </div>
             )}
 
             {error && <p className="text-sm text-red-500">{error}</p>}

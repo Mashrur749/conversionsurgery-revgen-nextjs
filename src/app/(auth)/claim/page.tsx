@@ -53,7 +53,7 @@ export default async function ClaimPage({ searchParams }: Props) {
     ));
 
   return (
-    <Card className="max-w-md mx-auto mt-20">
+    <Card className="max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Claim This Lead</CardTitle>
         <CardDescription>

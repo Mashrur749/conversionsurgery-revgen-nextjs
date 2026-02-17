@@ -21,14 +21,14 @@ export default async function ClaimErrorPage({ searchParams }: Props) {
   }
 
   return (
-    <Card className="max-w-md mx-auto mt-20 text-center">
+    <Card className="max-w-md mx-auto text-center border-red-200">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="text-red-600">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-muted-foreground">{message}</p>
         <Button asChild variant="outline">
-          <Link href="/dashboard">Go to Dashboard</Link>
+          <Link href="/login">Back to Login</Link>
         </Button>
       </CardContent>
     </Card>

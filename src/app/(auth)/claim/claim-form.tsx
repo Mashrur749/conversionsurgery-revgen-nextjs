@@ -25,12 +25,14 @@ interface Props {
 export function ClaimForm({ token, members, leadId }: Props) {
   const [selectedMember, setSelectedMember] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   async function handleClaim() {
     if (!selectedMember) return;
 
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/claim', {
         method: 'POST',
@@ -43,11 +45,14 @@ export function ClaimForm({ token, members, leadId }: Props) {
       if (data.success) {
         router.push(`/leads/${leadId}?claimed=true`);
       } else {
-        alert(data.error || 'Failed to claim');
         if (data.error === 'Already claimed') {
           router.push(`/claim-error?reason=claimed&by=${encodeURIComponent(data.claimedBy || 'Someone')}`);
+        } else {
+          setError(data.error || 'Failed to claim. Please try again.');
         }
       }
+    } catch {
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -55,6 +60,11 @@ export function ClaimForm({ token, members, leadId }: Props) {
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-3">
+          <p className="text-red-800 text-sm">{error}</p>
+        </div>
+      )}
       <Select value={selectedMember} onValueChange={setSelectedMember}>
         <SelectTrigger>
           <SelectValue placeholder="Select your name..." />

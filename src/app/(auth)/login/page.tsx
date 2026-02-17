@@ -1,6 +1,11 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useSearchParams } from "next/navigation";
 
 function LoginContent() {
@@ -9,6 +14,7 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
 
   const errorParam = searchParams.get("error");
   const errorMessages: Record<string, string> = {
@@ -35,6 +41,7 @@ function LoginContent() {
         throw new Error(data.error || "Failed to send sign-in link");
       }
 
+      setSubmittedEmail(email);
       setSubmitted(true);
       setEmail("");
     } catch (err) {
@@ -49,89 +56,95 @@ function LoginContent() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-8 space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-slate-900">Revenue Recovery</h1>
-        <p className="text-slate-600">
+    <Card>
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl">Revenue Recovery</CardTitle>
+        <p className="text-muted-foreground">
           Enter your email to receive a login link
         </p>
-      </div>
-
-      {errorParam && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-3">
-          <p className="text-red-800 text-sm">
-            {errorMessages[errorParam] ||
-              "An error occurred. Please try again."}
-          </p>
-        </div>
-      )}
-
-      {submitted ? (
-        <div className="text-center space-y-4">
-          <div className="bg-green-50 border border-green-200 rounded-md p-4">
-            <p className="text-green-800 font-medium">Check your email!</p>
-            <p className="text-green-700 text-sm mt-2">
-              We&apos;ve sent a sign-in link to <strong>{email}</strong>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {errorParam && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-red-800 text-sm">
+              {errorMessages[errorParam] ||
+                "An error occurred. Please try again."}
             </p>
           </div>
-          <p className="text-slate-600 text-sm">
-            Click the link in your email to sign in. The link expires in 24
-            hours.
-          </p>
-          <button
-            onClick={() => setSubmitted(false)}
-            className="text-blue-600 hover:text-blue-700 font-medium"
-          >
-            Try another email
-          </button>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-slate-700"
-            >
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isLoading}
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            />
-          </div>
+        )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <p className="text-red-800 text-sm">{error}</p>
+        {submitted ? (
+          <div className="text-center space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <p className="text-green-800 font-medium">Check your email!</p>
+              <p className="text-green-700 text-sm mt-2">
+                We&apos;ve sent a sign-in link to <strong>{submittedEmail}</strong>
+              </p>
             </div>
-          )}
+            <p className="text-muted-foreground text-sm">
+              Click the link in your email to sign in. The link expires in 24
+              hours.
+            </p>
+            <Button
+              variant="link"
+              onClick={() => setSubmitted(false)}
+            >
+              Try another email
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={isLoading || !email}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors"
-          >
-            {isLoading ? "Sending..." : "Send Login Link"}
-          </button>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-red-800 text-sm">{error}</p>
+              </div>
+            )}
 
-          <p className="text-xs text-center text-slate-500">
-            We&apos;ll send you a magic link to sign in securely.
-          </p>
-        </form>
-      )}
-    </div>
+            <Button
+              type="submit"
+              disabled={isLoading || !email}
+              className="w-full"
+            >
+              {isLoading ? "Sending..." : "Send Login Link"}
+            </Button>
+
+            <p className="text-xs text-center text-muted-foreground">
+              We&apos;ll send you a magic link to sign in securely.
+            </p>
+          </form>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <Card>
+        <CardHeader className="text-center space-y-2">
+          <Skeleton className="h-7 w-48 mx-auto" />
+          <Skeleton className="h-4 w-64 mx-auto" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </CardContent>
+      </Card>
+    }>
       <LoginContent />
     </Suspense>
   );
