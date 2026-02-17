@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
           <h2 style="color: #1B2F26;">Sign in to ConversionSurgery</h2>
           <p>Click below to sign in:</p>
           <a href="${verifyUrl}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Sign In</a>
-          <p style="color: #666; font-size: 12px;">Link expires in 24 hours</p>
+          <p style="color: #6b6762; font-size: 12px;">Link expires in 24 hours</p>
         </div>
       `,
     });

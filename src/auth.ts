@@ -152,8 +152,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
                 <h2 style="color: #1B2F26;">Sign in to ConversionSurgery</h2>
                 <p>Click the link below to sign in with your email address:</p>
                 <a href="${url}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Sign In</a>
-                <p style="color: #666; font-size: 12px;">This link expires at ${new Date(expires).toLocaleString()}</p>
-                <p style="color: #999; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+                <p style="color: #6b6762; font-size: 12px;">This link expires at ${new Date(expires).toLocaleString()}</p>
+                <p style="color: #9ca3af; font-size: 12px;">If you didn't request this, please ignore this email.</p>
               </div>
             `,
           });

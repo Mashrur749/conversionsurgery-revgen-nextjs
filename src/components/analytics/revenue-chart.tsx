@@ -64,7 +64,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
           <Line
             type="monotone"
             dataKey="revenue"
-            stroke="#2563eb"
+            stroke="#6B7E54"
             strokeWidth={2}
             name="Revenue"
             dot={false}
@@ -72,7 +72,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
           <Line
             type="monotone"
             dataKey="payments"
-            stroke="#16a34a"
+            stroke="#3D7A50"
             strokeWidth={2}
             name="Payments"
             dot={false}

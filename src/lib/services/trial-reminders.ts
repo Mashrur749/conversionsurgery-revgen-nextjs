@@ -81,12 +81,12 @@ function formatTrialEmail(
     return {
       subject: `${businessName} — Your trial ends today`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #dc2626;">Your trial ends today</h2>
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #C15B2E;">Your trial ends today</h2>
           <p>Hi ${ownerName},</p>
           <p>Your 14-day trial of ConversionSurgery for <strong>${businessName}</strong> ends today.</p>
           <p>To keep your missed call recovery, automated follow-ups, and lead management running, upgrade to a paid plan.</p>
-          <a href="${appUrl}/client/billing" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Upgrade Now</a>
+          <a href="${appUrl}/client/billing" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Upgrade Now</a>
           <p style="color: #9ca3af; margin-top: 24px; font-size: 14px;">If you've already upgraded, you can ignore this email.</p>
         </div>
       `,
@@ -98,12 +98,12 @@ function formatTrialEmail(
     return {
       subject: `${businessName} — ${daysLeft} days left in your trial`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #f59e0b;">${daysLeft} days left in your trial</h2>
+        <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #D4754A;">${daysLeft} days left in your trial</h2>
           <p>Hi ${ownerName},</p>
           <p>Your ConversionSurgery trial for <strong>${businessName}</strong> ends in ${daysLeft} days.</p>
           <p>So far, we've been handling your missed calls, following up with leads, and booking appointments automatically. Don't lose that momentum.</p>
-          <a href="${appUrl}/client/billing" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Plans</a>
+          <a href="${appUrl}/client/billing" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Plans</a>
         </div>
       `,
     };
@@ -113,18 +113,18 @@ function formatTrialEmail(
   return {
     subject: `${businessName} — How's your first week going?`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1a1a1a;">One week in!</h2>
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1B2F26;">One week in!</h2>
         <p>Hi ${ownerName},</p>
         <p>You've been using ConversionSurgery for <strong>${businessName}</strong> for ${dayNumber} days. Here's a quick reminder of what's running for you:</p>
-        <ul style="color: #374151; line-height: 1.8;">
+        <ul style="color: #1B2F26; line-height: 1.8;">
           <li>Missed call recovery — instant text to every missed caller</li>
           <li>AI-powered lead follow-ups</li>
           <li>Automated appointment booking</li>
           <li>Weekly performance reports</li>
         </ul>
         <p>You have <strong>${daysLeft} days</strong> left in your trial.</p>
-        <a href="${appUrl}/client" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Your Dashboard</a>
+        <a href="${appUrl}/client" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Your Dashboard</a>
         <p style="color: #9ca3af; margin-top: 24px; font-size: 14px;">Reply to this email anytime — we're here to help.</p>
       </div>
     `,

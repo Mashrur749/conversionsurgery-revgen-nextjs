@@ -104,11 +104,11 @@ export async function createAndSendEmailOTP(rawEmail: string): Promise<OTPResult
       to: email,
       subject: 'Your login code',
       html: `
-        <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; text-align: center;">
-          <h2 style="color: #1a1a1a;">Your Login Code</h2>
-          <p style="font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #2563eb; margin: 24px 0;">${code}</p>
-          <p style="color: #666;">This code expires in ${OTP_EXPIRY_MINUTES} minutes.</p>
-          <p style="color: #999; font-size: 12px; margin-top: 24px;">If you didn't request this code, you can safely ignore this email.</p>
+        <div style="font-family: 'Inter', sans-serif; max-width: 400px; margin: 0 auto; text-align: center;">
+          <h2 style="color: #1B2F26;">Your Login Code</h2>
+          <p style="font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #1B2F26; margin: 24px 0;">${code}</p>
+          <p style="color: #6b6762;">This code expires in ${OTP_EXPIRY_MINUTES} minutes.</p>
+          <p style="color: #9ca3af; font-size: 12px; margin-top: 24px;">If you didn't request this code, you can safely ignore this email.</p>
         </div>
       `,
     });

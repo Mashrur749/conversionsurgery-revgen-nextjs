@@ -60,13 +60,13 @@ export function newLeadEmail(data: {
   return {
     subject: `New Lead — ${data.leadName || data.leadPhone}`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1a1a1a;">New Lead for ${data.businessName}</h2>
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1B2F26;">New Lead for ${data.businessName}</h2>
         <p><strong>Phone:</strong> ${data.leadPhone}</p>
         ${data.leadName ? `<p><strong>Name:</strong> ${data.leadName}</p>` : ''}
         <p><strong>Source:</strong> ${data.source}</p>
-        <p style="color: #666;">We've sent an instant text response.</p>
-        <a href="${data.dashboardUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View in Dashboard</a>
+        <p style="color: #6b6762;">We've sent an instant text response.</p>
+        <a href="${data.dashboardUrl}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View in Dashboard</a>
       </div>
     `,
   };
@@ -84,15 +84,15 @@ export function actionRequiredEmail(data: {
   return {
     subject: `⚠️ Action Required — ${data.leadName || data.leadPhone}`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">⚠️ Action Required</h2>
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #C15B2E;">⚠️ Action Required</h2>
         <p><strong>${data.leadName || data.leadPhone}</strong> needs your response.</p>
         <p><strong>Reason:</strong> ${data.reason}</p>
-        <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
-          <p style="margin: 0; color: #374151;"><strong>Their message:</strong></p>
-          <p style="margin: 8px 0 0 0; color: #1f2937;">"${data.lastMessage}"</p>
+        <div style="background: #F8F9FA; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          <p style="margin: 0; color: #1B2F26;"><strong>Their message:</strong></p>
+          <p style="margin: 8px 0 0 0; color: #1B2F26;">"${data.lastMessage}"</p>
         </div>
-        <a href="${data.dashboardUrl}" style="display: inline-block; background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Respond Now</a>
+        <a href="${data.dashboardUrl}" style="display: inline-block; background: #C15B2E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Respond Now</a>
       </div>
     `,
   };
@@ -107,17 +107,17 @@ export function onboardingWelcomeEmail(data: {
   return {
     subject: `Welcome to ConversionSurgery — ${data.businessName} is Live!`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1a1a1a;">Welcome, ${data.ownerName}!</h2>
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1B2F26;">Welcome, ${data.ownerName}!</h2>
         <p>Your account for <strong>${data.businessName}</strong> is now active on ConversionSurgery.</p>
         <p>Here's what we're handling for you:</p>
-        <ul style="color: #374151; line-height: 1.8;">
+        <ul style="color: #1B2F26; line-height: 1.8;">
           <li>Missed call recovery — instant text to every caller</li>
           <li>Lead follow-ups — automated sequences that book appointments</li>
           <li>Review requests — grow your Google reviews on autopilot</li>
           <li>Weekly performance digests — know exactly what's working</li>
         </ul>
-        <a href="${data.loginUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Log In to Your Dashboard</a>
+        <a href="${data.loginUrl}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">Log In to Your Dashboard</a>
         <p style="color: #9ca3af; margin-top: 24px; font-size: 14px;">Reply to this email or text us anytime for support.</p>
       </div>
     `,
@@ -145,29 +145,29 @@ export function agencyWeeklyDigestEmail(data: {
   dashboardUrl: string;
 }) {
   const actionSection = data.hasActionItems
-    ? `<div style="background: #fef3c7; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-        <p style="margin: 0; color: #92400e; font-weight: 600;">Action Needed</p>
-        <p style="margin: 8px 0 0 0; color: #78350f;">You have leads without automated follow-up sequences. Reply YES to the SMS we sent to start them.</p>
+    ? `<div style="background: #FFF3E0; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #D4754A;">
+        <p style="margin: 0; color: #C15B2E; font-weight: 600;">Action Needed</p>
+        <p style="margin: 8px 0 0 0; color: #C15B2E;">You have leads without automated follow-up sequences. Reply YES to the SMS we sent to start them.</p>
       </div>`
     : '';
 
   return {
     subject: `${data.businessName} — Weekly Digest (${data.weekStart} - ${data.weekEnd})`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1a1a1a;">Weekly Performance Digest</h2>
-        <p style="color: #666;">${data.weekStart} — ${data.weekEnd} for ${data.businessName}</p>
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1B2F26;">Weekly Performance Digest</h2>
+        <p style="color: #6b6762;">${data.weekStart} — ${data.weekEnd} for ${data.businessName}</p>
 
-        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #374151;">Overview</h3>
+        <div style="background: #F8F9FA; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #1B2F26;">Overview</h3>
           <p style="margin: 8px 0;">Leads captured: <strong>${data.stats.totalLeads}</strong>${data.trend}</p>
           <p style="margin: 8px 0;">Messages sent: <strong>${data.stats.totalMessages}</strong></p>
           <p style="margin: 8px 0;">Appointments: <strong>${data.stats.totalAppointments}</strong></p>
           <p style="margin: 8px 0;">Conversion rate: <strong>${data.stats.conversionRate}%</strong></p>
         </div>
 
-        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #374151;">Breakdown</h3>
+        <div style="background: #F8F9FA; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #1B2F26;">Breakdown</h3>
           <p style="margin: 8px 0;">Missed calls recovered: <strong>${data.stats.missedCalls}</strong></p>
           <p style="margin: 8px 0;">Forms responded: <strong>${data.stats.formsResponded}</strong></p>
           <p style="margin: 8px 0;">Estimate follow-ups: <strong>${data.stats.estimatesFollowed}</strong></p>
@@ -176,7 +176,7 @@ export function agencyWeeklyDigestEmail(data: {
 
         ${actionSection}
 
-        <a href="${data.dashboardUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Full Dashboard</a>
+        <a href="${data.dashboardUrl}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Full Dashboard</a>
       </div>
     `,
   };
@@ -201,18 +201,18 @@ export function weeklySummaryEmail(data: {
   return {
     subject: `${data.businessName} — Weekly Summary (${data.weekStart} - ${data.weekEnd})`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #1a1a1a;">Weekly Performance Summary</h2>
-        <p style="color: #666;">${data.weekStart} — ${data.weekEnd}</p>
+      <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #1B2F26;">Weekly Performance Summary</h2>
+        <p style="color: #6b6762;">${data.weekStart} — ${data.weekEnd}</p>
 
-        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #374151;">Leads Captured</h3>
+        <div style="background: #F8F9FA; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #1B2F26;">Leads Captured</h3>
           <p style="margin: 8px 0;">📞 Missed Calls Recovered: <strong>${data.stats.missedCallsCaptured}</strong></p>
           <p style="margin: 8px 0;">📝 Forms Responded: <strong>${data.stats.formsResponded}</strong></p>
         </div>
 
-        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #374151;">Follow-ups Sent</h3>
+        <div style="background: #F8F9FA; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin-top: 0; color: #1B2F26;">Follow-ups Sent</h3>
           <p style="margin: 8px 0;">📅 Appointment Reminders: <strong>${data.stats.appointmentsReminded}</strong></p>
           <p style="margin: 8px 0;">💰 Estimate Follow-ups: <strong>${data.stats.estimatesFollowedUp}</strong></p>
           <p style="margin: 8px 0;">⭐ Review Requests: <strong>${data.stats.reviewsRequested}</strong></p>
@@ -221,7 +221,7 @@ export function weeklySummaryEmail(data: {
 
         <p style="font-size: 18px;"><strong>Total Messages Sent:</strong> ${data.stats.totalMessages}</p>
 
-        <a href="${data.dashboardUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Full Dashboard</a>
+        <a href="${data.dashboardUrl}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Full Dashboard</a>
       </div>
     `,
   };

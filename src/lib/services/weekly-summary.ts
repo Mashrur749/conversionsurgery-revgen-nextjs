@@ -109,12 +109,12 @@ export function formatWeeklyEmail(
   const subject = `Your Week with ConversionSurgery - ${stats.leadsCapture} Leads Captured`;
 
   const html = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Hi ${ownerName},</h2>
 
       <p>Here's what happened at <strong>${businessName}</strong> this week:</p>
 
-      <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <div style="background: #F8F9FA; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <h3 style="margin-top: 0;">LEADS CAPTURED</h3>
         <p style="font-size: 24px; font-weight: bold; margin: 0;">${stats.leadsCapture}</p>
 
@@ -132,14 +132,14 @@ export function formatWeeklyEmail(
       ` : ''}
 
       <p>
-        <a href="${dashboardLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none;">
+        <a href="${dashboardLink}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none;">
           View Full Dashboard
         </a>
       </p>
 
       <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
 
-      <p style="color: #666; font-size: 14px;">
+      <p style="color: #6b6762; font-size: 14px;">
         Questions? Reply to this email or text us anytime.
       </p>
     </div>

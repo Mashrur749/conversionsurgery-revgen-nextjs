@@ -87,13 +87,13 @@ export async function POST(
         to: message.userEmail,
         subject: 'New reply to your support request',
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1a1a1a;">You have a new reply</h2>
-            <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
-              <p style="margin: 0; color: #374151;">${parsed.content}</p>
+          <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1B2F26;">You have a new reply</h2>
+            <div style="background: #F8F9FA; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <p style="margin: 0; color: #1B2F26;">${parsed.content}</p>
             </div>
-            ${parsed.calcomLink ? `<p style="margin: 16px 0;"><a href="${parsed.calcomLink}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Book a Call</a></p>` : ''}
-            <a href="${threadUrl}" style="display: inline-block; background: #111827; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 8px;">View Discussion</a>
+            ${parsed.calcomLink ? `<p style="margin: 16px 0;"><a href="${parsed.calcomLink}" style="display: inline-block; background: #6B7E54; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">Book a Call</a></p>` : ''}
+            <a href="${threadUrl}" style="display: inline-block; background: #1B2F26; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 8px;">View Discussion</a>
           </div>
         `,
       });
