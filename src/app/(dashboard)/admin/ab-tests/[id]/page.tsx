@@ -67,7 +67,7 @@ export default async function TestDetailPage({ params }: Props) {
       </div>
 
       {/* Test Info */}
-      <div className="grid grid-cols-4 gap-4 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
         <div className="bg-[#F8F9FA] p-4 rounded-lg border">
           <p className="text-muted-foreground font-medium">Test Type</p>
           <p className="font-semibold mt-1 capitalize">{test.testType}</p>

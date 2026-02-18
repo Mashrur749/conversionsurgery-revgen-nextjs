@@ -15,7 +15,7 @@ export default async function EscalationsPage() {
 
   if (session.user?.isAdmin && !clientId) {
     return (
-      <div className="container py-6">
+      <div className="space-y-6">
         <div className="flex flex-col items-center justify-center py-20">
           <h2 className="text-xl font-semibold mb-2">Select a Client</h2>
           <p className="text-muted-foreground">
@@ -27,7 +27,7 @@ export default async function EscalationsPage() {
   }
 
   return (
-    <div className="container py-6">
+    <div className="space-y-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Escalation Queue</h1>
         <p className="text-muted-foreground">

@@ -28,15 +28,15 @@ export default async function AnalyticsPage() {
   }
 
   return (
-    <div className="container py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Analytics & ROI</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Analytics &amp; ROI</h1>
         <p className="text-muted-foreground">
           Track your leads, conversions, and revenue
         </p>
       </div>
 
-      <Suspense fallback={<div>Loading analytics...</div>}>
+      <Suspense fallback={<div className="py-12 text-center text-muted-foreground">Loading analytics...</div>}>
         <AnalyticsDashboard clientId={clientId} />
       </Suspense>
     </div>
