@@ -55,17 +55,17 @@ export default async function ReportsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-lg border p-4">
           <p className="text-muted-foreground text-sm font-medium">Total Reports</p>
-          <p className="text-3xl font-bold mt-2">{totalReports}</p>
+          <p className="text-2xl font-bold mt-2">{totalReports}</p>
           <p className="text-xs text-muted-foreground mt-1">All time</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-muted-foreground text-sm font-medium">Bi-Weekly</p>
-          <p className="text-3xl font-bold mt-2">{biWeeklyCount}</p>
+          <p className="text-2xl font-bold mt-2">{biWeeklyCount}</p>
           <p className="text-xs text-muted-foreground mt-1">Sent every 2 weeks</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-muted-foreground text-sm font-medium">Monthly</p>
-          <p className="text-3xl font-bold mt-2">{monthlyCount}</p>
+          <p className="text-2xl font-bold mt-2">{monthlyCount}</p>
           <p className="text-xs text-muted-foreground mt-1">Sent every month</p>
         </div>
       </div>

@@ -20,7 +20,7 @@ export default async function AnalyticsPage() {
         </p>
       </div>
 
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div className="py-12 text-center text-muted-foreground">Loading analytics...</div>}>
         {categories.map(({ category }) => (
           <CategoryPerformance key={category} category={category!} />
         ))}

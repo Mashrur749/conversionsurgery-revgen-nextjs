@@ -12,7 +12,7 @@ export default async function AdminPlatformAnalyticsPage() {
   }
 
   return (
-    <div className="container py-6">
+    <div className="space-y-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Platform Analytics</h1>
         <p className="text-muted-foreground">
@@ -20,7 +20,7 @@ export default async function AdminPlatformAnalyticsPage() {
         </p>
       </div>
 
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div className="py-12 text-center text-muted-foreground">Loading platform analytics...</div>}>
         <PlatformAnalytics />
       </Suspense>
     </div>

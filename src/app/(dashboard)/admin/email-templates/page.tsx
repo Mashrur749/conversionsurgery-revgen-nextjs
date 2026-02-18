@@ -60,7 +60,7 @@ export default function EmailTemplatesPage() {
     fetchTemplates();
   }
 
-  if (loading) return <p className="text-muted-foreground">Loading...</p>;
+  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading email templates...</div>;
 
   return (
     <div className="space-y-6">

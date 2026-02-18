@@ -54,11 +54,11 @@ export default async function ClaimPage({ searchParams }: Props) {
 
   return (
     <Card className="max-w-md mx-auto overflow-hidden border-0 shadow-2xl">
-      <div className="bg-forest px-6 py-5 text-center">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 mb-2">
-          <span className="text-lg font-bold text-white">C</span>
+      <div className="bg-forest px-6 py-6 text-center">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 mb-3">
+          <span className="text-xl font-bold text-white">C</span>
         </div>
-        <h1 className="text-lg font-semibold text-white">Claim This Lead</h1>
+        <h1 className="text-xl font-semibold text-white">Claim This Lead</h1>
         <p className="text-sm text-white/60 mt-1">
           Select your name to claim and respond to this lead
         </p>

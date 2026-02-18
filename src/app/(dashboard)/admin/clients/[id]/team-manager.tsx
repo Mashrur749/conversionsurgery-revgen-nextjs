@@ -13,6 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 import { X } from 'lucide-react';
 
 interface TeamMember {
@@ -34,6 +39,7 @@ export function TeamManager({ clientId }: Props) {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   // Form state for adding new member
   const [newMember, setNewMember] = useState({
@@ -108,12 +114,9 @@ export function TeamManager({ clientId }: Props) {
   }
 
   async function handleRemoveMember(memberId: string) {
-    if (!confirm('Are you sure you want to remove this team member?')) {
-      return;
-    }
-
     try {
       setError('');
+      setRemovingId(null);
       const res = await fetch(`/api/team-members?memberId=${memberId}`, {
         method: 'DELETE',
       });
@@ -210,7 +213,17 @@ export function TeamManager({ clientId }: Props) {
           </h3>
 
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-start justify-between p-3 border rounded-lg">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                  <Skeleton className="h-8 w-8" />
+                </div>
+              ))}
+            </div>
           ) : members.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
               No team members added yet. Add one using the form above.
@@ -234,7 +247,7 @@ export function TeamManager({ clientId }: Props) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleRemoveMember(member.id)}
+                    onClick={() => setRemovingId(member.id)}
                     className="text-destructive hover:text-sienna hover:bg-[#FDEAE4]"
                   >
                     <X className="w-4 h-4" />
@@ -245,6 +258,23 @@ export function TeamManager({ clientId }: Props) {
           )}
         </div>
       </CardContent>
+
+      <AlertDialog open={!!removingId} onOpenChange={(open) => !open && setRemovingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this team member? They will no longer receive escalations or hot transfers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => removingId && handleRemoveMember(removingId)}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -55,7 +55,7 @@ export default async function TwilioAdminPage() {
           <CardContent>
             {balance ? (
               <>
-                <div className="text-3xl font-bold">
+                <div className="text-2xl font-bold">
                   {balance.currency} {parseFloat(balance.balance).toFixed(2)}
                 </div>
                 <p className="text-xs text-muted-foreground">Current Twilio balance</p>
@@ -74,7 +74,7 @@ export default async function TwilioAdminPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="text-2xl font-bold">
               {ownedNumbers.length - assignedNumbers.size}
             </div>
             <p className="text-sm text-muted-foreground">available to assign</p>

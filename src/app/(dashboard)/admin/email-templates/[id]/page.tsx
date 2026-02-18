@@ -62,7 +62,7 @@ export default function EmailTemplateEditorPage() {
     setPreviewHtml(html);
   }
 
-  if (loading) return <p className="text-muted-foreground">Loading...</p>;
+  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading template...</div>;
   if (!template) return <p className="text-destructive">Template not found.</p>;
 
   return (

@@ -59,20 +59,20 @@ export default async function ABTestsPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-sage-light p-4 rounded-lg border border-forest-light/30">
           <p className="text-sm text-forest font-medium">Active Tests</p>
-          <p className="text-3xl font-bold mt-2">{activeTests.length}</p>
+          <p className="text-2xl font-bold mt-2">{activeTests.length}</p>
           <p className="text-xs text-forest-light mt-1">Currently running</p>
         </div>
         <div className="bg-accent p-4 rounded-lg border border-olive/30">
           <p className="text-sm text-olive font-medium">Paused</p>
-          <p className="text-3xl font-bold mt-2">{pausedTests.length}</p>
+          <p className="text-2xl font-bold mt-2">{pausedTests.length}</p>
           <p className="text-xs text-olive mt-1">Ready to resume</p>
         </div>
         <div className="bg-[#E8F5E9] p-4 rounded-lg border border-[#3D7A50]/30">
           <p className="text-sm text-[#3D7A50] font-medium">Completed</p>
-          <p className="text-3xl font-bold mt-2">{completedTests.length}</p>
+          <p className="text-2xl font-bold mt-2">{completedTests.length}</p>
           <p className="text-xs text-[#3D7A50] mt-1">Results available</p>
         </div>
       </div>

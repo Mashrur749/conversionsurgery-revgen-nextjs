@@ -46,7 +46,7 @@ export default async function NpsDashboardPage() {
             <CardTitle className="text-sm text-muted-foreground">Average NPS Score</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{avgScoreNum.toFixed(1)}</p>
+            <p className="text-2xl font-bold">{avgScoreNum.toFixed(1)}</p>
             <p className="text-xs text-muted-foreground">out of 10</p>
           </CardContent>
         </Card>
@@ -55,7 +55,7 @@ export default async function NpsDashboardPage() {
             <CardTitle className="text-sm text-muted-foreground">Surveys Sent</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{Number(stats.totalSent)}</p>
+            <p className="text-2xl font-bold">{Number(stats.totalSent)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -63,7 +63,7 @@ export default async function NpsDashboardPage() {
             <CardTitle className="text-sm text-muted-foreground">Response Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{responseRate}%</p>
+            <p className="text-2xl font-bold">{responseRate}%</p>
             <p className="text-xs text-muted-foreground">{Number(stats.responded)} responses</p>
           </CardContent>
         </Card>
