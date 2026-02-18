@@ -62,7 +62,7 @@ export function AgencyOverviewStats({
       label: 'Missed Calls (Today)',
       value: todayMissedCallsCaptured,
       icon: PhoneOff,
-      color: 'bg-rose-100 text-rose-600',
+      color: 'bg-[#FDEAE4] text-sienna',
       description: `Captured today`,
     },
     {

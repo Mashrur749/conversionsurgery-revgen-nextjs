@@ -150,7 +150,7 @@ export function AnalyticsDashboard({ clientId }: AnalyticsDashboardProps) {
 
       {/* ROI Highlight Card */}
       {monthly && (
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-[#3D7A50]/30">
+        <Card className="bg-[#E8F5E9] border-[#3D7A50]/30">
           <CardContent className="py-6">
             <div className="flex items-center justify-between">
               <div>

@@ -181,7 +181,7 @@ export default async function DashboardPage() {
                 <Link
                   key={lead.id}
                   href={`/leads/${lead.id}`}
-                  className="block p-3 rounded-lg border border-l-4 border-l-red-500 hover:bg-[#F8F9FA] transition-colors"
+                  className="block p-3 rounded-lg border border-l-4 border-l-sienna hover:bg-[#F8F9FA] transition-colors"
                 >
                   <div className="flex justify-between items-start">
                     <div>

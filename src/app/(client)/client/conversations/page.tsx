@@ -61,7 +61,7 @@ export default async function ConversationsPage() {
         {allLeads.map((lead) => (
           <Link key={lead.id} href={`/client/conversations/${lead.id}`}>
             <Card className={`hover:bg-[#F8F9FA] transition-colors ${
-              lead.actionRequired ? 'border-l-4 border-l-red-500' : ''
+              lead.actionRequired ? 'border-l-4 border-l-sienna' : ''
             }`}>
               <CardContent className="py-3">
                 <div className="flex justify-between items-start">

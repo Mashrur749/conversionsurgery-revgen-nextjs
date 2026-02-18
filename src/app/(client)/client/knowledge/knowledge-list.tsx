@@ -37,7 +37,7 @@ const categoryColors: Record<string, string> = {
   faq: 'bg-moss-light text-olive',
   policies: 'bg-[#FFF3E0] text-terracotta-dark',
   about: 'bg-muted text-foreground',
-  custom: 'bg-pink-100 text-pink-800',
+  custom: 'bg-muted text-muted-foreground',
 };
 
 interface KnowledgeListProps {

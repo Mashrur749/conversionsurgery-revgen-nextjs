@@ -24,7 +24,7 @@ const categoryColors: Record<string, string> = {
   referral: 'bg-moss-light text-olive',
   appointment: 'bg-[#FFF3E0] text-terracotta-dark',
   missed_call: 'bg-[#FDEAE4] text-sienna',
-  form_response: 'bg-cyan-100 text-cyan-800',
+  form_response: 'bg-sage-light text-forest',
   custom: 'bg-muted text-foreground',
 };
 

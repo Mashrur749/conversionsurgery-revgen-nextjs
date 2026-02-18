@@ -51,7 +51,7 @@ export function ClientSelector() {
         value={selectedClientId || ''}
         onChange={(e) => setSelectedClientId(e.target.value || null)}
         disabled={loading}
-        className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-forest-light"
+        className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-ring focus:border-forest-light"
       >
         <option value="">-- Select a client --</option>
         {availableClients.map((client) => (

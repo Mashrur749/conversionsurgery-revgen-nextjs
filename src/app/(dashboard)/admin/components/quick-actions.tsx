@@ -46,7 +46,7 @@ export function QuickActions() {
       label: 'Generate Bi-Weekly Report',
       description: 'Create client reports',
       href: '#',
-      color: 'bg-rose-500 hover:bg-rose-600',
+      color: 'bg-sienna hover:bg-sienna/90',
       disabled: true,
     },
     {

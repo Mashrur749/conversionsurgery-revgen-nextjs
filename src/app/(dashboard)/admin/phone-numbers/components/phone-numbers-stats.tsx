@@ -49,7 +49,7 @@ export function PhoneNumbersStats({
       label: 'Missed Calls (Today)',
       value: totalMissedCalls,
       icon: AlertCircle,
-      color: 'bg-rose-100 text-rose-600',
+      color: 'bg-[#FDEAE4] text-sienna',
       description: 'Captured across all numbers',
     },
   ];

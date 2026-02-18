@@ -107,7 +107,7 @@ export default function GenerateReportForm({ clients }: Props) {
             name="clientId"
             value={formData.clientId}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             required
           >
             <option value="">Select a client</option>
@@ -130,7 +130,7 @@ export default function GenerateReportForm({ clients }: Props) {
               name="startDate"
               value={formData.startDate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               required
             />
           </div>
@@ -143,7 +143,7 @@ export default function GenerateReportForm({ clients }: Props) {
               name="endDate"
               value={formData.endDate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               required
             />
           </div>
@@ -158,7 +158,7 @@ export default function GenerateReportForm({ clients }: Props) {
             name="reportType"
             value={formData.reportType}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           >
             <option value="bi-weekly">Bi-Weekly</option>
             <option value="monthly">Monthly</option>
@@ -177,7 +177,7 @@ export default function GenerateReportForm({ clients }: Props) {
             value={formData.title}
             onChange={handleChange}
             placeholder="Leave blank for auto-generated title"
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
