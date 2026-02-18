@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { signIn } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ function LoginContent() {
     token_expired: "Sign-in link has expired. Please request a new one.",
     missing_params: "Invalid sign-in link",
     server_error: "Something went wrong. Please try again.",
+    AccessDenied: "No account found for this email address.",
   };
 
   async function handleSubmit(e: React.SubmitEvent) {
@@ -30,26 +32,19 @@ function LoginContent() {
     setError("");
 
     try {
-      const response = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      await signIn("email", {
+        email,
+        redirect: false,
+        callbackUrl: "/dashboard",
       });
 
-      if (!response.ok) {
-        const data = await response.json() as { error?: string };
-        throw new Error(data.error || "Failed to send sign-in link");
-      }
-
+      // Always show "check your email" regardless of result
+      // to prevent email enumeration attacks
       setSubmittedEmail(email);
       setSubmitted(true);
       setEmail("");
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again.",
-      );
+    } catch {
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
