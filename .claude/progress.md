@@ -164,3 +164,33 @@
 - [x] Fix `any` types: defined ReportMetrics/RoiSummary/TeamPerformance/TestResult/DailyStats/ABTestVariant interfaces (AA-L1-L5)
 - [x] Danger Zone: client detail page (DeleteButton in own red-bordered card), action-buttons (red Danger Zone label) (AC-M8, TD-M12, AA-M10)
 - [x] Revenue page: pipeline stats reduced from text-3xl to text-2xl, win rate + avg job split to summary row (AC-M6)
+
+## Session 3: Re-Audit + Brand Color Cleanup + Login Bug Fix
+
+### Double Email Fix
+- [x] Root cause: custom `/api/auth/signin` route + NextAuth EmailProvider both sent emails
+- [x] Fixed login page to use `signIn("email", ...)` from next-auth/react
+- [x] Deleted redundant `/api/auth/signin/route.ts`
+- [x] Deleted redundant `/api/auth/verify/route.ts`
+
+### Post-Brand-Alignment Stale Color Fixes
+- [x] `focus:ring-blue-500` -> `focus:ring-ring` in generate-report-form.tsx (5 instances)
+- [x] `bg-pink-100 text-pink-800` -> `bg-muted text-muted-foreground` in knowledge-list.tsx
+- [x] `bg-cyan-100 text-cyan-800` -> `bg-sage-light text-forest` in flow-management.tsx, template-list.tsx
+- [x] `border-l-red-500` -> `border-l-sienna` in client conversations/page.tsx, dashboard/page.tsx
+- [x] `from-green-50 to-emerald-50` -> `bg-[#E8F5E9]` in analytics-dashboard.tsx
+- [x] `bg-rose-100 text-rose-600` -> `bg-[#FDEAE4] text-sienna` in phone-numbers-stats.tsx, agency-overview-stats.tsx
+- [x] `bg-rose-500 hover:bg-rose-600` -> `bg-sienna hover:bg-sienna/90` in quick-actions.tsx
+- [x] `focus:ring-blue-500` -> `focus:ring-ring` in client-selector.tsx
+
+### Additional UX Fixes from Re-Audit
+- [x] Auth header consistency: claim, claim-error, link-expired standardized (w-12 h-12, text-xl, py-6)
+- [x] team-manager.tsx: browser confirm() replaced with AlertDialog + Skeleton loading
+- [x] Loading states: analytics, platform-analytics, email-templates styled
+- [x] Stat card text-3xl -> text-2xl: 11 instances in ab-tests(3), nps(3), reports(3), twilio(2)
+- [x] Responsive grid: ab-tests stats grid-cols-3 -> grid-cols-1 md:grid-cols-3
+- [x] Layout: platform-analytics container -> space-y-6
+
+### Documentation
+- [x] Updated docs/UX-AUDIT.md with resolution summary and session 3 fixes
+- [x] Updated .claude/progress.md with session 3 work

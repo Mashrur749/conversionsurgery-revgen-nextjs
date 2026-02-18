@@ -4,6 +4,55 @@
 **Scope:** 77 pages, 68 components across 4 portals
 **Standards:** `.claude/skills/ux-standards/SKILL.md`
 
+## Resolution Summary
+
+All 15 fix batches completed across 3 sessions (~170 violations resolved). See `.claude/progress.md` for detailed per-fix tracking.
+
+| Fix | Description | IDs Resolved | Status |
+|-----|------------|-------------|--------|
+| 1 | Revenue recovered on all dashboards | S5 | Done |
+| 2 | Mobile nav + active states for client portal | NAV-C1, CP-C1, CP-C2 | Done |
+| 3 | AlertDialog for all destructive actions (14 locations) | S4, AA-C1-C6, AC-H1/H4/H5/H6, CP-H1-H3, TD-H3/H4 | Done |
+| 4 | Skeleton loading states | S1, TD-H1 | Done |
+| 5 | Trend/context lines on all stat cards | S2 | Done |
+| 6 | Active nav states | CP-C2, NAV-H1 | Done |
+| 7 | Empty state action buttons | S3 | Done |
+| 8 | Auth page bugs (email, alert, catch) | AUTH-BUG-1/2/3 | Done |
+| 9 | Search/filter on admin list views | AA-H1, AC-M3 | Done |
+| 10 | Auth pages standardized to shadcn | AUTH-H1, AUTH-H3 | Done |
+| 11 | Page title typography (text-2xl font-bold) | CP-M1, AA-H3, AC-M12 | Done |
+| 12 | Color coding consistency | TD-M1, AC-M5, AA-M1, AA-M4, CP-M5 | Done |
+| 13 | Hover states on admin lists | AA-H2, AC-M4 | Done |
+| 14 | Form button alignment (right-aligned) | S6 | Done |
+| 15 | Remaining medium/low issues | Various | Done |
+
+### Post-Audit Session 3 Fixes
+
+Additional issues found during a re-audit after brand alignment:
+
+- **Double email on login** — Root cause: two auth paths (custom route + NextAuth EmailProvider) both sending emails. Fixed by consolidating to NextAuth `signIn("email")` and deleting redundant `/api/auth/signin` and `/api/auth/verify` routes.
+- **Stale non-brand colors** — 9 additional files had hardcoded Tailwind colors (pink, cyan, blue, rose, red, emerald) that weren't caught in the original brand sweep:
+  - `focus:ring-blue-500` → `focus:ring-ring` (generate-report-form, client-selector)
+  - `bg-pink-100 text-pink-800` → `bg-muted text-muted-foreground` (knowledge-list)
+  - `bg-cyan-100 text-cyan-800` → `bg-sage-light text-forest` (flow-management, template-list)
+  - `border-l-red-500` → `border-l-sienna` (client conversations, dashboard)
+  - `from-green-50 to-emerald-50` → `bg-[#E8F5E9]` (analytics-dashboard)
+  - `bg-rose-100 text-rose-600` → `bg-[#FDEAE4] text-sienna` (phone-numbers-stats, agency-overview-stats)
+  - `bg-rose-500 hover:bg-rose-600` → `bg-sienna hover:bg-sienna/90` (quick-actions)
+- **Auth page header consistency** — Standardized claim, claim-error, link-expired pages: logo w-12 h-12, heading text-xl, py-6
+- **Browser confirm() → AlertDialog** — team-manager.tsx still used `confirm()` for removing team members
+- **Loading state improvements** — analytics, platform-analytics, email-templates pages had unstyled `Loading...` text
+- **Stat card text-3xl → text-2xl** — 11 more instances in ab-tests, nps, reports, twilio pages
+- **Responsive grid fix** — ab-tests stats grid: `grid-cols-3` → `grid-cols-1 md:grid-cols-3`
+- **Layout fix** — platform-analytics: `container` → `space-y-6` (parent provides max-w-7xl)
+
+### Remaining Low-Priority Items (acceptable)
+
+- Dark mode color variants (`dark:bg-red-900`, `dark:bg-blue-900/30`, etc.) — kept as-is for future dark mode support
+- `as any` types in `reports/[id]/page.tsx` and `ab-tests` for JSON column casts — not UX-visible
+- Some admin list views without search (flow-templates, reputation, NPS, coupons) — fewer items, less critical need
+- `CancelSubscriptionDialog` uses Dialog instead of AlertDialog — kept intentionally because it contains a multi-step form
+
 ---
 
 ## Systemic Issues
