@@ -61,7 +61,7 @@ export function ClaimForm({ token, members, leadId }: Props) {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
+        <div role="alert" className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
           <p className="text-sienna text-sm">{error}</p>
         </div>
       )}

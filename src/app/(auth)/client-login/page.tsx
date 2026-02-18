@@ -176,6 +176,7 @@ export default function ClientLoginPage() {
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="py-3 text-lg"
                   autoFocus
+                  aria-invalid={!!error || undefined}
                 />
               </div>
             ) : (
@@ -191,11 +192,12 @@ export default function ClientLoginPage() {
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="py-3 text-lg"
                   autoFocus
+                  aria-invalid={!!error || undefined}
                 />
               </div>
             )}
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
             <Button
               type="submit"
@@ -237,7 +239,7 @@ export default function ClientLoginPage() {
               className="py-3 text-center text-2xl tracking-[0.5em]"
             />
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
 
             {loading && code.length === 6 && (
               <p className="text-center text-sm text-muted-foreground">Verifying...</p>
@@ -246,6 +248,7 @@ export default function ClientLoginPage() {
             <div className="flex items-center justify-between text-sm">
               <button
                 type="button"
+                aria-label="Go back to enter phone or email"
                 onClick={() => {
                   setPhase('identifier');
                   setCode('');

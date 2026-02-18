@@ -63,7 +63,7 @@ function LoginContent() {
       </div>
       <CardContent className="p-6 space-y-4">
         {errorParam && (
-          <div className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
+          <div role="alert" className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
             <p className="text-sienna text-sm">
               {errorMessages[errorParam] ||
                 "An error occurred. Please try again."}
@@ -102,11 +102,12 @@ function LoginContent() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                aria-invalid={!!error || undefined}
               />
             </div>
 
             {error && (
-              <div className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
+              <div role="alert" className="bg-[#FDEAE4] border border-destructive/30 rounded-md p-3">
                 <p className="text-sienna text-sm">{error}</p>
               </div>
             )}
