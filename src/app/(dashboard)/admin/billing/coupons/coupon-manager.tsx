@@ -23,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Ticket, Trash2 } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -117,7 +118,7 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
                 <div className="space-y-2">
                   <Label htmlFor="discountType">Type</Label>
                   <select name="discountType" defaultValue="percent"
-                    className="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm">
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring">
                     <option value="percent">Percentage (%)</option>
                     <option value="amount">Fixed Amount (cents)</option>
                   </select>
@@ -131,7 +132,7 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duration</Label>
                   <select name="duration" defaultValue="once"
-                    className="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm">
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring">
                     <option value="once">Once</option>
                     <option value="repeating">Repeating</option>
                     <option value="forever">Forever</option>
@@ -152,10 +153,10 @@ export function CouponManager({ coupons: initialCoupons }: CouponManagerProps) {
                   <Input id="validUntil" name="validUntil" type="date" />
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="firstTimeOnly" />
-                First-time subscribers only
-              </label>
+              <div className="flex items-center gap-2 text-sm">
+                <Checkbox id="firstTimeOnly" name="firstTimeOnly" />
+                <Label htmlFor="firstTimeOnly" className="font-normal">First-time subscribers only</Label>
+              </div>
               <div className="flex justify-end">
                 <Button type="submit" disabled={saving}>
                   {saving ? 'Creating...' : 'Create Coupon'}

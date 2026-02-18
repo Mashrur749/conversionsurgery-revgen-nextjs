@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -183,12 +184,13 @@ export function PlanList({ plans: initialPlans }: PlanListProps) {
             : key === 'analytics' ? 'includesAdvancedAnalytics'
             : key === 'whiteLabel' ? 'includesWhiteLabel'
             : 'apiAccess';
+          const label = key === 'voiceAi' ? 'Voice AI' : key === 'calendarSync' ? 'Calendar Sync'
+            : key === 'analytics' ? 'Advanced Analytics' : key === 'whiteLabel' ? 'White Label' : 'API Access';
           return (
-            <label key={key} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name={key} defaultChecked={plan?.features[featureKey] ?? false} />
-              {key === 'voiceAi' ? 'Voice AI' : key === 'calendarSync' ? 'Calendar Sync'
-                : key === 'analytics' ? 'Advanced Analytics' : key === 'whiteLabel' ? 'White Label' : 'API Access'}
-            </label>
+            <div key={key} className="flex items-center gap-2 text-sm">
+              <Checkbox id={`feature-${key}`} name={key} defaultChecked={plan?.features[featureKey] ?? false} />
+              <Label htmlFor={`feature-${key}`} className="font-normal">{label}</Label>
+            </div>
           );
         })}
       </div>
@@ -196,7 +198,7 @@ export function PlanList({ plans: initialPlans }: PlanListProps) {
         <div className="space-y-2">
           <Label htmlFor="supportLevel">Support Level</Label>
           <select name="supportLevel" defaultValue={plan?.features.supportLevel ?? 'email'}
-            className="flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm">
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring">
             <option value="email">Email</option>
             <option value="priority">Priority</option>
             <option value="dedicated">Dedicated</option>
@@ -206,16 +208,16 @@ export function PlanList({ plans: initialPlans }: PlanListProps) {
           <Label htmlFor="displayOrder">Display Order</Label>
           <Input id="displayOrder" name="displayOrder" type="number" defaultValue={plan?.displayOrder ?? 0} />
         </div>
-        <label className="flex items-center gap-2 text-sm pt-7">
-          <input type="checkbox" name="isPopular" defaultChecked={plan?.isPopular ?? false} />
-          Mark as Popular
-        </label>
+        <div className="flex items-center gap-2 text-sm pt-7">
+          <Checkbox id="isPopular" name="isPopular" defaultChecked={plan?.isPopular ?? false} />
+          <Label htmlFor="isPopular" className="font-normal">Mark as Popular</Label>
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" name="allowOverages" defaultChecked={plan?.features.allowOverages ?? false} />
-          Allow Overages
-        </label>
+        <div className="flex items-center gap-2 text-sm">
+          <Checkbox id="allowOverages" name="allowOverages" defaultChecked={plan?.features.allowOverages ?? false} />
+          <Label htmlFor="allowOverages" className="font-normal">Allow Overages</Label>
+        </div>
         <div className="space-y-2">
           <Label htmlFor="overagePerLead">Overage $/Lead</Label>
           <Input id="overagePerLead" name="overagePerLead" type="number" step="0.01" placeholder="e.g. 1.50"

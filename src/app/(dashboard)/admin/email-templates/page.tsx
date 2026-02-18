@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -88,12 +89,12 @@ export default function EmailTemplatesPage() {
         <Card>
           <CardContent className="py-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <input placeholder="Slug (e.g. new-lead)" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="border rounded px-3 py-2 text-sm" />
-              <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="border rounded px-3 py-2 text-sm" />
+              <Input placeholder="Slug (e.g. new-lead)" value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} />
+              <Input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
-            <input placeholder="Subject line" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="border rounded px-3 py-2 text-sm w-full" />
-            <textarea placeholder="HTML body (use {{variable}} for placeholders)" value={form.htmlBody} onChange={(e) => setForm({ ...form, htmlBody: e.target.value })} className="border rounded px-3 py-2 text-sm w-full min-h-[150px]" />
-            <input placeholder="Variables (comma-separated: businessName, leadPhone)" value={form.variables} onChange={(e) => setForm({ ...form, variables: e.target.value })} className="border rounded px-3 py-2 text-sm w-full" />
+            <Input placeholder="Subject line" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
+            <Textarea placeholder="HTML body (use {{variable}} for placeholders)" value={form.htmlBody} onChange={(e) => setForm({ ...form, htmlBody: e.target.value })} className="min-h-[150px] font-mono text-xs" />
+            <Input placeholder="Variables (comma-separated: businessName, leadPhone)" value={form.variables} onChange={(e) => setForm({ ...form, variables: e.target.value })} />
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setShowCreate(false)}>Cancel</Button>
               <Button size="sm" onClick={handleCreate}>Create</Button>

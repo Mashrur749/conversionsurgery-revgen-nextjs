@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -102,12 +106,13 @@ export function SendMessageDialog({
               </div>
             )}
 
-            <div>
-              <label className="mb-1 block text-sm font-medium">Client</label>
+            <div className="space-y-2">
+              <Label htmlFor="msg-client">Client</Label>
               <select
+                id="msg-client"
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
-                className="w-full rounded-md border px-3 py-2 text-sm"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
                 required
               >
                 <option value="">Select a client</option>
@@ -141,25 +146,23 @@ export function SendMessageDialog({
 
             {type === 'prompt' && (
               <>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Prompt Type
-                  </label>
+                <div className="space-y-2">
+                  <Label htmlFor="promptType">Prompt Type</Label>
                   <select
+                    id="promptType"
                     value={promptType}
                     onChange={(e) => setPromptType(e.target.value)}
-                    className="w-full rounded-md border px-3 py-2 text-sm"
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="start_sequences">Start Sequences</option>
                     <option value="schedule_callback">Schedule Callback</option>
                     <option value="confirm_action">Confirm Action</option>
                   </select>
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium">
-                    Expires In (hours)
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="expiresIn">Expires In (hours)</Label>
+                  <Input
+                    id="expiresIn"
                     type="number"
                     value={expiresInHours}
                     onChange={(e) =>
@@ -167,31 +170,29 @@ export function SendMessageDialog({
                     }
                     min={1}
                     max={168}
-                    className="w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
               </>
             )}
 
             {type === 'alert' && (
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
+              <div className="flex items-center gap-2 text-sm">
+                <Switch
+                  id="isUrgent"
                   checked={isUrgent}
-                  onChange={(e) => setIsUrgent(e.target.checked)}
-                  className="rounded border-border"
+                  onCheckedChange={setIsUrgent}
                 />
-                Mark as urgent (bypasses quiet hours)
-              </label>
+                <Label htmlFor="isUrgent" className="font-normal">Mark as urgent (bypasses quiet hours)</Label>
+              </div>
             )}
 
-            <div>
-              <label className="mb-1 block text-sm font-medium">Message</label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="message">Message</Label>
+              <Textarea
+                id="message"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={4}
-                className="w-full rounded-md border px-3 py-2 text-sm"
                 placeholder="Type your message..."
                 required
               />

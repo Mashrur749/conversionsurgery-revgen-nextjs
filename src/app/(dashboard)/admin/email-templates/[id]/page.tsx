@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 
 interface Template {
@@ -88,23 +90,21 @@ export default function EmailTemplateEditorPage() {
             <CardTitle className="text-base">Template Editor</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <input
+            <Input
               placeholder="Name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="border rounded px-3 py-2 text-sm w-full"
             />
-            <input
+            <Input
               placeholder="Subject line"
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              className="border rounded px-3 py-2 text-sm w-full"
             />
-            <textarea
+            <Textarea
               placeholder="HTML body"
               value={form.htmlBody}
               onChange={(e) => setForm({ ...form, htmlBody: e.target.value })}
-              className="border rounded px-3 py-2 text-sm w-full min-h-[300px] font-mono text-xs"
+              className="min-h-[300px] font-mono text-xs"
             />
             <div className="flex gap-2 justify-end">
               <Button variant="outline" size="sm" onClick={handlePreview}>

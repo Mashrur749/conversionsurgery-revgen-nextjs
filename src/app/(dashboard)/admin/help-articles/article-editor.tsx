@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -94,40 +98,37 @@ export function ArticleEditor() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <input
+            <Input
               placeholder="Title"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              className="border rounded px-3 py-2 text-sm"
             />
-            <input
+            <Input
               placeholder="Slug (e.g. getting-started)"
               value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              className="border rounded px-3 py-2 text-sm"
             />
           </div>
-          <input
+          <Input
             placeholder="Category"
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
-            className="border rounded px-3 py-2 text-sm w-full"
           />
-          <textarea
+          <Textarea
             placeholder="Article content (supports markdown)"
             value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
-            className="border rounded px-3 py-2 text-sm w-full min-h-[200px]"
+            className="min-h-[200px]"
           />
           <div className="flex items-center justify-end gap-3">
-            <label className="flex items-center gap-2 text-sm mr-auto">
-              <input
-                type="checkbox"
+            <div className="flex items-center gap-2 text-sm mr-auto">
+              <Switch
+                id="isPublished"
                 checked={form.isPublished}
-                onChange={(e) => setForm({ ...form, isPublished: e.target.checked })}
+                onCheckedChange={(checked) => setForm({ ...form, isPublished: checked })}
               />
-              Published
-            </label>
+              <Label htmlFor="isPublished" className="font-normal">Published</Label>
+            </div>
             {editing && (
               <Button variant="ghost" size="sm" onClick={() => {
                 setEditing(null);

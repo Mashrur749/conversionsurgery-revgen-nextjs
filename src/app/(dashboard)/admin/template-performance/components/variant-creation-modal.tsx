@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { X, AlertCircle } from 'lucide-react';
 
 const TEMPLATE_TYPES = [
@@ -81,12 +84,13 @@ export function VariantCreationModal({ onClose, onSuccess }: Props) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground">Template Type</label>
+          <div className="space-y-2">
+            <Label htmlFor="templateType">Template Type</Label>
             <select
+              id="templateType"
               value={templateType}
               onChange={(e) => setTemplateType(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
               required
             >
               <option value="">Select a type...</option>
@@ -98,41 +102,39 @@ export function VariantCreationModal({ onClose, onSuccess }: Props) {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground">Variant Name</label>
-            <input
-              type="text"
+          <div className="space-y-2">
+            <Label htmlFor="variantName">Variant Name</Label>
+            <Input
+              id="variantName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., 'Standard', 'Aggressive', 'Friendly'"
-              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground placeholder-gray-500"
+              placeholder="e.g., &apos;Standard&apos;, &apos;Aggressive&apos;, &apos;Friendly&apos;"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground">Message Content</label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="messageContent">Message Content</Label>
+            <Textarea
+              id="messageContent"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Hi {name}, you have a missed call from {business}..."
               rows={6}
-              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground placeholder-gray-500"
               required
             />
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Use variables like &#123;name&#125;, &#123;business&#125;, &#123;phone&#125; for personalization
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground">Notes (Optional)</label>
-            <input
-              type="text"
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Input
+              id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="What's different about this variant? e.g., 'More urgent tone with emoji'"
-              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-foreground placeholder-gray-500"
+              placeholder="What&apos;s different about this variant? e.g., &apos;More urgent tone with emoji&apos;"
             />
           </div>
 

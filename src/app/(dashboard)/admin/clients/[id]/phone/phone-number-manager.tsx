@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Star } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -100,17 +101,15 @@ export function PhoneNumberManager({ clientId }: { clientId: string }) {
       <CardContent className="space-y-3">
         {showAdd && (
           <div className="border rounded p-3 space-y-2">
-            <input
+            <Input
               placeholder="Phone number (+1XXXXXXXXXX)"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="border rounded px-3 py-2 text-sm w-full"
             />
-            <input
+            <Input
               placeholder="Friendly name (optional)"
               value={friendlyName}
               onChange={(e) => setFriendlyName(e.target.value)}
-              className="border rounded px-3 py-2 text-sm w-full"
             />
             <div className="flex gap-2">
               <Button size="sm" onClick={handleAdd} disabled={!phoneNumber}>Add</Button>

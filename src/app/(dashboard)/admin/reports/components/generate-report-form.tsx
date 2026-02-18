@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Client } from '@/db/schema';
 
 interface Props {
@@ -83,8 +85,8 @@ export default function GenerateReportForm({ clients }: Props) {
       if (data.report?.id) {
         router.push(`/admin/reports/${data.report.id}`);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate report');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to generate report');
       setLoading(false);
     }
   };
@@ -99,15 +101,14 @@ export default function GenerateReportForm({ clients }: Props) {
 
       <div className="space-y-6">
         {/* Client Selection */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Client
-          </label>
+        <div className="space-y-2">
+          <Label htmlFor="clientId">Client</Label>
           <select
+            id="clientId"
             name="clientId"
             value={formData.clientId}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
             required
           >
             <option value="">Select a client</option>
@@ -121,44 +122,39 @@ export default function GenerateReportForm({ clients }: Props) {
 
         {/* Date Range */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Start Date
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="startDate">Start Date</Label>
+            <Input
+              id="startDate"
               type="date"
               name="startDate"
               value={formData.startDate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              End Date
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="endDate">End Date</Label>
+            <Input
+              id="endDate"
               type="date"
               name="endDate"
               value={formData.endDate}
               onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               required
             />
           </div>
         </div>
 
         {/* Report Type */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Report Type
-          </label>
+        <div className="space-y-2">
+          <Label htmlFor="reportType">Report Type</Label>
           <select
+            id="reportType"
             name="reportType"
             value={formData.reportType}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
           >
             <option value="bi-weekly">Bi-Weekly</option>
             <option value="monthly">Monthly</option>
@@ -167,17 +163,14 @@ export default function GenerateReportForm({ clients }: Props) {
         </div>
 
         {/* Custom Title (optional) */}
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Custom Title (optional)
-          </label>
-          <input
-            type="text"
+        <div className="space-y-2">
+          <Label htmlFor="title">Custom Title (optional)</Label>
+          <Input
+            id="title"
             name="title"
             value={formData.title}
             onChange={handleChange}
             placeholder="Leave blank for auto-generated title"
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
 
