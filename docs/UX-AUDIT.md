@@ -46,12 +46,30 @@ Additional issues found during a re-audit after brand alignment:
 - **Responsive grid fix** — ab-tests stats grid: `grid-cols-3` → `grid-cols-1 md:grid-cols-3`
 - **Layout fix** — platform-analytics: `container` → `space-y-6` (parent provides max-w-7xl)
 
+### Post-Audit Session 4 Fixes
+
+Comprehensive component consistency sweep:
+
+- **Auth accessibility** — Added `role="alert"` on all error messages, `aria-invalid` on form inputs in error state, `aria-label` on icon-only buttons across login, client-login, and claim pages
+- **Raw checkboxes → Switch** — Replaced all raw `<input type="checkbox">` with shadcn Switch components in ai-settings-form (4), feature-toggles-form (1), send-message-dialog (1), article-editor (1)
+- **Raw checkboxes → Checkbox** — Replaced with shadcn Checkbox in coupon-manager (1), plan-list (7 — 5 features + isPopular + allowOverages)
+- **Raw inputs → Input** — Replaced all raw `<input>` elements with shadcn Input in phone-number-manager (2), email-templates list (4), email-templates editor (2), generate-report-form (3), variant-creation-modal (2), send-message-dialog (1)
+- **Raw textareas → Textarea** — Replaced all raw `<textarea>` with shadcn Textarea in email-templates list (1), email-templates editor (1), article-editor (1), variant-creation-modal (1), send-message-dialog (1)
+- **confirm() → AlertDialog** — Replaced remaining `confirm()` calls with AlertDialog in team-members-list, calendar-integrations, lead-media-tab (3 files, now zero `confirm()` calls in codebase)
+- **Container layout fixes** — Removed redundant `container` classes from escalations and analytics pages (parent provides max-w-7xl)
+- **Native select styling** — Standardized all remaining native `<select>` elements to match shadcn Input appearance (`border-input`, `shadow-xs`, `focus:ring-ring`)
+- **Label standardization** — Replaced raw `<label>` with shadcn Label component with proper `htmlFor`/`id` pairing across all fixed forms
+- **Type safety** — Fixed `catch(err: any)` → `catch(err: unknown)` in generate-report-form
+
+**Result:** Zero raw `<input type=>`, zero raw `<input type="checkbox">`, zero raw `<textarea>` (outside component definitions), zero `confirm()` calls remain in the codebase.
+
 ### Remaining Low-Priority Items (acceptable)
 
 - Dark mode color variants (`dark:bg-red-900`, `dark:bg-blue-900/30`, etc.) — kept as-is for future dark mode support
 - `as any` types in `reports/[id]/page.tsx` and `ab-tests` for JSON column casts — not UX-visible
 - Some admin list views without search (flow-templates, reputation, NPS, coupons) — fewer items, less critical need
 - `CancelSubscriptionDialog` uses Dialog instead of AlertDialog — kept intentionally because it contains a multi-step form
+- Native `<select>` elements kept (not converted to Radix Select) — FormData-based forms require native selects; styling is standardized to match shadcn appearance
 
 ---
 

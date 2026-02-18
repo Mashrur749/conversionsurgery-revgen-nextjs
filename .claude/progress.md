@@ -194,3 +194,60 @@
 ### Documentation
 - [x] Updated docs/UX-AUDIT.md with resolution summary and session 3 fixes
 - [x] Updated .claude/progress.md with session 3 work
+
+## Session 4: Component Consistency Sweep
+
+### Auth Accessibility
+- [x] login/page.tsx: `role="alert"` on error divs, `aria-invalid` on email input
+- [x] client-login/page.tsx: `aria-invalid` on phone/email inputs, `role="alert"` on error messages, `aria-label` on back button
+- [x] claim/claim-form.tsx: `role="alert"` on error div
+
+### Raw Checkboxes → shadcn Switch/Checkbox
+- [x] ai-settings-form.tsx: 4 checkboxes → Switch (useEmojis, signMessages, canSchedule, quietHours)
+- [x] feature-toggles-form.tsx: 1 custom switch → shadcn Switch
+- [x] send-message-dialog.tsx: 1 checkbox → Switch (isUrgent)
+- [x] article-editor.tsx: 1 checkbox → Switch (isPublished)
+- [x] coupon-manager.tsx: 1 checkbox → Checkbox (firstTimeOnly)
+- [x] plan-list.tsx: 7 checkboxes → Checkbox (5 features + isPopular + allowOverages)
+
+### Raw Inputs → shadcn Input
+- [x] phone-number-manager.tsx: 2 raw inputs → Input
+- [x] email-templates/page.tsx: 4 raw inputs → Input
+- [x] email-templates/[id]/page.tsx: 2 raw inputs → Input
+- [x] generate-report-form.tsx: 3 raw inputs → Input (2 date, 1 text)
+- [x] variant-creation-modal.tsx: 2 raw inputs → Input
+- [x] send-message-dialog.tsx: 1 raw input → Input (number)
+
+### Raw Textareas → shadcn Textarea
+- [x] email-templates/page.tsx: 1 raw textarea → Textarea
+- [x] email-templates/[id]/page.tsx: 1 raw textarea → Textarea
+- [x] article-editor.tsx: 1 raw textarea → Textarea
+- [x] variant-creation-modal.tsx: 1 raw textarea → Textarea
+- [x] send-message-dialog.tsx: 1 raw textarea → Textarea
+
+### confirm() → AlertDialog
+- [x] team-members-list.tsx: confirm() → AlertDialog (from session 3 carry-over)
+- [x] calendar-integrations.tsx: confirm() → AlertDialog
+- [x] lead-media-tab.tsx: confirm() → AlertDialog
+
+### Layout & Styling Fixes
+- [x] escalations/page.tsx: `container py-6` → `space-y-6`
+- [x] analytics/page.tsx: `container py-6` → `space-y-6`, styled Suspense fallback
+- [x] ab-tests/[id]/page.tsx: `grid-cols-4` → responsive `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`
+- [x] Native select styling standardized to match shadcn Input across coupon-manager, plan-list, generate-report-form, variant-creation-modal, send-message-dialog
+- [x] Label standardization: raw `<label>` → shadcn Label with htmlFor/id pairing
+
+### Type Safety
+- [x] generate-report-form.tsx: `catch(err: any)` → `catch(err: unknown)` with instanceof guard
+
+### Verification
+- [x] Zero raw `<input type=>` in codebase
+- [x] Zero raw `<input type="checkbox">` in codebase
+- [x] Zero raw `<textarea>` in codebase (outside component definition)
+- [x] Zero `confirm()` calls in codebase
+- [x] TypeScript typecheck: clean
+- [x] Production build: clean
+
+### Documentation
+- [x] Updated docs/UX-AUDIT.md with session 4 fixes
+- [x] Updated .claude/progress.md with session 4 work
