@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, RefreshCw, CheckCircle, Loader2 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -51,6 +55,7 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState<string | null>(null);
+  const [disconnectId, setDisconnectId] = useState<string | null>(null);
 
   /** Fetch the list of calendar integrations for this client */
   const fetchIntegrations = useCallback(async () => {
@@ -94,13 +99,11 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
 
   /** Disconnect (soft-delete) a calendar integration */
   const disconnect = async (integrationId: string) => {
-    if (!confirm('Disconnect this calendar? Events will stop syncing.'))
-      return;
-
     try {
       await fetch(`/api/calendar/integrations/${integrationId}`, {
         method: 'DELETE',
       });
+      setDisconnectId(null);
       await fetchIntegrations();
       toast.success('Calendar disconnected');
     } catch {
@@ -204,7 +207,7 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => disconnect(integration.id)}
+                        onClick={() => setDisconnectId(integration.id)}
                       >
                         Disconnect
                       </Button>
@@ -220,6 +223,20 @@ export function CalendarIntegrations({ clientId }: CalendarIntegrationsProps) {
           })
         )}
       </CardContent>
+      <AlertDialog open={!!disconnectId} onOpenChange={(open) => !open && setDisconnectId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect Calendar</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will disconnect the calendar integration. Events will stop syncing.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => disconnectId && disconnect(disconnectId)}>Disconnect</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

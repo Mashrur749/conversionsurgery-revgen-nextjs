@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface TeamMember {
   id: string;
@@ -20,6 +25,7 @@ export function TeamMembersList({ clientId }: { clientId: string }) {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [newMember, setNewMember] = useState({ name: '', phone: '', email: '', role: '' });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMembers();
@@ -56,13 +62,19 @@ export function TeamMembersList({ clientId }: { clientId: string }) {
   }
 
   async function deleteMember(id: string) {
-    if (!confirm('Remove this team member?')) return;
     await fetch(`/api/team-members/${id}`, { method: 'DELETE' });
+    setDeleteId(null);
     fetchMembers();
   }
 
   if (loading) {
-    return <p className="text-muted-foreground">Loading...</p>;
+    return (
+      <div className="space-y-2">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-16 rounded-lg" />
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -100,7 +112,7 @@ export function TeamMembersList({ clientId }: { clientId: string }) {
                   variant="ghost"
                   size="sm"
                   className="text-destructive hover:text-sienna"
-                  onClick={() => deleteMember(member.id)}
+                  onClick={() => setDeleteId(member.id)}
                 >
                   Remove
                 </Button>
@@ -146,6 +158,20 @@ export function TeamMembersList({ clientId }: { clientId: string }) {
           + Add Team Member
         </Button>
       )}
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the team member. They will no longer receive escalation notifications.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => deleteId && deleteMember(deleteId)}>Remove</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

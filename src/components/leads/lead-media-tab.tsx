@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { MediaGallery } from '@/components/media/media-gallery';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 /** Shape of a media item as returned by the leads media API */
 interface MediaItem {
@@ -25,6 +29,7 @@ interface LeadMediaTabProps {
 export function LeadMediaTab({ leadId }: LeadMediaTabProps) {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/leads/${leadId}/media`)
@@ -40,10 +45,9 @@ export function LeadMediaTab({ leadId }: LeadMediaTabProps) {
   }, [leadId]);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this file?')) return;
-
     await fetch(`/api/media/${id}`, { method: 'DELETE' });
     setMedia(prev => prev.filter(m => m.id !== id));
+    setDeleteId(null);
   };
 
   if (loading) {
@@ -56,5 +60,23 @@ export function LeadMediaTab({ leadId }: LeadMediaTabProps) {
     );
   }
 
-  return <MediaGallery items={media} onDelete={handleDelete} />;
+  return (
+    <>
+      <MediaGallery items={media} onDelete={(id) => setDeleteId(id)} />
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete File</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this file. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={() => deleteId && handleDelete(deleteId)}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
 }
