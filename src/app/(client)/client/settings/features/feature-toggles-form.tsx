@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 
 interface Props {
   defaults: {
@@ -67,21 +68,12 @@ export function FeatureTogglesForm({ defaults }: Props) {
               <p className="font-medium">{meta.label}</p>
               <p className="text-sm text-muted-foreground">{meta.description}</p>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={form[key as keyof typeof form]}
-              onClick={() => toggle(key)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-                form[key as keyof typeof form] ? 'bg-primary' : 'bg-muted'
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform ${
-                  form[key as keyof typeof form] ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
+            <Switch
+              id={key}
+              checked={form[key as keyof typeof form]}
+              onCheckedChange={() => toggle(key)}
+              aria-label={meta.label}
+            />
           </CardContent>
         </Card>
       ))}

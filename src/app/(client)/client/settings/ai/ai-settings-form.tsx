@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 interface Props {
   defaults: {
@@ -61,22 +62,20 @@ export function AiSettingsForm({ defaults }: Props) {
           </div>
 
           <div className="flex items-center justify-between">
-            <Label>Use emojis in responses</Label>
-            <input
-              type="checkbox"
+            <Label htmlFor="use-emojis">Use emojis in responses</Label>
+            <Switch
+              id="use-emojis"
               checked={form.useEmojis}
-              onChange={(e) => update('useEmojis', e.target.checked)}
-              className="h-4 w-4"
+              onCheckedChange={(checked) => update('useEmojis', checked)}
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <Label>Sign messages with business name</Label>
-            <input
-              type="checkbox"
+            <Label htmlFor="sign-messages">Sign messages with business name</Label>
+            <Switch
+              id="sign-messages"
               checked={form.signMessages}
-              onChange={(e) => update('signMessages', e.target.checked)}
-              className="h-4 w-4"
+              onCheckedChange={(checked) => update('signMessages', checked)}
             />
           </div>
         </CardContent>
@@ -100,12 +99,11 @@ export function AiSettingsForm({ defaults }: Props) {
           </div>
 
           <div className="flex items-center justify-between">
-            <Label>AI can schedule appointments</Label>
-            <input
-              type="checkbox"
+            <Label htmlFor="can-schedule">AI can schedule appointments</Label>
+            <Switch
+              id="can-schedule"
               checked={form.canScheduleAppointments}
-              onChange={(e) => update('canScheduleAppointments', e.target.checked)}
-              className="h-4 w-4"
+              onCheckedChange={(checked) => update('canScheduleAppointments', checked)}
             />
           </div>
         </CardContent>
@@ -117,12 +115,11 @@ export function AiSettingsForm({ defaults }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <Label>Enable quiet hours</Label>
-            <input
-              type="checkbox"
+            <Label htmlFor="quiet-hours">Enable quiet hours</Label>
+            <Switch
+              id="quiet-hours"
               checked={form.quietHoursEnabled}
-              onChange={(e) => update('quietHoursEnabled', e.target.checked)}
-              className="h-4 w-4"
+              onCheckedChange={(checked) => update('quietHoursEnabled', checked)}
             />
           </div>
 
