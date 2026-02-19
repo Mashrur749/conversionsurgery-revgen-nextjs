@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS, ALL_PERMISSIONS } from '@/lib/permissions';
+import { requireAgencyPermission, AGENCY_PERMISSIONS, ALL_PERMISSIONS, preventEscalation } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { roleTemplates, agencyMemberships, clientMemberships, auditLog } from '@/db/schema';
 import { eq, count } from 'drizzle-orm';
@@ -16,7 +16,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+    const session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const { id } = await params;
     const body = await request.json();
@@ -51,6 +51,16 @@ export async function PATCH(
         return NextResponse.json(
           { error: 'Invalid permissions', details: invalidPerms },
           { status: 400 }
+        );
+      }
+
+      // Escalation prevention: editor must hold all permissions in the updated role
+      try {
+        preventEscalation(session.permissions, validated.permissions);
+      } catch (err) {
+        return NextResponse.json(
+          { error: err instanceof Error ? err.message : 'Permission escalation denied' },
+          { status: 403 }
         );
       }
     }

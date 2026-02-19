@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS, ALL_PERMISSIONS } from '@/lib/permissions';
+import { requireAgencyPermission, AGENCY_PERMISSIONS, ALL_PERMISSIONS, preventEscalation } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { roleTemplates, auditLog } from '@/db/schema';
 import { desc } from 'drizzle-orm';
@@ -40,7 +40,7 @@ const createRoleSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+    const session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const body = await request.json();
     const validated = createRoleSchema.parse(body);
@@ -53,6 +53,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid permissions', details: invalidPerms },
         { status: 400 }
+      );
+    }
+
+    // Escalation prevention: creator must hold all permissions in the new role
+    try {
+      preventEscalation(session.permissions, validated.permissions);
+    } catch (err) {
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : 'Permission escalation denied' },
+        { status: 403 }
       );
     }
 

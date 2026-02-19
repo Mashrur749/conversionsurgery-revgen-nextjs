@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { requireAgencyPermission, AGENCY_PERMISSIONS, preventEscalation } from '@/lib/permissions';
 import { getDb } from '@/db';
 import {
   agencyMemberships,
@@ -23,7 +23,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+    const session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const { id } = await params;
     const body = await request.json();
@@ -83,6 +83,16 @@ export async function PATCH(
         return NextResponse.json(
           { error: 'Cannot assign the Agency Owner role' },
           { status: 400 }
+        );
+      }
+
+      // Escalation prevention: editor must hold all permissions in the new role
+      try {
+        preventEscalation(session.permissions, template.permissions);
+      } catch (err) {
+        return NextResponse.json(
+          { error: err instanceof Error ? err.message : 'Permission escalation denied' },
+          { status: 403 }
         );
       }
     }
