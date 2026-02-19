@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import {
   clientMemberships,
@@ -28,9 +28,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; mid: string }> }
 ) {
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_EDIT);
-
     const { id: clientId, mid: membershipId } = await params;
+    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+
     const body = await request.json();
     const validated = updateClientMemberSchema.parse(body);
 
@@ -169,9 +169,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; mid: string }> }
 ) {
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_EDIT);
-
     const { id: clientId, mid: membershipId } = await params;
+    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+
     const db = getDb();
 
     // Load existing membership

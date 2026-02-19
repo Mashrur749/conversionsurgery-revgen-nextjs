@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import {
   people,
@@ -17,9 +17,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_EDIT);
-
     const { id: clientId } = await params;
+    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+
     const db = getDb();
 
     // Verify client exists
@@ -102,9 +102,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_EDIT);
-
     const { id: clientId } = await params;
+    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+
     const body = await request.json();
     const validated = addMemberSchema.parse(body);
 

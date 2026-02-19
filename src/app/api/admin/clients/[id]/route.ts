@@ -1,22 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { z } from 'zod';
 import { sendOnboardingNotification } from '@/lib/services/agency-communication';
-import { isSuperAdmin } from '@/lib/utils/admin-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
 
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_VIEW);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const db = getDb();
@@ -77,10 +81,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
 
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   try {
@@ -142,13 +151,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
 
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-  if (!isSuperAdmin(session)) {
-    return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_DELETE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const db = getDb();

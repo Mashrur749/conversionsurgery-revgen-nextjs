@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { responseTemplates } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
@@ -21,10 +21,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
 
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.TEMPLATES_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const db = getDb();
@@ -43,10 +48,15 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await auth();
 
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.TEMPLATES_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   try {

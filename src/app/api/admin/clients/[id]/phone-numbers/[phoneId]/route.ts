@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { removeNumber, setPrimary } from '@/lib/services/client-phone-management';
 import { z } from 'zod';
 
@@ -11,12 +11,17 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; phoneId: string }> }
 ) {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const { id, phoneId } = await params;
 
-  const { phoneId } = await params;
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.PHONES_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
+  }
   const parsed = patchSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -33,12 +38,18 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; phoneId: string }> }
 ) {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const { id, phoneId } = await params;
+
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.PHONES_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
-  const { phoneId } = await params;
   await removeNumber(phoneId);
   return NextResponse.json({ success: true });
 }

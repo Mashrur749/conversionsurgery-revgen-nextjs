@@ -36,6 +36,7 @@ export {
 export {
   getAgencySession,
   requireAgencyPermission,
+  requireAgencyClientPermission,
   canAccessClient,
   type AgencySession,
 } from './require-agency-permission';

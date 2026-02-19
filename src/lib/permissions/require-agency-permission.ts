@@ -133,3 +133,20 @@ export function canAccessClient(
   if (session.clientScope === 'all') return true;
   return session.assignedClientIds?.includes(clientId) ?? false;
 }
+
+/**
+ * Require agency permission AND client access in one call.
+ * Use in /api/admin/clients/[id]/* route handlers.
+ * Throws 'Unauthorized' if not authenticated, 'Forbidden' if insufficient
+ * permissions or client not in scope.
+ */
+export async function requireAgencyClientPermission(
+  clientId: string,
+  ...required: AgencyPermission[]
+): Promise<AgencySession> {
+  const session = await requireAgencyPermission(...required);
+  if (!canAccessClient(session, clientId)) {
+    throw new Error('Forbidden: client not in scope');
+  }
+  return session;
+}

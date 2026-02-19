@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { updateKnowledgeEntry, deleteKnowledgeEntry } from '@/lib/services/knowledge-base';
 import { z } from 'zod';
 
@@ -15,11 +15,16 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; entryId: string }> }
 ) {
-  const { entryId } = await params;
-  const session = await auth();
+  const { id, entryId } = await params;
 
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.KNOWLEDGE_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   try {
@@ -47,11 +52,16 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; entryId: string }> }
 ) {
-  const { entryId } = await params;
-  const session = await auth();
+  const { id, entryId } = await params;
 
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.KNOWLEDGE_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   try {
