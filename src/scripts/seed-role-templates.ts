@@ -9,44 +9,12 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { roleTemplates } from '../db/schema/role-templates';
 import { sql } from 'drizzle-orm';
-
-const ALL_PORTAL_PERMISSIONS = [
-  'portal.dashboard',
-  'portal.leads.view',
-  'portal.leads.edit',
-  'portal.conversations.view',
-  'portal.analytics.view',
-  'portal.revenue.view',
-  'portal.knowledge.view',
-  'portal.knowledge.edit',
-  'portal.reviews.view',
-  'portal.team.view',
-  'portal.team.manage',
-  'portal.settings.view',
-  'portal.settings.edit',
-  'portal.settings.ai',
-];
-
-const ALL_AGENCY_PERMISSIONS = [
-  'agency.clients.view',
-  'agency.clients.create',
-  'agency.clients.edit',
-  'agency.clients.delete',
-  'agency.flows.view',
-  'agency.flows.edit',
-  'agency.templates.edit',
-  'agency.knowledge.edit',
-  'agency.conversations.view',
-  'agency.conversations.respond',
-  'agency.analytics.view',
-  'agency.abtests.manage',
-  'agency.ai.edit',
-  'agency.billing.view',
-  'agency.billing.manage',
-  'agency.team.manage',
-  'agency.settings.manage',
-  'agency.phones.manage',
-];
+import {
+  PORTAL_PERMISSIONS,
+  AGENCY_PERMISSIONS,
+  ALL_PORTAL_PERMISSIONS,
+  ALL_AGENCY_PERMISSIONS,
+} from '../lib/permissions/constants';
 
 const BUILT_IN_TEMPLATES = [
   {
@@ -54,7 +22,7 @@ const BUILT_IN_TEMPLATES = [
     slug: 'business_owner',
     description: 'Full access to all client portal features. Assigned to the business owner.',
     scope: 'client',
-    permissions: ALL_PORTAL_PERMISSIONS,
+    permissions: [...ALL_PORTAL_PERMISSIONS],
   },
   {
     name: 'Office Manager',
@@ -62,7 +30,7 @@ const BUILT_IN_TEMPLATES = [
     description: 'Access to most client portal features except AI settings and team management.',
     scope: 'client',
     permissions: ALL_PORTAL_PERMISSIONS.filter(
-      (p) => p !== 'portal.settings.ai' && p !== 'portal.team.manage'
+      (p) => p !== PORTAL_PERMISSIONS.SETTINGS_AI && p !== PORTAL_PERMISSIONS.TEAM_MANAGE
     ),
   },
   {
@@ -71,9 +39,9 @@ const BUILT_IN_TEMPLATES = [
     description: 'Basic access to dashboard, leads, and conversations.',
     scope: 'client',
     permissions: [
-      'portal.dashboard',
-      'portal.leads.view',
-      'portal.conversations.view',
+      PORTAL_PERMISSIONS.DASHBOARD,
+      PORTAL_PERMISSIONS.LEADS_VIEW,
+      PORTAL_PERMISSIONS.CONVERSATIONS_VIEW,
     ],
   },
   {
@@ -81,7 +49,7 @@ const BUILT_IN_TEMPLATES = [
     slug: 'agency_owner',
     description: 'Full access to all agency features including billing and settings.',
     scope: 'agency',
-    permissions: ALL_AGENCY_PERMISSIONS,
+    permissions: [...ALL_AGENCY_PERMISSIONS],
   },
   {
     name: 'Agency Admin',
@@ -89,7 +57,7 @@ const BUILT_IN_TEMPLATES = [
     description: 'Full agency access except billing management and system settings.',
     scope: 'agency',
     permissions: ALL_AGENCY_PERMISSIONS.filter(
-      (p) => p !== 'agency.billing.manage' && p !== 'agency.settings.manage'
+      (p) => p !== AGENCY_PERMISSIONS.BILLING_MANAGE && p !== AGENCY_PERMISSIONS.SETTINGS_MANAGE
     ),
   },
   {
@@ -98,15 +66,15 @@ const BUILT_IN_TEMPLATES = [
     description: 'Manage assigned clients: edit settings, flows, conversations, and knowledge base.',
     scope: 'agency',
     permissions: [
-      'agency.clients.view',
-      'agency.clients.edit',
-      'agency.flows.view',
-      'agency.flows.edit',
-      'agency.conversations.view',
-      'agency.conversations.respond',
-      'agency.analytics.view',
-      'agency.knowledge.edit',
-      'agency.ai.edit',
+      AGENCY_PERMISSIONS.CLIENTS_VIEW,
+      AGENCY_PERMISSIONS.CLIENTS_EDIT,
+      AGENCY_PERMISSIONS.FLOWS_VIEW,
+      AGENCY_PERMISSIONS.FLOWS_EDIT,
+      AGENCY_PERMISSIONS.CONVERSATIONS_VIEW,
+      AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND,
+      AGENCY_PERMISSIONS.ANALYTICS_VIEW,
+      AGENCY_PERMISSIONS.KNOWLEDGE_EDIT,
+      AGENCY_PERMISSIONS.AI_EDIT,
     ],
   },
   {
@@ -115,10 +83,10 @@ const BUILT_IN_TEMPLATES = [
     description: 'View clients and conversations, edit templates and knowledge base.',
     scope: 'agency',
     permissions: [
-      'agency.clients.view',
-      'agency.conversations.view',
-      'agency.templates.edit',
-      'agency.knowledge.edit',
+      AGENCY_PERMISSIONS.CLIENTS_VIEW,
+      AGENCY_PERMISSIONS.CONVERSATIONS_VIEW,
+      AGENCY_PERMISSIONS.TEMPLATES_EDIT,
+      AGENCY_PERMISSIONS.KNOWLEDGE_EDIT,
     ],
   },
 ];

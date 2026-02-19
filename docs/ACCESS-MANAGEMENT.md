@@ -151,7 +151,7 @@ Each spec is designed to be committed and verified independently. After each spe
 |------|------|------------|
 | Agency Owner | `agency_owner` | All `agency.*` permissions |
 | Agency Admin | `agency_admin` | All except `agency.billing.manage`, `agency.settings.manage` |
-| Account Manager | `account_manager` | `agency.clients.view/edit`, `agency.flows.view/edit`, `agency.conversations.*`, `agency.analytics.view`, `agency.knowledge.edit` |
+| Account Manager | `account_manager` | `agency.clients.view/edit`, `agency.flows.view/edit`, `agency.conversations.*`, `agency.analytics.view`, `agency.knowledge.edit`, `agency.ai.edit` |
 | Content Specialist | `content_specialist` | `agency.clients.view`, `agency.conversations.view`, `agency.templates.edit`, `agency.knowledge.edit` |
 
 ## Security Considerations
@@ -159,6 +159,12 @@ Each spec is designed to be committed and verified independently. After each spe
 1. **Permission escalation prevention**: When granting permissions, the API checks that the granting user holds every permission being granted
 2. **Session invalidation**: Changing a user&apos;s role or revoking access bumps `sessionVersion`, immediately invalidating their existing session
 3. **Client suspension cascade**: When a client is suspended/deactivated, all `client_memberships` for that client have `isActive` set to false
-4. **Audit logging**: All permission changes, role assignments, access grants/revokes, and login events are logged
+4. **Audit logging**: All permission changes, role assignments, access grants/revokes, and login events are logged. Client portal team actions are also audited:
+   - `auth.business_switched` &mdash; user switches between businesses in the portal
+   - `team.member_added` &mdash; client portal user adds a team member
+   - `team.member_reactivated` &mdash; inactive member is reactivated
+   - `team.member_updated` &mdash; client portal user updates a team member
+   - `team.member_deactivated` &mdash; member is deactivated from the portal
+   - `team.member_removed` &mdash; member is removed from the portal
 5. **Partial unique index**: DB-level constraint ensures exactly one `isOwner = true` per client
 6. **Join table for client assignments**: `agency_client_assignments` uses proper FK references instead of UUID arrays for referential integrity

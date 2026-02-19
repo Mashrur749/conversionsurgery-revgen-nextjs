@@ -380,6 +380,21 @@ LEFT JOIN people p ON al.person_id = p.id
 WHERE al.action IN ('role.changed', 'member.invited', 'member.removed', 'member.updated')
 ORDER BY al.created_at DESC
 LIMIT 50;
+
+-- Client portal team actions
+SELECT al.action, al.created_at, p.name, al.metadata
+FROM audit_log al
+LEFT JOIN people p ON al.person_id = p.id
+WHERE al.action IN (
+  'auth.business_switched',    -- user switched between businesses
+  'team.member_added',         -- client portal user added team member
+  'team.member_reactivated',   -- inactive member reactivated
+  'team.member_updated',       -- client portal user updated team member
+  'team.member_deactivated',   -- member deactivated from portal
+  'team.member_removed'        -- member removed from portal
+)
+ORDER BY al.created_at DESC
+LIMIT 50;
 ```
 
 ---

@@ -58,7 +58,7 @@ function ClientLoginContent() {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   // Business picker state
-  const [personId, setPersonId] = useState('');
+  const [businessSelectionToken, setBusinessSelectionToken] = useState('');
   const [businesses, setBusinesses] = useState<BusinessOption[]>([]);
 
   const codeInputRef = useRef<HTMLInputElement>(null);
@@ -164,8 +164,9 @@ function ClientLoginContent() {
         error?: string;
         attemptsRemaining?: number;
         requireBusinessSelection?: boolean;
-        personId?: string;
+        businessSelectionToken?: string;
         businesses?: BusinessOption[];
+        redirectTo?: string;
       };
 
       if (!res.ok) {
@@ -179,8 +180,8 @@ function ClientLoginContent() {
       }
 
       // Multi-business: show business picker
-      if (data.requireBusinessSelection && data.personId && data.businesses) {
-        setPersonId(data.personId);
+      if (data.requireBusinessSelection && data.businessSelectionToken && data.businesses) {
+        setBusinessSelectionToken(data.businessSelectionToken);
         setBusinesses(data.businesses);
         setPhase('business-picker');
         setLoading(false);
@@ -188,7 +189,8 @@ function ClientLoginContent() {
       }
 
       // Single business or legacy — cookie already set
-      router.push('/client');
+      // Redirect to welcome page on first login, otherwise dashboard
+      router.push(data.redirectTo || '/client');
     } catch {
       setError('Something went wrong. Please try again.');
       setLoading(false);
@@ -203,7 +205,7 @@ function ClientLoginContent() {
       const res = await fetch('/api/client/auth/select-business', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personId, clientId }),
+        body: JSON.stringify({ businessSelectionToken, clientId }),
       });
 
       const data = (await res.json()) as { success?: boolean; error?: string };
@@ -394,7 +396,7 @@ function ClientLoginContent() {
                 setCode('');
                 setError('');
                 setBusinesses([]);
-                setPersonId('');
+                setBusinessSelectionToken('');
               }}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >

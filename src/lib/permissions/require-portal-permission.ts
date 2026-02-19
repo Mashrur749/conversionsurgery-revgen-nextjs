@@ -2,9 +2,9 @@
  * Portal (client) permission checking middleware.
  * Replaces the current getClientSession() pattern with permission-aware checks.
  *
- * During the transition period (before SPEC-03 cookie rewrite),
- * this uses the legacy cookie format and looks up permissions from the DB.
- * After SPEC-03, the cookie will carry personId + permissions directly.
+ * Supports both:
+ * - New cookie format (personId + clientId + permissions + sessionVersion)
+ * - Legacy cookie format (clientId only — looks up owner membership from DB)
  */
 import { getClientSession } from '@/lib/client-auth';
 import { getDb } from '@/db';
@@ -26,19 +26,64 @@ export interface PortalSession {
  * Get the authenticated client portal session with resolved permissions.
  * Returns null if not authenticated or membership is inactive.
  *
- * Currently uses the legacy cookie (clientId only) and enriches with
- * permission data from client_memberships + role_templates.
- * SPEC-03 will update to read permissions from the new cookie format.
+ * New format path: uses personId + clientId from cookie to look up ANY membership
+ * (owners, office managers, team members — all work).
+ *
+ * Legacy format path: uses clientId only and looks up the owner membership
+ * (pre-migration fallback).
  */
 export async function getPortalSession(): Promise<PortalSession | null> {
   const session = await getClientSession();
   if (!session) return null;
 
   const { clientId } = session;
-
-  // Look up owner membership for this client (legacy path)
-  // After SPEC-03, the cookie will carry personId + permissions directly
   const db = getDb();
+
+  // New format: cookie carries personId + permissions
+  if ('personId' in session && session.personId) {
+    const [membership] = await db
+      .select({
+        id: clientMemberships.id,
+        personId: clientMemberships.personId,
+        isOwner: clientMemberships.isOwner,
+        isActive: clientMemberships.isActive,
+        roleTemplateId: clientMemberships.roleTemplateId,
+        permissionOverrides: clientMemberships.permissionOverrides,
+      })
+      .from(clientMemberships)
+      .where(
+        and(
+          eq(clientMemberships.personId, session.personId),
+          eq(clientMemberships.clientId, clientId),
+          eq(clientMemberships.isActive, true)
+        )
+      )
+      .limit(1);
+
+    if (!membership) return null;
+
+    // Load role template permissions
+    const [template] = await db
+      .select({ permissions: roleTemplates.permissions })
+      .from(roleTemplates)
+      .where(eq(roleTemplates.id, membership.roleTemplateId))
+      .limit(1);
+
+    if (!template) return null;
+
+    const overrides = membership.permissionOverrides as PermissionOverrides | null;
+    const permissions = resolvePermissions(template.permissions, overrides);
+
+    return {
+      personId: membership.personId,
+      clientId,
+      membershipId: membership.id,
+      permissions,
+      isOwner: membership.isOwner,
+    };
+  }
+
+  // Legacy format: clientId only — look up owner membership
   const [membership] = await db
     .select({
       id: clientMemberships.id,

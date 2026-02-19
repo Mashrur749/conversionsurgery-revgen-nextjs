@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { requireAdmin } from '@/lib/utils/admin-auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import {
   agencyMemberships,
@@ -24,8 +23,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    requireAdmin(session);
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const { id } = await params;
     const body = await request.json();
@@ -166,8 +164,13 @@ export async function PATCH(
 
     return NextResponse.json({ membership: updated });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('admin access required')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -185,8 +188,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    requireAdmin(session);
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const { id } = await params;
     const db = getDb();
@@ -244,8 +246,13 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('admin access required')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
     console.error('DELETE /api/admin/team/[id] error:', error);
     return NextResponse.json({ error: 'Failed to remove member' }, { status: 500 });

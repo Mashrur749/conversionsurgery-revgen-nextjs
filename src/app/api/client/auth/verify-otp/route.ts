@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyOTP } from '@/lib/services/otp';
-import { setClientSessionCookie, setClientSessionCookieWithPermissions } from '@/lib/client-auth';
+import { setClientSessionCookie, setClientSessionCookieWithPermissions, signBusinessSelectionToken } from '@/lib/client-auth';
 import { getDb } from '@/db';
 import { people } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -59,8 +59,16 @@ export async function POST(request: NextRequest) {
 
     // New path: person-based auth with potential multi-business
     if (result.personId && result.businesses) {
-      // Update lastLoginAt
+      // Check if this is the person's first login (for welcome page redirect)
       const db = getDb();
+      const [person] = await db
+        .select({ lastLoginAt: people.lastLoginAt })
+        .from(people)
+        .where(eq(people.id, result.personId))
+        .limit(1);
+      const isFirstLogin = !person?.lastLoginAt;
+
+      // Update lastLoginAt
       await db
         .update(people)
         .set({ lastLoginAt: new Date() })
@@ -72,14 +80,18 @@ export async function POST(request: NextRequest) {
           result.personId,
           result.businesses[0].clientId
         );
-        return NextResponse.json({ success: true });
+        return NextResponse.json({
+          success: true,
+          ...(isFirstLogin ? { redirectTo: '/client/welcome' } : {}),
+        });
       }
 
-      // Multiple businesses — return list for business picker
+      // Multiple businesses — return signed token (not raw personId) for business picker
+      const token = await signBusinessSelectionToken(result.personId);
       return NextResponse.json({
         success: true,
         requireBusinessSelection: true,
-        personId: result.personId,
+        businessSelectionToken: token,
         businesses: result.businesses,
       });
     }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { requireAdmin } from '@/lib/utils/admin-auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import {
   people,
@@ -15,8 +14,7 @@ import { z } from 'zod';
 
 export async function GET() {
   try {
-    const session = await auth();
-    requireAdmin(session);
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const db = getDb();
 
@@ -80,8 +78,13 @@ export async function GET() {
 
     return NextResponse.json({ members: enrichedMembers });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('admin access required')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
     console.error('GET /api/admin/team error:', error);
     return NextResponse.json({ error: 'Failed to load team members' }, { status: 500 });
@@ -98,8 +101,7 @@ const inviteMemberSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    requireAdmin(session);
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const body = await request.json();
     const validated = inviteMemberSchema.parse(body);
@@ -209,8 +211,13 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('admin access required')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
     if (error instanceof z.ZodError) {
       return NextResponse.json(

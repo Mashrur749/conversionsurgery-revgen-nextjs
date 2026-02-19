@@ -157,6 +157,36 @@ export async function clearClientSessionCookie(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
+/**
+ * Business selection token: a signed, time-limited token proving OTP verification.
+ * Used instead of exposing raw personId to the client during multi-business selection.
+ * Token format: base64({personId, exp}).signature
+ */
+const BUSINESS_TOKEN_MAX_AGE_MS = 5 * 60 * 1000; // 5 minutes
+
+/** Sign a business selection token containing the personId. */
+export async function signBusinessSelectionToken(personId: string): Promise<string> {
+  const payload = btoa(
+    JSON.stringify({ personId, exp: Date.now() + BUSINESS_TOKEN_MAX_AGE_MS })
+  );
+  return signPayload(payload);
+}
+
+/** Verify a business selection token and return the personId, or null if invalid/expired. */
+export async function verifyBusinessSelectionToken(token: string): Promise<string | null> {
+  const payload = await verifyPayload(token);
+  if (!payload) return null;
+
+  try {
+    const decoded = JSON.parse(atob(payload)) as { personId?: string; exp?: number };
+    if (!decoded.personId || !decoded.exp) return null;
+    if (Date.now() > decoded.exp) return null;
+    return decoded.personId;
+  } catch {
+    return null;
+  }
+}
+
 /** Legacy session result (clientId only) */
 interface LegacySession {
   clientId: string;

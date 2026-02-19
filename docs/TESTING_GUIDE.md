@@ -234,12 +234,12 @@ These features have **no client dependency** — they're standalone admin tools.
 ### 2.5 Client User Login (C1)
 
 1. Open a new incognito window
-2. Go to `http://localhost:3000/login`
+2. Go to `http://localhost:3000/client-login`
 3. Enter the email you used when creating "Test Roofing Co"
-4. Click the magic link from email
-5. Verify you're redirected to the client dashboard `/dashboard`
+4. Enter the OTP code from email
+5. Verify you're redirected to the client portal `/client`
 
-**Pass criteria**: Dashboard shows the client's business name, lead count, and navigation.
+**Pass criteria**: Portal shows the client's business name, lead count, and navigation.
 
 ### 2.6 Client Team Management (C6)
 
@@ -292,7 +292,7 @@ These features have **no client dependency** — they're standalone admin tools.
 
 ### 2.5.2 Role Template Management
 
-1. Navigate to `/admin/team/roles`
+1. Navigate to `/admin/roles`
 2. Verify 7 built-in templates appear (3 client + 4 agency)
 3. Click &ldquo;Create Role&rdquo;
 4. Enter: Name &ldquo;Read-Only Analyst,&rdquo; scope &ldquo;agency,&rdquo; select `agency.clients.view` and `agency.analytics.view` permissions
@@ -328,6 +328,8 @@ These features have **no client dependency** — they're standalone admin tools.
 8. Verify they only see Dashboard and Conversations in the nav (Team Member role)
 
 **Pass criteria**: Team member has restricted navigation. Cannot access Settings, Revenue, etc.
+
+**API note**: The `GET /api/client/team/roles` endpoint lists available client-scoped roles. For non-owners, it filters out the `business_owner` role so they cannot escalate their own privileges.
 
 ### 2.5.6 Multi-Business Login
 

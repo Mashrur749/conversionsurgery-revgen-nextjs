@@ -283,8 +283,15 @@ export async function verifyOTP(
     .set({ attempts: otp.attempts + 1 })
     .where(eq(otpCodes.id, otp.id));
 
-  // Compare code
-  if (otp.code !== code) {
+  // Compare code using constant-time comparison to prevent timing attacks
+  const encoder = new TextEncoder();
+  const a = encoder.encode(otp.code);
+  const b = encoder.encode(code);
+  let mismatch = a.length !== b.length ? 1 : 0;
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= (a[i] ?? 0) ^ (b[i] ?? 0);
+  }
+  if (mismatch !== 0) {
     const remaining = otp.maxAttempts - (otp.attempts + 1);
     return { success: false, attemptsRemaining: remaining, error: 'wrong_code' };
   }

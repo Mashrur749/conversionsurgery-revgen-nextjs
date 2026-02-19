@@ -645,8 +645,9 @@ All human users are represented by a single `people` record. Access is granted t
    - "View All Clients" → client list
    - "View Reports" → report list
    - "Twilio Settings" → account dashboard
-4. Navigation is organized into four groups:
+4. Navigation is organized into five groups:
    - **Clients**: Dashboard, Clients, Users, Communications, Discussions
+   - **Team & Access**: Team, Roles, Audit Log
    - **Optimization**: Flow Templates, Flow Analytics, Variant Results, A/B Tests, Reputation
    - **Reporting**: Billing, Plans, Reports, Platform Health, Costs & Usage
    - **Settings**: Phone Numbers, Twilio Account, Voice AI, Compliance, Webhook Logs, Email Templates, API Keys, System Settings
@@ -684,7 +685,7 @@ All human users are represented by a single `people` record. Access is granted t
    - Confirm via AlertDialog
    - The system deactivates the membership and bumps `sessionVersion`
 6. To manage role templates:
-   - Navigate to `/admin/team/roles`
+   - Navigate to `/admin/roles`
    - View built-in roles (cannot be edited) and custom roles
    - Create custom roles by selecting from the available 18 agency permissions
    - Escalation prevention: you cannot grant permissions you don&apos;t hold yourself

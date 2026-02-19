@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { requireAdmin } from '@/lib/utils/admin-auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS, ALL_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { roleTemplates, agencyMemberships, clientMemberships, auditLog } from '@/db/schema';
 import { eq, count } from 'drizzle-orm';
 import { z } from 'zod';
-import { ALL_PERMISSIONS } from '@/lib/permissions';
 
 const updateRoleSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -18,8 +16,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    requireAdmin(session);
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const { id } = await params;
     const body = await request.json();
@@ -84,8 +81,13 @@ export async function PATCH(
 
     return NextResponse.json({ template: updated });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('admin access required')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -103,8 +105,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    requireAdmin(session);
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
 
     const { id } = await params;
     const db = getDb();
@@ -167,8 +168,13 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('admin access required')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
     console.error('DELETE /api/admin/roles/[id] error:', error);
     return NextResponse.json({ error: 'Failed to delete role template' }, { status: 500 });

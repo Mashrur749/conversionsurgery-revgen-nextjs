@@ -3,11 +3,11 @@ import { z } from 'zod';
 import { getDb } from '@/db';
 import { clientMemberships, clients, people, auditLog } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { setClientSessionCookieWithPermissions } from '@/lib/client-auth';
+import { setClientSessionCookieWithPermissions, verifyBusinessSelectionToken } from '@/lib/client-auth';
 
 const selectBusinessSchema = z
   .object({
-    personId: z.string().uuid(),
+    businessSelectionToken: z.string().min(1, 'Token is required'),
     clientId: z.string().uuid(),
   })
   .strict();
@@ -15,7 +15,7 @@ const selectBusinessSchema = z
 /**
  * POST /api/client/auth/select-business
  * Called after OTP verification when a person has multiple businesses.
- * Validates membership, sets cookie with permissions, and redirects to dashboard.
+ * Validates the signed token (proof of OTP), membership, sets cookie with permissions.
  */
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -33,7 +33,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { personId, clientId } = parsed.data;
+  const { businessSelectionToken, clientId } = parsed.data;
+
+  // Verify the signed token to extract personId (proves OTP was completed)
+  const personId = await verifyBusinessSelectionToken(businessSelectionToken);
+  if (!personId) {
+    return NextResponse.json(
+      { error: 'Invalid or expired token. Please log in again.' },
+      { status: 401 }
+    );
+  }
 
   try {
     const db = getDb();
