@@ -8,24 +8,35 @@ import {
   unique,
   primaryKey,
   boolean,
+  index,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
+import { people } from './people';
 
 /**
  * NextAuth Drizzle adapter tables
  */
 
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  emailVerified: timestamp('email_verified'),
-  image: varchar('image', { length: 500 }),
-  clientId: uuid('client_id').references(() => clients.id),
-  isAdmin: boolean('is_admin').default(false),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+export const users = pgTable(
+  'users',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: varchar('name', { length: 255 }),
+    email: varchar('email', { length: 255 }).notNull().unique(),
+    emailVerified: timestamp('email_verified'),
+    image: varchar('image', { length: 500 }),
+    clientId: uuid('client_id').references(() => clients.id),
+    isAdmin: boolean('is_admin').default(false),
+    personId: uuid('person_id').references(() => people.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_users_person_id').on(table.personId),
+  ]
+);
 
 export const accounts = pgTable(
   'accounts',

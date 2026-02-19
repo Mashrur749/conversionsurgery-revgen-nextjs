@@ -127,6 +127,13 @@
       "when": 1771301493562,
       "tag": "0017_ambiguous_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1771475491762,
+      "tag": "0018_lyrical_swordsman",
+      "breakpoints": true
     }
   ]
 }

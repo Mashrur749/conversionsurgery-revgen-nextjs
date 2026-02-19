@@ -32,6 +32,12 @@ import { escalationQueue } from './escalation-queue';
 import { escalationRules } from './escalation-rules';
 import { conversationCheckpoints } from './conversation-checkpoints';
 import { clientAgentSettings } from './client-agent-settings';
+import { people } from './people';
+import { roleTemplates } from './role-templates';
+import { clientMemberships } from './client-memberships';
+import { agencyMemberships } from './agency-memberships';
+import { agencyClientAssignments } from './agency-client-assignments';
+import { auditLog } from './audit-log';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -68,10 +74,14 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   escalationQueueItems: many(escalationQueue),
   escalationRules: many(escalationRules),
   clientAgentSettings: many(clientAgentSettings),
+  clientMemberships: many(clientMemberships),
+  agencyClientAssignments: many(agencyClientAssignments),
+  auditLogEntries: many(auditLog),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   client: one(clients, { fields: [users.clientId], references: [clients.id] }),
+  person: one(people, { fields: [users.personId], references: [people.id] }),
   accounts: many(accounts),
   sessions: many(sessions),
 }));
@@ -478,6 +488,82 @@ export const conversationCheckpointsRelations = relations(conversationCheckpoint
 export const clientAgentSettingsRelations = relations(clientAgentSettings, ({ one }) => ({
   client: one(clients, {
     fields: [clientAgentSettings.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Access Management
+export const peopleRelations = relations(people, ({ many }) => ({
+  users: many(users),
+  clientMemberships: many(clientMemberships, { relationName: 'memberClientMemberships' }),
+  invitedClientMemberships: many(clientMemberships, { relationName: 'invitedClientMemberships' }),
+  agencyMembership: many(agencyMemberships, { relationName: 'memberAgencyMemberships' }),
+  invitedAgencyMemberships: many(agencyMemberships, { relationName: 'invitedAgencyMemberships' }),
+  auditLogEntries: many(auditLog),
+}));
+
+export const roleTemplatesRelations = relations(roleTemplates, ({ many }) => ({
+  clientMemberships: many(clientMemberships),
+  agencyMemberships: many(agencyMemberships),
+}));
+
+export const clientMembershipsRelations = relations(clientMemberships, ({ one }) => ({
+  person: one(people, {
+    fields: [clientMemberships.personId],
+    references: [people.id],
+    relationName: 'memberClientMemberships',
+  }),
+  client: one(clients, {
+    fields: [clientMemberships.clientId],
+    references: [clients.id],
+  }),
+  roleTemplate: one(roleTemplates, {
+    fields: [clientMemberships.roleTemplateId],
+    references: [roleTemplates.id],
+  }),
+  invitedByPerson: one(people, {
+    fields: [clientMemberships.invitedBy],
+    references: [people.id],
+    relationName: 'invitedClientMemberships',
+  }),
+}));
+
+export const agencyMembershipsRelations = relations(agencyMemberships, ({ one, many }) => ({
+  person: one(people, {
+    fields: [agencyMemberships.personId],
+    references: [people.id],
+    relationName: 'memberAgencyMemberships',
+  }),
+  roleTemplate: one(roleTemplates, {
+    fields: [agencyMemberships.roleTemplateId],
+    references: [roleTemplates.id],
+  }),
+  invitedByPerson: one(people, {
+    fields: [agencyMemberships.invitedBy],
+    references: [people.id],
+    relationName: 'invitedAgencyMemberships',
+  }),
+  clientAssignments: many(agencyClientAssignments),
+}));
+
+export const agencyClientAssignmentsRelations = relations(agencyClientAssignments, ({ one }) => ({
+  agencyMembership: one(agencyMemberships, {
+    fields: [agencyClientAssignments.agencyMembershipId],
+    references: [agencyMemberships.id],
+  }),
+  client: one(clients, {
+    fields: [agencyClientAssignments.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const auditLogRelations = relations(auditLog, ({ one }) => ({
+  person: one(people, {
+    fields: [auditLog.personId],
+    references: [people.id],
+  }),
+  client: one(clients, {
+    fields: [auditLog.clientId],
     references: [clients.id],
   }),
 }));

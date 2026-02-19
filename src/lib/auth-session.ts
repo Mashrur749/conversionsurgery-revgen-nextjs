@@ -54,6 +54,8 @@ export async function getAuthSession() {
         id: user.id,
         email: user.email,
         name: user.name,
+        personId: user.personId ?? null,
+        isAdmin: user.isAdmin ?? false,
       },
       session: {
         sessionToken,

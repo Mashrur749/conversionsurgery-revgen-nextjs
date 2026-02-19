@@ -102,6 +102,14 @@ export * from './client-phone-numbers';
 // Auth tables (NextAuth)
 export * from './auth';
 
+// Access Management
+export * from './people';
+export * from './role-templates';
+export * from './client-memberships';
+export * from './agency-memberships';
+export * from './agency-client-assignments';
+export * from './audit-log';
+
 // Public tools
 export * from './roi-calculator-leads';
 
