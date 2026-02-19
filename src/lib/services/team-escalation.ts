@@ -175,7 +175,7 @@ export async function claimEscalation(token: string, teamMemberId: string) {
       };
     }
 
-    // Verify team member exists
+    // Verify team member exists and belongs to the same client
     const [member] = await db
       .select()
       .from(teamMembers)
@@ -184,6 +184,11 @@ export async function claimEscalation(token: string, teamMemberId: string) {
 
     if (!member) {
       console.log('[Team Escalation] Team member not found:', teamMemberId);
+      return { success: false, error: 'Team member not found' };
+    }
+
+    if (member.clientId !== escalation.clientId) {
+      console.log('[Team Escalation] Cross-client claim attempt:', { teamMemberId, escalationClient: escalation.clientId, memberClient: member.clientId });
       return { success: false, error: 'Team member not found' };
     }
 

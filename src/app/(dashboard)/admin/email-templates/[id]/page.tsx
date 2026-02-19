@@ -123,9 +123,12 @@ export default function EmailTemplateEditorPage() {
           </CardHeader>
           <CardContent>
             {previewHtml ? (
-              <div
-                className="border rounded p-4 bg-white"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
+              <iframe
+                srcDoc={previewHtml}
+                sandbox=""
+                className="w-full border rounded bg-white"
+                style={{ height: '400px' }}
+                title="Email template preview"
               />
             ) : (
               <p className="text-muted-foreground text-sm">Click Preview to see the rendered template.</p>
