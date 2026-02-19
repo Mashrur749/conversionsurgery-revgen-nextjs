@@ -23,6 +23,11 @@ export {
 export { preventEscalation, validateOverrides } from './escalation-guard';
 
 export {
+  invalidateClientSession,
+  invalidateAgencySession,
+} from './session-invalidation';
+
+export {
   getPortalSession,
   requirePortalPermission,
   type PortalSession,

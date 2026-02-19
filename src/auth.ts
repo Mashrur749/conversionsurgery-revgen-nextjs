@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { users, accounts, sessions, verificationTokens } from '@/db/schema/auth';
 import { clients } from '@/db/schema/clients';
 import { adminUsers } from '@/db/schema/admin-users';
+import { agencyMemberships, roleTemplates, agencyClientAssignments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendEmail } from '@/lib/services/resend';
 
@@ -23,6 +24,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           id: users.id,
           clientId: users.clientId,
           isAdmin: users.isAdmin,
+          personId: users.personId,
         })
         .from(users)
         .where(eq(users.email, user.email!))
@@ -31,15 +33,57 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (dbUser) {
         session.user.id = dbUser.id;
         session.user.isAdmin = dbUser.isAdmin ?? false;
+        session.user.personId = dbUser.personId;
 
-        // Look up admin role if this is an admin user
-        if (dbUser.isAdmin) {
+        // New path: if user has personId, enrich with agency membership data
+        if (dbUser.personId) {
+          const [membership] = await db
+            .select({
+              id: agencyMemberships.id,
+              roleTemplateId: agencyMemberships.roleTemplateId,
+              clientScope: agencyMemberships.clientScope,
+              isActive: agencyMemberships.isActive,
+            })
+            .from(agencyMemberships)
+            .where(eq(agencyMemberships.personId, dbUser.personId))
+            .limit(1);
+
+          if (membership && membership.isActive) {
+            const [template] = await db
+              .select({
+                permissions: roleTemplates.permissions,
+                slug: roleTemplates.slug,
+              })
+              .from(roleTemplates)
+              .where(eq(roleTemplates.id, membership.roleTemplateId))
+              .limit(1);
+
+            if (template) {
+              session.user.permissions = template.permissions;
+              session.user.role = template.slug;
+              session.user.clientScope = membership.clientScope as 'all' | 'assigned';
+              session.user.isAgency = true;
+
+              if (membership.clientScope === 'assigned') {
+                const assignments = await db
+                  .select({ clientId: agencyClientAssignments.clientId })
+                  .from(agencyClientAssignments)
+                  .where(eq(agencyClientAssignments.agencyMembershipId, membership.id));
+
+                session.user.assignedClientIds = assignments.map((a) => a.clientId);
+              }
+            }
+          }
+        }
+
+        // Legacy fallback: look up admin role from admin_users
+        if (dbUser.isAdmin && !session.user.isAgency) {
           const [adminRecord] = await db
             .select({ role: adminUsers.role })
             .from(adminUsers)
             .where(eq(adminUsers.email, user.email!))
             .limit(1);
-          (session.user as any).role = adminRecord?.role || 'admin';
+          session.user.role = adminRecord?.role || 'admin';
         }
 
         let clientId = dbUser.clientId;
@@ -47,7 +91,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         // Auto-link: if user has no clientId, try to find a matching client
         // by email. This handles the first-login race condition where the
         // signIn callback runs before the adapter creates the user record.
-        if (!dbUser.isAdmin && !clientId) {
+        if (!dbUser.isAdmin && !session.user.isAgency && !clientId) {
           const [matchingClient] = await db
             .select({ id: clients.id })
             .from(clients)
@@ -66,7 +110,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           }
         }
 
-        if (!dbUser.isAdmin && clientId) {
+        if (!dbUser.isAdmin && !session.user.isAgency && clientId) {
           const [client] = await db
             .select({
               id: clients.id,
@@ -102,6 +146,17 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       if (dbUser?.isAdmin) return true;
 
+      // Check if user has an agency membership (via personId)
+      if (dbUser?.personId) {
+        const [membership] = await db
+          .select({ id: agencyMemberships.id })
+          .from(agencyMemberships)
+          .where(eq(agencyMemberships.personId, dbUser.personId))
+          .limit(1);
+
+        if (membership) return true;
+      }
+
       const [client] = await db
         .select()
         .from(clients)
@@ -111,8 +166,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (!client) return false;
 
       // Link user to client if not already linked.
-      // On first login the adapter may not have created the user yet,
-      // so we also handle this in the session callback below.
       if (dbUser && !dbUser.clientId) {
         await db
           .update(users)
@@ -130,12 +183,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       type: 'email',
       from: process.env.EMAIL_FROM || 'noreply@example.com',
       maxAge: 24 * 60 * 60,
-      async sendVerificationRequest({ identifier, url, expires, provider }) {
-        console.log(`[EmailProvider] sendVerificationRequest called!`);
-        console.log(`[EmailProvider] identifier: ${identifier}`);
-        console.log(`[EmailProvider] url: ${url}`);
-        console.log(`[EmailProvider] provider: ${JSON.stringify(provider)}`);
-
+      async sendVerificationRequest({ identifier, url, expires }) {
         try {
           if (process.env.NODE_ENV === 'development') {
             console.log(`[next-auth][info][EMAIL_VERIFICATION_SEND]`);

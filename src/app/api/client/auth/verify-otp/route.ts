@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyOTP } from '@/lib/services/otp';
-import { setClientSessionCookie } from '@/lib/client-auth';
+import { setClientSessionCookie, setClientSessionCookieWithPermissions } from '@/lib/client-auth';
+import { getDb } from '@/db';
+import { people } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 const verifyOtpSchema = z
   .object({
@@ -54,10 +57,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Set signed client session cookie — 30 days
-    await setClientSessionCookie(result.clientId!);
+    // New path: person-based auth with potential multi-business
+    if (result.personId && result.businesses) {
+      // Update lastLoginAt
+      const db = getDb();
+      await db
+        .update(people)
+        .set({ lastLoginAt: new Date() })
+        .where(eq(people.id, result.personId));
 
-    return NextResponse.json({ success: true });
+      if (result.businesses.length === 1) {
+        // Single business — auto-select and set cookie with permissions
+        await setClientSessionCookieWithPermissions(
+          result.personId,
+          result.businesses[0].clientId
+        );
+        return NextResponse.json({ success: true });
+      }
+
+      // Multiple businesses — return list for business picker
+      return NextResponse.json({
+        success: true,
+        requireBusinessSelection: true,
+        personId: result.personId,
+        businesses: result.businesses,
+      });
+    }
+
+    // Legacy path: clientId-only session
+    if (result.clientId) {
+      await setClientSessionCookie(result.clientId);
+      return NextResponse.json({ success: true });
+    }
+
+    return NextResponse.json(
+      { error: 'No active business found for this account.' },
+      { status: 403 }
+    );
   } catch (error) {
     console.error('[OTP] Verify error:', error);
     return NextResponse.json(

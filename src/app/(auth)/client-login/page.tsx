@@ -1,19 +1,27 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronRight } from 'lucide-react';
 
 type Method = 'phone' | 'email';
-type Phase = 'identifier' | 'otp';
+type Phase = 'identifier' | 'otp' | 'business-picker';
+
+interface BusinessOption {
+  clientId: string;
+  businessName: string;
+}
 
 const RESEND_COOLDOWN = 30;
 
 export default function ClientLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const revoked = searchParams.get('revoked') === 'true';
 
   const [method, setMethod] = useState<Method>('phone');
   const [phase, setPhase] = useState<Phase>('identifier');
@@ -22,6 +30,10 @@ export default function ClientLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Business picker state
+  const [personId, setPersonId] = useState('');
+  const [businesses, setBusinesses] = useState<BusinessOption[]>([]);
 
   const codeInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,15 +133,57 @@ export default function ClientLoginPage() {
         body: JSON.stringify({ identifier: identifier.trim(), code, method }),
       });
 
-      const data = (await res.json()) as { success?: boolean; error?: string; attemptsRemaining?: number };
+      const data = (await res.json()) as {
+        success?: boolean;
+        error?: string;
+        attemptsRemaining?: number;
+        requireBusinessSelection?: boolean;
+        personId?: string;
+        businesses?: BusinessOption[];
+      };
 
       if (!res.ok) {
         setError(data.error || 'Verification failed');
         if (data.attemptsRemaining === 0) {
-          // Locked out — go back to send new code
           setPhase('identifier');
           setCode('');
         }
+        setLoading(false);
+        return;
+      }
+
+      // Multi-business: show business picker
+      if (data.requireBusinessSelection && data.personId && data.businesses) {
+        setPersonId(data.personId);
+        setBusinesses(data.businesses);
+        setPhase('business-picker');
+        setLoading(false);
+        return;
+      }
+
+      // Single business or legacy — cookie already set
+      router.push('/client');
+    } catch {
+      setError('Something went wrong. Please try again.');
+      setLoading(false);
+    }
+  }
+
+  async function handleSelectBusiness(clientId: string) {
+    setError('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/client/auth/select-business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ personId, clientId }),
+      });
+
+      const data = (await res.json()) as { success?: boolean; error?: string };
+
+      if (!res.ok) {
+        setError(data.error || 'Failed to select business');
         setLoading(false);
         return;
       }
@@ -161,6 +215,12 @@ export default function ClientLoginPage() {
         <p className="text-sm text-white/60 mt-1">Sign in to your dashboard</p>
       </div>
       <CardContent className="p-6">
+        {revoked && phase === 'identifier' && (
+          <div className="mb-4 rounded-md bg-sage-light px-4 py-3 text-sm text-forest">
+            Your access has been updated. Please contact your administrator if you need access.
+          </div>
+        )}
+
         {phase === 'identifier' ? (
           <form onSubmit={handleSendOTP} className="space-y-4">
             {method === 'phone' ? (
@@ -218,7 +278,7 @@ export default function ClientLoginPage() {
               </button>
             </p>
           </form>
-        ) : (
+        ) : phase === 'otp' ? (
           <div className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">
               Enter the code sent to{' '}
@@ -274,6 +334,46 @@ export default function ClientLoginPage() {
                   : 'Resend code'}
               </button>
             </div>
+          </div>
+        ) : (
+          /* Business picker phase */
+          <div className="space-y-4">
+            <CardHeader className="p-0 pb-2">
+              <CardTitle className="text-lg">Select Business</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                You have access to multiple businesses. Select one to continue.
+              </p>
+            </CardHeader>
+
+            <div className="divide-y rounded-lg border">
+              {businesses.map((b) => (
+                <button
+                  key={b.clientId}
+                  onClick={() => handleSelectBusiness(b.clientId)}
+                  disabled={loading}
+                  className="w-full flex items-center justify-between p-4 hover:bg-accent transition-colors text-left first:rounded-t-lg last:rounded-b-lg disabled:opacity-50"
+                >
+                  <span className="font-medium">{b.businessName}</span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
+
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+
+            <button
+              type="button"
+              onClick={() => {
+                setPhase('identifier');
+                setCode('');
+                setError('');
+                setBusinesses([]);
+                setPersonId('');
+              }}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              &larr; Start over
+            </button>
           </div>
         )}
       </CardContent>
