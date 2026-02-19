@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { verifyOTP } from '@/lib/services/otp';
 import { setClientSessionCookie, setClientSessionCookieWithPermissions, signBusinessSelectionToken } from '@/lib/client-auth';
 import { getDb } from '@/db';
-import { people } from '@/db/schema';
+import { people, auditLog } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 const verifyOtpSchema = z
@@ -80,6 +80,19 @@ export async function POST(request: NextRequest) {
           result.personId,
           result.businesses[0].clientId
         );
+
+        // Audit log for auto-selected login
+        await db.insert(auditLog).values({
+          personId: result.personId,
+          clientId: result.businesses[0].clientId,
+          action: 'login.auto_selected',
+          resourceType: 'person',
+          resourceId: result.personId,
+          metadata: { method, businessCount: 1 },
+          ipAddress: request.headers.get('x-forwarded-for'),
+          userAgent: request.headers.get('user-agent'),
+        });
+
         return NextResponse.json({
           success: true,
           ...(isFirstLogin ? { redirectTo: '/client/welcome' } : {}),

@@ -43,12 +43,28 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               roleTemplateId: agencyMemberships.roleTemplateId,
               clientScope: agencyMemberships.clientScope,
               isActive: agencyMemberships.isActive,
+              sessionVersion: agencyMemberships.sessionVersion,
             })
             .from(agencyMemberships)
             .where(eq(agencyMemberships.personId, dbUser.personId))
             .limit(1);
 
           if (membership && membership.isActive) {
+            // Check if session version has changed (role/scope was updated)
+            if (
+              session.user.agencySessionVersion !== undefined &&
+              membership.sessionVersion > session.user.agencySessionVersion
+            ) {
+              // Session is stale — clear agency data to force re-auth
+              session.user.isAgency = false;
+              session.user.permissions = [];
+              session.user.role = undefined;
+              session.user.clientScope = undefined;
+              session.user.assignedClientIds = undefined;
+              session.user.agencySessionVersion = membership.sessionVersion;
+              return session;
+            }
+
             const [template] = await db
               .select({
                 permissions: roleTemplates.permissions,
@@ -63,6 +79,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               session.user.role = template.slug;
               session.user.clientScope = membership.clientScope as 'all' | 'assigned';
               session.user.isAgency = true;
+              session.user.agencySessionVersion = membership.sessionVersion;
 
               if (membership.clientScope === 'assigned') {
                 const assignments = await db

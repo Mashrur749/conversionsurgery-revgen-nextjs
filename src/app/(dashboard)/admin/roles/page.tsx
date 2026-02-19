@@ -53,6 +53,9 @@ export default async function RolesPage() {
     updatedAt: t.updatedAt.toISOString(),
   }));
 
+  // Pass current user's permissions for escalation prevention in the UI
+  const userPermissions = session.user.permissions || [];
+
   return (
     <div className="space-y-6">
       <div>
@@ -62,7 +65,7 @@ export default async function RolesPage() {
         </p>
       </div>
 
-      <RolesClient templates={enrichedTemplates} />
+      <RolesClient templates={enrichedTemplates} userPermissions={userPermissions} />
     </div>
   );
 }

@@ -162,9 +162,10 @@ interface RoleTemplate {
 
 interface RolesClientProps {
   templates: RoleTemplate[];
+  userPermissions: string[];
 }
 
-export function RolesClient({ templates }: RolesClientProps) {
+export function RolesClient({ templates, userPermissions }: RolesClientProps) {
   const router = useRouter();
   const [createOpen, setCreateOpen] = useState(false);
   const [viewTemplate, setViewTemplate] = useState<RoleTemplate | null>(null);
@@ -180,6 +181,21 @@ export function RolesClient({ templates }: RolesClientProps) {
 
   const builtInTemplates = templates.filter((t) => t.isBuiltIn);
   const customTemplates = templates.filter((t) => !t.isBuiltIn);
+  const userPermSet = new Set(userPermissions);
+
+  // Compute permissions the user cannot grant (they don't hold them)
+  function getDisabledPermissions(scope: string): Set<string> {
+    const groups = getPermissionGroups(scope);
+    const disabled = new Set<string>();
+    for (const group of Object.values(groups)) {
+      for (const perm of group.permissions) {
+        if (!userPermSet.has(perm.key)) {
+          disabled.add(perm.key);
+        }
+      }
+    }
+    return disabled;
+  }
 
   function getPermissionGroups(scope: string) {
     return scope === 'agency' ? AGENCY_PERMISSION_GROUPS : CLIENT_PERMISSION_GROUPS;
@@ -291,7 +307,8 @@ export function RolesClient({ templates }: RolesClientProps) {
   function renderPermissionChecklist(
     scope: string,
     permissions: string[],
-    readOnly: boolean
+    readOnly: boolean,
+    disabledPermissions?: Set<string>
   ) {
     const groups = getPermissionGroups(scope);
 
@@ -308,19 +325,27 @@ export function RolesClient({ templates }: RolesClientProps) {
               </Badge>
             </CollapsibleTrigger>
             <CollapsibleContent className="pl-6 space-y-1">
-              {group.permissions.map((perm) => (
-                <label
-                  key={perm.key}
-                  className="flex items-center gap-2 px-2 py-1 rounded hover:bg-accent cursor-pointer text-sm"
-                >
-                  <Checkbox
-                    checked={permissions.includes(perm.key)}
-                    onCheckedChange={() => !readOnly && togglePermission(perm.key)}
-                    disabled={readOnly}
-                  />
-                  {perm.label}
-                </label>
-              ))}
+              {group.permissions.map((perm) => {
+                const isDisabled = readOnly || disabledPermissions?.has(perm.key);
+                return (
+                  <label
+                    key={perm.key}
+                    className={`flex items-center gap-2 px-2 py-1 rounded text-sm ${
+                      isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-accent cursor-pointer'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={permissions.includes(perm.key)}
+                      onCheckedChange={() => !isDisabled && togglePermission(perm.key)}
+                      disabled={isDisabled}
+                    />
+                    {perm.label}
+                    {!readOnly && disabledPermissions?.has(perm.key) && (
+                      <Lock className="size-3 text-muted-foreground ml-auto" />
+                    )}
+                  </label>
+                );
+              })}
             </CollapsibleContent>
           </Collapsible>
         ))}
@@ -518,8 +543,11 @@ export function RolesClient({ templates }: RolesClientProps) {
             </div>
             <div>
               <Label>Permissions</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permissions you don&apos;t hold are locked.
+              </p>
               <div className="border rounded-md p-2 mt-1 max-h-64 overflow-y-auto">
-                {renderPermissionChecklist(formScope, formPermissions, false)}
+                {renderPermissionChecklist(formScope, formPermissions, false, getDisabledPermissions(formScope))}
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -583,8 +611,11 @@ export function RolesClient({ templates }: RolesClientProps) {
             </div>
             <div>
               <Label>Permissions</Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Permissions you don&apos;t hold are locked.
+              </p>
               <div className="border rounded-md p-2 mt-1 max-h-64 overflow-y-auto">
-                {renderPermissionChecklist(formScope, formPermissions, false)}
+                {renderPermissionChecklist(formScope, formPermissions, false, getDisabledPermissions(formScope))}
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2">

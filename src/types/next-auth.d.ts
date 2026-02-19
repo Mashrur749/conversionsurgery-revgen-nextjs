@@ -14,6 +14,7 @@ declare module 'next-auth' {
       clientScope?: 'all' | 'assigned';
       assignedClientIds?: string[];
       isAgency?: boolean;
+      agencySessionVersion?: number;
     };
     client?: {
       id: string;

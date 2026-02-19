@@ -562,6 +562,10 @@ export function ClientTeamClient({
               <DialogTitle>Edit {editMember?.name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
+                Changes to this member&apos;s role or status will take effect immediately
+                and they will be logged out.
+              </p>
               <div>
                 <Label>Role</Label>
                 <Select value={editRoleId} onValueChange={setEditRoleId}>
