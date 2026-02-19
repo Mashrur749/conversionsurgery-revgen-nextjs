@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 
 const updateSchema = z.object({
   enabled: z.boolean(),
@@ -11,9 +11,11 @@ const updateSchema = z.object({
 });
 
 export async function PUT(request: NextRequest) {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   const { clientId } = session;
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -18,14 +18,27 @@ type ClientToggle = typeof CLIENT_SAFE_TOGGLES[number];
 
 /** GET /api/client/features - Fetch safe feature toggles for the authenticated client. */
 export async function GET() {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_VIEW);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const db = getDb();
+  const [client] = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.id, session.clientId))
+    .limit(1);
+
+  if (!client) {
+    return NextResponse.json({ error: 'Client not found' }, { status: 404 });
   }
 
   const toggles: Record<string, boolean> = {};
   for (const key of CLIENT_SAFE_TOGGLES) {
-    toggles[key] = session.client[key] ?? true;
+    toggles[key] = client[key] ?? true;
   }
 
   return NextResponse.json(toggles);
@@ -41,9 +54,11 @@ const updateSchema = z.object({
 
 /** PUT /api/client/features - Update safe feature toggles for the authenticated client. */
 export async function PUT(request: NextRequest) {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = await request.json();

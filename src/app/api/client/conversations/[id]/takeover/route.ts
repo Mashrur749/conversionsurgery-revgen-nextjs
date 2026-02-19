@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 
 /**
  * POST /api/client/conversations/[id]/takeover
@@ -12,10 +12,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getClientSession();
-  if (!session) {
-    console.error('[Messaging] Unauthorized takeover attempt');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.CONVERSATIONS_VIEW);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   const { clientId } = session;
 

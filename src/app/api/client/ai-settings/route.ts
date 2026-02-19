@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { clientAgentSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -7,9 +7,11 @@ import { z } from 'zod';
 
 /** GET /api/client/ai-settings - Fetch AI settings for the authenticated client. */
 export async function GET() {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_VIEW);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const db = getDb();
@@ -57,9 +59,11 @@ const updateSchema = z.object({
 
 /** PUT /api/client/ai-settings - Update AI settings for the authenticated client. */
 export async function PUT(request: NextRequest) {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_AI);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = await request.json();

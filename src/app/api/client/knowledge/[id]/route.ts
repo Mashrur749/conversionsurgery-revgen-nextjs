@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { knowledgeBase } from '@/db/schema/knowledge-base';
 import { eq, and } from 'drizzle-orm';
@@ -19,9 +19,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.KNOWLEDGE_EDIT);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = await request.json();
@@ -60,9 +62,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.KNOWLEDGE_EDIT);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const db = getDb();

@@ -11,6 +11,7 @@ import { getDb } from '@/db';
 import { clientMemberships, roleTemplates } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { resolvePermissions, hasAllPermissions } from './resolve';
+import { ALL_PORTAL_PERMISSIONS } from './constants';
 import type { PortalPermission } from './constants';
 import type { PermissionOverrides } from './resolve';
 
@@ -20,6 +21,8 @@ export interface PortalSession {
   membershipId: string;
   permissions: Set<string>;
   isOwner: boolean;
+  /** True when running in legacy mode (pre-migration, no memberships). */
+  isLegacy?: boolean;
 }
 
 /**
@@ -105,8 +108,15 @@ export async function getPortalSession(): Promise<PortalSession | null> {
 
   if (!membership) {
     // No owner membership yet (pre-migration via SPEC-06).
-    // Return null — callers should fall back to the existing getClientSession().
-    return null;
+    // Legacy users had full portal access — bridge with all permissions during transition.
+    return {
+      personId: '',
+      clientId,
+      membershipId: '',
+      permissions: new Set<string>(ALL_PORTAL_PERMISSIONS),
+      isOwner: true,
+      isLegacy: true,
+    };
   }
 
   // Load role template permissions

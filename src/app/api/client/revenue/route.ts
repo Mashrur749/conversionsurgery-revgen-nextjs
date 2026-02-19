@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 import { getDb, leads, appointments } from '@/db';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { getRevenueStats, getRevenueByService } from '@/lib/services/revenue';
@@ -7,9 +7,11 @@ import { getSpeedToLeadMetrics } from '@/lib/services/speed-to-lead';
 
 /** GET /api/client/revenue - Client-facing ROI metrics. */
 export async function GET() {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.REVENUE_VIEW);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const { clientId } = session;

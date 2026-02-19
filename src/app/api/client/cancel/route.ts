@@ -9,7 +9,7 @@ import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendEmail } from '@/lib/services/resend';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 
 const cancelSchema = z.object({
   reason: z.string().min(1),
@@ -19,9 +19,11 @@ const cancelSchema = z.object({
 
 /** POST /api/client/cancel */
 export async function POST(request: NextRequest) {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   const { clientId } = session;
 

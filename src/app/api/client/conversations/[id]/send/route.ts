@@ -4,7 +4,7 @@ import { leads, conversations, clients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { z } from 'zod';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 
 const sendMessageSchema = z.object({
   message: z.string().min(1, 'Message is required'),
@@ -18,10 +18,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getClientSession();
-  if (!session) {
-    console.error('[Messaging] Unauthorized send attempt');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.CONVERSATIONS_VIEW);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
   const { clientId } = session;
 

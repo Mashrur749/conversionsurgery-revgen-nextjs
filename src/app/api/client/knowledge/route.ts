@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getClientSession } from '@/lib/client-auth';
+import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { knowledgeBase } from '@/db/schema/knowledge-base';
 import { eq, and } from 'drizzle-orm';
@@ -15,9 +15,11 @@ const createSchema = z.object({
 
 /** GET /api/client/knowledge - List all KB entries for the authenticated client. */
 export async function GET() {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.KNOWLEDGE_VIEW);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const db = getDb();
@@ -35,9 +37,11 @@ export async function GET() {
 
 /** POST /api/client/knowledge - Create a new KB entry. */
 export async function POST(request: NextRequest) {
-  const session = await getClientSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let session;
+  try {
+    session = await requirePortalPermission(PORTAL_PERMISSIONS.KNOWLEDGE_EDIT);
+  } catch {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = await request.json();
