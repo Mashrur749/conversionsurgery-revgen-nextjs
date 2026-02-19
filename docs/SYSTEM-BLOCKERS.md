@@ -14,9 +14,10 @@ Beyond security (auth, permissions, IDOR), the application has **system-wide ope
 |----------|----------|------|--------|-----|
 | Data Integrity | 4 | 3 | 5 | 2 |
 | External API Resilience | 3 | 5 | 4 | 2 |
-| Legacy Migration | 0 | 2 | 1 | 0 |
-| Business Logic | 0 | 0 | 2 | 1 |
-| **Total** | **7** | **10** | **12** | **5** |
+| Legacy Migration | 0 | 2 | 2 | 0 |
+| Business Logic | 1 | 1 | 4 | 2 |
+| Scaling & Config | 2 | 1 | 1 | 0 |
+| **Total** | **10** | **12** | **16** | **6** |
 
 ---
 
@@ -303,7 +304,14 @@ Still uses `session?.user?.isAdmin` (line 53). Not migrated to `requireAgencyPer
 
 ---
 
-### L3 — TODOs indicating incomplete features [MEDIUM]
+### L3 — Legacy `users.isAdmin` and `users.clientId` still queried [MEDIUM]
+**Files:** `src/app/api/admin/users/route.ts`, `src/auth.ts`
+
+These fields are supposed to be deprecated in favor of `users.personId` → `agencyMemberships`/`clientMemberships`, but they are still actively read. Cannot drop columns until auth flow and user management routes are updated to the new model.
+
+---
+
+### L4 — TODOs indicating incomplete features [MEDIUM]
 **Files:**
 
 | File | TODO | Impact |
@@ -316,14 +324,48 @@ Still uses `session?.user?.isAdmin` (line 53). Not migrated to `requireAgencyPer
 
 ## 4. BUSINESS LOGIC GAPS
 
-### B1 — Cancellation flow has no Stripe integration [MEDIUM]
+### B1 — Plan deactivation allows active subscriptions [CRITICAL]
+**File:** `src/app/api/admin/plans/[id]/route.ts:106-135`
+
+Plans can be deactivated (`DELETE /api/admin/plans/[id]`) without checking if clients have active subscriptions. Deactivating a plan mid-billing cycle breaks subscription renewals and Stripe webhook handlers that reference the plan.
+
+**Fix:** Check for active subscriptions before allowing deactivation. Return 409 if count > 0.
+
+---
+
+### B2 — Phone number release without conversation check [HIGH]
+**File:** `src/lib/services/twilio-provisioning.ts:333-373`
+
+`releaseNumber()` clears a client's Twilio number without checking for active conversations. Leads in active conversations lose the ability to reply — their messages go to a dead number. No way to resume without reassigning and updating webhooks.
+
+**Fix:** Check for conversations in the last 30 days before allowing release.
+
+---
+
+### B3 — Client soft-delete without subscription cleanup [MEDIUM]
+**File:** `src/app/api/admin/clients/[id]/route.ts:149-181`
+
+Client deletion is a soft-delete (`status: 'cancelled'`) but doesn't cancel active Stripe subscriptions. Stripe continues billing a "cancelled" client, and MRR reports become inconsistent.
+
+---
+
+### B4 — Trial period can be bypassed via re-subscription [MEDIUM]
+**File:** `src/lib/services/subscription.ts:27-153`
+
+`createSubscription()` applies `plan.trialDays` without checking if the client has ever had a subscription before. A client can cancel and re-subscribe to get repeated free trials. The `subscriptions.clientId` UNIQUE constraint prevents concurrent subscriptions but not sequential abuse.
+
+**Fix:** Track `hasEverTrialed` flag on clients, or check for past subscription records before applying trial days.
+
+---
+
+### B5 — Cancellation flow has no Stripe integration [MEDIUM]
 **File:** `src/lib/services/cancellation.ts`
 
 The cancellation flow (initiate → scheduled call → save/cancel) manages DB state but never calls `stripe.subscriptions.cancel()`. The Stripe subscription continues charging even after `confirmCancellation()` marks the request as `cancelled`.
 
 ---
 
-### B2 — ROI calculation uses hardcoded assumptions [MEDIUM]
+### B6 — ROI calculation uses hardcoded assumptions [MEDIUM]
 **File:** `src/lib/services/cancellation.ts:45-46`
 
 ```typescript
@@ -335,7 +377,7 @@ const monthlyCost = 997;
 
 ---
 
-### B3 — Team member deletion has no cascading cleanup [LOW]
+### B7 — Team member deletion has no cascading cleanup [LOW]
 **File:** `src/app/api/team-members/route.ts:108-130` and `[id]/route.ts:58-78`
 
 Deleting a team member doesn't:
@@ -344,6 +386,51 @@ Deleting a team member doesn't:
 - Notify the client
 
 Escalation lookups (escalations/[id]/route.ts:47-52) will return `null` for deleted assignees.
+
+---
+
+### B8 — Coupon hard-delete without checking usage [LOW]
+**File:** `src/app/api/admin/coupons/[id]/route.ts:57-81`
+
+Coupons can be hard-deleted even if subscriptions reference their coupon code. Breaks referential integrity and prevents auditing which subscriptions used which coupons.
+
+---
+
+## 5. SCALING & CONFIGURATION
+
+### S1 — N+1 queries in win-back and no-show automations [CRITICAL]
+**Files:** `src/lib/automations/win-back.ts:61-80`, `src/lib/automations/no-show-recovery.ts:34-80`
+
+For each stale lead / no-show, the code runs 3-4 separate queries in a loop: fetch conversation history, generate AI message, send message. At 1000 stale leads, this means 3000+ DB round-trips + 1000 sequential OpenAI calls (~50 minutes). Daily cron will timeout, exhaust DB connection pool, and hit API rate limits.
+
+**Fix:** Batch leads into chunks of 10, process each chunk with `Promise.allSettled()`. Add circuit breaker to pause if error rate exceeds 10%.
+
+---
+
+### S2 — No startup environment validation [CRITICAL]
+**Files:** 23 files use `process.env.X!` non-null assertions
+
+Critical variables (`OPENAI_API_KEY`, `TWILIO_ACCOUNT_SID`, `STRIPE_SECRET_KEY`, `R2_ACCESS_KEY_ID`) have no startup validation. If missing, the app crashes at runtime when the code path is hit, not at deploy time.
+
+**Fix:** Create `src/lib/config-validation.ts` that validates all required env vars at startup via `instrumentation.ts`.
+
+---
+
+### S3 — Webhook secrets fall back to empty string [HIGH]
+**Files:** `src/lib/clients/stripe.ts:17`, `src/lib/services/webhook-dispatch.ts:47`
+
+`STRIPE_WEBHOOK_SECRET` defaults to `''` if not set — webhook signature validation silently fails on every event. Billing state drifts without any error visibility.
+
+**Fix:** Remove fallback values for security-critical secrets. Let the app fail-fast if missing.
+
+---
+
+### S4 — Unbounded admin list queries [MEDIUM]
+**Files:** `src/app/api/admin/reports/route.ts`, `ab-tests/route.ts`, `email-templates/route.ts`, `coupons/route.ts`
+
+GET endpoints return ALL records across ALL clients when `clientId` query param is omitted. No default pagination or limit. At scale, these queries exhaust memory.
+
+**Fix:** Add default `LIMIT 50` and require explicit pagination on all list endpoints.
 
 ---
 
@@ -360,6 +447,9 @@ Escalation lookups (escalations/[id]/route.ts:47-52) will return `null` for dele
 | E1 | Add Stripe idempotency keys to all mutation calls | 4 hours |
 | E2 | Build Stripe subscription reconciliation cron | 1 day |
 | E3 | Add retry logic to `sendSMS()` (3 attempts, exponential backoff) | 4 hours |
+| B1 | Add active-subscription check before plan deactivation | 2 hours |
+| S1 | Batch processing for win-back and no-show automations | 4 hours |
+| S2 | Add startup environment variable validation | 2 hours |
 
 ### Phase 2: High — Reliability and Correctness (2-4 weeks)
 
@@ -376,6 +466,8 @@ Escalation lookups (escalations/[id]/route.ts:47-52) will return `null` for dele
 | D7 | Audit and fix soft-delete filtering gaps | 4 hours |
 | L1 | Migrate legacy teamMembers routes to new system (or bridge) | 2 days |
 | L2 | Migrate business-hours route to permission system | 1 hour |
+| B2 | Add conversation check before phone number release | 2 hours |
+| S3 | Remove fallback values for webhook secrets (fail-fast) | 1 hour |
 
 ### Phase 3: Medium — Operational Polish (1-2 months)
 
@@ -390,9 +482,13 @@ Escalation lookups (escalations/[id]/route.ts:47-52) will return `null` for dele
 | E11 | Add OpenAI rate limit handling | 4 hours |
 | E12 | Add Resend email retry (3 attempts) | 2 hours |
 | E13 | Add ElevenLabs TTS fallback | 2 hours |
-| B1 | Integrate Stripe cancellation into cancellation flow | 4 hours |
-| B2 | Pull ROI assumptions from client/plan settings | 2 hours |
-| L3 | Address or remove stale TODOs | 4 hours |
+| B3 | Cancel Stripe subscription when soft-deleting client | 2 hours |
+| B4 | Prevent trial period abuse via re-subscription | 2 hours |
+| B5 | Integrate Stripe cancellation into cancellation flow | 4 hours |
+| B6 | Pull ROI assumptions from client/plan settings | 2 hours |
+| L3 | Update auth flow to use personId instead of isAdmin/clientId | 4 hours |
+| L4 | Address or remove stale TODOs | 4 hours |
+| S4 | Add default pagination to unbounded admin list endpoints | 4 hours |
 
 ### Phase 4: Low — Hardening (as time permits)
 
@@ -402,7 +498,8 @@ Escalation lookups (escalations/[id]/route.ts:47-52) will return `null` for dele
 | D14 | Audit all creation paths for timestamp consistency | 2 hours |
 | E14 | Add cron idempotency (skip already-processed clients) | 4 hours |
 | E15 | Add global OTP rate limit | 2 hours |
-| B3 | Add cascading cleanup on team member deletion | 4 hours |
+| B7 | Add cascading cleanup on team member deletion | 4 hours |
+| B8 | Soft-delete coupons or prevent deletion if redeemed | 2 hours |
 
 ---
 
@@ -429,3 +526,7 @@ These patterns are already well-implemented:
 4. **Rate limit testing:** Burst 100 SMS in 10 seconds, verify backoff
 5. **Token expiry:** Force Google OAuth token expiry, verify refresh + notification
 6. **Cron crash recovery:** Kill daily-summary mid-run, verify idempotent resume
+7. **Plan deactivation:** Attempt to deactivate plan with active subscription (should fail 409)
+8. **Phone release:** Create conversation, attempt to release number (should fail)
+9. **N+1 at scale:** Run win-back with 100 leads, assert <50 DB queries total
+10. **Env validation:** Start app with missing `OPENAI_API_KEY` (should crash immediately)
