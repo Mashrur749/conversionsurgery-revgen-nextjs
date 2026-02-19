@@ -19,9 +19,11 @@ export async function sendSMS(
   options?: { mediaUrl?: string[] }
 ): Promise<string> {
   try {
-    const statusCallback = process.env.NEXT_PUBLIC_APP_URL
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/twilio/status`
-      : undefined;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const statusCallback =
+      appUrl && !appUrl.includes('localhost')
+        ? `${appUrl}/api/webhooks/twilio/status`
+        : undefined;
     const message = await client.messages.create({
       to,
       from,

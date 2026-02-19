@@ -13,24 +13,52 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { BusinessSwitcher } from '@/components/business-switcher';
 
-const navItems = [
-  { href: '/client', label: 'Dashboard' },
-  { href: '/client/conversations', label: 'Conversations' },
-  { href: '/client/revenue', label: 'Revenue' },
-  { href: '/client/knowledge', label: 'Knowledge Base' },
+interface NavItem {
+  href: string;
+  label: string;
+  permission?: string;
+}
+
+/**
+ * Navigation items with optional permission gating.
+ * Items without a permission are always shown.
+ */
+const navItems: NavItem[] = [
+  { href: '/client', label: 'Dashboard', permission: PORTAL_PERMISSIONS.DASHBOARD },
+  { href: '/client/conversations', label: 'Conversations', permission: PORTAL_PERMISSIONS.CONVERSATIONS_VIEW },
+  { href: '/client/revenue', label: 'Revenue', permission: PORTAL_PERMISSIONS.REVENUE_VIEW },
+  { href: '/client/knowledge', label: 'Knowledge Base', permission: PORTAL_PERMISSIONS.KNOWLEDGE_VIEW },
   { href: '/client/flows', label: 'Flows' },
+  { href: '/client/team', label: 'Team', permission: PORTAL_PERMISSIONS.TEAM_VIEW },
   { href: '/client/billing', label: 'Billing' },
-  { href: '/client/settings', label: 'Settings' },
+  { href: '/client/settings', label: 'Settings', permission: PORTAL_PERMISSIONS.SETTINGS_VIEW },
   { href: '/client/help', label: 'Help' },
   { href: '/client/discussions', label: 'Discussions' },
 ];
 
-interface ClientNavProps {
+interface Business {
+  clientId: string;
   businessName: string;
 }
 
-export function ClientNav({ businessName }: ClientNavProps) {
+interface ClientNavProps {
+  businessName: string;
+  permissions?: string[];
+  showSwitcher?: boolean;
+  businesses?: Business[];
+  currentClientId?: string;
+}
+
+export function ClientNav({
+  businessName,
+  permissions = [],
+  showSwitcher = false,
+  businesses,
+  currentClientId,
+}: ClientNavProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -38,6 +66,15 @@ export function ClientNav({ businessName }: ClientNavProps) {
     if (href === '/client') return pathname === '/client';
     return pathname.startsWith(href);
   };
+
+  // Filter nav items by permission
+  const visibleItems = navItems.filter((item) => {
+    // If no permissions array provided (legacy), show all items
+    if (permissions.length === 0) return true;
+    // Items without a permission requirement are always visible
+    if (!item.permission) return true;
+    return permissions.includes(item.permission);
+  });
 
   return (
     <header className="bg-forest text-white sticky top-0 z-10">
@@ -57,7 +94,7 @@ export function ClientNav({ businessName }: ClientNavProps) {
                   <SheetTitle className="text-left text-white">{businessName}</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col overflow-y-auto h-[calc(100%-65px)] p-2">
-                  {navItems.map((item) => (
+                  {visibleItems.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
@@ -76,14 +113,23 @@ export function ClientNav({ businessName }: ClientNavProps) {
               </SheetContent>
             </Sheet>
 
-            <span className="font-semibold text-sm truncate max-w-[200px] text-white">
-              {businessName}
-            </span>
+            {/* Business name or switcher */}
+            {showSwitcher && businesses && currentClientId ? (
+              <BusinessSwitcher
+                currentClientId={currentClientId}
+                currentBusinessName={businessName}
+                businesses={businesses}
+              />
+            ) : (
+              <span className="font-semibold text-sm truncate max-w-[200px] text-white">
+                {businessName}
+              </span>
+            )}
           </div>
 
           {/* Desktop nav */}
           <nav className="hidden lg:flex gap-1">
-            {navItems.map((item) => (
+            {visibleItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
