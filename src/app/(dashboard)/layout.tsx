@@ -31,6 +31,11 @@ const adminNavItems = [
     { href: '/admin/agency', label: 'Communications' },
     { href: '/admin/discussions', label: 'Discussions' },
   ]},
+  { group: 'Team & Access', items: [
+    { href: '/admin/team', label: 'Team' },
+    { href: '/admin/roles', label: 'Roles' },
+    { href: '/admin/audit-log', label: 'Audit Log' },
+  ]},
   { group: 'Optimization', items: [
     { href: '/admin/flow-templates', label: 'Flow Templates' },
     { href: '/admin/analytics', label: 'Flow Analytics' },
