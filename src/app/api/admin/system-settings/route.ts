@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { systemSettings } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { z } from 'zod';
-import { isSuperAdmin } from '@/lib/utils/admin-auth';
 
 /** GET /api/admin/system-settings - List all system settings. */
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const db = getDb();
@@ -28,14 +32,16 @@ const upsertSchema = z.object({
   description: z.string().optional(),
 }).strict();
 
-/** POST /api/admin/system-settings - Create or update a system setting (super admin only). */
+/** POST /api/admin/system-settings - Create or update a system setting. */
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-  if (!isSuperAdmin(session)) {
-    return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const body = await request.json();

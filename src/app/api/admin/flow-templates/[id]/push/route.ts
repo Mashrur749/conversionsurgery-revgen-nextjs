@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { pushTemplateUpdate } from '@/lib/services/flow-templates';
 
 interface RouteContext {
@@ -11,11 +11,14 @@ interface RouteContext {
  * Push template updates to all client flows
  */
 export async function POST(request: NextRequest, { params }: RouteContext) {
-  const session = await auth();
-  const isAdmin = session?.user?.isAdmin;
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const { id } = await params;

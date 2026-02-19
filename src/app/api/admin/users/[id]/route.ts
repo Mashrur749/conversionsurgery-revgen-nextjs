@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -14,23 +14,20 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const session = await auth();
-
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
+
+  const { id } = await params;
 
   try {
     const body = (await request.json()) as Record<string, unknown>;
-
-    // Prevent demoting yourself
-    if (id === session.user.id && body.isAdmin === false) {
-      return NextResponse.json(
-        { error: 'Cannot remove your own admin access' },
-        { status: 400 }
-      );
-    }
 
     const data = updateUserSchema.parse(body);
 

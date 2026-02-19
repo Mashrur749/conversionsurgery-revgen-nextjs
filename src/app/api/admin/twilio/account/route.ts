@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getAccountBalance, listOwnedNumbers } from '@/lib/services/twilio-provisioning';
 
 /**
@@ -7,13 +7,17 @@ import { getAccountBalance, listOwnedNumbers } from '@/lib/services/twilio-provi
  *
  * Retrieve Twilio account information including current balance and all
  * owned phone numbers.
- * Requires admin authentication.
+ * Requires PHONES_MANAGE permission.
  */
 export async function GET(_request: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   try {

@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { messageTemplates } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
@@ -16,10 +16,7 @@ const assignTemplateSchema = z.object({
  */
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return new Response('Unauthorized', { status: 403 });
-    }
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
 
     const body = await req.json();
     const parsed = assignTemplateSchema.safeParse(body);
@@ -84,6 +81,14 @@ export async function POST(req: Request) {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (error.message.includes('Forbidden')) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      }
+    }
     console.error('[ABTesting] POST /api/admin/templates/assign error:', error);
     return new Response(
       JSON.stringify({

@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb, platformAnalytics, clients } from '@/db';
-import { eq, desc, sql } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { getFunnelMetrics } from '@/lib/services/funnel-queries';
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const db = getDb();

@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { templateVariants } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -17,10 +17,7 @@ const createVariantSchema = z.object({
  */
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return new Response('Unauthorized', { status: 403 });
-    }
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
 
     const body = await req.json();
     const parsed = createVariantSchema.safeParse(body);
@@ -70,6 +67,14 @@ export async function POST(req: Request) {
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (error.message.includes('Forbidden')) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      }
+    }
     // Handle unique constraint violation
     if (error instanceof Error && error.message.includes('unique constraint')) {
       return new Response(

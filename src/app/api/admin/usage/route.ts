@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb, apiUsageMonthly, clients } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
@@ -14,10 +14,7 @@ const querySchema = z.object({
 /** GET - Get usage summary for all clients */
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_VIEW);
 
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.safeParse({
@@ -71,6 +68,14 @@ export async function GET(request: NextRequest) {
       totals,
     });
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      if (error.message.includes('Forbidden')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
     console.error('[UsageTracking] GET /api/admin/usage failed:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

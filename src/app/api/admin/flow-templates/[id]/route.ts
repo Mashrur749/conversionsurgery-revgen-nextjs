@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { flowTemplates, flowTemplateSteps } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -13,11 +13,14 @@ interface RouteContext {
  * Get a single template with steps
  */
 export async function GET(request: NextRequest, { params }: RouteContext) {
-  const session = await auth();
-  const isAdmin = session?.user?.isAdmin;
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const { id } = await params;
@@ -47,11 +50,14 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
  * Update a template and its steps
  */
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  const session = await auth();
-  const isAdmin = session?.user?.isAdmin;
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const { id } = await params;
@@ -104,11 +110,14 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
  * Delete a template
  */
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
-  const session = await auth();
-  const isAdmin = session?.user?.isAdmin;
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const { id } = await params;

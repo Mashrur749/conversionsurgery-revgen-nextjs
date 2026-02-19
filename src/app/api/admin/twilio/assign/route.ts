@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { assignExistingNumber } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
 
@@ -13,13 +13,17 @@ const assignSchema = z.object({
  *
  * Assign an existing owned Twilio number to a client without configuring
  * webhooks. Use the configure endpoint separately to set up webhooks.
- * Requires admin authentication.
+ * Requires PHONES_MANAGE permission.
  */
 export async function POST(request: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   try {

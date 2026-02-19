@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { helpArticles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -18,9 +18,14 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const { id } = await params;
@@ -47,9 +52,14 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const { id } = await params;

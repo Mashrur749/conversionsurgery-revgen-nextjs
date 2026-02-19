@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { listVoices } from '@/lib/services/elevenlabs';
 
 export async function GET() {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.AI_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   try {

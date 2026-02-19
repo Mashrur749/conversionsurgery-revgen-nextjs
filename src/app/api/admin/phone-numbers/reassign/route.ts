@@ -1,4 +1,5 @@
-import { auth } from '@/auth';
+import { NextResponse } from 'next/server';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -14,13 +15,17 @@ const reassignSchema = z.object({
  *
  * Reassign a phone number from its current client to a different client.
  * Releases the number from the existing holder and assigns it to the target.
- * Requires admin authentication.
+ * Requires PHONES_MANAGE permission.
  */
 export async function PATCH(req: Request) {
-  const session = await auth();
-
-  if (!session?.user?.isAdmin) {
-    return Response.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   try {
@@ -28,7 +33,7 @@ export async function PATCH(req: Request) {
     const parsed = reassignSchema.safeParse(body);
 
     if (!parsed.success) {
-      return Response.json(
+      return NextResponse.json(
         { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
         { status: 400 }
       );
@@ -46,11 +51,11 @@ export async function PATCH(req: Request) {
       .limit(1);
 
     if (!targetClient) {
-      return Response.json({ error: 'Target client not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Target client not found' }, { status: 404 });
     }
 
     if (targetClient.status === 'cancelled') {
-      return Response.json(
+      return NextResponse.json(
         { error: 'Cannot assign number to cancelled client' },
         { status: 400 }
       );
@@ -74,7 +79,7 @@ export async function PATCH(req: Request) {
 
     console.log(`[Twilio] Reassigned ${phoneNumber} to client ${targetClient.businessName} (${targetClientId})`);
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
       phoneNumber,
       clientId: targetClientId,
@@ -84,7 +89,7 @@ export async function PATCH(req: Request) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[Twilio] Phone reassign error:', message);
 
-    return Response.json(
+    return NextResponse.json(
       { error: message || 'Failed to reassign phone number' },
       { status: 500 }
     );

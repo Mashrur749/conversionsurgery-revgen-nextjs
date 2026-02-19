@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb, escalationRules } from '@/db';
+import { type NewEscalationRule } from '@/db/schema/escalation-rules';
 import { eq, asc } from 'drizzle-orm';
 
 // GET - List all rules for a client
@@ -8,12 +9,18 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { id: clientId } = await params;
+
+  try {
+    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_VIEW);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
-  const { id: clientId } = await params;
   const db = getDb();
 
   try {
@@ -35,23 +42,25 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { id: clientId } = await params;
+
+  try {
+    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
-  const { id: clientId } = await params;
   const db = getDb();
 
   try {
-    const body = await request.json() as {
-      name?: string;
-      description?: string;
-      conditions?: any;
-      action?: any;
-      priority?: number;
-      enabled?: boolean;
-    };
+    const body = await request.json() as Pick<
+      NewEscalationRule,
+      'name' | 'description' | 'conditions' | 'action' | 'priority' | 'enabled'
+    >;
 
     if (!body.name || !body.conditions || !body.action) {
       return NextResponse.json({ error: 'name, conditions, and action are required' }, { status: 400 });

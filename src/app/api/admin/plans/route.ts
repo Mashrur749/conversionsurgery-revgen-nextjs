@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { plans } from '@/db/schema';
 import { asc } from 'drizzle-orm';
 import { z } from 'zod';
 import { isSuperAdmin } from '@/lib/utils/admin-auth';
+import { auth } from '@/auth';
 
 /** GET /api/admin/plans - List all plans. */
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_VIEW);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const db = getDb();
@@ -52,10 +58,16 @@ const createPlanSchema = z.object({
 
 /** POST /api/admin/plans - Create a new plan (super admin only). */
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
+  const session = await auth();
   if (!isSuperAdmin(session)) {
     return NextResponse.json({ error: 'Super admin access required' }, { status: 403 });
   }

@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { templateVariants, templatePerformanceMetrics } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 
@@ -9,10 +9,7 @@ import { eq, desc, sql } from 'drizzle-orm';
  */
 export async function GET(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return new Response('Unauthorized', { status: 403 });
-    }
+    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
 
     const db = getDb();
     const url = new URL(req.url);
@@ -134,6 +131,14 @@ export async function GET(req: Request) {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized')) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (error.message.includes('Forbidden')) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      }
+    }
     console.error('[ABTesting] GET /api/admin/templates/performance error:', error);
     return new Response(
       JSON.stringify({

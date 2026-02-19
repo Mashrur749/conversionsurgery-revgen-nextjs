@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { emailTemplates } from '@/db/schema';
 import { z } from 'zod';
 
 export async function GET() {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const db = getDb();
@@ -25,9 +30,14 @@ const createSchema = z.object({
 }).strict();
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!(session as any)?.user?.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  try {
+    await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return NextResponse.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
   }
 
   const parsed = createSchema.safeParse(await request.json());

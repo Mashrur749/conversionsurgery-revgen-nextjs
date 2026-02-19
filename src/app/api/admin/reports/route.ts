@@ -1,4 +1,4 @@
-import { auth } from '@/auth';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { reports, dailyStats, abTests, teamMembers } from '@/db/schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
@@ -15,10 +15,16 @@ const generateReportSchema = z.object({
 /** GET /api/admin/reports */
 export async function GET(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return Response.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
+  }
+
+  try {
 
     const { searchParams } = new URL(req.url);
     const clientId = searchParams.get('clientId');
@@ -51,10 +57,16 @@ export async function GET(req: Request) {
 /** POST /api/admin/reports */
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    return Response.json(
+      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
+      { status: msg.includes('Unauthorized') ? 401 : 403 }
+    );
+  }
+
+  try {
 
     const body = await req.json();
     const validation = generateReportSchema.safeParse(body);
