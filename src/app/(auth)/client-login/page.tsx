@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Method = 'phone' | 'email';
 type Phase = 'identifier' | 'otp' | 'business-picker';
@@ -19,6 +20,31 @@ interface BusinessOption {
 const RESEND_COOLDOWN = 30;
 
 export default function ClientLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="mx-auto max-w-md overflow-hidden border-0 shadow-2xl">
+          <div className="bg-forest px-6 py-6 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 mb-3">
+              <span className="text-xl font-bold text-white">C</span>
+            </div>
+            <h1 className="text-xl font-semibold text-white">ConversionSurgery</h1>
+            <p className="text-sm text-white/60 mt-1">Sign in to your dashboard</p>
+          </div>
+          <CardContent className="p-6 space-y-4">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+        </Card>
+      }
+    >
+      <ClientLoginContent />
+    </Suspense>
+  );
+}
+
+function ClientLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const revoked = searchParams.get('revoked') === 'true';

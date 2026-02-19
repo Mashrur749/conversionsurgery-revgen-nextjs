@@ -122,13 +122,34 @@ A comprehensive operations guide covering every workflow for every user type —
 
 ## User Types Overview
 
-| User Type | Authentication | Access Level | Primary Purpose |
-|-----------|---------------|--------------|-----------------|
-| **Admin** | Magic link email (NextAuth) | Full platform + all clients | Manage the agency, onboard clients, optimize templates |
-| **Client User** | Magic link email (NextAuth) | Own client dashboard only | View leads, conversations, escalations, analytics |
-| **Client Portal** | OTP login (email code) or cookie-based link | Self-service portal | Revenue, KB, flows, billing, AI settings, help |
-| **Team Member** | None (SMS/phone only) | Escalation claim links only | Receive escalation SMS, claim and resolve leads |
-| **Lead** | None (SMS/phone only) | No dashboard access | Receive automated messages, book appointments, send photos, opt out |
+All human users are represented by a single `people` record. Access is granted through **memberships** (client or agency) with role-based permissions.
+
+| User Type | Identity | Authentication | Access Level | Primary Purpose |
+|-----------|----------|---------------|--------------|-----------------|
+| **Agency Member** | `people` &rarr; `agency_memberships` | Magic link email (NextAuth) | Permission-based via role template | Manage the agency, onboard clients, optimize templates |
+| **Client Portal User** | `people` &rarr; `client_memberships` | OTP login (phone SMS or email) | Permission-based via role template | Revenue, KB, flows, billing, AI settings, help |
+| **Team Member** | `people` &rarr; `client_memberships` (with escalation flags) | OTP login or SMS claim links | Dashboard + escalation handling | View leads, receive escalations, claim and resolve |
+| **Lead** | N/A (SMS/phone only) | None | No dashboard access | Receive automated messages, book appointments, opt out |
+
+### Permission Model
+
+- **Role templates** define a set of permissions (e.g., `business_owner` gets all `portal.*` permissions)
+- **Per-user overrides** can grant or revoke individual permissions via JSONB `{ grant: [], revoke: [] }`
+- **Effective permissions** = (template permissions + grants) &minus; revokes
+- **Session invalidation**: changing a user&apos;s role or permissions bumps `sessionVersion`, forcing re-login
+- **Multi-business**: a person can belong to multiple businesses; a business picker appears at login
+
+### Built-in Roles
+
+| Role | Scope | Permissions |
+|------|-------|-------------|
+| Business Owner | Client | All 14 portal permissions |
+| Office Manager | Client | All except AI settings and team management |
+| Team Member | Client | Dashboard, leads view, conversations view |
+| Agency Owner | Agency | All 18 agency permissions |
+| Agency Admin | Agency | All except billing and settings management |
+| Account Manager | Agency | Client management, flows, conversations, analytics |
+| Content Specialist | Agency | View clients/conversations, edit templates and KB |
 
 ---
 
@@ -634,28 +655,50 @@ A comprehensive operations guide covering every workflow for every user type —
 
 ---
 
-### A18: Manage Users and Admin Access
+### A18: Manage Agency Team &amp; Roles
 
-**When**: Granting or revoking admin access, or managing user-client associations.
+**When**: Inviting new agency team members, changing roles, managing client access scopes, or revoking access.
+
+**Preconditions**: Admin is logged in with `agency.team.manage` permission.
 
 **Steps**:
 
-1. Navigate to `/admin/users`.
-2. View all users in the system with their:
-   - Email address
-   - Admin status (true/false)
-   - Associated client (if any)
-3. To grant admin access:
-   - Click "Edit" on the user
-   - Toggle `isAdmin` to true
-   - Save
-4. To associate a user with a client:
-   - Click "Edit" on the user
-   - Select a client from the dropdown
-   - Save
-5. New users are created automatically when they log in via magic link for the first time. Their `clientId` is auto-linked if their email matches a client's email.
+1. Navigate to `/admin/team`.
+2. View all agency team members with their:
+   - Name, email, avatar
+   - Role (e.g., Agency Admin, Account Manager, Content Specialist)
+   - Client scope (`all` or `assigned` with list of assigned clients)
+   - Status (active/inactive)
+3. To invite a new member:
+   - Click &ldquo;Invite Member&rdquo;
+   - Enter name, email, and select a role template
+   - Choose client scope: &ldquo;All clients&rdquo; or &ldquo;Assigned clients only&rdquo;
+   - If assigned, select which clients they can access
+   - Submit &mdash; the system creates a `people` record (or merges with existing) and an `agency_membership`
+4. To change a member&apos;s role:
+   - Click &ldquo;Edit&rdquo; on the member
+   - Select a new role template
+   - Save &mdash; the system bumps `sessionVersion` to force re-login
+5. To revoke access:
+   - Click &ldquo;Remove&rdquo; on the member
+   - Confirm via AlertDialog
+   - The system deactivates the membership and bumps `sessionVersion`
+6. To manage role templates:
+   - Navigate to `/admin/team/roles`
+   - View built-in roles (cannot be edited) and custom roles
+   - Create custom roles by selecting from the available 18 agency permissions
+   - Escalation prevention: you cannot grant permissions you don&apos;t hold yourself
 
-**Outcome**: Proper access control. Only designated admins can access the full platform. Client users are restricted to their own data.
+**Outcome**: Fine-grained access control for the agency team. Members see only what their role allows. Scoped members only see their assigned clients. Session invalidation ensures permission changes take effect immediately.
+
+**Key API calls**:
+- `GET /api/admin/team` (list members)
+- `POST /api/admin/team` (invite member)
+- `PATCH /api/admin/team/[id]` (update role/scope/status)
+- `DELETE /api/admin/team/[id]` (deactivate member)
+- `GET /api/admin/roles` (list role templates)
+- `POST /api/admin/roles` (create custom role)
+- `GET /api/admin/audit-log` (view changes)
 
 ---
 
@@ -1445,25 +1488,36 @@ A comprehensive operations guide covering every workflow for every user type —
 
 ### C6: Add and Manage Team Members
 
-**When**: You want to add employees who should receive escalation SMS alerts or hot transfer calls.
+**When**: You want to add employees who should receive escalation SMS alerts, hot transfer calls, or have portal access to view leads and conversations.
+
+**Preconditions**: Business owner or user with `portal.team.manage` permission.
 
 **Steps**:
 
-1. Navigate to `/settings`.
-2. Find the "Team Members" section.
-3. Click "Add Team Member."
+1. Navigate to `/client/team`.
+2. View existing team members with their name, role, permissions, and escalation status.
+3. Click &ldquo;Add Team Member.&rdquo;
 4. Enter their details:
    - Name
    - Phone number (for escalation SMS and hot transfers)
-   - Email (optional, for email notifications)
-   - Role (e.g., "Sales Manager", "Lead Technician")
-5. Configure their notifications:
+   - Email (for portal login and email notifications)
+   - Role template: **Team Member** (basic dashboard + leads + conversations) or **Office Manager** (all except AI settings)
+5. Configure their escalation settings:
    - **Receive Escalations**: Toggle on if they should get SMS when leads need attention
    - **Receive Hot Transfers**: Toggle on if they should receive live call transfers
 6. Set their **priority** (1 = first to be contacted for transfers).
-7. To remove a team member, click "Remove" on their row.
+7. The system creates a `people` record (or merges with existing) and a `client_membership` with the selected role.
+8. The new team member can now log in via `/client-login` using their phone number or email to receive an OTP.
+9. To change a member&apos;s role or permissions, click &ldquo;Edit&rdquo; on their row. Changes bump `sessionVersion` and force re-login.
+10. To remove a team member, click &ldquo;Remove&rdquo; and confirm. The membership is deactivated.
 
-**Outcome**: Your team stays informed about hot leads. When the AI can't handle a question, the right person gets notified immediately.
+**Outcome**: Your team stays informed about hot leads and has appropriate portal access. Team members with portal access can view leads and conversations based on their role permissions. When the AI can&apos;t handle a question, the right person gets notified immediately.
+
+**Key API calls**:
+- `GET /api/client/team` (list team members)
+- `POST /api/client/team` (invite member)
+- `PATCH /api/client/team/[id]` (update role/escalation settings)
+- `DELETE /api/client/team/[id]` (deactivate member)
 
 ---
 
@@ -1695,36 +1749,51 @@ Same workflow as A34 but accessed from the client dashboard settings. Client use
 
 ## Client Portal User Use Cases
 
-### P1: Access the Portal via Link or OTP
+### P1: Access the Portal via OTP Login
 
-**When**: Client receives a weekly summary email, a direct link, or navigates to the login page.
+**When**: Client or team member needs to access the portal. They navigate to the login page or click a link in an email.
 
-**Option A — Link access**:
-1. Click the portal link in your email (e.g., `https://app.conversionsurgery.com/d/[token]`).
-2. The system sets a `clientSessionId` cookie and redirects to `/client`.
-3. No password needed — the link contains the session token.
+**Login methods** (user can switch between them):
 
-**Option B — OTP login**:
+**Option A &mdash; Phone OTP**:
 1. Navigate to `/client-login`.
-2. Enter your business email address.
-3. Click "Send Code."
-4. Check your inbox for a 6-digit verification code (sent via Resend).
-5. Enter the code within 10 minutes.
-6. The system verifies the code against the `otp_codes` table, looks up the client by email, sets a session cookie, and redirects to `/client`.
+2. Enter your phone number.
+3. Click &ldquo;Send Code.&rdquo;
+4. Receive a 6-digit code via SMS (Twilio).
+5. Enter the code (auto-submits when 6 digits entered).
+
+**Option B &mdash; Email OTP**:
+1. Navigate to `/client-login` and click &ldquo;Use email instead.&rdquo;
+2. Enter your email address.
+3. Click &ldquo;Send Code.&rdquo;
+4. Receive a 6-digit code via email (Resend).
+5. Enter the code.
+
+**Multi-business flow**: If the person has memberships with multiple businesses, a business picker appears after OTP verification. Select which business to access.
+
+**First login**: New users see a welcome page showing their role and accessible features before proceeding to the dashboard.
+
+**Business switching**: Users with multiple businesses can switch without re-authenticating via the business switcher in the portal header.
+
+**Session revocation**: If an admin changes your role or removes your access, you&apos;ll be redirected to `/client-login?revoked=true` with a message explaining the change.
 
 **OTP security notes**:
 - OTP codes expire after 10 minutes.
 - Used codes are marked as consumed and cannot be reused.
-- Rate limiting prevents brute-force attempts.
+- 5 max verification attempts per code.
+- Rate limiting (429) prevents brute-force. Cooldown shown in UI.
+- The login method preference is remembered in localStorage.
 
-**Portal navigation** (9 items):
-Dashboard, Conversations, Revenue, Knowledge Base, Flows, Billing, Settings, Help, Discussions
+**Portal navigation** (visible based on permissions):
+Dashboard, Conversations, Revenue, Knowledge Base, Flows, Billing, Settings, Help, Discussions, Team
 
-**Outcome**: Access to the full self-service client portal with revenue tracking, KB management, flow control, billing, AI settings, and more.
+**Outcome**: Access to the self-service client portal with features determined by your role permissions.
 
-**Key API calls** (OTP):
-- `POST /api/client/auth/send-otp` (send code to email)
-- `POST /api/client/auth/verify-otp` (verify code, create session)
+**Key API calls**:
+- `POST /api/client/auth/send-otp` (send code to phone or email)
+- `POST /api/client/auth/verify-otp` (verify code; returns business list if multi-business)
+- `POST /api/client/auth/select-business` (pick a business from the list)
+- `POST /api/client/auth/switch-business` (switch to a different business mid-session)
 
 ---
 

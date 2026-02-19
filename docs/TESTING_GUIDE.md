@@ -44,19 +44,33 @@ npm run dev
 ### 0.2 Push Schema & Seed Database
 
 ```bash
-# Push all 95+ tables to Neon (first time only)
+# Push all tables to Neon (first time only)
 npm run db:push
 
 # Seed demo data (plans, templates, admin user, demo clients, leads)
 npm run db:seed
+
+# Seed role templates for access management
+npx tsx src/scripts/seed-role-templates.ts
+
+# Run identity migration (creates people records + memberships from existing data)
+npx tsx src/scripts/migrate-identities.ts --dry-run  # Preview first
+npx tsx src/scripts/migrate-identities.ts             # Execute
+
+# Verify migration
+npx tsx src/scripts/verify-migration.ts
 ```
 
-**Pass criteria**: Both commands exit with 0. Run `npm run db:studio` and verify:
+**Pass criteria**: All commands exit with 0. Run `npm run db:studio` and verify:
 - `plans` table has 3 rows (Starter, Professional, Enterprise)
 - `admin_users` table has 1 row (admin@conversionsurgery.com)
 - `clients` table has 5 demo clients
 - `flow_templates` table has 6 templates
 - `leads` table has 16 demo leads
+- `role_templates` table has 7 rows (3 client + 4 agency built-in roles)
+- `people` table has records for all client owners, team members, and admins
+- `client_memberships` table has owner records for each client
+- `agency_memberships` table has records for each admin user
 
 ### 0.3 Admin Login
 
@@ -65,7 +79,7 @@ npm run db:seed
 3. Check your email for the magic link (if using Resend `onboarding@resend.dev`, check the Resend dashboard for delivered emails)
 4. Click the magic link
 
-**Pass criteria**: Redirected to `/admin` dashboard. Top nav shows "Agency Dashboard".
+**Pass criteria**: Redirected to `/admin` dashboard. Top nav shows &ldquo;Agency Dashboard.&rdquo; Session should include `isAgency: true` and `permissions` array populated from `agency_memberships` &rarr; `role_templates`.
 
 ### 0.4 Explore Seeded Data
 
@@ -98,9 +112,9 @@ These features have **no client dependency** — they're standalone admin tools.
 3. Edit a setting (e.g., change `sms.maxDailyPerLead` from 5 to 10)
 4. Save
 
-**Pass criteria**: Setting value persists after page refresh. Only accessible to `super_admin` role.
+**Pass criteria**: Setting value persists after page refresh. Only accessible to users with `agency.settings.manage` permission (Agency Owner role).
 
-**If it fails**: Check that the admin user has `role: 'super_admin'` in `admin_users` table.
+**If it fails**: Check that the admin user has an `agency_membership` with the `agency_owner` role template. Legacy fallback: `role: 'super_admin'` in `admin_users` table.
 
 ### 1.2 Subscription Plans (A29)
 
@@ -248,11 +262,91 @@ These features have **no client dependency** — they're standalone admin tools.
 
 1. Open another incognito window
 2. Go to `http://localhost:3000/client-login`
-3. Enter the client email
-4. Enter the OTP code from email
-5. Verify portal dashboard loads at `/client`
+3. **Phone login**: Enter the client&apos;s phone number, click &ldquo;Send Code,&rdquo; enter the 6-digit SMS code
+4. **Email login**: Click &ldquo;Use email instead,&rdquo; enter the client email, click &ldquo;Send Code,&rdquo; enter the 6-digit email code
+5. If the person has multiple businesses, a business picker appears &mdash; select the business
+6. First-time users see a welcome page showing their role and accessible features
+7. Verify portal dashboard loads at `/client`
 
-**Pass criteria**: Portal shows client name, recent stats, and full navigation (Dashboard, Conversations, Revenue, KB, Flows, Team, Billing, Settings, Discussions).
+**Pass criteria**: Portal shows client name, recent stats, and navigation matching the user&apos;s role permissions. Business owner sees all nav items. Team member sees only Dashboard, Conversations.
+
+**If it fails**: Check that `people` record exists with matching email/phone, `client_memberships` record exists linking person to client, and `role_templates` are seeded.
+
+---
+
+## Phase 2.5: Access Management
+
+**Depends on**: Phase 0 (admin logged in, seed data, role templates seeded, migration run)
+**Use cases covered**: A18, P1 (multi-business), C6 (permission-based team)
+
+### 2.5.1 Agency Team Management (A18)
+
+1. Navigate to `/admin/team`
+2. Verify the seeded admin appears with Agency Owner role
+3. Click &ldquo;Invite Member&rdquo;
+4. Enter: Name &ldquo;Test Account Manager,&rdquo; email, role &ldquo;Account Manager,&rdquo; client scope &ldquo;Assigned,&rdquo; select 2 clients
+5. Submit
+6. Verify the new member appears in the list with correct role and assigned clients
+
+**Pass criteria**: Member created. Role shows &ldquo;Account Manager.&rdquo; Assigned clients listed.
+
+### 2.5.2 Role Template Management
+
+1. Navigate to `/admin/team/roles`
+2. Verify 7 built-in templates appear (3 client + 4 agency)
+3. Click &ldquo;Create Role&rdquo;
+4. Enter: Name &ldquo;Read-Only Analyst,&rdquo; scope &ldquo;agency,&rdquo; select `agency.clients.view` and `agency.analytics.view` permissions
+5. Save
+
+**Pass criteria**: Custom role appears in list. Built-in roles show lock icon (non-editable).
+
+### 2.5.3 Permission Changes Force Re-login
+
+1. In `/admin/team`, edit the Account Manager member created in 2.5.1
+2. Change their role to &ldquo;Content Specialist&rdquo;
+3. Save
+4. If the member had an active session, verify they must re-authenticate
+
+**Pass criteria**: `sessionVersion` incremented. Member&apos;s next request returns 401 if using stale session.
+
+### 2.5.4 Audit Log
+
+1. Navigate to `/admin/audit-log`
+2. Verify entries for: member.invited, role.changed from steps 2.5.1-2.5.3
+
+**Pass criteria**: Audit entries show actor, action, timestamp, and metadata.
+
+### 2.5.5 Client Team with Permissions (C6)
+
+1. In client portal as business owner, navigate to `/client/team`
+2. Click &ldquo;Add Team Member&rdquo;
+3. Enter: Name, phone, email, role &ldquo;Team Member&rdquo;
+4. Toggle &ldquo;Receive Escalations&rdquo; on
+5. Save
+6. Open a new incognito window, go to `/client-login`
+7. Log in as the new team member (phone or email OTP)
+8. Verify they only see Dashboard and Conversations in the nav (Team Member role)
+
+**Pass criteria**: Team member has restricted navigation. Cannot access Settings, Revenue, etc.
+
+### 2.5.6 Multi-Business Login
+
+1. Create a second client with the same owner email as an existing client
+2. Run the migration script (or manually create the `people` + `client_memberships` records)
+3. Log in via `/client-login` with that email
+4. After OTP, verify the business picker appears
+5. Select a business and verify the portal loads for that business
+6. Use the business switcher in the header to switch to the other business
+
+**Pass criteria**: Business picker works. Business switcher changes the active context without re-login.
+
+### 2.5.7 Session Revocation
+
+1. As admin, navigate to `/admin/team` and deactivate a member
+2. That member&apos;s next request should be rejected with a redirect to `/client-login?revoked=true`
+3. Verify the revocation banner message appears
+
+**Pass criteria**: Deactivated user cannot access the portal. Revocation message shown.
 
 ---
 

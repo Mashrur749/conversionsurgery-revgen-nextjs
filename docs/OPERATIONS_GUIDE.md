@@ -49,9 +49,15 @@ Day-to-day system operations, monitoring, troubleshooting, and incident response
 ```
 
 **Key data flows**:
-1. Inbound SMS/Call → Twilio → Webhook → App → AI Response → Twilio → Lead
-2. Cron (Cloudflare) → App → Process scheduled messages, aggregate stats
-3. Client login → NextAuth magic link → Resend → Email → Auth
+1. Inbound SMS/Call &rarr; Twilio &rarr; Webhook &rarr; App &rarr; AI Response &rarr; Twilio &rarr; Lead
+2. Cron (Cloudflare) &rarr; App &rarr; Process scheduled messages, aggregate stats
+3. Agency login &rarr; NextAuth magic link &rarr; Resend &rarr; Email &rarr; Auth &rarr; `agency_memberships` &rarr; permissions
+4. Portal login &rarr; OTP (SMS/email) &rarr; `people` &rarr; `client_memberships` &rarr; signed cookie with permissions
+
+**Identity model**: All users are represented by a `people` record. Access is granted through memberships:
+- `client_memberships`: links a person to a business with a role template and permission overrides
+- `agency_memberships`: links a person to the agency with a role template and client scope
+- `role_templates`: define permission bundles (7 built-in + custom)
 
 ---
 
@@ -298,6 +304,86 @@ npm run db:push       # push schema (dev only!)
 
 ---
 
+## Access Management Operations
+
+### Identity Migration
+
+Before using the new access management system, existing data must be migrated:
+
+```bash
+# Seed role templates (idempotent)
+npx tsx src/scripts/seed-role-templates.ts
+
+# Preview migration (no changes)
+npx tsx src/scripts/migrate-identities.ts --dry-run
+
+# Execute migration
+npx tsx src/scripts/migrate-identities.ts
+
+# Verify all data migrated correctly
+npx tsx src/scripts/verify-migration.ts
+```
+
+### Session Invalidation
+
+When you change a user&apos;s role or permissions, their `sessionVersion` is bumped automatically. The next request with a stale session cookie will be rejected, forcing re-authentication.
+
+To manually invalidate a session:
+
+```sql
+-- Invalidate a client portal session
+UPDATE client_memberships SET session_version = session_version + 1
+WHERE person_id = 'PERSON_UUID' AND client_id = 'CLIENT_UUID';
+
+-- Invalidate an agency session
+UPDATE agency_memberships SET session_version = session_version + 1
+WHERE person_id = 'PERSON_UUID';
+```
+
+### Permission Debugging
+
+To check what permissions a user has:
+
+```sql
+-- Client portal user permissions
+SELECT p.name, p.email, rt.name as role, rt.permissions,
+       cm.permission_overrides, cm.is_owner, cm.is_active
+FROM client_memberships cm
+JOIN people p ON cm.person_id = p.id
+JOIN role_templates rt ON cm.role_template_id = rt.id
+WHERE cm.client_id = 'CLIENT_UUID';
+
+-- Agency user permissions
+SELECT p.name, p.email, rt.name as role, rt.permissions,
+       am.client_scope, am.is_active
+FROM agency_memberships am
+JOIN people p ON am.person_id = p.id
+JOIN role_templates rt ON am.role_template_id = rt.id;
+```
+
+### Audit Log Queries
+
+```sql
+-- Recent auth events
+SELECT al.action, al.created_at, p.name, p.email,
+       al.resource_type, al.ip_address
+FROM audit_log al
+LEFT JOIN people p ON al.person_id = p.id
+WHERE al.action LIKE 'auth.%'
+ORDER BY al.created_at DESC
+LIMIT 50;
+
+-- Permission changes
+SELECT al.action, al.created_at, p.name, al.metadata
+FROM audit_log al
+LEFT JOIN people p ON al.person_id = p.id
+WHERE al.action IN ('role.changed', 'member.invited', 'member.removed', 'member.updated')
+ORDER BY al.created_at DESC
+LIMIT 50;
+```
+
+---
+
 ## Common Database Queries
 
 Use Drizzle Studio (`npm run db:studio`) for visual queries, or connect directly via Neon Console SQL Editor.
@@ -409,8 +495,10 @@ GROUP BY at.id;
 4. Define services (A37)
 5. Create or assign flow templates (A4, A5)
 6. Configure feature flags
-7. Send client their login credentials
-8. Schedule a training call
+7. A `people` record and `client_membership` (business_owner role, isOwner=true) are created automatically for the client&apos;s owner
+8. The owner can log in via `/client-login` using their phone or email OTP
+9. Owner can invite team members via `/client/team` (creates `people` + `client_membership` records)
+10. Schedule a training call
 
 ### Suspending a Client
 
@@ -448,11 +536,18 @@ If a client needs temporary suspension (non-payment, etc.):
 2. Release phone number back to Twilio pool
 3. Export client data (leads, conversations) as CSV for their records
 4. Disable all automations (suspension step above)
-5. Optionally: delete client data after retention period
+5. Deactivate all `client_memberships` for this client (bumps sessionVersion to force logout):
+   ```sql
+   UPDATE client_memberships
+   SET is_active = false, session_version = session_version + 1
+   WHERE client_id = 'CLIENT_UUID';
+   ```
+6. Optionally: delete client data after retention period
    ```sql
    -- WARNING: Cascading deletes. Back up first.
+   -- client_memberships cascade on client delete.
    -- Delete in order: conversations → leads → scheduled_messages →
-   --   team_members → business_hours → kb_entries → client
+   --   business_hours → kb_entries → client
    ```
 
 ---
