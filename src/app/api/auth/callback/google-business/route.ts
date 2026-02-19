@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { getAgencySession } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -18,10 +18,11 @@ interface GoogleAccountResponse {
 /**
  * GET — Google OAuth callback.
  * Exchanges authorization code for tokens, stores on client record.
+ * Requires an authenticated agency session (admin must be logged in).
  */
 export async function GET(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.isAdmin) {
+  const session = await getAgencySession();
+  if (!session) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

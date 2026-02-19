@@ -43,13 +43,16 @@ export async function validateMagicLink(token: string): Promise<{
     return { valid: false, error: 'Invalid or expired link' };
   }
 
-  // Mark as used (but don't invalidate - allow reuse within expiry)
-  if (!record.usedAt) {
-    await db
-      .update(magicLinkTokens)
-      .set({ usedAt: new Date() })
-      .where(eq(magicLinkTokens.id, record.id));
+  // Single-use: reject tokens that have already been consumed
+  if (record.usedAt) {
+    return { valid: false, error: 'Link has already been used' };
   }
+
+  // Mark as used — token cannot be reused after this point
+  await db
+    .update(magicLinkTokens)
+    .set({ usedAt: new Date() })
+    .where(eq(magicLinkTokens.id, record.id));
 
   return { valid: true, clientId: record.clientId };
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateMagicLink } from '@/lib/services/magic-link';
-import { cookies } from 'next/headers';
+import { setClientSessionCookie } from '@/lib/client-auth';
 
 export async function GET(
   request: NextRequest,
@@ -15,15 +15,8 @@ export async function GET(
     );
   }
 
-  // Set client session cookie
-  const cookieStore = await cookies();
-  cookieStore.set('clientSessionId', result.clientId!, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: '/',
-  });
+  // Set HMAC-signed client session cookie
+  await setClientSessionCookie(result.clientId!);
 
   return NextResponse.redirect(
     new URL('/client', request.url)
