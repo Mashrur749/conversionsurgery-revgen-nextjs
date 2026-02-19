@@ -30,7 +30,7 @@ export async function PATCH(
   try {
     const body = await request.json();
     const data = updateSchema.parse(body);
-    await updateKnowledgeEntry(entryId, data);
+    await updateKnowledgeEntry(entryId, data, id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -65,7 +65,7 @@ export async function DELETE(
   }
 
   try {
-    await deleteKnowledgeEntry(entryId);
+    await deleteKnowledgeEntry(entryId, id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

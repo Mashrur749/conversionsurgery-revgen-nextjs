@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { removeNumber, setPrimary } from '@/lib/services/client-phone-management';
+import { getDb } from '@/db';
+import { clientPhoneNumbers } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+
+/** Verify a phone number record belongs to the specified client */
+async function verifyPhoneOwnership(phoneId: string, clientId: string) {
+  const db = getDb();
+  const [record] = await db
+    .select({ id: clientPhoneNumbers.id })
+    .from(clientPhoneNumbers)
+    .where(and(eq(clientPhoneNumbers.id, phoneId), eq(clientPhoneNumbers.clientId, clientId)))
+    .limit(1);
+  return !!record;
+}
 
 const patchSchema = z.object({
   isPrimary: z.boolean().optional(),
@@ -22,6 +36,11 @@ export async function PATCH(
       { status: msg.includes('Unauthorized') ? 401 : 403 }
     );
   }
+
+  if (!(await verifyPhoneOwnership(phoneId, id))) {
+    return NextResponse.json({ error: 'Phone number not found' }, { status: 404 });
+  }
+
   const parsed = patchSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -48,6 +67,10 @@ export async function DELETE(
       { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
       { status: msg.includes('Unauthorized') ? 401 : 403 }
     );
+  }
+
+  if (!(await verifyPhoneOwnership(phoneId, id))) {
+    return NextResponse.json({ error: 'Phone number not found' }, { status: 404 });
   }
 
   await removeNumber(phoneId);

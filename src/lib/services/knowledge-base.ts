@@ -190,20 +190,27 @@ export async function addKnowledgeEntry(
 /** Update an existing knowledge base entry */
 export async function updateKnowledgeEntry(
   id: string,
-  updates: Partial<{ category: KnowledgeCategory; title: string; content: string; keywords: string | null; priority: number | null }>
+  updates: Partial<{ category: KnowledgeCategory; title: string; content: string; keywords: string | null; priority: number | null }>,
+  clientId?: string
 ): Promise<void> {
   const db = getDb();
+  const condition = clientId
+    ? and(eq(knowledgeBase.id, id), eq(knowledgeBase.clientId, clientId))
+    : eq(knowledgeBase.id, id);
   await db
     .update(knowledgeBase)
     .set({
       ...updates,
       updatedAt: new Date(),
     })
-    .where(eq(knowledgeBase.id, id));
+    .where(condition);
 }
 
-/** Delete a knowledge base entry by ID */
-export async function deleteKnowledgeEntry(id: string): Promise<void> {
+/** Delete a knowledge base entry by ID, optionally scoped to a client */
+export async function deleteKnowledgeEntry(id: string, clientId?: string): Promise<void> {
   const db = getDb();
-  await db.delete(knowledgeBase).where(eq(knowledgeBase.id, id));
+  const condition = clientId
+    ? and(eq(knowledgeBase.id, id), eq(knowledgeBase.clientId, clientId))
+    : eq(knowledgeBase.id, id);
+  await db.delete(knowledgeBase).where(condition);
 }

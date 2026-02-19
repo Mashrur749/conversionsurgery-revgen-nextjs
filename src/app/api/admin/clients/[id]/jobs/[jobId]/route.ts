@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { updateJobStatus, recordPayment } from '@/lib/services/revenue';
+import { getDb } from '@/db';
+import { jobs } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 
 const updateStatusSchema = z.object({
@@ -36,6 +39,18 @@ export async function PATCH(
       { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
       { status: msg.includes('Unauthorized') ? 401 : 403 }
     );
+  }
+
+  // Verify job belongs to this client (IDOR prevention)
+  const db = getDb();
+  const [job] = await db
+    .select({ id: jobs.id })
+    .from(jobs)
+    .where(and(eq(jobs.id, jobId), eq(jobs.clientId, id)))
+    .limit(1);
+
+  if (!job) {
+    return NextResponse.json({ error: 'Job not found' }, { status: 404 });
   }
 
   try {
