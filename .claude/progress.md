@@ -262,24 +262,31 @@
 
 ## Execution Order & Status
 
-### Quick wins (2h each)
-- [ ] D2 — Atomic coupon redemption
-- [ ] D3 — Atomic escalation claim
-- [ ] D4 — Atomic OTP verification
-- [ ] S2 — Startup env validation
-- [ ] B1 — Plan deactivation guard
+### Quick wins — ALL COMPLETE
+- [x] D2 — Atomic coupon redemption (`1542309`)
+- [x] D3 — Atomic escalation claim (`1542309`)
+- [x] D4 — Atomic OTP verification (`1542309`)
+- [x] S2 — Startup env validation (`1542309`, build fix `f0feb3b`)
+- [x] B1 — Plan deactivation guard (`1542309`)
 
-### Medium (4h each)
-- [ ] E1 — Stripe idempotency keys
-- [ ] E3 — SMS retry logic
-- [ ] S1 — Batch automations
+### Medium — ALL COMPLETE
+- [x] E1 — Stripe idempotency keys (`015d6e5`)
+- [x] E3 — SMS retry logic (`015d6e5`)
+- [x] S1 — Batch automations (`3b032c8`)
 
-### Large
-- [ ] D1 — Transaction boundaries
-- [ ] E2 — Stripe reconciliation cron
+### Large — ALL COMPLETE
+- [x] D1 — Transaction boundaries (`0fd5f3c`)
+- [x] E2 — Stripe reconciliation cron (`fad895d`)
 
 ## Commits
-(updated as work proceeds)
+1. `1542309` — D2, D3, D4, B1, S2 (race conditions + startup guards)
+2. `015d6e5` — E1, E3 (Stripe idempotency + SMS retry)
+3. `3b032c8` — S1 (batch automations)
+4. `0fd5f3c` — D1 (transaction boundaries)
+5. `fad895d` — E2 (Stripe reconciliation cron)
+6. `f0feb3b` — S2 build fix (skip env validation during next build)
 
 ## Docs Updated
-(updated as docs change)
+- `docs/SYSTEM-BLOCKERS.md` — Phase 1 remediation table in executive summary
+- `docs/OPERATIONS_GUIDE.md` — Stripe reconciliation cron, SMS retry behavior, monitoring items, incident response
+- `docs/TESTING_GUIDE.md` — Phase 11 (System Reliability) with 9 test cases, reconciliation in Appendix A

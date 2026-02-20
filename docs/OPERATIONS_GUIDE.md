@@ -72,7 +72,7 @@ All cron jobs are orchestrated by the master cron at `/api/cron` (POST), trigger
 | **Every 5 min** | Process scheduled messages, check missed calls |
 | **Every 30 min** | Auto review response, calendar sync |
 | **Hourly** | Usage tracking, SLA breach check, review sync, expire prompts, NPS surveys, agent health |
-| **Daily midnight** | Lead scoring, analytics aggregation, trial reminders, no-show recovery |
+| **Daily midnight** | Lead scoring, analytics aggregation, trial reminders, no-show recovery, Stripe reconciliation |
 | **Daily 7am** | Daily summary emails |
 | **Daily 10am** | Win-back re-engagement |
 | **Weekly Mon 7am** | Weekly summary, agency digest |
@@ -122,6 +122,9 @@ curl $BASE/api/cron/weekly-summary -H "Authorization: Bearer $CRON_SECRET"
 
 # Agency digest (Monday 7am)
 curl $BASE/api/cron/agency-digest -H "Authorization: Bearer $CRON_SECRET"
+
+# Stripe reconciliation (daily midnight)
+curl $BASE/api/cron/stripe-reconciliation -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ### Verifying Cron Health
@@ -163,6 +166,7 @@ If `errors` array is non-empty, investigate the failing job.
 | Cron job execution | Cloudflare Dashboard → Workers → Cron Triggers | All green | Re-deploy worker, check logs |
 | Failed webhooks | `/admin/webhook-logs` (filter: status >= 400) | 0 failures | Check webhook URLs, auth tokens |
 | Unresolved escalations | `/admin` dashboard | SLA within target | Notify team leads, check escalation rules |
+| Stripe reconciliation | Cron response `stripeReconciliation` | 0 mismatches | Investigate subscription drift, check webhook delivery |
 | Database connections | Neon Console → Monitoring | < 90% pool used | Investigate connection leaks |
 
 ### Weekly Checks
@@ -192,6 +196,8 @@ If `errors` array is non-empty, investigate the failing job.
 | Twilio balance | Twilio Console → Billing | Add funds |
 | Rate limiting | Check Twilio error codes in webhook logs | Slow down sending, increase limits |
 | Webhook URL mismatch | Twilio Console → Phone Number → webhooks | Update to correct URL |
+
+**SMS retry behavior**: `sendSMS()` automatically retries up to 3 times with exponential backoff (1s, 2s, 4s) for transient failures (HTTP 429, 5xx, network errors). Non-retryable errors (invalid number, auth failures) throw immediately without retry.
 
 ### AI Not Responding
 
@@ -293,6 +299,13 @@ npm run db:push       # push schema (dev only!)
 2. Payment links and checkout will fail — inform clients
 3. Existing subscriptions continue (Stripe retries failed invoices)
 4. After recovery: retry any failed manual actions
+5. Run manual reconciliation to catch any drift: `curl $BASE/api/cron/stripe-reconciliation -H "Authorization: Bearer $CRON_SECRET"`
+
+**Subscription safeguards**:
+- All Stripe mutation calls include idempotency keys (safe to retry on timeout)
+- Subscription creation uses saga pattern: if DB write fails after Stripe charge, compensating cancel is issued
+- All multi-step billing operations (create, cancel, change plan) are wrapped in DB transactions
+- Daily reconciliation cron compares local subscription state with Stripe (source of truth) and auto-fixes mismatches with audit trail in `billing_events`
 
 ### High SMS Costs / Unexpected Charges
 

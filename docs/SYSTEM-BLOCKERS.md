@@ -1,6 +1,7 @@
 # System-Wide Operational Blockers — ConversionSurgery RevGen
 
 **Audit date:** 2026-02-19
+**Last updated:** 2026-02-19
 **Scope:** Data integrity, external API resilience, legacy migration, business logic gaps
 **Companion doc:** `docs/SECURITY-AUDIT.md` (auth/access control findings — separate)
 
@@ -18,6 +19,23 @@ Beyond security (auth, permissions, IDOR), the application has **system-wide ope
 | Business Logic | 1 | 1 | 4 | 2 |
 | Scaling & Config | 2 | 1 | 1 | 0 |
 | **Total** | **10** | **12** | **16** | **6** |
+
+### Phase 1 Remediation — COMPLETE (2026-02-19)
+
+All 10 critical items resolved across 7 commits:
+
+| ID | Fix | Commit |
+|----|-----|--------|
+| D1 | `db.transaction()` on subscription create/cancel/change + webhook handlers, saga pattern for compensating Stripe cancel | `0fd5f3c` |
+| D2 | `validateAndRedeemCoupon()` — atomic UPDATE...WHERE prevents max_redemptions race | `1542309` |
+| D3 | Atomic escalation claim — UPDATE...WHERE status='pending' RETURNING | `1542309` |
+| D4 | Atomic OTP verification — UPDATE...WHERE verified_at IS NULL RETURNING | `1542309` |
+| E1 | Stripe idempotency keys on all mutation calls (create, cancel, update, pause, resume) | `015d6e5` |
+| E2 | Stripe reconciliation cron at `/api/cron/stripe-reconciliation` — daily status comparison | `fad895d` |
+| E3 | `sendSMS()` retry — 3 attempts with exponential backoff (1s, 2s, 4s) for transient failures | `015d6e5` |
+| B1 | Plan deactivation guard — 409 Conflict if active subscriptions exist | `1542309` |
+| S1 | Batch processing for win-back/no-show — eliminates N+1, concurrency-limited to 5 | `3b032c8` |
+| S2 | `src/lib/env.ts` — startup env validation with clear error messages, skips build phase | `1542309`, `f0feb3b` |
 
 ---
 

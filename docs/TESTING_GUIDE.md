@@ -19,6 +19,7 @@ A dependency-ordered walkthrough for testing every feature in the ConversionSurg
 - [Phase 8: Billing & Payments](#phase-8-billing--payments)
 - [Phase 9: Reviews & Reputation](#phase-9-reviews--reputation)
 - [Phase 10: Reporting & Advanced](#phase-10-reporting--advanced)
+- [Phase 11: System Reliability](#phase-11-system-reliability)
 - [Appendix A: Triggering Cron Jobs Manually](#appendix-a-triggering-cron-jobs-manually)
 - [Appendix B: Simulating Webhooks](#appendix-b-simulating-webhooks)
 - [Appendix C: Test Phone Numbers & Credentials](#appendix-c-test-phone-numbers--credentials)
@@ -1070,6 +1071,95 @@ curl http://localhost:3000/api/cron \
 
 ---
 
+## Phase 11: System Reliability
+
+**Depends on**: Phase 8 (subscriptions exist in Stripe)
+**Use cases covered**: Infrastructure reliability, data integrity, external API resilience
+
+These tests verify the operational safeguards added in the system blockers remediation (Phase 1 Critical).
+
+### 11.1 Startup Environment Validation (S2)
+
+1. Stop the dev server
+2. Unset a required variable (e.g., remove `OPENAI_API_KEY` from `.env.local`)
+3. Run `NODE_ENV=production node -e "require('./src/lib/env.ts')"`
+
+**Pass criteria**: Clear error message listing the missing variable. Application refuses to start.
+
+**Reset**: Restore the variable in `.env.local`.
+
+### 11.2 Stripe Reconciliation (E2)
+
+1. Create a test subscription via Phase 8
+2. In Stripe Dashboard (test mode), manually cancel the subscription
+3. Verify local DB still shows `status: 'active'`
+4. Trigger reconciliation:
+   ```bash
+   curl $BASE_URL/api/cron/stripe-reconciliation \
+     -H "Authorization: Bearer $CRON_SECRET"
+   ```
+
+**Pass criteria**: Response shows `mismatches: 1, fixed: 1`. Local subscription now shows `status: 'canceled'`. A `billing_events` entry with `eventType: 'reconciliation_fix'` is created.
+
+### 11.3 Coupon Race Condition (D2)
+
+1. Create a coupon with `maxRedemptions: 1`
+2. Apply the coupon to two subscriptions simultaneously (use two terminal windows)
+
+**Pass criteria**: Only one subscription gets the discount. The second attempt returns an error (coupon exhausted). `timesRedeemed` never exceeds `maxRedemptions`.
+
+### 11.4 Escalation Double-Claim (D3)
+
+1. Trigger an escalation (from Phase 5.3)
+2. Open the claim link in two browser tabs simultaneously
+3. Click "Claim" in both tabs at the same time
+
+**Pass criteria**: Only one claim succeeds. The second tab shows "already claimed" error. No duplicate claims in the database.
+
+### 11.5 SMS Retry Behavior (E3)
+
+1. Temporarily set an invalid Twilio auth token
+2. Trigger an SMS send (e.g., via form webhook from Phase 4.1)
+3. Check server logs
+
+**Pass criteria**: Logs show 3 retry attempts with increasing delays. Final error is thrown after all retries exhausted.
+
+**Reset**: Restore the correct Twilio auth token.
+
+### 11.6 Transaction Rollback (D1)
+
+1. Create a subscription via Phase 8
+2. Simulate a DB failure during cancellation (e.g., by adding a `RAISE EXCEPTION` trigger on the `billing_events` table temporarily)
+3. Attempt to cancel the subscription
+
+**Pass criteria**: Subscription status remains `active` (transaction rolled back). No partial state where subscription is canceled but billing event is missing.
+
+### 11.7 Plan Deactivation Guard (B1)
+
+1. Navigate to `/admin/billing/plans`
+2. Try to deactivate or delete a plan that has active subscriptions
+
+**Pass criteria**: Returns 409 Conflict with message explaining active subscriptions exist. Plan remains active.
+
+### 11.8 Stripe Idempotency (E1)
+
+1. Create a subscription and note the response
+2. Replay the exact same creation request immediately
+
+**Pass criteria**: No duplicate Stripe subscription created. Idempotency key prevents double-charge.
+
+### 11.9 Batch Automation Limits (S1)
+
+1. Create 20+ leads eligible for win-back (cold, 25-35 days inactive)
+2. Trigger win-back cron:
+   ```bash
+   curl $BASE_URL/api/cron/win-back -H "Authorization: Bearer $CRON_SECRET"
+   ```
+
+**Pass criteria**: Leads processed in batches of 5 (not all at once). No Twilio rate limit errors. All eligible leads contacted.
+
+---
+
 ## Appendix A: Triggering Cron Jobs Manually
 
 All cron jobs can be triggered via HTTP. Use your `CRON_SECRET` as a Bearer token.
@@ -1096,6 +1186,7 @@ export BASE_URL="http://localhost:3000"
 | **Win-back** | `curl $BASE_URL/api/cron/win-back -H "Authorization: Bearer $CRON_SECRET"` |
 | **Weekly summary** | `curl $BASE_URL/api/cron/weekly-summary -H "Authorization: Bearer $CRON_SECRET"` |
 | **Agency digest** | `curl $BASE_URL/api/cron/agency-digest -H "Authorization: Bearer $CRON_SECRET"` |
+| **Stripe reconciliation** | `curl $BASE_URL/api/cron/stripe-reconciliation -H "Authorization: Bearer $CRON_SECRET"` |
 
 ---
 
