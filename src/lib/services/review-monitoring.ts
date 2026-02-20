@@ -51,7 +51,7 @@ export async function syncAllReviews(clientId: string): Promise<{
   // Sync Google
   results.google = await syncGoogleReviews(clientId);
 
-  // TODO: Add Yelp, Facebook, etc.
+  // Future: Yelp, Facebook review sync (requires separate API integrations)
 
   return results;
 }

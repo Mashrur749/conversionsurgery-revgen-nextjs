@@ -424,12 +424,12 @@ async function executePromptAction(
 
   switch (promptType) {
     case 'start_sequences':
-      // TODO: Trigger follow-up sequences for specified leadIds
-      console.log(`[Agency] Would start sequences for leads:`, actionPayload.leadIds);
+      // Not yet implemented — follow-up sequence triggering requires flow engine integration
+      console.warn(`[Agency] start_sequences action not implemented. LeadIds:`, actionPayload.leadIds);
       break;
     case 'schedule_callback':
-      // TODO: Create escalation entry for callback
-      console.log(`[Agency] Would schedule callback for client: ${clientId}`);
+      // Not yet implemented — callback scheduling requires escalation system integration
+      console.warn(`[Agency] schedule_callback action not implemented for client: ${clientId}`);
       break;
     case 'confirm_action':
       // Generic confirmation — action is simply marked as executed
