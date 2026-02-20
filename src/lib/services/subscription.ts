@@ -121,38 +121,55 @@ export async function createSubscription(
     ? new Date(firstItem.current_period_end * 1000)
     : new Date();
 
-  // Create subscription record
-  const [subscription] = await db.insert(subscriptions).values({
-    clientId,
-    planId,
-    status: stripeSubscription.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused',
-    interval,
-    stripeCustomerId,
-    stripeSubscriptionId: stripeSubscription.id,
-    stripePriceId: priceId,
-    currentPeriodStart,
-    currentPeriodEnd,
-    trialStart,
-    trialEnd,
-    couponCode: couponCode?.toUpperCase(),
-    discountPercent: validatedDiscount?.discountValue,
-    discountEndsAt: validatedDiscount?.duration === 'repeating' && validatedDiscount.durationMonths
-      ? new Date(Date.now() + validatedDiscount.durationMonths * 30 * 24 * 60 * 60 * 1000)
-      : undefined,
-  }).returning();
+  // All DB writes after Stripe call are wrapped in a transaction.
+  // If this transaction fails, the Stripe subscription still exists —
+  // the reconciliation cron (E2) will detect and fix the discrepancy.
+  try {
+    const subscription = await db.transaction(async (tx) => {
+      const [sub] = await tx.insert(subscriptions).values({
+        clientId,
+        planId,
+        status: stripeSubscription.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused',
+        interval,
+        stripeCustomerId,
+        stripeSubscriptionId: stripeSubscription.id,
+        stripePriceId: priceId,
+        currentPeriodStart,
+        currentPeriodEnd,
+        trialStart,
+        trialEnd,
+        couponCode: couponCode?.toUpperCase(),
+        discountPercent: validatedDiscount?.discountValue,
+        discountEndsAt: validatedDiscount?.duration === 'repeating' && validatedDiscount.durationMonths
+          ? new Date(Date.now() + validatedDiscount.durationMonths * 30 * 24 * 60 * 60 * 1000)
+          : undefined,
+      }).returning();
 
-  // Coupon redemption already handled atomically by validateAndRedeemCoupon() above
+      // Log event
+      await tx.insert(billingEvents).values({
+        clientId,
+        eventType: 'subscription_created',
+        description: `Subscription created for ${plan.name} plan`,
+        subscriptionId: sub.id,
+        stripeEventId: `manual_${Date.now()}`,
+      });
 
-  // Log event
-  await db.insert(billingEvents).values({
-    clientId,
-    eventType: 'subscription_created',
-    description: `Subscription created for ${plan.name} plan`,
-    subscriptionId: subscription.id,
-    stripeEventId: `manual_${Date.now()}`,
-  });
+      return sub;
+    });
 
-  return subscription;
+    return subscription;
+  } catch (error) {
+    // Transaction failed — attempt to cancel the Stripe subscription
+    // to prevent orphaned billing
+    console.error('[Subscription] DB transaction failed after Stripe create, attempting compensation:', error);
+    try {
+      await stripe.subscriptions.cancel(stripeSubscription.id);
+      console.log('[Subscription] Compensating Stripe cancel succeeded');
+    } catch (cancelError) {
+      console.error('[Subscription] Compensating Stripe cancel FAILED — manual reconciliation needed:', cancelError);
+    }
+    throw error;
+  }
 }
 
 /**
@@ -188,21 +205,24 @@ export async function cancelSubscription(
     });
   }
 
-  // Update local record
-  const [updated] = await db.update(subscriptions).set({
-    cancelAtPeriodEnd: !cancelImmediately,
-    canceledAt: cancelImmediately ? new Date() : null,
-    cancelReason: reason,
-    status: cancelImmediately ? 'canceled' : subscription.status,
-    updatedAt: new Date(),
-  }).where(eq(subscriptions.id, subscriptionId)).returning();
+  // Wrap DB writes in transaction
+  const updated = await db.transaction(async (tx) => {
+    const [sub] = await tx.update(subscriptions).set({
+      cancelAtPeriodEnd: !cancelImmediately,
+      canceledAt: cancelImmediately ? new Date() : null,
+      cancelReason: reason,
+      status: cancelImmediately ? 'canceled' : subscription.status,
+      updatedAt: new Date(),
+    }).where(eq(subscriptions.id, subscriptionId)).returning();
 
-  // Log event
-  await db.insert(billingEvents).values({
-    clientId: subscription.clientId,
-    eventType: 'subscription_canceled',
-    description: reason || 'Subscription canceled',
-    subscriptionId,
+    await tx.insert(billingEvents).values({
+      clientId: subscription.clientId,
+      eventType: 'subscription_canceled',
+      description: reason || 'Subscription canceled',
+      subscriptionId,
+    });
+
+    return sub;
   });
 
   return updated;
@@ -252,20 +272,23 @@ export async function changePlan(
     idempotencyKey: `sub_change_${subscriptionId}_${newPlanId}_${interval}_${Date.now()}`,
   });
 
-  // Update local record
-  const [updated] = await db.update(subscriptions).set({
-    planId: newPlanId,
-    interval,
-    stripePriceId: priceId,
-    updatedAt: new Date(),
-  }).where(eq(subscriptions.id, subscriptionId)).returning();
+  // Wrap DB writes in transaction
+  const updated = await db.transaction(async (tx) => {
+    const [sub] = await tx.update(subscriptions).set({
+      planId: newPlanId,
+      interval,
+      stripePriceId: priceId,
+      updatedAt: new Date(),
+    }).where(eq(subscriptions.id, subscriptionId)).returning();
 
-  // Log event
-  await db.insert(billingEvents).values({
-    clientId: subscription.clientId,
-    eventType: 'plan_changed',
-    description: `Changed to ${newPlan.name} plan`,
-    subscriptionId,
+    await tx.insert(billingEvents).values({
+      clientId: subscription.clientId,
+      eventType: 'plan_changed',
+      description: `Changed to ${newPlan.name} plan`,
+      subscriptionId,
+    });
+
+    return sub;
   });
 
   return updated;

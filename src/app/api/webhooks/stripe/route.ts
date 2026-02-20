@@ -183,16 +183,26 @@ async function handleSubscriptionUpdate(db: DB, sub: Stripe.Subscription, event:
   // In Stripe v20, current_period is on subscription items
   const firstItem = sub.items.data[0];
 
-  await db.update(subscriptions).set({
-    status: sub.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused',
-    currentPeriodStart: firstItem ? new Date(firstItem.current_period_start * 1000) : undefined,
-    currentPeriodEnd: firstItem ? new Date(firstItem.current_period_end * 1000) : undefined,
-    cancelAtPeriodEnd: sub.cancel_at_period_end,
-    canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
-    updatedAt: new Date(),
-  }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
+  // Wrap in transaction to ensure subscription update and billing event are atomic
+  await db.transaction(async (tx) => {
+    await tx.update(subscriptions).set({
+      status: sub.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused',
+      currentPeriodStart: firstItem ? new Date(firstItem.current_period_start * 1000) : undefined,
+      currentPeriodEnd: firstItem ? new Date(firstItem.current_period_end * 1000) : undefined,
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+      updatedAt: new Date(),
+    }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
 
-  await logBillingEvent(db, clientId, event, `Subscription ${event.type.split('.')[2]}`);
+    await tx.insert(billingEvents).values({
+      clientId,
+      eventType: event.type.replace(/\./g, '_'),
+      description: `Subscription ${event.type.split('.')[2]}`,
+      stripeEventId: event.id,
+      stripeEventType: event.type,
+      rawData: event.data.object as unknown as Record<string, unknown>,
+    });
+  });
 }
 
 async function handleSubscriptionDeleted(db: DB, sub: Stripe.Subscription, event: Stripe.Event) {
@@ -204,21 +214,33 @@ async function handleSubscriptionDeleted(db: DB, sub: Stripe.Subscription, event
     .limit(1);
   if (existingEvent) return;
 
-  await db.update(subscriptions).set({
-    status: 'canceled',
-    canceledAt: new Date(),
-    updatedAt: new Date(),
-  }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
-
   const clientId = sub.metadata?.clientId;
-  if (clientId) {
-    await logBillingEvent(db, clientId, event, 'Subscription canceled');
 
-    await db.update(clients).set({
-      status: 'cancelled',
+  // Wrap all DB writes in transaction — prevents partial state where
+  // subscription is canceled but client status stays active
+  await db.transaction(async (tx) => {
+    await tx.update(subscriptions).set({
+      status: 'canceled',
+      canceledAt: new Date(),
       updatedAt: new Date(),
-    }).where(eq(clients.id, clientId));
-  }
+    }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
+
+    if (clientId) {
+      await tx.insert(billingEvents).values({
+        clientId,
+        eventType: event.type.replace(/\./g, '_'),
+        description: 'Subscription canceled',
+        stripeEventId: event.id,
+        stripeEventType: event.type,
+        rawData: event.data.object as unknown as Record<string, unknown>,
+      });
+
+      await tx.update(clients).set({
+        status: 'cancelled',
+        updatedAt: new Date(),
+      }).where(eq(clients.id, clientId));
+    }
+  });
 }
 
 async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe.Event) {
