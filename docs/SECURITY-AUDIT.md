@@ -68,55 +68,47 @@ The application underwent a comprehensive security hardening across 6 commits (5
 
 ---
 
-## Findings: REMAINING
+## Findings: ALL RESOLVED
 
-### M1 — Twilio webhooks lack signature validation [MEDIUM]
-**Status:** Partially addressed
-- **Current state:** SMS webhook uses `validateAndParseTwilioWebhook()` which validates Twilio signatures. However, some voice webhook sub-routes (gather, transfer, dial-complete) should be verified to use the same validation.
-- **Risk:** If any voice webhook route skips validation, an attacker could forge webhook calls.
-- **Recommendation:** Audit all 8 Twilio webhook routes to confirm consistent use of `validateAndParseTwilioWebhook()`.
+### M1 — Twilio webhooks lack signature validation [MEDIUM → ALREADY FIXED]
+**Status:** Verified resolved (no commit needed)
+- **Investigation:** All 11 Twilio webhook routes use `validateAndParseTwilioWebhook()` consistently — SMS inbound, status callback, and all 9 voice sub-routes (gather, transfer, dial-complete, etc.).
+- No action required.
 
-### M2 — Error messages leak internal details [MEDIUM]
-**Status:** Not addressed
-- **Current state:** ~30 admin routes return `error.message` to the client in 500 responses (e.g., `{ error: error instanceof Error ? error.message : 'Failed to...' }`). While this is behind admin auth, internal error details (stack frames, DB errors) could leak.
-- **Files affected:** reports/route.ts, reviews responses, twilio routes, templates routes, usage routes, and others.
-- **Recommendation:** Use generic error messages in 500 responses, log full errors server-side only.
+### M2 — Error messages leak internal details [MEDIUM → FIXED]
+**Commit:** 20fc409
+- **Issue:** 96 API route files returned `error.message` to clients in catch blocks, leaking internal details (DB errors, stack traces).
+- **Fix:** Created `safeErrorResponse()` and `permissionErrorResponse()` utilities in `src/lib/utils/api-errors.ts`. Replaced all `error instanceof Error ? error.message` patterns across 96 route files. Full errors logged server-side, generic messages returned to clients.
 
-### M3 — `as any` type casts in admin routes [MEDIUM]
-**Status:** Known, tracked
-- **Files:** `reports/route.ts` (7 casts for JSON columns, date fields), `ab-tests/route.ts` (for JSON columns)
-- **Risk:** Type safety bypass could mask data integrity issues. Not a direct security vulnerability but reduces confidence in data handling.
-- **Recommendation:** Define proper TypeScript interfaces for JSON column types.
+### M3 — `as any` type casts in admin routes [MEDIUM → FIXED]
+**Commit:** 56ba31a
+- **Issue:** Reports, ab-tests, and template performance routes used `as any` to bypass TypeScript for jsonb columns and date comparisons.
+- **Fix:** Added `.$type<T>()` annotations to jsonb columns in schema files. Replaced `z.any()` with `z.unknown()`. Removed all `as any` casts and replaced with proper types.
 
-### M4 — No rate limiting on API routes [MEDIUM]
-**Status:** Not addressed
-- **Current state:** No rate limiting middleware exists. All routes are protected by auth, but authenticated users can make unlimited requests.
-- **Risk:** Brute-force attacks on OTP verification, API abuse, denial of service from authenticated users.
-- **Recommendation:** Add rate limiting middleware, especially on: OTP send/verify, message sending, report generation, AI regeneration endpoints.
+### M4 — No rate limiting on API routes [MEDIUM → FIXED]
+**Commit:** 52016b0
+- **Issue:** No rate limiting — authenticated users could make unlimited requests.
+- **Fix:** Added `src/middleware.ts` with in-memory rate limiting: 120 req/min for general admin routes, 30 req/min for sensitive endpoints (AI generation, email send, OTP, TTS). Uses `cf-connecting-ip` header.
 
-### M5 — No CSRF protection [MEDIUM]
-**Status:** Not addressed
-- **Current state:** Cookie-based auth (both NextAuth session and client portal cookie) without CSRF tokens. Next.js App Router routes use JSON bodies (not form submissions), which provides some implicit protection via `Content-Type` enforcement.
-- **Risk:** Low for JSON API routes (browsers block cross-origin JSON posts by default via CORS). Higher for any endpoints that accept `application/x-www-form-urlencoded`.
-- **Recommendation:** Verify no routes accept form-encoded input. Consider adding `SameSite=Strict` to auth cookies if not already set.
+### M5 — No CSRF protection [MEDIUM → ALREADY FIXED]
+**Status:** Verified resolved (no commit needed)
+- **Investigation:** All auth cookies use `httpOnly`, `secure`, and `sameSite: 'lax'` flags. All API routes accept JSON only. No form-encoded endpoints exist.
+- No action required.
 
-### M6 — No middleware-level route protection [LOW]
-**Status:** By design
-- **Current state:** No `middleware.ts` file exists. All auth is enforced at the route handler level via `requireAgencyPermission()` / `requirePortalPermission()`.
-- **Risk:** A developer could add a new admin route and forget to add the permission check. There's no safety net at the middleware layer.
-- **Recommendation:** Consider adding a middleware that rejects unauthenticated requests to `/api/admin/*` and `/api/client/*` as a defense-in-depth measure.
+### M6 — No middleware-level route protection [MEDIUM → FIXED]
+**Commit:** 52016b0
+- **Issue:** No `middleware.ts` — all auth was individual handler responsibility with no safety net.
+- **Fix:** Added `src/middleware.ts` with cookie-existence auth guards: admin routes require NextAuth session cookie, client routes require `clientSessionId`, cron routes require `Bearer` header. Open routes (auth, webhooks, compliance) are exempted. Also added security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, etc.) on all API responses.
 
-### L1 — Cron route relies on Cloudflare `cf-cron` header [LOW]
-**Status:** By design
-- **Current state:** The main cron orchestrator (`/api/cron/route.ts`) checks for `cf-cron` header (set by Cloudflare Workers) and `CRON_SECRET` env var. Sub-cron routes verify `Authorization: Bearer <CRON_SECRET>` passed by the orchestrator.
-- **Risk:** In non-Cloudflare environments, the `cf-cron` header could be spoofed. The `CRON_SECRET` provides the actual security.
-- **Recommendation:** Acceptable for Cloudflare deployment. If migrating platforms, add `CRON_SECRET` verification to the orchestrator route itself.
+### L1 — Cron route auth [LOW → ALREADY FIXED]
+**Status:** Verified resolved (no commit needed)
+- **Investigation:** All 13 cron sub-routes use `verifyCronSecret()`. Middleware now additionally requires `Bearer` header on `/api/cron/*`.
+- No action required.
 
-### L2 — User management route lost self-demotion protection [LOW]
-**Status:** Known, acceptable
-- **Current state:** `users/[id]/route.ts` PATCH previously had a check preventing admins from removing their own admin access (`if (id === session.user.id && body.isAdmin === false)`). This was removed during the permission migration because the new system uses `personId`, not `session.user.id`.
-- **Risk:** An admin could accidentally remove their own admin flag via the legacy users table. The new permission system (people + memberships) has its own `preventEscalation()` checks.
-- **Recommendation:** Re-add self-demotion protection using the new session format, or deprecate the legacy user management route once migration is complete.
+### L2 — Self-demotion protection [LOW → FIXED]
+**Commit:** 29640f8
+- **Issue:** Admin could remove their own admin access via `/api/admin/users/[id]`.
+- **Fix:** Added check: if `session.userId === id && data.isAdmin === false`, returns 400 "Cannot remove your own admin access".
 
 ---
 
