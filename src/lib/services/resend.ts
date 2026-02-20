@@ -24,25 +24,34 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+  const MAX_ATTEMPTS = 2;
 
-  try {
-    const result = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
-      to,
-      subject,
-      html,
-    });
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const result = await resend.emails.send({ from, to, subject, html });
 
-    if (result.error) {
-      console.error('[Resend] API error:', result.error);
-      return { success: false, error: result.error };
+      if (result.error) {
+        // API-level error (not a network/transient issue) — don't retry
+        console.error('[Resend] API error:', result.error);
+        return { success: false, error: result.error };
+      }
+
+      return { success: true, id: result.data?.id };
+    } catch (error) {
+      console.error(`[Resend] Send failed (attempt ${attempt}/${MAX_ATTEMPTS}):`, error instanceof Error ? error.message : error);
+
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        continue;
+      }
+
+      return { success: false, error };
     }
-
-    return { success: true, id: result.data?.id };
-  } catch (error) {
-    console.error('[Resend] Send failed:', error instanceof Error ? error.message : error);
-    return { success: false, error };
   }
+
+  // Unreachable, but TypeScript needs it
+  return { success: false, error: 'Max attempts exceeded' };
 }
 
 // ============================================

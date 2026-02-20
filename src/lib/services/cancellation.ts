@@ -1,6 +1,6 @@
 import { getDb } from '@/db';
-import { cancellationRequests, clients, dailyStats } from '@/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { cancellationRequests, clients, dailyStats, leads, jobs, subscriptions, plans } from '@/db/schema';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 
 export interface ValueSummary {
   monthsActive: number;
@@ -41,9 +41,50 @@ export async function getValueSummary(clientId: string): Promise<ValueSummary> {
   const totalLeads = Number(stats?.totalLeads || 0);
   const totalMessages = Number(stats?.totalMessages || 0);
 
-  // Estimate: 10% of leads convert, average job value $3000
-  const estimatedRevenue = Math.round(totalLeads * 0.1 * 3000);
-  const monthlyCost = 997;
+  // Calculate conversion rate from actual lead data
+  const [leadCounts] = await db
+    .select({
+      totalLeads: sql<number>`COUNT(*)`,
+      wonLeads: sql<number>`COUNT(*) FILTER (WHERE ${leads.status} = 'won')`,
+    })
+    .from(leads)
+    .where(eq(leads.clientId, clientId));
+
+  const actualTotalLeads = Number(leadCounts?.totalLeads || 0);
+  const wonLeads = Number(leadCounts?.wonLeads || 0);
+  const conversionRate = actualTotalLeads > 0 ? wonLeads / actualTotalLeads : 0.1;
+
+  // Get average job value from won jobs (amounts in cents), fall back to $3000
+  const [avgJob] = await db
+    .select({
+      avgValue: sql<number>`COALESCE(AVG(${jobs.finalAmount}), 300000)`,
+    })
+    .from(jobs)
+    .where(and(
+      eq(jobs.clientId, clientId),
+      eq(jobs.status, 'won'),
+    ));
+
+  // avgValue is in cents, convert to dollars
+  const avgJobValue = Number(avgJob?.avgValue || 300000) / 100;
+
+  // Get actual monthly cost from active subscription/plan (priceMonthly is in cents)
+  let monthlyCost = 997; // fallback in dollars
+  const [activeSub] = await db
+    .select({ plan: plans })
+    .from(subscriptions)
+    .innerJoin(plans, eq(subscriptions.planId, plans.id))
+    .where(and(
+      eq(subscriptions.clientId, clientId),
+      inArray(subscriptions.status, ['active', 'trialing'])
+    ))
+    .limit(1);
+
+  if (activeSub?.plan) {
+    monthlyCost = (activeSub.plan.priceMonthly ?? 99700) / 100;
+  }
+
+  const estimatedRevenue = Math.round(totalLeads * conversionRate * avgJobValue);
   const totalCost = monthsActive * monthlyCost;
   const roi = totalCost > 0 ? Math.round((estimatedRevenue / totalCost) * 100) : 0;
 

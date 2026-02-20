@@ -18,14 +18,7 @@ export async function GET(request: NextRequest) {
   try {
     const db = getDb();
 
-    // Reset monthly message counts on the 1st of each month
-    const now = new Date();
-    if (now.getDate() === 1 && now.getHours() < 1) {
-      await db
-        .update(clients)
-        .set({ messagesSentThisMonth: 0 });
-      console.log('Reset monthly message counts');
-    }
+    // Monthly message count reset moved to dedicated /api/cron/monthly-reset (D9)
 
     // Get due messages (limit to prevent timeout)
     const dueMessages = await db

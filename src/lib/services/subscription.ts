@@ -68,11 +68,24 @@ export async function createSubscription(
 
   if (!priceId) throw new Error('No Stripe price configured for this plan/interval');
 
+  // Check for prior subscriptions — prevent trial abuse (B4)
+  let trialDays = plan.trialDays || undefined;
+  if (trialDays) {
+    const [priorSub] = await db
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(eq(subscriptions.clientId, clientId))
+      .limit(1);
+    if (priorSub) {
+      trialDays = undefined; // No trial for returning clients
+    }
+  }
+
   // Create Stripe subscription
   const stripeSubParams: Record<string, unknown> = {
     customer: stripeCustomerId,
     items: [{ price: priceId }],
-    trial_period_days: plan.trialDays || undefined,
+    trial_period_days: trialDays,
     payment_behavior: 'default_incomplete',
     payment_settings: {
       save_default_payment_method: 'on_subscription',
