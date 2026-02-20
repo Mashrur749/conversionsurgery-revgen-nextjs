@@ -300,27 +300,31 @@
 
 ## Execution Order & Status
 
-### Quick wins (1-2h each)
-- [ ] D5 — Explicit onDelete on subscriptions.planId FK
-- [ ] D6 — onDelete on usage records FKs
-- [ ] L2 — business-hours route auth migration + transaction wrap
-- [ ] S3 — Webhook secret fail-fast (remove empty-string fallbacks)
-- [ ] E4 — Stripe payment webhook dedup
-- [ ] E7 — SMS webhook dedup via MessageSid
-- [ ] B2 — Phone number release conversation check
+### Quick wins — ALL COMPLETE
+- [x] D5 — Explicit onDelete on subscriptions.planId FK (`668f677`)
+- [x] D6 — onDelete on usage records FKs (`668f677`)
+- [x] L2 — business-hours route auth migration + transaction wrap (`668f677`)
+- [x] S3 — Webhook secret fail-fast (`668f677`)
+- [x] E4 — Stripe payment webhook dedup (`668f677`)
+- [x] E7 — SMS webhook dedup via MessageSid (`668f677`)
+- [x] B2 — Phone number release conversation check (`668f677`)
 
-### Medium (4h each)
-- [ ] E5 — OpenAI timeout + retry
-- [ ] E6 — Google token refresh retry + failure notification
-- [ ] D7 — Soft-delete filtering gaps
+### Medium — ALL COMPLETE
+- [x] E5 — OpenAI timeout + retry (`f93a952`)
+- [x] E6 — Google token refresh retry + failure notification (`f93a952`)
+- [x] D7 — Soft-delete filtering gaps (`f93a952`)
 
-### Large (1-2 days)
-- [ ] E8 — Process-scheduled delivery confirmation
-- [ ] E9 — Missing Stripe webhook event handlers
-- [ ] L1 — Legacy teamMembers migration/bridge
+### Large — ALL COMPLETE
+- [x] E8 — Process-scheduled atomic claim pattern (`0a9befc`)
+- [x] E9 — Missing Stripe webhook handlers: pause/resume, disputes, payment action (`7b5779a`)
+- [x] L1 — Legacy teamMembers migration to new access management schema (`04ef05f`)
 
 ## Commits
-(updated as work proceeds)
+1. `668f677` — D5, D6, S3, L2, E4, E7, B2 (7 quick wins)
+2. `f93a952` — E5, E6, D7 (3 medium items)
+3. `0a9befc` — E8 (atomic claim for scheduled messages)
+4. `7b5779a` — E9 (missing Stripe webhook handlers)
+5. `04ef05f` — L1 (teamMembers migration to new schema, 17 files)
 
 ## Docs Updated
-(updated as docs change)
+- `.claude/progress.md` — this file

@@ -37,6 +37,26 @@ All 10 critical items resolved across 7 commits:
 | S1 | Batch processing for win-back/no-show — eliminates N+1, concurrency-limited to 5 | `3b032c8` |
 | S2 | `src/lib/env.ts` — startup env validation with clear error messages, skips build phase | `1542309`, `f0feb3b` |
 
+### Phase 2 Remediation — COMPLETE (2026-02-19)
+
+All 13 high-priority items resolved across 5 commits:
+
+| ID | Fix | Commit |
+|----|-----|--------|
+| D5 | `onDelete: 'restrict'` on subscriptions.planId FK | `668f677` |
+| D6 | `onDelete: 'set null'` on usage records FKs | `668f677` |
+| D7 | Plan `isActive` check on subscription create, opt-in/out flow for START/UNSTOP | `f93a952` |
+| E4 | Stripe checkout webhook dedup via billingEvents.stripeEventId | `668f677` |
+| E5 | OpenAI 15s timeout, 2 retries with exponential backoff for 429/5xx | `f93a952` |
+| E6 | Google token refresh: 3 retries, permanent failure detection + admin email | `f93a952` |
+| E7 | SMS webhook dedup via conversations.twilioSid | `668f677` |
+| E8 | Atomic claim pattern for scheduled messages — prevents duplicate sends | `0a9befc` |
+| E9 | Missing Stripe webhook handlers: pause/resume, disputes, payment action required | `7b5779a` |
+| L1 | All teamMembers queries migrated to clientMemberships + people via bridge layer (17 files) | `04ef05f` |
+| L2 | business-hours route migrated to `requireAgencyPermission()` + transaction wrap | `668f677` |
+| S3 | Webhook secret fail-fast — removed empty-string fallbacks, explicit 500 on missing | `668f677` |
+| B2 | Phone number release blocked if conversations exist in last 30 days | `668f677` |
+
 ---
 
 ## 1. DATA INTEGRITY
