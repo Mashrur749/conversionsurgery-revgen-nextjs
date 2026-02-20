@@ -1,7 +1,7 @@
 import twilio from "twilio";
 import { getDb } from "@/db";
-import { clients, systemSettings, clientPhoneNumbers } from "@/db/schema";
-import { eq, and, isNotNull } from "drizzle-orm";
+import { clients, systemSettings, clientPhoneNumbers, conversations } from "@/db/schema";
+import { eq, and, isNotNull, gte, sql } from "drizzle-orm";
 import { sendOnboardingNotification } from "@/lib/services/agency-communication";
 
 const twilioClient = twilio(
@@ -343,6 +343,25 @@ export async function releaseNumber(
 
     if (!client?.twilioNumber) {
       return { success: false, error: "No number assigned to this client" };
+    }
+
+    // Check for recent conversations before allowing release
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [recentActivity] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.clientId, clientId),
+          gte(conversations.createdAt, thirtyDaysAgo)
+        )
+      );
+
+    if (recentActivity && recentActivity.count > 0) {
+      return {
+        success: false,
+        error: `Cannot release number with ${recentActivity.count} conversation(s) in the last 30 days. Cancel scheduled messages and wait, or force release via admin.`,
+      };
     }
 
     // Find and release the number

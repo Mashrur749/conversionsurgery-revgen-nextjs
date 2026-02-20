@@ -14,4 +14,4 @@ export function getStripeClient(): Stripe {
   return _stripe;
 }
 
-export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+export const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;

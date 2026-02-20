@@ -44,7 +44,13 @@ export async function dispatchWebhook(
   };
 
   const body = JSON.stringify(payload);
-  const signature = createHmac('sha256', process.env.FORM_WEBHOOK_SECRET || 'webhook-secret')
+  const webhookSecret = process.env.FORM_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.warn('[Webhook] FORM_WEBHOOK_SECRET is not configured — skipping webhook dispatch');
+    return { sent: false };
+  }
+
+  const signature = createHmac('sha256', webhookSecret)
     .update(body)
     .digest('hex');
 

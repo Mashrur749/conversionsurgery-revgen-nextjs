@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleIncomingSMS } from '@/lib/automations/incoming-sms';
 import { getDb } from '@/db';
-import { webhookLog, clients, clientPhoneNumbers } from '@/db/schema';
+import { webhookLog, clients, clientPhoneNumbers, conversations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 
@@ -17,6 +17,23 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[Messaging] Twilio SMS webhook:', payload.From, payload.Body?.substring(0, 50));
+
+    // Dedup check — prevent duplicate processing on Twilio webhook retry
+    if (payload.MessageSid) {
+      const db = getDb();
+      const [existing] = await db
+        .select({ id: conversations.id })
+        .from(conversations)
+        .where(eq(conversations.twilioSid, payload.MessageSid))
+        .limit(1);
+      if (existing) {
+        console.log(`[Messaging] Duplicate MessageSid ${payload.MessageSid} — skipping`);
+        return new NextResponse(
+          '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
+          { headers: { 'Content-Type': 'text/xml' } }
+        );
+      }
+    }
 
     // Log webhook event — check junction table first, fallback to clients.twilioNumber
     try {

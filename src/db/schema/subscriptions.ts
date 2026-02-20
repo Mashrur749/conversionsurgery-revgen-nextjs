@@ -22,7 +22,7 @@ export const subscriptions = pgTable(
       .notNull()
       .unique(),
     planId: uuid('plan_id')
-      .references(() => plans.id)
+      .references(() => plans.id, { onDelete: 'restrict' })
       .notNull(),
 
     // Status

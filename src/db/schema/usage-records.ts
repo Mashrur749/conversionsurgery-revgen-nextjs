@@ -18,7 +18,7 @@ export const usageRecords = pgTable(
     clientId: uuid('client_id')
       .references(() => clients.id, { onDelete: 'cascade' })
       .notNull(),
-    subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
+    subscriptionId: uuid('subscription_id').references(() => subscriptions.id, { onDelete: 'set null' }),
 
     // Usage type
     usageType: varchar('usage_type', { length: 50 }).notNull(),
@@ -36,7 +36,7 @@ export const usageRecords = pgTable(
     stripeUsageRecordId: varchar('stripe_usage_record_id', { length: 100 }),
 
     // Billing
-    billedOnInvoiceId: uuid('billed_on_invoice_id').references(() => subscriptionInvoices.id),
+    billedOnInvoiceId: uuid('billed_on_invoice_id').references(() => subscriptionInvoices.id, { onDelete: 'set null' }),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },

@@ -290,3 +290,37 @@
 - `docs/SYSTEM-BLOCKERS.md` — Phase 1 remediation table in executive summary
 - `docs/OPERATIONS_GUIDE.md` — Stripe reconciliation cron, SMS retry behavior, monitoring items, incident response
 - `docs/TESTING_GUIDE.md` — Phase 11 (System Reliability) with 9 test cases, reconciliation in Appendix A
+
+---
+
+# System Blockers — Phase 2 Execution
+
+**Started:** 2026-02-19
+**Source:** `docs/SYSTEM-BLOCKERS.md` — Phase 2 (High priority, 13 items)
+
+## Execution Order & Status
+
+### Quick wins (1-2h each)
+- [ ] D5 — Explicit onDelete on subscriptions.planId FK
+- [ ] D6 — onDelete on usage records FKs
+- [ ] L2 — business-hours route auth migration + transaction wrap
+- [ ] S3 — Webhook secret fail-fast (remove empty-string fallbacks)
+- [ ] E4 — Stripe payment webhook dedup
+- [ ] E7 — SMS webhook dedup via MessageSid
+- [ ] B2 — Phone number release conversation check
+
+### Medium (4h each)
+- [ ] E5 — OpenAI timeout + retry
+- [ ] E6 — Google token refresh retry + failure notification
+- [ ] D7 — Soft-delete filtering gaps
+
+### Large (1-2 days)
+- [ ] E8 — Process-scheduled delivery confirmation
+- [ ] E9 — Missing Stripe webhook event handlers
+- [ ] L1 — Legacy teamMembers migration/bridge
+
+## Commits
+(updated as work proceeds)
+
+## Docs Updated
+(updated as docs change)

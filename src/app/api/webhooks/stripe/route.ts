@@ -18,6 +18,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('[Billing] STRIPE_WEBHOOK_SECRET is not configured — cannot verify webhook signatures');
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+  }
+
   const stripe = getStripeClient();
   let event: Stripe.Event;
 
@@ -25,7 +31,7 @@ export async function POST(request: NextRequest) {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      webhookSecret
     );
   } catch (err) {
     console.error('[Billing] Stripe webhook signature verification failed:', err);
@@ -36,6 +42,14 @@ export async function POST(request: NextRequest) {
 
   switch (event.type) {
     case 'checkout.session.completed': {
+      // Dedup check — prevent duplicate processing on webhook retry
+      const [existingCheckoutEvent] = await db
+        .select({ id: billingEvents.id })
+        .from(billingEvents)
+        .where(eq(billingEvents.stripeEventId, event.id))
+        .limit(1);
+      if (existingCheckoutEvent) break;
+
       const session = event.data.object as Stripe.Checkout.Session;
 
       if (session.payment_link && session.payment_intent) {
@@ -85,6 +99,15 @@ export async function POST(request: NextRequest) {
               );
             }
           }
+
+          // Log billing event for dedup
+          await logBillingEvent(
+            db,
+            clientId,
+            event,
+            `Payment received: ${formatAmount(session.amount_total || 0)}`,
+            session.amount_total || undefined
+          );
         }
       }
       break;

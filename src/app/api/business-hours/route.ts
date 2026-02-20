@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import { businessHours } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,10 +50,7 @@ const businessHoursSchema = z.object({
 
 export async function PUT(req: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.isAdmin) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_EDIT);
 
     const data = await req.json();
     const parsed = businessHoursSchema.safeParse(data);
@@ -67,25 +65,32 @@ export async function PUT(req: Request) {
     const validated = parsed.data;
     const db = getDb();
 
-    // Delete existing hours for this client
-    await db.delete(businessHours).where(eq(businessHours.clientId, validated.clientId));
+    // Wrap delete + insert in transaction to prevent partial state (D12)
+    const result = await db.transaction(async (tx) => {
+      await tx.delete(businessHours).where(eq(businessHours.clientId, validated.clientId));
 
-    // Insert new hours
-    const result = await db
-      .insert(businessHours)
-      .values(
-        validated.hours.map(hour => ({
-          clientId: validated.clientId,
-          dayOfWeek: hour.dayOfWeek,
-          openTime: hour.openTime,
-          closeTime: hour.closeTime,
-          isOpen: hour.isOpen,
-        }))
-      )
-      .returning();
+      return tx
+        .insert(businessHours)
+        .values(
+          validated.hours.map(hour => ({
+            clientId: validated.clientId,
+            dayOfWeek: hour.dayOfWeek,
+            openTime: hour.openTime,
+            closeTime: hour.closeTime,
+            isOpen: hour.isOpen,
+          }))
+        )
+        .returning();
+    });
 
     return Response.json({ success: true, hours: result });
   } catch (error) {
+    if (error instanceof Error && error.message.includes('Unauthorized')) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (error instanceof Error && error.message.includes('Forbidden')) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
     console.error('[BusinessHours] Update error:', error);
     return Response.json({ error: 'Failed to update business hours' }, { status: 500 });
   }
