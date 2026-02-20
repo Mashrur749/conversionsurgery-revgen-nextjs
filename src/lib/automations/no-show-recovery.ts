@@ -9,7 +9,7 @@
 import OpenAI from 'openai';
 import { getDb } from '@/db';
 import { appointments, leads, clients, conversations, scheduledMessages } from '@/db/schema';
-import { eq, and, lte, sql } from 'drizzle-orm';
+import { eq, and, lte, sql, inArray } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
@@ -49,86 +49,101 @@ export async function processNoShows(): Promise<{
       )
     ));
 
-  for (const { appointment, lead, client } of noShows) {
-    detected++;
+  if (noShows.length === 0) {
+    return { detected: 0, messaged: 0, errors: [] };
+  }
 
-    try {
-      // Mark appointment as no_show
-      await db
-        .update(appointments)
-        .set({ status: 'no_show', updatedAt: new Date() })
-        .where(eq(appointments.id, appointment.id));
+  detected = noShows.length;
 
-      // Skip if client has no phone number to send from
-      if (!client.twilioNumber) {
-        errors.push(`Client ${client.id}: no Twilio number`);
-        continue;
-      }
+  // Batch update: mark all appointments as no_show at once
+  const appointmentIds = noShows.map(({ appointment }) => appointment.id);
+  await db
+    .update(appointments)
+    .set({ status: 'no_show', updatedAt: new Date() })
+    .where(inArray(appointments.id, appointmentIds));
 
-      // Generate AI-personalized no-show follow-up
-      const message = await generateNoShowMessage(
-        client.id,
-        lead.id,
-        lead.name || 'there',
-        appointment.appointmentDate,
-        appointment.appointmentTime,
-        client.businessName,
-        client.ownerName,
-        1 // first attempt
-      );
+  // Filter to actionable leads (has Twilio number)
+  const actionableNoShows = noShows.filter(({ client }) => {
+    if (!client.twilioNumber) {
+      errors.push(`Client ${client.id}: no Twilio number`);
+      return false;
+    }
+    return true;
+  });
 
-      if (!message) {
-        errors.push(`Lead ${lead.id}: AI generation failed`);
-        continue;
-      }
+  // Process with concurrency limit (max 5 concurrent AI + SMS operations)
+  const CONCURRENCY = 5;
+  for (let i = 0; i < actionableNoShows.length; i += CONCURRENCY) {
+    const batch = actionableNoShows.slice(i, i + CONCURRENCY);
 
-      // Send through compliance gateway
-      const result = await sendCompliantMessage({
-        clientId: client.id,
-        to: lead.phone,
-        from: client.twilioNumber,
-        body: message,
-        messageCategory: 'transactional',
-        consentBasis: { type: 'existing_consent' },
-        leadId: lead.id,
-        queueOnQuietHours: true,
-        metadata: {
-          source: 'no_show_recovery',
-          attempt: 1,
-          appointmentId: appointment.id,
-        },
-      });
+    const results = await Promise.allSettled(
+      batch.map(async ({ appointment, lead, client }) => {
+        const message = await generateNoShowMessage(
+          client.id,
+          lead.id,
+          lead.name || 'there',
+          appointment.appointmentDate,
+          appointment.appointmentTime,
+          client.businessName,
+          client.ownerName,
+          1
+        );
 
-      if (result.sent || result.queued) {
-        messaged++;
-
-        // Log the outbound message
-        if (result.sent) {
-          await db.insert(conversations).values({
-            leadId: lead.id,
-            clientId: client.id,
-            direction: 'outbound',
-            messageType: 'ai_response',
-            content: message,
-          });
+        if (!message) {
+          errors.push(`Lead ${lead.id}: AI generation failed`);
+          return;
         }
 
-        // Schedule second follow-up in 2 days
-        const followUpDate = new Date();
-        followUpDate.setDate(followUpDate.getDate() + 2);
-        followUpDate.setHours(10, 0, 0, 0); // 10am
-
-        await db.insert(scheduledMessages).values({
-          leadId: lead.id,
+        const result = await sendCompliantMessage({
           clientId: client.id,
-          sendAt: followUpDate,
-          sequenceType: 'no_show_followup',
-          sequenceStep: 2,
-          content: '__AI_GENERATE__', // Placeholder — AI generates at send time
+          to: lead.phone,
+          from: client.twilioNumber!,
+          body: message,
+          messageCategory: 'transactional',
+          consentBasis: { type: 'existing_consent' },
+          leadId: lead.id,
+          queueOnQuietHours: true,
+          metadata: {
+            source: 'no_show_recovery',
+            attempt: 1,
+            appointmentId: appointment.id,
+          },
         });
+
+        if (result.sent || result.queued) {
+          messaged++;
+
+          if (result.sent) {
+            await db.insert(conversations).values({
+              leadId: lead.id,
+              clientId: client.id,
+              direction: 'outbound',
+              messageType: 'ai_response',
+              content: message,
+            });
+          }
+
+          const followUpDate = new Date();
+          followUpDate.setDate(followUpDate.getDate() + 2);
+          followUpDate.setHours(10, 0, 0, 0);
+
+          await db.insert(scheduledMessages).values({
+            leadId: lead.id,
+            clientId: client.id,
+            sendAt: followUpDate,
+            sequenceType: 'no_show_followup',
+            sequenceStep: 2,
+            content: '__AI_GENERATE__',
+          });
+        }
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        const reason = result.reason instanceof Error ? result.reason.message : 'Unknown error';
+        errors.push(`Batch error: ${reason}`);
       }
-    } catch (err) {
-      errors.push(`Lead ${lead.id}: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   }
 

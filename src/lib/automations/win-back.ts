@@ -78,109 +78,121 @@ export async function processWinBacks(): Promise<{
       gte(sql`max(${conversations.createdAt})`, staleCutoffMin),
     ));
 
-  for (const { lead, client } of staleLeads) {
-    eligible++;
+  if (staleLeads.length === 0) {
+    return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] };
+  }
 
+  // Batch check: which leads already have win-back messages (eliminates N+1)
+  const leadIds = staleLeads.map(({ lead }) => lead.id);
+  const existingWinBacks = await db
+    .select({ leadId: scheduledMessages.leadId })
+    .from(scheduledMessages)
+    .where(and(
+      inArray(scheduledMessages.leadId, leadIds),
+      eq(scheduledMessages.sequenceType, 'win_back'),
+    ));
+  const alreadySentSet = new Set(existingWinBacks.map(r => r.leadId));
+
+  // Filter to actionable leads
+  const actionableLeads = staleLeads.filter(({ lead, client }) => {
+    if (alreadySentSet.has(lead.id)) return false;
     if (!client.twilioNumber) {
       errors.push(`Client ${client.id}: no Twilio number`);
-      continue;
+      return false;
     }
+    return true;
+  });
 
-    // Check if we already sent a win-back for this lead
-    const existingWinBack = await db
-      .select()
-      .from(scheduledMessages)
-      .where(and(
-        eq(scheduledMessages.leadId, lead.id),
-        eq(scheduledMessages.sequenceType, 'win_back'),
-      ))
-      .limit(1);
+  eligible = staleLeads.length;
 
-    if (existingWinBack.length > 0) {
-      continue; // Already sent or scheduled a win-back
-    }
+  // Process with concurrency limit (max 5 concurrent AI + SMS operations)
+  const CONCURRENCY = 5;
+  for (let i = 0; i < actionableLeads.length; i += CONCURRENCY) {
+    const batch = actionableLeads.slice(i, i + CONCURRENCY);
 
-    try {
-      const message = await generateWinBackMessage(
-        client.id,
-        lead.id,
-        lead.name || 'there',
-        client.businessName,
-        client.ownerName,
-        1 // first attempt
-      );
+    const results = await Promise.allSettled(
+      batch.map(async ({ lead, client }) => {
+        const message = await generateWinBackMessage(
+          client.id,
+          lead.id,
+          lead.name || 'there',
+          client.businessName,
+          client.ownerName,
+          1
+        );
 
-      if (!message) {
-        errors.push(`Lead ${lead.id}: AI generation failed`);
-        continue;
-      }
-
-      const result = await sendCompliantMessage({
-        clientId: client.id,
-        to: lead.phone,
-        from: client.twilioNumber,
-        body: message,
-        messageCategory: 'marketing',
-        consentBasis: { type: 'existing_consent' },
-        leadId: lead.id,
-        queueOnQuietHours: true,
-        metadata: {
-          source: 'win_back',
-          attempt: 1,
-        },
-      });
-
-      if (result.sent || result.queued) {
-        messaged++;
-
-        if (result.sent) {
-          await db.insert(conversations).values({
-            leadId: lead.id,
-            clientId: client.id,
-            direction: 'outbound',
-            messageType: 'ai_response',
-            content: message,
-          });
+        if (!message) {
+          errors.push(`Lead ${lead.id}: AI generation failed`);
+          return;
         }
 
-        // Schedule second attempt 20-30 days later (randomized)
-        const secondDelay = SECOND_ATTEMPT_MIN_DAYS + Math.floor(
-          Math.random() * (SECOND_ATTEMPT_MAX_DAYS - SECOND_ATTEMPT_MIN_DAYS)
-        );
-        const followUpDate = new Date();
-        followUpDate.setDate(followUpDate.getDate() + secondDelay);
-        followUpDate.setHours(10 + Math.floor(Math.random() * 4), 0, 0, 0); // 10am-1pm
-
-        await db.insert(scheduledMessages).values({
-          leadId: lead.id,
+        const result = await sendCompliantMessage({
           clientId: client.id,
-          sendAt: followUpDate,
-          sequenceType: 'win_back',
-          sequenceStep: 2,
-          content: '__AI_GENERATE__',
+          to: lead.phone,
+          from: client.twilioNumber!,
+          body: message,
+          messageCategory: 'marketing',
+          consentBasis: { type: 'existing_consent' },
+          leadId: lead.id,
+          queueOnQuietHours: true,
+          metadata: { source: 'win_back', attempt: 1 },
         });
 
-        // Record that first win-back was sent
-        await db.insert(scheduledMessages).values({
-          leadId: lead.id,
-          clientId: client.id,
-          sendAt: new Date(),
-          sequenceType: 'win_back',
-          sequenceStep: 1,
-          content: message,
-          sent: true,
-          sentAt: new Date(),
-        });
-      } else if (result.blocked) {
-        // Consent expired or opted out — mark dormant
-        await db
-          .update(leads)
-          .set({ status: 'dormant', updatedAt: new Date() })
-          .where(eq(leads.id, lead.id));
-        markedDormant++;
+        if (result.sent || result.queued) {
+          messaged++;
+
+          if (result.sent) {
+            await db.insert(conversations).values({
+              leadId: lead.id,
+              clientId: client.id,
+              direction: 'outbound',
+              messageType: 'ai_response',
+              content: message,
+            });
+          }
+
+          const secondDelay = SECOND_ATTEMPT_MIN_DAYS + Math.floor(
+            Math.random() * (SECOND_ATTEMPT_MAX_DAYS - SECOND_ATTEMPT_MIN_DAYS)
+          );
+          const followUpDate = new Date();
+          followUpDate.setDate(followUpDate.getDate() + secondDelay);
+          followUpDate.setHours(10 + Math.floor(Math.random() * 4), 0, 0, 0);
+
+          await db.insert(scheduledMessages).values({
+            leadId: lead.id,
+            clientId: client.id,
+            sendAt: followUpDate,
+            sequenceType: 'win_back',
+            sequenceStep: 2,
+            content: '__AI_GENERATE__',
+          });
+
+          await db.insert(scheduledMessages).values({
+            leadId: lead.id,
+            clientId: client.id,
+            sendAt: new Date(),
+            sequenceType: 'win_back',
+            sequenceStep: 1,
+            content: message,
+            sent: true,
+            sentAt: new Date(),
+          });
+        } else if (result.blocked) {
+          await db
+            .update(leads)
+            .set({ status: 'dormant', updatedAt: new Date() })
+            .where(eq(leads.id, lead.id));
+          markedDormant++;
+        }
+      })
+    );
+
+    // Collect errors from rejected promises
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        const reason = result.reason instanceof Error ? result.reason.message : 'Unknown error';
+        errors.push(`Batch error: ${reason}`);
       }
-    } catch (err) {
-      errors.push(`Lead ${lead.id}: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   }
 
