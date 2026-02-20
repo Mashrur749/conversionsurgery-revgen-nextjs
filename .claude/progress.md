@@ -328,3 +328,58 @@
 
 ## Docs Updated
 - `.claude/progress.md` — this file
+
+---
+
+# System Blockers — Phase 3 Execution
+
+**Started:** 2026-02-19
+**Source:** `docs/SYSTEM-BLOCKERS.md` — Phase 3 (Medium priority, 16 items — D12 already done in Phase 2)
+
+## Execution Order & Status
+
+### Quick wins — ALL COMPLETE
+- [x] D12 — SKIP (already done in Phase 2 as part of L2)
+- [x] D9 — Dedicated monthly message count reset cron (`f73bd89`)
+- [x] B4 — Prevent trial abuse via re-subscription (`f73bd89`)
+- [x] B6 — ROI calculation from real data instead of hardcoded assumptions (`f73bd89`)
+- [x] E12 — Resend email retry (2 attempts) (`f73bd89`)
+
+### Medium — ALL COMPLETE
+- [x] D8 — Coupon count reconciliation cron (`fd63f62`)
+- [x] D11 — Add missing updatedAt to leads update in member-answered webhook (`fd63f62`)
+- [x] E10 — Twilio rate limit: 100ms inter-message throttle in process-scheduled (`fd63f62`)
+- [x] E11 — OpenAI rate limit handling already done in E5 (429 retry + timeout) — no further work needed
+- [x] E13 — ElevenLabs TTS retry (2 attempts) + fail-fast on missing API key (`fd63f62`)
+- [x] B3 — Cancel Stripe subscriptions + scheduled messages on client soft-delete (`fd63f62`)
+- [x] B5 — Stripe cancellation at period end when cancellation confirmed (`fd63f62`)
+- [x] S4 — Default pagination (50/page, max 100) on reports/ab-tests; safety limit (200) on templates/coupons (`fd63f62`)
+
+### Large — ALL COMPLETE
+- [x] D10 — Row-level locking not needed: atomic UPDATE...WHERE + unique clientId index already prevent races
+- [x] L3 — Admin users route now queries people/agencyMemberships alongside legacy fields (`1e7eb4f`)
+- [x] L4 — Stale TODOs replaced with explicit "not implemented" warnings (`1e7eb4f`)
+
+## Commits
+1. `f73bd89` — D9, B4, B6, E12 (quick wins)
+2. `fd63f62` — D8, D11, E10, E13, B3, B5, S4 (medium items)
+3. `1e7eb4f` — L3, L4, D10 (large items)
+
+---
+
+# System Blockers — Phase 4 Execution
+
+**Started:** 2026-02-19
+**Source:** `docs/SYSTEM-BLOCKERS.md` — Phase 4 (Low priority, 6 items)
+
+## Execution — ALL COMPLETE
+
+- [x] D13 — `logDeleteAudit()` utility at `src/lib/services/audit.ts`; audit logging on 6 hard-delete routes (email-templates, help-articles, flow-templates, system-settings, review-responses, coupons) (`2d9ddb3`)
+- [x] D14 — Non-issue: all tables use `defaultNow()` for createdAt. 5 tables lack `updatedAt` columns (conversations, coupons, reviews, voiceCalls, supportMessages) — documented for future schema migration
+- [x] E14 — Daily summary idempotency via `system_settings.last_daily_summary_date` key — prevents duplicate sends on double cron trigger (`2d9ddb3`)
+- [x] E15 — Global OTP rate limit: 100 codes/minute across all identifiers, checked before per-identifier limit (`2d9ddb3`)
+- [x] B7 — Team member soft-delete now releases open escalation claims (reset to pending) and queue items (reset to pending) for the deactivated member's legacy teamMember record (`2d9ddb3`)
+- [x] B8 — Redeemed coupons (timesRedeemed > 0) are soft-deleted (isActive=false) instead of hard-deleted; unredeemed coupons still allow hard-delete with audit trail (`2d9ddb3`)
+
+## Commits
+1. `2d9ddb3` — All 6 Phase 4 items

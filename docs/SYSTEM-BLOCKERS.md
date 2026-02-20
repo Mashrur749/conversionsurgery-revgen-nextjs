@@ -86,12 +86,12 @@ All 6 low-priority items resolved in 1 commit:
 
 | ID | Fix | Commit |
 |----|-----|--------|
-| D13 | `logDeleteAudit()` utility + audit logging on 6 hard-delete routes (email-templates, help-articles, flow-templates, system-settings, review-responses, coupons) | TBD |
+| D13 | `logDeleteAudit()` utility + audit logging on 6 hard-delete routes (email-templates, help-articles, flow-templates, system-settings, review-responses, coupons) | `2d9ddb3` |
 | D14 | Non-issue — all tables use `defaultNow()` for createdAt. 5 tables lack `updatedAt` columns (conversations, coupons, reviews, voiceCalls, supportMessages) — documented, schema changes deferred | N/A |
-| E14 | Daily summary idempotency via `system_settings.last_daily_summary_date` — prevents duplicate sends on double cron trigger | TBD |
-| E15 | Global OTP rate limit (100/minute across all identifiers) prevents distributed abuse | TBD |
-| B7 | Team member soft-delete now releases open escalation claims and queue items assigned to the deactivated member | TBD |
-| B8 | Redeemed coupons (timesRedeemed > 0) are soft-deleted (isActive=false) instead of hard-deleted; unredeemed coupons still allow hard-delete | TBD |
+| E14 | Daily summary idempotency via `system_settings.last_daily_summary_date` — prevents duplicate sends on double cron trigger | `2d9ddb3` |
+| E15 | Global OTP rate limit (100/minute across all identifiers) prevents distributed abuse | `2d9ddb3` |
+| B7 | Team member soft-delete now releases open escalation claims and queue items assigned to the deactivated member | `2d9ddb3` |
+| B8 | Redeemed coupons (timesRedeemed > 0) are soft-deleted (isActive=false) instead of hard-deleted; unredeemed coupons still allow hard-delete | `2d9ddb3` |
 
 ---
 
