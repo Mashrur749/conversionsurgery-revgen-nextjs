@@ -1,4 +1,4 @@
-import { getDb, clients, dailyStats, escalationClaims, teamMembers } from '@/db';
+import { getDb, clients, dailyStats, escalationClaims, clientMemberships, people } from '@/db';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendEmail } from '@/lib/services/resend';
@@ -38,16 +38,17 @@ export async function getWeeklyStats(clientId: string): Promise<WeeklyStats> {
   // Get top escalation claimer
   const escalationStats = await db
     .select({
-      teamMemberName: teamMembers.name,
+      teamMemberName: people.name,
       claims: sql<number>`COUNT(*)`,
     })
     .from(escalationClaims)
-    .innerJoin(teamMembers, eq(escalationClaims.claimedBy, teamMembers.id))
+    .innerJoin(clientMemberships, eq(escalationClaims.claimedBy, clientMemberships.id))
+    .innerJoin(people, eq(clientMemberships.personId, people.id))
     .where(and(
       eq(escalationClaims.clientId, clientId),
       gte(escalationClaims.claimedAt, sevenDaysAgo)
     ))
-    .groupBy(teamMembers.id, teamMembers.name)
+    .groupBy(clientMemberships.id, people.name)
     .orderBy(sql`COUNT(*) DESC`)
     .limit(1);
 

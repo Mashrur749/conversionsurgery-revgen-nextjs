@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { callAttempts, teamMembers } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { callAttempts } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { getHotTransferMembers } from '@/lib/services/team-bridge';
 import twilio from 'twilio';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
@@ -53,15 +54,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const members = await db
-    .select()
-    .from(teamMembers)
-    .where(and(
-      eq(teamMembers.clientId, attempt.clientId),
-      eq(teamMembers.isActive, true),
-      eq(teamMembers.receiveHotTransfers, true)
-    ))
-    .orderBy(teamMembers.priority);
+  const members = await getHotTransferMembers(attempt.clientId);
 
   if (members.length === 0) {
     const twiml = new VoiceResponse();

@@ -1,9 +1,10 @@
 import twilio from 'twilio';
 import { getDb } from '@/db';
-import { teamMembers, callAttempts, leads } from '@/db/schema';
+import { callAttempts, leads } from '@/db/schema';
 import { sendSMS } from '@/lib/services/twilio';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { formatPhoneNumber } from '@/lib/utils/phone';
+import { getHotTransferMembers } from '@/lib/services/team-bridge';
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
@@ -34,15 +35,7 @@ export async function initiateRingGroup(payload: RingGroupPayload): Promise<Ring
   const { leadId, clientId, leadPhone, twilioNumber } = payload;
   const db = getDb();
 
-  const members = await db
-    .select()
-    .from(teamMembers)
-    .where(and(
-      eq(teamMembers.clientId, clientId),
-      eq(teamMembers.isActive, true),
-      eq(teamMembers.receiveHotTransfers, true)
-    ))
-    .orderBy(teamMembers.priority);
+  const members = await getHotTransferMembers(clientId);
 
   if (members.length === 0) {
     console.log('[Voice] No team members configured for hot transfers');
@@ -121,14 +114,7 @@ export async function handleNoAnswer(payload: RingGroupPayload): Promise<void> {
   const { leadId, clientId, leadPhone, twilioNumber } = payload;
   const db = getDb();
 
-  const members = await db
-    .select()
-    .from(teamMembers)
-    .where(and(
-      eq(teamMembers.clientId, clientId),
-      eq(teamMembers.isActive, true),
-      eq(teamMembers.receiveHotTransfers, true)
-    ));
+  const members = await getHotTransferMembers(clientId);
 
   const [lead] = await db
     .select()

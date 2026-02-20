@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { getDb } from '@/db';
-import { teamMembers } from '@/db/schema';
+import { clientMemberships, people } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -38,17 +38,78 @@ export async function PATCH(
     }
 
     const db = getDb();
-    const [updated] = await db
-      .update(teamMembers)
-      .set({ ...parsed.data, updatedAt: new Date() })
-      .where(eq(teamMembers.id, id))
-      .returning();
+    const data = parsed.data;
 
-    if (!updated) {
+    // Get the membership to find the person
+    const [membership] = await db
+      .select()
+      .from(clientMemberships)
+      .where(eq(clientMemberships.id, id))
+      .limit(1);
+
+    if (!membership) {
       return Response.json({ error: 'Team member not found' }, { status: 404 });
     }
 
-    return Response.json({ success: true, member: updated });
+    // Update membership fields
+    const membershipUpdates: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.receiveEscalations !== undefined) membershipUpdates.receiveEscalations = data.receiveEscalations;
+    if (data.receiveHotTransfers !== undefined) membershipUpdates.receiveHotTransfers = data.receiveHotTransfers;
+    if (data.priority !== undefined) membershipUpdates.priority = data.priority;
+    if (data.isActive !== undefined) membershipUpdates.isActive = data.isActive;
+
+    // Update person fields
+    const personUpdates: Record<string, unknown> = {};
+    if (data.name !== undefined) personUpdates.name = data.name;
+    if (data.phone !== undefined) personUpdates.phone = data.phone;
+    if (data.email !== undefined) personUpdates.email = data.email || null;
+
+    await db.transaction(async (tx) => {
+      if (Object.keys(membershipUpdates).length > 1) {
+        await tx
+          .update(clientMemberships)
+          .set(membershipUpdates)
+          .where(eq(clientMemberships.id, id));
+      }
+
+      if (Object.keys(personUpdates).length > 0) {
+        personUpdates.updatedAt = new Date();
+        await tx
+          .update(people)
+          .set(personUpdates)
+          .where(eq(people.id, membership.personId));
+      }
+    });
+
+    // Fetch updated result for response
+    const [person] = await db
+      .select()
+      .from(people)
+      .where(eq(people.id, membership.personId))
+      .limit(1);
+
+    const [updated] = await db
+      .select()
+      .from(clientMemberships)
+      .where(eq(clientMemberships.id, id))
+      .limit(1);
+
+    const member = {
+      id: updated.id,
+      clientId: updated.clientId,
+      name: person?.name || '',
+      phone: person?.phone || '',
+      email: person?.email || null,
+      role: null,
+      receiveEscalations: updated.receiveEscalations,
+      receiveHotTransfers: updated.receiveHotTransfers,
+      priority: updated.priority,
+      isActive: updated.isActive,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+    };
+
+    return Response.json({ success: true, member });
   } catch (error) {
     console.error('[TeamHours] Team member update error:', error);
     return Response.json({ error: 'Failed to update team member' }, { status: 500 });
@@ -67,8 +128,12 @@ export async function DELETE(
   try {
     const { id } = await params;
 
+    // Soft-delete: deactivate the membership
     const db = getDb();
-    await db.delete(teamMembers).where(eq(teamMembers.id, id));
+    await db
+      .update(clientMemberships)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(clientMemberships.id, id));
 
     return Response.json({ success: true });
   } catch (error) {

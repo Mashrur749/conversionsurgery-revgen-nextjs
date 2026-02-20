@@ -5,10 +5,10 @@ import {
   subscriptionInvoices,
   plans,
   usageRecords,
-  teamMembers,
   clients,
 } from '@/db/schema';
 import { eq, desc, and, gte, lte, sql, count } from 'drizzle-orm';
+import { getTotalTeamMemberCount } from '@/lib/services/team-bridge';
 
 export async function getBillingData(clientId: string) {
   const db = getDb();
@@ -158,10 +158,8 @@ async function getUsageForPeriod(clientId: string) {
   };
 
   // Get team member count
-  const teamMemberResult = await db
-    .select({ count: count() })
-    .from(teamMembers)
-    .where(eq(teamMembers.clientId, clientId));
+  const teamMemberCount = await getTotalTeamMemberCount(clientId);
+  const teamMemberResult = [{ count: teamMemberCount }];
 
   // Get phone number count (client has one twilioNumber)
   const [client] = await db

@@ -3,14 +3,16 @@ import {
   escalationQueue,
   escalationRules,
   leadContext,
-  teamMembers,
   leads,
   clients,
+  clientMemberships,
+  people,
 } from '@/db/schema';
 import { eq, and, desc, sql, or } from 'drizzle-orm';
 import { sendTrackedSMS } from '@/lib/clients/twilio-tracked';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail } from '@/lib/services/resend';
+import { getTeamMembers, getTeamMemberById, getEscalationMembers } from '@/lib/services/team-bridge';
 
 /**
  * Parameters for creating a new escalation
@@ -141,13 +143,7 @@ async function createEscalationInternal(params: CreateEscalationParams): Promise
 
   if (assignTo === 'round_robin') {
     // Get next available team member
-    const members = await db
-      .select()
-      .from(teamMembers)
-      .where(and(
-        eq(teamMembers.clientId, clientId),
-        eq(teamMembers.isActive, true)
-      ));
+    const members = await getTeamMembers(clientId).then(m => m.filter(x => x.isActive));
 
     if (members.length > 0) {
       // Simple round-robin based on who has fewest pending
@@ -260,21 +256,10 @@ async function notifyEscalation(
   let recipients: any[] = [];
 
   if (assignedTo) {
-    const [member] = await db
-      .select()
-      .from(teamMembers)
-      .where(eq(teamMembers.id, assignedTo))
-      .limit(1);
+    const member = await getTeamMemberById(assignedTo);
     if (member) recipients.push(member);
   } else {
-    recipients = await db
-      .select()
-      .from(teamMembers)
-      .where(and(
-        eq(teamMembers.clientId, escalation.clientId),
-        eq(teamMembers.isActive, true),
-        eq(teamMembers.receiveEscalations, true)
-      ));
+    recipients = await getEscalationMembers(escalation.clientId);
   }
 
   const priorityLabel = escalation.priority === 1 ? 'URGENT'
@@ -439,11 +424,24 @@ export async function getEscalationQueue(
     .select({
       escalation: escalationQueue,
       lead: leads,
-      assignee: teamMembers,
+      assignee: {
+        id: clientMemberships.id,
+        clientId: clientMemberships.clientId,
+        name: people.name,
+        phone: people.phone,
+        email: people.email,
+        receiveEscalations: clientMemberships.receiveEscalations,
+        receiveHotTransfers: clientMemberships.receiveHotTransfers,
+        priority: clientMemberships.priority,
+        isActive: clientMemberships.isActive,
+        createdAt: clientMemberships.createdAt,
+        updatedAt: clientMemberships.updatedAt,
+      },
     })
     .from(escalationQueue)
     .leftJoin(leads, eq(escalationQueue.leadId, leads.id))
-    .leftJoin(teamMembers, eq(escalationQueue.assignedTo, teamMembers.id))
+    .leftJoin(clientMemberships, eq(escalationQueue.assignedTo, clientMemberships.id))
+    .leftJoin(people, eq(clientMemberships.personId, people.id))
     .where(and(...conditions))
     .orderBy(escalationQueue.priority, desc(escalationQueue.createdAt));
 }
@@ -476,14 +474,7 @@ async function checkSlaBreachesInternal(): Promise<number> {
     }).where(eq(escalationQueue.id, escalation.id));
 
     // Notify team members for this client
-    const members = await db
-      .select()
-      .from(teamMembers)
-      .where(and(
-        eq(teamMembers.clientId, escalation.clientId),
-        eq(teamMembers.isActive, true),
-        eq(teamMembers.receiveEscalations, true)
-      ));
+    const members = await getEscalationMembers(escalation.clientId);
 
     const [client] = await db
       .select()

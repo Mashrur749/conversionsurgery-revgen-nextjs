@@ -1,10 +1,11 @@
 import { getDb } from '@/db';
-import { teamMembers, escalationClaims, leads, clients } from '@/db/schema';
+import { escalationClaims, leads, clients } from '@/db/schema';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
 import { eq, and } from 'drizzle-orm';
 import { generateClaimToken } from '@/lib/utils/tokens';
 import { formatPhoneNumber } from '@/lib/utils/phone';
+import { getEscalationMembers, getTeamMemberById } from '@/lib/services/team-bridge';
 
 interface EscalationPayload {
   leadId: string;
@@ -31,17 +32,7 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
     const db = getDb();
 
     // Get active team members who receive escalations, ordered by priority
-    const members = await db
-      .select()
-      .from(teamMembers)
-      .where(
-        and(
-          eq(teamMembers.clientId, clientId),
-          eq(teamMembers.isActive, true),
-          eq(teamMembers.receiveEscalations, true)
-        )
-      )
-      .orderBy(teamMembers.priority);
+    const members = await getEscalationMembers(clientId);
 
     if (members.length === 0) {
       console.log('[Team Escalation] No team members configured for escalations');
@@ -144,11 +135,7 @@ export async function claimEscalation(token: string, teamMemberId: string) {
     const db = getDb();
 
     // Verify team member exists first (before attempting claim)
-    const [member] = await db
-      .select()
-      .from(teamMembers)
-      .where(eq(teamMembers.id, teamMemberId))
-      .limit(1);
+    const member = await getTeamMemberById(teamMemberId);
 
     if (!member) {
       console.log('[Team Escalation] Team member not found:', teamMemberId);
@@ -196,11 +183,7 @@ export async function claimEscalation(token: string, teamMemberId: string) {
       // Already claimed — look up who claimed it
       let claimedByName = 'Someone';
       if (escalation.claimedBy) {
-        const [claimer] = await db
-          .select()
-          .from(teamMembers)
-          .where(eq(teamMembers.id, escalation.claimedBy))
-          .limit(1);
+        const claimer = await getTeamMemberById(escalation.claimedBy);
         if (claimer) claimedByName = claimer.name;
       }
 
@@ -224,16 +207,7 @@ export async function claimEscalation(token: string, teamMemberId: string) {
       .where(eq(leads.id, escalation.leadId));
 
     // Notify other team members that someone claimed it
-    const otherMembers = await db
-      .select()
-      .from(teamMembers)
-      .where(
-        and(
-          eq(teamMembers.clientId, escalation.clientId),
-          eq(teamMembers.isActive, true),
-          eq(teamMembers.receiveEscalations, true)
-        )
-      );
+    const otherMembers = await getEscalationMembers(escalation.clientId);
 
     const [lead] = await db
       .select()

@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
-import { getDb, clients, teamMembers, leads, appointments, dailyStats } from '@/db';
+import { getDb, clients, leads, appointments, dailyStats } from '@/db';
 import { eq, and, gte, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,11 +41,8 @@ export default async function ClientDetailPage({ params }: Props) {
     notFound();
   }
 
-  const members = await db
-    .select()
-    .from(teamMembers)
-    .where(eq(teamMembers.clientId, client.id))
-    .orderBy(teamMembers.priority);
+  const { getTeamMembers } = await import('@/lib/services/team-bridge');
+  const members = await getTeamMembers(client.id);
 
   // Fetch ROI metrics in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);

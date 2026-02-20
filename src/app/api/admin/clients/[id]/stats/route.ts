@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
-import { leads, dailyStats, teamMembers } from '@/db/schema';
+import { leads, dailyStats } from '@/db/schema';
 import { eq, and, gte, sql } from 'drizzle-orm';
+import { getActiveTeamMemberCount } from '@/lib/services/team-bridge';
 
 export async function GET(
   request: NextRequest,
@@ -53,15 +54,7 @@ export async function GET(
     );
 
   // Get team member count
-  const teamCount = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(teamMembers)
-    .where(
-      and(
-        eq(teamMembers.clientId, clientId),
-        eq(teamMembers.isActive, true)
-      )
-    );
+  const activeTeamCount = await getActiveTeamMemberCount(clientId);
 
   return NextResponse.json({
     stats: {
@@ -71,7 +64,7 @@ export async function GET(
         Number(weekStats[0]?.missedCalls || 0) +
         Number(weekStats[0]?.forms || 0),
       messagesThisWeek: Number(weekStats[0]?.messages || 0),
-      teamMembers: Number(teamCount[0]?.count || 0),
+      teamMembers: activeTeamCount,
     },
   });
 }

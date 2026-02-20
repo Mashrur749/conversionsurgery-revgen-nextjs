@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { getDb, escalationQueue, leads, conversations, teamMembers } from '@/db';
+import { getDb, escalationQueue, leads, conversations } from '@/db';
 import { eq, desc } from 'drizzle-orm';
+import { getTeamMemberById } from '@/lib/services/team-bridge';
 
 export async function GET(
   request: NextRequest,
@@ -44,12 +45,7 @@ export async function GET(
     // Get assignee details
     let assignee = null;
     if (escalation.assignedTo) {
-      const [member] = await db
-        .select()
-        .from(teamMembers)
-        .where(eq(teamMembers.id, escalation.assignedTo))
-        .limit(1);
-      assignee = member || null;
+      assignee = await getTeamMemberById(escalation.assignedTo);
     }
 
     return NextResponse.json({

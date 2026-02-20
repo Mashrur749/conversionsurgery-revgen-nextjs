@@ -1,6 +1,7 @@
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
-import { reports, dailyStats, abTests, teamMembers } from '@/db/schema';
+import { reports, dailyStats, abTests } from '@/db/schema';
+import { getTeamMembers } from '@/lib/services/team-bridge';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -112,10 +113,7 @@ export async function POST(req: Request) {
       );
 
     // Get team members
-    const teamMemsList = await db
-      .select()
-      .from(teamMembers)
-      .where(eq(teamMembers.clientId, clientId));
+    const teamMemsList = await getTeamMembers(clientId);
 
     // Aggregate metrics
     const aggregatedMetrics = {

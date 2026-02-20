@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { claimEscalation } from '@/lib/services/team-escalation';
-import { getDb } from '@/db';
-import { teamMembers } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { getTeamMembers } from '@/lib/services/team-bridge';
 
 /**
  * POST /api/claims/claim
@@ -24,18 +22,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get current user's team member ID
-    const db = getDb();
     const clientId = session.client?.id;
 
     if (!clientId) {
       return NextResponse.json({ error: 'No client associated' }, { status: 403 });
     }
 
-    const [userTeamMember] = await db
-      .select()
-      .from(teamMembers)
-      .where(eq(teamMembers.clientId, clientId))
-      .limit(1);
+    const clientMembers = await getTeamMembers(clientId);
+    const userTeamMember = clientMembers[0];
 
     if (!userTeamMember) {
       return NextResponse.json(

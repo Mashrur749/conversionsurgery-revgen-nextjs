@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { callAttempts, teamMembers, leads, clients } from '@/db/schema';
+import { callAttempts, leads, clients } from '@/db/schema';
 import { sendSMS, validateAndParseTwilioWebhook } from '@/lib/services/twilio';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { getTeamMemberById, getHotTransferMembers } from '@/lib/services/team-bridge';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 
 /**
@@ -39,20 +40,9 @@ export async function POST(request: NextRequest) {
     return new NextResponse('OK');
   }
 
-  const [member] = await db
-    .select()
-    .from(teamMembers)
-    .where(eq(teamMembers.id, memberId))
-    .limit(1);
+  const member = await getTeamMemberById(memberId);
 
-  const otherMembers = await db
-    .select()
-    .from(teamMembers)
-    .where(and(
-      eq(teamMembers.clientId, attempt.clientId),
-      eq(teamMembers.isActive, true),
-      eq(teamMembers.receiveHotTransfers, true)
-    ));
+  const otherMembers = await getHotTransferMembers(attempt.clientId);
 
   const [lead] = await db
     .select()

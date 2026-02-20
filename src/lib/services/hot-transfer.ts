@@ -1,8 +1,9 @@
 import { getDb } from '@/db';
-import { callAttempts, teamMembers } from '@/db/schema';
+import { callAttempts } from '@/db/schema';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { getHotTransferMembers } from '@/lib/services/team-bridge';
 
 interface HotTransferPayload {
   leadId: string;
@@ -53,16 +54,7 @@ export async function routeHighIntentLead(payload: HotTransferPayload): Promise<
     }
 
     // Get available team members for ring group
-    const members = await db
-      .select()
-      .from(teamMembers)
-      .where(
-        and(
-          eq(teamMembers.clientId, clientId),
-          eq(teamMembers.isActive, true),
-          eq(teamMembers.receiveHotTransfers, true)
-        )
-      );
+    const members = await getHotTransferMembers(clientId);
 
     if (members.length === 0) {
       console.log('[Voice] No team members available, using escalation');

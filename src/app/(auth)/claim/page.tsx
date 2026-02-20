@@ -1,5 +1,6 @@
-import { getDb, escalationClaims, leads, teamMembers } from '@/db';
-import { eq, and } from 'drizzle-orm';
+import { getDb, escalationClaims, leads } from '@/db';
+import { eq } from 'drizzle-orm';
+import { getTeamMemberById, getTeamMembers } from '@/lib/services/team-bridge';
 import { redirect } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatPhoneNumber } from '@/lib/utils/phone';
@@ -29,11 +30,7 @@ export default async function ClaimPage({ searchParams }: Props) {
   }
 
   if (escalation.status !== 'pending') {
-    const [claimer] = await db
-      .select()
-      .from(teamMembers)
-      .where(eq(teamMembers.id, escalation.claimedBy!))
-      .limit(1);
+    const claimer = await getTeamMemberById(escalation.claimedBy!);
 
     redirect(`/claim-error?reason=claimed&by=${encodeURIComponent(claimer?.name || 'Someone')}`);
   }
@@ -44,13 +41,8 @@ export default async function ClaimPage({ searchParams }: Props) {
     .where(eq(leads.id, escalation.leadId))
     .limit(1);
 
-  const members = await db
-    .select()
-    .from(teamMembers)
-    .where(and(
-      eq(teamMembers.clientId, escalation.clientId),
-      eq(teamMembers.isActive, true)
-    ));
+  const allMembers = await getTeamMembers(escalation.clientId);
+  const members = allMembers.filter(m => m.isActive);
 
   return (
     <Card className="max-w-md mx-auto overflow-hidden border-0 shadow-2xl">
