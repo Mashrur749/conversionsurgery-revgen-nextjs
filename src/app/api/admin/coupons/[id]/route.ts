@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { coupons } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { logDeleteAudit } from '@/lib/services/audit';
 
 const updateCouponSchema = z.object({
   name: z.string().max(100).optional(),
@@ -54,7 +55,7 @@ export async function PATCH(
   return NextResponse.json({ coupon: updated });
 }
 
-/** DELETE /api/admin/coupons/[id] — Delete a coupon */
+/** DELETE /api/admin/coupons/[id] — Delete or deactivate a coupon (B8) */
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -71,11 +72,21 @@ export async function DELETE(
 
   const { id } = await params;
   const db = getDb();
-  const [deleted] = await db.delete(coupons).where(eq(coupons.id, id)).returning();
 
-  if (!deleted) {
+  // Check if coupon exists and has been redeemed
+  const [coupon] = await db.select().from(coupons).where(eq(coupons.id, id)).limit(1);
+  if (!coupon) {
     return NextResponse.json({ error: 'Coupon not found' }, { status: 404 });
   }
 
+  // If redeemed, soft-delete (deactivate) instead of hard-delete to preserve audit trail
+  if (coupon.timesRedeemed && coupon.timesRedeemed > 0) {
+    await db.update(coupons).set({ isActive: false }).where(eq(coupons.id, id));
+    return NextResponse.json({ success: true, softDeleted: true });
+  }
+
+  // Never redeemed — safe to hard-delete
+  await db.delete(coupons).where(eq(coupons.id, id));
+  await logDeleteAudit({ resourceType: 'coupon', resourceId: id, metadata: { code: coupon.code, name: coupon.name } });
   return NextResponse.json({ success: true });
 }

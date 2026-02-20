@@ -8,6 +8,7 @@ import { sendEmail } from '@/lib/services/resend';
 const OTP_EXPIRY_MINUTES = 5;
 const MAX_REQUESTS_PER_WINDOW = 3;
 const RATE_LIMIT_WINDOW_MINUTES = 15;
+const GLOBAL_MAX_OTP_PER_MINUTE = 100;
 
 /** Generate a cryptographically secure 6-digit OTP (Cloudflare Workers compatible) */
 export function generateOTP(): string {
@@ -27,6 +28,12 @@ interface OTPResult {
 export async function createAndSendPhoneOTP(rawPhone: string): Promise<OTPResult> {
   const phone = normalizePhoneNumber(rawPhone);
   const db = getDb();
+
+  // Global rate limit (E15)
+  const globalLimit = await checkGlobalRateLimit(db);
+  if (!globalLimit.allowed) {
+    return { success: false, retryAfterSeconds: globalLimit.retryAfterSeconds, error: 'rate_limit' };
+  }
 
   // Look up person by phone (new path)
   const [person] = await db
@@ -123,6 +130,12 @@ export async function createAndSendPhoneOTP(rawPhone: string): Promise<OTPResult
 export async function createAndSendEmailOTP(rawEmail: string): Promise<OTPResult> {
   const email = rawEmail.toLowerCase().trim();
   const db = getDb();
+
+  // Global rate limit (E15)
+  const globalLimit = await checkGlobalRateLimit(db);
+  if (!globalLimit.allowed) {
+    return { success: false, retryAfterSeconds: globalLimit.retryAfterSeconds, error: 'rate_limit' };
+  }
 
   // Look up person by email (new path)
   const [person] = await db
@@ -357,6 +370,22 @@ export async function verifyOTP(
 
   // Legacy path: return clientId directly
   return { success: true, clientId: verified.clientId ?? undefined };
+}
+
+/** Global rate limit: max N OTP codes per minute across all identifiers (E15) */
+async function checkGlobalRateLimit(
+  db: ReturnType<typeof getDb>
+): Promise<{ allowed: boolean; retryAfterSeconds?: number }> {
+  const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(otpCodes)
+    .where(gt(otpCodes.createdAt, oneMinuteAgo));
+
+  if (Number(result?.count ?? 0) >= GLOBAL_MAX_OTP_PER_MINUTE) {
+    return { allowed: false, retryAfterSeconds: 60 };
+  }
+  return { allowed: true };
 }
 
 /** Check rate limit: max N OTP requests per identifier per window */

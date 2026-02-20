@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { emailTemplates } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { logDeleteAudit } from '@/lib/services/audit';
 
 export async function GET(
   request: NextRequest,
@@ -85,6 +86,9 @@ export async function DELETE(
 
   const { id } = await params;
   const db = getDb();
-  await db.delete(emailTemplates).where(eq(emailTemplates.id, id));
+  const [deleted] = await db.delete(emailTemplates).where(eq(emailTemplates.id, id)).returning();
+  if (deleted) {
+    await logDeleteAudit({ resourceType: 'email_template', resourceId: id, metadata: { name: deleted.name } });
+  }
   return NextResponse.json({ success: true });
 }

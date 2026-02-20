@@ -57,6 +57,42 @@ All 13 high-priority items resolved across 5 commits:
 | S3 | Webhook secret fail-fast — removed empty-string fallbacks, explicit 500 on missing | `668f677` |
 | B2 | Phone number release blocked if conversations exist in last 30 days | `668f677` |
 
+### Phase 3 Remediation — COMPLETE (2026-02-19)
+
+All 16 medium-priority items resolved across 3 commits:
+
+| ID | Fix | Commit |
+|----|-----|--------|
+| D8 | Daily coupon redemption count reconciliation cron | `fd63f62` |
+| D9 | Dedicated monthly message counter reset cron (moved from process-scheduled) | `f73bd89` |
+| D10 | Not needed — atomic UPDATE...WHERE (Phase 1) + unique clientId index already prevent races | N/A |
+| D11 | Missing updatedAt added to leads update in member-answered webhook | `fd63f62` |
+| D12 | Already done in Phase 2 as part of L2 | `668f677` |
+| E10 | 100ms inter-message throttle in process-scheduled to avoid carrier filtering | `fd63f62` |
+| E11 | Already done in E5 — OpenAI 429 retry + 15s timeout | `f93a952` |
+| E12 | sendEmail() retry (2 attempts, 1s delay between) | `f73bd89` |
+| E13 | ElevenLabs TTS retry (2 attempts) + fail-fast on missing API key | `fd63f62` |
+| B3 | Cancel active Stripe subscriptions + pending scheduled messages on client soft-delete | `fd63f62` |
+| B4 | Skip trial_period_days for clients with prior subscriptions | `f73bd89` |
+| B5 | Stripe subscription cancellation at period end when cancellation confirmed | `fd63f62` |
+| B6 | ROI uses actual conversion rate, avg job value from jobs table, monthly cost from subscription | `f73bd89` |
+| L3 | Admin users route queries people/agencyMemberships alongside legacy fields | `1e7eb4f` |
+| L4 | Stale TODOs replaced with explicit "not implemented" warnings | `1e7eb4f` |
+| S4 | Default pagination (50/page, max 100) on reports/ab-tests; safety limit (200) on templates/coupons | `fd63f62` |
+
+### Phase 4 Remediation — COMPLETE (2026-02-19)
+
+All 6 low-priority items resolved in 1 commit:
+
+| ID | Fix | Commit |
+|----|-----|--------|
+| D13 | `logDeleteAudit()` utility + audit logging on 6 hard-delete routes (email-templates, help-articles, flow-templates, system-settings, review-responses, coupons) | TBD |
+| D14 | Non-issue — all tables use `defaultNow()` for createdAt. 5 tables lack `updatedAt` columns (conversations, coupons, reviews, voiceCalls, supportMessages) — documented, schema changes deferred | N/A |
+| E14 | Daily summary idempotency via `system_settings.last_daily_summary_date` — prevents duplicate sends on double cron trigger | TBD |
+| E15 | Global OTP rate limit (100/minute across all identifiers) prevents distributed abuse | TBD |
+| B7 | Team member soft-delete now releases open escalation claims and queue items assigned to the deactivated member | TBD |
+| B8 | Redeemed coupons (timesRedeemed > 0) are soft-deleted (isActive=false) instead of hard-deleted; unredeemed coupons still allow hard-delete | TBD |
+
 ---
 
 ## 1. DATA INTEGRITY

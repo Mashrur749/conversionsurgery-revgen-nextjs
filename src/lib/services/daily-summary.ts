@@ -1,4 +1,5 @@
 import { getDb, clients, dailyStats, leads, appointments, conversations, notificationPreferences } from '@/db';
+import { systemSettings } from '@/db/schema';
 import { eq, and, gte, lte, sql, desc } from 'drizzle-orm';
 import { sendEmail } from '@/lib/services/resend';
 import { createMagicLink } from '@/lib/services/magic-link';
@@ -166,6 +167,19 @@ export async function sendDailySummary(clientId: string): Promise<void> {
 
 export async function processDailySummaries(): Promise<number> {
   const db = getDb();
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Idempotency: skip if already processed today (E14)
+  const [lastRun] = await db
+    .select({ value: systemSettings.value })
+    .from(systemSettings)
+    .where(eq(systemSettings.key, 'last_daily_summary_date'))
+    .limit(1);
+
+  if (lastRun?.value === todayStr) {
+    console.log(`[DailySummary] Already processed for ${todayStr}, skipping`);
+    return 0;
+  }
 
   // Find clients who have daily summary enabled in notification preferences
   const eligibleClients = await db
@@ -188,6 +202,19 @@ export async function processDailySummaries(): Promise<number> {
       console.error(`[DailySummary] Failed for client ${clientId}:`, error);
     }
   }
+
+  // Record today as processed
+  await db
+    .insert(systemSettings)
+    .values({
+      key: 'last_daily_summary_date',
+      value: todayStr,
+      description: 'Last date daily summaries were processed (idempotency guard)',
+    })
+    .onConflictDoUpdate({
+      target: systemSettings.key,
+      set: { value: todayStr, updatedAt: new Date() },
+    });
 
   return sent;
 }

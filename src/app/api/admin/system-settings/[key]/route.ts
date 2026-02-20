@@ -3,6 +3,7 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { systemSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { logDeleteAudit } from '@/lib/services/audit';
 
 /** DELETE /api/admin/system-settings/[key] - Delete a system setting. */
 export async function DELETE(
@@ -30,6 +31,8 @@ export async function DELETE(
   if (!deleted) {
     return NextResponse.json({ error: 'Setting not found' }, { status: 404 });
   }
+
+  await logDeleteAudit({ resourceType: 'system_setting', resourceId: deleted.id, metadata: { key: deleted.key } });
 
   return NextResponse.json({ ok: true });
 }

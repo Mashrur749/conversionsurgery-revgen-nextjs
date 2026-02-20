@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { helpArticles } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { logDeleteAudit } from '@/lib/services/audit';
 
 const updateSchema = z.object({
   title: z.string().min(1).max(255).optional(),
@@ -64,7 +65,10 @@ export async function DELETE(
 
   const { id } = await params;
   const db = getDb();
-  await db.delete(helpArticles).where(eq(helpArticles.id, id));
+  const [deleted] = await db.delete(helpArticles).where(eq(helpArticles.id, id)).returning();
+  if (deleted) {
+    await logDeleteAudit({ resourceType: 'help_article', resourceId: id, metadata: { title: deleted.title } });
+  }
 
   return NextResponse.json({ success: true });
 }

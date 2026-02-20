@@ -3,6 +3,7 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { flowTemplates, flowTemplateSteps } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { logDeleteAudit } from '@/lib/services/audit';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -123,7 +124,10 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const { id } = await params;
   const db = getDb();
 
-  await db.delete(flowTemplates).where(eq(flowTemplates.id, id));
+  const [deleted] = await db.delete(flowTemplates).where(eq(flowTemplates.id, id)).returning();
+  if (deleted) {
+    await logDeleteAudit({ resourceType: 'flow_template', resourceId: id, metadata: { name: deleted.name } });
+  }
 
   console.log('[FlowEngine] Deleted template:', id);
   return NextResponse.json({ success: true });
