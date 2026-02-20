@@ -24,6 +24,8 @@ export async function createSetupIntent(clientId: string): Promise<{
       email: client.email || undefined,
       name: client.businessName,
       metadata: { clientId },
+    }, {
+      idempotencyKey: `cust_create_${clientId}`,
     });
     stripeCustomerId = customer.id;
 
@@ -34,6 +36,8 @@ export async function createSetupIntent(clientId: string): Promise<{
     customer: stripeCustomerId,
     payment_method_types: ['card'],
     metadata: { clientId },
+  }, {
+    idempotencyKey: `setup_intent_${clientId}_${Date.now()}`,
   });
 
   return {

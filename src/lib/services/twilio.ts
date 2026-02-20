@@ -5,8 +5,36 @@ const client = twilio(
   process.env.TWILIO_AUTH_TOKEN!
 );
 
+const SMS_MAX_RETRIES = 3;
+const SMS_RETRY_BASE_DELAY_MS = 1000;
+
 /**
- * Send an SMS message via Twilio
+ * Check if a Twilio error is retryable (transient network/server issues).
+ */
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    // Twilio REST API errors with retryable status codes
+    if ('status' in error) {
+      const status = (error as { status: number }).status;
+      // 429 = rate limited, 500+ = server errors
+      return status === 429 || status >= 500;
+    }
+    // Network-level failures
+    if (message.includes('econnreset') || message.includes('etimedout') ||
+        message.includes('enotfound') || message.includes('socket hang up') ||
+        message.includes('fetch failed')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Send an SMS message via Twilio with retry logic.
+ * Retries up to 3 times with exponential backoff (1s, 2s, 4s) for transient failures.
+ * Non-retryable errors (invalid number, auth failure) throw immediately.
+ *
  * @param to - Recipient phone number in E.164 format
  * @param body - Message content
  * @param from - Sender phone number (Twilio number)
@@ -18,25 +46,41 @@ export async function sendSMS(
   from: string,
   options?: { mediaUrl?: string[] }
 ): Promise<string> {
-  try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    const statusCallback =
-      appUrl && !appUrl.includes('localhost')
-        ? `${appUrl}/api/webhooks/twilio/status`
-        : undefined;
-    const message = await client.messages.create({
-      to,
-      from,
-      body,
-      statusCallback,
-      ...(options?.mediaUrl?.length ? { mediaUrl: options.mediaUrl } : {}),
-    });
-    console.log('[Messaging] SMS sent:', message.sid);
-    return message.sid;
-  } catch (error) {
-    console.error('[Messaging] Twilio SMS error:', error);
-    throw error;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const statusCallback =
+    appUrl && !appUrl.includes('localhost')
+      ? `${appUrl}/api/webhooks/twilio/status`
+      : undefined;
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= SMS_MAX_RETRIES; attempt++) {
+    try {
+      const message = await client.messages.create({
+        to,
+        from,
+        body,
+        statusCallback,
+        ...(options?.mediaUrl?.length ? { mediaUrl: options.mediaUrl } : {}),
+      });
+      console.log('[Messaging] SMS sent:', message.sid);
+      return message.sid;
+    } catch (error) {
+      lastError = error;
+
+      if (!isRetryableError(error) || attempt === SMS_MAX_RETRIES) {
+        console.error(`[Messaging] Twilio SMS error (attempt ${attempt}/${SMS_MAX_RETRIES}):`, error);
+        throw error;
+      }
+
+      const delay = SMS_RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+      console.warn(`[Messaging] SMS attempt ${attempt} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
+
+  // Should never reach here, but TypeScript needs it
+  throw lastError;
 }
 
 /**
