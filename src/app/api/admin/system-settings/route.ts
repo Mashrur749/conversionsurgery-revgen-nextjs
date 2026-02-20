@@ -4,17 +4,14 @@ import { getDb } from '@/db';
 import { systemSettings } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/admin/system-settings - List all system settings. */
 export async function GET() {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -37,11 +34,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const body = await request.json();

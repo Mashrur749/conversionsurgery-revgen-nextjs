@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { responseTemplates } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createTemplateSchema = z.object({
   name: z.string().min(1).max(100),
@@ -25,11 +26,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.TEMPLATES_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -52,11 +49,7 @@ export async function POST(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.TEMPLATES_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

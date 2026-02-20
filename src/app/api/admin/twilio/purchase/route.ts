@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { purchaseNumber } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const purchaseSchema = z.object({
   phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters'),
@@ -18,11 +19,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -73,11 +70,6 @@ export async function POST(request: NextRequest) {
     console.log(`[Twilio] Purchase success: SID=${result.sid}`);
     return NextResponse.json({ success: true, sid: result.sid });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('[Twilio] Purchase API error:', message);
-    return NextResponse.json(
-      { error: message || 'Failed to purchase number' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Twilio] Purchase API error', error, 'Failed to purchase number');
   }
 }

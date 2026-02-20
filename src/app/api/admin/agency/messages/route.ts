@@ -5,6 +5,7 @@ import { agencyMessages, clients } from '@/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { sendActionPrompt, sendAlert } from '@/lib/services/agency-communication';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/agency/messages
@@ -14,11 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { searchParams } = request.nextUrl;
@@ -94,11 +91,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

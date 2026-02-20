@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { pushTemplateUpdate } from '@/lib/services/flow-templates';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -14,11 +15,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;

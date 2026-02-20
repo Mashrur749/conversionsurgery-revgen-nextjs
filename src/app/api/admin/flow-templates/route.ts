@@ -5,6 +5,7 @@ import { flowTemplates } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { createTemplate } from '@/lib/services/flow-templates';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/flow-templates
@@ -14,11 +15,7 @@ export async function GET() {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -74,11 +71,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

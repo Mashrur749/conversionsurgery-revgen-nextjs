@@ -5,6 +5,7 @@ import { reviewSources } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { findGooglePlaceId } from '@/lib/services/google-places';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const addSourceSchema = z.object({
   source: z.enum(['google', 'yelp', 'facebook', 'bbb', 'angi', 'homeadvisor', 'other']),
@@ -23,11 +24,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -49,11 +46,7 @@ export async function POST(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

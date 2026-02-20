@@ -6,17 +6,14 @@ import { asc } from 'drizzle-orm';
 import { z } from 'zod';
 import { isSuperAdmin } from '@/lib/utils/admin-auth';
 import { auth } from '@/auth';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/admin/plans - List all plans. */
 export async function GET() {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -61,11 +58,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
   const session = await auth();
   if (!isSuperAdmin(session)) {

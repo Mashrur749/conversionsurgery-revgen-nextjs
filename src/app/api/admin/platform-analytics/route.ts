@@ -3,16 +3,13 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb, platformAnalytics, clients } from '@/db';
 import { desc, sql } from 'drizzle-orm';
 import { getFunnelMetrics } from '@/lib/services/funnel-queries';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET() {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();

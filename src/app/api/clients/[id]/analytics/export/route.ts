@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb, analyticsMonthly, clients } from '@/db';
 import { eq, desc } from 'drizzle-orm';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(
   request: NextRequest,
@@ -12,11 +13,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.ANALYTICS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { searchParams } = new URL(request.url);

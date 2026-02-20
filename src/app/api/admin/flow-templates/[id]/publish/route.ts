@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { publishTemplate } from '@/lib/services/flow-templates';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const publishSchema = z.object({
   changeNotes: z.string().optional(),
@@ -15,11 +16,7 @@ export async function POST(
   try {
     agencySession = await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;

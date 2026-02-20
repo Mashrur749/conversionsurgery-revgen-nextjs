@@ -4,11 +4,16 @@ import { getDb } from '@/db';
 import { roleTemplates, auditLog } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET() {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const db = getDb();
 
     const templates = await db
@@ -18,16 +23,7 @@ export async function GET() {
 
     return NextResponse.json({ templates });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('GET /api/admin/roles error:', error);
-    return NextResponse.json({ error: 'Failed to load role templates' }, { status: 500 });
+    return safeErrorResponse('GET /api/admin/roles', error, 'Failed to load role templates');
   }
 }
 
@@ -39,9 +35,14 @@ const createRoleSchema = z.object({
 }).strict();
 
 export async function POST(request: NextRequest) {
+  let session: Awaited<ReturnType<typeof requireAgencyPermission>>;
   try {
-    const session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+    session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const body = await request.json();
     const validated = createRoleSchema.parse(body);
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       preventEscalation(session.permissions, validated.permissions);
     } catch (err) {
       return NextResponse.json(
-        { error: err instanceof Error ? err.message : 'Permission escalation denied' },
+        { error: 'Permission escalation denied' },
         { status: 403 }
       );
     }
@@ -117,21 +118,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ template });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
-    console.error('POST /api/admin/roles error:', error);
-    return NextResponse.json({ error: 'Failed to create role template' }, { status: 500 });
+    return safeErrorResponse('POST /api/admin/roles', error, 'Failed to create role template');
   }
 }

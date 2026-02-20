@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const reassignSchema = z.object({
   phoneNumber: z.string().min(1, 'Phone number is required'),
@@ -21,11 +22,7 @@ export async function PATCH(req: Request) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -86,12 +83,6 @@ export async function PATCH(req: Request) {
       message: `Phone number reassigned to ${targetClient.businessName}`,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('[Twilio] Phone reassign error:', message);
-
-    return NextResponse.json(
-      { error: message || 'Failed to reassign phone number' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Twilio] Phone reassign error', error, 'Failed to reassign phone number');
   }
 }

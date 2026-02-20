@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getClientSession } from '@/lib/client-auth';
 import { ComplianceService } from '@/lib/compliance/compliance-service';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const consentScopeSchema = z.object({
   marketing: z.boolean(),
@@ -73,11 +74,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ consentId });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Compliance Consent] Failed to record consent:', message);
-    return NextResponse.json(
-      { error: 'Failed to record consent' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Compliance Consent]', error, 'Failed to record consent');
   }
 }

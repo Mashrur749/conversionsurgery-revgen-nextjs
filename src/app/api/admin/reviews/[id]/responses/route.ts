@@ -5,6 +5,7 @@ import { reviewResponses } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { createDraftResponse } from '@/lib/services/review-response';
 import { z } from 'zod';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const generateSchema = z.object({
   useTemplate: z.boolean().optional(),
@@ -20,11 +21,7 @@ export async function GET(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;
@@ -47,11 +44,7 @@ export async function POST(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;
@@ -78,9 +71,6 @@ export async function POST(
     return NextResponse.json(draft);
   } catch (error) {
     console.error('[Reputation] Generate response error for review', id, ':', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to generate response' },
-      { status: 500 }
-    );
+    return safeErrorResponse('admin/reviews/[id]/responses', error, 'Failed to generate response');
   }
 }

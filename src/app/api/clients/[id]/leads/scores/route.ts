@@ -4,6 +4,7 @@ import { scoreClientLeads, getLeadsByTemperature } from '@/lib/services/lead-sco
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { eq, sql } from 'drizzle-orm';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/clients/[id]/leads/scores - Get score distribution and top hot leads for a client. */
 export async function GET(
@@ -15,11 +16,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.ANALYTICS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -57,11 +54,7 @@ export async function POST(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.ANALYTICS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const body = (await request.json().catch(() => ({}))) as { useAI?: boolean };

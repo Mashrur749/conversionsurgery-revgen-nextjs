@@ -5,6 +5,7 @@ import {
   saveStructuredKnowledge,
   loadStructuredKnowledge,
 } from '@/lib/services/structured-knowledge';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const serviceSchema = z.object({
   name: z.string().min(1),
@@ -44,11 +45,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.KNOWLEDGE_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -70,11 +67,7 @@ export async function PUT(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.KNOWLEDGE_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

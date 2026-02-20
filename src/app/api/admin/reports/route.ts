@@ -4,6 +4,7 @@ import { reports, dailyStats, abTests } from '@/db/schema';
 import { getTeamMembers } from '@/lib/services/team-bridge';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const generateReportSchema = z.object({
   clientId: z.string().uuid(),
@@ -18,11 +19,7 @@ export async function GET(req: Request) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return Response.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -54,12 +51,7 @@ export async function GET(req: Request) {
       limit,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch reports';
-    console.error('[Analytics] Reports List Error:', errorMessage);
-    return Response.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Analytics] Reports List Error:', error, 'Failed to fetch reports');
   }
 }
 
@@ -68,11 +60,7 @@ export async function POST(req: Request) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return Response.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -219,12 +207,6 @@ export async function POST(req: Request) {
       message: `Report generated for ${startDate} to ${endDate}`,
     });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to generate report';
-    console.error('[Analytics] Reports Generate Error:', errorMessage);
-
-    return Response.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Analytics] Reports Generate Error:', error, 'Failed to generate report');
   }
 }

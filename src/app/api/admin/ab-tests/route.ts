@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { abTests, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createTestSchema = z.object({
   clientId: z.string().uuid(),
@@ -21,11 +22,7 @@ export async function GET(req: Request) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return Response.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -56,11 +53,7 @@ export async function GET(req: Request) {
       limit,
     });
   } catch (error) {
-    console.error('[ABTesting] GET /api/admin/ab-tests error:', error);
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch tests' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[ABTesting] GET /api/admin/ab-tests error:', error, 'Failed to fetch tests');
   }
 }
 
@@ -72,11 +65,7 @@ export async function POST(req: Request) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return Response.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -125,10 +114,6 @@ export async function POST(req: Request) {
       message: `Test "${name}" created for ${client.businessName}`,
     });
   } catch (error) {
-    console.error('[ABTesting] POST /api/admin/ab-tests error:', error);
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to create test' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[ABTesting] POST /api/admin/ab-tests error:', error, 'Failed to create test');
   }
 }

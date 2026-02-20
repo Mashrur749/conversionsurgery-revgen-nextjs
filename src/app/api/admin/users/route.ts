@@ -3,16 +3,13 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { users, clients, people, agencyMemberships, clientMemberships } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();

@@ -10,6 +10,7 @@ import {
 } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const transferSchema = z.object({
   targetMembershipId: z.string().uuid('Valid membership ID is required'),
@@ -20,10 +21,14 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: clientId } = await params;
   try {
-    const { id: clientId } = await params;
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const body = await request.json();
     const validated = transferSchema.parse(body);
 
@@ -165,21 +170,12 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
-    console.error('POST /api/admin/clients/[id]/team/transfer-ownership error:', error);
-    return NextResponse.json({ error: 'Failed to transfer ownership' }, { status: 500 });
+    return safeErrorResponse('POST /api/admin/clients/[id]/team/transfer-ownership', error, 'Failed to transfer ownership');
   }
 }

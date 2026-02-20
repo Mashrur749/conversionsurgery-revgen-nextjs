@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getClientSession } from '@/lib/client-auth';
 import { ComplianceService } from '@/lib/compliance/compliance-service';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const complianceCheckSchema = z.object({
   phoneNumber: z.string().min(1, 'Phone number is required'),
@@ -38,11 +39,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Compliance Check] Failed to check compliance:', message);
-    return NextResponse.json(
-      { error: 'Failed to check compliance' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Compliance Check]', error, 'Failed to check compliance');
   }
 }

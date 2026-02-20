@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import { clientPhoneNumbers } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** Verify a phone number record belongs to the specified client */
 async function verifyPhoneOwnership(phoneId: string, clientId: string) {
@@ -30,11 +31,7 @@ export async function PATCH(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.PHONES_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   if (!(await verifyPhoneOwnership(phoneId, id))) {
@@ -62,11 +59,7 @@ export async function DELETE(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.PHONES_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   if (!(await verifyPhoneOwnership(phoneId, id))) {

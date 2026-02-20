@@ -2,6 +2,7 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { abTests, abTestMetrics } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/ab-tests/[id]/results
@@ -14,11 +15,7 @@ export async function GET(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return Response.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -144,10 +141,6 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('[ABTesting] GET /api/admin/ab-tests/[id]/results error:', error);
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch test results' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[ABTesting] GET /api/admin/ab-tests/[id]/results error:', error, 'Failed to fetch test results');
   }
 }

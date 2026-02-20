@@ -3,6 +3,7 @@ import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permiss
 import { getDb } from '@/db';
 import { voiceCalls } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * [Voice] GET /api/admin/clients/[id]/voice-calls
@@ -17,11 +18,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CONVERSATIONS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();

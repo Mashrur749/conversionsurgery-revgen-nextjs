@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getClientSession } from '@/lib/client-auth';
 import { ComplianceReportGenerator } from '@/lib/compliance/report-generator';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const reportQuerySchema = z.object({
   months: z.coerce.number().int().min(1).max(24).default(1),
@@ -40,11 +41,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(report);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Compliance Report] Failed to generate report:', message);
-    return NextResponse.json(
-      { error: 'Failed to generate compliance report' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Compliance Report]', error, 'Failed to generate compliance report');
   }
 }

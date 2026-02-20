@@ -5,6 +5,7 @@ import {
   sendWeeklyDigest,
   processAgencyWeeklyDigests,
 } from '@/lib/services/agency-communication';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const sendDigestSchema = z.object({
   clientId: z.string().uuid().optional(),
@@ -19,11 +20,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

@@ -3,11 +3,16 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { auditLog, people, clients } from '@/db/schema';
 import { eq, desc, and, gte, lte, count, SQL } from 'drizzle-orm';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const searchParams = request.nextUrl.searchParams;
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)));
@@ -85,15 +90,6 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('GET /api/admin/audit-log error:', error);
-    return NextResponse.json({ error: 'Failed to load audit log' }, { status: 500 });
+    return safeErrorResponse('admin/audit-log', error, 'Failed to load audit log');
   }
 }

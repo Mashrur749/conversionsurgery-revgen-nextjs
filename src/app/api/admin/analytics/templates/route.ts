@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { compareTemplates } from '@/lib/services/flow-metrics';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/admin/analytics/templates */
 export async function GET(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -27,11 +24,6 @@ export async function GET(request: NextRequest) {
     const comparison = await compareTemplates(category, days);
     return NextResponse.json(comparison);
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch template analytics';
-    console.error('[Analytics] Templates Error:', errorMessage);
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Analytics] Templates Error:', error, 'Failed to fetch template analytics');
   }
 }

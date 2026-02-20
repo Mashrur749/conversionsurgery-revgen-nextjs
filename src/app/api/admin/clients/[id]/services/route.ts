@@ -3,6 +3,7 @@ import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permiss
 import { getDb, clientServices } from '@/db';
 import { eq, and, asc } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createServiceSchema = z.object({
   name: z.string().min(1).max(200),
@@ -37,11 +38,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -68,11 +65,7 @@ export async function POST(
   try {
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
   const body: Record<string, unknown> = await request.json();
   const db = getDb();

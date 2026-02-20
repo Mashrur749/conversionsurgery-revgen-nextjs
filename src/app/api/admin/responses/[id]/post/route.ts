@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { postResponseToGoogle } from '@/lib/services/google-business';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** POST - Post a review response to Google Business Profile. */
 export async function POST(
@@ -10,11 +11,7 @@ export async function POST(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS, getAgencySession } from '@/lib/permissions';
 import { acknowledgeAlert } from '@/lib/services/usage-alerts';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** POST - Acknowledge a usage alert */
 export async function POST(
@@ -10,11 +11,7 @@ export async function POST(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

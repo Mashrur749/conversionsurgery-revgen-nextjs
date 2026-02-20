@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const updateUserSchema = z.object({
   isAdmin: z.boolean().optional(),
@@ -17,11 +18,7 @@ export async function PATCH(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;

@@ -11,15 +11,20 @@ import {
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: clientId } = await params;
   try {
-    const { id: clientId } = await params;
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const db = getDb();
 
     // Verify client exists
@@ -63,16 +68,7 @@ export async function GET(
       members,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('GET /api/admin/clients/[id]/team error:', error);
-    return NextResponse.json({ error: 'Failed to load client team' }, { status: 500 });
+    return safeErrorResponse('GET /api/admin/clients/[id]/team', error, 'Failed to load client team');
   }
 }
 
@@ -101,10 +97,14 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: clientId } = await params;
   try {
-    const { id: clientId } = await params;
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const body = await request.json();
     const validated = addMemberSchema.parse(body);
 
@@ -287,21 +287,12 @@ export async function POST(
       },
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
-    console.error('POST /api/admin/clients/[id]/team error:', error);
-    return NextResponse.json({ error: 'Failed to add team member' }, { status: 500 });
+    return safeErrorResponse('POST /api/admin/clients/[id]/team', error, 'Failed to add team member');
   }
 }

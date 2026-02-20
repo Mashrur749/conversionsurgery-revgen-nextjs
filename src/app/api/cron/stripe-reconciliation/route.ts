@@ -156,8 +156,8 @@ export async function GET(request: NextRequest) {
                 `[Reconciliation] Orphaned sub ${localSub.id}: not found in Stripe, marked canceled`
               );
             } else {
-              const msg = error instanceof Error ? error.message : 'Unknown error';
-              results.errors.push(`Sub ${localSub.id}: ${msg}`);
+              console.error(`[Reconciliation] Sub ${localSub.id} error:`, error);
+              results.errors.push(`Sub ${localSub.id}: retrieval failed`);
             }
           }
         })
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[Reconciliation] Fatal error:', error);
     return NextResponse.json(
-      { error: 'Reconciliation failed', details: error instanceof Error ? error.message : 'Unknown' },
+      { error: 'Reconciliation failed' },
       { status: 500 }
     );
   }

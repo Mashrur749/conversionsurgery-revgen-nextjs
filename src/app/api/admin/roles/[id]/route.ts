@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { roleTemplates, agencyMemberships, clientMemberships, auditLog } from '@/db/schema';
 import { eq, count } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const updateRoleSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -15,9 +16,14 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session;
   try {
-    const session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+    session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const { id } = await params;
     const body = await request.json();
     const validated = updateRoleSchema.parse(body);
@@ -59,7 +65,7 @@ export async function PATCH(
         preventEscalation(session.permissions, validated.permissions);
       } catch (err) {
         return NextResponse.json(
-          { error: err instanceof Error ? err.message : 'Permission escalation denied' },
+          { error: 'Permission escalation denied' },
           { status: 403 }
         );
       }
@@ -91,22 +97,13 @@ export async function PATCH(
 
     return NextResponse.json({ template: updated });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
-    console.error('PATCH /api/admin/roles/[id] error:', error);
-    return NextResponse.json({ error: 'Failed to update role template' }, { status: 500 });
+    return safeErrorResponse('PATCH /api/admin/roles/[id]', error, 'Failed to update role template');
   }
 }
 
@@ -116,7 +113,11 @@ export async function DELETE(
 ) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const { id } = await params;
     const db = getDb();
 
@@ -178,15 +179,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('DELETE /api/admin/roles/[id] error:', error);
-    return NextResponse.json({ error: 'Failed to delete role template' }, { status: 500 });
+    return safeErrorResponse('DELETE /api/admin/roles/[id]', error, 'Failed to delete role template');
   }
 }

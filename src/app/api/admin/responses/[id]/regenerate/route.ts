@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { regenerateResponse } from '@/lib/services/review-response';
 import { z } from 'zod';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const regenerateSchema = z.object({
   tone: z.enum(['professional', 'friendly', 'apologetic', 'thankful']).optional(),
@@ -17,11 +18,7 @@ export async function POST(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;
@@ -48,9 +45,6 @@ export async function POST(
     return NextResponse.json({ responseText: newText });
   } catch (error) {
     console.error('[Reputation] Regenerate response error for', id, ':', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to regenerate response' },
-      { status: 500 }
-    );
+    return safeErrorResponse('admin/responses/[id]/regenerate', error, 'Failed to regenerate response');
   }
 }

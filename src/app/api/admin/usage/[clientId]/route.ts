@@ -3,6 +3,7 @@ import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permiss
 import { getClientUsageSummary, getCurrentMonthUsage } from '@/lib/services/usage-tracking';
 import { getUnacknowledgedAlerts } from '@/lib/services/usage-alerts';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const querySchema = z.object({
   startDate: z
@@ -20,10 +21,15 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
-  try {
-    const { clientId } = await params;
-    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.BILLING_VIEW);
+  const { clientId } = await params;
 
+  try {
+    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.BILLING_VIEW);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
+
+  try {
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.safeParse({
       startDate: searchParams.get('startDate') || undefined,
@@ -52,16 +58,7 @@ export async function GET(
       alerts,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('[UsageTracking] GET /api/admin/usage/[clientId] failed:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return safeErrorResponse('admin/usage/[clientId]', error, 'Failed to load client usage');
   }
 }
 

@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { abTests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const updateTestSchema = z.object({
   status: z.enum(['active', 'paused', 'completed', 'archived']).optional(),
@@ -21,11 +22,7 @@ export async function GET(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return Response.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -44,11 +41,7 @@ export async function GET(
 
     return Response.json({ success: true, test });
   } catch (error) {
-    console.error('[ABTesting] GET /api/admin/ab-tests/[id] error:', error);
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to fetch test' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[ABTesting] GET /api/admin/ab-tests/[id] error:', error, 'Failed to fetch test');
   }
 }
 
@@ -63,11 +56,7 @@ export async function PATCH(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return Response.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {
@@ -115,10 +104,6 @@ export async function PATCH(
       message: `Test updated: status=${status || test.status}, winner=${winner || 'none'}`,
     });
   } catch (error) {
-    console.error('[ABTesting] PATCH /api/admin/ab-tests/[id] error:', error);
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Failed to update test' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[ABTesting] PATCH /api/admin/ab-tests/[id] error:', error, 'Failed to update test');
   }
 }

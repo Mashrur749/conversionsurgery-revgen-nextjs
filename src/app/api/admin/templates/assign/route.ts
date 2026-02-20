@@ -3,6 +3,7 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { messageTemplates } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const assignTemplateSchema = z.object({
   clientId: z.string().uuid('Invalid client ID'),
@@ -17,7 +18,11 @@ const assignTemplateSchema = z.object({
 export async function POST(req: Request) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const body = await req.json();
     const parsed = assignTemplateSchema.safeParse(body);
 
@@ -81,21 +86,6 @@ export async function POST(req: Request) {
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
-      }
-      if (error.message.includes('Forbidden')) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
-      }
-    }
-    console.error('[ABTesting] POST /api/admin/templates/assign error:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return safeErrorResponse('admin/templates/assign', error, 'Failed to assign template');
   }
 }

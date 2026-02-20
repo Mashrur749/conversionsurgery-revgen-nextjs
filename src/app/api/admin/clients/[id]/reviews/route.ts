@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { reviews } from '@/db/schema';
 import { eq, desc, and, lte } from 'drizzle-orm';
 import { syncAllReviews, getReviewSummary } from '@/lib/services/review-monitoring';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET - List reviews for a client with optional filters. */
 export async function GET(
@@ -15,11 +16,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { searchParams } = new URL(request.url);
@@ -64,11 +61,7 @@ export async function POST(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

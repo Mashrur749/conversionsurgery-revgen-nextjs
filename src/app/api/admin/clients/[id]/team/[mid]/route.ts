@@ -10,6 +10,7 @@ import {
 } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const updateClientMemberSchema = z.object({
   roleTemplateId: z.string().uuid().optional(),
@@ -27,10 +28,14 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; mid: string }> }
 ) {
+  const { id: clientId, mid: membershipId } = await params;
   try {
-    const { id: clientId, mid: membershipId } = await params;
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const body = await request.json();
     const validated = updateClientMemberSchema.parse(body);
 
@@ -145,22 +150,13 @@ export async function PATCH(
 
     return NextResponse.json({ membership: updated });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.issues },
         { status: 400 }
       );
     }
-    console.error('PATCH /api/admin/clients/[id]/team/[mid] error:', error);
-    return NextResponse.json({ error: 'Failed to update member' }, { status: 500 });
+    return safeErrorResponse('PATCH /api/admin/clients/[id]/team/[mid]', error, 'Failed to update member');
   }
 }
 
@@ -168,10 +164,14 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; mid: string }> }
 ) {
+  const { id: clientId, mid: membershipId } = await params;
   try {
-    const { id: clientId, mid: membershipId } = await params;
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const db = getDb();
 
     // Load existing membership
@@ -234,15 +234,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden') || error.message.includes('admin access required')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('DELETE /api/admin/clients/[id]/team/[mid] error:', error);
-    return NextResponse.json({ error: 'Failed to remove member' }, { status: 500 });
+    return safeErrorResponse('DELETE /api/admin/clients/[id]/team/[mid]', error, 'Failed to remove member');
   }
 }

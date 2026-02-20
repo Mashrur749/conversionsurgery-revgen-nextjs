@@ -3,6 +3,7 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb, apiUsageMonthly, clients } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const querySchema = z.object({
   month: z
@@ -15,7 +16,11 @@ const querySchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_VIEW);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.safeParse({
       month: searchParams.get('month') || undefined,
@@ -68,16 +73,7 @@ export async function GET(request: NextRequest) {
       totals,
     });
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      if (error.message.includes('Forbidden')) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    console.error('[UsageTracking] GET /api/admin/usage failed:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return safeErrorResponse('admin/usage', error, 'Failed to load usage summary');
   }
 }
 

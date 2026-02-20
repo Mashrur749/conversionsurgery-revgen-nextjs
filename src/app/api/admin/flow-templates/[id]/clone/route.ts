@@ -3,6 +3,7 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { flowTemplates, flowTemplateSteps } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** POST /api/admin/flow-templates/[id]/clone - Duplicate a template with all steps. */
 export async function POST(
@@ -12,11 +13,7 @@ export async function POST(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;

@@ -38,7 +38,7 @@ export async function POST(
     const updated = await retryInvoicePayment(id);
     return NextResponse.json({ success: true, invoice: updated });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Payment retry failed';
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error('[Billing] Invoice retry error:', error);
+    return NextResponse.json({ error: 'Payment retry failed' }, { status: 400 });
   }
 }

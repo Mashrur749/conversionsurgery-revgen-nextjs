@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import { jobs } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const updateStatusSchema = z.object({
   action: z.literal('update_status'),
@@ -34,11 +35,7 @@ export async function PATCH(
   try {
     await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   // Verify job belongs to this client (IDOR prevention)

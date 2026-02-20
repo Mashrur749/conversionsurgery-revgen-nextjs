@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { searchAvailableNumbers } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const searchQuerySchema = z.object({
   areaCode: z
@@ -24,11 +25,7 @@ export async function GET(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const url = new URL(request.url);
@@ -71,11 +68,6 @@ export async function GET(request: NextRequest) {
       isDevelopmentMock: process.env.NODE_ENV === 'development' && numbers.length > 0,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error('[Twilio] Search API error:', message);
-    return NextResponse.json(
-      { error: message || 'Failed to search available numbers' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Twilio] Search API error', error, 'Failed to search available numbers');
   }
 }

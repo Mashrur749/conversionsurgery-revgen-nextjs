@@ -5,6 +5,7 @@ import { systemSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { configureAgencyWebhooks } from '@/lib/services/twilio-provisioning';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const AGENCY_NUMBER_KEY = 'agency_twilio_number';
 const AGENCY_NUMBER_SID_KEY = 'agency_twilio_number_sid';
@@ -13,11 +14,7 @@ export async function GET() {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -47,11 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   try {

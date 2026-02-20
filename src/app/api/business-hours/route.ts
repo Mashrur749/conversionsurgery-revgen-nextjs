@@ -6,6 +6,7 @@ import { businessHours } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(request: NextRequest) {
   try {
@@ -51,7 +52,11 @@ const businessHoursSchema = z.object({
 export async function PUT(req: Request) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_EDIT);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const data = await req.json();
     const parsed = businessHoursSchema.safeParse(data);
 
@@ -85,13 +90,6 @@ export async function PUT(req: Request) {
 
     return Response.json({ success: true, hours: result });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('Unauthorized')) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    if (error instanceof Error && error.message.includes('Forbidden')) {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    console.error('[BusinessHours] Update error:', error);
-    return Response.json({ error: 'Failed to update business hours' }, { status: 500 });
+    return safeErrorResponse('[BusinessHours] Update error', error, 'Failed to update business hours');
   }
 }

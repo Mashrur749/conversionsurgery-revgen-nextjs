@@ -3,6 +3,7 @@ import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { templateVariants } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createVariantSchema = z.object({
   templateType: z.string().min(1, 'Template type required'),
@@ -18,7 +19,11 @@ const createVariantSchema = z.object({
 export async function POST(req: Request) {
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
+  } catch (error) {
+    return permissionErrorResponse(error);
+  }
 
+  try {
     const body = await req.json();
     const parsed = createVariantSchema.safeParse(body);
 
@@ -36,15 +41,6 @@ export async function POST(req: Request) {
     const { templateType, name, content, notes } = parsed.data;
 
     const db = getDb();
-
-    // Check if variant with same type and name already exists
-    const existing = await db
-      .select()
-      .from(templateVariants)
-      .where(
-        eq(templateVariants.templateType, templateType)
-      )
-      .limit(1);
 
     // Insert new variant
     const result = await db
@@ -67,32 +63,6 @@ export async function POST(req: Request) {
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message.includes('Unauthorized')) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
-      }
-      if (error.message.includes('Forbidden')) {
-        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
-      }
-    }
-    // Handle unique constraint violation
-    if (error instanceof Error && error.message.includes('unique constraint')) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'A variant with this type and name already exists',
-        }),
-        { status: 409, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.error('[ABTesting] POST /api/admin/templates/variants error:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return safeErrorResponse('[ABTesting] POST /api/admin/templates/variants', error, 'Internal server error');
   }
 }

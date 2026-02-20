@@ -3,6 +3,7 @@ import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permiss
 import { getDb, escalationRules } from '@/db';
 import { type NewEscalationRule } from '@/db/schema/escalation-rules';
 import { eq, asc } from 'drizzle-orm';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 // GET - List all rules for a client
 export async function GET(
@@ -14,11 +15,7 @@ export async function GET(
   try {
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_VIEW);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();
@@ -47,11 +44,7 @@ export async function POST(
   try {
     await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const db = getDb();

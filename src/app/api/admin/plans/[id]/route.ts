@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { plans, subscriptions } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
+import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/admin/plans/[id] - Get a single plan. */
 export async function GET(
@@ -13,11 +14,7 @@ export async function GET(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;
@@ -71,11 +68,7 @@ export async function PATCH(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;
@@ -133,11 +126,7 @@ export async function DELETE(
   try {
     await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : '';
-    return NextResponse.json(
-      { error: msg.includes('Unauthorized') ? 'Unauthorized' : 'Forbidden' },
-      { status: msg.includes('Unauthorized') ? 401 : 403 }
-    );
+    return permissionErrorResponse(error);
   }
 
   const { id } = await params;
