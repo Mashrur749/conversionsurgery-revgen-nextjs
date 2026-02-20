@@ -4,7 +4,8 @@ import { getDb } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
+import type { AgencySession } from '@/lib/permissions';
 
 const updateUserSchema = z.object({
   isAdmin: z.boolean().optional(),
@@ -15,8 +16,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session: AgencySession;
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
+    session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
   } catch (error) {
     return permissionErrorResponse(error);
   }
@@ -27,6 +29,14 @@ export async function PATCH(
     const body = (await request.json()) as Record<string, unknown>;
 
     const data = updateUserSchema.parse(body);
+
+    // Prevent self-demotion: admin cannot remove their own admin access
+    if (data.isAdmin === false && session.userId === id) {
+      return NextResponse.json(
+        { error: 'Cannot remove your own admin access' },
+        { status: 400 }
+      );
+    }
 
     const db = getDb();
     const [updated] = await db
@@ -50,10 +60,6 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    console.error('Update user error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    );
+    return safeErrorResponse('PATCH /api/admin/users/[id]', error, 'Failed to update user');
   }
 }
