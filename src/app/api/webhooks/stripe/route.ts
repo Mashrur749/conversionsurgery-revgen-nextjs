@@ -8,6 +8,7 @@ import { sendSMS } from '@/lib/services/twilio';
 import { getStripeClient } from '@/lib/clients/stripe';
 import { syncInvoiceFromStripe } from '@/lib/services/subscription-invoices';
 import { addPaymentMethod } from '@/lib/services/payment-methods';
+import { sendEmail } from '@/lib/services/resend';
 
 /** POST /api/webhooks/stripe */
 export async function POST(request: NextRequest) {
@@ -177,6 +178,36 @@ export async function POST(request: NextRequest) {
       }
       break;
     }
+
+    case 'customer.subscription.paused': {
+      const sub = event.data.object as Stripe.Subscription;
+      await handleSubscriptionPaused(db, sub, event);
+      break;
+    }
+
+    case 'customer.subscription.resumed': {
+      const sub = event.data.object as Stripe.Subscription;
+      await handleSubscriptionResumed(db, sub, event);
+      break;
+    }
+
+    case 'invoice.payment_action_required': {
+      const invoice = event.data.object as Stripe.Invoice;
+      await handlePaymentActionRequired(db, invoice, event);
+      break;
+    }
+
+    case 'charge.dispute.created': {
+      const dispute = event.data.object as Stripe.Dispute;
+      await handleDisputeCreated(db, dispute, event);
+      break;
+    }
+
+    case 'charge.dispute.closed': {
+      const dispute = event.data.object as Stripe.Dispute;
+      await handleDisputeClosed(db, dispute, event);
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });
@@ -310,6 +341,178 @@ async function handlePaymentMethodAttached(db: DB, pm: Stripe.PaymentMethod, eve
   if (client) {
     await addPaymentMethod(client.id, pm.id, false);
     await logBillingEvent(db, client.id, event, 'Payment method added');
+  }
+}
+
+async function handleSubscriptionPaused(db: DB, sub: Stripe.Subscription, event: Stripe.Event) {
+  const clientId = sub.metadata?.clientId;
+  if (!clientId) return;
+
+  const [existingEvent] = await db
+    .select({ id: billingEvents.id })
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingEvent) return;
+
+  await db.transaction(async (tx) => {
+    await tx.update(subscriptions).set({
+      status: 'paused',
+      pausedAt: new Date(),
+      updatedAt: new Date(),
+    }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
+
+    await tx.insert(billingEvents).values({
+      clientId,
+      eventType: 'subscription_paused',
+      description: 'Subscription paused',
+      stripeEventId: event.id,
+      stripeEventType: event.type,
+      rawData: event.data.object as unknown as Record<string, unknown>,
+    });
+  });
+}
+
+async function handleSubscriptionResumed(db: DB, sub: Stripe.Subscription, event: Stripe.Event) {
+  const clientId = sub.metadata?.clientId;
+  if (!clientId) return;
+
+  const [existingEvent] = await db
+    .select({ id: billingEvents.id })
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingEvent) return;
+
+  await db.transaction(async (tx) => {
+    await tx.update(subscriptions).set({
+      status: 'active',
+      pausedAt: null,
+      resumesAt: null,
+      updatedAt: new Date(),
+    }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
+
+    await tx.insert(billingEvents).values({
+      clientId,
+      eventType: 'subscription_resumed',
+      description: 'Subscription resumed',
+      stripeEventId: event.id,
+      stripeEventType: event.type,
+      rawData: event.data.object as unknown as Record<string, unknown>,
+    });
+  });
+}
+
+async function handlePaymentActionRequired(db: DB, invoice: Stripe.Invoice, event: Stripe.Event) {
+  const stripeSubId = typeof invoice.parent?.subscription_details?.subscription === 'string'
+    ? invoice.parent.subscription_details.subscription
+    : invoice.parent?.subscription_details?.subscription?.id;
+
+  if (!stripeSubId) return;
+
+  const [subscription] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeSubscriptionId, stripeSubId))
+    .limit(1);
+
+  if (!subscription) return;
+
+  await logBillingEvent(
+    db,
+    subscription.clientId,
+    event,
+    'Payment requires customer action (3D Secure or additional verification)',
+    invoice.amount_due
+  );
+
+  // Notify admin so they can follow up with the client
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    const [client] = await db.select().from(clients).where(eq(clients.id, subscription.clientId)).limit(1);
+    await sendEmail({
+      to: adminEmail,
+      subject: `Payment action required — ${client?.businessName || subscription.clientId}`,
+      html: `<p>A payment for <strong>${client?.businessName || subscription.clientId}</strong> requires customer action (e.g., 3D Secure authentication).</p><p>Invoice amount: $${((invoice.amount_due || 0) / 100).toFixed(2)}</p><p>The customer needs to complete authentication to process this payment. Check the Stripe dashboard for details.</p>`,
+    });
+  }
+}
+
+async function resolveClientFromDispute(db: DB, dispute: Stripe.Dispute): Promise<string | undefined> {
+  // Try to find client via the charge's customer
+  const charge = typeof dispute.charge === 'object' && dispute.charge ? dispute.charge : null;
+  let customerStr: string | undefined;
+
+  if (charge) {
+    customerStr = typeof charge.customer === 'string' ? charge.customer : charge.customer?.id;
+  } else {
+    // Charge is just a string ID — retrieve it from Stripe to get the customer
+    const chargeId = typeof dispute.charge === 'string' ? dispute.charge : undefined;
+    if (chargeId) {
+      try {
+        const stripe = getStripeClient();
+        const fullCharge = await stripe.charges.retrieve(chargeId);
+        customerStr = typeof fullCharge.customer === 'string' ? fullCharge.customer : fullCharge.customer?.id;
+      } catch {
+        // If we can't retrieve the charge, we can't resolve the client
+      }
+    }
+  }
+
+  if (!customerStr) return undefined;
+
+  const [client] = await db.select({ id: clients.id }).from(clients).where(eq(clients.stripeCustomerId, customerStr)).limit(1);
+  return client?.id;
+}
+
+async function handleDisputeCreated(db: DB, dispute: Stripe.Dispute, event: Stripe.Event) {
+  const clientId = await resolveClientFromDispute(db, dispute);
+  if (!clientId) return;
+
+  await logBillingEvent(
+    db,
+    clientId,
+    event,
+    `Dispute opened: ${dispute.reason || 'unknown reason'} — $${((dispute.amount || 0) / 100).toFixed(2)}`,
+    dispute.amount
+  );
+
+  // Notify admin immediately — disputes have strict response deadlines
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    const [client] = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1);
+    const dueBy = dispute.evidence_details?.due_by
+      ? new Date(dispute.evidence_details.due_by * 1000).toLocaleDateString()
+      : 'unknown';
+    await sendEmail({
+      to: adminEmail,
+      subject: `URGENT: Dispute opened — ${client?.businessName || clientId}`,
+      html: `<p>A payment dispute has been opened for <strong>${client?.businessName || clientId}</strong>.</p><p><strong>Amount:</strong> $${((dispute.amount || 0) / 100).toFixed(2)}<br/><strong>Reason:</strong> ${dispute.reason || 'Not specified'}<br/><strong>Evidence due by:</strong> ${dueBy}</p><p>Respond in the <a href="https://dashboard.stripe.com/disputes/${dispute.id}">Stripe Dashboard</a> before the deadline.</p>`,
+    });
+  }
+}
+
+async function handleDisputeClosed(db: DB, dispute: Stripe.Dispute, event: Stripe.Event) {
+  const clientId = await resolveClientFromDispute(db, dispute);
+  if (!clientId) return;
+
+  const won = dispute.status === 'won';
+  await logBillingEvent(
+    db,
+    clientId,
+    event,
+    `Dispute ${won ? 'won' : 'lost'}: $${((dispute.amount || 0) / 100).toFixed(2)}`,
+    dispute.amount
+  );
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    const [client] = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1);
+    await sendEmail({
+      to: adminEmail,
+      subject: `Dispute ${won ? 'won' : 'lost'} — ${client?.businessName || clientId}`,
+      html: `<p>A dispute for <strong>${client?.businessName || clientId}</strong> has been closed.</p><p><strong>Outcome:</strong> ${won ? 'Won (funds returned)' : 'Lost (funds deducted)'}<br/><strong>Amount:</strong> $${((dispute.amount || 0) / 100).toFixed(2)}</p>`,
+    });
   }
 }
 
