@@ -87,6 +87,23 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      // Atomic claim: mark as sending to prevent duplicate processing on concurrent cron runs.
+      // If 0 rows updated, another process already claimed this message.
+      const [claimed] = await db
+        .update(scheduledMessages)
+        .set({ sent: true, sentAt: new Date() })
+        .where(and(
+          eq(scheduledMessages.id, message.id),
+          eq(scheduledMessages.sent, false),
+          eq(scheduledMessages.cancelled, false)
+        ))
+        .returning({ id: scheduledMessages.id });
+
+      if (!claimed) {
+        skipped++;
+        continue;
+      }
+
       // Send SMS via compliance gateway
       try {
         // Resolve __AI_GENERATE__ placeholder to real AI-generated content
@@ -121,16 +138,11 @@ export async function GET(request: NextRequest) {
         });
 
         if (sendResult.blocked) {
+          // Unclaim: mark back as unsent and cancelled
           await markCancelled(db, message.id, `Compliance: ${sendResult.blockReason}`);
           skipped++;
           continue;
         }
-
-        // Mark sent
-        await db
-          .update(scheduledMessages)
-          .set({ sent: true, sentAt: new Date() })
-          .where(eq(scheduledMessages.id, message.id));
 
         // Log conversation (use resolved messageBody, not the placeholder)
         await db.insert(conversations).values({
@@ -148,6 +160,11 @@ export async function GET(request: NextRequest) {
         sent++;
       } catch (error) {
         console.error('[CronScheduling] Failed to send scheduled message:', message.id, error);
+        // Unclaim: mark back as unsent so it can be retried on next cron run
+        await db
+          .update(scheduledMessages)
+          .set({ sent: false, sentAt: null })
+          .where(eq(scheduledMessages.id, message.id));
         failed++;
       }
     }
