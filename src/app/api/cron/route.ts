@@ -151,6 +151,7 @@ export async function POST(request: NextRequest) {
 
       results.trialReminders = await dispatch(baseUrl, '/api/cron/trial-reminders', cronSecret!, 'POST');
       results.noShowRecovery = await dispatch(baseUrl, '/api/cron/no-show-recovery', cronSecret!);
+      results.stripeReconciliation = await dispatch(baseUrl, '/api/cron/stripe-reconciliation', cronSecret!);
 
       // Monthly: update cohort retention (1st of month)
       if (now.getUTCDate() === 1) {
