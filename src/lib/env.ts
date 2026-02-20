@@ -129,7 +129,9 @@ export function validateEnv(): void {
   }
 }
 
-// Validate on module import in production
-if (process.env.NODE_ENV === 'production') {
+// Validate on module import in production runtime (not during build).
+// NEXT_PHASE is 'phase-production-build' during `next build` — skip validation then.
+const isBuilding = process.env.NEXT_PHASE === 'phase-production-build';
+if (process.env.NODE_ENV === 'production' && !isBuilding) {
   validateEnv();
 }
