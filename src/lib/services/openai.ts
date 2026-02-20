@@ -5,7 +5,30 @@ import { getDb } from '@/db';
 import { clientAgentSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+  timeout: 15_000, // 15s timeout — prevents hanging during OpenAI degradation
+  maxRetries: 0,   // We handle retries ourselves for better control
+});
+
+const OPENAI_MAX_RETRIES = 2;
+const OPENAI_RETRY_BASE_DELAY_MS = 1000;
+
+/**
+ * Determines if an OpenAI error is retryable (rate limit or server error).
+ */
+function isRetryableOpenAIError(error: unknown): boolean {
+  if (error instanceof OpenAI.APIError) {
+    // 429 = rate limited, 5xx = server error
+    return error.status === 429 || (error.status !== undefined && error.status >= 500);
+  }
+  // Network / timeout errors
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    return msg.includes('timeout') || msg.includes('econnreset') || msg.includes('fetch failed');
+  }
+  return false;
+}
 
 // ============================================
 // HOT INTENT DETECTION
@@ -136,18 +159,34 @@ export async function generateAIResponse(
 ${knowledgeSection}${guardrailSection}`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...conversationHistory.slice(-10),
-        { role: 'user', content: incomingMessage },
-      ],
-      max_tokens: 200,
-      temperature: 0.7,
-    });
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory.slice(-10),
+      { role: 'user', content: incomingMessage },
+    ];
 
-    const response = completion.choices[0]?.message?.content || '';
+    let completion: OpenAI.Chat.ChatCompletion | undefined;
+
+    for (let attempt = 1; attempt <= OPENAI_MAX_RETRIES + 1; attempt++) {
+      try {
+        completion = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages,
+          max_tokens: 200,
+          temperature: 0.7,
+        });
+        break; // Success — exit retry loop
+      } catch (retryError) {
+        if (!isRetryableOpenAIError(retryError) || attempt > OPENAI_MAX_RETRIES) {
+          throw retryError;
+        }
+        const delay = OPENAI_RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        console.warn(`[OpenAI] Attempt ${attempt} failed (retryable), retrying in ${delay}ms`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    const response = completion?.choices[0]?.message?.content || '';
 
     // Confidence based on response quality
     let confidence = 0.85;
@@ -170,7 +209,7 @@ ${knowledgeSection}${guardrailSection}`;
       escalationReason: confidence < 0.7 ? 'Low AI confidence' : undefined,
     };
   } catch (error) {
-    console.error('OpenAI error:', error);
+    console.error('[OpenAI] AI generation failed after retries:', error);
     return {
       response: '',
       confidence: 0,

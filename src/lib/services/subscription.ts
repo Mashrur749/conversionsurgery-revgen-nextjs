@@ -39,6 +39,7 @@ export async function createSubscription(
 
   const [plan] = await db.select().from(plans).where(eq(plans.id, planId)).limit(1);
   if (!plan) throw new Error('Plan not found');
+  if (!plan.isActive) throw new Error('Plan is not active');
 
   // Create or get Stripe customer
   let stripeCustomerId = client.stripeCustomerId;

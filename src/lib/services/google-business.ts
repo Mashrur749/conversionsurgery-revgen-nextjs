@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import type { ReviewResponse } from '@/db/schema/review-responses';
 import type { Review } from '@/db/schema/reviews';
 import type { Client } from '@/db/schema/clients';
+import { sendEmail } from '@/lib/services/resend';
 
 /** Result of posting a response to Google Business Profile. */
 interface PostResult {
@@ -148,32 +149,70 @@ async function refreshGoogleToken(
   clientId: string,
   refreshToken: string
 ): Promise<string> {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: refreshToken,
-      grant_type: 'refresh_token',
-    }),
-  });
+  const maxAttempts = 3;
 
-  const data = (await res.json()) as GoogleTokenResponse;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID!,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
 
-  if (!data.access_token) {
-    throw new Error(`[Reputation] Failed to refresh Google token for client ${clientId}`);
+    const data = (await res.json()) as GoogleTokenResponse & { error?: string };
+
+    if (data.access_token) {
+      // Save new token
+      const db = getDb();
+      await db
+        .update(clients)
+        .set({
+          googleAccessToken: data.access_token,
+          googleTokenExpiresAt: new Date(Date.now() + (data.expires_in || 3600) * 1000),
+        })
+        .where(eq(clients.id, clientId));
+
+      return data.access_token;
+    }
+
+    // Permanent failure — token revoked or invalid grant
+    if (data.error === 'invalid_grant') {
+      console.error(`[Reputation] Google token permanently invalid for client ${clientId}`);
+
+      // Mark integration as needing re-auth
+      const db = getDb();
+      await db
+        .update(clients)
+        .set({
+          googleAccessToken: null,
+          googleTokenExpiresAt: null,
+        })
+        .where(eq(clients.id, clientId));
+
+      // Notify admin about the failure
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (adminEmail) {
+        await sendEmail({
+          to: adminEmail,
+          subject: `Google integration requires re-authorization — Client ${clientId}`,
+          html: `<p>The Google Business Profile integration for client <strong>${clientId}</strong> has failed permanently (invalid_grant). The refresh token was revoked or expired.</p><p>Action needed: Re-authorize the Google connection from the admin dashboard.</p>`,
+        });
+      }
+
+      throw new Error(`[Reputation] Google token revoked for client ${clientId} — needs re-authorization`);
+    }
+
+    // Transient failure — retry
+    if (attempt < maxAttempts) {
+      const delay = 1000 * Math.pow(2, attempt - 1);
+      console.warn(`[Reputation] Google token refresh attempt ${attempt} failed, retrying in ${delay}ms`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
 
-  // Save new token
-  const db = getDb();
-  await db
-    .update(clients)
-    .set({
-      googleAccessToken: data.access_token,
-      googleTokenExpiresAt: new Date(Date.now() + (data.expires_in || 3600) * 1000),
-    })
-    .where(eq(clients.id, clientId));
-
-  return data.access_token;
+  throw new Error(`[Reputation] Failed to refresh Google token for client ${clientId} after ${maxAttempts} attempts`);
 }

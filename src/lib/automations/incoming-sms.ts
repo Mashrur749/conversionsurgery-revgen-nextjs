@@ -112,6 +112,29 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     lead = created[0];
   } else {
     lead = leadResult[0];
+
+    // Check for opt-in request from opted-out lead
+    const optInWords = ['start', 'unstop', 'subscribe', 'yes'];
+    if (lead.optedOut && optInWords.includes(messageBody.toLowerCase())) {
+      await db
+        .update(leads)
+        .set({ optedOut: false, optedOutAt: null, status: 'contacted' })
+        .where(eq(leads.id, lead.id));
+      lead = { ...lead, optedOut: false };
+
+      await sendSMS(
+        senderPhone,
+        `You've been re-subscribed to messages from ${client.businessName}. Reply STOP at any time to opt out.`,
+        client.twilioNumber!
+      );
+      return { processed: true, action: 'opted_in' };
+    }
+
+    // Skip automated processing for opted-out leads
+    if (lead.optedOut) {
+      console.log(`[SMS] Skipping processing for opted-out lead ${lead.id}`);
+      return { processed: false, reason: 'Lead opted out' };
+    }
   }
 
   // 5. Log inbound message
