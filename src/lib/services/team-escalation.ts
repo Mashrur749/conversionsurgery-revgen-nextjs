@@ -143,20 +143,57 @@ export async function claimEscalation(token: string, teamMemberId: string) {
   try {
     const db = getDb();
 
-    // Find the escalation claim
-    const [escalation] = await db
+    // Verify team member exists first (before attempting claim)
+    const [member] = await db
       .select()
-      .from(escalationClaims)
-      .where(eq(escalationClaims.claimToken, token))
+      .from(teamMembers)
+      .where(eq(teamMembers.id, teamMemberId))
       .limit(1);
 
-    if (!escalation) {
-      console.log('[Team Escalation] Invalid claim token:', token);
-      return { success: false, error: 'Invalid claim link' };
+    if (!member) {
+      console.log('[Team Escalation] Team member not found:', teamMemberId);
+      return { success: false, error: 'Team member not found' };
     }
 
-    if (escalation.status !== 'pending') {
-      // Look up who claimed it
+    // Atomic claim: UPDATE only if status is still 'pending'
+    // This prevents the TOCTOU race where two team members both read 'pending'
+    // and then both write 'claimed'. Only one UPDATE will match the WHERE clause.
+    const [claimed] = await db
+      .update(escalationClaims)
+      .set({
+        claimedBy: teamMemberId,
+        claimedAt: new Date(),
+        status: 'claimed',
+      })
+      .where(
+        and(
+          eq(escalationClaims.claimToken, token),
+          eq(escalationClaims.status, 'pending'),
+          eq(escalationClaims.clientId, member.clientId)
+        )
+      )
+      .returning();
+
+    if (!claimed) {
+      // Either invalid token, already claimed, or cross-client attempt.
+      // Look up the escalation to provide a better error message.
+      const [escalation] = await db
+        .select()
+        .from(escalationClaims)
+        .where(eq(escalationClaims.claimToken, token))
+        .limit(1);
+
+      if (!escalation) {
+        console.log('[Team Escalation] Invalid claim token:', token);
+        return { success: false, error: 'Invalid claim link' };
+      }
+
+      if (escalation.clientId !== member.clientId) {
+        console.log('[Team Escalation] Cross-client claim attempt:', { teamMemberId, escalationClient: escalation.clientId, memberClient: member.clientId });
+        return { success: false, error: 'Team member not found' };
+      }
+
+      // Already claimed — look up who claimed it
       let claimedByName = 'Someone';
       if (escalation.claimedBy) {
         const [claimer] = await db
@@ -175,32 +212,7 @@ export async function claimEscalation(token: string, teamMemberId: string) {
       };
     }
 
-    // Verify team member exists and belongs to the same client
-    const [member] = await db
-      .select()
-      .from(teamMembers)
-      .where(eq(teamMembers.id, teamMemberId))
-      .limit(1);
-
-    if (!member) {
-      console.log('[Team Escalation] Team member not found:', teamMemberId);
-      return { success: false, error: 'Team member not found' };
-    }
-
-    if (member.clientId !== escalation.clientId) {
-      console.log('[Team Escalation] Cross-client claim attempt:', { teamMemberId, escalationClient: escalation.clientId, memberClient: member.clientId });
-      return { success: false, error: 'Team member not found' };
-    }
-
-    // Claim the escalation
-    await db
-      .update(escalationClaims)
-      .set({
-        claimedBy: teamMemberId,
-        claimedAt: new Date(),
-        status: 'claimed',
-      })
-      .where(eq(escalationClaims.id, escalation.id));
+    const escalation = claimed;
 
     // Clear action required flag on the lead
     await db

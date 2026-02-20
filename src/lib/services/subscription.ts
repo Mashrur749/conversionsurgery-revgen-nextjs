@@ -2,7 +2,7 @@ import { getDb } from '@/db';
 import { subscriptions, plans, clients, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
-import { validateCoupon, redeemCoupon } from '@/lib/services/coupon-validation';
+import { validateAndRedeemCoupon } from '@/lib/services/coupon-validation';
 import type Stripe from 'stripe';
 import type { Subscription } from '@/db/schema/subscriptions';
 import type { Plan } from '@/db/schema/plans';
@@ -81,10 +81,11 @@ export async function createSubscription(
     },
   };
 
-  // Validate coupon if provided
+  // Validate and atomically redeem coupon if provided
+  // This uses a single UPDATE...WHERE to prevent race conditions on max_redemptions
   let validatedDiscount: { discountValue?: number; duration?: string; durationMonths?: number | null } | undefined;
   if (couponCode) {
-    const couponResult = await validateCoupon(couponCode, planId, clientId);
+    const couponResult = await validateAndRedeemCoupon(couponCode, planId, clientId);
     if (!couponResult.valid) {
       throw new Error(couponResult.error || 'Invalid coupon code');
     }
@@ -135,10 +136,7 @@ export async function createSubscription(
       : undefined,
   }).returning();
 
-  // Increment coupon redemption count
-  if (couponCode) {
-    await redeemCoupon(couponCode);
-  }
+  // Coupon redemption already handled atomically by validateAndRedeemCoupon() above
 
   // Log event
   await db.insert(billingEvents).values({

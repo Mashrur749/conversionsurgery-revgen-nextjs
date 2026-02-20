@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
-import { plans } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { plans, subscriptions } from '@/db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 
 /** GET /api/admin/plans/[id] - Get a single plan. */
@@ -90,6 +90,28 @@ export async function PATCH(
   }
 
   const db = getDb();
+
+  // If deactivating, check for active subscriptions first
+  if (parsed.data.isActive === false) {
+    const activeSubscriptions = await db
+      .select({ id: subscriptions.id })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.planId, id),
+          inArray(subscriptions.status, ['active', 'trialing', 'past_due'])
+        )
+      )
+      .limit(1);
+
+    if (activeSubscriptions.length > 0) {
+      return NextResponse.json(
+        { error: 'Cannot deactivate plan with active subscriptions. Migrate subscribers to another plan first.' },
+        { status: 409 }
+      );
+    }
+  }
+
   const [updated] = await db
     .update(plans)
     .set({ ...parsed.data, updatedAt: new Date() })
@@ -120,6 +142,25 @@ export async function DELETE(
 
   const { id } = await params;
   const db = getDb();
+
+  // Check for active subscriptions before deactivating
+  const activeSubscriptions = await db
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.planId, id),
+        inArray(subscriptions.status, ['active', 'trialing', 'past_due'])
+      )
+    )
+    .limit(1);
+
+  if (activeSubscriptions.length > 0) {
+    return NextResponse.json(
+      { error: 'Cannot deactivate plan with active subscriptions. Migrate subscribers to another plan first.' },
+      { status: 409 }
+    );
+  }
 
   const [updated] = await db
     .update(plans)

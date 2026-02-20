@@ -1,6 +1,6 @@
 import { getDb, clients, otpCodes } from '@/db';
 import { people, clientMemberships } from '@/db/schema';
-import { eq, and, gt, isNull, desc } from 'drizzle-orm';
+import { eq, and, gt, isNull, desc, sql } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendEmail } from '@/lib/services/resend';
@@ -277,12 +277,6 @@ export async function verifyOTP(
     return { success: false, attemptsRemaining: 0, error: 'max_attempts' };
   }
 
-  // Increment attempts
-  await db
-    .update(otpCodes)
-    .set({ attempts: otp.attempts + 1 })
-    .where(eq(otpCodes.id, otp.id));
-
   // Compare code using constant-time comparison to prevent timing attacks
   const encoder = new TextEncoder();
   const a = encoder.encode(otp.code);
@@ -291,19 +285,43 @@ export async function verifyOTP(
   for (let i = 0; i < a.length; i++) {
     mismatch |= (a[i] ?? 0) ^ (b[i] ?? 0);
   }
+
   if (mismatch !== 0) {
+    // Wrong code — atomically increment attempts and check if max reached
+    // Uses SQL to prevent concurrent requests from both reading the same attempt count
+    await db
+      .update(otpCodes)
+      .set({ attempts: sql`${otpCodes.attempts} + 1` })
+      .where(eq(otpCodes.id, otp.id));
+
     const remaining = otp.maxAttempts - (otp.attempts + 1);
     return { success: false, attemptsRemaining: remaining, error: 'wrong_code' };
   }
 
-  // Mark as verified
-  await db
+  // Correct code — atomically mark as verified AND increment attempts in one operation.
+  // The WHERE clause ensures verified_at IS NULL, preventing concurrent double-verification.
+  // Only one concurrent request will match this UPDATE.
+  const [verified] = await db
     .update(otpCodes)
-    .set({ verifiedAt: now })
-    .where(eq(otpCodes.id, otp.id));
+    .set({
+      verifiedAt: now,
+      attempts: sql`${otpCodes.attempts} + 1`,
+    })
+    .where(
+      and(
+        eq(otpCodes.id, otp.id),
+        isNull(otpCodes.verifiedAt)
+      )
+    )
+    .returning();
+
+  if (!verified) {
+    // Another concurrent request already verified this OTP
+    return { success: false, error: 'invalid_or_expired' };
+  }
 
   // If OTP has a personId (new path), look up their businesses
-  if (otp.personId) {
+  if (verified.personId) {
     const memberships = await db
       .select({
         clientId: clientMemberships.clientId,
@@ -313,7 +331,7 @@ export async function verifyOTP(
       .innerJoin(clients, eq(clients.id, clientMemberships.clientId))
       .where(
         and(
-          eq(clientMemberships.personId, otp.personId),
+          eq(clientMemberships.personId, verified.personId),
           eq(clientMemberships.isActive, true),
           eq(clients.status, 'active')
         )
@@ -322,7 +340,7 @@ export async function verifyOTP(
     if (memberships.length === 1) {
       return {
         success: true,
-        personId: otp.personId,
+        personId: verified.personId,
         clientId: memberships[0].clientId,
         businesses: memberships,
       };
@@ -331,14 +349,14 @@ export async function verifyOTP(
     if (memberships.length > 1) {
       return {
         success: true,
-        personId: otp.personId,
+        personId: verified.personId,
         businesses: memberships,
       };
     }
   }
 
   // Legacy path: return clientId directly
-  return { success: true, clientId: otp.clientId ?? undefined };
+  return { success: true, clientId: verified.clientId ?? undefined };
 }
 
 /** Check rate limit: max N OTP requests per identifier per window */

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import '@/lib/env'; // Validate required env vars at startup
 import { Providers } from '@/components/providers';
 import { Toaster } from 'sonner';
 

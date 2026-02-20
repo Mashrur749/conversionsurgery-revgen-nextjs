@@ -251,3 +251,35 @@
 ### Documentation
 - [x] Updated docs/UX-AUDIT.md with session 4 fixes
 - [x] Updated .claude/progress.md with session 4 work
+
+---
+
+# System Blockers — Phase 1 Execution
+
+**Started:** 2026-02-19
+**Source:** `docs/SYSTEM-BLOCKERS.md`
+**Scope:** Phase 1 Critical fixes (10 items)
+
+## Execution Order & Status
+
+### Quick wins (2h each)
+- [ ] D2 — Atomic coupon redemption
+- [ ] D3 — Atomic escalation claim
+- [ ] D4 — Atomic OTP verification
+- [ ] S2 — Startup env validation
+- [ ] B1 — Plan deactivation guard
+
+### Medium (4h each)
+- [ ] E1 — Stripe idempotency keys
+- [ ] E3 — SMS retry logic
+- [ ] S1 — Batch automations
+
+### Large
+- [ ] D1 — Transaction boundaries
+- [ ] E2 — Stripe reconciliation cron
+
+## Commits
+(updated as work proceeds)
+
+## Docs Updated
+(updated as docs change)
