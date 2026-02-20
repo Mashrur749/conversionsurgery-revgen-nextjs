@@ -120,6 +120,19 @@ The application underwent a comprehensive security hardening across 6 commits (5
 
 ---
 
+## Related: System Blockers Remediation
+
+This audit covers **auth and access control** findings. A companion audit at `docs/SYSTEM-BLOCKERS.md` covers **data integrity, API resilience, and business logic** findings that also have security implications:
+
+- **Phase 1 (Critical):** Transactions on subscription lifecycle (D1), atomic race condition fixes on coupon redemption / escalation claims / OTP verification (D2-D4), Stripe idempotency keys (E1), SMS retry (E3), env validation (S2)
+- **Phase 2 (High):** FK constraints (D5-D6), webhook dedup (E4, E7), scheduled message atomic claims (E8), missing Stripe webhook handlers (E9), webhook secret fail-fast (S3)
+- **Phase 3 (Medium):** Coupon count reconciliation (D8), email retry (E12), carrier filtering prevention (E10), Stripe cancellation on client delete (B3), pagination safety limits (S4)
+- **Phase 4 (Low):** Audit trail for hard deletes (D13), global OTP rate limit (E15), coupon soft-delete protection (B8)
+
+Together, these two audits form a comprehensive hardening program. All 45 system blocker items are resolved.
+
+---
+
 ## Permission Mapping Reference
 
 | Permission Constant | Routes Protected | Count |

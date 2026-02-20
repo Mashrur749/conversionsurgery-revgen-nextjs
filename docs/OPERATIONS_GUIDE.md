@@ -72,11 +72,11 @@ All cron jobs are orchestrated by the master cron at `/api/cron` (POST), trigger
 | **Every 5 min** | Process scheduled messages, check missed calls |
 | **Every 30 min** | Auto review response, calendar sync |
 | **Hourly** | Usage tracking, SLA breach check, review sync, expire prompts, NPS surveys, agent health |
-| **Daily midnight** | Lead scoring, analytics aggregation, trial reminders, no-show recovery, Stripe reconciliation |
+| **Daily midnight** | Lead scoring, analytics aggregation, trial reminders, no-show recovery, Stripe reconciliation, coupon reconciliation |
 | **Daily 7am** | Daily summary emails |
 | **Daily 10am** | Win-back re-engagement |
 | **Weekly Mon 7am** | Weekly summary, agency digest |
-| **Monthly 1st** | Cohort retention analysis |
+| **Monthly 1st** | Cohort retention analysis, monthly message counter reset |
 
 ### Manually Triggering Cron Jobs
 
@@ -125,6 +125,12 @@ curl $BASE/api/cron/agency-digest -H "Authorization: Bearer $CRON_SECRET"
 
 # Stripe reconciliation (daily midnight)
 curl $BASE/api/cron/stripe-reconciliation -H "Authorization: Bearer $CRON_SECRET"
+
+# Coupon redemption count reconciliation (daily midnight)
+curl $BASE/api/cron/coupon-reconciliation -H "Authorization: Bearer $CRON_SECRET"
+
+# Monthly message counter reset (1st of month)
+curl $BASE/api/cron/monthly-reset -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ### Verifying Cron Health
