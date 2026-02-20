@@ -10,8 +10,8 @@ const createTestSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   testType: z.enum(['messaging', 'timing', 'team', 'sequence']),
-  variantA: z.record(z.string(), z.any()),
-  variantB: z.record(z.string(), z.any()),
+  variantA: z.record(z.string(), z.unknown()),
+  variantB: z.record(z.string(), z.unknown()),
 });
 
 /**
@@ -102,8 +102,8 @@ export async function POST(req: Request) {
         name,
         description,
         testType,
-        variantA: variantA as any,
-        variantB: variantB as any,
+        variantA,
+        variantB,
         status: 'active',
       })
       .returning();

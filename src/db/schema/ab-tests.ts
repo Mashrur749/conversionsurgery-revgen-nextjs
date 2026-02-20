@@ -26,8 +26,8 @@ export const abTests = pgTable(
     description: text('description'),
     testType: varchar('test_type', { length: 50 }).notNull(), // 'messaging', 'timing', 'team', 'sequence'
     status: varchar('status', { length: 20 }).default('active'), // active, paused, completed, archived
-    variantA: jsonb('variant_a').notNull(), // Configuration for variant A
-    variantB: jsonb('variant_b').notNull(), // Configuration for variant B
+    variantA: jsonb('variant_a').$type<Record<string, unknown>>().notNull(),
+    variantB: jsonb('variant_b').$type<Record<string, unknown>>().notNull(),
     winner: varchar('winner', { length: 1 }), // 'A' or 'B' - declared after test ends
     startDate: timestamp('start_date').defaultNow(),
     endDate: timestamp('end_date'),

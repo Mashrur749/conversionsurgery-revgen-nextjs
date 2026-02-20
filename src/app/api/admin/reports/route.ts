@@ -92,8 +92,8 @@ export async function POST(req: Request) {
       .where(
         and(
           eq(dailyStats.clientId, clientId),
-          gte(dailyStats.date, startDate as any),
-          lte(dailyStats.date, endDate as any)
+          gte(dailyStats.date, startDate),
+          lte(dailyStats.date, endDate)
         )
       );
 
@@ -131,11 +131,11 @@ export async function POST(req: Request) {
         0
       ),
       reviewsRequested: periodStats.reduce(
-        (sum, s) => sum + ((s as any).reviewsRequested || 0),
+        (sum, s) => sum + (s.reviewsRequested || 0),
         0
       ),
       paymentsReminded: periodStats.reduce(
-        (sum, s) => sum + ((s as any).paymentsReminded || 0),
+        (sum, s) => sum + (s.paymentsReminded || 0),
         0
       ),
       missedCallsCaptured: periodStats.reduce(
@@ -191,13 +191,13 @@ export async function POST(req: Request) {
         clientId,
         title: reportTitle,
         reportType,
-        startDate: startDate as any,
-        endDate: endDate as any,
-        metrics: aggregatedMetrics as any,
-        performanceData: periodStats as any,
-        testResults: activeTests.length > 0 ? (activeTests as any) : null,
-        teamPerformance: teamPerformance as any,
-        roiSummary: roiSummary as any,
+        startDate,
+        endDate,
+        metrics: aggregatedMetrics as Record<string, unknown>,
+        performanceData: periodStats as unknown as Record<string, unknown>[],
+        testResults: activeTests.length > 0 ? (activeTests as unknown as Record<string, unknown>[]) : null,
+        teamPerformance: teamPerformance as Record<string, unknown>,
+        roiSummary: roiSummary as Record<string, unknown>,
       })
       .returning();
 

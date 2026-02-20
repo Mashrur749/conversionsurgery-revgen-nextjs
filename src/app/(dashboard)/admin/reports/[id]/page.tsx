@@ -83,11 +83,11 @@ export default async function ReportDetailPage({ params }: Props) {
     .where(eq(clients.id, report.clientId))
     .limit(1);
 
-  const metrics = (report.metrics as ReportMetrics) || {};
-  const roiSummary = (report.roiSummary as ReportRoiSummary) || {};
-  const teamPerformance = (report.teamPerformance as ReportTeamPerformance) || {};
-  const performanceData = (report.performanceData as ReportDailyStats[]) || [];
-  const testResults = (report.testResults as ReportTestResult[]) || [];
+  const metrics = (report.metrics as unknown as ReportMetrics) || {};
+  const roiSummary = (report.roiSummary as unknown as ReportRoiSummary) || {};
+  const teamPerformance = (report.teamPerformance as unknown as ReportTeamPerformance) || {};
+  const performanceData = (report.performanceData as unknown as ReportDailyStats[]) || [];
+  const testResults = (report.testResults as unknown as ReportTestResult[]) || [];
 
   return (
     <div className="space-y-8">

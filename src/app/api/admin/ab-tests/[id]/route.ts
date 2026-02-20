@@ -1,6 +1,6 @@
 import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
-import { abTests } from '@/db/schema';
+import { abTests, type NewABTest } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
@@ -87,7 +87,7 @@ export async function PATCH(
     }
 
     // Update test
-    const updates: any = { updatedAt: new Date() };
+    const updates: Partial<NewABTest> = { updatedAt: new Date() };
     if (status) updates.status = status;
     if (winner) updates.winner = winner;
     if (endDate) updates.endDate = new Date(endDate);

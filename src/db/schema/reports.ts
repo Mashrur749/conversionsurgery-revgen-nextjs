@@ -27,19 +27,19 @@ export const reports = pgTable(
     endDate: date('end_date').notNull(),
 
     // Aggregated metrics
-    metrics: jsonb('metrics').notNull(), // Summary stats for the period
+    metrics: jsonb('metrics').$type<Record<string, unknown>>().notNull(),
 
     // Performance data
-    performanceData: jsonb('performance_data'), // Daily breakdown
+    performanceData: jsonb('performance_data').$type<Record<string, unknown>[]>(),
 
     // A/B test results if any
-    testResults: jsonb('test_results'), // Running tests during period
+    testResults: jsonb('test_results').$type<Record<string, unknown>[]>(),
 
     // Team performance
-    teamPerformance: jsonb('team_performance'), // By team member
+    teamPerformance: jsonb('team_performance').$type<Record<string, unknown>>(),
 
     // ROI summary
-    roiSummary: jsonb('roi_summary'), // Key ROI metrics
+    roiSummary: jsonb('roi_summary').$type<Record<string, unknown>>(),
 
     // Report content
     notes: text('notes'), // Notes about the period

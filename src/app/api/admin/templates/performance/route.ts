@@ -4,6 +4,23 @@ import { templateVariants, templatePerformanceMetrics } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
+interface VariantSummary {
+  id: string;
+  name: string;
+  templateType: string;
+  content: string;
+  isActive: boolean | null;
+  notes: string | null;
+  clientsUsing: number;
+  metrics: {
+    executionsLast30Days: number | null;
+    deliveryRate: number;
+    engagementRate: number;
+    conversionRate: number;
+    responseTime: number | null;
+  } | null;
+}
+
 /**
  * GET /api/admin/templates/performance
  * Retrieves aggregate performance metrics for all template variants
@@ -57,7 +74,7 @@ export async function GET(req: Request) {
     const results = await query;
 
     // Group by variant and get most recent metrics per variant
-    const variantMap = new Map<string, any>();
+    const variantMap = new Map<string, VariantSummary>();
     results.forEach((row) => {
       const variantId = row.variant.id;
       if (!variantMap.has(variantId)) {
@@ -85,7 +102,7 @@ export async function GET(req: Request) {
     const templateVariantsList = Array.from(variantMap.values());
 
     // Calculate comparisons within template types
-    const grouped: Record<string, any[]> = {};
+    const grouped: Record<string, VariantSummary[]> = {};
     templateVariantsList.forEach((variant) => {
       if (!grouped[variant.templateType]) {
         grouped[variant.templateType] = [];
