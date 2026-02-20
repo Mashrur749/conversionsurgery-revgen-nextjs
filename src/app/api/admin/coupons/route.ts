@@ -33,7 +33,7 @@ export async function GET() {
   }
 
   const db = getDb();
-  const results = await db.select().from(coupons).orderBy(desc(coupons.createdAt));
+  const results = await db.select().from(coupons).orderBy(desc(coupons.createdAt)).limit(200);
   return NextResponse.json({ coupons: results });
 }
 

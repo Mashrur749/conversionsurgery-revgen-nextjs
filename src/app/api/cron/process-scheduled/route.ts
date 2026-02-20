@@ -151,6 +151,11 @@ export async function GET(request: NextRequest) {
         await updateDailyStats(db, client.id, message.sequenceType);
 
         sent++;
+
+        // Throttle: 100ms between messages to avoid carrier filtering (E10)
+        if (sent < dueMessages.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       } catch (error) {
         console.error('[CronScheduling] Failed to send scheduled message:', message.id, error);
         // Unclaim: mark back as unsent so it can be retried on next cron run

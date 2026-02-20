@@ -166,6 +166,15 @@ export async function confirmCancellation(
   const gracePeriodEnds = new Date();
   gracePeriodEnds.setDate(gracePeriodEnds.getDate() + gracePeriodDays);
 
+  // Get the cancellation request to find the clientId
+  const [request] = await db
+    .select()
+    .from(cancellationRequests)
+    .where(eq(cancellationRequests.id, requestId))
+    .limit(1);
+
+  if (!request) throw new Error('Cancellation request not found');
+
   await db
     .update(cancellationRequests)
     .set({
@@ -174,6 +183,25 @@ export async function confirmCancellation(
       processedAt: new Date(),
     })
     .where(eq(cancellationRequests.id, requestId));
+
+  // B5: Cancel Stripe subscription at end of billing period
+  const [activeSub] = await db
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .where(and(
+      eq(subscriptions.clientId, request.clientId),
+      inArray(subscriptions.status, ['active', 'trialing'])
+    ))
+    .limit(1);
+
+  if (activeSub) {
+    const { cancelSubscription } = await import('@/lib/services/subscription');
+    await cancelSubscription(
+      activeSub.id,
+      request.reason || 'Client initiated cancellation',
+      false // cancel at period end, not immediately
+    );
+  }
 }
 
 /**

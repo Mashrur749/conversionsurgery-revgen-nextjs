@@ -31,21 +31,29 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const clientId = searchParams.get('clientId');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '50')), 100);
+    const offset = (page - 1) * limit;
 
     const db = getDb();
 
     let query = db.select().from(abTests);
 
     if (clientId) {
-      query = query.where(eq(abTests.clientId, clientId)) as any;
+      query = query.where(eq(abTests.clientId, clientId)) as typeof query;
     }
 
-    const tests = await (query as any).orderBy(abTests.startDate);
+    const tests = await (query as typeof query)
+      .orderBy(abTests.startDate)
+      .limit(limit)
+      .offset(offset);
 
     return Response.json({
       success: true,
       tests,
       count: tests.length,
+      page,
+      limit,
     });
   } catch (error) {
     console.error('[ABTesting] GET /api/admin/ab-tests error:', error);

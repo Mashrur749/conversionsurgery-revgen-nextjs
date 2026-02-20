@@ -16,7 +16,7 @@ export async function GET() {
   }
 
   const db = getDb();
-  const templates = await db.select().from(emailTemplates).orderBy(emailTemplates.name);
+  const templates = await db.select().from(emailTemplates).orderBy(emailTemplates.name).limit(200);
   return NextResponse.json(templates);
 }
 

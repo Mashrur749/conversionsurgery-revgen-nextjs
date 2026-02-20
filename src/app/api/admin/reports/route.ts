@@ -29,21 +29,29 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const clientId = searchParams.get('clientId');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '50')), 100);
+    const offset = (page - 1) * limit;
 
     const db = getDb();
 
     let query = db.select().from(reports);
 
     if (clientId) {
-      query = query.where(eq(reports.clientId, clientId)) as any;
+      query = query.where(eq(reports.clientId, clientId)) as typeof query;
     }
 
-    const allReports = await (query as any).orderBy(reports.createdAt);
+    const allReports = await (query as typeof query)
+      .orderBy(reports.createdAt)
+      .limit(limit)
+      .offset(offset);
 
     return Response.json({
       success: true,
       reports: allReports,
       count: allReports.length,
+      page,
+      limit,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch reports';

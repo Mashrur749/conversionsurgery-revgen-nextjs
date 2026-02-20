@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
   if (lead) {
     await db
       .update(leads)
-      .set({ actionRequired: false, actionRequiredReason: null })
+      .set({ actionRequired: false, actionRequiredReason: null, updatedAt: new Date() })
       .where(eq(leads.id, lead.id));
   }
 

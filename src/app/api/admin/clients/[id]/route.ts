@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb } from '@/db';
-import { clients } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { clients, subscriptions, scheduledMessages } from '@/db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { z } from 'zod';
 import { sendOnboardingNotification } from '@/lib/services/agency-communication';
+import { cancelSubscription } from '@/lib/services/subscription';
 
 export async function GET(
   request: NextRequest,
@@ -163,6 +164,7 @@ export async function DELETE(
   }
 
   const db = getDb();
+
   // Soft delete - set status to cancelled
   const [updated] = await db
     .update(clients)
@@ -176,6 +178,37 @@ export async function DELETE(
   if (!updated) {
     return NextResponse.json({ error: 'Client not found' }, { status: 404 });
   }
+
+  // B3: Cancel active Stripe subscriptions
+  const activeSubs = await db
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .where(and(
+      eq(subscriptions.clientId, id),
+      inArray(subscriptions.status, ['active', 'trialing', 'past_due'])
+    ));
+
+  for (const sub of activeSubs) {
+    try {
+      await cancelSubscription(sub.id, 'Client account cancelled', true);
+    } catch (err) {
+      console.error(`[Admin] Failed to cancel subscription ${sub.id} for deleted client ${id}:`, err);
+    }
+  }
+
+  // Cancel pending scheduled messages
+  await db
+    .update(scheduledMessages)
+    .set({
+      cancelled: true,
+      cancelledAt: new Date(),
+      cancelledReason: 'Client account cancelled',
+    })
+    .where(and(
+      eq(scheduledMessages.clientId, id),
+      eq(scheduledMessages.sent, false),
+      eq(scheduledMessages.cancelled, false)
+    ));
 
   return NextResponse.json({ success: true });
 }
