@@ -3,6 +3,13 @@
 Last updated: 2026-02-21
 Scope: Managed service launch now + SaaS-readiness foundation (next ~6 months)
 
+## Status Tags
+- `P1: DONE`
+- `P2: DONE`
+- `P3: DONE`
+- `REMAINING: []`
+- `LAST_VERIFIED_COMMIT: 2f4253c`
+
 ## Executive Status
 
 | Area | Status | Notes |

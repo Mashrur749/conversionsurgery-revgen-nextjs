@@ -3,6 +3,13 @@
 Last updated: 2026-02-21
 Scope: Open items after security + access hardening wave
 
+## Status Tags
+- `P1: DONE`
+- `P2: DONE`
+- `P3: DONE`
+- `REMAINING: []`
+- `LAST_VERIFIED_COMMIT: 2f4253c`
+
 ## P1 (Must complete before scale-up)
 1. None.
 

@@ -2,6 +2,40 @@
 
 Last updated: 2026-02-21
 Audience: Engineering + Operations
+Purpose: run a manual + automated release check without getting blocked mid-flow.
+
+## 0. Preflight (Run First)
+
+### Required environment variables
+Minimum required to execute this guide locally:
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `NEXTAUTH_URL` (or `AUTH_URL` if your auth config expects it)
+- `CRON_SECRET`
+
+Optional but recommended for full managed-service simulation:
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+- `OPENAI_API_KEY`
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+- `RESEND_API_KEY`
+
+### One-time setup / refresh
+```bash
+npm install
+npm run db:setup
+npx tsx src/scripts/seed-role-templates.ts
+```
+
+Why this matters:
+- Public signup and team flows require built-in role templates (`business_owner`, `team_member`).
+- If role templates are missing, onboarding and team creation fail with 500s.
+
+### Launch app
+```bash
+npm run dev
+```
+
+Keep this terminal open. Use another terminal for commands below.
 
 ## 1. Fast Validation (Required)
 
@@ -10,85 +44,161 @@ npm test
 npm run build
 ```
 
-Current baseline:
-- Unit tests: 49 passing
-- Build: must pass before merge/release
+Expected:
+- Unit tests: 49 passing.
+- Build passes.
+- Known non-blocking warning today: Next.js middleware deprecation warning (`middleware` -> `proxy`).
 
-## 2. Core Regression Areas
+Stop and fix before continuing if either command fails.
 
-### Access + Tenant Isolation
-1. Agency assigned-scope user can only see assigned clients.
-2. Unassigned client access attempts are rejected by API.
-3. Portal page permission guard redirects unauthorized users.
+## 2. Sequential Manual Test Run
 
-### Team Management
-1. Adding/reactivating team member respects plan team-member limit.
-2. Non-owner role assignment cannot escalate permissions.
+Run in order. Do not skip prerequisites.
 
-### Onboarding
-1. Admin create-client creates owner identity + client membership.
-2. Wizard blocks progression on team step API failures.
-3. Review step business edits persist via API.
+### Step 1: Create/select a test client
+1. Open `/signup` and create a fresh test client (unique email).
+2. Confirm response includes `clientId`.
+3. Open `/signup/next-steps?clientId=<id>&email=<email>`.
+4. Click `Load Setup Status`.
 
-### Messaging/Escalation
-1. Escalation fallback notifies owner when no team escalation recipients.
-2. Agency communication actions only mark executed after successful execution.
+Expected:
+- Checklist loads with `Workspace created: Done`.
+- No `Client not found` / `Owner role template is missing` errors.
 
-### Cron Security
-1. `/api/cron` returns 401 without bearer secret.
-2. `/api/cron` succeeds with `Authorization: Bearer $CRON_SECRET`.
+If blocked:
+- `Owner role template is missing`: run `npx tsx src/scripts/seed-role-templates.ts`.
+- `Client not found`: verify exact `clientId` + `email` pair from signup response.
 
-### 30-Day Guarantee Workflow
-1. New subscriptions initialize `guaranteeStartAt`, `guaranteeEndsAt`, and `guaranteeStatus=pending`.
-2. `GET /api/cron/guarantee-check` marks `fulfilled` when a recovered lead is found in-window.
-3. `GET /api/cron/guarantee-check` marks `refund_review_required` once window expires without fulfillment.
-4. Billing events are created for status transitions (`guarantee_fulfilled`, `guarantee_refund_review_required`).
+### Step 2: Access + tenant isolation checks
+Use two agency users if available: one full scope, one assigned scope.
 
-### Overage + Reporting + Queue Replay
-1. `GET /api/cron/monthly-reset` creates overage invoice items and logs `overage_invoiced` events.
-2. `GET /api/cron/biweekly-reports` is idempotent by period and generates report records.
-3. `GET /api/cron/process-queued-compliance` replays non-lead quiet-hours queue items.
+1. With assigned-scope user, access only assigned client data in:
+- `/admin/clients`
+- `/leads`
+- `/api/leads?clientId=<unassigned-client-id>`
 
-### Appointment Reminder Parity
-1. Verify `buildAppointmentReminderPlan()` schedules homeowner + contractor reminders in unit tests.
-2. Verify scheduled contractor reminders deliver from cron path (`appointment_reminder_contractor` sequence type).
+Expected:
+- Assigned client access works.
+- Unassigned API access returns `403`.
+- Unauthorized portal pages redirect/deny by permission guard.
 
-## 3. Manual Smoke Run (Pre-Release)
-1. Create or select a test client.
-2. Send inbound lead message path and verify response/logs.
-3. Trigger escalation path and validate assignment/fallback.
-4. Validate one cron run and inspect returned job results.
-5. Validate client portal page permissions across at least 2 roles.
+### Step 3: Team management checks
+1. In admin/client team UI, add team members up to plan limit.
+2. Attempt to add one over the limit.
+3. Deactivate and reactivate a member.
 
-## 4. Useful Commands
+Expected:
+- Add/restore works up to limit.
+- Over-limit attempt fails with clear limit error.
+- Non-owner cannot escalate to owner-equivalent access.
 
+If blocked:
+- `Default team member role not configured`: rerun role seed script.
+
+### Step 4: Onboarding persistence checks
+1. Use onboarding wizard (`/admin/clients/new/wizard` or current onboarding flow in your environment).
+2. Trigger a failure at team step (invalid payload/network interruption).
+3. Return to review step and edit business fields.
+
+Expected:
+- Team step blocks progression on API failure.
+- Review step edits persist after save/reload.
+
+### Step 5: Messaging + escalation fallback
+1. Create a manual lead from authenticated context (`/api/leads` via app flow or UI).
+2. Trigger escalation path (conversation needing human escalation).
+3. Ensure no eligible escalation recipients besides owner.
+
+Expected:
+- Escalation created.
+- Owner fallback recipient is notified when no normal recipients qualify.
+- Agency communication actions are marked executed only after successful execution.
+
+### Step 6: Cron security
 ```bash
-# Run all tests
-npm test
-
-# Build for production
-npm run build
-
-# Run one file
-npx vitest run src/lib/permissions/resolve.test.ts
-
-# Cron auth sanity check
 curl -i -X POST http://localhost:3000/api/cron
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
+```
 
-# Guarantee evaluator
+Expected:
+- First call: `401 Unauthorized`.
+- Second call: `200` with cron job result payload.
+
+If blocked:
+- If both fail, verify `CRON_SECRET` matches app env exactly.
+
+### Step 7: 30-day guarantee workflow
+```bash
 curl -i http://localhost:3000/api/cron/guarantee-check -H "Authorization: Bearer $CRON_SECRET"
+```
 
-# Bi-weekly reports
+Expected:
+- Endpoint responds with success payload.
+- Eligible subscriptions transition to `fulfilled` or `refund_review_required`.
+- Billing events logged for transition states.
+
+### Step 8: Overage + reporting + queue replay
+```bash
+curl -i http://localhost:3000/api/cron/monthly-reset -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
-
-# Non-lead queue replay
 curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-## 5. Release Gate
+Expected:
+- Monthly reset is idempotent by period and includes overage processing result.
+- Bi-weekly report run is idempotent by period.
+- Queued compliance replay processes non-lead queued items without duplicates.
+
+Note:
+- `monthly-reset` only executes full reset on day 1 (defensive guard).
+
+### Step 9: Appointment reminder parity
+Verification path A (required):
+```bash
+npx vitest run src/lib/automations/appointment-reminder.test.ts
+```
+
+Expected:
+- Confirms homeowner + contractor reminder scheduling.
+
+Verification path B (recommended manual):
+1. Schedule appointment for a test lead.
+2. Run scheduled cron:
+```bash
+curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bearer $CRON_SECRET"
+```
+3. Confirm contractor reminder path (`appointment_reminder_contractor`) is delivered to client owner phone.
+
+### Step 10: Final smoke
+1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
+2. Validate client portal permissions with at least two distinct roles.
+3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
+
+## 3. Useful Commands
+
+```bash
+# Automated baseline
+npm test
+npm run build
+
+# Focused tests
+npx vitest run src/lib/permissions/resolve.test.ts
+npx vitest run src/lib/automations/appointment-reminder.test.ts
+
+# Cron endpoints
+curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/guarantee-check -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/monthly-reset -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bearer $CRON_SECRET"
+```
+
+## 4. Release Gate
+
 Release only if all pass:
 1. `npm test`
 2. `npm run build`
-3. Manual smoke run complete
+3. Sequential manual run (Section 2) completed without blockers
 4. No open P1 items in `docs/REMAINING-GAPS.md`
+5. No unresolved auth/compliance regressions from cron checks
