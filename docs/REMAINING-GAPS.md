@@ -59,10 +59,12 @@ This document catalogs all known gaps after completing the security audit harden
 
 ### Low Priority
 
-#### 6. Feature stubs (monitoring)
+#### 6. ~~Review monitoring stubs (Yelp, Facebook, etc.)~~ — By Design
 - **Category:** Product
-- **Description:** Review monitoring features (Yelp, Facebook) and agency communication are partially stubbed. The UI exists but some integrations are incomplete.
-- **Recommendation:** These are roadmap items, not bugs. Complete when prioritized by product.
+- **Status:** Intentional scope decision — not a gap.
+- **What exists:** Google review monitoring is fully operational (OAuth, sync, AI response generation, auto-posting, negative review SMS alerts, cron jobs, admin UI). The database schema includes enum values and ID columns for Yelp, Facebook, BBB, Angi, and HomeAdvisor, but no service code exists for those platforms.
+- **Why Google-only is correct:** Google is the only platform with official APIs that support the full pipeline (fetch reviews + post responses). Yelp&apos;s API is read-only (no response posting). Facebook Graph API requires onerous app review and Meta frequently changes their review endpoints. BBB/Angi/HomeAdvisor have no public review APIs. Building these integrations would require scraping (fragile, TOS-violating) or manual-only workflows with limited value.
+- **If needed later:** The schema is ready. Add a platform-specific sync service (e.g. `yelp-reviews.ts`) following the `google-places.ts` pattern, wire it into `syncAllReviews()`, and set expectations for read-only monitoring with manual response workflow.
 
 #### 7. Cloudflare WAF rate limiting
 - **Category:** Infrastructure
