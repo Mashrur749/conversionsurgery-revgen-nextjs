@@ -12,9 +12,9 @@ Goal: become fully confident operating ConversionSurgery end-to-end for managed 
 ## Phase 1: System Foundation (Day 1)
 Objective: understand architecture, auth boundaries, and mission-critical automations.
 
-1. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/LAUNCH-READINESS.md`.
-2. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/ACCESS-MANAGEMENT.md`.
-3. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/USE_CASES.md`.
+1. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`.
+2. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/03-ACCESS-MANAGEMENT.md`.
+3. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/05-USE-CASES.md`.
 4. Run baseline validation:
 ```bash
 npm test
@@ -28,7 +28,7 @@ Exit gate:
 ## Phase 2: Controlled Walkthrough (Day 1-2)
 Objective: run the full test path manually without getting blocked.
 
-1. Execute `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/TESTING_GUIDE.md` Section `0` -> `4` in order.
+1. Execute `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md` Section `0` -> `4` in order.
 2. Create at least one fresh test client via `/signup`.
 3. Complete guided setup checks via `/signup/next-steps`.
 4. Validate cron auth and sub-jobs with real `CRON_SECRET`.
@@ -40,7 +40,7 @@ Exit gate:
 ## Phase 3: Daily Service Operations (Week 1)
 Objective: run live managed-service operations reliably.
 
-1. Execute `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/OPERATIONS_GUIDE.md` daily checklist.
+1. Execute `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md` daily checklist.
 2. Review escalation queue and SLA breaches every day.
 3. Review pending onboarding clients and remove blockers.
 4. Review guarantee refund-review queue and billing events.
@@ -127,8 +127,8 @@ Exit gate:
 7. Bi-weekly reports generated and delivered.
 
 ## Core References
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/TESTING_GUIDE.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/OPERATIONS_GUIDE.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/ACCESS-MANAGEMENT.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/USE_CASES.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/LAUNCH-READINESS.md`
+- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`
+- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md`
+- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/03-ACCESS-MANAGEMENT.md`
+- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/05-USE-CASES.md`
+- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`

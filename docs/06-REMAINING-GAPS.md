@@ -39,4 +39,4 @@ Scope: Open items after security + access hardening wave
 - Self-serve onboarding checklist and managed setup request path.
 
 ## Tracking Rule
-Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `SYSTEM-BLOCKERS.md` archive form.
+Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `99-ARCHIVE-SYSTEM-BLOCKERS.md` archive form.

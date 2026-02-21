@@ -200,5 +200,5 @@ Release only if all pass:
 1. `npm test`
 2. `npm run build`
 3. Sequential manual run (Section 2) completed without blockers
-4. No open P1 items in `docs/REMAINING-GAPS.md`
+4. No open P1 items in `docs/06-REMAINING-GAPS.md`
 5. No unresolved auth/compliance regressions from cron checks
