@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getDb, clients } from '@/db';
-import { eq } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { ClientSelector } from '@/components/admin/client-selector';
 import { AdminNav } from '@/components/admin/admin-nav';
 import { SwitchingOverlay } from '@/components/admin/switching-overlay';
@@ -11,6 +11,7 @@ import { MobileNav } from '@/components/mobile-nav';
 import { DashboardNavLinks } from '@/components/dashboard-nav-links';
 import SignOutButton from './signout-button';
 import { HelpButton } from '@/components/ui/help-button';
+import { getAgencySession } from '@/lib/permissions';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview' },
@@ -78,16 +79,31 @@ export default async function DashboardLayout({
 
   let allClients: { id: string; businessName: string; ownerName: string }[] = [];
   if (isAgency) {
+    const agencySession = await getAgencySession();
+    if (!agencySession) {
+      redirect('/login');
+    }
+
     const db = getDb();
-    allClients = await db
+    const baseQuery = db
       .select({
         id: clients.id,
         businessName: clients.businessName,
         ownerName: clients.ownerName,
       })
       .from(clients)
-      .where(eq(clients.status, 'active'))
       .orderBy(clients.businessName);
+
+    if (agencySession.clientScope === 'assigned') {
+      const assignedIds = agencySession.assignedClientIds ?? [];
+      allClients = assignedIds.length
+        ? await baseQuery.where(
+            and(eq(clients.status, 'active'), inArray(clients.id, assignedIds))
+          )
+        : [];
+    } else {
+      allClients = await baseQuery.where(eq(clients.status, 'active'));
+    }
   }
 
   return (

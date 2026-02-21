@@ -34,17 +34,70 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
     // Get active team members who receive escalations, ordered by priority
     const members = await getEscalationMembers(clientId);
 
-    if (members.length === 0) {
-      console.log('[Team Escalation] No team members configured for escalations');
-      return { notified: 0 };
-    }
-
     // Get lead info
     const [lead] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
 
     if (!lead) {
       console.log('[Team Escalation] Lead not found:', leadId);
       return { notified: 0, error: 'Lead not found' };
+    }
+
+    if (members.length === 0) {
+      // Fallback path: notify business owner directly when no escalation team is configured.
+      const [client] = await db
+        .select({
+          businessName: clients.businessName,
+          ownerName: clients.ownerName,
+          ownerPhone: clients.phone,
+          ownerEmail: clients.email,
+        })
+        .from(clients)
+        .where(eq(clients.id, clientId))
+        .limit(1);
+
+      if (!client) {
+        console.log('[Team Escalation] Client not found for fallback:', clientId);
+        return { notified: 0, error: 'Client not found' };
+      }
+
+      const leadDisplay = lead.name || formatPhoneNumber(lead.phone);
+      const truncatedMessage =
+        lastMessage.length > 80 ? `${lastMessage.substring(0, 80)}...` : lastMessage;
+      const smsBody = `🔥 ${leadDisplay} needs help!\n\n"${truncatedMessage}"\n\nReason: ${reason}\n\nOpen dashboard to respond.`;
+
+      let notified = 0;
+
+      if (client.ownerPhone) {
+        try {
+          await sendSMS(client.ownerPhone, smsBody, twilioNumber);
+          notified++;
+        } catch (error) {
+          console.error('[Team Escalation] Owner fallback SMS failed:', error);
+        }
+      }
+
+      if (client.ownerEmail) {
+        try {
+          const emailData = actionRequiredEmail({
+            businessName: client.businessName,
+            leadName: lead.name || undefined,
+            leadPhone: formatPhoneNumber(lead.phone),
+            reason,
+            lastMessage,
+            dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/leads/${lead.id}`,
+          });
+          await sendEmail({ to: client.ownerEmail, ...emailData });
+          notified++;
+        } catch (error) {
+          console.error('[Team Escalation] Owner fallback email failed:', error);
+        }
+      }
+
+      console.log('[Team Escalation] No team members configured, used owner fallback', {
+        clientId,
+        notified,
+      });
+      return { notified };
     }
 
     // Create claim token and escalation record

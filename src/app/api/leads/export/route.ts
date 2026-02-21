@@ -3,6 +3,8 @@ import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { eq, and, or, ilike, gte, lte } from 'drizzle-orm';
+import { canAccessClient, getAgencySession } from '@/lib/permissions';
+import { getClientId } from '@/lib/get-client-id';
 
 function escapeCsv(value: string | null | undefined): string {
   if (value == null) return '';
@@ -40,7 +42,26 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const effectiveClientId = isAgency ? (clientId || null) : sessionClientId;
+  let effectiveClientId = isAgency ? clientId || null : sessionClientId;
+
+  if (isAgency) {
+    const agencySession = await getAgencySession();
+    if (!agencySession) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!effectiveClientId) {
+      effectiveClientId = await getClientId();
+    }
+
+    if (effectiveClientId && !canAccessClient(agencySession, effectiveClientId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    if (!effectiveClientId && agencySession.clientScope === 'assigned') {
+      return NextResponse.json({ error: 'Select a client to export leads' }, { status: 400 });
+    }
+  }
 
   const db = getDb();
   const conditions = [];

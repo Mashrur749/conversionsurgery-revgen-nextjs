@@ -4,10 +4,13 @@ import { getDb } from '@/db';
 import { knowledgeBase } from '@/db/schema/knowledge-base';
 import { eq, and } from 'drizzle-orm';
 import { KnowledgeList } from './knowledge-list';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 export const dynamic = 'force-dynamic';
 
 export default async function KnowledgeBasePage() {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.KNOWLEDGE_VIEW);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 

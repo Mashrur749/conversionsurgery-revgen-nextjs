@@ -4,6 +4,8 @@ import { getDb } from '@/db';
 import { clientMemberships, people, escalationClaims, escalationQueue } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
+import { canAccessClient, getAgencySession } from '@/lib/permissions';
+import { getClientId } from '@/lib/get-client-id';
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -49,6 +51,18 @@ export async function PATCH(
 
     if (!membership) {
       return Response.json({ error: 'Team member not found' }, { status: 404 });
+    }
+
+    if (session.user?.isAgency) {
+      const agencySession = await getAgencySession();
+      if (!agencySession || !canAccessClient(agencySession, membership.clientId)) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    } else {
+      const ownClientId = await getClientId();
+      if (!ownClientId || ownClientId !== membership.clientId) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     // Update membership fields
@@ -131,13 +145,25 @@ export async function DELETE(
 
     // Get the membership
     const [membership] = await db
-      .select({ id: clientMemberships.id })
+      .select({ id: clientMemberships.id, clientId: clientMemberships.clientId })
       .from(clientMemberships)
       .where(eq(clientMemberships.id, id))
       .limit(1);
 
     if (!membership) {
       return Response.json({ error: 'Team member not found' }, { status: 404 });
+    }
+
+    if (session.user?.isAgency) {
+      const agencySession = await getAgencySession();
+      if (!agencySession || !canAccessClient(agencySession, membership.clientId)) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    } else {
+      const ownClientId = await getClientId();
+      if (!ownClientId || ownClientId !== membership.clientId) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     // Soft-delete: deactivate the membership

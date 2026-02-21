@@ -7,8 +7,11 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { getRevenueStats } from '@/lib/services/revenue';
 import { DollarSign } from 'lucide-react';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 export default async function ClientDashboardPage() {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.DASHBOARD);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 

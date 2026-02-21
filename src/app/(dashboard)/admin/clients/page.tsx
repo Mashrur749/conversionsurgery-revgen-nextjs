@@ -2,10 +2,11 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, inArray } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ClientsFilter } from './clients-filter';
+import { getAgencySession } from '@/lib/permissions';
 
 export default async function AdminClientsPage() {
   const session = await auth();
@@ -14,11 +15,23 @@ export default async function AdminClientsPage() {
     redirect('/dashboard');
   }
 
+  const agencySession = await getAgencySession();
+  if (!agencySession) {
+    redirect('/dashboard');
+  }
+
   const db = getDb();
-  const allClients = await db
+  const baseQuery = db
     .select()
     .from(clients)
     .orderBy(desc(clients.createdAt));
+
+  const allClients =
+    agencySession.clientScope === 'assigned'
+      ? (agencySession.assignedClientIds?.length
+          ? await baseQuery.where(inArray(clients.id, agencySession.assignedClientIds))
+          : [])
+      : await baseQuery;
 
   return (
     <div className="space-y-6">

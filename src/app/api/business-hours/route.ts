@@ -5,7 +5,12 @@ import { getDb } from '@/db';
 import { businessHours } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import {
+  requireAgencyClientPermission,
+  AGENCY_PERMISSIONS,
+  getAgencySession,
+  canAccessClient,
+} from '@/lib/permissions';
 import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(request: NextRequest) {
@@ -16,10 +21,23 @@ export async function GET(request: NextRequest) {
     }
 
     const url = new URL(request.url);
-    const clientId = url.searchParams.get('clientId') || await getClientId();
+    const requestedClientId = url.searchParams.get('clientId');
+    let clientId = requestedClientId || await getClientId();
 
     if (!clientId) {
       return Response.json({ error: 'No client' }, { status: 403 });
+    }
+
+    if (session.user?.isAgency) {
+      const agencySession = await getAgencySession();
+      if (!agencySession || !canAccessClient(agencySession, clientId)) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    } else {
+      const ownClientId = await getClientId();
+      if (!ownClientId || clientId !== ownClientId) {
+        return Response.json({ error: 'Forbidden' }, { status: 403 });
+      }
     }
 
     const db = getDb();
@@ -51,12 +69,6 @@ const businessHoursSchema = z.object({
 
 export async function PUT(req: Request) {
   try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
     const data = await req.json();
     const parsed = businessHoursSchema.safeParse(data);
 
@@ -68,6 +80,12 @@ export async function PUT(req: Request) {
     }
 
     const validated = parsed.data;
+
+    await requireAgencyClientPermission(
+      validated.clientId,
+      AGENCY_PERMISSIONS.CLIENTS_EDIT
+    );
+
     const db = getDb();
 
     // Wrap delete + insert in transaction to prevent partial state (D12)
@@ -90,6 +108,9 @@ export async function PUT(req: Request) {
 
     return Response.json({ success: true, hours: result });
   } catch (error) {
+    if (error instanceof Error && (error.message.includes('Unauthorized') || error.message.includes('Forbidden'))) {
+      return permissionErrorResponse(error);
+    }
     return safeErrorResponse('[BusinessHours] Update error', error, 'Failed to update business hours');
   }
 }

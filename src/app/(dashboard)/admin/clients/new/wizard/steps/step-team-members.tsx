@@ -46,10 +46,14 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
   }
 
   async function handleNext() {
+    setError('');
+
     // Save team members to database if we have any
     if (data.teamMembers.length > 0 && data.clientId) {
+      const failures: string[] = [];
+
       for (const member of data.teamMembers) {
-        await fetch('/api/team-members', {
+        const res = await fetch('/api/team-members', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -60,6 +64,16 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
             role: member.role || undefined,
           }),
         });
+
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          failures.push(`${member.name}: ${body.error || 'Failed to save team member'}`);
+        }
+      }
+
+      if (failures.length > 0) {
+        setError(failures.join(' | '));
+        return;
       }
     }
 

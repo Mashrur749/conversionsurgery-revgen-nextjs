@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
-import { clients } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { clients, people, clientMemberships, roleTemplates } from '@/db/schema';
+import { eq, desc, and, inArray } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { z } from 'zod';
 
 export const GET = adminRoute(
   { permission: AGENCY_PERMISSIONS.CLIENTS_VIEW },
-  async () => {
+  async ({ session }) => {
     const db = getDb();
-    const allClients = await db
+    const baseQuery = db
       .select()
       .from(clients)
       .orderBy(desc(clients.createdAt));
+
+    const allClients =
+      session.clientScope === 'assigned'
+        ? (session.assignedClientIds?.length
+            ? await baseQuery.where(inArray(clients.id, session.assignedClientIds))
+            : [])
+        : await baseQuery;
 
     return NextResponse.json({ clients: allClients });
   }
@@ -35,6 +42,8 @@ export const POST = adminRoute(
     const data = createClientSchema.parse(body);
 
     const db = getDb();
+    const normalizedPhone = normalizePhoneNumber(data.phone);
+
     // Check if email already exists
     const [existing] = await db
       .select()
@@ -49,18 +58,77 @@ export const POST = adminRoute(
       );
     }
 
-    const [client] = await db
-      .insert(clients)
-      .values({
-        businessName: data.businessName,
-        ownerName: data.ownerName,
-        email: data.email,
-        phone: normalizePhoneNumber(data.phone),
-        timezone: data.timezone,
-        googleBusinessUrl: data.googleBusinessUrl || null,
-        status: 'pending', // Not active until Twilio number assigned
-      })
-      .returning();
+    const [ownerTemplate] = await db
+      .select({ id: roleTemplates.id })
+      .from(roleTemplates)
+      .where(
+        and(
+          eq(roleTemplates.slug, 'business_owner'),
+          eq(roleTemplates.scope, 'client')
+        )
+      )
+      .limit(1);
+
+    if (!ownerTemplate) {
+      return NextResponse.json(
+        { error: 'Business owner role template is missing. Run role template seeds.' },
+        { status: 500 }
+      );
+    }
+
+    const client = await db.transaction(async (tx) => {
+      const [createdClient] = await tx
+        .insert(clients)
+        .values({
+          businessName: data.businessName,
+          ownerName: data.ownerName,
+          email: data.email,
+          phone: normalizedPhone,
+          timezone: data.timezone,
+          googleBusinessUrl: data.googleBusinessUrl || null,
+          status: 'pending', // Not active until Twilio number assigned
+        })
+        .returning();
+
+      let [person] = await tx
+        .select()
+        .from(people)
+        .where(eq(people.email, data.email))
+        .limit(1);
+
+      if (!person) {
+        [person] = await tx
+          .insert(people)
+          .values({
+            name: data.ownerName,
+            email: data.email,
+            phone: normalizedPhone,
+          })
+          .returning();
+      } else {
+        await tx
+          .update(people)
+          .set({
+            name: data.ownerName,
+            phone: person.phone || normalizedPhone,
+            updatedAt: new Date(),
+          })
+          .where(eq(people.id, person.id));
+      }
+
+      await tx
+        .insert(clientMemberships)
+        .values({
+          personId: person.id,
+          clientId: createdClient.id,
+          roleTemplateId: ownerTemplate.id,
+          isOwner: true,
+          receiveEscalations: true,
+          receiveHotTransfers: true,
+        });
+
+      return createdClient;
+    });
 
     return NextResponse.json({ client });
   }

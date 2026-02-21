@@ -364,21 +364,42 @@ export async function handleAgencyInboundSMS(payload: {
 
   // Handle YES/Y
   if (normalizedReply === 'YES' || normalizedReply === 'Y') {
-    await db
-      .update(agencyMessages)
-      .set({ actionStatus: 'executed', clientReply: body })
-      .where(eq(agencyMessages.id, pendingPrompt.id));
+    try {
+      // Execute first, then mark executed only on success.
+      await executePromptAction(
+        pendingPrompt.promptType!,
+        pendingPrompt.actionPayload as Record<string, unknown>,
+        client.id
+      );
 
-    // Execute the action
-    await executePromptAction(pendingPrompt.promptType!, pendingPrompt.actionPayload as Record<string, unknown>, client.id);
+      await db
+        .update(agencyMessages)
+        .set({ actionStatus: 'executed', clientReply: body })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
 
-    await sendAgencySMS({
-      clientId: client.id,
-      toPhone: client.phone,
-      body: `Done! We've started the action for ${client.businessName}.`,
-      category: 'reply',
-      inReplyTo: pendingPrompt.id,
-    });
+      await sendAgencySMS({
+        clientId: client.id,
+        toPhone: client.phone,
+        body: `Done! We've started the action for ${client.businessName}.`,
+        category: 'reply',
+        inReplyTo: pendingPrompt.id,
+      });
+    } catch (error) {
+      console.error('[Agency Inbound] Failed to execute prompt action:', error);
+
+      await db
+        .update(agencyMessages)
+        .set({ actionStatus: 'replied', clientReply: body })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
+
+      await sendAgencySMS({
+        clientId: client.id,
+        toPhone: client.phone,
+        body: `Thanks — we received your approval, but this action needs manual handling by our team.`,
+        category: 'reply',
+        inReplyTo: pendingPrompt.id,
+      });
+    }
     return;
   }
 
@@ -424,19 +445,15 @@ async function executePromptAction(
 
   switch (promptType) {
     case 'start_sequences':
-      // Not yet implemented — follow-up sequence triggering requires flow engine integration
-      console.warn(`[Agency] start_sequences action not implemented. LeadIds:`, actionPayload.leadIds);
-      break;
+      throw new Error('start_sequences requires flow engine integration');
     case 'schedule_callback':
-      // Not yet implemented — callback scheduling requires escalation system integration
-      console.warn(`[Agency] schedule_callback action not implemented for client: ${clientId}`);
-      break;
+      throw new Error('schedule_callback requires callback scheduler integration');
     case 'confirm_action':
       // Generic confirmation — action is simply marked as executed
       console.log(`[Agency] Generic action confirmed for client: ${clientId}`);
       break;
     default:
-      console.log(`[Agency] Unknown prompt type: ${promptType}`);
+      throw new Error(`Unknown prompt type: ${promptType}`);
   }
 }
 

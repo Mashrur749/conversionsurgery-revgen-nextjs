@@ -3,12 +3,15 @@ import { redirect, notFound } from 'next/navigation';
 import { getDb, leads, conversations } from '@/db';
 import { eq, and, asc } from 'drizzle-orm';
 import { ConversationView } from './conversation-view';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 export default async function ConversationDetailPage({ params }: Props) {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.CONVERSATIONS_VIEW);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 

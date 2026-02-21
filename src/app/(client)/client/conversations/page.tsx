@@ -6,8 +6,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 export default async function ConversationsPage() {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.CONVERSATIONS_VIEW);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 

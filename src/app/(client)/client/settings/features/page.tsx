@@ -1,8 +1,11 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { FeatureTogglesForm } from './feature-toggles-form';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 export default async function ClientFeaturesPage() {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 

@@ -11,6 +11,7 @@ import { eq, and } from 'drizzle-orm';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 import { preventEscalation } from '@/lib/permissions';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
+import { getActiveTeamMemberCount } from '@/lib/services/team-bridge';
 
 /**
  * GET /api/client/team
@@ -192,6 +193,19 @@ export const POST = portalRoute(
             { status: 409 }
           );
         }
+
+        const { checkUsageLimit } = await import('@/lib/services/subscription');
+        const activeCount = await getActiveTeamMemberCount(clientId);
+        const usageCheck = await checkUsageLimit(clientId, 'team_members', activeCount);
+        if (!usageCheck.allowed) {
+          return NextResponse.json(
+            {
+              error: `Team member limit reached (${usageCheck.current}/${usageCheck.limit}). Upgrade your plan for more capacity.`,
+            },
+            { status: 403 }
+          );
+        }
+
         // Reactivate existing membership with new role
         await db
           .update(clientMemberships)
@@ -216,6 +230,18 @@ export const POST = portalRoute(
         return NextResponse.json(
           { success: true, membershipId: existingMembership.id },
           { status: 200 }
+        );
+      }
+
+      const { checkUsageLimit } = await import('@/lib/services/subscription');
+      const activeCount = await getActiveTeamMemberCount(clientId);
+      const usageCheck = await checkUsageLimit(clientId, 'team_members', activeCount);
+      if (!usageCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: `Team member limit reached (${usageCheck.current}/${usageCheck.limit}). Upgrade your plan for more capacity.`,
+          },
+          { status: 403 }
         );
       }
 

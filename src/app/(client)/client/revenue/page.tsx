@@ -5,8 +5,11 @@ import { eq, and, gte, sql } from 'drizzle-orm';
 import { getRevenueStats, getRevenueByService } from '@/lib/services/revenue';
 import { getSpeedToLeadMetrics } from '@/lib/services/speed-to-lead';
 import { ROIDashboard } from '@/app/(dashboard)/admin/clients/[id]/roi-dashboard';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 export default async function ClientRevenuePage() {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.REVENUE_VIEW);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 

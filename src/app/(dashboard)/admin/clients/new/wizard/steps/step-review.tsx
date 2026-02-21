@@ -19,6 +19,7 @@ interface Props {
 
 export function StepReview({ data, updateData, onBack, onComplete, onGoToStep }: Props) {
   const [activating, setActivating] = useState(false);
+  const [savingBusiness, setSavingBusiness] = useState(false);
   const [error, setError] = useState('');
 
   // Inline editing state for business info
@@ -60,17 +61,46 @@ export function StepReview({ data, updateData, onBack, onComplete, onGoToStep }:
     }
   }
 
-  function saveBusiness() {
+  async function saveBusiness() {
     if (!editFields.businessName.trim() || !editFields.email.trim()) {
+      setError('Business name and email are required');
       return;
     }
-    updateData({
-      businessName: editFields.businessName.trim(),
-      ownerName: editFields.ownerName.trim(),
-      email: editFields.email.trim(),
-      phone: editFields.phone.trim(),
-    });
-    setEditingBusiness(false);
+
+    if (!data.clientId) {
+      setError('Client not created');
+      return;
+    }
+
+    setSavingBusiness(true);
+    setError('');
+    try {
+      const payload = {
+        businessName: editFields.businessName.trim(),
+        ownerName: editFields.ownerName.trim(),
+        email: editFields.email.trim(),
+        phone: editFields.phone.trim(),
+      };
+
+      const res = await fetch(`/api/admin/clients/${data.clientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const result = (await res.json()) as { error?: string };
+        setError(result.error || 'Failed to save business details');
+        return;
+      }
+
+      updateData(payload);
+      setEditingBusiness(false);
+    } catch {
+      setError('Failed to save business details');
+    } finally {
+      setSavingBusiness(false);
+    }
   }
 
   const openDays = data.businessHours.filter(h => h.isOpen);
@@ -108,8 +138,8 @@ export function StepReview({ data, updateData, onBack, onComplete, onGoToStep }:
               >
                 Cancel
               </Button>
-              <Button size="sm" onClick={saveBusiness}>
-                Save
+              <Button size="sm" onClick={saveBusiness} disabled={savingBusiness}>
+                {savingBusiness ? 'Saving...' : 'Save'}
               </Button>
             </div>
           ) : (

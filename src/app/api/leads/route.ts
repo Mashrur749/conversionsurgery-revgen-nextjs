@@ -5,6 +5,8 @@ import { leads } from '@/db/schema/leads';
 import { eq, and, or, ilike, sql, desc, asc, gte, lte, count } from 'drizzle-orm';
 import { z } from 'zod';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
+import { canAccessClient, getAgencySession } from '@/lib/permissions';
+import { getClientId } from '@/lib/get-client-id';
 
 const querySchema = z.object({
   search: z.string().optional(),
@@ -51,8 +53,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Determine which clientId to filter by — admins can query across clients
-  const effectiveClientId = isAgency ? (clientId || null) : sessionClientId;
+  let effectiveClientId = isAgency ? clientId || null : sessionClientId;
+
+  if (isAgency) {
+    const agencySession = await getAgencySession();
+    if (!agencySession) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!effectiveClientId) {
+      effectiveClientId = await getClientId();
+    }
+
+    // Assigned-scope users must stay inside their assigned clients.
+    if (effectiveClientId && !canAccessClient(agencySession, effectiveClientId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    if (!effectiveClientId && agencySession.clientScope === 'assigned') {
+      return NextResponse.json(
+        { error: 'Select a client to view leads' },
+        { status: 400 }
+      );
+    }
+  }
 
   if (!isAgency && !effectiveClientId) {
     return NextResponse.json({ error: 'No client' }, { status: 403 });
@@ -169,10 +193,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const effectiveClientId = isAgency ? (data.clientId || sessionClientId) : sessionClientId;
+  let effectiveClientId = isAgency ? (data.clientId || null) : sessionClientId;
+
+  if (!effectiveClientId) {
+    if (isAgency) {
+      effectiveClientId = await getClientId();
+    }
+  }
 
   if (!effectiveClientId) {
     return NextResponse.json({ error: 'clientId is required' }, { status: 400 });
+  }
+
+  if (isAgency) {
+    const agencySession = await getAgencySession();
+    if (!agencySession) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!canAccessClient(agencySession, effectiveClientId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
   }
 
   // Check usage limit (skip for admins creating leads on behalf of clients)

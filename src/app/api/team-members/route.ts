@@ -7,6 +7,31 @@ import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { z } from 'zod';
 import { NextRequest } from 'next/server';
 import { getTeamMembers, getTotalTeamMemberCount } from '@/lib/services/team-bridge';
+import { canAccessClient, getAgencySession } from '@/lib/permissions';
+
+async function resolveAuthorizedClientId(
+  session: { user?: { isAgency?: boolean } } | null,
+  requestedClientId?: string | null
+): Promise<string | null> {
+  if (!session) return null;
+
+  if (session.user?.isAgency) {
+    const agencySession = await getAgencySession();
+    if (!agencySession) return null;
+
+    const fallbackClientId = await getClientId();
+    const targetClientId = requestedClientId || fallbackClientId;
+    if (!targetClientId) return null;
+
+    if (!canAccessClient(agencySession, targetClientId)) return null;
+    return targetClientId;
+  }
+
+  const ownClientId = await getClientId();
+  if (!ownClientId) return null;
+  if (requestedClientId && requestedClientId !== ownClientId) return null;
+  return ownClientId;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,17 +40,11 @@ export async function GET(req: NextRequest) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Admin can pass clientId as query param; regular users use getClientId()
-    let clientId: string | null = null;
-    if (session.user?.isAgency) {
-      clientId = req.nextUrl.searchParams.get('clientId');
-    }
-    if (!clientId) {
-      clientId = await getClientId();
-    }
+    const requestedClientId = req.nextUrl.searchParams.get('clientId');
+    const clientId = await resolveAuthorizedClientId(session, requestedClientId);
 
     if (!clientId) {
-      return Response.json({ error: 'No client' }, { status: 403 });
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const members = await getTeamMembers(clientId);
@@ -65,11 +84,15 @@ export async function POST(req: Request) {
     }
 
     const validated = parsed.data;
+    const clientId = await resolveAuthorizedClientId(session, validated.clientId);
+    if (!clientId) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Check usage limit for team members
     const { checkUsageLimit } = await import('@/lib/services/subscription');
-    const currentCount = await getTotalTeamMemberCount(validated.clientId);
-    const usageCheck = await checkUsageLimit(validated.clientId, 'team_members', currentCount);
+    const currentCount = await getTotalTeamMemberCount(clientId);
+    const usageCheck = await checkUsageLimit(clientId, 'team_members', currentCount);
     if (!usageCheck.allowed) {
       return Response.json(
         { error: `Team member limit reached (${usageCheck.current}/${usageCheck.limit}). Upgrade your plan for more capacity.` },
@@ -138,7 +161,7 @@ export async function POST(req: Request) {
         .from(clientMemberships)
         .where(and(
           eq(clientMemberships.personId, person.id),
-          eq(clientMemberships.clientId, validated.clientId)
+          eq(clientMemberships.clientId, clientId)
         ))
         .limit(1);
 
@@ -176,7 +199,7 @@ export async function POST(req: Request) {
         .insert(clientMemberships)
         .values({
           personId: person.id,
-          clientId: validated.clientId,
+          clientId,
           roleTemplateId: defaultRole.id,
           receiveEscalations: validated.receiveEscalations,
           receiveHotTransfers: validated.receiveHotTransfers,
@@ -218,8 +241,26 @@ export async function DELETE(req: NextRequest) {
       return Response.json({ error: 'memberId is required' }, { status: 400 });
     }
 
-    // Soft-delete: deactivate the membership instead of hard deleting
     const db = getDb();
+    const [membership] = await db
+      .select({ clientId: clientMemberships.clientId })
+      .from(clientMemberships)
+      .where(eq(clientMemberships.id, memberId))
+      .limit(1);
+
+    if (!membership) {
+      return Response.json({ error: 'Team member not found' }, { status: 404 });
+    }
+
+    const authorizedClientId = await resolveAuthorizedClientId(
+      session,
+      membership.clientId
+    );
+    if (!authorizedClientId) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Soft-delete: deactivate the membership instead of hard deleting
     await db
       .update(clientMemberships)
       .set({ isActive: false, updatedAt: new Date() })

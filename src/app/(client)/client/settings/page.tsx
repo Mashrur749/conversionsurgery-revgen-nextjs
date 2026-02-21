@@ -4,8 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { SummarySettings } from './summary-settings';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 export default async function ClientSettingsPage() {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.SETTINGS_VIEW);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 

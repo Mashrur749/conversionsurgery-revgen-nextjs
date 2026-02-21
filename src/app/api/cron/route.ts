@@ -8,6 +8,7 @@ import { runDailyAnalyticsJob } from '@/lib/services/analytics-aggregation';
 import { updateCohortMetrics } from '@/lib/services/cohort-analysis';
 import { getDb, clients, reviewSources } from '@/db';
 import { eq, and, or, isNull, lt } from 'drizzle-orm';
+import { verifyCronSecret } from '@/lib/utils/cron';
 
 // Helper to dispatch a cron sub-endpoint via fetch
 async function dispatch(
@@ -34,13 +35,11 @@ async function dispatch(
  * Cloudflare fires every 5 min and Monday 7am UTC.
  */
 export async function POST(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-
-  const cronId = request.headers.get('cf-cron');
-  if (!cronId) {
-    return NextResponse.json({ error: 'Not a cron request' }, { status: 400 });
+  if (!verifyCronSecret(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const cronSecret = process.env.CRON_SECRET;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const now = new Date();
   const minute = now.getUTCMinutes();

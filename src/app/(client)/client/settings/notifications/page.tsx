@@ -4,8 +4,11 @@ import { getNotificationPrefs } from '@/lib/services/notification-preferences';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { NotificationSettingsForm } from './notification-settings-form';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 export default async function NotificationSettingsPage() {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 

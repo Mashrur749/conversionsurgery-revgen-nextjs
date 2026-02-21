@@ -4,8 +4,11 @@ import { getDb } from '@/db';
 import { clientAgentSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { AiSettingsForm } from './ai-settings-form';
+import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
+import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 export default async function ClientAiSettingsPage() {
+  await requirePortalPagePermission(PORTAL_PERMISSIONS.SETTINGS_AI);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 
