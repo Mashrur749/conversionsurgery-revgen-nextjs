@@ -52,6 +52,7 @@ export const reviews = pgTable(
     reviewDate: timestamp('review_date'),
     fetchedAt: timestamp('fetched_at').notNull().defaultNow(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
   },
   (table) => [
     index('idx_reviews_client').on(table.clientId),

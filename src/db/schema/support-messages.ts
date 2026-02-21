@@ -19,6 +19,7 @@ export const supportMessages = pgTable(
     message: text('message').notNull(),
     status: varchar('status', { length: 20 }).default('open').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
   },
   (table) => []
 );

@@ -43,6 +43,7 @@ export const coupons = pgTable(
 
     isActive: boolean('is_active').default(true),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow(),
   },
   (table) => [
     uniqueIndex('coupons_code_idx').on(table.code),

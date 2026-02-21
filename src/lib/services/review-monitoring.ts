@@ -107,6 +107,7 @@ export async function checkAndAlertNegativeReviews(clientId: string): Promise<nu
         aiSuggestedResponse: suggestedResponse,
         alertSent: true,
         alertSentAt: new Date(),
+        updatedAt: new Date(),
       })
       .where(eq(reviews.id, review.id));
 

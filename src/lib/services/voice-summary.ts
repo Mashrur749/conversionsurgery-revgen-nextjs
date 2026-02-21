@@ -44,7 +44,7 @@ export async function generateCallSummary(callId: string): Promise<string> {
 
   await db
     .update(voiceCalls)
-    .set({ aiSummary: summary })
+    .set({ aiSummary: summary, updatedAt: new Date() })
     .where(eq(voiceCalls.id, callId));
 
   return summary;

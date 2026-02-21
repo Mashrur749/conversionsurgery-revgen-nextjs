@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const db = getDb();
     await db
       .update(conversations)
-      .set({ deliveryStatus: messageStatus })
+      .set({ deliveryStatus: messageStatus, updatedAt: new Date() })
       .where(eq(conversations.twilioSid, messageSid));
 
     return NextResponse.json({ success: true });

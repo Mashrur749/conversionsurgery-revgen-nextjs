@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
             status: 'completed',
             outcome: 'dropped',
             endedAt: new Date(),
+            updatedAt: new Date(),
           })
           .where(eq(voiceCalls.id, call.id));
       } else {
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
             status: 'completed',
             outcome: call.outcome || 'transferred',
             endedAt: new Date(),
+            updatedAt: new Date(),
           })
           .where(eq(voiceCalls.id, call.id));
       }

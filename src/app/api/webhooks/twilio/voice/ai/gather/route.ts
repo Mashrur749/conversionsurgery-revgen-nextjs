@@ -153,6 +153,7 @@ Return JSON:
         transcript: `${newTranscript}\nAI: ${result.response}`,
         callerIntent: result.intent,
         callbackRequested: result.callbackRequested,
+        updatedAt: new Date(),
       })
       .where(eq(voiceCalls.id, call.id));
 

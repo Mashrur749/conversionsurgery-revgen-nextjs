@@ -29,6 +29,7 @@ export const conversations = pgTable(
     deliveryStatus: varchar('delivery_status', { length: 20 }), // queued, sent, delivered, failed, undelivered
     mediaUrl: jsonb('media_url').$type<string[]>(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow(),
   },
   (table) => [
     index('idx_conversations_lead_id').on(table.leadId),

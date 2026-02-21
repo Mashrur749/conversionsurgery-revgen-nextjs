@@ -36,7 +36,7 @@ export const PATCH = adminRoute<{ id: string }>(
       updates.validUntil = parsed.data.validUntil ? new Date(parsed.data.validUntil) : null;
     }
 
-    const [updated] = await db.update(coupons).set(updates).where(eq(coupons.id, id)).returning();
+    const [updated] = await db.update(coupons).set({ ...updates, updatedAt: new Date() }).where(eq(coupons.id, id)).returning();
     if (!updated) {
       return NextResponse.json({ error: 'Coupon not found' }, { status: 404 });
     }
@@ -60,7 +60,7 @@ export const DELETE = adminRoute<{ id: string }>(
 
     // If redeemed, soft-delete (deactivate) instead of hard-delete to preserve audit trail
     if (coupon.timesRedeemed && coupon.timesRedeemed > 0) {
-      await db.update(coupons).set({ isActive: false }).where(eq(coupons.id, id));
+      await db.update(coupons).set({ isActive: false, updatedAt: new Date() }).where(eq(coupons.id, id));
       return NextResponse.json({ success: true, softDeleted: true });
     }
 

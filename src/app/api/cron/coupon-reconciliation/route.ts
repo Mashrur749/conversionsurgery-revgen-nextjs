@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
           .update(coupons)
           .set({
             timesRedeemed: actual,
+            updatedAt: new Date(),
           })
           .where(eq(coupons.id, coupon.id));
 

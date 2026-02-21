@@ -100,7 +100,7 @@ export async function PATCH(
     const db = getDb();
     const [updated] = await db
       .update(supportMessages)
-      .set({ status })
+      .set({ status, updatedAt: new Date() })
       .where(eq(supportMessages.id, id))
       .returning();
 

@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       // Update call outcome
       await db
         .update(voiceCalls)
-        .set({ outcome: 'voicemail' })
+        .set({ outcome: 'voicemail', updatedAt: new Date() })
         .where(eq(voiceCalls.id, call.id));
 
       const appUrl = getWebhookBaseUrl(request);
@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
       .set({
         outcome: 'transferred',
         transferredTo: transferTo,
+        updatedAt: new Date(),
       })
       .where(eq(voiceCalls.id, call.id));
 

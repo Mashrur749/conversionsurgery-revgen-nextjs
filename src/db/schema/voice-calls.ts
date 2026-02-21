@@ -50,6 +50,7 @@ export const voiceCalls = pgTable(
     startedAt: timestamp('started_at'),
     endedAt: timestamp('ended_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow(),
   },
   (table) => [
     index('idx_voice_calls_client_id').on(table.clientId),

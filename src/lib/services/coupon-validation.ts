@@ -140,7 +140,7 @@ export async function validateAndRedeemCoupon(
   // If another request already incremented past the limit, 0 rows are returned.
   const [redeemed] = await db
     .update(coupons)
-    .set({ timesRedeemed: sql`coalesce(${coupons.timesRedeemed}, 0) + 1` })
+    .set({ timesRedeemed: sql`coalesce(${coupons.timesRedeemed}, 0) + 1`, updatedAt: new Date() })
     .where(
       and(
         eq(coupons.code, upperCode),
@@ -171,6 +171,6 @@ export async function redeemCoupon(code: string): Promise<void> {
   const db = getDb();
   await db
     .update(coupons)
-    .set({ timesRedeemed: sql`coalesce(${coupons.timesRedeemed}, 0) + 1` })
+    .set({ timesRedeemed: sql`coalesce(${coupons.timesRedeemed}, 0) + 1`, updatedAt: new Date() })
     .where(eq(coupons.code, code.toUpperCase()));
 }

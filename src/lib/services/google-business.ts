@@ -116,6 +116,7 @@ export async function postResponseToGoogle(
         hasResponse: true,
         responseText: response.responseText,
         responseDate: new Date(),
+        updatedAt: new Date(),
       })
       .where(eq(reviews.id, response.reviewId));
 
