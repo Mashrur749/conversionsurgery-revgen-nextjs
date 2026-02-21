@@ -2,7 +2,7 @@
 
 Day-to-day system operations, monitoring, troubleshooting, and incident response for the ConversionSurgery platform.
 
-**Companion docs**: [Testing Guide](./TESTING_GUIDE.md) for E2E testing, [Use Cases](./USE_CASES.md) for workflow reference, [Deployment](../DEPLOYMENT.md) for setup.
+**Companion docs**: [Testing Guide](./TESTING_GUIDE.md) for E2E and unit testing, [Use Cases](./USE_CASES.md) for workflow reference, [Deployment](../DEPLOYMENT.md) for setup, [Remaining Gaps](./REMAINING-GAPS.md) for known issues.
 
 ---
 
@@ -255,16 +255,24 @@ If `errors` array is non-empty, investigate the failing job.
 ### Build / Deploy Failures
 
 ```bash
-# Check TypeScript errors
-npm run build
+# Quick typecheck (~13s, no build output)
+npm run typecheck
+
+# Run unit tests (46 tests: route-handler, permissions, phone utils)
+npm test
 
 # Check lint
 npm run lint
+
+# Full production build (includes typecheck + page generation)
+npm run build
 
 # If migration issues
 npm run db:generate   # regenerate migrations
 npm run db:push       # push schema (dev only!)
 ```
+
+**CI/CD Pipeline**: All PRs and pushes to `main` run the full pipeline automatically via GitHub Actions (`.github/workflows/ci.yml`): `npm ci` &rarr; typecheck &rarr; lint &rarr; test &rarr; build &rarr; audit. Check the Actions tab for build status.
 
 ---
 

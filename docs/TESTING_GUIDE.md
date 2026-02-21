@@ -1,6 +1,6 @@
 # End-to-End Testing Guide
 
-A dependency-ordered walkthrough for testing every feature in the ConversionSurgery platform. Tests are organized into **10 phases** — each phase's prerequisites are satisfied by completing earlier phases.
+A dependency-ordered walkthrough for testing every feature in the ConversionSurgery platform. This guide covers both **automated unit tests** (run instantly) and **manual E2E tests** organized into 11 phases.
 
 **Before you start**: Complete the [Local Development Setup](../DEPLOYMENT.md#local-development-setup) and ensure `npm run dev` is running.
 
@@ -8,6 +8,8 @@ A dependency-ordered walkthrough for testing every feature in the ConversionSurg
 
 ## Table of Contents
 
+- [Automated Tests](#automated-tests)
+- [CI/CD Pipeline](#cicd-pipeline)
 - [Phase 0: Environment & Seed Data](#phase-0-environment--seed-data)
 - [Phase 1: Admin Foundation](#phase-1-admin-foundation)
 - [Phase 2: Client Onboarding](#phase-2-client-onboarding)
@@ -24,6 +26,78 @@ A dependency-ordered walkthrough for testing every feature in the ConversionSurg
 - [Appendix B: Simulating Webhooks](#appendix-b-simulating-webhooks)
 - [Appendix C: Test Phone Numbers & Credentials](#appendix-c-test-phone-numbers--credentials)
 - [Appendix D: Cleanup & Reset](#appendix-d-cleanup--reset)
+
+---
+
+## Automated Tests
+
+The platform has a Vitest unit test suite covering core utilities and permission logic. These tests run instantly with no database or external service dependencies.
+
+### Running Tests
+
+```bash
+# Run all tests (46 tests, ~2 seconds)
+npm test
+
+# Run in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run a specific test file
+npx vitest run src/lib/utils/phone.test.ts
+```
+
+### Test Files
+
+| File | Tests | What it covers |
+|------|-------|---------------|
+| `src/lib/utils/route-handler.test.ts` | 11 | Route handler wrappers (`adminRoute`, `adminClientRoute`, `portalRoute`) — auth, error handling, param extraction |
+| `src/lib/permissions/resolve.test.ts` | 15 | `resolvePermissions()`, `hasPermission()`, `hasAllPermissions()`, `hasAnyPermission()` |
+| `src/lib/permissions/escalation-guard.test.ts` | 9 | `preventEscalation()`, `validateOverrides()` — privilege escalation prevention |
+| `src/lib/utils/phone.test.ts` | 11 | `normalizePhoneNumber()`, `formatPhoneNumber()`, `isValidPhoneNumber()` |
+
+### Writing New Tests
+
+- Place test files next to the source: `src/lib/utils/foo.ts` &rarr; `src/lib/utils/foo.test.ts`
+- Config: `vitest.config.ts` (includes `@` path alias for imports)
+- Mock modules with `vi.mock()` — see `route-handler.test.ts` for examples
+- Focus on pure functions and logic that doesn&apos;t require a database connection
+
+---
+
+## CI/CD Pipeline
+
+All pushes to `main` and pull requests run the full pipeline via GitHub Actions.
+
+**Config**: `.github/workflows/ci.yml`
+
+### Pipeline Steps
+
+| Step | Command | Purpose |
+|------|---------|---------|
+| Install | `npm ci` | Clean install from lockfile |
+| Typecheck | `npm run typecheck` | TypeScript type validation (~13s) |
+| Lint | `npm run lint` | ESLint (next/core-web-vitals + next/typescript) |
+| Test | `npm test` | Vitest unit tests (46 tests) |
+| Build | `npm run build` | Full Next.js production build |
+| Audit | `npm audit --audit-level=moderate` | Dependency vulnerability scan (non-blocking) |
+
+### Features
+
+- **Concurrency groups**: Stale PR runs are automatically canceled when new commits are pushed
+- **Timeout**: 15-minute maximum per run
+- **Dummy env vars**: Build step uses placeholder `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL` (no real credentials needed)
+
+### Checking Build Status
+
+1. Go to the repository &rarr; Actions tab
+2. Find the workflow run for your branch/PR
+3. If any step fails, click into it for detailed error output
+
+---
+
+## Manual E2E Testing
+
+The phases below cover **manual end-to-end testing** of every feature. Each phase&apos;s prerequisites are satisfied by completing earlier phases.
 
 ---
 
