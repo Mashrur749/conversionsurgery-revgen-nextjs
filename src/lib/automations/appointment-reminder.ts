@@ -19,6 +19,43 @@ interface AppointmentReminderResult {
   scheduledIds?: string[];
 }
 
+export interface ReminderPlanEntry {
+  sequenceType: 'appointment_reminder' | 'appointment_reminder_contractor';
+  sequenceStep: 1 | 2;
+  sendAt: Date;
+}
+
+/**
+ * Builds reminder plan entries for both homeowner and contractor.
+ * Used by scheduling and regression tests.
+ */
+export function buildAppointmentReminderPlan(
+  appointmentDateTime: Date,
+  now: Date = new Date(),
+  includeContractor: boolean = true
+): ReminderPlanEntry[] {
+  const entries: ReminderPlanEntry[] = [];
+  const dayBeforeSendAt = subDays(appointmentDateTime, 1);
+  dayBeforeSendAt.setHours(10, 0, 0, 0);
+  const twoHourSendAt = subHours(appointmentDateTime, 2);
+
+  if (dayBeforeSendAt > now) {
+    entries.push({ sequenceType: 'appointment_reminder', sequenceStep: 1, sendAt: dayBeforeSendAt });
+    if (includeContractor) {
+      entries.push({ sequenceType: 'appointment_reminder_contractor', sequenceStep: 1, sendAt: dayBeforeSendAt });
+    }
+  }
+
+  if (twoHourSendAt > now) {
+    entries.push({ sequenceType: 'appointment_reminder', sequenceStep: 2, sendAt: twoHourSendAt });
+    if (includeContractor) {
+      entries.push({ sequenceType: 'appointment_reminder_contractor', sequenceStep: 2, sendAt: twoHourSendAt });
+    }
+  }
+
+  return entries;
+}
+
 /**
  * Schedules appointment reminders (day-before and 2-hour) for a lead.
  * Creates an appointment record and scheduled messages for automated reminders.
@@ -74,53 +111,41 @@ export async function scheduleAppointmentReminders(payload: AppointmentPayload):
   const appointmentAddress = address || lead.address || 'the scheduled location';
 
   const scheduledIds: string[] = [];
+  const plan = buildAppointmentReminderPlan(
+    appointmentDateTime,
+    new Date(),
+    !!client.phone
+  );
 
-  // 5. Day-before reminder (10am)
-  const dayBeforeSendAt = subDays(appointmentDateTime, 1);
-  dayBeforeSendAt.setHours(10, 0, 0, 0);
-
-  if (dayBeforeSendAt > new Date()) {
-    const content = renderTemplate('appointment_day_before', {
-      name: lead.name || 'there',
-      time: formattedTime,
-      address: appointmentAddress,
-      businessName: client.businessName,
-    });
-
-    const scheduled = await db
-      .insert(scheduledMessages)
-      .values({
-        leadId,
-        clientId,
-        sequenceType: 'appointment_reminder',
-        sequenceStep: 1,
-        content,
-        sendAt: dayBeforeSendAt,
-      })
-      .returning();
-    scheduledIds.push(scheduled[0].id);
-  }
-
-  // 6. 2-hour-before reminder
-  const twoHourSendAt = subHours(appointmentDateTime, 2);
-
-  if (twoHourSendAt > new Date()) {
-    const content = renderTemplate('appointment_2hr', {
-      name: lead.name || 'there',
-      time: formattedTime,
-      ownerName: client.ownerName,
-      businessName: client.businessName,
-    });
+  // 5/6. Insert reminder plan entries
+  for (const entry of plan) {
+    const content = entry.sequenceType === 'appointment_reminder'
+      ? (entry.sequenceStep === 1
+          ? renderTemplate('appointment_day_before', {
+              name: lead.name || 'there',
+              time: formattedTime,
+              address: appointmentAddress,
+              businessName: client.businessName,
+            })
+          : renderTemplate('appointment_2hr', {
+              name: lead.name || 'there',
+              time: formattedTime,
+              ownerName: client.ownerName,
+              businessName: client.businessName,
+            }))
+      : (entry.sequenceStep === 1
+          ? `Reminder: ${lead.name || 'Customer'} appointment tomorrow at ${formattedTime}${appointmentAddress ? ` (${appointmentAddress})` : ''}.`
+          : `Upcoming in 2h: ${lead.name || 'Customer'} at ${formattedTime}${appointmentAddress ? ` (${appointmentAddress})` : ''}.`);
 
     const scheduled = await db
       .insert(scheduledMessages)
       .values({
         leadId,
         clientId,
-        sequenceType: 'appointment_reminder',
-        sequenceStep: 2,
+        sequenceType: entry.sequenceType,
+        sequenceStep: entry.sequenceStep,
         content,
-        sendAt: twoHourSendAt,
+        sendAt: entry.sendAt,
       })
       .returning();
     scheduledIds.push(scheduled[0].id);

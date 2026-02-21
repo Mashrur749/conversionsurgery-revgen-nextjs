@@ -10,11 +10,11 @@ Scope: Managed service launch now + SaaS-readiness foundation (next ~6 months)
 | Access control + scope isolation | Ready | Assigned-scope enforcement + portal page guards implemented |
 | Client onboarding baseline | Ready with caveats | Owner membership auto-created; wizard persistence improved |
 | Team operations | Ready with caveats | Team limit enforcement added; escalation fallback added |
-| Compliance gateway | Mostly ready | Consent/opt-out/quiet hours enforced; durable replay now covered for lead-linked messages |
-| Billing + plan limits | Mostly ready | Team/lead/message controls exist; overage invoicing automation still needed |
+| Compliance gateway | Ready | Consent/opt-out/quiet hours enforced; durable replay covers lead + non-lead flows |
+| Billing + plan limits | Ready | Team/lead/message controls + overage line-item automation in monthly cycle |
 | Cron + reliability | Ready with caveats | Master cron now requires bearer secret; runbook updated |
-| Self-serve foundation | Baseline ready | Public signup route/page added; lifecycle still managed-service-first |
-| Reporting | Partial | Weekly/daily present; bi-weekly managed-service report automation needs hardening |
+| Self-serve foundation | Ready | Public signup + guided onboarding checklist + setup request path |
+| Reporting | Ready | Deterministic bi-weekly report generation/delivery with idempotency guard |
 
 ## What Was Closed Recently
 - Agency assigned-scope access enforcement across major APIs and dashboard selection.
@@ -28,6 +28,12 @@ Scope: Managed service launch now + SaaS-readiness foundation (next ~6 months)
 - Voice AI gather path now uses guardrails and includes recent SMS context when `leadId` exists.
 - Billing seed limits aligned to business plan limits; subscription create/change now sync monthly message limits by tier.
 - 30-day guarantee lifecycle automation added: daily guarantee evaluator marks `fulfilled` or `refund_review_required` and logs billing events for review workflow.
+- Overage billing line-item automation runs during monthly reset cycle with billing event audit trail.
+- Bi-weekly report cron now generates and emails managed-service reports deterministically (idempotent by period).
+- Appointment reminders now include both homeowner and contractor reminder scheduling paths.
+- Quiet-hours replay now includes non-lead durable queue processing.
+- Monthly access-review automation sends stale-access digest to agency owners.
+- Self-serve onboarding now includes guided checklist and managed-setup request flow.
 
 ## Remaining Launch Blockers (Managed Service)
 
@@ -35,18 +41,14 @@ Scope: Managed service launch now + SaaS-readiness foundation (next ~6 months)
 1. None.
 
 ### P2
-1. Overage billing line-item automation is incomplete.
-2. Bi-weekly performance report generation/delivery should be fully deterministic and audited.
-3. Appointment reminders to both homeowner and contractor need explicit verification in regression tests.
-4. Quiet-hours fallback for non-lead system messages should be made durable (current durable queue path depends on `leadId`).
+1. None.
 
 ### P3
-1. Periodic access review automation for agency/client memberships.
-2. Self-serve onboarding completion pipeline (number provisioning + guided setup + tutorial readiness).
+1. None.
 
 ## Go-Live Gate (Managed Service)
 Release only when all are true:
-- P1 items complete (currently satisfied).
+- P1/P2/P3 items complete (currently satisfied).
 - Test suite + build pass in CI for release commit.
 - Ops runbook validated by one dry-run incident simulation.
 - One full onboarding dry run from create client -> number -> first lead -> report.

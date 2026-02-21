@@ -5,6 +5,7 @@ import { processNoShowFollowUp } from '@/lib/automations/no-show-recovery';
 import { processWinBackFollowUp } from '@/lib/automations/win-back';
 import { eq, and, lte, sql } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
+import { sendSMS } from '@/lib/services/twilio';
 
 /**
  * GET handler to process scheduled messages.
@@ -42,27 +43,31 @@ export async function GET(request: NextRequest) {
     let failed = 0;
 
     for (const { message, lead, client } of dueMessages) {
+      const isContractorReminder = message.sequenceType === 'appointment_reminder_contractor';
+
       // Skip if lead opted out
-      if (lead.optedOut) {
+      if (!isContractorReminder && lead.optedOut) {
         await markCancelled(db, message.id, 'Lead opted out');
         skipped++;
         continue;
       }
 
       // Skip if number blocked
-      const blockedResult = await db
-        .select()
-        .from(blockedNumbers)
-        .where(and(
-          eq(blockedNumbers.clientId, client.id),
-          eq(blockedNumbers.phone, lead.phone)
-        ))
-        .limit(1);
+      if (!isContractorReminder) {
+        const blockedResult = await db
+          .select()
+          .from(blockedNumbers)
+          .where(and(
+            eq(blockedNumbers.clientId, client.id),
+            eq(blockedNumbers.phone, lead.phone)
+          ))
+          .limit(1);
 
-      if (blockedResult.length) {
-        await markCancelled(db, message.id, 'Number blocked');
-        skipped++;
-        continue;
+        if (blockedResult.length) {
+          await markCancelled(db, message.id, 'Number blocked');
+          skipped++;
+          continue;
+        }
       }
 
       // Skip if over monthly limit
@@ -118,34 +123,44 @@ export async function GET(request: NextRequest) {
           messageBody = generated;
         }
 
-        const sendResult = await sendCompliantMessage({
-          clientId: client.id,
-          to: lead.phone,
-          from: client.twilioNumber,
-          body: messageBody,
-          messageCategory: 'marketing',
-          consentBasis: { type: 'existing_consent' },
-          leadId: lead.id,
-          queueOnQuietHours: false, // Already scheduled, don't re-queue
-          metadata: { source: 'scheduled_message', messageId: message.id, sequenceType: message.sequenceType },
-        });
+        if (isContractorReminder) {
+          if (!client.phone) {
+            await markCancelled(db, message.id, 'Client owner phone missing');
+            skipped++;
+            continue;
+          }
 
-        if (sendResult.blocked) {
-          // Unclaim: mark back as unsent and cancelled
-          await markCancelled(db, message.id, `Compliance: ${sendResult.blockReason}`);
-          skipped++;
-          continue;
+          await sendSMS(client.phone, messageBody, client.twilioNumber);
+        } else {
+          const sendResult = await sendCompliantMessage({
+            clientId: client.id,
+            to: lead.phone,
+            from: client.twilioNumber,
+            body: messageBody,
+            messageCategory: 'marketing',
+            consentBasis: { type: 'existing_consent' },
+            leadId: lead.id,
+            queueOnQuietHours: false, // Already scheduled, don't re-queue
+            metadata: { source: 'scheduled_message', messageId: message.id, sequenceType: message.sequenceType },
+          });
+
+          if (sendResult.blocked) {
+            // Unclaim: mark back as unsent and cancelled
+            await markCancelled(db, message.id, `Compliance: ${sendResult.blockReason}`);
+            skipped++;
+            continue;
+          }
+
+          // Log conversation (use resolved messageBody, not the placeholder)
+          await db.insert(conversations).values({
+            leadId: lead.id,
+            clientId: client.id,
+            direction: 'outbound',
+            messageType: 'scheduled',
+            content: messageBody,
+            twilioSid: sendResult.messageSid || undefined,
+          });
         }
-
-        // Log conversation (use resolved messageBody, not the placeholder)
-        await db.insert(conversations).values({
-          leadId: lead.id,
-          clientId: client.id,
-          direction: 'outbound',
-          messageType: 'scheduled',
-          content: messageBody,
-          twilioSid: sendResult.messageSid || undefined,
-        });
 
         // Update daily stats (monthly count handled by gateway)
         await updateDailyStats(db, client.id, message.sequenceType);

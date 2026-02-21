@@ -199,6 +199,9 @@ export async function sendCompliantMessage(
       await ComplianceService.logComplianceEvent(clientId, 'message_queued', {
         phoneNumber: normalizedPhone,
         phoneHash,
+        from,
+        body,
+        mediaUrl,
         reason: 'quiet_hours',
         messageCategory,
         leadId,

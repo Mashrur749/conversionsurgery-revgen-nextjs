@@ -52,6 +52,13 @@ Outcome: Faster responses and less lead leakage.
 
 Outcome: Predictable automation operations.
 
+### U6b. Monthly overage and access-review automation
+1. Monthly cron computes SMS/lead overages and creates invoice line items.
+2. Billing events are logged for every overage invoice action.
+3. Monthly access-review digest is sent to agency owners.
+
+Outcome: predictable revenue capture and proactive access governance.
+
 ### U7. No-team escalation fallback
 1. Lead requires escalation.
 2. No eligible escalation team members are active.
@@ -75,6 +82,13 @@ Outcome: guarantee promise is enforced operationally instead of manual tracking.
 3. Team or automation completes setup before activation.
 
 Outcome: Acquisition funnel starts without manual data entry.
+
+### U8b. Guided onboarding completion
+1. New signup redirects to onboarding checklist page.
+2. Checklist shows setup progress (phone, hours, knowledge, team).
+3. User can request managed setup help directly from onboarding.
+
+Outcome: faster activation and fewer manual onboarding handoffs.
 
 ### U9. Customer-controlled team management (future self-serve)
 1. Customer manages their own assistants and roles.

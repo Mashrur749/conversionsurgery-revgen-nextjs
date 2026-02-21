@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
       results.expirePrompts = await dispatch(baseUrl, '/api/cron/expire-prompts', cronSecret!);
       results.sendNps = await dispatch(baseUrl, '/api/cron/send-nps', cronSecret!, 'POST');
       results.agentCheck = await dispatch(baseUrl, '/api/cron/agent-check', cronSecret!);
+      results.queuedCompliance = await dispatch(baseUrl, '/api/cron/process-queued-compliance', cronSecret!);
     }
 
     // ── Daily midnight UTC (hour=0) ──────────────────────────
@@ -162,6 +163,8 @@ export async function POST(request: NextRequest) {
           console.error('[Cron] Cohort analysis error:', error);
           results.cohortUpdate = { error: 'Failed' };
         }
+
+        results.accessReview = await dispatch(baseUrl, '/api/cron/access-review', cronSecret!);
       }
     }
 
@@ -179,6 +182,7 @@ export async function POST(request: NextRequest) {
     if (day === 1 && hour === 7 && minute < 10) {
       results.weeklySummary = await dispatch(baseUrl, '/api/cron/weekly-summary', cronSecret!);
       results.agencyDigest = await dispatch(baseUrl, '/api/cron/agency-digest', cronSecret!);
+      results.biweeklyReports = await dispatch(baseUrl, '/api/cron/biweekly-reports', cronSecret!);
     }
 
     return NextResponse.json(results);

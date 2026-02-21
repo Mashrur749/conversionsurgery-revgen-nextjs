@@ -11,7 +11,7 @@ npm run build
 ```
 
 Current baseline:
-- Unit tests: 46 passing
+- Unit tests: 49 passing
 - Build: must pass before merge/release
 
 ## 2. Core Regression Areas
@@ -44,6 +44,15 @@ Current baseline:
 3. `GET /api/cron/guarantee-check` marks `refund_review_required` once window expires without fulfillment.
 4. Billing events are created for status transitions (`guarantee_fulfilled`, `guarantee_refund_review_required`).
 
+### Overage + Reporting + Queue Replay
+1. `GET /api/cron/monthly-reset` creates overage invoice items and logs `overage_invoiced` events.
+2. `GET /api/cron/biweekly-reports` is idempotent by period and generates report records.
+3. `GET /api/cron/process-queued-compliance` replays non-lead quiet-hours queue items.
+
+### Appointment Reminder Parity
+1. Verify `buildAppointmentReminderPlan()` schedules homeowner + contractor reminders in unit tests.
+2. Verify scheduled contractor reminders deliver from cron path (`appointment_reminder_contractor` sequence type).
+
 ## 3. Manual Smoke Run (Pre-Release)
 1. Create or select a test client.
 2. Send inbound lead message path and verify response/logs.
@@ -69,6 +78,12 @@ curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_S
 
 # Guarantee evaluator
 curl -i http://localhost:3000/api/cron/guarantee-check -H "Authorization: Bearer $CRON_SECRET"
+
+# Bi-weekly reports
+curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
+
+# Non-lead queue replay
+curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ## 5. Release Gate

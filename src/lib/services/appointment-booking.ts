@@ -7,7 +7,7 @@
 
 import { getDb } from '@/db';
 import { appointments, businessHours, clients, leads, scheduledMessages } from '@/db/schema';
-import { eq, and, gte, lte, not } from 'drizzle-orm';
+import { eq, and, gte, lte, not, inArray } from 'drizzle-orm';
 import { scheduleAppointmentReminders } from '@/lib/automations/appointment-reminder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { createEvent } from '@/lib/services/calendar';
@@ -282,7 +282,7 @@ export async function rescheduleAppointment(
     })
     .where(and(
       eq(scheduledMessages.leadId, appointment.leadId),
-      eq(scheduledMessages.sequenceType, 'appointment_reminder'),
+      inArray(scheduledMessages.sequenceType, ['appointment_reminder', 'appointment_reminder_contractor']),
       eq(scheduledMessages.sent, false),
       eq(scheduledMessages.cancelled, false)
     ));
@@ -329,7 +329,7 @@ export async function cancelAppointment(
     })
     .where(and(
       eq(scheduledMessages.leadId, appointment.leadId),
-      eq(scheduledMessages.sequenceType, 'appointment_reminder'),
+      inArray(scheduledMessages.sequenceType, ['appointment_reminder', 'appointment_reminder_contractor']),
       eq(scheduledMessages.sent, false),
       eq(scheduledMessages.cancelled, false)
     ));

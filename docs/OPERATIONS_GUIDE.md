@@ -33,6 +33,15 @@ curl -s "$BASE_URL/api/cron/check-missed-calls" \
 
 curl -s "$BASE_URL/api/cron/guarantee-check" \
   -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/biweekly-reports" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/process-queued-compliance" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/access-review" \
+  -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ### Expected behavior

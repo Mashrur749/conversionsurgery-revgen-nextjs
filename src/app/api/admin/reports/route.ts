@@ -1,9 +1,9 @@
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
-import { reports, dailyStats, abTests } from '@/db/schema';
-import { getTeamMembers } from '@/lib/services/team-bridge';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { reports } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { generateClientReport } from '@/lib/services/report-generation';
 
 const generateReportSchema = z.object({
   clientId: z.string().uuid(),
@@ -70,121 +70,13 @@ export const POST = adminRoute(
 
     const db = getDb();
 
-    // Fetch all data for the period
-    const periodStats = await db
-      .select()
-      .from(dailyStats)
-      .where(
-        and(
-          eq(dailyStats.clientId, clientId),
-          gte(dailyStats.date, startDate),
-          lte(dailyStats.date, endDate)
-        )
-      );
-
-    // Fetch A/B tests running during this period
-    const activeTests = await db
-      .select()
-      .from(abTests)
-      .where(
-        and(
-          eq(abTests.clientId, clientId),
-          gte(abTests.startDate, new Date(startDate))
-        )
-      );
-
-    // Get team members
-    const teamMemsList = await getTeamMembers(clientId);
-
-    // Aggregate metrics
-    const aggregatedMetrics = {
-      messagesSent: periodStats.reduce((sum, s) => sum + (s.messagesSent || 0), 0),
-      conversationsStarted: periodStats.reduce(
-        (sum, s) => sum + (s.conversationsStarted || 0),
-        0
-      ),
-      appointmentsReminded: periodStats.reduce(
-        (sum, s) => sum + (s.appointmentsReminded || 0),
-        0
-      ),
-      formsResponded: periodStats.reduce(
-        (sum, s) => sum + (s.formsResponded || 0),
-        0
-      ),
-      estimatesFollowedUp: periodStats.reduce(
-        (sum, s) => sum + (s.estimatesFollowedUp || 0),
-        0
-      ),
-      reviewsRequested: periodStats.reduce(
-        (sum, s) => sum + (s.reviewsRequested || 0),
-        0
-      ),
-      paymentsReminded: periodStats.reduce(
-        (sum, s) => sum + (s.paymentsReminded || 0),
-        0
-      ),
-      missedCallsCaptured: periodStats.reduce(
-        (sum, s) => sum + (s.missedCallsCaptured || 0),
-        0
-      ),
-      days: periodStats.length,
-    };
-
-    // Calculate conversion rates
-    const conversionRate =
-      aggregatedMetrics.messagesSent > 0
-        ? (
-            (aggregatedMetrics.appointmentsReminded /
-              aggregatedMetrics.messagesSent) *
-            100
-          ).toFixed(2)
-        : '0';
-
-    const engagementRate =
-      aggregatedMetrics.messagesSent > 0
-        ? (
-            (aggregatedMetrics.conversationsStarted /
-              aggregatedMetrics.messagesSent) *
-            100
-          ).toFixed(2)
-        : '0';
-
-    // ROI summary
-    const roiSummary = {
-      messagesSent: aggregatedMetrics.messagesSent,
-      appointmentsReminded: aggregatedMetrics.appointmentsReminded,
-      conversionRate: parseFloat(conversionRate),
-      engagementRate: parseFloat(engagementRate),
-      daysInPeriod: aggregatedMetrics.days,
-      averagePerDay: (aggregatedMetrics.messagesSent / aggregatedMetrics.days).toFixed(1),
-    };
-
-    // Team performance
-    const teamPerformance = {
-      totalMembers: teamMemsList.length,
-      activeMembers: teamMemsList.filter((t) => t.isActive).length,
-    };
-
-    // Create report
-    const reportTitle =
-      customTitle ||
-      `Report ${startDate} to ${endDate} - ${reportType === 'bi-weekly' ? 'Bi-Weekly' : reportType === 'monthly' ? 'Monthly' : 'Custom'}`;
-
-    const [newReport] = await db
-      .insert(reports)
-      .values({
-        clientId,
-        title: reportTitle,
-        reportType,
-        startDate,
-        endDate,
-        metrics: aggregatedMetrics as Record<string, unknown>,
-        performanceData: periodStats as unknown as Record<string, unknown>[],
-        testResults: activeTests.length > 0 ? (activeTests as unknown as Record<string, unknown>[]) : null,
-        teamPerformance: teamPerformance as Record<string, unknown>,
-        roiSummary: roiSummary as Record<string, unknown>,
-      })
-      .returning();
+    const newReport = await generateClientReport(
+      clientId,
+      startDate,
+      endDate,
+      reportType,
+      customTitle
+    );
 
     return Response.json({
       success: true,

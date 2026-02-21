@@ -7,15 +7,10 @@ Scope: Open items after security + access hardening wave
 1. None.
 
 ## P2 (High priority)
-1. Overage charging automation for invoices needs completion.
-2. Bi-weekly managed-service performance reports require stronger automation and delivery traceability.
-3. Appointment reminder parity (homeowner + contractor) must be re-verified with tests.
-4. Quiet-hours durable replay should be extended to non-lead system messages (lead-linked messages are now durable).
+1. None.
 
 ## P3 (Near-term)
-1. Access review automation for agency/client memberships.
-2. Self-serve onboarding completion beyond signup baseline (guided setup, provisioning workflow).
-3. Formal customer tutorial system (planned for SaaS launch phase).
+1. None.
 
 ## Recently Closed
 - Agency assigned-scope enforcement in dashboard/API paths.
@@ -29,6 +24,12 @@ Scope: Open items after security + access hardening wave
 - Quiet-hours queue persistence via `scheduled_messages` (lead-linked).
 - Billing seed + subscription-tier message limit consistency improvements.
 - 30-day guarantee lifecycle automation with refund-review flagging.
+- Overage billing line-item automation in monthly cycle.
+- Deterministic bi-weekly report generation and delivery.
+- Appointment reminder parity for homeowner + contractor plus regression tests.
+- Non-lead quiet-hours durable replay automation.
+- Monthly access-review automation.
+- Self-serve onboarding checklist and managed setup request path.
 
 ## Tracking Rule
 Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `SYSTEM-BLOCKERS.md` archive form.

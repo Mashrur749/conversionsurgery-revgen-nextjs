@@ -41,14 +41,21 @@ export function SignupForm() {
         body: JSON.stringify(form),
       });
 
-      const data = (await res.json()) as { error?: string; message?: string };
+      const data = (await res.json()) as { error?: string; message?: string; clientId?: string };
       if (!res.ok) {
         setError(data.error || 'Signup failed');
         return;
       }
 
       setSuccess(data.message || 'Signup completed');
-      setTimeout(() => router.push('/client-login'), 1200);
+      const nextClientId = data.clientId;
+      setTimeout(() => {
+        if (nextClientId) {
+          router.push(`/signup/next-steps?clientId=${nextClientId}&email=${encodeURIComponent(form.email)}`);
+          return;
+        }
+        router.push('/client-login');
+      }, 800);
     } catch {
       setError('Signup failed');
     } finally {
