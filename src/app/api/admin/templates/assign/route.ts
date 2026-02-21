@@ -1,9 +1,8 @@
 import { getDb } from '@/db';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { messageTemplates } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const assignTemplateSchema = z.object({
   clientId: z.string().uuid('Invalid client ID'),
@@ -15,15 +14,10 @@ const assignTemplateSchema = z.object({
  * POST /api/admin/templates/assign
  * Assigns a template variant to a client for a specific template type
  */
-export async function POST(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const body = await req.json();
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.TEMPLATES_EDIT },
+  async ({ request }) => {
+    const body = await request.json();
     const parsed = assignTemplateSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -85,7 +79,5 @@ export async function POST(req: Request) {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    return safeErrorResponse('admin/templates/assign', error, 'Failed to assign template');
   }
-}
+);

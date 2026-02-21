@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import {
   clientMemberships,
@@ -10,7 +10,6 @@ import {
 } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const updateClientMemberSchema = z.object({
   roleTemplateId: z.string().uuid().optional(),
@@ -24,18 +23,11 @@ const updateClientMemberSchema = z.object({
   isActive: z.boolean().optional(),
 }).strict();
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; mid: string }> }
-) {
-  const { id: clientId, mid: membershipId } = await params;
-  try {
-    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const PATCH = adminClientRoute<{ id: string; mid: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, params, clientId }) => {
+    const { mid: membershipId } = params;
 
-  try {
     const body = await request.json();
     const validated = updateClientMemberSchema.parse(body);
 
@@ -149,29 +141,14 @@ export async function PATCH(
     });
 
     return NextResponse.json({ membership: updated });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    return safeErrorResponse('PATCH /api/admin/clients/[id]/team/[mid]', error, 'Failed to update member');
   }
-}
+);
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string; mid: string }> }
-) {
-  const { id: clientId, mid: membershipId } = await params;
-  try {
-    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const DELETE = adminClientRoute<{ id: string; mid: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, params, clientId }) => {
+    const { mid: membershipId } = params;
 
-  try {
     const db = getDb();
 
     // Load existing membership
@@ -233,7 +210,5 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return safeErrorResponse('DELETE /api/admin/clients/[id]/team/[mid]', error, 'Failed to remove member');
   }
-}
+);

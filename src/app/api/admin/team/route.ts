@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS, preventEscalation } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
+import { preventEscalation } from '@/lib/permissions';
 import { getDb } from '@/db';
 import {
   people,
@@ -9,18 +10,12 @@ import {
   auditLog,
   clients,
 } from '@/db/schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
-export async function GET() {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.TEAM_MANAGE },
+  async () => {
     const db = getDb();
 
     const members = await db
@@ -82,10 +77,8 @@ export async function GET() {
     }));
 
     return NextResponse.json({ members: enrichedMembers });
-  } catch (error) {
-    return safeErrorResponse('GET /api/admin/team', error, 'Failed to load team members');
   }
-}
+);
 
 const inviteMemberSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -95,15 +88,9 @@ const inviteMemberSchema = z.object({
   assignedClientIds: z.array(z.string().uuid()).optional(),
 }).strict();
 
-export async function POST(request: NextRequest) {
-  let session: Awaited<ReturnType<typeof requireAgencyPermission>>;
-  try {
-    session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.TEAM_MANAGE },
+  async ({ request, session }) => {
     const body = await request.json();
     const validated = inviteMemberSchema.parse(body);
 
@@ -138,7 +125,7 @@ export async function POST(request: NextRequest) {
     // Escalation prevention: inviter must hold all permissions in the target role
     try {
       preventEscalation(session.permissions, template.permissions);
-    } catch (err) {
+    } catch {
       return NextResponse.json(
         { error: 'Permission escalation denied' },
         { status: 403 }
@@ -221,13 +208,5 @@ export async function POST(request: NextRequest) {
         role: template,
       },
     });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    return safeErrorResponse('POST /api/admin/team', error, 'Failed to invite member');
   }
-}
+);

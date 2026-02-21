@@ -1,38 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { systemSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { configureAgencyWebhooks } from '@/lib/services/twilio-provisioning';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const AGENCY_NUMBER_KEY = 'agency_twilio_number';
 const AGENCY_NUMBER_SID_KEY = 'agency_twilio_number_sid';
 
-export async function GET() {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.SETTINGS_MANAGE },
+  async () => {
+    const db = getDb();
+    const settings = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, AGENCY_NUMBER_KEY));
+
+    const sidSettings = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, AGENCY_NUMBER_SID_KEY));
+
+    return NextResponse.json({
+      agencyNumber: settings[0]?.value ?? null,
+      agencyNumberSid: sidSettings[0]?.value ?? null,
+    });
   }
-
-  const db = getDb();
-  const settings = await db
-    .select()
-    .from(systemSettings)
-    .where(eq(systemSettings.key, AGENCY_NUMBER_KEY));
-
-  const sidSettings = await db
-    .select()
-    .from(systemSettings)
-    .where(eq(systemSettings.key, AGENCY_NUMBER_SID_KEY));
-
-  return NextResponse.json({
-    agencyNumber: settings[0]?.value ?? null,
-    agencyNumberSid: sidSettings[0]?.value ?? null,
-  });
-}
+);
 
 const updateSchema = z.object({
   agencyNumber: z.string().min(10),
@@ -40,14 +36,9 @@ const updateSchema = z.object({
   configureWebhooks: z.boolean().optional(),
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.SETTINGS_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.SETTINGS_MANAGE },
+  async ({ request }) => {
     const body = await request.json();
     const data = updateSchema.parse(body);
 
@@ -103,17 +94,5 @@ export async function POST(request: NextRequest) {
       agencyNumber: data.agencyNumber,
       agencyNumberSid: data.agencyNumberSid,
     });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('[Agency Settings] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update agency settings' },
-      { status: 500 }
-    );
   }
-}
+);

@@ -1,27 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
-export async function GET(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_VIEW },
+  async () => {
+    const db = getDb();
+    const allClients = await db
+      .select()
+      .from(clients)
+      .orderBy(desc(clients.createdAt));
+
+    return NextResponse.json({ clients: allClients });
   }
-
-  const db = getDb();
-  const allClients = await db
-    .select()
-    .from(clients)
-    .orderBy(desc(clients.createdAt));
-
-  return NextResponse.json({ clients: allClients });
-}
+);
 
 const createClientSchema = z.object({
   businessName: z.string().min(1, 'Business name is required'),
@@ -32,14 +28,9 @@ const createClientSchema = z.object({
   googleBusinessUrl: z.string().url().optional().or(z.literal('')),
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_CREATE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_CREATE },
+  async ({ request }) => {
     const body = await request.json();
     const data = createClientSchema.parse(body);
 
@@ -72,17 +63,5 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json({ client });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('Create client error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create client' },
-      { status: 500 }
-    );
   }
-}
+);

@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { regenerateResponse } from '@/lib/services/review-response';
 import { z } from 'zod';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const regenerateSchema = z.object({
   tone: z.enum(['professional', 'friendly', 'apologetic', 'thankful']).optional(),
@@ -11,19 +10,11 @@ const regenerateSchema = z.object({
 });
 
 /** POST - Regenerate a review response with different parameters. */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const POST = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND },
+  async ({ request, params }) => {
+    const { id } = params;
 
-  const { id } = await params;
-
-  try {
     const body = await request.json();
     const parsed = regenerateSchema.safeParse(body);
 
@@ -43,8 +34,5 @@ export async function POST(
     });
 
     return NextResponse.json({ responseText: newText });
-  } catch (error) {
-    console.error('[Reputation] Regenerate response error for', id, ':', error);
-    return safeErrorResponse('admin/responses/[id]/regenerate', error, 'Failed to regenerate response');
   }
-}
+);

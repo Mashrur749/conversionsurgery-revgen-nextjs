@@ -1,19 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS, ALL_PERMISSIONS, preventEscalation } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS, type AgencySession } from '@/lib/utils/route-handler';
+import { ALL_PERMISSIONS, preventEscalation } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { roleTemplates, auditLog } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
-export async function GET() {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.TEAM_MANAGE },
+  async () => {
     const db = getDb();
 
     const templates = await db
@@ -22,10 +17,8 @@ export async function GET() {
       .orderBy(desc(roleTemplates.isBuiltIn), roleTemplates.name);
 
     return NextResponse.json({ templates });
-  } catch (error) {
-    return safeErrorResponse('GET /api/admin/roles', error, 'Failed to load role templates');
   }
-}
+);
 
 const createRoleSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
@@ -34,15 +27,9 @@ const createRoleSchema = z.object({
   permissions: z.array(z.string()).min(1, 'At least one permission is required'),
 }).strict();
 
-export async function POST(request: NextRequest) {
-  let session: Awaited<ReturnType<typeof requireAgencyPermission>>;
-  try {
-    session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.TEAM_MANAGE },
+  async ({ request, session }) => {
     const body = await request.json();
     const validated = createRoleSchema.parse(body);
 
@@ -60,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Escalation prevention: creator must hold all permissions in the new role
     try {
       preventEscalation(session.permissions, validated.permissions);
-    } catch (err) {
+    } catch {
       return NextResponse.json(
         { error: 'Permission escalation denied' },
         { status: 403 }
@@ -117,13 +104,5 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ template });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    return safeErrorResponse('POST /api/admin/roles', error, 'Failed to create role template');
   }
-}
+);

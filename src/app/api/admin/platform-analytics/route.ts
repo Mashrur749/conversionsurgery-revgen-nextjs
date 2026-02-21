@@ -1,20 +1,14 @@
 import { NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb, platformAnalytics, clients } from '@/db';
 import { desc, sql } from 'drizzle-orm';
 import { getFunnelMetrics } from '@/lib/services/funnel-queries';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
-export async function GET() {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.ANALYTICS_VIEW },
+  async () => {
+    const db = getDb();
 
-  const db = getDb();
-
-  try {
     // Get latest platform analytics row
     const [latest] = await db
       .select()
@@ -55,8 +49,5 @@ export async function GET() {
       churnRate,
       funnelStages,
     });
-  } catch (error) {
-    console.error('[Platform Analytics] Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+);

@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { responseTemplates } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createTemplateSchema = z.object({
   name: z.string().min(1).max(100),
@@ -17,42 +16,24 @@ const createTemplateSchema = z.object({
 });
 
 // GET - List response templates for a client
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+export const GET = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.TEMPLATES_EDIT, clientIdFrom: (p) => p.id },
+  async ({ clientId }) => {
+    const db = getDb();
+    const templates = await db
+      .select()
+      .from(responseTemplates)
+      .where(eq(responseTemplates.clientId, clientId))
+      .orderBy(desc(responseTemplates.usageCount));
 
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.TEMPLATES_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
+    return NextResponse.json(templates);
   }
-
-  const db = getDb();
-  const templates = await db
-    .select()
-    .from(responseTemplates)
-    .where(eq(responseTemplates.clientId, id))
-    .orderBy(desc(responseTemplates.usageCount));
-
-  return NextResponse.json(templates);
-}
+);
 
 // POST - Create a new response template
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.TEMPLATES_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.TEMPLATES_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, clientId }) => {
     const body = await request.json();
     const data = createTemplateSchema.parse(body);
 
@@ -60,7 +41,7 @@ export async function POST(
     const [template] = await db
       .insert(responseTemplates)
       .values({
-        clientId: id,
+        clientId,
         name: data.name,
         category: data.category,
         templateText: data.templateText,
@@ -72,14 +53,5 @@ export async function POST(
       .returning();
 
     return NextResponse.json(template);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('[Response Template] Create error:', error);
-    return NextResponse.json({ error: 'Failed to create template' }, { status: 500 });
   }
-}
+);

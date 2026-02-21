@@ -1,23 +1,17 @@
 import { getDb } from '@/db';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { templateVariants } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/templates
  * Retrieves all template variants with client usage counts
  */
-export async function GET(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.TEMPLATES_EDIT },
+  async ({ request }) => {
     const db = getDb();
-    const url = new URL(req.url);
+    const url = new URL(request.url);
     const templateType = url.searchParams.get('templateType');
 
     // Get all active template variants with client count
@@ -54,7 +48,5 @@ export async function GET(req: Request) {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    return safeErrorResponse('admin/templates', error, 'Failed to load templates');
   }
-}
+);

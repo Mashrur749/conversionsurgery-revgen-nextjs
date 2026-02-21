@@ -1,25 +1,16 @@
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { abTests, abTestMetrics } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/ab-tests/[id]/results
  * Retrieves aggregated performance metrics for both variants of an A/B test
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const { id } = await params;
+export const GET = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.ABTESTS_MANAGE },
+  async ({ params }) => {
+    const { id } = params;
     const db = getDb();
 
     // Get test
@@ -140,7 +131,5 @@ export async function GET(
               ).toFixed(1),
       },
     });
-  } catch (error) {
-    return safeErrorResponse('[ABTesting] GET /api/admin/ab-tests/[id]/results error:', error, 'Failed to fetch test results');
   }
-}
+);

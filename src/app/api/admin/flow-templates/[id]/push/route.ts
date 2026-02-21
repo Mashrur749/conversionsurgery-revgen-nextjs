@@ -1,26 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { pushTemplateUpdate } from '@/lib/services/flow-templates';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
-
-interface RouteContext {
-  params: Promise<{ id: string }>;
-}
 
 /**
  * POST /api/admin/flow-templates/[id]/push
  * Push template updates to all client flows
  */
-export async function POST(request: NextRequest, { params }: RouteContext) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const POST = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.FLOWS_EDIT },
+  async ({ request, params }) => {
+    const { id } = params;
 
-  const { id } = await params;
-
-  try {
     const { searchParams } = new URL(request.url);
     const dryRun = searchParams.get('dryRun') === 'true';
 
@@ -29,11 +19,5 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     console.log('[FlowEngine] Push complete:', result.affected, 'affected,', result.skipped, 'skipped');
     return NextResponse.json(result);
-  } catch (error) {
-    console.error('[FlowEngine] Template push error:', error);
-    return NextResponse.json(
-      { error: 'Failed to push template update' },
-      { status: 500 }
-    );
   }
-}
+);

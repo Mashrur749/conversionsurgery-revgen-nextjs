@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getAccountBalance, listOwnedNumbers } from '@/lib/services/twilio-provisioning';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/twilio/account
@@ -10,14 +9,9 @@ import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-erro
  * owned phone numbers.
  * Requires PHONES_MANAGE permission.
  */
-export async function GET(_request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.PHONES_MANAGE },
+  async () => {
     const [balance, numbers] = await Promise.all([
       getAccountBalance(),
       listOwnedNumbers(),
@@ -27,7 +21,5 @@ export async function GET(_request: NextRequest) {
       balance,
       numbers,
     });
-  } catch (error: unknown) {
-    return safeErrorResponse('[Twilio] Account API error', error, 'Failed to fetch account info');
   }
-}
+);

@@ -1,9 +1,8 @@
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { abTests, type NewABTest } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const updateTestSchema = z.object({
   status: z.enum(['active', 'paused', 'completed', 'archived']).optional(),
@@ -15,18 +14,10 @@ const updateTestSchema = z.object({
  * GET /api/admin/ab-tests/[id]
  * Retrieves a single A/B test by ID
  */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const { id } = await params;
+export const GET = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.ABTESTS_MANAGE },
+  async ({ params }) => {
+    const { id } = params;
     const db = getDb();
 
     const [test] = await db
@@ -40,28 +31,18 @@ export async function GET(
     }
 
     return Response.json({ success: true, test });
-  } catch (error) {
-    return safeErrorResponse('[ABTesting] GET /api/admin/ab-tests/[id] error:', error, 'Failed to fetch test');
   }
-}
+);
 
 /**
  * PATCH /api/admin/ab-tests/[id]
  * Updates an A/B test (status, winner, end date)
  */
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const { id } = await params;
-    const body = await req.json();
+export const PATCH = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.ABTESTS_MANAGE },
+  async ({ request, params }) => {
+    const { id } = params;
+    const body = await request.json();
     const parsed = updateTestSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -103,7 +84,5 @@ export async function PATCH(
       test: updatedTest,
       message: `Test updated: status=${status || test.status}, winner=${winner || 'none'}`,
     });
-  } catch (error) {
-    return safeErrorResponse('[ABTesting] PATCH /api/admin/ab-tests/[id] error:', error, 'Failed to update test');
   }
-}
+);

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { listUnassignedNumbers } from '@/lib/services/twilio-provisioning';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/twilio/unassigned
@@ -9,14 +8,9 @@ import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-erro
  * List Twilio phone numbers on the account that are not assigned to any client.
  * Requires PHONES_MANAGE permission.
  */
-export async function GET() {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.PHONES_MANAGE },
+  async () => {
     const numbers = await listUnassignedNumbers();
 
     return NextResponse.json({
@@ -24,7 +18,5 @@ export async function GET() {
       numbers,
       count: numbers.length,
     });
-  } catch (error: unknown) {
-    return safeErrorResponse('[Twilio] Unassigned numbers API error', error, 'Failed to list unassigned numbers');
   }
-}
+);

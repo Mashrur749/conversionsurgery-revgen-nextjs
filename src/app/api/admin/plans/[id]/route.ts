@@ -1,37 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { plans, subscriptions } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/admin/plans/[id] - Get a single plan. */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const GET = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.BILLING_MANAGE },
+  async ({ params }) => {
+    const { id } = params;
+    const db = getDb();
+
+    const [plan] = await db
+      .select()
+      .from(plans)
+      .where(eq(plans.id, id))
+      .limit(1);
+
+    if (!plan) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ plan });
   }
-
-  const { id } = await params;
-  const db = getDb();
-
-  const [plan] = await db
-    .select()
-    .from(plans)
-    .where(eq(plans.id, id))
-    .limit(1);
-
-  if (!plan) {
-    return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ plan });
-}
+);
 
 const featuresSchema = z.object({
   maxLeadsPerMonth: z.number().nullable(),
@@ -61,31 +54,65 @@ const updatePlanSchema = z.object({
 }).strict();
 
 /** PATCH /api/admin/plans/[id] - Update a plan. */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const PATCH = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.BILLING_MANAGE },
+  async ({ request, params }) => {
+    const { id } = params;
+    const body = await request.json();
+    const parsed = updatePlanSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', fieldErrors: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const db = getDb();
+
+    // If deactivating, check for active subscriptions first
+    if (parsed.data.isActive === false) {
+      const activeSubscriptions = await db
+        .select({ id: subscriptions.id })
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.planId, id),
+            inArray(subscriptions.status, ['active', 'trialing', 'past_due'])
+          )
+        )
+        .limit(1);
+
+      if (activeSubscriptions.length > 0) {
+        return NextResponse.json(
+          { error: 'Cannot deactivate plan with active subscriptions. Migrate subscribers to another plan first.' },
+          { status: 409 }
+        );
+      }
+    }
+
+    const [updated] = await db
+      .update(plans)
+      .set({ ...parsed.data, updatedAt: new Date() })
+      .where(eq(plans.id, id))
+      .returning();
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ plan: updated });
   }
+);
 
-  const { id } = await params;
-  const body = await request.json();
-  const parsed = updatePlanSchema.safeParse(body);
+/** DELETE /api/admin/plans/[id] - Soft-delete (deactivate) a plan. */
+export const DELETE = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.BILLING_MANAGE },
+  async ({ params }) => {
+    const { id } = params;
+    const db = getDb();
 
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid input', fieldErrors: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
-
-  const db = getDb();
-
-  // If deactivating, check for active subscriptions first
-  if (parsed.data.isActive === false) {
+    // Check for active subscriptions before deactivating
     const activeSubscriptions = await db
       .select({ id: subscriptions.id })
       .from(subscriptions)
@@ -103,63 +130,17 @@ export async function PATCH(
         { status: 409 }
       );
     }
+
+    const [updated] = await db
+      .update(plans)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(plans.id, id))
+      .returning();
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ ok: true });
   }
-
-  const [updated] = await db
-    .update(plans)
-    .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(plans.id, id))
-    .returning();
-
-  if (!updated) {
-    return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ plan: updated });
-}
-
-/** DELETE /api/admin/plans/[id] - Soft-delete (deactivate) a plan. */
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  const { id } = await params;
-  const db = getDb();
-
-  // Check for active subscriptions before deactivating
-  const activeSubscriptions = await db
-    .select({ id: subscriptions.id })
-    .from(subscriptions)
-    .where(
-      and(
-        eq(subscriptions.planId, id),
-        inArray(subscriptions.status, ['active', 'trialing', 'past_due'])
-      )
-    )
-    .limit(1);
-
-  if (activeSubscriptions.length > 0) {
-    return NextResponse.json(
-      { error: 'Cannot deactivate plan with active subscriptions. Migrate subscribers to another plan first.' },
-      { status: 409 }
-    );
-  }
-
-  const [updated] = await db
-    .update(plans)
-    .set({ isActive: false, updatedAt: new Date() })
-    .where(eq(plans.id, id))
-    .returning();
-
-  if (!updated) {
-    return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ ok: true });
-}
+);

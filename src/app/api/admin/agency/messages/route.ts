@@ -1,77 +1,73 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { agencyMessages, clients } from '@/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { sendActionPrompt, sendAlert } from '@/lib/services/agency-communication';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/agency/messages
  * List all agency messages. Filterable by clientId, category. Paginated.
  */
-export async function GET(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.CONVERSATIONS_VIEW },
+  async ({ request }) => {
+    const { searchParams } = request.nextUrl;
+    const clientId = searchParams.get('clientId');
+    const category = searchParams.get('category');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+    const offset = (page - 1) * limit;
+
+    const db = getDb();
+
+    const conditions = [];
+    if (clientId) conditions.push(eq(agencyMessages.clientId, clientId));
+    if (category) conditions.push(eq(agencyMessages.category, category));
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const [messages, countResult] = await Promise.all([
+      db
+        .select({
+          id: agencyMessages.id,
+          clientId: agencyMessages.clientId,
+          clientName: clients.businessName,
+          direction: agencyMessages.direction,
+          channel: agencyMessages.channel,
+          content: agencyMessages.content,
+          subject: agencyMessages.subject,
+          category: agencyMessages.category,
+          promptType: agencyMessages.promptType,
+          actionStatus: agencyMessages.actionStatus,
+          clientReply: agencyMessages.clientReply,
+          delivered: agencyMessages.delivered,
+          createdAt: agencyMessages.createdAt,
+          expiresAt: agencyMessages.expiresAt,
+        })
+        .from(agencyMessages)
+        .leftJoin(clients, eq(agencyMessages.clientId, clients.id))
+        .where(whereClause)
+        .orderBy(desc(agencyMessages.createdAt))
+        .limit(limit)
+        .offset(offset),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(agencyMessages)
+        .where(whereClause),
+    ]);
+
+    return NextResponse.json({
+      messages,
+      pagination: {
+        page,
+        limit,
+        total: Number(countResult[0]?.count ?? 0),
+      },
+    });
   }
-
-  const { searchParams } = request.nextUrl;
-  const clientId = searchParams.get('clientId');
-  const category = searchParams.get('category');
-  const page = parseInt(searchParams.get('page') || '1', 10);
-  const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
-  const offset = (page - 1) * limit;
-
-  const db = getDb();
-
-  const conditions = [];
-  if (clientId) conditions.push(eq(agencyMessages.clientId, clientId));
-  if (category) conditions.push(eq(agencyMessages.category, category));
-
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const [messages, countResult] = await Promise.all([
-    db
-      .select({
-        id: agencyMessages.id,
-        clientId: agencyMessages.clientId,
-        clientName: clients.businessName,
-        direction: agencyMessages.direction,
-        channel: agencyMessages.channel,
-        content: agencyMessages.content,
-        subject: agencyMessages.subject,
-        category: agencyMessages.category,
-        promptType: agencyMessages.promptType,
-        actionStatus: agencyMessages.actionStatus,
-        clientReply: agencyMessages.clientReply,
-        delivered: agencyMessages.delivered,
-        createdAt: agencyMessages.createdAt,
-        expiresAt: agencyMessages.expiresAt,
-      })
-      .from(agencyMessages)
-      .leftJoin(clients, eq(agencyMessages.clientId, clients.id))
-      .where(whereClause)
-      .orderBy(desc(agencyMessages.createdAt))
-      .limit(limit)
-      .offset(offset),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(agencyMessages)
-      .where(whereClause),
-  ]);
-
-  return NextResponse.json({
-    messages,
-    pagination: {
-      page,
-      limit,
-      total: Number(countResult[0]?.count ?? 0),
-    },
-  });
-}
+);
 
 /**
  * POST /api/admin/agency/messages
@@ -87,14 +83,9 @@ const sendMessageSchema = z.object({
   isUrgent: z.boolean().optional(),
 });
 
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND },
+  async ({ request }) => {
     const body = await request.json();
     const data = sendMessageSchema.parse(body);
 
@@ -163,17 +154,5 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json({ success: true, messageId: inserted.id });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('[Agency Messages] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to send message' },
-      { status: 500 }
-    );
   }
-}
+);

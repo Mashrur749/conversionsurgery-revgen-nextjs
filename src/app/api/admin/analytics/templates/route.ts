@@ -1,18 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { compareTemplates } from '@/lib/services/flow-metrics';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/admin/analytics/templates */
-export async function GET(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.ANALYTICS_VIEW },
+  async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const days = parseInt(searchParams.get('days') || '30');
@@ -23,7 +16,5 @@ export async function GET(request: NextRequest) {
 
     const comparison = await compareTemplates(category, days);
     return NextResponse.json(comparison);
-  } catch (error) {
-    return safeErrorResponse('[Analytics] Templates Error:', error, 'Failed to fetch template analytics');
   }
-}
+);

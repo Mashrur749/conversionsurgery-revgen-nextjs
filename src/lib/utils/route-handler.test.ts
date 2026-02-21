@@ -84,7 +84,7 @@ describe('adminRoute', () => {
     const res = await route(makeRequest(), makeContext());
     expect(handler).not.toHaveBeenCalled();
     expect(res.status).toBe(401);
-    const body = await res.json();
+    const body = await res.json() as { error: string };
     expect(body.error).toBe('Unauthorized');
   });
 
@@ -112,10 +112,9 @@ describe('adminRoute', () => {
         {
           code: 'invalid_type',
           expected: 'string',
-          received: 'number',
           path: ['name'],
           message: 'Expected string',
-        },
+        } as ZodError['issues'][number],
       ])
     );
 
@@ -126,7 +125,7 @@ describe('adminRoute', () => {
 
     const res = await route(makeRequest('POST', '/api/admin/test'), makeContext());
     expect(res.status).toBe(400);
-    const body = await res.json();
+    const body = await res.json() as { error: string; details: unknown[] };
     expect(body.error).toBe('Invalid input');
     expect(body.details).toHaveLength(1);
   });
@@ -143,7 +142,7 @@ describe('adminRoute', () => {
 
     const res = await route(makeRequest(), makeContext());
     expect(res.status).toBe(500);
-    const body = await res.json();
+    const body = await res.json() as { error: string };
     expect(body.error).toBe('Internal server error');
   });
 

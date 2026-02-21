@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import {
   people,
@@ -8,23 +8,13 @@ import {
   clients,
   auditLog,
 } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: clientId } = await params;
-  try {
-    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT, clientIdFrom: (p) => p.id },
+  async ({ clientId }) => {
     const db = getDb();
 
     // Verify client exists
@@ -67,10 +57,8 @@ export async function GET(
       client,
       members,
     });
-  } catch (error) {
-    return safeErrorResponse('GET /api/admin/clients/[id]/team', error, 'Failed to load client team');
   }
-}
+);
 
 const addMemberSchema = z.object({
   personId: z.string().uuid().optional(),
@@ -93,18 +81,9 @@ const addMemberSchema = z.object({
   { message: 'Either personId, email, or phone is required for new members' }
 );
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: clientId } = await params;
-  try {
-    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, clientId }) => {
     const body = await request.json();
     const validated = addMemberSchema.parse(body);
 
@@ -217,15 +196,7 @@ export async function POST(
       .limit(1);
 
     if (existingMembership) {
-      // Check if it's for this specific client
-      const [forThisClient] = await db
-        .select({ id: clientMemberships.id })
-        .from(clientMemberships)
-        .where(eq(clientMemberships.personId, person.id))
-        .limit(1);
-
       // More specific check with both personId and clientId
-      const { and } = await import('drizzle-orm');
       const [duplicate] = await db
         .select({ id: clientMemberships.id })
         .from(clientMemberships)
@@ -286,13 +257,5 @@ export async function POST(
         role: template,
       },
     });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    return safeErrorResponse('POST /api/admin/clients/[id]/team', error, 'Failed to add team member');
   }
-}
+);

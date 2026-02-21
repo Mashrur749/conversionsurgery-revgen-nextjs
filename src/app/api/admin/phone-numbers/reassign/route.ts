@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const reassignSchema = z.object({
   phoneNumber: z.string().min(1, 'Phone number is required'),
@@ -18,15 +17,10 @@ const reassignSchema = z.object({
  * Releases the number from the existing holder and assigns it to the target.
  * Requires PHONES_MANAGE permission.
  */
-export async function PATCH(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const body = await req.json();
+export const PATCH = adminRoute(
+  { permission: AGENCY_PERMISSIONS.PHONES_MANAGE },
+  async ({ request }) => {
+    const body = await request.json();
     const parsed = reassignSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -82,7 +76,5 @@ export async function PATCH(req: Request) {
       clientId: targetClientId,
       message: `Phone number reassigned to ${targetClient.businessName}`,
     });
-  } catch (error: unknown) {
-    return safeErrorResponse('[Twilio] Phone reassign error', error, 'Failed to reassign phone number');
   }
-}
+);

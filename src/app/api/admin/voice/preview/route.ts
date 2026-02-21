@@ -1,27 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { synthesizeSpeech } from '@/lib/services/elevenlabs';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const previewSchema = z.object({
   voiceId: z.string().min(1),
   text: z.string().min(1).max(500),
 }).strict();
 
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.AI_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.AI_EDIT },
+  async ({ request }) => {
+    const parsed = previewSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
 
-  const parsed = previewSchema.safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
-
-  try {
     const audio = await synthesizeSpeech(parsed.data.voiceId, parsed.data.text);
     return new NextResponse(audio, {
       headers: {
@@ -29,8 +23,5 @@ export async function POST(request: NextRequest) {
         'Content-Disposition': 'inline',
       },
     });
-  } catch (error) {
-    console.error('[ElevenLabs] Preview error:', error);
-    return NextResponse.json({ error: 'Failed to synthesize speech' }, { status: 500 });
   }
-}
+);

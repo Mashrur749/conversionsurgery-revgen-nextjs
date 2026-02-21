@@ -1,10 +1,9 @@
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { reports, dailyStats, abTests } from '@/db/schema';
 import { getTeamMembers } from '@/lib/services/team-bridge';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import { z } from 'zod';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const generateReportSchema = z.object({
   clientId: z.string().uuid(),
@@ -15,16 +14,10 @@ const generateReportSchema = z.object({
 });
 
 /** GET /api/admin/reports */
-export async function GET(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-
-    const { searchParams } = new URL(req.url);
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.ANALYTICS_VIEW },
+  async ({ request }) => {
+    const { searchParams } = new URL(request.url);
     const clientId = searchParams.get('clientId');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
     const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '50')), 100);
@@ -50,22 +43,14 @@ export async function GET(req: Request) {
       page,
       limit,
     });
-  } catch (error) {
-    return safeErrorResponse('[Analytics] Reports List Error:', error, 'Failed to fetch reports');
   }
-}
+);
 
 /** POST /api/admin/reports */
-export async function POST(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-
-    const body = await req.json();
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.ANALYTICS_VIEW },
+  async ({ request }) => {
+    const body = await request.json();
     const validation = generateReportSchema.safeParse(body);
 
     if (!validation.success) {
@@ -206,7 +191,5 @@ export async function POST(req: Request) {
       report: newReport,
       message: `Report generated for ${startDate} to ${endDate}`,
     });
-  } catch (error) {
-    return safeErrorResponse('[Analytics] Reports Generate Error:', error, 'Failed to generate report');
   }
-}
+);

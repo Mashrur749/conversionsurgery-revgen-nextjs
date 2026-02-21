@@ -1,71 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getRecentJobs, getRevenueStats, createJobFromLead } from '@/lib/services/revenue';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createJobSchema = z.object({
   leadId: z.string().uuid(),
   description: z.string().optional(),
 });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_VIEW, clientIdFrom: (p) => p.id },
+  async ({ clientId }) => {
     const [jobsList, stats] = await Promise.all([
-      getRecentJobs(id, 20),
-      getRevenueStats(id),
+      getRecentJobs(clientId, 20),
+      getRevenueStats(clientId),
     ]);
 
     return NextResponse.json({ jobs: jobsList, stats });
-  } catch (error) {
-    console.error('Get jobs error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch jobs' },
-      { status: 500 }
-    );
   }
-}
+);
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, clientId }) => {
     const body = await request.json();
     const data = createJobSchema.parse(body);
-    const jobId = await createJobFromLead(data.leadId, id, data.description);
+    const jobId = await createJobFromLead(data.leadId, clientId, data.description);
 
     return NextResponse.json({ jobId });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('Create job error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create job' },
-      { status: 500 }
-    );
   }
-}
+);

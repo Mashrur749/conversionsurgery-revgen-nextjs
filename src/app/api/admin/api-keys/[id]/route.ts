@@ -1,19 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { revokeApiKey } from '@/lib/services/api-key-management';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const DELETE = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT },
+  async ({ params }) => {
+    const { id } = params;
+    await revokeApiKey(id);
+    return NextResponse.json({ success: true });
   }
-
-  const { id } = await params;
-  await revokeApiKey(id);
-  return NextResponse.json({ success: true });
-}
+);

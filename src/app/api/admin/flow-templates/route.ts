@@ -1,31 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { flowTemplates } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { createTemplate } from '@/lib/services/flow-templates';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/admin/flow-templates
  * List all flow templates
  */
-export async function GET() {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.FLOWS_EDIT },
+  async () => {
+    const db = getDb();
+    const templates = await db
+      .select()
+      .from(flowTemplates)
+      .orderBy(desc(flowTemplates.updatedAt));
+
+    return NextResponse.json(templates);
   }
-
-  const db = getDb();
-  const templates = await db
-    .select()
-    .from(flowTemplates)
-    .orderBy(desc(flowTemplates.updatedAt));
-
-  return NextResponse.json(templates);
-}
+);
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -67,14 +63,9 @@ const createSchema = z.object({
  * POST /api/admin/flow-templates
  * Create a new flow template
  */
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.FLOWS_EDIT },
+  async ({ request }) => {
     const body = await request.json();
     const validation = createSchema.safeParse(body);
 
@@ -108,11 +99,5 @@ export async function POST(request: NextRequest) {
 
     console.log('[FlowEngine] Created template:', template.id);
     return NextResponse.json(template);
-  } catch (error) {
-    console.error('[FlowEngine] Template creation error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create template' },
-      { status: 500 }
-    );
   }
-}
+);

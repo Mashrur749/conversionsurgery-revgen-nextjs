@@ -1,27 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { publishTemplate } from '@/lib/services/flow-templates';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const publishSchema = z.object({
   changeNotes: z.string().optional(),
 }).strict();
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  let agencySession;
-  try {
-    agencySession = await requireAgencyPermission(AGENCY_PERMISSIONS.FLOWS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const POST = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.FLOWS_EDIT },
+  async ({ request, session, params }) => {
+    const { id } = params;
 
-  const { id } = await params;
-
-  try {
     const parsed = publishSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -30,12 +20,9 @@ export async function POST(
     const newVersion = await publishTemplate(
       id,
       parsed.data.changeNotes,
-      agencySession.userId
+      session.userId
     );
 
     return NextResponse.json({ success: true, version: newVersion });
-  } catch (error) {
-    console.error('[FlowTemplates] Publish error:', error);
-    return NextResponse.json({ error: 'Failed to publish' }, { status: 500 });
   }
-}
+);

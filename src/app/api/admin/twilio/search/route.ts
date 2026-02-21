@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { searchAvailableNumbers } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const searchQuerySchema = z.object({
   areaCode: z
@@ -21,34 +20,29 @@ const searchQuerySchema = z.object({
  * Search for available Twilio phone numbers by location (region/city) or
  * area code. Requires PHONES_MANAGE permission.
  */
-export async function GET(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.PHONES_MANAGE },
+  async ({ request }) => {
+    const url = new URL(request.url);
+    const rawParams = {
+      areaCode: url.searchParams.get('areaCode') || undefined,
+      contains: url.searchParams.get('contains') || undefined,
+      country: url.searchParams.get('country') || undefined,
+      inRegion: url.searchParams.get('inRegion') || undefined,
+      inLocality: url.searchParams.get('inLocality') || undefined,
+    };
 
-  const url = new URL(request.url);
-  const rawParams = {
-    areaCode: url.searchParams.get('areaCode') || undefined,
-    contains: url.searchParams.get('contains') || undefined,
-    country: url.searchParams.get('country') || undefined,
-    inRegion: url.searchParams.get('inRegion') || undefined,
-    inLocality: url.searchParams.get('inLocality') || undefined,
-  };
+    const parsed = searchQuerySchema.safeParse(rawParams);
 
-  const parsed = searchQuerySchema.safeParse(rawParams);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
 
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
+    const { areaCode, contains, country, inRegion, inLocality } = parsed.data;
 
-  const { areaCode, contains, country, inRegion, inLocality } = parsed.data;
-
-  try {
     console.log(`[Twilio] Search request: region=${inRegion ?? 'any'}, locality=${inLocality ?? 'any'}, areaCode=${areaCode ?? 'any'}, country=${country}`);
 
     const numbers = await searchAvailableNumbers({
@@ -67,7 +61,5 @@ export async function GET(request: NextRequest) {
       count: numbers.length,
       isDevelopmentMock: process.env.NODE_ENV === 'development' && numbers.length > 0,
     });
-  } catch (error: unknown) {
-    return safeErrorResponse('[Twilio] Search API error', error, 'Failed to search available numbers');
   }
-}
+);

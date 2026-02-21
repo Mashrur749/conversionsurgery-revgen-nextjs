@@ -1,23 +1,13 @@
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { reports } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/admin/reports/[id] */
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-
-    const { id } = await params;
+export const GET = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.ANALYTICS_VIEW },
+  async ({ params }) => {
+    const { id } = params;
     const db = getDb();
 
     const [report] = await db
@@ -31,7 +21,5 @@ export async function GET(
     }
 
     return Response.json({ success: true, report });
-  } catch (error) {
-    return safeErrorResponse('[Analytics] Reports Get Error:', error, 'Failed to fetch report');
   }
-}
+);

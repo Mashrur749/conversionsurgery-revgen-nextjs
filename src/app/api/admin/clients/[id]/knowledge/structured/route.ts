@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { z } from 'zod';
 import {
   saveStructuredKnowledge,
   loadStructuredKnowledge,
 } from '@/lib/services/structured-knowledge';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const serviceSchema = z.object({
   name: z.string().min(1),
@@ -36,41 +35,18 @@ const structuredKnowledgeSchema = z.object({
 });
 
 /** GET - Load existing structured knowledge for a client */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.KNOWLEDGE_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const data = await loadStructuredKnowledge(id);
+export const GET = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.KNOWLEDGE_EDIT, clientIdFrom: (p) => p.id },
+  async ({ clientId }) => {
+    const data = await loadStructuredKnowledge(clientId);
     return NextResponse.json({ data });
-  } catch (error) {
-    console.error('[Knowledge] Failed to load structured knowledge:', error);
-    return NextResponse.json({ error: 'Failed to load' }, { status: 500 });
   }
-}
+);
 
 /** PUT - Save structured knowledge (replaces existing) */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.KNOWLEDGE_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const PUT = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.KNOWLEDGE_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, clientId }) => {
     const body = await request.json();
     const parsed = structuredKnowledgeSchema.safeParse(body);
 
@@ -81,14 +57,11 @@ export async function PUT(
       );
     }
 
-    const result = await saveStructuredKnowledge(id, parsed.data);
+    const result = await saveStructuredKnowledge(clientId, parsed.data);
 
     return NextResponse.json({
       success: true,
       entriesCreated: result.entriesCreated,
     });
-  } catch (error) {
-    console.error('[Knowledge] Failed to save structured knowledge:', error);
-    return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
   }
-}
+);

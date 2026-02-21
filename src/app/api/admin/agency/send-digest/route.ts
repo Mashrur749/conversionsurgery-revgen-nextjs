@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { z } from 'zod';
 import {
   sendWeeklyDigest,
   processAgencyWeeklyDigests,
 } from '@/lib/services/agency-communication';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const sendDigestSchema = z.object({
   clientId: z.string().uuid().optional(),
@@ -16,14 +15,9 @@ const sendDigestSchema = z.object({
  * POST { clientId } — send to one client
  * POST {} — send to all active clients
  */
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND },
+  async ({ request }) => {
     const body = await request.json();
     const data = sendDigestSchema.parse(body);
 
@@ -34,17 +28,5 @@ export async function POST(request: NextRequest) {
 
     const sent = await processAgencyWeeklyDigests();
     return NextResponse.json({ success: true, sent });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('[Admin] Send digest error:', error);
-    return NextResponse.json(
-      { error: 'Failed to send digest' },
-      { status: 500 }
-    );
   }
-}
+);

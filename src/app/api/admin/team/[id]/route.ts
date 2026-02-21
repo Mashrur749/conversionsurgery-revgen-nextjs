@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS, preventEscalation } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
+import { preventEscalation } from '@/lib/permissions';
 import { getDb } from '@/db';
 import {
   agencyMemberships,
@@ -10,7 +11,6 @@ import {
 } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const updateMemberSchema = z.object({
   roleTemplateId: z.string().uuid().optional(),
@@ -19,19 +19,10 @@ const updateMemberSchema = z.object({
   isActive: z.boolean().optional(),
 }).strict();
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  let session: Awaited<ReturnType<typeof requireAgencyPermission>>;
-  try {
-    session = await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const { id } = await params;
+export const PATCH = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.TEAM_MANAGE },
+  async ({ request, session, params }) => {
+    const { id } = params;
     const body = await request.json();
     const validated = updateMemberSchema.parse(body);
 
@@ -95,7 +86,7 @@ export async function PATCH(
       // Escalation prevention: editor must hold all permissions in the new role
       try {
         preventEscalation(session.permissions, template.permissions);
-      } catch (err) {
+      } catch {
         return NextResponse.json(
           { error: 'Permission escalation denied' },
           { status: 403 }
@@ -179,29 +170,13 @@ export async function PATCH(
     });
 
     return NextResponse.json({ membership: updated });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    return safeErrorResponse('PATCH /api/admin/team/[id]', error, 'Failed to update member');
   }
-}
+);
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEAM_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const { id } = await params;
+export const DELETE = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.TEAM_MANAGE },
+  async ({ request, params }) => {
+    const { id } = params;
     const db = getDb();
 
     // Load existing membership
@@ -256,7 +231,5 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    return safeErrorResponse('DELETE /api/admin/team/[id]', error, 'Failed to remove member');
   }
-}
+);

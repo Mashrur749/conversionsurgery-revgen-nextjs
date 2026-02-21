@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { releaseNumber } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const releaseSchema = z.object({
   clientId: z.string().uuid('Client ID must be a valid UUID'),
@@ -15,14 +14,9 @@ const releaseSchema = z.object({
  * the assignment from the database.
  * Requires PHONES_MANAGE permission.
  */
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.PHONES_MANAGE },
+  async ({ request }) => {
     const body = await request.json();
     const parsed = releaseSchema.safeParse(body);
 
@@ -49,7 +43,5 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Twilio] Release success: client ${clientId}`);
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return safeErrorResponse('[Twilio] Release API error', error, 'Failed to release number');
   }
-}
+);

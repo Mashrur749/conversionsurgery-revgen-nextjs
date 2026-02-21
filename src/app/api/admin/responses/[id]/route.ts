@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { reviewResponses } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { logDeleteAudit } from '@/lib/services/audit';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const updateSchema = z.object({
   responseText: z.string().min(1).optional(),
@@ -13,46 +12,32 @@ const updateSchema = z.object({
 });
 
 /** GET - Get a single review response by ID. */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const GET = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND },
+  async ({ params }) => {
+    const { id } = params;
+
+    const db = getDb();
+    const [response] = await db
+      .select()
+      .from(reviewResponses)
+      .where(eq(reviewResponses.id, id))
+      .limit(1);
+
+    if (!response) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(response);
   }
-
-  const { id } = await params;
-
-  const db = getDb();
-  const [response] = await db
-    .select()
-    .from(reviewResponses)
-    .where(eq(reviewResponses.id, id))
-    .limit(1);
-
-  if (!response) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-
-  return NextResponse.json(response);
-}
+);
 
 /** PATCH - Update a review response's text or status. */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const PATCH = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND },
+  async ({ request, params }) => {
+    const { id } = params;
 
-  const { id } = await params;
-
-  try {
     const body = await request.json();
     const parsed = updateSchema.safeParse(body);
 
@@ -76,30 +61,21 @@ export async function PATCH(
       .where(eq(reviewResponses.id, id));
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('[Reputation] Update response error for', id, ':', error);
-    return NextResponse.json({ error: 'Failed to update response' }, { status: 500 });
   }
-}
+);
 
 /** DELETE - Delete a draft review response. */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const DELETE = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND },
+  async ({ params }) => {
+    const { id } = params;
+
+    const db = getDb();
+    const [deleted] = await db.delete(reviewResponses).where(eq(reviewResponses.id, id)).returning();
+    if (deleted) {
+      await logDeleteAudit({ resourceType: 'review_response', resourceId: id });
+    }
+
+    return NextResponse.json({ success: true });
   }
-
-  const { id } = await params;
-
-  const db = getDb();
-  const [deleted] = await db.delete(reviewResponses).where(eq(reviewResponses.id, id)).returning();
-  if (deleted) {
-    await logDeleteAudit({ resourceType: 'review_response', resourceId: id });
-  }
-
-  return NextResponse.json({ success: true });
-}
+);

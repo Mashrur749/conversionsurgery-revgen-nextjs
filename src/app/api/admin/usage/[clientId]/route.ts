@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getClientUsageSummary, getCurrentMonthUsage } from '@/lib/services/usage-tracking';
 import { getUnacknowledgedAlerts } from '@/lib/services/usage-alerts';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const querySchema = z.object({
   startDate: z
@@ -17,19 +16,9 @@ const querySchema = z.object({
 });
 
 /** GET - Get detailed usage for a specific client */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ clientId: string }> }
-) {
-  const { clientId } = await params;
-
-  try {
-    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.BILLING_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminClientRoute<{ clientId: string }>(
+  { permission: AGENCY_PERMISSIONS.BILLING_VIEW, clientIdFrom: (p) => p.clientId },
+  async ({ request, clientId }) => {
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.safeParse({
       startDate: searchParams.get('startDate') || undefined,
@@ -57,10 +46,8 @@ export async function GET(
       currentMonth,
       alerts,
     });
-  } catch (error) {
-    return safeErrorResponse('admin/usage/[clientId]', error, 'Failed to load client usage');
   }
-}
+);
 
 function getMonthStart(): string {
   const now = new Date();

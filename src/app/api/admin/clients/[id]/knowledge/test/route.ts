@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import OpenAI from 'openai';
 import { buildKnowledgeContext, searchKnowledge } from '@/lib/services/knowledge-base';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -17,19 +16,9 @@ const testSchema = z.object({
   })).optional().default([]),
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.KNOWLEDGE_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.KNOWLEDGE_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, clientId }) => {
     const body = await request.json();
     const { message, history } = testSchema.parse(body);
 
@@ -37,15 +26,15 @@ export async function POST(
     const [client] = await db
       .select()
       .from(clients)
-      .where(eq(clients.id, id))
+      .where(eq(clients.id, clientId))
       .limit(1);
 
     if (!client) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    const knowledgeContext = await buildKnowledgeContext(id);
-    const relevantEntries = await searchKnowledge(id, message);
+    const knowledgeContext = await buildKnowledgeContext(clientId);
+    const relevantEntries = await searchKnowledge(clientId, message);
 
     let relevantSection = '';
     if (relevantEntries.length > 0) {
@@ -78,17 +67,5 @@ Keep responses SHORT (1-3 sentences). Be helpful and professional.`;
     return NextResponse.json({
       response: response.choices[0].message.content,
     });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    console.error('Knowledge test error:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate test response' },
-      { status: 500 }
-    );
   }
-}
+);

@@ -1,9 +1,8 @@
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { abTests, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createTestSchema = z.object({
   clientId: z.string().uuid(),
@@ -18,15 +17,10 @@ const createTestSchema = z.object({
  * GET /api/admin/ab-tests
  * Retrieves all A/B tests, optionally filtered by client ID
  */
-export async function GET(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const { searchParams } = new URL(req.url);
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.ABTESTS_MANAGE },
+  async ({ request }) => {
+    const { searchParams } = new URL(request.url);
     const clientId = searchParams.get('clientId');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
     const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '50')), 100);
@@ -52,24 +46,17 @@ export async function GET(req: Request) {
       page,
       limit,
     });
-  } catch (error) {
-    return safeErrorResponse('[ABTesting] GET /api/admin/ab-tests error:', error, 'Failed to fetch tests');
   }
-}
+);
 
 /**
  * POST /api/admin/ab-tests
  * Creates a new A/B test for a client
  */
-export async function POST(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ABTESTS_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const body = await req.json();
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.ABTESTS_MANAGE },
+  async ({ request }) => {
+    const body = await request.json();
     const parsed = createTestSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -113,7 +100,5 @@ export async function POST(req: Request) {
       test: newTest,
       message: `Test "${name}" created for ${client.businessName}`,
     });
-  } catch (error) {
-    return safeErrorResponse('[ABTesting] POST /api/admin/ab-tests error:', error, 'Failed to create test');
   }
-}
+);

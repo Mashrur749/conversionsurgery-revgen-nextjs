@@ -1,9 +1,7 @@
 import { getDb } from '@/db';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { templateVariants } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createVariantSchema = z.object({
   templateType: z.string().min(1, 'Template type required'),
@@ -16,15 +14,10 @@ const createVariantSchema = z.object({
  * POST /api/admin/templates/variants
  * Creates a new template variant for A/B testing
  */
-export async function POST(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.TEMPLATES_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
-    const body = await req.json();
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.TEMPLATES_EDIT },
+  async ({ request }) => {
+    const body = await request.json();
     const parsed = createVariantSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -62,7 +55,5 @@ export async function POST(req: Request) {
       }),
       { status: 201, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    return safeErrorResponse('[ABTesting] POST /api/admin/templates/variants', error, 'Internal server error');
   }
-}
+);

@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import {
   clientMemberships,
@@ -10,25 +10,15 @@ import {
 } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const transferSchema = z.object({
   targetMembershipId: z.string().uuid('Valid membership ID is required'),
   confirmName: z.string().min(1, 'Confirmation name is required'),
 }).strict();
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id: clientId } = await params;
-  try {
-    await requireAgencyClientPermission(clientId, AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, clientId }) => {
     const body = await request.json();
     const validated = transferSchema.parse(body);
 
@@ -169,13 +159,5 @@ export async function POST(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.issues },
-        { status: 400 }
-      );
-    }
-    return safeErrorResponse('POST /api/admin/clients/[id]/team/transfer-ownership', error, 'Failed to transfer ownership');
   }
-}
+);

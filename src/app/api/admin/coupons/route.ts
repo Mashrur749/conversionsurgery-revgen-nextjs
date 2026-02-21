@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { coupons } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const createCouponSchema = z.object({
   code: z.string().min(2).max(50),
@@ -22,52 +21,46 @@ const createCouponSchema = z.object({
 }).strict();
 
 /** GET /api/admin/coupons — List all coupons */
-export async function GET() {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.BILLING_MANAGE },
+  async () => {
+    const db = getDb();
+    const results = await db.select().from(coupons).orderBy(desc(coupons.createdAt)).limit(200);
+    return NextResponse.json({ coupons: results });
   }
-
-  const db = getDb();
-  const results = await db.select().from(coupons).orderBy(desc(coupons.createdAt)).limit(200);
-  return NextResponse.json({ coupons: results });
-}
+);
 
 /** POST /api/admin/coupons — Create a coupon */
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.BILLING_MANAGE },
+  async ({ request }) => {
+    const body = await request.json();
+    const parsed = createCouponSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const data = parsed.data;
+    const db = getDb();
+
+    const [coupon] = await db.insert(coupons).values({
+      code: data.code.toUpperCase(),
+      name: data.name || null,
+      discountType: data.discountType,
+      discountValue: data.discountValue,
+      duration: data.duration,
+      durationMonths: data.durationMonths || null,
+      maxRedemptions: data.maxRedemptions || null,
+      validFrom: data.validFrom ? new Date(data.validFrom) : null,
+      validUntil: data.validUntil ? new Date(data.validUntil) : null,
+      applicablePlans: data.applicablePlans || null,
+      minAmountCents: data.minAmountCents || null,
+      firstTimeOnly: data.firstTimeOnly,
+    }).returning();
+
+    return NextResponse.json({ coupon }, { status: 201 });
   }
-
-  const body = await request.json();
-  const parsed = createCouponSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid input', details: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
-
-  const data = parsed.data;
-  const db = getDb();
-
-  const [coupon] = await db.insert(coupons).values({
-    code: data.code.toUpperCase(),
-    name: data.name || null,
-    discountType: data.discountType,
-    discountValue: data.discountValue,
-    duration: data.duration,
-    durationMonths: data.durationMonths || null,
-    maxRedemptions: data.maxRedemptions || null,
-    validFrom: data.validFrom ? new Date(data.validFrom) : null,
-    validUntil: data.validUntil ? new Date(data.validUntil) : null,
-    applicablePlans: data.applicablePlans || null,
-    minAmountCents: data.minAmountCents || null,
-    firstTimeOnly: data.firstTimeOnly,
-  }).returning();
-
-  return NextResponse.json({ coupon }, { status: 201 });
-}
+);

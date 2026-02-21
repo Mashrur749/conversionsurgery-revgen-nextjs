@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb, apiUsageMonthly, clients } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const querySchema = z.object({
   month: z
@@ -13,14 +12,9 @@ const querySchema = z.object({
 });
 
 /** GET - Get usage summary for all clients */
-export async function GET(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.BILLING_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.BILLING_VIEW },
+  async ({ request }) => {
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.safeParse({
       month: searchParams.get('month') || undefined,
@@ -72,10 +66,8 @@ export async function GET(request: NextRequest) {
       clients: usage,
       totals,
     });
-  } catch (error) {
-    return safeErrorResponse('admin/usage', error, 'Failed to load usage summary');
   }
-}
+);
 
 function getCurrentMonth(): string {
   const now = new Date();

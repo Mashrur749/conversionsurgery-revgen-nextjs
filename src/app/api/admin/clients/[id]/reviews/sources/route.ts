@@ -1,11 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { reviewSources } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { findGooglePlaceId } from '@/lib/services/google-places';
 import { z } from 'zod';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 const addSourceSchema = z.object({
   source: z.enum(['google', 'yelp', 'facebook', 'bbb', 'angi', 'homeadvisor', 'other']),
@@ -15,41 +14,23 @@ const addSourceSchema = z.object({
 });
 
 /** GET - List all review sources for a client. */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+export const GET = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_VIEW, clientIdFrom: (p) => p.id },
+  async ({ clientId }) => {
+    const db = getDb();
+    const sources = await db
+      .select()
+      .from(reviewSources)
+      .where(eq(reviewSources.clientId, clientId));
 
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
+    return NextResponse.json({ sources });
   }
-
-  const db = getDb();
-  const sources = await db
-    .select()
-    .from(reviewSources)
-    .where(eq(reviewSources.clientId, id));
-
-  return NextResponse.json({ sources });
-}
+);
 
 /** POST - Add or update a review source for a client. */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-
-  try {
-    await requireAgencyClientPermission(id, AGENCY_PERMISSIONS.CLIENTS_EDIT);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminClientRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT, clientIdFrom: (p) => p.id },
+  async ({ request, clientId }) => {
     const body = await request.json();
     const parsed = addSourceSchema.safeParse(body);
 
@@ -83,7 +64,7 @@ export async function POST(
       .from(reviewSources)
       .where(
         and(
-          eq(reviewSources.clientId, id),
+          eq(reviewSources.clientId, clientId),
           eq(reviewSources.source, data.source)
         )
       )
@@ -100,7 +81,7 @@ export async function POST(
         .where(eq(reviewSources.id, existing.id));
     } else {
       await db.insert(reviewSources).values({
-        clientId: id,
+        clientId,
         source: data.source,
         googlePlaceId: googlePlaceId || null,
         isActive: true,
@@ -108,11 +89,5 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true, googlePlaceId });
-  } catch (error) {
-    console.error('[Reputation] Add review source error for client', id, ':', error);
-    return NextResponse.json(
-      { error: 'Failed to add review source' },
-      { status: 500 }
-    );
   }
-}
+);

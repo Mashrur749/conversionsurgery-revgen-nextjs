@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { assignExistingNumber } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
-import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 const assignSchema = z.object({
   phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters'),
@@ -16,14 +15,9 @@ const assignSchema = z.object({
  * webhooks. Use the configure endpoint separately to set up webhooks.
  * Requires PHONES_MANAGE permission.
  */
-export async function POST(request: NextRequest) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.PHONES_MANAGE);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const POST = adminRoute(
+  { permission: AGENCY_PERMISSIONS.PHONES_MANAGE },
+  async ({ request }) => {
     const body = await request.json();
     const parsed = assignSchema.safeParse(body);
 
@@ -50,7 +44,5 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Twilio] Assign success: ${phoneNumber} → ${clientId}`);
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    return safeErrorResponse('[Twilio] Assign API error', error, 'Failed to assign number');
   }
-}
+);

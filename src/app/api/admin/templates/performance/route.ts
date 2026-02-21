@@ -1,8 +1,7 @@
 import { getDb } from '@/db';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { templateVariants, templatePerformanceMetrics } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
-import { safeErrorResponse, permissionErrorResponse } from '@/lib/utils/api-errors';
 
 interface VariantSummary {
   id: string;
@@ -25,16 +24,11 @@ interface VariantSummary {
  * GET /api/admin/templates/performance
  * Retrieves aggregate performance metrics for all template variants
  */
-export async function GET(req: Request) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.ANALYTICS_VIEW);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
-
-  try {
+export const GET = adminRoute(
+  { permission: AGENCY_PERMISSIONS.ANALYTICS_VIEW },
+  async ({ request }) => {
     const db = getDb();
-    const url = new URL(req.url);
+    const url = new URL(request.url);
     const dateRange = url.searchParams.get('dateRange') || 'last_30_days';
     const templateType = url.searchParams.get('templateType');
 
@@ -152,7 +146,5 @@ export async function GET(req: Request) {
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    return safeErrorResponse('admin/templates/performance', error, 'Failed to load template performance');
   }
-}
+);

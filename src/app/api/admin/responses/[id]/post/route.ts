@@ -1,22 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requireAgencyPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { postResponseToGoogle } from '@/lib/services/google-business';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
 
 /** POST - Post a review response to Google Business Profile. */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    await requireAgencyPermission(AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND);
-  } catch (error) {
-    return permissionErrorResponse(error);
-  }
+export const POST = adminRoute<{ id: string }>(
+  { permission: AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND },
+  async ({ params }) => {
+    const { id } = params;
 
-  const { id } = await params;
-
-  try {
     const result = await postResponseToGoogle(id);
 
     if (!result.success) {
@@ -24,11 +15,5 @@ export async function POST(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('[Reputation] Post response to Google error for', id, ':', error);
-    return NextResponse.json(
-      { error: 'Failed to post response to Google' },
-      { status: 500 }
-    );
   }
-}
+);
