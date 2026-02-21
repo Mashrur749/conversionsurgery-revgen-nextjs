@@ -1,7 +1,8 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { getDb, users, clients } from '@/db';
-import { eq, desc } from 'drizzle-orm';
+import { getDb } from '@/db';
+import { users, people, agencyMemberships, clientMemberships, clients } from '@/db/schema';
+import { eq, desc, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export default async function UsersPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 
@@ -21,15 +22,18 @@ export default async function UsersPage() {
   const allUsers = await db
     .select({
       id: users.id,
-      name: users.name,
-      email: users.email,
-      isAdmin: users.isAdmin,
-      clientId: users.clientId,
-      clientName: clients.businessName,
+      name: sql<string | null>`COALESCE(${people.name}, ${users.name})`,
+      email: sql<string>`COALESCE(${people.email}, ${users.email})`,
+      hasAgencyAccess: sql<boolean>`${agencyMemberships.id} IS NOT NULL`,
+      clientId: sql<string | null>`${clientMemberships.clientId}`,
+      clientName: sql<string | null>`${clients.businessName}`,
       createdAt: users.createdAt,
     })
     .from(users)
-    .leftJoin(clients, eq(users.clientId, clients.id))
+    .leftJoin(people, eq(users.personId, people.id))
+    .leftJoin(agencyMemberships, eq(people.id, agencyMemberships.personId))
+    .leftJoin(clientMemberships, eq(people.id, clientMemberships.personId))
+    .leftJoin(clients, eq(clientMemberships.clientId, clients.id))
     .orderBy(desc(users.createdAt));
 
   const allClients = await db
@@ -46,7 +50,7 @@ export default async function UsersPage() {
           <p className="text-muted-foreground">Manage user access and permissions</p>
         </div>
         <Button asChild variant="outline">
-          <Link href="/admin">← Back to Clients</Link>
+          <Link href="/admin">&larr; Back to Clients</Link>
         </Button>
       </div>
 

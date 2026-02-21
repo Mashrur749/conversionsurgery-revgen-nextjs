@@ -12,7 +12,7 @@ export default async function AnalyticsPage() {
 
   const clientId = await getClientId();
 
-  if (session.user.isAdmin && !clientId) {
+  if (session.user.isAgency && !clientId) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <h2 className="text-xl font-semibold mb-2">Select a Client</h2>

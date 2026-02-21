@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminPlatformAnalyticsPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/login');
   }
 

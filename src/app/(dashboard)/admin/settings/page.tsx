@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function SystemSettingsPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   const db = getDb();
   const settings = await db

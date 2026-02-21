@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
-import { users, clients, people, agencyMemberships } from '@/db/schema';
+import { users, people, agencyMemberships, clientMemberships, clients } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 
 export const GET = adminRoute(
@@ -9,25 +9,22 @@ export const GET = adminRoute(
   async () => {
     const db = getDb();
 
-    // Query users with both legacy fields and new schema data.
-    // Legacy: users.isAdmin, users.clientId — still populated for pre-migration users.
-    // New: users.personId → people (name, phone, email) → agencyMemberships/clientMemberships.
     const allUsers = await db
       .select({
         id: users.id,
         name: sql<string | null>`COALESCE(${people.name}, ${users.name})`,
         email: sql<string>`COALESCE(${people.email}, ${users.email})`,
-        isAdmin: users.isAdmin,
-        clientId: users.clientId,
-        clientName: clients.businessName,
         personId: users.personId,
         hasAgencyAccess: sql<boolean>`${agencyMemberships.id} IS NOT NULL`,
+        clientId: sql<string | null>`${clientMemberships.clientId}`,
+        clientName: sql<string | null>`${clients.businessName}`,
         createdAt: users.createdAt,
       })
       .from(users)
-      .leftJoin(clients, eq(users.clientId, clients.id))
       .leftJoin(people, eq(users.personId, people.id))
       .leftJoin(agencyMemberships, eq(people.id, agencyMemberships.personId))
+      .leftJoin(clientMemberships, eq(people.id, clientMemberships.personId))
+      .leftJoin(clients, eq(clientMemberships.clientId, clients.id))
       .orderBy(desc(users.createdAt))
       .limit(200);
 

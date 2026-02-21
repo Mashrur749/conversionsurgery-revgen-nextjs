@@ -8,7 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { leads } from './leads';
 import { clients } from './clients';
-import { teamMembers } from './team-members';
+import { clientMemberships } from './client-memberships';
 
 /**
  * Log of call attempts made to team members during hot transfer
@@ -25,7 +25,7 @@ export const callAttempts = pgTable(
       .references(() => clients.id, { onDelete: 'cascade' }),
     callSid: varchar('call_sid', { length: 50 }),
     status: varchar('status', { length: 20 }), // ringing, answered, failed, no-answer, busy
-    answeredBy: uuid('answered_by').references(() => teamMembers.id, { onDelete: 'set null' }),
+    answeredBy: uuid('answered_by').references(() => clientMemberships.id, { onDelete: 'set null' }),
     duration: integer('duration'), // seconds
     recordingUrl: varchar('recording_url', { length: 500 }),
     createdAt: timestamp('created_at').defaultNow().notNull(),

@@ -20,7 +20,7 @@ export default async function ClientTeamPage({
 }) {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

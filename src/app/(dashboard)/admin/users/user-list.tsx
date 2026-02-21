@@ -11,7 +11,7 @@ interface User {
   id: string;
   name: string | null;
   email: string | null;
-  isAdmin: boolean | null;
+  hasAgencyAccess: boolean;
   clientId: string | null;
   clientName: string | null;
   createdAt: Date | null;
@@ -69,8 +69,8 @@ export function UserList({ users, clients, currentUserId }: Props) {
               <span className="text-sm text-muted-foreground">
                 {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : '\u2014'}
               </span>
-              {user.isAdmin && (
-                <Badge className="bg-[#FFF3E0] text-forest">Admin</Badge>
+              {user.hasAgencyAccess && (
+                <Badge className="bg-[#FFF3E0] text-forest">Agency</Badge>
               )}
               <UserActions
                 user={user}

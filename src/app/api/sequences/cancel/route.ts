@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthSession } from '@/lib/auth-session';
+import { getClientSession } from '@/lib/client-auth';
 import { getDb, scheduledMessages } from '@/db';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
@@ -14,8 +14,8 @@ const schema = z.object({
  * Can cancel all sequences or specific types (appointment, estimate, review, payment).
  */
 export async function POST(request: NextRequest) {
-  const authSession = await getAuthSession();
-  if (!authSession?.clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { leadId, sequenceType } = parsed.data;
-    const clientId = authSession.clientId;
+    const clientId = session.clientId;
 
     // Map short names to actual database sequenceType values
     const sequenceTypeMap: Record<string, string[]> = {

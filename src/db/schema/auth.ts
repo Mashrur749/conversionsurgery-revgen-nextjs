@@ -7,10 +7,8 @@ import {
   integer,
   unique,
   primaryKey,
-  boolean,
   index,
 } from 'drizzle-orm/pg-core';
-import { clients } from './clients';
 import { people } from './people';
 
 /**
@@ -25,8 +23,6 @@ export const users = pgTable(
     email: varchar('email', { length: 255 }).notNull().unique(),
     emailVerified: timestamp('email_verified'),
     image: varchar('image', { length: 500 }),
-    clientId: uuid('client_id').references(() => clients.id),
-    isAdmin: boolean('is_admin').default(false),
     personId: uuid('person_id').references(() => people.id, {
       onDelete: 'set null',
     }),

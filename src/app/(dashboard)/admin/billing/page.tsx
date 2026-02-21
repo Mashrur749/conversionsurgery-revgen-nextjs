@@ -13,7 +13,7 @@ export const metadata = {
 
 async function AdminBillingContent() {
   const session = await auth();
-  if (!session || !session?.user?.isAdmin) {
+  if (!session || !session?.user?.isAgency) {
     redirect('/login');
   }
 

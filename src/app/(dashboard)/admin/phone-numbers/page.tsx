@@ -11,7 +11,7 @@ import { PhoneNumbersStats } from './components/phone-numbers-stats';
 export default async function PhoneNumbersPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

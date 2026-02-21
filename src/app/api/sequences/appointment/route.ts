@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthSession } from '@/lib/auth-session';
+import { getClientSession } from '@/lib/client-auth';
 import { scheduleAppointmentReminders } from '@/lib/automations/appointment-reminder';
 import { z } from 'zod';
 
@@ -15,8 +15,8 @@ const schema = z.object({
  * Creates appointment record and schedules day-before and 2-hour reminder messages.
  */
 export async function POST(request: NextRequest) {
-  const authSession = await getAuthSession();
-  if (!authSession?.clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { leadId, date, time, address } = parsed.data;
-    const clientId = authSession.clientId;
+    const clientId = session.clientId;
 
     const result = await scheduleAppointmentReminders({
       leadId,

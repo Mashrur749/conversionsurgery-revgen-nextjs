@@ -12,7 +12,7 @@ import { eq } from 'drizzle-orm';
 export default async function TwilioAdminPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

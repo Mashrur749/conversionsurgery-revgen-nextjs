@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 
 export default async function NpsDashboardPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   const db = getDb();
 

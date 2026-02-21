@@ -1,10 +1,10 @@
 import { Session } from 'next-auth';
 
 /**
- * Check if session user is an admin. Throws if not.
+ * Check if session user is an agency member. Throws if not.
  */
 export function requireAdmin(session: Session | null): void {
-  if (!(session as any)?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     throw new Error('Forbidden: admin access required');
   }
 }
@@ -13,7 +13,7 @@ export function requireAdmin(session: Session | null): void {
  * Check if session user is a super admin. Returns false for regular admins.
  */
 export function isSuperAdmin(session: Session | null): boolean {
-  return (session as any)?.user?.role === 'super_admin';
+  return session?.user?.role === 'super_admin' || session?.user?.role === 'agency_owner';
 }
 
 /**

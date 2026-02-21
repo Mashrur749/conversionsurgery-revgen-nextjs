@@ -5,12 +5,10 @@ import {
   subscriptionPlans,
   flowTemplates,
   flowTemplateSteps,
-  adminUsers,
   systemSettings,
   clients,
   leads,
   conversations,
-  teamMembers,
   businessHours,
   dailyStats,
   appointments,
@@ -18,9 +16,18 @@ import {
   templateVariants,
   plans,
   users,
+  people,
+  roleTemplates,
+  clientMemberships,
+  agencyMemberships,
 } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { randomBytes, scryptSync } from 'crypto';
+import {
+  ALL_PORTAL_PERMISSIONS,
+  ALL_AGENCY_PERMISSIONS,
+  PORTAL_PERMISSIONS,
+  AGENCY_PERMISSIONS,
+} from '@/lib/permissions/constants';
+import { eq, and } from 'drizzle-orm';
 
 const db = getDb();
 
@@ -491,47 +498,196 @@ async function seedFlowTemplates() {
 }
 
 // ============================================
-// 4. ADMIN USER
+// 4. ROLE TEMPLATES
 // ============================================
 
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(password, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
+const BUILT_IN_ROLE_TEMPLATES = [
+  {
+    name: 'Business Owner',
+    slug: 'business_owner',
+    description: 'Full access to all client portal features.',
+    scope: 'client',
+    permissions: [...ALL_PORTAL_PERMISSIONS],
+  },
+  {
+    name: 'Office Manager',
+    slug: 'office_manager',
+    description: 'Access to most client portal features except AI settings and team management.',
+    scope: 'client',
+    permissions: ALL_PORTAL_PERMISSIONS.filter(
+      (p) => p !== PORTAL_PERMISSIONS.SETTINGS_AI && p !== PORTAL_PERMISSIONS.TEAM_MANAGE
+    ),
+  },
+  {
+    name: 'Team Member',
+    slug: 'team_member',
+    description: 'Basic access to dashboard, leads, and conversations.',
+    scope: 'client',
+    permissions: [
+      PORTAL_PERMISSIONS.DASHBOARD,
+      PORTAL_PERMISSIONS.LEADS_VIEW,
+      PORTAL_PERMISSIONS.CONVERSATIONS_VIEW,
+    ],
+  },
+  {
+    name: 'Agency Owner',
+    slug: 'agency_owner',
+    description: 'Full access to all agency features including billing and settings.',
+    scope: 'agency',
+    permissions: [...ALL_AGENCY_PERMISSIONS],
+  },
+  {
+    name: 'Agency Admin',
+    slug: 'agency_admin',
+    description: 'Full agency access except billing management and system settings.',
+    scope: 'agency',
+    permissions: ALL_AGENCY_PERMISSIONS.filter(
+      (p) => p !== AGENCY_PERMISSIONS.BILLING_MANAGE && p !== AGENCY_PERMISSIONS.SETTINGS_MANAGE
+    ),
+  },
+  {
+    name: 'Account Manager',
+    slug: 'account_manager',
+    description: 'Manage assigned clients.',
+    scope: 'agency',
+    permissions: [
+      AGENCY_PERMISSIONS.CLIENTS_VIEW,
+      AGENCY_PERMISSIONS.CLIENTS_EDIT,
+      AGENCY_PERMISSIONS.FLOWS_VIEW,
+      AGENCY_PERMISSIONS.FLOWS_EDIT,
+      AGENCY_PERMISSIONS.CONVERSATIONS_VIEW,
+      AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND,
+      AGENCY_PERMISSIONS.ANALYTICS_VIEW,
+      AGENCY_PERMISSIONS.KNOWLEDGE_EDIT,
+      AGENCY_PERMISSIONS.AI_EDIT,
+    ],
+  },
+  {
+    name: 'Content Specialist',
+    slug: 'content_specialist',
+    description: 'View clients and conversations, edit templates and knowledge base.',
+    scope: 'agency',
+    permissions: [
+      AGENCY_PERMISSIONS.CLIENTS_VIEW,
+      AGENCY_PERMISSIONS.CONVERSATIONS_VIEW,
+      AGENCY_PERMISSIONS.TEMPLATES_EDIT,
+      AGENCY_PERMISSIONS.KNOWLEDGE_EDIT,
+    ],
+  },
+];
+
+async function seedRoleTemplates() {
+  console.log('Seeding role templates...');
+
+  for (const template of BUILT_IN_ROLE_TEMPLATES) {
+    const existing = await db
+      .select()
+      .from(roleTemplates)
+      .where(eq(roleTemplates.slug, template.slug))
+      .limit(1);
+
+    if (existing.length > 0) {
+      console.log(`  Role template "${template.slug}" exists, updating permissions...`);
+      await db.update(roleTemplates).set({
+        permissions: template.permissions,
+        updatedAt: new Date(),
+      }).where(eq(roleTemplates.slug, template.slug));
+    } else {
+      console.log(`  Creating role template "${template.slug}"...`);
+      await db.insert(roleTemplates).values({
+        name: template.name,
+        slug: template.slug,
+        description: template.description,
+        scope: template.scope,
+        permissions: template.permissions,
+        isBuiltIn: true,
+      });
+    }
+  }
+
+  console.log('  ✓ Role templates seeded');
 }
+
+// ============================================
+// 5. ADMIN USER (via people + agency_memberships)
+// ============================================
 
 async function seedAdminUser() {
   console.log('Seeding admin user...');
 
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@conversionsurgery.com';
-  const adminPassword = process.env.ADMIN_PASSWORD || 'changeme123!';
 
-  const existing = await db
+  // Find or create person
+  let [adminPerson] = await db
     .select()
-    .from(adminUsers)
-    .where(eq(adminUsers.email, adminEmail))
+    .from(people)
+    .where(eq(people.email, adminEmail))
     .limit(1);
 
-  if (existing.length > 0) {
-    console.log(`  Admin "${adminEmail}" already exists, skipping`);
+  if (!adminPerson) {
+    [adminPerson] = await db.insert(people).values({
+      name: 'Admin',
+      email: adminEmail,
+    }).returning();
+    console.log(`  Created admin person: ${adminEmail}`);
+  } else {
+    console.log(`  Admin person "${adminEmail}" already exists`);
+  }
+
+  // Look up agency_owner role template
+  const [ownerRole] = await db
+    .select()
+    .from(roleTemplates)
+    .where(and(eq(roleTemplates.slug, 'agency_owner'), eq(roleTemplates.scope, 'agency')))
+    .limit(1);
+
+  if (!ownerRole) {
+    console.error('  ✗ agency_owner role template not found — run seedRoleTemplates first');
     return;
   }
 
-  const passwordHash = hashPassword(adminPassword);
+  // Create agency membership if not exists
+  const [existingMembership] = await db
+    .select()
+    .from(agencyMemberships)
+    .where(eq(agencyMemberships.personId, adminPerson.id))
+    .limit(1);
 
-  await db.insert(adminUsers).values({
-    email: adminEmail,
-    name: 'Admin',
-    passwordHash,
-    role: 'super_admin',
-  });
+  if (!existingMembership) {
+    await db.insert(agencyMemberships).values({
+      personId: adminPerson.id,
+      roleTemplateId: ownerRole.id,
+      clientScope: 'all',
+    });
+    console.log(`  Created agency membership for ${adminEmail}`);
+  } else {
+    console.log(`  Agency membership for "${adminEmail}" already exists`);
+  }
 
-  console.log(`  ✓ Admin user created: ${adminEmail}`);
-  console.log(`  ⚠️  CHANGE PASSWORD IMMEDIATELY IN PRODUCTION`);
+  // Create NextAuth user record if not exists
+  const [existingUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, adminEmail))
+    .limit(1);
+
+  if (!existingUser) {
+    await db.insert(users).values({
+      name: 'Admin',
+      email: adminEmail,
+      personId: adminPerson.id,
+    });
+    console.log(`  Created user record: ${adminEmail}`);
+  } else if (!existingUser.personId) {
+    await db.update(users).set({ personId: adminPerson.id, updatedAt: new Date() }).where(eq(users.id, existingUser.id));
+    console.log(`  Linked user to person: ${adminEmail}`);
+  }
+
+  console.log(`  ✓ Admin user seeded: ${adminEmail}`);
 }
 
 // ============================================
-// 5. SYSTEM SETTINGS
+// 6. SYSTEM SETTINGS
 // ============================================
 
 const SYSTEM_SETTINGS = [
@@ -570,7 +726,7 @@ async function seedSystemSettings() {
 }
 
 // ============================================
-// 6. TEMPLATE VARIANTS (A/B Testing)
+// 7. TEMPLATE VARIANTS (A/B Testing)
 // ============================================
 
 const TEMPLATE_VARIANTS = [
@@ -686,7 +842,7 @@ async function seedTemplateVariants() {
 }
 
 // ============================================
-// 7. DEMO CLIENTS
+// 8. DEMO CLIENTS
 // ============================================
 
 const DEMO_CLIENTS = [
@@ -813,103 +969,161 @@ async function seedDemoClients(): Promise<string[]> {
 }
 
 // ============================================
-// 8. DEMO USERS (NextAuth login accounts)
+// 9. DEMO USERS (NextAuth login accounts)
 // ============================================
 
 async function seedDemoUsers(clientIds: string[]) {
   console.log('Seeding demo users...');
 
-  // Admin user (can log in via magic link)
+  // Admin user (already created in seedAdminUser, just verify)
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@conversionsurgery.com';
   const existingAdmin = await db.select().from(users).where(eq(users.email, adminEmail)).limit(1);
 
   if (existingAdmin.length === 0) {
+    // Find admin person
+    const [adminPerson] = await db.select().from(people).where(eq(people.email, adminEmail)).limit(1);
     await db.insert(users).values({
       name: 'Admin',
       email: adminEmail,
-      isAdmin: true,
+      personId: adminPerson?.id,
     });
     console.log(`  Created admin user: ${adminEmail}`);
   } else {
     console.log(`  Admin user exists, skipping`);
   }
 
-  // Client users (one per demo client)
-  const clientEmails = DEMO_CLIENTS.map((c) => c.email);
-  for (let i = 0; i < clientEmails.length; i++) {
-    const email = clientEmails[i];
-    const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  // Client users: create person + client_membership + user for each demo client
+  const [businessOwnerRole] = await db
+    .select()
+    .from(roleTemplates)
+    .where(and(eq(roleTemplates.slug, 'business_owner'), eq(roleTemplates.scope, 'client')))
+    .limit(1);
 
-    if (existing.length > 0) {
-      console.log(`  User "${email}" exists, skipping`);
+  if (!businessOwnerRole) {
+    console.error('  ✗ business_owner role template not found');
+    return;
+  }
+
+  for (let i = 0; i < DEMO_CLIENTS.length; i++) {
+    const client = DEMO_CLIENTS[i];
+    const clientId = clientIds[i];
+
+    const existingUser = await db.select().from(users).where(eq(users.email, client.email)).limit(1);
+    if (existingUser.length > 0) {
+      console.log(`  User "${client.email}" exists, skipping`);
       continue;
     }
 
+    // Create person for the client owner
+    let [ownerPerson] = await db.select().from(people).where(eq(people.email, client.email)).limit(1);
+    if (!ownerPerson) {
+      [ownerPerson] = await db.insert(people).values({
+        name: client.ownerName,
+        email: client.email,
+        phone: client.phone,
+      }).returning();
+    }
+
+    // Create client membership (business owner)
+    const [existingMembership] = await db.select().from(clientMemberships)
+      .where(and(eq(clientMemberships.personId, ownerPerson.id), eq(clientMemberships.clientId, clientId)))
+      .limit(1);
+
+    if (!existingMembership) {
+      await db.insert(clientMemberships).values({
+        personId: ownerPerson.id,
+        clientId,
+        roleTemplateId: businessOwnerRole.id,
+        isOwner: true,
+        receiveEscalations: true,
+        receiveHotTransfers: true,
+      });
+    }
+
+    // Create NextAuth user
     await db.insert(users).values({
-      name: DEMO_CLIENTS[i].ownerName,
-      email,
-      clientId: clientIds[i],
-      isAdmin: false,
+      name: client.ownerName,
+      email: client.email,
+      personId: ownerPerson.id,
     });
-    console.log(`  Created user: ${email}`);
+    console.log(`  Created user: ${client.email}`);
   }
 
   console.log('  ✓ Demo users seeded');
 }
 
 // ============================================
-// 9. TEAM MEMBERS
+// 10. TEAM MEMBERS (via people + client_memberships)
 // ============================================
 
 async function seedTeamMembers(clientIds: string[]) {
   console.log('Seeding team members...');
 
+  const [teamMemberRole] = await db
+    .select()
+    .from(roleTemplates)
+    .where(and(eq(roleTemplates.slug, 'team_member'), eq(roleTemplates.scope, 'client')))
+    .limit(1);
+
+  if (!teamMemberRole) {
+    console.error('  ✗ team_member role template not found');
+    return;
+  }
+
   const TEAM_MEMBERS = [
-    // Summit Roofing (clientIds[0]) - 3 team members
-    { clientId: clientIds[0], name: 'Mike Henderson', phone: '+14035551001', email: 'mike@summitroofing.ca', role: 'owner', priority: 1 },
-    { clientId: clientIds[0], name: 'Tyler Burns', phone: '+14035551011', email: 'tyler@summitroofing.ca', role: 'estimator', priority: 2 },
-    { clientId: clientIds[0], name: 'Jordan Wells', phone: '+14035551012', email: 'jordan@summitroofing.ca', role: 'project_manager', priority: 3 },
+    // Summit Roofing (clientIds[0]) - extra team members (owner already created)
+    { clientId: clientIds[0], name: 'Tyler Burns', phone: '+14035551011', email: 'tyler@summitroofing.ca', receiveHotTransfers: true },
+    { clientId: clientIds[0], name: 'Jordan Wells', phone: '+14035551012', email: 'jordan@summitroofing.ca', receiveHotTransfers: false },
 
-    // Precision Plumbing (clientIds[1]) - 2 team members
-    { clientId: clientIds[1], name: 'Sarah Chen', phone: '+17805551002', email: 'sarah@precisionplumbing.ca', role: 'owner', priority: 1 },
-    { clientId: clientIds[1], name: 'Kevin Patel', phone: '+17805551021', email: 'kevin@precisionplumbing.ca', role: 'technician', priority: 2 },
+    // Precision Plumbing (clientIds[1]) - extra team members
+    { clientId: clientIds[1], name: 'Kevin Patel', phone: '+17805551021', email: 'kevin@precisionplumbing.ca', receiveHotTransfers: false },
 
-    // Northern HVAC (clientIds[2]) - 1 team member (solo)
-    { clientId: clientIds[2], name: 'James Walker', phone: '+14035551003', email: 'james@northernhvac.ca', role: 'owner', priority: 1 },
-
-    // Alpine Electrical (clientIds[4]) - 4 team members
-    { clientId: clientIds[4], name: 'Lisa Park', phone: '+17805551005', email: 'lisa@alpineelectrical.ca', role: 'owner', priority: 1 },
-    { clientId: clientIds[4], name: 'Ryan Choi', phone: '+17805551051', email: 'ryan@alpineelectrical.ca', role: 'estimator', priority: 2 },
-    { clientId: clientIds[4], name: 'Amanda Foster', phone: '+17805551052', email: 'amanda@alpineelectrical.ca', role: 'office_manager', priority: 3 },
-    { clientId: clientIds[4], name: 'Derek Silva', phone: '+17805551053', email: 'derek@alpineelectrical.ca', role: 'electrician', priority: 4 },
+    // Alpine Electrical (clientIds[4]) - extra team members
+    { clientId: clientIds[4], name: 'Ryan Choi', phone: '+17805551051', email: 'ryan@alpineelectrical.ca', receiveHotTransfers: true },
+    { clientId: clientIds[4], name: 'Amanda Foster', phone: '+17805551052', email: 'amanda@alpineelectrical.ca', receiveHotTransfers: false },
+    { clientId: clientIds[4], name: 'Derek Silva', phone: '+17805551053', email: 'derek@alpineelectrical.ca', receiveHotTransfers: false },
   ];
 
   for (const member of TEAM_MEMBERS) {
-    const existing = await db
-      .select()
-      .from(teamMembers)
-      .where(eq(teamMembers.phone, member.phone))
+    // Check if person already exists
+    let [person] = await db.select().from(people).where(eq(people.phone, member.phone)).limit(1);
+    if (!person && member.email) {
+      [person] = await db.select().from(people).where(eq(people.email, member.email)).limit(1);
+    }
+
+    if (!person) {
+      [person] = await db.insert(people).values({
+        name: member.name,
+        phone: member.phone,
+        email: member.email,
+      }).returning();
+    }
+
+    // Check if membership already exists
+    const [existingMembership] = await db.select().from(clientMemberships)
+      .where(and(eq(clientMemberships.personId, person.id), eq(clientMemberships.clientId, member.clientId)))
       .limit(1);
 
-    if (existing.length > 0) {
+    if (existingMembership) {
       console.log(`  Team member "${member.name}" exists, skipping`);
       continue;
     }
 
-    await db.insert(teamMembers).values({
-      ...member,
+    await db.insert(clientMemberships).values({
+      personId: person.id,
+      clientId: member.clientId,
+      roleTemplateId: teamMemberRole.id,
       receiveEscalations: true,
-      receiveHotTransfers: member.role === 'owner' || member.role === 'estimator',
-      isActive: true,
+      receiveHotTransfers: member.receiveHotTransfers,
     });
-    console.log(`  Created team member: ${member.name} (${member.role})`);
+    console.log(`  Created team member: ${member.name}`);
   }
 
   console.log('  ✓ Team members seeded');
 }
 
 // ============================================
-// 10. BUSINESS HOURS
+// 11. BUSINESS HOURS
 // ============================================
 
 async function seedBusinessHours(clientIds: string[]) {
@@ -949,7 +1163,7 @@ async function seedBusinessHours(clientIds: string[]) {
 }
 
 // ============================================
-// 11. DEMO LEADS
+// 12. DEMO LEADS
 // ============================================
 
 async function seedDemoLeads(clientIds: string[]): Promise<string[]> {
@@ -1008,7 +1222,7 @@ async function seedDemoLeads(clientIds: string[]): Promise<string[]> {
 }
 
 // ============================================
-// 12. DEMO CONVERSATIONS
+// 13. DEMO CONVERSATIONS
 // ============================================
 
 async function seedDemoConversations(clientIds: string[], leadIds: string[]) {
@@ -1017,7 +1231,6 @@ async function seedDemoConversations(clientIds: string[], leadIds: string[]) {
   const now = new Date();
   const minutesAgo = (m: number) => new Date(now.getTime() - m * 60000);
 
-  // Conversation for lead[0] (John Richardson - Summit Roofing, contacted)
   const convos = [
     // John Richardson missed call thread
     { leadId: leadIds[0], clientId: clientIds[0], direction: 'outbound', messageType: 'sms', content: 'Hi John, this is Summit Roofing Co. Sorry we missed your call! How can we help you today?', aiConfidence: '0.95', createdAt: minutesAgo(7200) },
@@ -1059,7 +1272,7 @@ async function seedDemoConversations(clientIds: string[], leadIds: string[]) {
 }
 
 // ============================================
-// 13. DAILY STATS (last 30 days)
+// 14. DAILY STATS (last 30 days)
 // ============================================
 
 async function seedDailyStats(clientIds: string[]) {
@@ -1113,7 +1326,7 @@ async function seedDailyStats(clientIds: string[]) {
 }
 
 // ============================================
-// 14. DEMO APPOINTMENTS
+// 15. DEMO APPOINTMENTS
 // ============================================
 
 async function seedDemoAppointments(clientIds: string[], leadIds: string[]) {
@@ -1151,7 +1364,7 @@ async function seedDemoAppointments(clientIds: string[], leadIds: string[]) {
 }
 
 // ============================================
-// 15. SCHEDULED MESSAGES
+// 16. SCHEDULED MESSAGES
 // ============================================
 
 async function seedScheduledMessages(clientIds: string[], leadIds: string[]) {
@@ -1248,6 +1461,7 @@ export async function seed() {
     await seedSubscriptionPlans();
     await seedBillingPlans();
     await seedFlowTemplates();
+    await seedRoleTemplates(); // Must run before admin/team member seeding
     await seedAdminUser();
     await seedSystemSettings();
     await seedTemplateVariants();

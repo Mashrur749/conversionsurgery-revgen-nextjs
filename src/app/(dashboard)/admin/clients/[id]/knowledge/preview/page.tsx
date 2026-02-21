@@ -15,7 +15,7 @@ interface Props {
 export default async function KnowledgePreviewPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   const db = getDb();
   const [client] = await db

@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 export default async function FlowTemplatesPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   const db = getDb();
   const templates = await db

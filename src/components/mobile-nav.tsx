@@ -20,10 +20,10 @@ type NavGroup = { group: string; items: NavItem[] };
 interface MobileNavProps {
   navItems: NavItem[];
   adminGroups?: NavGroup[];
-  isAdmin: boolean;
+  isAgency: boolean;
 }
 
-export function MobileNav({ navItems, adminGroups, isAdmin }: MobileNavProps) {
+export function MobileNav({ navItems, adminGroups, isAgency }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -58,7 +58,7 @@ export function MobileNav({ navItems, adminGroups, isAdmin }: MobileNavProps) {
             ))}
           </div>
 
-          {isAdmin && adminGroups && (
+          {isAgency && adminGroups && (
             <>
               <div className="border-t mx-4 my-2" />
               {adminGroups.map((group) => (

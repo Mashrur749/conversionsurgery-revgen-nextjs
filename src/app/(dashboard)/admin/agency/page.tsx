@@ -7,7 +7,7 @@ import { AgencyDashboard } from './_components/agency-dashboard';
 
 export default async function AgencyPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/login');
   }
 

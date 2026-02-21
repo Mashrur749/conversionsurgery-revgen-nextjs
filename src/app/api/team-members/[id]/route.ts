@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { getDb } from '@/db';
-import { clientMemberships, people, teamMembers, escalationClaims, escalationQueue } from '@/db/schema';
+import { clientMemberships, people, escalationClaims, escalationQueue } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -129,9 +129,9 @@ export async function DELETE(
     const { id } = await params;
     const db = getDb();
 
-    // Get the membership to find the person and client
+    // Get the membership
     const [membership] = await db
-      .select({ personId: clientMemberships.personId, clientId: clientMemberships.clientId })
+      .select({ id: clientMemberships.id })
       .from(clientMemberships)
       .where(eq(clientMemberships.id, id))
       .limit(1);
@@ -146,43 +146,22 @@ export async function DELETE(
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(clientMemberships.id, id));
 
-    // B7: Release open escalation items assigned to this member's legacy teamMember record
-    const [person] = await db
-      .select({ phone: people.phone })
-      .from(people)
-      .where(eq(people.id, membership.personId))
-      .limit(1);
+    // Release open escalation items assigned to this membership
+    await db
+      .update(escalationClaims)
+      .set({ claimedBy: null, status: 'pending', claimedAt: null })
+      .where(and(
+        eq(escalationClaims.claimedBy, id),
+        inArray(escalationClaims.status, ['pending', 'claimed'])
+      ));
 
-    if (person?.phone) {
-      const [legacyMember] = await db
-        .select({ id: teamMembers.id })
-        .from(teamMembers)
-        .where(and(
-          eq(teamMembers.clientId, membership.clientId),
-          eq(teamMembers.phone, person.phone)
-        ))
-        .limit(1);
-
-      if (legacyMember) {
-        // Release pending/claimed escalation claims back to pending
-        await db
-          .update(escalationClaims)
-          .set({ claimedBy: null, status: 'pending', claimedAt: null })
-          .where(and(
-            eq(escalationClaims.claimedBy, legacyMember.id),
-            inArray(escalationClaims.status, ['pending', 'claimed'])
-          ));
-
-        // Release assigned escalation queue items back to pending
-        await db
-          .update(escalationQueue)
-          .set({ assignedTo: null, status: 'pending', assignedAt: null, updatedAt: new Date() })
-          .where(and(
-            eq(escalationQueue.assignedTo, legacyMember.id),
-            inArray(escalationQueue.status, ['assigned', 'in_progress'])
-          ));
-      }
-    }
+    await db
+      .update(escalationQueue)
+      .set({ assignedTo: null, status: 'pending', assignedAt: null, updatedAt: new Date() })
+      .where(and(
+        eq(escalationQueue.assignedTo, id),
+        inArray(escalationQueue.status, ['assigned', 'in_progress'])
+      ));
 
     return Response.json({ success: true });
   } catch (error) {

@@ -6,13 +6,13 @@ import { eq, asc } from 'drizzle-orm';
 
 async function getCallerIdentity(): Promise<{
   userEmail: string;
-  isAdmin: boolean;
+  isAgency: boolean;
 } | null> {
   const nextAuthSession = await auth();
   if (nextAuthSession?.user) {
     return {
       userEmail: nextAuthSession.user.email ?? 'unknown',
-      isAdmin: (nextAuthSession as any).user?.isAdmin || false,
+      isAgency: nextAuthSession.user?.isAgency || false,
     };
   }
 
@@ -20,7 +20,7 @@ async function getCallerIdentity(): Promise<{
   if (clientSession) {
     return {
       userEmail: clientSession.client.email,
-      isAdmin: false,
+      isAgency: false,
     };
   }
 
@@ -51,7 +51,7 @@ export async function GET(
     }
 
     // Only allow owner (by email) or admin
-    if (!caller.isAdmin && message.userEmail !== caller.userEmail) {
+    if (!caller.isAgency && message.userEmail !== caller.userEmail) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -80,8 +80,8 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const isAdmin = session.user?.isAdmin || false;
-  if (!isAdmin) {
+  const isAgency = session.user?.isAgency || false;
+  if (!isAgency) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

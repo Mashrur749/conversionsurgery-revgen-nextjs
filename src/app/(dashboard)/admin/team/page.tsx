@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export default async function AgencyTeamPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

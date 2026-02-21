@@ -44,7 +44,7 @@ function generateRisks(optOutRate: number, messagesBlocked: number): string[] {
 
 export default async function CompliancePage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

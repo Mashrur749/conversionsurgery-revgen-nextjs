@@ -8,7 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { leads } from './leads';
 import { clients } from './clients';
-import { teamMembers } from './team-members';
+import { clientMemberships } from './client-memberships';
 
 /**
  * Escalation claims for high-intent leads
@@ -24,7 +24,7 @@ export const escalationClaims = pgTable(
     clientId: uuid('client_id')
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
-    claimedBy: uuid('claimed_by').references(() => teamMembers.id, { onDelete: 'set null' }),
+    claimedBy: uuid('claimed_by').references(() => clientMemberships.id, { onDelete: 'set null' }),
     claimToken: varchar('claim_token', { length: 64 }).notNull().unique(),
     escalationReason: varchar('escalation_reason', { length: 255 }),
     lastLeadMessage: text('last_lead_message'),

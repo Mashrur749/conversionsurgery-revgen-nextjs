@@ -13,7 +13,7 @@ import type { ReviewSource } from '@/db/schema/review-sources';
 export default async function ReputationPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

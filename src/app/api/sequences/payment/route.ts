@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthSession } from '@/lib/auth-session';
+import { getClientSession } from '@/lib/client-auth';
 import { startPaymentReminder, markInvoicePaid } from '@/lib/automations/payment-reminder';
 import { z } from 'zod';
 
@@ -20,8 +20,8 @@ const paidSchema = z.object({
  * Requires authentication with clientId. Creates invoice and schedules reminders.
  */
 export async function POST(request: NextRequest) {
-  const authSession = await getAuthSession();
-  if (!authSession?.clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validation.data;
-    const clientId = authSession.clientId;
+    const clientId = session.clientId;
 
     const result = await startPaymentReminder({ ...data, clientId });
     return NextResponse.json(result);
@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
  * Requires authentication. Cancels remaining reminders and updates payment status.
  */
 export async function PATCH(request: NextRequest) {
-  const authSession = await getAuthSession();
-  if (!authSession) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

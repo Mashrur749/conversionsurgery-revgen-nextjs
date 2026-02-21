@@ -15,7 +15,7 @@ const supportMessageSchema = z.object({
 async function getCallerIdentity(): Promise<{
   userId: string | null;
   userEmail: string;
-  isAdmin: boolean;
+  isAgency: boolean;
 } | null> {
   // Try NextAuth first (admin/dashboard users)
   const nextAuthSession = await auth();
@@ -23,7 +23,7 @@ async function getCallerIdentity(): Promise<{
     return {
       userId: (nextAuthSession.user as any).id as string,
       userEmail: nextAuthSession.user.email ?? 'unknown',
-      isAdmin: (nextAuthSession as any).user?.isAdmin || false,
+      isAgency: nextAuthSession.user?.isAgency || false,
     };
   }
 
@@ -33,7 +33,7 @@ async function getCallerIdentity(): Promise<{
     return {
       userId: null,
       userEmail: clientSession.client.email,
-      isAdmin: false,
+      isAgency: false,
     };
   }
 
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
 
     // Build conditions
     const conditions = [];
-    if (!caller.isAdmin) {
+    if (!caller.isAgency) {
       // Non-admin: filter by email (works for both NextAuth and client auth)
       conditions.push(eq(supportMessages.userEmail, caller.userEmail));
     }

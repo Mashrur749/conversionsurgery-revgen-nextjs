@@ -4,7 +4,7 @@ import { ArticleEditor } from './article-editor';
 
 export default async function HelpArticlesPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   return (
     <div className="space-y-6">

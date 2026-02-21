@@ -20,10 +20,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const isAdmin = session.user?.isAdmin || false;
+  const isAgency = session.user?.isAgency || false;
   const sessionClientId = session?.client?.id;
 
-  if (!isAdmin && !sessionClientId) {
+  if (!isAgency && !sessionClientId) {
     return NextResponse.json({ error: 'No client' }, { status: 403 });
   }
 
@@ -36,11 +36,11 @@ export async function GET(request: NextRequest) {
   const dateFrom = sp.get('dateFrom') || undefined;
   const dateTo = sp.get('dateTo') || undefined;
 
-  if (clientId && !isAdmin) {
+  if (clientId && !isAgency) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const effectiveClientId = isAdmin ? (clientId || null) : sessionClientId;
+  const effectiveClientId = isAgency ? (clientId || null) : sessionClientId;
 
   const db = getDb();
   const conditions = [];

@@ -9,7 +9,7 @@ import { TemplatePerformanceDashboard } from './components/template-performance-
 export default async function TemplatePerformancePage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/login');
   }
 

@@ -14,13 +14,13 @@ const replySchema = z.object({
 
 async function getCallerIdentity(): Promise<{
   userEmail: string;
-  isAdmin: boolean;
+  isAgency: boolean;
 } | null> {
   const nextAuthSession = await auth();
   if (nextAuthSession?.user) {
     return {
       userEmail: nextAuthSession.user.email ?? 'unknown',
-      isAdmin: (nextAuthSession as any).user?.isAdmin || false,
+      isAgency: nextAuthSession.user?.isAgency || false,
     };
   }
 
@@ -28,7 +28,7 @@ async function getCallerIdentity(): Promise<{
   if (clientSession) {
     return {
       userEmail: clientSession.client.email,
-      isAdmin: false,
+      isAgency: false,
     };
   }
 
@@ -63,7 +63,7 @@ export async function POST(
     }
 
     // Only allow owner (by email) or admin
-    if (!caller.isAdmin && message.userEmail !== caller.userEmail) {
+    if (!caller.isAgency && message.userEmail !== caller.userEmail) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -72,14 +72,14 @@ export async function POST(
       .values({
         supportMessageId: id,
         content: parsed.content,
-        isAdmin: caller.isAdmin,
+        isAdmin: caller.isAgency,
         authorEmail: caller.userEmail,
         calcomLink: parsed.calcomLink || null,
       })
       .returning();
 
     // If admin reply, send email notification to the user
-    if (caller.isAdmin) {
+    if (caller.isAgency) {
       const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
       const threadUrl = `${appUrl}/client/discussions/${id}`;
 

@@ -6,26 +6,18 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 const updateUserSchema = z.object({
-  isAdmin: z.boolean().optional(),
-  clientId: z.string().uuid().optional().or(z.null()),
+  name: z.string().optional(),
+  email: z.string().email().optional(),
 });
 
 export const PATCH = adminRoute<{ id: string }>(
   { permission: AGENCY_PERMISSIONS.TEAM_MANAGE },
-  async ({ request, session, params }) => {
+  async ({ request, params }) => {
     const { id } = params;
 
     const body = (await request.json()) as Record<string, unknown>;
 
     const data = updateUserSchema.parse(body);
-
-    // Prevent self-demotion: admin cannot remove their own admin access
-    if (data.isAdmin === false && session.userId === id) {
-      return NextResponse.json(
-        { error: 'Cannot remove your own admin access' },
-        { status: 400 }
-      );
-    }
 
     const db = getDb();
     const [updated] = await db

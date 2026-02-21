@@ -50,7 +50,7 @@ interface Props {
 
 export default async function ReportDetailPage({ params }: Props) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/login');
   }
 

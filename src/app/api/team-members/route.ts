@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
     // Admin can pass clientId as query param; regular users use getClientId()
     let clientId: string | null = null;
-    if (session.user?.isAdmin) {
+    if (session.user?.isAgency) {
       clientId = req.nextUrl.searchParams.get('clientId');
     }
     if (!clientId) {

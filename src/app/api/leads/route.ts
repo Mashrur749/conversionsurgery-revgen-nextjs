@@ -27,10 +27,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const isAdmin = session.user?.isAdmin || false;
+  const isAgency = session.user?.isAgency || false;
   const sessionClientId = session?.client?.id;
 
-  if (!isAdmin && !sessionClientId) {
+  if (!isAgency && !sessionClientId) {
     return NextResponse.json({ error: 'No client' }, { status: 403 });
   }
 
@@ -47,14 +47,14 @@ export async function GET(request: NextRequest) {
   const { search, status, source, clientId, temperature, dateFrom, dateTo, page, limit, sortBy, sortDir } = parsed.data;
 
   // Non-admins cannot query other clients
-  if (clientId && !isAdmin) {
+  if (clientId && !isAgency) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   // Determine which clientId to filter by — admins can query across clients
-  const effectiveClientId = isAdmin ? (clientId || null) : sessionClientId;
+  const effectiveClientId = isAgency ? (clientId || null) : sessionClientId;
 
-  if (!isAdmin && !effectiveClientId) {
+  if (!isAgency && !effectiveClientId) {
     return NextResponse.json({ error: 'No client' }, { status: 403 });
   }
 
@@ -145,10 +145,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const isAdmin = session.user?.isAdmin || false;
+  const isAgency = session.user?.isAgency || false;
   const sessionClientId = session?.client?.id;
 
-  if (!isAdmin && !sessionClientId) {
+  if (!isAgency && !sessionClientId) {
     return NextResponse.json({ error: 'No client' }, { status: 403 });
   }
 
@@ -165,18 +165,18 @@ export async function POST(request: NextRequest) {
   const data = parsed.data;
 
   // Non-admins cannot create leads for other clients
-  if (data.clientId && !isAdmin) {
+  if (data.clientId && !isAgency) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const effectiveClientId = isAdmin ? (data.clientId || sessionClientId) : sessionClientId;
+  const effectiveClientId = isAgency ? (data.clientId || sessionClientId) : sessionClientId;
 
   if (!effectiveClientId) {
     return NextResponse.json({ error: 'clientId is required' }, { status: 400 });
   }
 
   // Check usage limit (skip for admins creating leads on behalf of clients)
-  if (!isAdmin) {
+  if (!isAgency) {
     const { checkUsageLimit } = await import('@/lib/services/subscription');
     const leadCount = await getDb()
       .select({ count: count() })

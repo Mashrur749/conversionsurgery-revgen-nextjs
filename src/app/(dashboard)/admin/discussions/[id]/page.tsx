@@ -12,8 +12,8 @@ export default async function AdminDiscussionDetailPage({
 }) {
   const session = await auth();
   if (!session) redirect('/login');
-  const isAdmin = session.user?.isAdmin || false;
-  if (!isAdmin) redirect('/dashboard');
+  const isAgency = session.user?.isAgency || false;
+  if (!isAgency) redirect('/dashboard');
 
   const { id } = await params;
   const db = getDb();

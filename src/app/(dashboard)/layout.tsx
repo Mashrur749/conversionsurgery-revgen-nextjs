@@ -74,10 +74,10 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  const isAdmin = session.user?.isAdmin || false;
+  const isAgency = session.user?.isAgency || false;
 
   let allClients: { id: string; businessName: string; ownerName: string }[] = [];
-  if (isAdmin) {
+  if (isAgency) {
     const db = getDb();
     allClients = await db
       .select({
@@ -97,12 +97,12 @@ export default async function DashboardLayout({
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center h-14 lg:h-16">
               <div className="flex items-center gap-2 lg:gap-8">
-                <MobileNav navItems={navItems} adminGroups={isAdmin ? adminNavItems : undefined} isAdmin={isAdmin} />
+                <MobileNav navItems={navItems} adminGroups={isAgency ? adminNavItems : undefined} isAgency={isAgency} />
                 <Link href="/dashboard" className="font-semibold text-base lg:text-lg text-white">
                   ConversionSurgery
                 </Link>
                 <nav className="hidden lg:flex items-center gap-1">
-                  {isAdmin ? (
+                  {isAgency ? (
                     <>
                       <ClientSelector clients={allClients} />
                       <AdminNav groups={[
@@ -116,7 +116,7 @@ export default async function DashboardLayout({
                 </nav>
               </div>
               <div className="flex items-center gap-2 lg:gap-4">
-                {!isAdmin && (
+                {!isAgency && (
                   <span className="hidden lg:inline text-sm text-white/70">
                     {session.client?.businessName || session.user?.email}
                   </span>
@@ -127,13 +127,13 @@ export default async function DashboardLayout({
           </div>
         </header>
         <main className="max-w-7xl mx-auto px-3 py-4 lg:px-4 lg:py-8">
-          {isAdmin ? (
+          {isAgency ? (
             <SwitchingOverlay>{children}</SwitchingOverlay>
           ) : (
             children
           )}
         </main>
-        {!isAdmin && <HelpButton />}
+        {!isAgency && <HelpButton />}
       </div>
     </AdminProvider>
   );

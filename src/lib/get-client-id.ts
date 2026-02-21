@@ -6,9 +6,9 @@ export async function getClientId(): Promise<string | null> {
 
   if (!session) return null;
 
-  const isAdmin = session.user?.isAdmin || false;
+  const isAgency = session.user?.isAgency || false;
 
-  if (isAdmin) {
+  if (isAgency) {
     const cookieStore = await cookies();
     const adminClientId = cookieStore.get('adminSelectedClientId')?.value;
     return adminClientId || null;

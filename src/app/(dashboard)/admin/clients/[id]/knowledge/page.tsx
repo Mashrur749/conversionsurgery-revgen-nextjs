@@ -18,7 +18,7 @@ export default async function KnowledgeBasePage({ params, searchParams }: Props)
   const { id } = await params;
   const { tab } = await searchParams;
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   const db = getDb();
   const [client] = await db

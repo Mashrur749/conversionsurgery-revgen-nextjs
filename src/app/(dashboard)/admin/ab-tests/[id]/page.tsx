@@ -25,7 +25,7 @@ interface Props {
 export default async function TestDetailPage({ params }: Props) {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

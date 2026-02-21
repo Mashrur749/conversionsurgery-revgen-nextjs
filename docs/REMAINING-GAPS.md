@@ -1,6 +1,6 @@
 # Remaining Gaps — ConversionSurgery RevGen
 
-**Last updated:** 2026-02-21
+**Last updated:** 2026-02-20
 
 This document catalogs all known gaps after completing the security audit hardening and system blockers remediation. All security findings (M1-M6, L1-L2) have been resolved. The remaining gaps are operational, architectural, and infrastructure items.
 
@@ -27,21 +27,13 @@ This document catalogs all known gaps after completing the security audit harden
 
 ### High Priority
 
-#### 1. Identity migration not run
+#### 1. ~~Identity migration not run~~ — Resolved
 - **Category:** Operations
-- **Description:** The SPEC-06 identity migration (`migrate-identities.ts` + `verify-migration.ts`) has been built and tested but not yet executed in production. Until run, all users rely on the legacy auth bridge which grants full permissions.
-- **Recommendation:** Schedule a maintenance window. Run on staging first, verify with `verify-migration.ts`, then run in production.
-- **Files:** `src/scripts/migrate-identities.ts`, `src/scripts/verify-migration.ts`
+- **Status:** Resolved — database reset to zero state; legacy migration scripts (`migrate-identities.ts`, `verify-migration.ts`) deleted. New seed script creates all identity records directly using the new schema.
 
-#### 2. Legacy tables still exist
+#### 2. ~~Legacy tables still exist~~ — Resolved
 - **Category:** Schema
-- **Description:** After the identity migration, these tables/columns become dead weight:
-  - `admin_users` table — fully replaced by `agency_memberships`
-  - `team_members` table — runtime code uses `team-bridge.ts`, but table still exists
-  - `users.isAdmin` column — replaced by `agency_memberships`
-  - `users.clientId` column — replaced by `client_memberships`
-- **Recommendation:** After migration is verified in production, create a Drizzle migration to: (1) drop `admin_users`, (2) drop `team_members`, (3) remove `isAdmin` and `clientId` columns from `users`.
-- **Dependencies:** Requires identity migration (item 1) to be complete and verified.
+- **Status:** Resolved — `admin_users` table dropped, `team_members` table dropped, `users.isAdmin` and `users.clientId` columns removed from schema. All runtime code updated to use `people` + `client_memberships` + `agency_memberships`. FKs retargeted from `team_members` to `client_memberships`. Run `db:push` or `db:generate` to apply to database.
 
 ### Medium Priority
 

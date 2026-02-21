@@ -3,9 +3,8 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter';
 import { getDb } from '@/db';
 import { users, accounts, sessions, verificationTokens } from '@/db/schema/auth';
 import { clients } from '@/db/schema/clients';
-import { adminUsers } from '@/db/schema/admin-users';
-import { agencyMemberships, roleTemplates, agencyClientAssignments } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { clientMemberships, agencyMemberships, roleTemplates, agencyClientAssignments } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { sendEmail } from '@/lib/services/resend';
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
@@ -22,8 +21,6 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       const [dbUser] = await db
         .select({
           id: users.id,
-          clientId: users.clientId,
-          isAdmin: users.isAdmin,
           personId: users.personId,
         })
         .from(users)
@@ -32,10 +29,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
       if (dbUser) {
         session.user.id = dbUser.id;
-        session.user.isAdmin = dbUser.isAdmin ?? false;
         session.user.personId = dbUser.personId;
 
-        // New path: if user has personId, enrich with agency membership data
+        // Enrich with agency membership data via personId
         if (dbUser.personId) {
           const [membership] = await db
             .select({
@@ -91,59 +87,42 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
               }
             }
           }
+
+          // Look up client via personId → clientMemberships (if not an agency user)
+          if (!session.user.isAgency) {
+            const [cm] = await db
+              .select({ clientId: clientMemberships.clientId })
+              .from(clientMemberships)
+              .where(and(
+                eq(clientMemberships.personId, dbUser.personId),
+                eq(clientMemberships.isActive, true)
+              ))
+              .limit(1);
+
+            if (cm) {
+              const [client] = await db
+                .select({ id: clients.id, businessName: clients.businessName, ownerName: clients.ownerName })
+                .from(clients)
+                .where(eq(clients.id, cm.clientId))
+                .limit(1);
+
+              if (client) {
+                session.client = { id: client.id, businessName: client.businessName, ownerName: client.ownerName };
+              }
+            }
+          }
         }
 
-        // Legacy fallback: look up admin role from admin_users
-        if (dbUser.isAdmin && !session.user.isAgency) {
-          const [adminRecord] = await db
-            .select({ role: adminUsers.role })
-            .from(adminUsers)
-            .where(eq(adminUsers.email, user.email!))
-            .limit(1);
-          session.user.role = adminRecord?.role || 'admin';
-        }
-
-        let clientId = dbUser.clientId;
-
-        // Auto-link: if user has no clientId, try to find a matching client
-        // by email. This handles the first-login race condition where the
-        // signIn callback runs before the adapter creates the user record.
-        if (!dbUser.isAdmin && !session.user.isAgency && !clientId) {
-          const [matchingClient] = await db
-            .select({ id: clients.id })
+        // Fallback for users without personId: match client by email
+        if (!session.user.isAgency && !session.client) {
+          const [client] = await db
+            .select({ id: clients.id, businessName: clients.businessName, ownerName: clients.ownerName })
             .from(clients)
             .where(eq(clients.email, user.email!))
             .limit(1);
 
-          if (matchingClient) {
-            clientId = matchingClient.id;
-            await db
-              .update(users)
-              .set({ clientId })
-              .where(eq(users.id, dbUser.id));
-            console.log(
-              `[Auth] Auto-linked user ${dbUser.id} to client ${clientId}`,
-            );
-          }
-        }
-
-        if (!dbUser.isAdmin && !session.user.isAgency && clientId) {
-          const [client] = await db
-            .select({
-              id: clients.id,
-              businessName: clients.businessName,
-              ownerName: clients.ownerName,
-            })
-            .from(clients)
-            .where(eq(clients.id, clientId))
-            .limit(1);
-
           if (client) {
-            session.client = {
-              id: client.id,
-              businessName: client.businessName,
-              ownerName: client.ownerName,
-            };
+            session.client = { id: client.id, businessName: client.businessName, ownerName: client.ownerName };
           }
         }
       }
@@ -156,12 +135,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       const db = getDb();
 
       const [dbUser] = await db
-        .select()
+        .select({ id: users.id, personId: users.personId })
         .from(users)
         .where(eq(users.email, user.email))
         .limit(1);
-
-      if (dbUser?.isAdmin) return true;
 
       // Check if user has an agency membership (via personId)
       if (dbUser?.personId) {
@@ -174,23 +151,30 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         if (membership) return true;
       }
 
+      // Check if email matches a client
       const [client] = await db
-        .select()
+        .select({ id: clients.id })
         .from(clients)
         .where(eq(clients.email, user.email))
         .limit(1);
 
-      if (!client) return false;
+      if (client) return true;
 
-      // Link user to client if not already linked.
-      if (dbUser && !dbUser.clientId) {
-        await db
-          .update(users)
-          .set({ clientId: client.id })
-          .where(eq(users.id, dbUser.id));
+      // Check if user has an active client membership
+      if (dbUser?.personId) {
+        const [cm] = await db
+          .select({ id: clientMemberships.id })
+          .from(clientMemberships)
+          .where(and(
+            eq(clientMemberships.personId, dbUser.personId),
+            eq(clientMemberships.isActive, true)
+          ))
+          .limit(1);
+
+        if (cm) return true;
       }
 
-      return true;
+      return false;
     },
   },
   providers: [

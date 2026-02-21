@@ -12,7 +12,7 @@ interface PageProps {
 
 export default async function TemplateEditorPage({ params }: PageProps) {
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   const { id } = await params;
   const isNew = id === 'new';

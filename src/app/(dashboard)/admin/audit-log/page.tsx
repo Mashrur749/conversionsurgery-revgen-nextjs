@@ -24,7 +24,7 @@ export default async function AuditLogPage({
 }) {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

@@ -13,7 +13,7 @@ export default async function EscalationsPage() {
 
   const clientId = await getClientId();
 
-  if (session.user?.isAdmin && !clientId) {
+  if (session.user?.isAgency && !clientId) {
     return (
       <div className="space-y-6">
         <div className="flex flex-col items-center justify-center py-20">
@@ -37,7 +37,7 @@ export default async function EscalationsPage() {
 
       <EscalationQueue
         clientId={clientId ?? undefined}
-        isAdmin={session.user?.isAdmin}
+        isAgency={session.user?.isAgency}
       />
     </div>
   );

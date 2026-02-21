@@ -10,7 +10,7 @@ interface Props {
 export default async function NewKnowledgeEntryPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

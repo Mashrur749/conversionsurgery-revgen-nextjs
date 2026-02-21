@@ -9,7 +9,6 @@ import { invoices } from './invoices';
 import { blockedNumbers } from './blocked-numbers';
 import { messageTemplates } from './message-templates';
 import { dailyStats } from './daily-stats';
-import { teamMembers } from './team-members';
 import { escalationClaims } from './escalation-claims';
 import { businessHours } from './business-hours';
 import { callAttempts } from './call-attempts';
@@ -52,7 +51,6 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   blockedNumbers: many(blockedNumbers),
   messageTemplates: many(messageTemplates),
   dailyStats: many(dailyStats),
-  teamMembers: many(teamMembers),
   escalationClaims: many(escalationClaims),
   businessHours: many(businessHours),
   callAttempts: many(callAttempts),
@@ -80,7 +78,6 @@ export const clientsRelations = relations(clients, ({ many }) => ({
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
-  client: one(clients, { fields: [users.clientId], references: [clients.id] }),
   person: one(people, { fields: [users.personId], references: [people.id] }),
   accounts: many(accounts),
   sessions: many(sessions),
@@ -192,14 +189,6 @@ export const dailyStatsRelations = relations(dailyStats, ({ one }) => ({
   }),
 }));
 
-export const teamMembersRelations = relations(teamMembers, ({ one, many }) => ({
-  client: one(clients, {
-    fields: [teamMembers.clientId],
-    references: [clients.id],
-  }),
-  claims: many(escalationClaims),
-}));
-
 export const escalationClaimsRelations = relations(escalationClaims, ({ one }) => ({
   lead: one(leads, {
     fields: [escalationClaims.leadId],
@@ -209,9 +198,9 @@ export const escalationClaimsRelations = relations(escalationClaims, ({ one }) =
     fields: [escalationClaims.clientId],
     references: [clients.id],
   }),
-  claimedByMember: one(teamMembers, {
+  claimedByMember: one(clientMemberships, {
     fields: [escalationClaims.claimedBy],
-    references: [teamMembers.id],
+    references: [clientMemberships.id],
   }),
 }));
 
@@ -231,9 +220,9 @@ export const callAttemptsRelations = relations(callAttempts, ({ one }) => ({
     fields: [callAttempts.clientId],
     references: [clients.id],
   }),
-  answeredByMember: one(teamMembers, {
+  answeredByMember: one(clientMemberships, {
     fields: [callAttempts.answeredBy],
-    references: [teamMembers.id],
+    references: [clientMemberships.id],
   }),
 }));
 
@@ -465,9 +454,9 @@ export const escalationQueueRelations = relations(escalationQueue, ({ one }) => 
     fields: [escalationQueue.clientId],
     references: [clients.id],
   }),
-  assignedTeamMember: one(teamMembers, {
+  assignedTeamMember: one(clientMemberships, {
     fields: [escalationQueue.assignedTo],
-    references: [teamMembers.id],
+    references: [clientMemberships.id],
   }),
 }));
 

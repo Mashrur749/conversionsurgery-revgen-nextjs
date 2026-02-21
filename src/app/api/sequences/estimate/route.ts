@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthSession } from '@/lib/auth-session';
+import { getClientSession } from '@/lib/client-auth';
 import { startEstimateFollowup } from '@/lib/automations/estimate-followup';
 import { z } from 'zod';
 
@@ -12,8 +12,8 @@ const schema = z.object({
  * Requires authentication with clientId. Schedules follow-up messages for estimate.
  */
 export async function POST(request: NextRequest) {
-  const authSession = await getAuthSession();
-  if (!authSession?.clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { leadId } = validation.data;
-    const clientId = authSession.clientId;
+    const clientId = session.clientId;
 
     const result = await startEstimateFollowup({ leadId, clientId });
     return NextResponse.json(result);

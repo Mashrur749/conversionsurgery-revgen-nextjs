@@ -28,7 +28,7 @@ import { formatDistanceToNow } from 'date-fns';
  */
 interface EscalationQueueProps {
   clientId?: string;
-  isAdmin?: boolean;
+  isAgency?: boolean;
 }
 
 interface Escalation {
@@ -72,7 +72,7 @@ interface ClientOption {
 /**
  * EscalationQueue component - displays escalation queue with filtering and summary statistics
  */
-export function EscalationQueue({ clientId: initialClientId, isAdmin }: EscalationQueueProps) {
+export function EscalationQueue({ clientId: initialClientId, isAgency }: EscalationQueueProps) {
   const [escalations, setEscalations] = useState<Escalation[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [filter, setFilter] = useState('active');
@@ -82,7 +82,7 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
 
   // For admin users, fetch client list
   useEffect(() => {
-    if (isAdmin) {
+    if (isAgency) {
       fetch('/api/admin/clients')
         .then((res) => res.json())
         .then((data: any) => {
@@ -97,7 +97,7 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
         })
         .catch(console.error);
     }
-  }, [isAdmin]);
+  }, [isAgency]);
 
   const fetchEscalations = useCallback(async () => {
     if (!selectedClientId) return;
@@ -155,7 +155,7 @@ export function EscalationQueue({ clientId: initialClientId, isAdmin }: Escalati
   return (
     <div className="space-y-6">
       {/* Admin client selector */}
-      {isAdmin && clients.length > 0 && (
+      {isAgency && clients.length > 0 && (
         <Select value={selectedClientId} onValueChange={setSelectedClientId}>
           <SelectTrigger className="w-full sm:w-64">
             <SelectValue placeholder="Select a client" />

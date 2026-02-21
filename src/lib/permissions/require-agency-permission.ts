@@ -11,7 +11,7 @@ import {
 } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { resolvePermissions, hasAllPermissions } from './resolve';
-import { ALL_AGENCY_PERMISSIONS, type AgencyPermission } from './constants';
+import { type AgencyPermission } from './constants';
 
 export interface AgencySession {
   personId: string;
@@ -87,21 +87,7 @@ export async function getAgencySession(): Promise<AgencySession | null> {
     };
   }
 
-  // Legacy path: check users.isAdmin flag
-  if (!user.isAdmin) return null;
-
-  // Legacy admins get ALL agency permissions during transition.
-  // After SPEC-06 migration links them to a person + agency_membership,
-  // they will use the new path above instead.
-  return {
-    personId: '',
-    userId: user.id,
-    membershipId: '',
-    permissions: new Set<string>(ALL_AGENCY_PERMISSIONS),
-    clientScope: 'all',
-    assignedClientIds: null,
-    isLegacy: true,
-  };
+  return null;
 }
 
 /**

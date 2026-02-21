@@ -11,7 +11,7 @@ import { CreateTestForm } from '../components/create-test-form';
 export default async function CreateTestPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

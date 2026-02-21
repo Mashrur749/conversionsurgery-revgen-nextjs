@@ -11,7 +11,7 @@ import { ChevronDown } from 'lucide-react';
 export default async function VoiceAIPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

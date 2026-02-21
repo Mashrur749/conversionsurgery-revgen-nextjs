@@ -12,7 +12,7 @@ import {
 import { leads } from './leads';
 import { clients } from './clients';
 import { conversations } from './conversations';
-import { teamMembers } from './team-members';
+import { clientMemberships } from './client-memberships';
 import { escalationReasonEnum } from './agent-enums';
 
 /**
@@ -46,12 +46,12 @@ export const escalationQueue = pgTable(
 
     // Assignment
     status: varchar('status', { length: 20 }).default('pending').notNull(), // pending, assigned, in_progress, resolved, dismissed
-    assignedTo: uuid('assigned_to').references(() => teamMembers.id),
+    assignedTo: uuid('assigned_to').references(() => clientMemberships.id),
     assignedAt: timestamp('assigned_at'),
 
     // Resolution
     resolvedAt: timestamp('resolved_at'),
-    resolvedBy: uuid('resolved_by').references(() => teamMembers.id),
+    resolvedBy: uuid('resolved_by').references(() => clientMemberships.id),
     resolution: varchar('resolution', { length: 30 }), // 'handled', 'returned_to_ai', 'no_action', 'converted', 'lost'
     resolutionNotes: text('resolution_notes'),
 

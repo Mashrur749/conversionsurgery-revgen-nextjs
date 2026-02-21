@@ -11,7 +11,7 @@ interface PageProps {
 
 export default async function PushUpdatePage({ params }: PageProps) {
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   const { id } = await params;
   const db = getDb();

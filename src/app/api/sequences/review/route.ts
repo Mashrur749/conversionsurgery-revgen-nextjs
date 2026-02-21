@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthSession } from '@/lib/auth-session';
+import { getClientSession } from '@/lib/client-auth';
 import { startReviewRequest } from '@/lib/automations/review-request';
 import { z } from 'zod';
 
@@ -8,8 +8,8 @@ const schema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const authSession = await getAuthSession();
-  if (!authSession?.clientId) {
+  const session = await getClientSession();
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { leadId } = schema.parse(body);
 
-    const clientId = authSession.clientId;
+    const clientId = session.clientId;
 
     const result = await startReviewRequest({ leadId, clientId });
     return NextResponse.json(result);

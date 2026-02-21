@@ -7,7 +7,7 @@ import { CouponManager } from './coupon-manager';
 
 export default async function CouponsPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   const db = getDb();
   const allCoupons = await db.select().from(coupons).orderBy(desc(coupons.createdAt));

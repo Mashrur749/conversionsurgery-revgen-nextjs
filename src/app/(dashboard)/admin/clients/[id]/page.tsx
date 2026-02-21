@@ -25,7 +25,7 @@ export default async function ClientDetailPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

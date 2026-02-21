@@ -4,7 +4,7 @@ import { WebhookLogViewer } from './webhook-log-viewer';
 
 export default async function WebhookLogsPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) redirect('/dashboard');
+  if (!session?.user?.isAgency) redirect('/dashboard');
 
   return (
     <div className="space-y-6">

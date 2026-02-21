@@ -8,7 +8,7 @@ import { CreateClientForm } from './create-client-form';
 export default async function NewClientPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

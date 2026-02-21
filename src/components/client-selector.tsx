@@ -10,11 +10,11 @@ export function ClientSelector() {
   const [availableClients, setAvailableClients] = useState<Array<{ id: string; businessName: string }>>([]);
   const [loading, setLoading] = useState(false);
 
-  const isAdmin = session?.user?.isAdmin || false;
+  const isAgency = session?.user?.isAgency || false;
 
   // Load available clients for admin
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAgency) {
       return;
     }
 
@@ -34,10 +34,10 @@ export function ClientSelector() {
     }
 
     loadClients();
-  }, [isAdmin]);
+  }, [isAgency]);
 
   // Don't show selector if not admin
-  if (!isAdmin) {
+  if (!isAgency) {
     return null;
   }
 

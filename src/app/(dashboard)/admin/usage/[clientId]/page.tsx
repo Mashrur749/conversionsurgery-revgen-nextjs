@@ -10,7 +10,7 @@ interface PageProps {
 
 export default async function ClientUsagePage({ params }: PageProps) {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

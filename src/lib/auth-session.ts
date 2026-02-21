@@ -55,13 +55,11 @@ export async function getAuthSession() {
         email: user.email,
         name: user.name,
         personId: user.personId ?? null,
-        isAdmin: user.isAdmin ?? false,
       },
       session: {
         sessionToken,
         expires: session.expires,
       },
-      clientId: user.clientId,
     };
   } catch (error) {
     console.error('[Auth Session] Error:', error);

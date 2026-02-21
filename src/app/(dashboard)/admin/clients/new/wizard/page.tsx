@@ -5,7 +5,7 @@ import { SetupWizard } from './setup-wizard';
 export default async function WizardPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

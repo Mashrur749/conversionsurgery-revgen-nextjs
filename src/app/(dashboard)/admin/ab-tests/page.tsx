@@ -13,7 +13,7 @@ import { ABTestsList } from './components/ab-tests-list';
 export default async function ABTestsPage() {
   const session = await auth();
 
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 

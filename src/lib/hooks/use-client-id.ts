@@ -7,9 +7,9 @@ export function useClientId(): string | null {
   const { data: session } = useSession();
   const { selectedClientId } = useAdmin();
 
-  const isAdmin = session?.user?.isAdmin || false;
+  const isAgency = session?.user?.isAgency || false;
 
-  if (isAdmin) {
+  if (isAgency) {
     return selectedClientId;
   }
 

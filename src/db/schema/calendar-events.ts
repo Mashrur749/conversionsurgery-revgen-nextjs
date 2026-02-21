@@ -9,7 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 import { leads } from './leads';
-import { teamMembers } from './team-members';
+import { clientMemberships } from './client-memberships';
 import { jobs } from './jobs';
 import { calendarProviderEnum } from './calendar-integrations';
 
@@ -44,7 +44,7 @@ export const calendarEvents = pgTable(
     syncStatus: varchar('sync_status', { length: 20 }).notNull().default('pending'), // pending, synced, error
 
     // Assignment
-    assignedTeamMemberId: uuid('assigned_team_member_id').references(() => teamMembers.id),
+    assignedTeamMemberId: uuid('assigned_team_member_id').references(() => clientMemberships.id),
 
     // Metadata
     eventType: varchar('event_type', { length: 50 }), // estimate, job, follow_up, consultation

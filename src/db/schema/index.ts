@@ -11,7 +11,6 @@ export * from './webhook-log';
 export * from './message-templates';
 export * from './daily-stats';
 export * from './active-calls';
-export * from './team-members';
 export * from './escalation-claims';
 export * from './business-hours';
 export * from './call-attempts';
@@ -51,7 +50,6 @@ export * from './calendar-integrations';
 export * from './calendar-events';
 export * from './voice-calls';
 export * from './subscription-plans';
-export * from './admin-users';
 export * from './system-settings';
 export * from './agency-messages';
 

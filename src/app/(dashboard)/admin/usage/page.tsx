@@ -4,7 +4,7 @@ import { UsageDashboard } from './components/usage-dashboard';
 
 export default async function UsagePage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) {
+  if (!session?.user?.isAgency) {
     redirect('/dashboard');
   }
 
