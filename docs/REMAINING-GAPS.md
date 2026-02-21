@@ -1,6 +1,6 @@
 # Remaining Gaps — ConversionSurgery RevGen
 
-**Last updated:** 2026-02-20
+**Last updated:** 2026-02-21
 
 This document catalogs all known gaps after completing the security audit hardening and system blockers remediation. All security findings (M1-M6, L1-L2) have been resolved. The remaining gaps are operational, architectural, and infrastructure items.
 
@@ -45,37 +45,25 @@ This document catalogs all known gaps after completing the security audit harden
 
 ### Medium Priority
 
-#### 3. Missing `updatedAt` columns
+#### 3. ~~Missing `updatedAt` columns~~ — Resolved
 - **Category:** Schema
-- **Description:** 5 tables lack `updatedAt` timestamps, making it impossible to track when records were last modified:
-  - `conversations`
-  - `coupons`
-  - `reviews`
-  - `voice_calls`
-  - `support_messages`
-- **Recommendation:** Add `updatedAt` columns via Drizzle migration. Set default to `now()` for existing rows. Update relevant service code to set `updatedAt` on mutations.
+- **Status:** Resolved (commit 8021c8c)
+- **Description:** `updatedAt` columns added to `conversations`, `coupons`, `reviews`, `voice_calls`, and `support_messages`. All `db.update().set()` calls for these tables now include `updatedAt: new Date()`. Drizzle migration: `0020_rainy_nemesis.sql`.
 
-#### 4. No automated test suite
+#### 4. ~~No automated test suite~~ — Resolved
 - **Category:** Infrastructure
-- **Description:** The codebase has zero automated tests. All verification is manual (typecheck + build).
-- **Recommendation:** Start with API route integration tests using Vitest + supertest. Priority order:
-  1. Auth flows (OTP send/verify, session management)
-  2. Billing (subscription lifecycle, webhook handlers)
-  3. Permission system (role resolution, escalation prevention)
-  4. Webhook handlers (Twilio signature validation, Stripe event processing)
-- **Note:** The permission system (`resolvePermissions`, `hasPermission`, `preventEscalation`) is particularly well-suited for unit tests.
+- **Status:** Resolved (commit ab9606d)
+- **Description:** Vitest test suite established with 46 tests across 4 test files:
+  - `src/lib/utils/route-handler.test.ts` — 11 tests (wrapper auth, error handling, params)
+  - `src/lib/permissions/resolve.test.ts` — 15 tests (resolvePermissions, hasPermission variants)
+  - `src/lib/permissions/escalation-guard.test.ts` — 9 tests (preventEscalation, validateOverrides)
+  - `src/lib/utils/phone.test.ts` — 11 tests (normalize, format, validate)
+- **Next steps:** Expand to integration tests for auth flows, billing, and webhook handlers.
 
-#### 5. No CI/CD pipeline
+#### 5. ~~No CI/CD pipeline~~ — Resolved
 - **Category:** Infrastructure
-- **Description:** No GitHub Actions or equivalent CI pipeline. PRs are not automatically checked.
-- **Recommendation:** Minimal pipeline:
-  ```yaml
-  # .github/workflows/ci.yml
-  - npm run typecheck
-  - npm run build
-  - npm audit --audit-level=moderate
-  ```
-  Add to run on every PR to `main`.
+- **Status:** Resolved (commit 0ac2af7)
+- **Description:** GitHub Actions CI pipeline at `.github/workflows/ci.yml`. Runs on push to main and all PRs. Steps: `npm ci` → `typecheck` → `lint` → `test` → `build` → `npm audit`. Concurrency groups cancel stale runs.
 
 ### Low Priority
 
@@ -122,4 +110,20 @@ test -f src/middleware.ts && echo "OK" || echo "MISSING"
 # Build passes clean
 npm run build
 # Expected: 0 errors
+
+# Route handler wrappers: no direct requireAgencyPermission in admin routes
+grep -rn "requireAgencyPermission" src/app/api/admin/ --include="*.ts"
+# Expected: 0 results (all go through adminRoute/adminClientRoute)
+
+# Route handler wrappers: no direct requirePortalPermission in client routes
+grep -rn "requirePortalPermission" src/app/api/client/ --include="*.ts"
+# Expected: 0 results (all go through portalRoute)
+
+# Tests pass
+npm test
+# Expected: 46 tests passing
+
+# CI pipeline exists
+test -f .github/workflows/ci.yml && echo "OK" || echo "MISSING"
+# Expected: OK
 ```

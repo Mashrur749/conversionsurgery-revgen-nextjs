@@ -23,9 +23,9 @@ Resolve ambiguity yourself by:
 ## Key Patterns
 
 - Database: use `getDb()` from `@/db` — creates a Neon HTTP client per request. Never cache the instance.
-- Auth (admin): use `auth()` from `@/lib/auth` for server components, `getServerSession(authOptions)` for API routes
-- Auth (client portal): use `getClientSession()` from `@/lib/client-auth` — cookie-based, returns `{ clientId, userId }`
-- Admin check: use `requireAdmin(session)` from `@/lib/utils/admin-auth` — all admin API routes must return 403 if not admin
+- Auth (admin API): use `adminRoute()` or `adminClientRoute()` from `@/lib/utils/route-handler` — handles permission checks, error responses, and params automatically
+- Auth (client portal API): use `portalRoute()` from `@/lib/utils/route-handler` — handles portal session, permissions, and error responses
+- Auth (server components): use `auth()` from `@/lib/auth` for admin, `getClientSession()` from `@/lib/client-auth` for portal
 - API route params: Next.js 16 uses `Promise<{ id: string }>` for async params — always `await` them
 - Phone numbers: normalize with `normalizePhoneNumber()` from `@/lib/utils/phone`
 - Validation: Zod schemas for all API input, return validation error details on 400
@@ -36,10 +36,16 @@ Resolve ambiguity yourself by:
 ## Auto-Checklists (follow these — don't ask)
 
 ### New API Route
-1. Auth: `/api/admin/*` → `getServerSession(authOptions)` + `requireAdmin(session)` + 403. `/api/client/*` → `getClientSession()` + 401. `/api/cron/*` → `verifyCronSecret()`. `/api/webhooks/*` → signature verification (no auth).
-2. Validation: Zod schema with `.strict()`, return `{ error, details }` on 400
-3. Params: `await` all route params (`Promise<{ id: string }>` in Next.js 16)
-4. Response: return typed JSON, 404 for missing resources, 500 with `console.error` (never expose raw DB errors)
+1. Auth wrappers (preferred):
+   - `/api/admin/*` → `export const GET = adminRoute({ permission: AGENCY_PERMISSIONS.X }, async ({ session, params }) => { ... })`
+   - `/api/admin/clients/[id]/*` → `export const GET = adminClientRoute({ permission: ..., clientIdFrom: (p) => p.id }, async ({ session, params, clientId }) => { ... })`
+   - `/api/client/*` → `export const GET = portalRoute({ permission: PORTAL_PERMISSIONS.X }, async ({ session, params }) => { ... })`
+   - `/api/cron/*` → `verifyCronSecret()` (no wrapper — unique pattern)
+   - `/api/webhooks/*` → signature verification (no wrapper — unique pattern)
+   - Import from `@/lib/utils/route-handler` (also re-exports `AGENCY_PERMISSIONS`, `PORTAL_PERMISSIONS`)
+2. Validation: Zod schema with `.strict()`, return `{ error, details }` on 400 (ZodErrors auto-handled by wrapper)
+3. Params: automatically resolved by wrapper — access via `params` in context
+4. Response: return typed JSON, 404 for missing resources (generic errors auto-handled by wrapper via `safeErrorResponse`)
 5. Phone numbers: always `normalizePhoneNumber()` before DB lookup
 
 ### New Schema Table
@@ -76,6 +82,8 @@ This avoids stale patterns from training data. Always do this — don't rely on 
 - `npm run db:push` — push schema directly to database (use with caution)
 - `npm run db:migrate` — run generated migrations
 - `npm run typecheck` — fast TypeScript type-check only (~13s, no build output)
+- `npm test` — run Vitest test suite (46 tests: route-handler, permissions, phone utils)
+- `npm run test:watch` — run Vitest in watch mode
 - `npm run db:studio` — open Drizzle Studio for visual database browsing
 
 ## After Making Changes
