@@ -32,6 +32,7 @@ export const plans = pgTable(
     // Features/limits
     features: jsonb('features').$type<{
       maxLeadsPerMonth: number | null;
+      maxMessagesPerMonth?: number | null;
       maxTeamMembers: number | null;
       maxPhoneNumbers: number;
       includesVoiceAi: boolean;

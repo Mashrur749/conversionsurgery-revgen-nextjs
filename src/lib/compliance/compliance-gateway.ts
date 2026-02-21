@@ -1,7 +1,8 @@
 import { sendSMS } from '@/lib/services/twilio';
 import { ComplianceService } from './compliance-service';
-import { getDb, clients, leads, consentRecords } from '@/db';
+import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessages } from '@/db';
 import { eq, and, sql } from 'drizzle-orm';
+import { getTimezoneOffset } from 'date-fns-tz';
 
 /**
  * Consent basis for first-contact messages.
@@ -183,11 +184,26 @@ export async function sendCompliantMessage(
   // -----------------------------------------------------------
   if (complianceResult.isQuietHours) {
     if (queueOnQuietHours) {
+      let queuedSendAt: Date | null = null;
+      if (leadId) {
+        queuedSendAt = await getNextAllowedSendAt(clientId, clientData.timezone || 'America/Edmonton');
+        await db.insert(scheduledMessages).values({
+          clientId,
+          leadId,
+          sequenceType: 'quiet_hours_queue',
+          content: body,
+          sendAt: queuedSendAt,
+        });
+      }
+
       await ComplianceService.logComplianceEvent(clientId, 'message_queued', {
         phoneNumber: normalizedPhone,
         phoneHash,
         reason: 'quiet_hours',
         messageCategory,
+        leadId,
+        queuedSendAt: queuedSendAt?.toISOString(),
+        persistedToSchedule: !!queuedSendAt,
         ...metadata,
       });
 
@@ -392,4 +408,44 @@ async function blocked(
     blockReason: reason,
     warnings: [],
   };
+}
+
+async function getNextAllowedSendAt(clientId: string, timezone: string): Promise<Date> {
+  const db = getDb();
+  const now = new Date();
+  const offset = getTimezoneOffset(timezone, now);
+  const localNow = new Date(now.getTime() + offset);
+  const localDay = localNow.getUTCDay();
+  const isWeekend = localDay === 0 || localDay === 6;
+
+  const config = await db.query.quietHoursConfig.findFirst({
+    where: eq(quietHoursConfig.clientId, clientId),
+  });
+
+  const quietStart = isWeekend && config?.weekendQuietStartHour !== null && config?.weekendQuietStartHour !== undefined
+    ? config.weekendQuietStartHour
+    : (config?.quietStartHour ?? 21);
+
+  const quietEnd = isWeekend && config?.weekendQuietEndHour !== null && config?.weekendQuietEndHour !== undefined
+    ? config.weekendQuietEndHour
+    : (config?.quietEndHour ?? 10);
+
+  const localHour = localNow.getUTCHours();
+  const localTarget = new Date(localNow);
+  localTarget.setUTCMinutes(1, 0, 0);
+
+  if (quietStart > quietEnd) {
+    if (localHour >= quietStart) {
+      localTarget.setUTCDate(localTarget.getUTCDate() + 1);
+    }
+    localTarget.setUTCHours(quietEnd);
+  } else {
+    localTarget.setUTCHours(quietEnd);
+    if (localHour >= quietEnd) {
+      localTarget.setUTCDate(localTarget.getUTCDate() + 1);
+    }
+  }
+
+  // Convert the computed local target back to UTC-ish timestamp using current zone offset.
+  return new Date(localTarget.getTime() - offset);
 }

@@ -18,6 +18,9 @@ interface SubscriptionRow {
   clientName: string;
   planName: string;
   status: string;
+  guaranteeStatus: string | null;
+  guaranteeEndsAt: string | null;
+  guaranteeRefundEligibleAt: string | null;
   priceMonthly: number;
   currentPeriodEnd: string | null;
   createdAt: string;
@@ -30,6 +33,13 @@ const statusColors: Record<string, string> = {
   canceled: 'bg-muted text-foreground',
   unpaid: 'bg-[#FDEAE4] text-sienna',
   paused: 'bg-[#FFF3E0] text-sienna',
+};
+
+const guaranteeColors: Record<string, string> = {
+  pending: 'bg-[#FFF3E0] text-sienna',
+  fulfilled: 'bg-sage-light text-forest',
+  refund_review_required: 'bg-[#FDEAE4] text-sienna',
+  refunded: 'bg-muted text-foreground',
 };
 
 export function AdminSubscriptionTable() {
@@ -75,6 +85,7 @@ export function AdminSubscriptionTable() {
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">MRR</TableHead>
                 <TableHead>Renews</TableHead>
+                <TableHead>Guarantee</TableHead>
                 <TableHead>Started</TableHead>
               </TableRow>
             </TableHeader>
@@ -95,6 +106,23 @@ export function AdminSubscriptionTable() {
                     {sub.currentPeriodEnd
                       ? format(new Date(sub.currentPeriodEnd), 'MMM d, yyyy')
                       : '-'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <Badge className={guaranteeColors[sub.guaranteeStatus || 'pending'] || 'bg-muted text-foreground'}>
+                        {sub.guaranteeStatus || 'pending'}
+                      </Badge>
+                      {sub.guaranteeStatus === 'pending' && sub.guaranteeEndsAt && (
+                        <span className="text-xs text-muted-foreground">
+                          Ends {format(new Date(sub.guaranteeEndsAt), 'MMM d')}
+                        </span>
+                      )}
+                      {sub.guaranteeStatus === 'refund_review_required' && sub.guaranteeRefundEligibleAt && (
+                        <span className="text-xs text-muted-foreground">
+                          Flagged {format(new Date(sub.guaranteeRefundEligibleAt), 'MMM d')}
+                        </span>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {sub.createdAt

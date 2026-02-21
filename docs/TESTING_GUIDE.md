@@ -38,6 +38,12 @@ Current baseline:
 1. `/api/cron` returns 401 without bearer secret.
 2. `/api/cron` succeeds with `Authorization: Bearer $CRON_SECRET`.
 
+### 30-Day Guarantee Workflow
+1. New subscriptions initialize `guaranteeStartAt`, `guaranteeEndsAt`, and `guaranteeStatus=pending`.
+2. `GET /api/cron/guarantee-check` marks `fulfilled` when a recovered lead is found in-window.
+3. `GET /api/cron/guarantee-check` marks `refund_review_required` once window expires without fulfillment.
+4. Billing events are created for status transitions (`guarantee_fulfilled`, `guarantee_refund_review_required`).
+
 ## 3. Manual Smoke Run (Pre-Release)
 1. Create or select a test client.
 2. Send inbound lead message path and verify response/logs.
@@ -60,6 +66,9 @@ npx vitest run src/lib/permissions/resolve.test.ts
 # Cron auth sanity check
 curl -i -X POST http://localhost:3000/api/cron
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
+
+# Guarantee evaluator
+curl -i http://localhost:3000/api/cron/guarantee-check -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ## 5. Release Gate

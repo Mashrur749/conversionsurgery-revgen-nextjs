@@ -59,6 +59,14 @@ Outcome: Predictable automation operations.
 
 Outcome: No escalation is silently dropped.
 
+### U7b. 30-day guarantee automation
+1. A new subscription starts with guarantee window metadata.
+2. Daily guarantee cron evaluates recovered-lead fulfillment.
+3. Subscription is automatically marked `fulfilled` or `refund_review_required`.
+4. Billing events are logged for audit and operator action.
+
+Outcome: guarantee promise is enforced operationally instead of manual tracking.
+
 ## 4. SaaS Transition Use Cases (Near-Term)
 
 ### U8. Public self-serve signup baseline

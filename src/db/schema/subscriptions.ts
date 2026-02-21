@@ -58,6 +58,16 @@ export const subscriptions = pgTable(
     discountEndsAt: timestamp('discount_ends_at'),
     couponCode: varchar('coupon_code', { length: 50 }),
 
+    // 30-day performance guarantee lifecycle
+    guaranteeStartAt: timestamp('guarantee_start_at'),
+    guaranteeEndsAt: timestamp('guarantee_ends_at'),
+    guaranteeStatus: varchar('guarantee_status', { length: 40 }).default('pending'),
+    guaranteeFulfilledAt: timestamp('guarantee_fulfilled_at'),
+    guaranteeRecoveredLeadId: uuid('guarantee_recovered_lead_id'),
+    guaranteeRefundEligibleAt: timestamp('guarantee_refund_eligible_at'),
+    guaranteeRefundedAt: timestamp('guarantee_refunded_at'),
+    guaranteeNotes: text('guarantee_notes'),
+
     // Usage-based add-ons
     additionalLeadsCents: integer('additional_leads_cents').default(0),
     additionalSmsCents: integer('additional_sms_cents').default(0),

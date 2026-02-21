@@ -11,6 +11,7 @@ type PlanInterval = 'month' | 'year';
 
 interface PlanFeatures {
   maxLeadsPerMonth: number | null;
+  maxMessagesPerMonth?: number | null;
   maxTeamMembers: number | null;
   maxPhoneNumbers: number;
   includesVoiceAi: boolean;
@@ -19,6 +20,18 @@ interface PlanFeatures {
   includesWhiteLabel: boolean;
   supportLevel: 'email' | 'priority' | 'dedicated';
   apiAccess: boolean;
+}
+
+function resolveMonthlyMessageLimit(plan: Plan): number {
+  const features = plan.features as PlanFeatures;
+  if (features.maxMessagesPerMonth && features.maxMessagesPerMonth > 0) {
+    return features.maxMessagesPerMonth;
+  }
+
+  const slug = (plan.slug || '').toLowerCase();
+  if (slug.includes('enterprise')) return 20000;
+  if (slug.includes('starter')) return 1000;
+  return 5000; // Professional/default
 }
 
 /**
@@ -134,6 +147,8 @@ export async function createSubscription(
   const currentPeriodEnd = firstItem
     ? new Date(firstItem.current_period_end * 1000)
     : new Date();
+  const guaranteeStartAt = new Date();
+  const guaranteeEndsAt = new Date(guaranteeStartAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
   // All DB writes after Stripe call are wrapped in a transaction.
   // If this transaction fails, the Stripe subscription still exists —
@@ -157,7 +172,15 @@ export async function createSubscription(
         discountEndsAt: validatedDiscount?.duration === 'repeating' && validatedDiscount.durationMonths
           ? new Date(Date.now() + validatedDiscount.durationMonths * 30 * 24 * 60 * 60 * 1000)
           : undefined,
+        guaranteeStartAt,
+        guaranteeEndsAt,
+        guaranteeStatus: 'pending',
       }).returning();
+
+      await tx.update(clients).set({
+        monthlyMessageLimit: resolveMonthlyMessageLimit(plan),
+        updatedAt: new Date(),
+      }).where(eq(clients.id, clientId));
 
       // Log event
       await tx.insert(billingEvents).values({
@@ -294,6 +317,11 @@ export async function changePlan(
       stripePriceId: priceId,
       updatedAt: new Date(),
     }).where(eq(subscriptions.id, subscriptionId)).returning();
+
+    await tx.update(clients).set({
+      monthlyMessageLimit: resolveMonthlyMessageLimit(newPlan),
+      updatedAt: new Date(),
+    }).where(eq(clients.id, subscription.clientId));
 
     await tx.insert(billingEvents).values({
       clientId: subscription.clientId,

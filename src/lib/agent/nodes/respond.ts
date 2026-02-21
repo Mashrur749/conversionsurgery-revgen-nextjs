@@ -65,7 +65,7 @@ export async function generateResponse(
 
   // Format conversation
   const conversationText = state.messages
-    .slice(-8)
+    .slice(-15)
     .map(m => {
       const role = m._getType() === 'human' ? 'Customer' : 'Agent';
       return `${role}: ${m.content}`;

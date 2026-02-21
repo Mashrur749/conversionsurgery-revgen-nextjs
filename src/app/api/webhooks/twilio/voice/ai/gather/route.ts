@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { voiceCalls, clients, knowledgeBase } from '@/db/schema';
+import { voiceCalls, clients, knowledgeBase, conversations, clientAgentSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 import OpenAI from 'openai';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { buildGuardrailPrompt } from '@/lib/agent/guardrails';
 
 function twimlResponse(twiml: string) {
   return new NextResponse(
@@ -78,6 +79,47 @@ export async function POST(request: NextRequest) {
       .map((k) => `${k.category}: ${k.title} - ${k.content}`)
       .join('\n');
 
+    const [agentSettings] = await db
+      .select()
+      .from(clientAgentSettings)
+      .where(eq(clientAgentSettings.clientId, call.clientId))
+      .limit(1);
+
+    let smsHistorySection = 'No prior SMS history available.';
+    if (call.leadId) {
+      const history = await db
+        .select({
+          direction: conversations.direction,
+          content: conversations.content,
+          createdAt: conversations.createdAt,
+        })
+        .from(conversations)
+        .where(eq(conversations.leadId, call.leadId))
+        .orderBy(conversations.createdAt)
+        .limit(15);
+
+      if (history.length > 0) {
+        smsHistorySection = history
+          .map((m) => `${m.direction === 'inbound' ? 'Caller' : 'Business'}: ${m.content}`)
+          .join('\n');
+      }
+    }
+
+    const messagesWithoutResponse = (call.transcript || '')
+      .split('\n')
+      .reverse()
+      .findIndex((line) => line.startsWith('Caller:'));
+
+    const guardrails = buildGuardrailPrompt({
+      ownerName: client?.ownerName || 'the owner',
+      businessName: client?.businessName || 'the business',
+      agentTone: (agentSettings?.agentTone || 'professional') as 'professional' | 'friendly' | 'casual',
+      messagesWithoutResponse: messagesWithoutResponse === -1
+        ? 0
+        : messagesWithoutResponse,
+      canDiscussPricing: agentSettings?.canDiscussPricing || false,
+    });
+
     // Update transcript
     const currentTranscript = call.transcript || '';
     const newTranscript = `${currentTranscript}\nCaller: ${speechResult}`;
@@ -100,6 +142,11 @@ Your capabilities:
 
 Knowledge base:
 ${knowledgeContext}
+
+Recent SMS conversation history (if any):
+${smsHistorySection}
+
+${guardrails}
 
 Respond conversationally and briefly (under 50 words).
 End with a question or next step.

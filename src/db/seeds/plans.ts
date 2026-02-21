@@ -12,8 +12,9 @@ export async function seedPlans() {
       priceMonthly: 49700, // $497
       priceYearly: 497000, // $4,970 (2 months free)
       features: {
-        maxLeadsPerMonth: 50,
-        maxTeamMembers: 1,
+        maxLeadsPerMonth: 100,
+        maxMessagesPerMonth: 1000,
+        maxTeamMembers: 2,
         maxPhoneNumbers: 1,
         includesVoiceAi: false,
         includesCalendarSync: false,
@@ -32,7 +33,8 @@ export async function seedPlans() {
       priceMonthly: 99700, // $997
       priceYearly: 997000, // $9,970
       features: {
-        maxLeadsPerMonth: 200,
+        maxLeadsPerMonth: 500,
+        maxMessagesPerMonth: 5000,
         maxTeamMembers: 5,
         maxPhoneNumbers: 3,
         includesVoiceAi: true,
@@ -54,6 +56,7 @@ export async function seedPlans() {
       priceYearly: 1997000, // $19,970
       features: {
         maxLeadsPerMonth: null, // unlimited
+        maxMessagesPerMonth: 20000,
         maxTeamMembers: null,
         maxPhoneNumbers: 10,
         includesVoiceAi: true,

@@ -161,7 +161,7 @@ ${knowledgeSection}${guardrailSection}`;
   try {
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: systemPrompt },
-      ...conversationHistory.slice(-10),
+      ...conversationHistory.slice(-15),
       { role: 'user', content: incomingMessage },
     ];
 

@@ -9,6 +9,7 @@ Audience: Founder, operations monitor, on-call engineer
 3. Review unresolved escalations and SLA breaches.
 4. Review message delivery failures and opt-out anomalies.
 5. Review onboarding clients stuck in `pending`.
+6. Review subscriptions flagged `refund_review_required` under 30-day guarantee workflow.
 
 ## Cron Operations
 
@@ -28,6 +29,9 @@ curl -s "$BASE_URL/api/cron/process-scheduled" \
   -H "Authorization: Bearer $CRON_SECRET"
 
 curl -s "$BASE_URL/api/cron/check-missed-calls" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/guarantee-check" \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 

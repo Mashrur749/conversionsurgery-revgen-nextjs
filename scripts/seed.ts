@@ -161,6 +161,7 @@ const BILLING_PLANS = [
     stripeProductId: process.env.STRIPE_PRODUCT_STARTER || 'prod_starter',
     features: {
       maxLeadsPerMonth: 100,
+      maxMessagesPerMonth: 1000,
       maxTeamMembers: 2,
       maxPhoneNumbers: 1,
       includesVoiceAi: false,
@@ -185,6 +186,7 @@ const BILLING_PLANS = [
     stripeProductId: process.env.STRIPE_PRODUCT_PRO || 'prod_pro',
     features: {
       maxLeadsPerMonth: 500,
+      maxMessagesPerMonth: 5000,
       maxTeamMembers: 5,
       maxPhoneNumbers: 3,
       includesVoiceAi: false,
@@ -210,6 +212,7 @@ const BILLING_PLANS = [
     stripeProductId: process.env.STRIPE_PRODUCT_ENTERPRISE || 'prod_enterprise',
     features: {
       maxLeadsPerMonth: null, // unlimited
+      maxMessagesPerMonth: 20000,
       maxTeamMembers: null,   // unlimited
       maxPhoneNumbers: 10,
       includesVoiceAi: true,
