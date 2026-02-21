@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -17,32 +17,28 @@ const CLIENT_SAFE_TOGGLES = [
 type ClientToggle = typeof CLIENT_SAFE_TOGGLES[number];
 
 /** GET /api/client/features - Fetch safe feature toggles for the authenticated client. */
-export async function GET() {
-  let session;
-  try {
-    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_VIEW);
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+export const GET = portalRoute(
+  { permission: PORTAL_PERMISSIONS.SETTINGS_VIEW },
+  async ({ session }) => {
+    const db = getDb();
+    const [client] = await db
+      .select()
+      .from(clients)
+      .where(eq(clients.id, session.clientId))
+      .limit(1);
+
+    if (!client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    const toggles: Record<string, boolean> = {};
+    for (const key of CLIENT_SAFE_TOGGLES) {
+      toggles[key] = client[key] ?? true;
+    }
+
+    return NextResponse.json(toggles);
   }
-
-  const db = getDb();
-  const [client] = await db
-    .select()
-    .from(clients)
-    .where(eq(clients.id, session.clientId))
-    .limit(1);
-
-  if (!client) {
-    return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-  }
-
-  const toggles: Record<string, boolean> = {};
-  for (const key of CLIENT_SAFE_TOGGLES) {
-    toggles[key] = client[key] ?? true;
-  }
-
-  return NextResponse.json(toggles);
-}
+);
 
 const updateSchema = z.object({
   missedCallSmsEnabled: z.boolean().optional(),
@@ -53,41 +49,37 @@ const updateSchema = z.object({
 }).strict();
 
 /** PUT /api/client/features - Update safe feature toggles for the authenticated client. */
-export async function PUT(request: NextRequest) {
-  let session;
-  try {
-    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+export const PUT = portalRoute(
+  { permission: PORTAL_PERMISSIONS.SETTINGS_EDIT },
+  async ({ request, session }) => {
+    const body = await request.json();
+    const parsed = updateSchema.safeParse(body);
 
-  const body = await request.json();
-  const parsed = updateSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Invalid input', fieldErrors: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
-
-  // Only allow the safe subset
-  const updates: Partial<Record<ClientToggle, boolean>> = {};
-  for (const [key, val] of Object.entries(parsed.data)) {
-    if (CLIENT_SAFE_TOGGLES.includes(key as ClientToggle) && val !== undefined) {
-      updates[key as ClientToggle] = val;
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid input', fieldErrors: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
     }
-  }
 
-  if (Object.keys(updates).length === 0) {
+    // Only allow the safe subset
+    const updates: Partial<Record<ClientToggle, boolean>> = {};
+    for (const [key, val] of Object.entries(parsed.data)) {
+      if (CLIENT_SAFE_TOGGLES.includes(key as ClientToggle) && val !== undefined) {
+        updates[key as ClientToggle] = val;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ ok: true });
+    }
+
+    const db = getDb();
+    await db
+      .update(clients)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(clients.id, session.clientId));
+
     return NextResponse.json({ ok: true });
   }
-
-  const db = getDb();
-  await db
-    .update(clients)
-    .set({ ...updates, updatedAt: new Date() })
-    .where(eq(clients.id, session.clientId));
-
-  return NextResponse.json({ ok: true });
-}
+);

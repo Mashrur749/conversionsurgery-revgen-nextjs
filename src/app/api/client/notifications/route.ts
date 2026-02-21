@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getNotificationPrefs, updateNotificationPrefs } from '@/lib/services/notification-preferences';
-import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
+import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 
 const updateSchema = z.object({
   smsNewLead: z.boolean().optional(),
@@ -19,34 +19,26 @@ const updateSchema = z.object({
   urgentOverride: z.boolean().optional(),
 });
 
-export async function GET() {
-  let session;
-  try {
-    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_VIEW);
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-  const { clientId } = session;
+export const GET = portalRoute(
+  { permission: PORTAL_PERMISSIONS.SETTINGS_VIEW },
+  async ({ session }) => {
+    const { clientId } = session;
 
-  try {
-    const prefs = await getNotificationPrefs(clientId);
-    return NextResponse.json({ prefs });
-  } catch (error) {
-    console.error('Get notification prefs error:', error);
-    return NextResponse.json({ error: 'Failed to get preferences' }, { status: 500 });
+    try {
+      const prefs = await getNotificationPrefs(clientId);
+      return NextResponse.json({ prefs });
+    } catch (error) {
+      console.error('Get notification prefs error:', error);
+      return NextResponse.json({ error: 'Failed to get preferences' }, { status: 500 });
+    }
   }
-}
+);
 
-export async function PUT(request: NextRequest) {
-  let session;
-  try {
-    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-  const { clientId } = session;
+export const PUT = portalRoute(
+  { permission: PORTAL_PERMISSIONS.SETTINGS_EDIT },
+  async ({ request, session }) => {
+    const { clientId } = session;
 
-  try {
     const body = await request.json();
     const parsed = updateSchema.safeParse(body);
 
@@ -59,8 +51,5 @@ export async function PUT(request: NextRequest) {
 
     await updateNotificationPrefs(clientId, parsed.data);
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Update notification prefs error:', error);
-    return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
   }
-}
+);

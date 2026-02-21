@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
   initiateCancellation,
@@ -9,7 +9,7 @@ import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendEmail } from '@/lib/services/resend';
-import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
+import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 
 const cancelSchema = z.object({
   reason: z.string().min(1),
@@ -18,16 +18,11 @@ const cancelSchema = z.object({
 });
 
 /** POST /api/client/cancel */
-export async function POST(request: NextRequest) {
-  let session;
-  try {
-    session = await requirePortalPermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-  const { clientId } = session;
+export const POST = portalRoute(
+  { permission: PORTAL_PERMISSIONS.SETTINGS_EDIT },
+  async ({ request, session }) => {
+    const { clientId } = session;
 
-  try {
     const body = await request.json();
     const parsed = cancelSchema.safeParse(body);
 
@@ -90,8 +85,5 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-  } catch (error) {
-    console.error('[Billing] Cancellation error:', error);
-    return NextResponse.json({ error: 'Failed to process cancellation' }, { status: 500 });
   }
-}
+);

@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { requirePortalPermission, PORTAL_PERMISSIONS } from '@/lib/permissions';
+import { NextResponse } from 'next/server';
+import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
 import { knowledgeBase } from '@/db/schema/knowledge-base';
 import { eq, and } from 'drizzle-orm';
@@ -14,74 +14,62 @@ const updateSchema = z.object({
 }).strict();
 
 /** PATCH /api/client/knowledge/[id] - Update a KB entry. */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  let session;
-  try {
-    session = await requirePortalPermission(PORTAL_PERMISSIONS.KNOWLEDGE_EDIT);
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+export const PATCH = portalRoute<{ id: string }>(
+  { permission: PORTAL_PERMISSIONS.KNOWLEDGE_EDIT },
+  async ({ request, session, params }) => {
+    const { id } = params;
+
+    const body = await request.json();
+    const parsed = updateSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', fieldErrors: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    const db = getDb();
+    const [updated] = await db
+      .update(knowledgeBase)
+      .set({
+        ...parsed.data,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(knowledgeBase.id, id),
+        eq(knowledgeBase.clientId, session.clientId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(updated);
   }
-
-  const body = await request.json();
-  const parsed = updateSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: 'Validation failed', fieldErrors: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
-
-  const db = getDb();
-  const [updated] = await db
-    .update(knowledgeBase)
-    .set({
-      ...parsed.data,
-      updatedAt: new Date(),
-    })
-    .where(and(
-      eq(knowledgeBase.id, id),
-      eq(knowledgeBase.clientId, session.clientId)
-    ))
-    .returning();
-
-  if (!updated) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-
-  return NextResponse.json(updated);
-}
+);
 
 /** DELETE /api/client/knowledge/[id] - Soft-delete a KB entry. */
-export async function DELETE(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
-  let session;
-  try {
-    session = await requirePortalPermission(PORTAL_PERMISSIONS.KNOWLEDGE_EDIT);
-  } catch {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+export const DELETE = portalRoute<{ id: string }>(
+  { permission: PORTAL_PERMISSIONS.KNOWLEDGE_EDIT },
+  async ({ session, params }) => {
+    const { id } = params;
+
+    const db = getDb();
+    const [updated] = await db
+      .update(knowledgeBase)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(
+        eq(knowledgeBase.id, id),
+        eq(knowledgeBase.clientId, session.clientId)
+      ))
+      .returning();
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
   }
-
-  const db = getDb();
-  const [updated] = await db
-    .update(knowledgeBase)
-    .set({ isActive: false, updatedAt: new Date() })
-    .where(and(
-      eq(knowledgeBase.id, id),
-      eq(knowledgeBase.clientId, session.clientId)
-    ))
-    .returning();
-
-  if (!updated) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ success: true });
-}
+);
