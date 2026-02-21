@@ -15,12 +15,12 @@ Previous high-volume UI consistency issues were addressed in earlier passes. Thi
 ## Open UX Risks
 - Quiet-hours queued messaging status may appear complete to operators without explicit replay visibility.
 - Bi-weekly report automation visibility in UI is limited (delivery confirmation should be clearer).
-- Self-serve signup currently lands clients in pending state without full guided setup UX.
+- Self-serve signup still lands clients in `pending` until setup completion; conversion from checklist -> activation should be clearer.
 
 ## Next UX Iteration Focus
 1. Add explicit queue/replay visibility for quiet-hours messages.
 2. Add report delivery status and retry controls in admin reporting UI.
-3. Build guided self-serve onboarding checklist and tutorial entry points.
+3. Expand guided onboarding checklist into a full in-product tutorial path with milestone prompts.
 
 ## Archival Note
 Detailed historical issue lists were intentionally collapsed to avoid stale, fixed-item noise. Recover prior details via git history if needed.

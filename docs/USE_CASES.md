@@ -79,7 +79,7 @@ Outcome: guarantee promise is enforced operationally instead of manual tracking.
 ### U8. Public self-serve signup baseline
 1. Prospect visits `/signup` and submits business details.
 2. Platform creates client in `pending` state + owner membership.
-3. Team or automation completes setup before activation.
+3. Checklist + managed setup request path drive completion before activation.
 
 Outcome: Acquisition funnel starts without manual data entry.
 
@@ -93,6 +93,6 @@ Outcome: faster activation and fewer manual onboarding handoffs.
 ### U9. Customer-controlled team management (future self-serve)
 1. Customer manages their own assistants and roles.
 2. Platform enforces plan limits and permission boundaries.
-3. Tutorial-led setup reduces support overhead.
+3. Tutorial-led setup reduces support overhead and activation time.
 
 Outcome: SaaS-ready control model with low operational risk.

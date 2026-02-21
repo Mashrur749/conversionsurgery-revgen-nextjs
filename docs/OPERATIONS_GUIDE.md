@@ -8,7 +8,7 @@ Audience: Founder, operations monitor, on-call engineer
 2. Check failed webhook logs (Twilio, Stripe, form/webhooks).
 3. Review unresolved escalations and SLA breaches.
 4. Review message delivery failures and opt-out anomalies.
-5. Review onboarding clients stuck in `pending`.
+5. Review onboarding clients in `pending` and move blockers (number, hours, knowledge, team).
 6. Review subscriptions flagged `refund_review_required` under 30-day guarantee workflow.
 
 ## Cron Operations
@@ -92,3 +92,4 @@ curl -s "$BASE_URL/api/cron/access-review" \
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/utils/cron.ts`
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/TESTING_GUIDE.md`
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/REMAINING-GAPS.md`
+- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/OPERATOR-MASTERY-PLAYBOOK.md`

@@ -61,11 +61,11 @@ Permission templates and overrides resolve effective access at runtime.
 - No privilege escalation: non-owners cannot assign roles above their effective permissions.
 - Session invalidation on role/scope changes (`sessionVersion` bump).
 - Audit logging on key team management actions.
+- Monthly access-review automation sends stale-access digest to agency owners.
 
-## Open Gaps
+## Remaining Gaps
 - No dedicated invitation lifecycle UI for role approvals/workflows.
 - No MFA policy layer yet (OTP exists, but no mandatory MFA policy engine).
-- No periodic access review automation (manual today).
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`
