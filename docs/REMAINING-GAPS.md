@@ -47,8 +47,8 @@ This document catalogs all known gaps after completing the security audit harden
 
 #### 3. ~~Missing `updatedAt` columns~~ — Resolved
 - **Category:** Schema
-- **Status:** Resolved (commit 8021c8c)
-- **Description:** `updatedAt` columns added to `conversations`, `coupons`, `reviews`, `voice_calls`, and `support_messages`. All `db.update().set()` calls for these tables now include `updatedAt: new Date()`. Drizzle migration: `0020_rainy_nemesis.sql`.
+- **Status:** Resolved (commit 8021c8c, migration applied via `db:push`)
+- **Description:** `updatedAt` columns added to `conversations`, `coupons`, `reviews`, `voice_calls`, and `support_messages`. All `db.update().set()` calls for these tables now include `updatedAt: new Date()`. Drizzle migration: `0020_rainy_nemesis.sql` (applied).
 
 #### 4. ~~No automated test suite~~ — Resolved
 - **Category:** Infrastructure
