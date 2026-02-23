@@ -1,6 +1,6 @@
 # Docs Index
 
-Last updated: 2026-02-21
+Last updated: 2026-02-23
 Purpose: single navigation map for all operational documents.
 
 ## Recommended Reading Order
@@ -11,13 +11,14 @@ Purpose: single navigation map for all operational documents.
 5. `03-ACCESS-MANAGEMENT.md` — role/scope model and delegation guardrails.
 6. `05-USE-CASES.md` — role-based business workflows.
 7. `07-LAUNCH-READINESS.md` — launch status and go-live gates.
-8. `06-REMAINING-GAPS.md` — live open-gap tracker (currently none).
-9. `08-UX-AUDIT.md` — operational UX risks and next iteration focus.
-10. `09-SECURITY-AUDIT.md` — auth and security findings.
-11. `99-ARCHIVE-SYSTEM-BLOCKERS.md` — historical archive only.
+8. `10-OFFER-PARITY-GAPS.md` — offer-to-implementation gap tracker for selling/delivery parity.
+9. `06-REMAINING-GAPS.md` — closed launch-hardening gap archive and scope note.
+10. `08-UX-AUDIT.md` — operational UX risks and next iteration focus.
+11. `09-SECURITY-AUDIT.md` — auth and security findings.
+12. `99-ARCHIVE-SYSTEM-BLOCKERS.md` — historical archive only.
 
 ## File Labels (By Intent)
-- `00-09`: active operational documents.
+- `00-10`: active operational documents.
 - `99-*`: historical archive documents.
 
 ## Notes

@@ -1,7 +1,13 @@
 # Launch Readiness
 
-Last updated: 2026-02-21
+Last updated: 2026-02-23
 Scope: Managed service launch now + SaaS-readiness foundation (next ~6 months)
+
+## Scope Note
+This document reflects the launch-hardening baseline that was completed in February 2026.
+
+Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately in:
+- `docs/10-OFFER-PARITY-GAPS.md`
 
 ## Status Tags
 - `P1: DONE`

@@ -1,6 +1,6 @@
 # Admin Onboarding Wiki
 
-Last updated: 2026-02-22
+Last updated: 2026-02-23
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
 
@@ -24,8 +24,11 @@ Purpose: safely onboard your spouse/internal monitor and client-side assistants.
 6. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`
 Purpose: verify launch gate status and confirm operational readiness.
 
-7. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
-Purpose: final blocker check before outbound and client onboarding.
+7. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
+Purpose: verify offer promises are matched by implementation before selling.
+
+8. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
+Purpose: confirm earlier launch-hardening wave is closed and historical context is preserved.
 
 ## Mandatory Execution Before Selling Next Week
 
@@ -33,6 +36,7 @@ Purpose: final blocker check before outbound and client onboarding.
 2. Run one mock client onboarding from signup to checklist progression.
 3. Run one incident drill from `01-OPERATOR-MASTERY-PLAYBOOK.md` (cron auth failure or escalation fallback).
 4. Validate your wife/internal monitor can access only assigned clients.
+5. Review all `P0` items in `10-OFFER-PARITY-GAPS.md` and close or qualify before selling.
 
 ## Confidence Criteria (Go/No-Go)
 
@@ -41,3 +45,4 @@ Go only if all are true:
 2. You can run daily ops from `04-OPERATIONS-GUIDE.md` in under 30 minutes.
 3. You can recover from one simulated operational failure without engineering help.
 4. `07-LAUNCH-READINESS.md` and `06-REMAINING-GAPS.md` show no open blockers.
+5. `10-OFFER-PARITY-GAPS.md` has no unresolved `P0` items for sold promises.

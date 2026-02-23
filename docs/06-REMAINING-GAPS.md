@@ -1,6 +1,6 @@
 # Remaining Gaps
 
-Last updated: 2026-02-21
+Last updated: 2026-02-23
 Scope: Open items after security + access hardening wave
 
 ## Status Tags
@@ -9,6 +9,12 @@ Scope: Open items after security + access hardening wave
 - `P3: DONE`
 - `REMAINING: []`
 - `LAST_VERIFIED_COMMIT: 2f4253c`
+
+## Scope Note
+This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
+
+Offer parity gaps against the reviewed v2.1 offer architecture are tracked separately in:
+- `docs/10-OFFER-PARITY-GAPS.md`
 
 ## P1 (Must complete before scale-up)
 1. None.
