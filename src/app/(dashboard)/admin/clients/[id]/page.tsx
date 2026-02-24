@@ -13,9 +13,12 @@ import { DeleteButton } from './delete-button';
 import { FeatureTogglesCard } from './feature-toggles';
 import { FeatureStatusList } from './feature-status';
 import { ROIDashboard } from './roi-dashboard';
+import { QuarterlyCampaignsCard } from './quarterly-campaigns-card';
 import { format } from 'date-fns';
 import { getRevenueStats, getRevenueByService } from '@/lib/services/revenue';
 import { getSpeedToLeadMetrics } from '@/lib/services/speed-to-lead';
+import { listClientQuarterlyCampaigns } from '@/lib/services/campaign-service';
+import { toQuarterlyCampaignSummaryDto } from '@/lib/services/quarterly-campaign-summary';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -43,6 +46,7 @@ export default async function ClientDetailPage({ params }: Props) {
 
   const { getTeamMembers } = await import('@/lib/services/team-bridge');
   const members = await getTeamMembers(client.id);
+  const quarterlyCampaigns = await listClientQuarterlyCampaigns(client.id);
 
   // Fetch ROI metrics in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -288,6 +292,11 @@ export default async function ClientDetailPage({ params }: Props) {
           multiLanguageEnabled: client.multiLanguageEnabled,
           preferredLanguage: client.preferredLanguage,
         }}
+      />
+
+      <QuarterlyCampaignsCard
+        clientId={client.id}
+        initialCampaigns={quarterlyCampaigns.map(toQuarterlyCampaignSummaryDto)}
       />
 
       <TeamManager clientId={client.id} />

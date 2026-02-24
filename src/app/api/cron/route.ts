@@ -181,6 +181,16 @@ export async function POST(request: NextRequest) {
         '/api/cron/estimate-fallback-nudges',
         cronSecret!
       );
+      results.quarterlyCampaignPlanner = await dispatch(
+        baseUrl,
+        '/api/cron/quarterly-campaign-planner',
+        cronSecret!
+      );
+      results.quarterlyCampaignAlerts = await dispatch(
+        baseUrl,
+        '/api/cron/quarterly-campaign-alerts',
+        cronSecret!
+      );
     }
 
     // ── Weekly Monday 7am UTC ────────────────────────────────
@@ -188,6 +198,11 @@ export async function POST(request: NextRequest) {
       results.weeklySummary = await dispatch(baseUrl, '/api/cron/weekly-summary', cronSecret!);
       results.agencyDigest = await dispatch(baseUrl, '/api/cron/agency-digest', cronSecret!);
       results.biweeklyReports = await dispatch(baseUrl, '/api/cron/biweekly-reports', cronSecret!);
+      results.quarterlyCampaignDigest = await dispatch(
+        baseUrl,
+        '/api/cron/quarterly-campaign-alerts?mode=weekly',
+        cronSecret!
+      );
     }
 
     return NextResponse.json(results);

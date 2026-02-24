@@ -15,9 +15,9 @@ Objective: Ensure paying-client delivery matches every sold promise.
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Quarterly Growth Blitz operations are not productized.
 - Bi-weekly "Without Us" reporting methodology is not implemented.
 - Cancellation/data-export contract terms are not fully implemented in product workflows.
+- Quiet-hours legal classification decision is still pending for full claim expansion.
 
 ## Spec Mapping (One Spec Per Gap)
 
@@ -27,7 +27,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Done |
 | GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Done |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Done |
-| GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
+| GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Done |
 | GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
 | GAP-007 | P0 | `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | Spec Ready |
 | GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Spec Ready |
@@ -55,7 +55,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | KB QA process with gap closure loop | Gap tracking primitives exist; full operational closure loop missing | Partial |
 | 30-day proof-of-life + 90-day recovery guarantee | Dual-layer evaluator + low-volume extension + visibility workflows implemented | Ready |
 | Low-volume guarantee extension formula | Implemented in guarantee v2 evaluator and persisted windows | Ready |
-| Quarterly Growth Blitz | No quarterly campaign scheduler/workflow | Gap |
+| Quarterly Growth Blitz | Quarterly campaign ledger + planner + transitions + reporting summary + admin digest/alerts implemented | Ready |
 | Bi-weekly scoreboard + "Without Us" line | Bi-weekly reports exist; "Without Us" methodology not implemented | Gap |
 | Month-to-month, 30-day cancellation, 5-day export SLA | Current cancellation workflow uses 7-day grace path; full export workflow incomplete | Gap |
 
@@ -170,9 +170,37 @@ Highest-risk mismatches for paying clients are now concentrated in:
 
 5. `GAP-005` Quarterly Growth Blitz not productized
 - Offer promise: quarterly campaign cadence with scheduling/communication expectations.
-- Current behavior: no quarterly campaign engine, scheduling workflow, or evidence tracking path.
+- Progress (2026-02-24): `MS-05` Milestones A-D completed.
+- Added quarterly campaign data model:
+  - `quarterly_campaigns` table
+  - campaign type/status enums
+  - required assets, completed assets, evidence links, and lifecycle timestamps
+- Added campaign service layer (`campaign-service.ts`) for:
+  - idempotent planner defaults
+  - quarter-level draft creation
+  - transition actions (approve, launch, complete) with guard validation
+  - asset/evidence tracking and DTO summaries
+  - portfolio digest and missed-quarter alert generation
+- Added cron workflows:
+  - quarterly planner (`/api/cron/quarterly-campaign-planner`)
+  - admin digest/alerts (`/api/cron/quarterly-campaign-alerts`)
+  - wired into orchestrator (daily and weekly windows)
+- Added operator workflow surfaces:
+  - admin client quarterly campaign APIs
+  - admin client quarterly campaign card with lifecycle actions and checklist tracking
+- Added visibility/reporting:
+  - client dashboard quarterly campaign status card
+  - report context now includes quarterly campaign summary DTO
+- Remaining: none (`MS-05` complete).
 - Evidence:
-  - no quarter/campaign scheduling implementation in `src/app/api/cron/*` and `src/lib/services/*`
+  - `src/db/schema/quarterly-campaigns.ts`
+  - `src/lib/services/campaign-service.ts`
+  - `src/lib/services/quarterly-campaign-rules.ts`
+  - `src/lib/services/quarterly-campaign-transition-guard.ts`
+  - `src/app/api/cron/quarterly-campaign-planner/route.ts`
+  - `src/app/api/cron/quarterly-campaign-alerts/route.ts`
+  - `src/app/api/admin/clients/[id]/quarterly-campaigns/route.ts`
+  - `src/app/api/admin/clients/[id]/quarterly-campaigns/[campaignId]/route.ts`
 
 6. `GAP-006` Bi-weekly "Without Us" methodology not implemented
 - Offer promise: standardized modeled low/base/high risk line in bi-weekly report.

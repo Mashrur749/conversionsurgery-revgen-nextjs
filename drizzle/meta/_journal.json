@@ -169,6 +169,13 @@
       "when": 1771902968739,
       "tag": "0023_loving_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1771903939862,
+      "tag": "0024_blue_ted_forrester",
+      "breakpoints": true
     }
   ]
 }

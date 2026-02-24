@@ -19,9 +19,11 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Commits: `f25a9eb`, `650a32c`, `e90a35e`, `9773ae3`
 - `MS-04` Milestones A-D: complete.
   - Commit: `4b1ab2f`
+- `MS-05` Milestones A-D: complete.
+  - Commit: current working session commit (pending)
 
 ## Current Focus
-- Next spec: `MS-05` (Quarterly Growth Blitz).
+- Next spec: `MS-06` (Bi-weekly "Without Us" model).
 - `MS-04` delivered end-to-end:
   - smart-assist config model on client (`enabled`, `delay`, `manual categories`)
   - centralized AI send-policy resolver with shared category constants
@@ -31,6 +33,12 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - assist lifecycle statuses + transition helper + retry-safe send claim
   - operator visibility in scheduled/lead views
   - assist outcome counters in `daily_stats`
+- `MS-05` delivered end-to-end:
+  - quarterly campaign schema, enums, and relations
+  - campaign service with planner, transitions, asset/evidence capture, and digest/alerts
+  - cron planner and quarterly digest/alert endpoints integrated into orchestrator
+  - admin workflow APIs and admin client execution UI card
+  - client dashboard campaign status visibility and report-context campaign summary
 
 ## Required Skills For Any MS Milestone
 - `ms-spec-delivery`
@@ -50,5 +58,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-05 Milestone A only.
+Continue with MS-06 Milestone A only.
 ```

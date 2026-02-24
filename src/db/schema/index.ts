@@ -52,6 +52,8 @@ export * from './voice-calls';
 export * from './subscription-plans';
 export * from './system-settings';
 export * from './agency-messages';
+export * from './quarterly-campaign-enums';
+export * from './quarterly-campaigns';
 
 export * from './compliance';
 

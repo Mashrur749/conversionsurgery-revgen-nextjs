@@ -31,6 +31,7 @@ import { escalationQueue } from './escalation-queue';
 import { escalationRules } from './escalation-rules';
 import { conversationCheckpoints } from './conversation-checkpoints';
 import { clientAgentSettings } from './client-agent-settings';
+import { quarterlyCampaigns } from './quarterly-campaigns';
 import { people } from './people';
 import { roleTemplates } from './role-templates';
 import { clientMemberships } from './client-memberships';
@@ -75,6 +76,7 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   clientMemberships: many(clientMemberships),
   agencyClientAssignments: many(agencyClientAssignments),
   auditLogEntries: many(auditLog),
+  quarterlyCampaigns: many(quarterlyCampaigns),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -133,6 +135,24 @@ export const scheduledMessagesRelations = relations(
     client: one(clients, {
       fields: [scheduledMessages.clientId],
       references: [clients.id],
+    }),
+  })
+);
+
+export const quarterlyCampaignsRelations = relations(
+  quarterlyCampaigns,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [quarterlyCampaigns.clientId],
+      references: [clients.id],
+    }),
+    createdByUser: one(users, {
+      fields: [quarterlyCampaigns.createdBy],
+      references: [users.id],
+    }),
+    updatedByUser: one(users, {
+      fields: [quarterlyCampaigns.updatedBy],
+      references: [users.id],
     }),
   })
 );

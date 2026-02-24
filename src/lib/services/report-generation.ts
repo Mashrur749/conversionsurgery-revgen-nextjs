@@ -3,6 +3,7 @@ import { abTests, clients, dailyStats, reports, systemSettings } from '@/db/sche
 import { and, eq, gte, lte } from 'drizzle-orm';
 import { getTeamMembers } from '@/lib/services/team-bridge';
 import { sendEmail } from '@/lib/services/resend';
+import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
 
 type ReportType = 'bi-weekly' | 'monthly' | 'custom';
 
@@ -37,6 +38,7 @@ export async function generateClientReport(
     );
 
   const teamMemsList = await getTeamMembers(clientId);
+  const quarterlyCampaignSummary = await getCurrentQuarterlyCampaignSummary(clientId, new Date(endDate));
 
   const aggregatedMetrics = {
     messagesSent: periodStats.reduce((sum, s) => sum + (s.messagesSent || 0), 0),
@@ -68,6 +70,7 @@ export async function generateClientReport(
     averagePerDay: aggregatedMetrics.days > 0
       ? (aggregatedMetrics.messagesSent / aggregatedMetrics.days).toFixed(1)
       : '0.0',
+    quarterlyCampaign: quarterlyCampaignSummary,
   };
 
   const teamPerformance = {

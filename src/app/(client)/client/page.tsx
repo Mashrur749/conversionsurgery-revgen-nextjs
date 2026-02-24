@@ -9,6 +9,7 @@ import { getRevenueStats } from '@/lib/services/revenue';
 import { DollarSign } from 'lucide-react';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
+import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
 
 export default async function ClientDashboardPage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.DASHBOARD);
@@ -39,6 +40,7 @@ export default async function ClientDashboardPage() {
 
   // Revenue stats (last 30 days)
   const revenueStats = await getRevenueStats(clientId);
+  const quarterlyCampaign = await getCurrentQuarterlyCampaignSummary(clientId);
 
   // Recent activity
   const recentLeads = await db
@@ -108,6 +110,33 @@ export default async function ClientDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Quarterly Growth Blitz Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!quarterlyCampaign ? (
+            <p className="text-sm text-muted-foreground">
+              Quarterly campaign is being planned by your account team.
+            </p>
+          ) : (
+            <div className="space-y-1">
+              <p className="font-medium">{quarterlyCampaign.campaignTypeLabel}</p>
+              <p className="text-sm text-muted-foreground">
+                {quarterlyCampaign.quarterKey} • {quarterlyCampaign.statusLabel}
+              </p>
+              {quarterlyCampaign.missingAssetLabels.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Waiting on assets: {quarterlyCampaign.missingAssetLabels.join(', ')}
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Upcoming Appointments */}
       <Card>
