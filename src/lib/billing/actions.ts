@@ -5,7 +5,6 @@ import { getDb } from '@/db';
 import { subscriptions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import {
-  cancelSubscription as cancelSub,
   pauseSubscription as pauseSub,
   resumeSubscription as resumeSub,
   changePlan as changeSubPlan,
@@ -34,24 +33,6 @@ async function requireBillingAccess(clientId: string) {
     throw new Error('Forbidden: insufficient permissions');
   }
   return session;
-}
-
-export async function cancelSubscription(clientId: string, reason: string) {
-  await requireBillingAccess(clientId);
-  const db = getDb();
-
-  const [subscription] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.clientId, clientId))
-    .limit(1);
-
-  if (!subscription) {
-    throw new Error('No active subscription found');
-  }
-
-  await cancelSub(subscription.id, reason);
-  revalidatePath('/client/billing');
 }
 
 export async function pauseSubscription(clientId: string, resumeDate: Date) {

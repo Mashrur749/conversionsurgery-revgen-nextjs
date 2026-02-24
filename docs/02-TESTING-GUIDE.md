@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `9388e70`
+Last verified commit: `MS-07 working tree`
 
 ## 0. Preflight (Run First)
 
@@ -224,7 +224,24 @@ Expected:
 - UI renders assumptions/disclaimer when status is `ready`.
 - UI shows clear insufficiency state without fake metrics when status is `insufficient_data`.
 
-### Step 13: Final smoke
+### Step 13: Cancellation + export parity (MS-07)
+1. Open `/client/cancel` and submit cancellation with `Cancel Anyway`.
+2. Confirm success response includes:
+- `effectiveCancellationDate` (30-day notice)
+- `dataExport` object with `status`, `dueAt`, and optional `downloadPath`
+3. Open `/client/cancel/confirmed`:
+- Verify effective cancellation date is shown.
+- Verify export SLA messaging shows 5 business days.
+4. Verify export status + retrieval:
+- In browser session, open `/api/client/exports` (same authenticated client portal session).
+- Use UI download button when request status is `ready`.
+
+Expected:
+- Cancellation no longer references 7-day grace.
+- Export request lifecycle exists (`requested|processing|ready|delivered|failed`).
+- Downloaded package contains `leads.csv`, `conversations.csv`, and `pipeline_jobs.csv` sections.
+
+### Step 14: Final smoke
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
@@ -240,6 +257,7 @@ npm run build
 npx vitest run src/lib/permissions/resolve.test.ts
 npx vitest run src/lib/automations/appointment-reminder.test.ts
 npx vitest run src/lib/services/without-us-model.test.ts
+npx vitest run src/lib/services/cancellation-policy.test.ts src/lib/services/data-export-bundle.test.ts src/lib/services/data-export-requests.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"

@@ -23,9 +23,11 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Commit: `edc545d`
 - `MS-06` Milestones A-D: complete.
   - Commit: `9388e70`
+- `MS-07` Milestones A-D: complete.
+  - Commit: pending current change set
 
 ## Current Focus
-- Next spec: `MS-07` (Cancellation/export parity).
+- Next spec: `MS-08` (Quiet-hours classification).
 - `MS-04` delivered end-to-end:
   - smart-assist config model on client (`enabled`, `delay`, `manual categories`)
   - centralized AI send-policy resolver with shared category constants
@@ -48,6 +50,14 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - report persistence + admin report detail rendering + bi-weekly email summary integration
   - explicit insufficient-data guardrails
   - typed report DTO parsing in report UI paths
+- `MS-07` delivered end-to-end:
+  - policy constants for cancellation notice and export SLA
+  - `data_export_requests` schema + migration + lifecycle statuses
+  - cancellation confirmation now returns effective 30-day date and creates export requests automatically
+  - full export bundle generation (`leads`, `conversations`, `pipeline/jobs`)
+  - secure tokenized download endpoint with expiry and delivered-state tracking
+  - admin billing SLA queue for pending/at-risk/breached exports
+  - billing cancel-path bypass removed in favor of unified `/client/cancel` workflow
 
 ## Required Skills For Any MS Milestone
 - `ms-spec-delivery`
@@ -67,5 +77,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-07 Milestone A only.
+Continue with MS-08 Milestone A only.
 ```

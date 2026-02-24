@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `9388e70`
+**Last verified commit:** `MS-07 working tree`
 
 ---
 
@@ -213,5 +213,6 @@ Since the original audit window, new managed-service features (Smart Assist work
 1. Admin/client API routes use permission-wrapped handlers (`adminClientRoute`, `portalRoute`).
 2. Cron surfaces use `verifyCronSecret()` with bearer auth.
 3. Data writes remain client-scoped and route-scoped.
+4. Cancellation/export parity (`MS-07`) adds tokenized download endpoints with client-scope checks and token expiry validation.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

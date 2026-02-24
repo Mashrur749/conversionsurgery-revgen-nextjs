@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: 9388e70`
+- `LAST_VERIFIED_COMMIT: MS-07 working tree`
 
 ## Executive Status
 
@@ -24,7 +24,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 | Client onboarding baseline | Ready with caveats | Owner membership auto-created; wizard persistence improved |
 | Team operations | Ready with caveats | Team limit enforcement added; escalation fallback added |
 | Compliance gateway | Ready | Consent/opt-out/quiet hours enforced; durable replay covers lead + non-lead flows |
-| Billing + plan policy | Ready with caveats | Unlimited policy defaults enforced for active offer; add-on transparency + cancellation/export parity tracked in offer gaps |
+| Billing + plan policy | Ready with caveats | Unlimited policy defaults and cancellation/export parity are implemented; add-on transparency remains tracked in offer gaps |
 | Cron + reliability | Ready with caveats | Master cron now requires bearer secret; runbook updated |
 | Self-serve foundation | Ready | Public signup + guided onboarding checklist + setup request path |
 | Reporting | Ready | Deterministic bi-weekly report generation/delivery with idempotency guard |
@@ -44,6 +44,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Monthly reset now records billing-policy outcomes (`processed` vs `skippedByPolicy`) for audit-safe unlimited-plan handling.
 - Bi-weekly report cron now generates and emails managed-service reports deterministically (idempotent by period).
 - Bi-weekly reports now include "Without Us" directional model payload (low/base/high), assumptions, disclaimers, and insufficient-data guard state.
+- Cancellation workflow now enforces 30-day notice with tracked export SLA and expiring secure download links for full lead/conversation/pipeline exports.
 - Appointment reminders now include both homeowner and contractor reminder scheduling paths.
 - Quiet-hours replay now includes non-lead durable queue processing.
 - Monthly access-review automation sends stale-access digest to agency owners.
@@ -71,7 +72,7 @@ Current snapshot at this commit:
 4. Done: `GAP-004` smart assist auto-send parity.
 5. Done: `GAP-005` quarterly growth blitz productization.
 6. Done: `GAP-006` bi-weekly "Without Us" model parity.
-7. Remaining P0: `GAP-007` cancellation/export parity.
+7. Done: `GAP-007` cancellation/export parity.
 
 ## Go-Live Gate (Managed Service)
 Release only when all are true:

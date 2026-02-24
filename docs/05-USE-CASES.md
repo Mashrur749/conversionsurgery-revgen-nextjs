@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `9388e70`
+Last verified commit: `MS-07 working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -118,3 +118,12 @@ Outcome: retention anchor is operationalized with auditable delivery.
 3. Report detail view shows either model ranges or an explicit insufficient-data state.
 
 Outcome: retention narrative is evidence-backed and transparent, without fabricated certainty.
+
+### U12. Cancellation + full data export fulfillment (MS-07)
+1. Client submits cancellation notice through `/client/cancel`.
+2. System sets effective cancellation date to 30 calendar days after written notice.
+3. System creates export request with 5-business-day SLA and tracks lifecycle status.
+4. Client can retrieve full export bundle (leads, conversations, pipeline/jobs) using secure expiring download token.
+5. Operations monitors SLA queue in admin billing and handles any failed or overdue requests.
+
+Outcome: cancellation terms are contract-aligned and auditable without manual ad hoc export handling.

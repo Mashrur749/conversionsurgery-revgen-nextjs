@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { format, differenceInDays } from 'date-fns';
 import { CreditCard, Calendar, AlertTriangle, CheckCircle, Pause, X } from 'lucide-react';
-import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 import { PauseSubscriptionDialog } from './PauseSubscriptionDialog';
 
 interface SubscriptionCardProps {
@@ -33,7 +32,7 @@ interface SubscriptionCardProps {
     messages: number;
   };
   onUpgrade: () => void;
-  onCancelSubscription: (reason: string) => Promise<void>;
+  onStartCancellation: () => void;
   onPauseSubscription: (resumeDate: Date) => Promise<void>;
   onResumeSubscription: () => Promise<void>;
 }
@@ -42,11 +41,10 @@ export function SubscriptionCard({
   subscription,
   usage,
   onUpgrade,
-  onCancelSubscription,
+  onStartCancellation,
   onPauseSubscription,
   onResumeSubscription,
 }: SubscriptionCardProps) {
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPauseDialog, setShowPauseDialog] = useState(false);
 
   const statusConfig = {
@@ -189,7 +187,7 @@ export function SubscriptionCard({
               <Button
                 variant="ghost"
                 className="text-destructive hover:text-sienna"
-                onClick={() => setShowCancelDialog(true)}
+                onClick={onStartCancellation}
               >
                 Cancel Subscription
               </Button>
@@ -197,13 +195,6 @@ export function SubscriptionCard({
           </div>
         </CardContent>
       </Card>
-
-      <CancelSubscriptionDialog
-        open={showCancelDialog}
-        onOpenChange={setShowCancelDialog}
-        onConfirm={onCancelSubscription}
-        endDate={subscription.currentPeriodEnd}
-      />
 
       <PauseSubscriptionDialog
         open={showPauseDialog}

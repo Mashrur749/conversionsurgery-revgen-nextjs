@@ -1,7 +1,8 @@
 import { getDb } from '@/db';
 import { cancellationRequests, clients, dailyStats, leads, jobs, subscriptions, plans } from '@/db/schema';
-import { eq, and, sql, inArray } from 'drizzle-orm';
+import { eq, and, sql, inArray, desc } from 'drizzle-orm';
 import { buildGuaranteeSummary } from '@/lib/services/guarantee-v2/summary';
+import { calculateEffectiveCancellationDate } from '@/lib/services/cancellation-policy';
 
 export interface ValueSummary {
   monthsActive: number;
@@ -17,6 +18,13 @@ export interface GuaranteeCancellationContext {
   statusLabel: string;
   refundReviewRequired: boolean;
   refundEligibleAt: string | null;
+}
+
+export interface CancellationConfirmationResult {
+  requestId: string;
+  clientId: string;
+  effectiveCancellationDate: Date;
+  processedAt: Date;
 }
 
 export async function getGuaranteeCancellationContext(
@@ -220,15 +228,12 @@ export async function markAsSaved(requestId: string): Promise<void> {
 }
 
 /**
- * Confirm cancellation with grace period
+ * Confirm cancellation with 30-day notice terms.
  */
 export async function confirmCancellation(
-  requestId: string,
-  gracePeriodDays: number = 7
-): Promise<void> {
+  requestId: string
+): Promise<CancellationConfirmationResult> {
   const db = getDb();
-  const gracePeriodEnds = new Date();
-  gracePeriodEnds.setDate(gracePeriodEnds.getDate() + gracePeriodDays);
 
   // Get the cancellation request to find the clientId
   const [request] = await db
@@ -238,13 +243,15 @@ export async function confirmCancellation(
     .limit(1);
 
   if (!request) throw new Error('Cancellation request not found');
+  const processedAt = new Date();
+  const effectiveCancellationDate = calculateEffectiveCancellationDate(processedAt);
 
   await db
     .update(cancellationRequests)
     .set({
       status: 'cancelled',
-      gracePeriodEnds,
-      processedAt: new Date(),
+      gracePeriodEnds: effectiveCancellationDate,
+      processedAt,
     })
     .where(eq(cancellationRequests.id, requestId));
 
@@ -266,6 +273,13 @@ export async function confirmCancellation(
       false // cancel at period end, not immediately
     );
   }
+
+  return {
+    requestId,
+    clientId: request.clientId,
+    effectiveCancellationDate,
+    processedAt,
+  };
 }
 
 /**
@@ -284,4 +298,26 @@ export async function getPendingCancellation(clientId: string) {
     .limit(1);
 
   return request;
+}
+
+export async function getLatestCancelledCancellation(clientId: string) {
+  const db = getDb();
+
+  const [request] = await db
+    .select({
+      id: cancellationRequests.id,
+      reason: cancellationRequests.reason,
+      feedback: cancellationRequests.feedback,
+      processedAt: cancellationRequests.processedAt,
+      effectiveCancellationDate: cancellationRequests.gracePeriodEnds,
+    })
+    .from(cancellationRequests)
+    .where(and(
+      eq(cancellationRequests.clientId, clientId),
+      eq(cancellationRequests.status, 'cancelled')
+    ))
+    .orderBy(desc(cancellationRequests.processedAt), desc(cancellationRequests.createdAt))
+    .limit(1);
+
+  return request || null;
 }

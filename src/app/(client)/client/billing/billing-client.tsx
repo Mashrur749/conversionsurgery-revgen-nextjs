@@ -8,7 +8,6 @@ import { InvoiceList } from '@/components/billing/InvoiceList';
 import { UsageDisplay } from '@/components/billing/UsageDisplay';
 import { GuaranteeStatusCard, type GuaranteeSummary } from '@/components/billing/GuaranteeStatusCard';
 import {
-  cancelSubscription,
   pauseSubscription,
   resumeSubscription,
   addPaymentMethod,
@@ -120,10 +119,7 @@ export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
               subscription={subscription}
               usage={usage ? { leads: usage.leads.used, messages: 0 } : undefined}
               onUpgrade={() => router.push('/client/billing/upgrade')}
-              onCancelSubscription={async (reason) => {
-                await cancelSubscription(clientId, reason);
-                router.refresh();
-              }}
+              onStartCancellation={() => router.push('/client/cancel')}
               onPauseSubscription={async (resumeDate) => {
                 await pauseSubscription(clientId, resumeDate);
                 router.refresh();

@@ -25,7 +25,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 | MS-04 | GAP-004 | DONE | DONE | DONE | DONE | MS-04 complete: policy model + deferred lifecycle + category controls + observability. |
 | MS-05 | GAP-005 | DONE | DONE | DONE | DONE | MS-05 complete: campaign ledger, planner, transitions, reporting visibility, and operator digest/alerts. |
 | MS-06 | GAP-006 | DONE | DONE | DONE | DONE | MS-06 complete: deterministic model service, enriched inputs, report/email rendering, insufficient-data guardrails, typed report DTOs. |
-| MS-07 | GAP-007 | OPEN | OPEN | OPEN | OPEN | |
+| MS-07 | GAP-007 | DONE | DONE | DONE | DONE | MS-07 complete: 30-day cancellation policy + export request lifecycle + full bundle + secure download + admin SLA queue. |
 | MS-08 | GAP-101 | OPEN | OPEN | OPEN | OPEN | |
 | MS-09 | GAP-102 | OPEN | OPEN | OPEN | OPEN | |
 | MS-10 | GAP-103 | OPEN | OPEN | OPEN | OPEN | |

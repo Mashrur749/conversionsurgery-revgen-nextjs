@@ -18,6 +18,8 @@ import { flows, flowSteps } from './flows';
 import { flowExecutions, flowStepExecutions, suggestedActions } from './flow-executions';
 import { knowledgeBase } from './knowledge-base';
 import { notificationPreferences } from './notification-preferences';
+import { cancellationRequests } from './cancellation-requests';
+import { dataExportRequests } from './data-export-requests';
 import { clientServices } from './client-services';
 import { jobs } from './jobs';
 import { revenueEvents } from './revenue-events';
@@ -61,6 +63,8 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   suggestedActions: many(suggestedActions),
   knowledgeBase: many(knowledgeBase),
   notificationPreferences: many(notificationPreferences),
+  cancellationRequests: many(cancellationRequests),
+  dataExportRequests: many(dataExportRequests),
   clientServices: many(clientServices),
   jobs: many(jobs),
   revenueEvents: many(revenueEvents),
@@ -78,6 +82,31 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   auditLogEntries: many(auditLog),
   quarterlyCampaigns: many(quarterlyCampaigns),
 }));
+
+export const cancellationRequestsRelations = relations(
+  cancellationRequests,
+  ({ one, many }) => ({
+    client: one(clients, {
+      fields: [cancellationRequests.clientId],
+      references: [clients.id],
+    }),
+    dataExportRequests: many(dataExportRequests),
+  })
+);
+
+export const dataExportRequestsRelations = relations(
+  dataExportRequests,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [dataExportRequests.clientId],
+      references: [clients.id],
+    }),
+    cancellationRequest: one(cancellationRequests, {
+      fields: [dataExportRequests.cancellationRequestId],
+      references: [cancellationRequests.id],
+    }),
+  })
+);
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   person: one(people, { fields: [users.personId], references: [people.id] }),

@@ -1,5 +1,10 @@
 # MS-07: Cancellation and Data Export Parity
 
+## Status
+- `STATE: DONE`
+- `COMPLETED_ON: 2026-02-24`
+- `IMPLEMENTATION: 30-day cancellation policy + tracked export lifecycle + secure download + admin SLA queue`
+
 ## Goal
 Align product behavior to sold cancellation/export terms:
 - month-to-month

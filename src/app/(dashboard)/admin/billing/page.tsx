@@ -6,6 +6,27 @@ import { getAdminBillingStats } from '@/lib/billing/queries';
 import { AdminSubscriptionTable } from '@/components/admin/billing/AdminSubscriptionTable';
 import { RevenueChart } from '@/components/admin/billing/RevenueChart';
 import { DollarSign, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { listPendingDataExportRequests } from '@/lib/services/data-export-requests';
+
+function formatDate(value: Date | null): string {
+  if (!value) {
+    return 'n/a';
+  }
+  return value.toLocaleDateString();
+}
+
+function getSlaBadgeClasses(state: 'on_track' | 'at_risk' | 'breached' | 'closed'): string {
+  switch (state) {
+    case 'breached':
+      return 'bg-[#FDEAE4] text-sienna';
+    case 'at_risk':
+      return 'bg-[#FFF3E0] text-sienna';
+    case 'closed':
+      return 'bg-muted text-foreground';
+    default:
+      return 'bg-[#E8F5E9] text-[#3D7A50]';
+  }
+}
 
 export const metadata = {
   title: 'Billing Management | Admin',
@@ -17,7 +38,10 @@ async function AdminBillingContent() {
     redirect('/login');
   }
 
-  const stats = await getAdminBillingStats();
+  const [stats, exportQueue] = await Promise.all([
+    getAdminBillingStats(),
+    listPendingDataExportRequests(25),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -89,6 +113,37 @@ async function AdminBillingContent() {
 
       {/* Revenue Chart */}
       <RevenueChart data={stats.revenueHistory} />
+
+      {/* Data Export SLA Queue */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Data Export SLA Queue</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {exportQueue.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No pending export requests.</p>
+          ) : (
+            <div className="space-y-2">
+              {exportQueue.map((request) => (
+                <div key={request.id} className="rounded-md border p-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-medium">{request.businessName}</p>
+                    <span className={`rounded px-2 py-1 text-xs font-medium ${getSlaBadgeClasses(request.slaState)}`}>
+                      {request.slaState.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground mt-1">
+                    Status: {request.status} | Requested: {formatDate(request.requestedAt)} | Due: {formatDate(request.dueAt)}
+                  </p>
+                  {request.failureReason ? (
+                    <p className="text-xs text-sienna mt-1">Failure: {request.failureReason}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Subscriptions Table */}
       <AdminSubscriptionTable />

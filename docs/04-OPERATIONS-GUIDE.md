@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `9388e70`
+Last verified commit: `MS-07 working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -11,9 +11,10 @@ Last verified commit: `9388e70`
 4. Review message delivery failures and opt-out anomalies.
 5. Review onboarding clients in `pending` and move blockers (number, hours, knowledge, team).
 6. Review subscriptions in guarantee-v2 risk states (`proof_pending`, `recovery_pending`, `refund_review_required`) and action queues.
-7. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
-8. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
-9. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
+7. Review data export SLA queue in admin billing (`requested`, `processing`, `ready`, `failed`) and clear at-risk/breached items.
+8. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
+9. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
+10. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
 
 ## Cron Operations
 
@@ -60,6 +61,7 @@ curl -s "$BASE_URL/api/cron/access-review" \
 - Quarterly planner is idempotent (no duplicate client/quarter campaign records).
 - Quarterly alerts include overdue campaign count for launch-risk visibility.
 - Bi-weekly report payload includes directional "Without Us" model section or explicit insufficient-data state.
+- Cancellation-confirmed clients receive export requests with 5-business-day due date and monitored SLA states.
 
 ## Access Management Operations
 

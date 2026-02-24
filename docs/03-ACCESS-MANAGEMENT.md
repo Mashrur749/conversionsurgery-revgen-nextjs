@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `9388e70`
+Last verified commit: `MS-07 working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -71,6 +71,12 @@ Permission templates and overrides resolve effective access at runtime.
 ## MS-06 Continuity Note
 - Bi-weekly report "Without Us" model implementation (`MS-06`) introduced no new role surfaces or access paths.
 - Existing agency-only report access boundaries remain unchanged.
+
+## MS-07 Access Note
+- Cancellation/export parity (`MS-07`) keeps client data export access within portal permissions:
+1. `GET /api/client/exports` requires `portal.settings.view`.
+2. `POST /api/client/exports` requires `portal.settings.edit`.
+3. Download endpoint requires both client session scope and matching expiring token.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

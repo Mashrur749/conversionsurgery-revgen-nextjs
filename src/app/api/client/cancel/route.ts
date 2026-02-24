@@ -6,6 +6,14 @@ import {
   confirmCancellation,
   getGuaranteeCancellationContext,
 } from '@/lib/services/cancellation';
+import {
+  requestAndProcessDataExport,
+  buildExportDownloadPath,
+} from '@/lib/services/data-export-requests';
+import {
+  CANCELLATION_NOTICE_DAYS,
+  EXPORT_SLA_BUSINESS_DAYS,
+} from '@/lib/services/cancellation-policy';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -70,7 +78,15 @@ export const POST = portalRoute(
 
     if (action === 'confirm') {
       const guaranteeContext = await getGuaranteeCancellationContext(clientId);
-      await confirmCancellation(requestId, 7);
+      const cancellationResult = await confirmCancellation(requestId);
+      const exportRequest = await requestAndProcessDataExport({
+        clientId,
+        cancellationRequestId: requestId,
+        requestedBy: 'client_cancellation_confirm',
+      });
+      const exportDownloadPath = exportRequest.downloadToken
+        ? buildExportDownloadPath(exportRequest.id, exportRequest.downloadToken)
+        : null;
 
       // Notify admin
       await sendEmail({
@@ -84,13 +100,25 @@ export const POST = portalRoute(
          ${guaranteeContext?.refundReviewRequired
            ? `<p><strong>Refund review required:</strong> Yes${guaranteeContext.refundEligibleAt ? ` (eligible since ${new Date(guaranteeContext.refundEligibleAt).toLocaleDateString()})` : ''}</p>`
            : '<p><strong>Refund review required:</strong> No</p>'}
-         <p><strong>Grace Period:</strong> 7 days</p>`,
+         <p><strong>Cancellation effective:</strong> ${cancellationResult.effectiveCancellationDate.toLocaleDateString()}</p>
+         <p><strong>Notice period:</strong> ${CANCELLATION_NOTICE_DAYS} calendar days</p>
+         <p><strong>Data export status:</strong> ${exportRequest.status}</p>
+         <p><strong>Data export due by:</strong> ${exportRequest.dueAt.toLocaleDateString()} (${EXPORT_SLA_BUSINESS_DAYS} business days SLA)</p>`,
       });
 
       return NextResponse.json({
         success: true,
         action: 'cancelled',
         guarantee: guaranteeContext,
+        effectiveCancellationDate: cancellationResult.effectiveCancellationDate.toISOString(),
+        dataExport: {
+          id: exportRequest.id,
+          status: exportRequest.status,
+          dueAt: exportRequest.dueAt.toISOString(),
+          readyAt: exportRequest.readyAt?.toISOString() ?? null,
+          deliveredAt: exportRequest.deliveredAt?.toISOString() ?? null,
+          downloadPath: exportDownloadPath,
+        },
       });
     }
 

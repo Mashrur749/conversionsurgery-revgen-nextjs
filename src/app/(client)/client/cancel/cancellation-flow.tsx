@@ -142,7 +142,7 @@ export function CancellationFlow({ clientId, valueSummary }: Props) {
         </div>
 
         <p className="text-xs text-muted-foreground text-center">
-          If you cancel, you&apos;ll have 7 days to reactivate before losing your data
+          If you cancel, service ends 30 calendar days after notice and your full data export is prepared within 5 business days.
         </p>
       </CardContent>
 
@@ -151,7 +151,7 @@ export function CancellationFlow({ clientId, valueSummary }: Props) {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Cancellation</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel your subscription? You&apos;ll have 7 days to reactivate before your data is removed.
+              Are you sure you want to cancel your subscription? Cancellation is effective 30 calendar days after this notice, and we will prepare your full data export within 5 business days.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -21,7 +21,7 @@ export const cancellationRequests = pgTable(
     feedback: text('feedback'),
     valueShown: jsonb('value_shown'), // Stats shown at cancellation
     scheduledCallAt: timestamp('scheduled_call_at'),
-    gracePeriodEnds: timestamp('grace_period_ends'),
+    gracePeriodEnds: timestamp('grace_period_ends'), // effective cancellation date under notice policy
     createdAt: timestamp('created_at').defaultNow().notNull(),
     processedAt: timestamp('processed_at'),
     processedBy: varchar('processed_by', { length: 255 }),
