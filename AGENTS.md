@@ -38,6 +38,8 @@ A skill is a set of local instructions to follow that is stored in a `SKILL.md` 
   - Keep changes tightly scoped to current milestone.
   - Avoid unrelated refactors.
   - Remove deprecated code only when called out by the spec milestone.
+  - When sessions get long, prefer starting a fresh session after 2-4 milestones and continue from repo state.
+  - Use file paths as canonical context; avoid restating large documents in chat.
 - Safety:
   - Never run destructive migrations or schema drops without explicit approval.
   - Never mark a gap/spec as done without tests and docs alignment.

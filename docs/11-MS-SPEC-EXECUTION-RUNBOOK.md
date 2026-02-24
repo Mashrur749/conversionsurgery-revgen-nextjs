@@ -62,3 +62,14 @@ Also update:
 - Skipping refactor checkpoint after large code edits
 - Marking done without docs/testing updates
 - Mixing unrelated cleanup into milestone commits
+
+## 8) Session Context Hygiene
+Use this to prevent context bloat in long implementation cycles:
+- Keep one request to one milestone (`MS-XX`, `A|B|C|D`).
+- Do not paste long docs repeatedly; reference file paths instead.
+- End each milestone with commit + board/gap status updates.
+- Start a fresh session every 2-4 milestones (or after each spec) with:
+  - "Reload from repo state only"
+  - target spec + milestone
+  - required skills list
+- Treat repo files as source of truth; avoid relying on chat memory.
