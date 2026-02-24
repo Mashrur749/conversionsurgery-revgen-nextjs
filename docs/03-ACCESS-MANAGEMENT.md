@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-11 Milestone A working tree`
+Last verified commit: `MS-11 Milestone B working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -108,6 +108,11 @@ Permission templates and overrides resolve effective access at runtime.
 - Existing report access boundaries remain:
 1. Admin report APIs: `agency.analytics.view`.
 2. Bi-weekly cron execution: `verifyCronSecret` bearer guard.
+
+## MS-11 Access Note (Milestone B)
+- Retry engine adds one cron-only endpoint and no new user-facing role surface:
+1. `GET /api/cron/report-delivery-retries` guarded by `verifyCronSecret`.
+- Retry service reads existing client/report records and writes lifecycle state transitions in existing report-delivery tables only.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

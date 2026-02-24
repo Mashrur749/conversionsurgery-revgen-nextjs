@@ -29,7 +29,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 | MS-08 | GAP-101 | DONE | DONE | DONE | DONE | MS-08 complete: policy mode resolver + required message classification + pure decision tests + diagnostics API/widget + mode-change audit events. |
 | MS-09 | GAP-102 | DONE | DONE | DONE | DONE | MS-09 complete: Day-One milestone model + audit artifact lifecycle + SLA cron alerting + operator/client visibility. |
 | MS-10 | GAP-103 | DONE | DONE | DONE | DONE | Milestone D complete: invoice provenance linkage + admin dispute annotation workflow + charge traceability surfaces. |
-| MS-11 | GAP-104 | DONE | OPEN | OPEN | OPEN | Milestone A complete: report delivery cycle model + transition events + lifecycle service + bi-weekly cron lifecycle refactor. |
+| MS-11 | GAP-104 | DONE | DONE | OPEN | OPEN | Milestones A-B complete: lifecycle model + transition events + centralized retry policy/claim engine + retry cron orchestration. |
 | MS-12 | GAP-105 | OPEN | OPEN | OPEN | OPEN | |
 | MS-13 | GAP-201 | OPEN | OPEN | OPEN | OPEN | |
 | MS-14 | GAP-202 | OPEN | OPEN | OPEN | OPEN | |

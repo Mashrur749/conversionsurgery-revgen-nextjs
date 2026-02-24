@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-11 Milestone A working tree`
+Last verified commit: `MS-11 Milestone B working tree`
 
 ## 0. Preflight (Run First)
 
@@ -221,6 +221,7 @@ Expected:
 ```bash
 curl -i http://localhost:3000/api/cron/monthly-reset -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/report-delivery-retries -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorization: Bearer $CRON_SECRET"
 ```
 
@@ -230,6 +231,8 @@ Expected:
 - Bi-weekly report run now reports delivery counters (`generated`, `emailed`, `failed`) and whether the period lock was updated.
 - `report_deliveries` rows are created per active client and include lifecycle state + timestamps.
 - `report_delivery_events` rows reflect state transitions (`generated`, `queued`, `sent`, `failed`).
+- Retry cron reports deterministic counters (`scanned`, `retried`, `sent`, `failed`, `backoffPending`, `terminal`) and only retries eligible failed deliveries.
+- Re-running retry cron immediately should keep most failed rows in `backoffPending` until backoff windows are reached.
 - Queued compliance replay processes non-lead queued items without duplicates.
 
 Note:

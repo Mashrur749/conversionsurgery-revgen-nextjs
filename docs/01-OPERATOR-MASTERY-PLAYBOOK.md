@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `MS-11 Milestone A working tree`
+Last verified commit: `MS-11 Milestone B working tree`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -81,6 +81,7 @@ Run these drills on a staging/test environment:
 - Confirm expected send/queue behavior and `quiet_hours_policy_mode_changed` audit event.
 5. Reporting drill:
 - Run `/api/cron/biweekly-reports` twice and verify idempotency.
+- Run `/api/cron/report-delivery-retries` and verify failed deliveries respect backoff and retry attempt progression.
 6. Day-One SLA drill:
 - Create an onboarding client with pending milestones past target time in staging.
 - Run `/api/cron/onboarding-sla-check`.
@@ -156,7 +157,7 @@ Exit gate:
 14. Add-on billing ledger freshness verified (recent team/number/voice rows present with no duplicate idempotency conflicts).
 15. Add-on cycle CSV export and invoice line-item add-on labels validated for one active client.
 16. Add-on dispute/provenance annotations reviewed and unresolved dispute states triaged.
-17. Bi-weekly report delivery lifecycle reviewed (`generated/queued/sent/failed`) and failed deliveries triaged for rerun.
+17. Bi-weekly report delivery lifecycle reviewed (`generated/queued/retried/sent/failed`) and failed/backoff/terminal states triaged with retry cron.
 
 ## Core References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`

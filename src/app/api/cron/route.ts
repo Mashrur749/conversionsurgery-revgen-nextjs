@@ -56,6 +56,11 @@ export async function POST(request: NextRequest) {
     if (minute < 5 || (minute >= 30 && minute < 35)) {
       results.autoReviewResponse = await dispatch(baseUrl, '/api/cron/auto-review-response', cronSecret!, 'POST');
       results.calendarSync = await dispatch(baseUrl, '/api/cron/calendar-sync', cronSecret!);
+      results.reportDeliveryRetries = await dispatch(
+        baseUrl,
+        '/api/cron/report-delivery-retries',
+        cronSecret!
+      );
     }
 
     // ── Hourly (minute < 10) ─────────────────────────────────

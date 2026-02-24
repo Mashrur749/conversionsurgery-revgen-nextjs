@@ -34,15 +34,21 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Milestone B: idempotent add-on billing ledger + event emitters + voice rollup cron
   - Milestone C: shared add-on formatter + invoice line-item merge + cycle breakdown + CSV export
   - Milestone D: invoice linkage + provenance metadata + admin dispute annotation workflow
+- `MS-11` Milestone A: complete.
+  - Commit: `257b1e0`
 
 ## Current Focus
-- Next spec: `MS-11` (report delivery observability), Milestone B.
-- `MS-11` Milestone A is implemented in the working tree:
+- Next spec: `MS-11` (report delivery observability), Milestone C.
+- `MS-11` Milestones A-B are implemented in the working tree:
   - report delivery cycle table + transition event table
   - centralized lifecycle state transition service (`generated`, `queued`, `sent`, `failed`, `retried`)
   - latest client delivery query helper
   - bi-weekly cron flow refactored to lifecycle service (state transitions out of ad-hoc cron mutation)
   - delivery failure now keeps period unlocked for manual rerun (`lastRunUpdated=false` when failures exist)
+  - deterministic retry policy with exponential backoff and terminal retry handling
+  - idempotent retry claim transition (`failed` -> `retried`) before resend
+  - dedicated retry cron endpoint + orchestrator dispatch
+  - shared bi-weekly report email sender used by primary and retry flows
 - `MS-10` Milestones A-D are implemented in the working tree:
   - centralized add-on pricing catalog keys and effective-date resolver
   - route limit messaging for team seats/phone numbers now sourced from add-on pricing resolver
@@ -115,5 +121,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-11 Milestone B only.
+Continue with MS-11 Milestone C only.
 ```

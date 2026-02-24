@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-11 Milestone A working tree`
+- `LAST_VERIFIED_COMMIT: MS-11 Milestone B working tree`
 
 ## Executive Status
 
@@ -78,7 +78,7 @@ Current snapshot at this commit:
 8. Done: `GAP-101` quiet-hours policy classification switch parity.
 9. Done: `GAP-102` Day-One Activation SLA + Revenue Leak Audit tracking parity.
 10. Done: `GAP-103` add-on billing transparency (`MS-10` Milestones A-D complete).
-11. In progress: `GAP-104` report delivery observability (`MS-11` Milestone A complete; Milestones B-D remaining).
+11. In progress: `GAP-104` report delivery observability (`MS-11` Milestones A-B complete; Milestones C-D remaining).
 
 ## Go-Live Gate (Managed Service)
 Release only when all are true:

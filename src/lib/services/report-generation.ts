@@ -11,7 +11,7 @@ import {
 } from '@/db/schema';
 import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { getTeamMembers } from '@/lib/services/team-bridge';
-import { sendEmail } from '@/lib/services/resend';
+import { sendBiWeeklyReportEmail } from '@/lib/services/report-email';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
 import {
   ensureReportDeliveryCycle,
@@ -32,11 +32,6 @@ const WITHOUT_US_ASSUMPTIONS_KEY = 'without_us_model_assumptions';
 const QUIET_HOURS_START_HOUR = 21;
 const QUIET_HOURS_END_HOUR = 10;
 const ESTIMATE_STALE_DAYS = 5;
-const CAD_FORMATTER = new Intl.NumberFormat('en-CA', {
-  style: 'currency',
-  currency: 'CAD',
-  maximumFractionDigits: 0,
-});
 
 function toPeriodStartUtc(date: string): Date {
   return new Date(`${date}T00:00:00.000Z`);
@@ -220,26 +215,6 @@ async function collectWithoutUsModelInput(
     delayedFollowupCount,
     periodLeadCount,
   };
-}
-
-function buildWithoutUsEmailSummary(withoutUsModel: WithoutUsModelResult | null): string {
-  if (!withoutUsModel) return '';
-
-  if (withoutUsModel.status === 'insufficient_data') {
-    return `
-      <p><strong>Without Us (directional model):</strong> unavailable this period due to insufficient input data.</p>
-      <p style="color: #6b7280; font-size: 12px;">${withoutUsModel.message}</p>
-    `;
-  }
-
-  const low = CAD_FORMATTER.format(withoutUsModel.ranges.low.estimatedRevenueRisk);
-  const base = CAD_FORMATTER.format(withoutUsModel.ranges.base.estimatedRevenueRisk);
-  const high = CAD_FORMATTER.format(withoutUsModel.ranges.high.estimatedRevenueRisk);
-
-  return `
-    <p><strong>Without Us (directional model):</strong> estimated period risk range ${low} to ${high} (base: ${base}).</p>
-    <p style="color: #6b7280; font-size: 12px;">${withoutUsModel.assumptions.disclaimer}</p>
-  `;
 }
 
 function stringifyError(error: unknown): string {
@@ -490,9 +465,6 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
 
       if (client.email) {
         const summary = (report.roiSummary as { withoutUsModel?: WithoutUsModelResult } | null) || null;
-        const withoutUsSummary = buildWithoutUsEmailSummary(
-          summary?.withoutUsModel || null
-        );
 
         await transitionReportDeliveryState(delivery.id, 'queued', {
           reportId: report.id,
@@ -507,17 +479,13 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
           },
         });
 
-        const emailResult = await sendEmail({
+        const emailResult = await sendBiWeeklyReportEmail({
           to: client.email,
-          subject: `${client.businessName} — Bi-weekly Performance Report`,
-          html: `
-            <div style="font-family: Arial, sans-serif;">
-              <p>Your bi-weekly report is ready for ${periodStartStr} to ${periodEndStr}.</p>
-              <p>Report ID: <strong>${report.id}</strong></p>
-              ${withoutUsSummary}
-              <p>Your account manager can walk through details and optimization actions.</p>
-            </div>
-          `,
+          businessName: client.businessName,
+          periodStart: periodStartStr,
+          periodEnd: periodEndStr,
+          reportId: report.id,
+          withoutUsModel: summary?.withoutUsModel || null,
         });
 
         if (emailResult.success) {

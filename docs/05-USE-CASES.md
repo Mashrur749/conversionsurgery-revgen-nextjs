@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `MS-11 Milestone A working tree`
+Last verified commit: `MS-11 Milestone B working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -135,10 +135,11 @@ Outcome: retention anchor is operationalized with auditable delivery.
 
 Outcome: retention narrative is evidence-backed and transparent, without fabricated certainty.
 
-### U11b. Bi-weekly report delivery lifecycle observability (MS-11 A)
+### U11b. Bi-weekly report delivery lifecycle + retry observability (MS-11 A-B)
 1. Bi-weekly cron creates/updates one delivery cycle record per active client.
-2. Delivery transitions are persisted (`generated`, `queued`, `sent`, `failed`) with timestamps and channel metadata.
-3. Operator can identify failed deliveries and rerun the cycle without re-sending already delivered reports.
+2. Delivery transitions are persisted (`generated`, `queued`, `retried`, `sent`, `failed`) with timestamps and channel metadata.
+3. Retry cron applies deterministic backoff/attempt policy and idempotent retry claim before resend.
+4. Operator can identify failed/backoff/terminal deliveries and rerun safely without re-sending already delivered reports.
 
 Outcome: report delivery is auditable and operationally visible instead of silent best-effort.
 

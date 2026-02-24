@@ -9,13 +9,13 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-11 Milestone A working tree`
+- `LAST_VERIFIED_COMMIT: MS-11 Milestone B working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Report delivery observability and cron catch-up guarantees.
+- Operator/client report-delivery visibility surfaces and cron catch-up guarantees.
 
 ## Spec Mapping (One Spec Per Gap)
 
@@ -386,13 +386,22 @@ Highest-risk mismatches for paying clients are now concentrated in:
 - Added explicit report delivery lifecycle model (`generated`, `queued`, `sent`, `failed`, `retried`) with per-cycle records and transition event audit trail.
 - Added centralized lifecycle service and moved bi-weekly cron delivery-state mutation into the service.
 - Added latest-delivery query helper for client-scoped status retrieval.
-- Remaining: Milestones B-D (retry engine, operator dashboard/retry UX, client-facing delivery clarity).
+- Progress (2026-02-24): `MS-11` Milestone B completed.
+- Added deterministic retry policy (attempt cap + exponential backoff + terminal classification).
+- Added idempotent retry claim transition and dedicated retry cron endpoint.
+- Refactored report email sending into a shared service used by primary and retry flows.
+- Remaining: Milestones C-D (operator dashboard/retry UX, client-facing delivery clarity).
 - Evidence:
   - `src/db/schema/report-deliveries.ts`
   - `drizzle/0030_lively_rage.sql`
   - `src/lib/services/report-delivery.ts`
+  - `src/lib/services/report-delivery-retry.ts`
+  - `src/lib/services/report-email.ts`
   - `src/lib/services/report-delivery.test.ts`
+  - `src/lib/services/report-delivery-retry.test.ts`
   - `src/lib/services/report-generation.ts`
+  - `src/app/api/cron/report-delivery-retries/route.ts`
+  - `src/app/api/cron/route.ts`
   - `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md`
 
 5. `GAP-105` Guaranteed operational catch-up when cron windows are missed

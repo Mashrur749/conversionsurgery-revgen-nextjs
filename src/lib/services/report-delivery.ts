@@ -1,6 +1,6 @@
 import { getDb } from '@/db';
 import { reportDeliveries, reportDeliveryEvents } from '@/db/schema';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, lt } from 'drizzle-orm';
 
 export const REPORT_DELIVERY_STATES = [
   'generated',
@@ -156,4 +156,58 @@ export async function getLatestReportDeliveryForClient(
     .limit(1);
 
   return delivery ?? null;
+}
+
+interface ClaimRetryOptions {
+  at?: Date;
+  metadata?: Record<string, unknown>;
+}
+
+export async function claimReportDeliveryForRetry(
+  deliveryId: string,
+  maxAttempts: number,
+  options: ClaimRetryOptions = {}
+) {
+  const db = getDb();
+  const now = options.at ?? new Date();
+
+  return db.transaction(async (tx) => {
+    const [current] = await tx
+      .select()
+      .from(reportDeliveries)
+      .where(eq(reportDeliveries.id, deliveryId))
+      .limit(1);
+
+    if (!current) return null;
+
+    const [claimed] = await tx
+      .update(reportDeliveries)
+      .set({
+        state: 'retried',
+        attemptCount: current.attemptCount + 1,
+        retriedAt: now,
+        lastStateAt: now,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(reportDeliveries.id, deliveryId),
+          eq(reportDeliveries.state, 'failed'),
+          lt(reportDeliveries.attemptCount, maxAttempts)
+        )
+      )
+      .returning();
+
+    if (!claimed) return null;
+
+    await tx.insert(reportDeliveryEvents).values({
+      deliveryId,
+      fromState: current.state,
+      toState: 'retried',
+      metadata: options.metadata,
+      createdAt: now,
+    });
+
+    return claimed;
+  });
 }

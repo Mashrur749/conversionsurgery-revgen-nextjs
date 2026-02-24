@@ -2,8 +2,8 @@
 
 ## Status
 - `STATE: IN_PROGRESS`
-- `DONE: [Milestone A]`
-- `REMAINING: [Milestone B, Milestone C, Milestone D]`
+- `DONE: [Milestone A, Milestone B]`
+- `REMAINING: [Milestone C, Milestone D]`
 
 ## Goal
 Make bi-weekly report delivery operationally reliable and visible:
@@ -58,6 +58,20 @@ Milestone A implementation status:
 
 Refactor checkpoint B:
 - Share retry helper with other outbound workflows if patterns match.
+
+Milestone B implementation status:
+- Done:
+1. Added deterministic retry policy + eligibility evaluator:
+   - `src/lib/services/report-delivery-retry.ts`
+2. Added idempotent retry claim flow:
+   - `claimReportDeliveryForRetry(...)` in `src/lib/services/report-delivery.ts`
+3. Added shared report email sender helper reused by primary + retry paths:
+   - `src/lib/services/report-email.ts`
+4. Added retry cron endpoint and orchestrator wiring:
+   - `src/app/api/cron/report-delivery-retries/route.ts`
+   - `src/app/api/cron/route.ts`
+5. Added retry policy tests:
+   - `src/lib/services/report-delivery-retry.test.ts`
 
 ### Milestone C: Operator observability
 1. Add report delivery ops dashboard/filter (failed, pending retry, sent).
