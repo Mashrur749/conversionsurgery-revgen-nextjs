@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
-Last verified commit: `MS-08 working tree`
+Last verified commit: `MS-09 working tree`
 
 ## Canonical Order (Read + Execute)
 
@@ -58,6 +58,7 @@ Cadence rule:
 4. Validate your wife/internal monitor can access only assigned clients.
 5. Validate one generated report includes the "Without Us (Directional Model)" section with assumptions/disclaimer or explicit insufficient-data state.
 6. Confirm `P0` is fully closed in `10-OFFER-PARITY-GAPS.md`; `GAP-101` (quiet-hours classification switch) should be marked done; review remaining open `P1` items with claim-language qualifiers before selling.
+7. Confirm `GAP-102` is marked done and you can execute Day-One card actions from `/admin/clients/<id>` without escalation help.
 
 ## Confidence Criteria (Go/No-Go)
 

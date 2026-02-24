@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-08 working tree`
+- `LAST_VERIFIED_COMMIT: MS-09 working tree`
 
 ## Executive Status
 
@@ -50,6 +50,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Quiet-hours replay now includes non-lead durable queue processing.
 - Monthly access-review automation sends stale-access digest to agency owners.
 - Self-serve onboarding now includes guided checklist and managed-setup request flow.
+- Day-One Activation workflow now has tracked milestones, SLA breach alerts, and Revenue Leak Audit delivery proof.
 
 ## Remaining Launch Blockers (Managed Service)
 
@@ -75,6 +76,7 @@ Current snapshot at this commit:
 6. Done: `GAP-006` bi-weekly "Without Us" model parity.
 7. Done: `GAP-007` cancellation/export parity.
 8. Done: `GAP-101` quiet-hours policy classification switch parity.
+9. Done: `GAP-102` Day-One Activation SLA + Revenue Leak Audit tracking parity.
 
 ## Go-Live Gate (Managed Service)
 Release only when all are true:

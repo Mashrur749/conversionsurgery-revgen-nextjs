@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `MS-08 working tree`
+**Last verified commit:** `MS-09 working tree`
 
 ---
 
@@ -215,5 +215,9 @@ Since the original audit window, new managed-service features (Smart Assist work
 3. Data writes remain client-scoped and route-scoped.
 4. Cancellation/export parity (`MS-07`) adds tokenized download endpoints with client-scope checks and token expiry validation.
 5. Quiet-hours policy diagnostics (`MS-08`) adds agency-only read endpoint with `agency.settings.manage` permission enforcement.
+6. Day-One activation workflow (`MS-09`) adds:
+   - client-scoped agency route (`/api/admin/clients/[id]/onboarding/day-one`) guarded by `adminClientRoute` permissions.
+   - cron sub-route (`/api/cron/onboarding-sla-check`) guarded by `verifyCronSecret()`.
+   - public onboarding status surface remains constrained to verified `clientId + email` pair.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

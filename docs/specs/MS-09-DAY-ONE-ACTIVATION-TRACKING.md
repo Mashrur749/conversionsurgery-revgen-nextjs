@@ -1,5 +1,10 @@
 # MS-09: Day-One Activation and Revenue Leak Audit Tracking
 
+## Status
+- `STATE: DONE`
+- `DONE_AT: 2026-02-24`
+- `REMAINING: []`
+
 ## Goal
 Productize Day-One Activation promises with tracked SLA checkpoints:
 - number live
@@ -88,3 +93,16 @@ Refactor checkpoint D:
 ## Definition of Done
 - Day-One promises are system-tracked, timestamped, and reviewable.
 - Revenue Leak Audit delivery is operationally provable.
+
+## Implementation Evidence
+- `src/db/schema/onboarding-day-one.ts`
+- `drizzle/0027_goofy_vindicator.sql`
+- `src/lib/services/day-one-policy.ts`
+- `src/lib/services/day-one-activation.ts`
+- `src/app/api/admin/clients/[id]/onboarding/day-one/route.ts`
+- `src/app/(dashboard)/admin/clients/[id]/day-one-activation-card.tsx`
+- `src/app/api/public/signup/route.ts`
+- `src/app/api/public/onboarding/status/route.ts`
+- `src/app/signup/next-steps/onboarding-checklist.tsx`
+- `src/app/api/cron/onboarding-sla-check/route.ts`
+- `src/app/api/cron/route.ts`

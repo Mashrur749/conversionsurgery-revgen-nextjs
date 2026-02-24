@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-08 working tree`
+- `LAST_VERIFIED_COMMIT: MS-09 working tree`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -46,6 +46,7 @@ Offer parity gaps against the reviewed v2.1 offer architecture are tracked separ
 - Non-lead quiet-hours durable replay automation.
 - Monthly access-review automation.
 - Self-serve onboarding checklist and managed setup request path.
+- Day-One Activation milestone tracking, SLA breach alerting, and Revenue Leak Audit delivery workflow.
 
 ## Tracking Rule
 Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `99-ARCHIVE-SYSTEM-BLOCKERS.md` archive form.

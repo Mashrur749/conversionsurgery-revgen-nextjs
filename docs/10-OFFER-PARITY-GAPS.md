@@ -9,13 +9,12 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-08 working tree`
+- `LAST_VERIFIED_COMMIT: MS-09 working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Day-one activation SLA/audit tracking.
 - Add-on billing transparency.
 - Report delivery observability and cron catch-up guarantees.
 
@@ -31,7 +30,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Done |
 | GAP-007 | P0 | `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | Done |
 | GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Done |
-| GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Spec Ready |
+| GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Done |
 | GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Spec Ready |
 | GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Spec Ready |
 | GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
@@ -50,7 +49,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | Dedicated number + CRM | Implemented | Ready |
 | Additional team/number paid add-ons | Limits enforced; add-on billing workflow not fully productized | Gap |
 | Voice AI optional add-on at $0.15/min | Voice AI exists; transparent per-minute billing workflow not fully wired | Gap |
-| Day-One Activation package | Number + missed-call path exist; audit/SLA tracking workflow not productized | Partial |
+| Day-One Activation package | Milestone tracker, audit artifact workflow, SLA alerting, and operator/client visibility implemented | Ready |
 | Smart assist mode (5-minute auto-send window) | Smart-assist queue + owner approve/edit/cancel + auto-send lifecycle implemented | Ready |
 | KB QA process with gap closure loop | Gap tracking primitives exist; full operational closure loop missing | Partial |
 | 30-day proof-of-life + 90-day recovery guarantee | Dual-layer evaluator + low-volume extension + visibility workflows implemented | Ready |
@@ -294,11 +293,44 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `drizzle/0026_fair_rocket_racer.sql`
 
 2. `GAP-102` Day-One Activation SLA and Revenue Leak Audit workflow tracking
-- Offer commits explicit activation/audit timelines; product lacks a dedicated tracked workflow for these deliverables.
+- Offer commits explicit activation/audit timelines; product now has a dedicated tracked workflow for these deliverables.
+- Progress (2026-02-24): `MS-09` Milestones A-D completed.
+- Added Day-One activation data model:
+  - `onboarding_milestones`
+  - `onboarding_milestone_activities`
+  - `onboarding_sla_alerts`
+  - `revenue_leak_audits`
+- Added centralized Day-One policy/service:
+  - milestone definitions and SLA timing constants
+  - milestone creation/completion + immutable activity writes
+  - audit draft/delivery lifecycle
+  - SLA breach detection and alert creation
+- Added operator workflow APIs:
+  - `GET/PATCH /api/admin/clients/[id]/onboarding/day-one`
+  - manual milestone completion
+  - audit save/deliver actions
+  - manual SLA alert resolution
+- Added operator UX:
+  - Day-One activation card on admin client detail page with progress, milestones, audit delivery proof, alerts, and activity trail
+- Added client-facing onboarding visibility:
+  - public onboarding status now includes Day-One summary
+  - onboarding checklist now shows Day-One milestone statuses and delivered audit summary
+- Added cron reliability path:
+  - `/api/cron/onboarding-sla-check`
+  - orchestrator dispatch in hourly window
+- Remaining: none (`MS-09` complete).
 - Evidence:
-  - onboarding endpoints exist but no audit artifact workflow:
+  - `src/db/schema/onboarding-day-one.ts`
+  - `drizzle/0027_goofy_vindicator.sql`
+  - `src/lib/services/day-one-policy.ts`
+  - `src/lib/services/day-one-activation.ts`
+  - `src/app/api/admin/clients/[id]/onboarding/day-one/route.ts`
+  - `src/app/(dashboard)/admin/clients/[id]/day-one-activation-card.tsx`
+  - `src/app/(dashboard)/admin/clients/[id]/page.tsx`
+  - `src/app/api/cron/onboarding-sla-check/route.ts`
+  - `src/app/api/cron/route.ts`
   - `src/app/api/public/onboarding/status/route.ts`
-  - `src/app/api/public/onboarding/request-setup/route.ts`
+  - `src/app/signup/next-steps/onboarding-checklist.tsx`
 
 3. `GAP-103` Add-on billing clarity for extra team members/phone numbers/voice
 - Offer positions transparent add-ons; system currently enforces limits and usage tracking but does not fully expose end-to-end add-on invoice transparency.

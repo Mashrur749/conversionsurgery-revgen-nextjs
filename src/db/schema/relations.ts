@@ -20,6 +20,12 @@ import { knowledgeBase } from './knowledge-base';
 import { notificationPreferences } from './notification-preferences';
 import { cancellationRequests } from './cancellation-requests';
 import { dataExportRequests } from './data-export-requests';
+import {
+  onboardingMilestones,
+  onboardingMilestoneActivities,
+  onboardingSlaAlerts,
+  revenueLeakAudits,
+} from './onboarding-day-one';
 import { clientServices } from './client-services';
 import { jobs } from './jobs';
 import { revenueEvents } from './revenue-events';
@@ -65,6 +71,10 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   notificationPreferences: many(notificationPreferences),
   cancellationRequests: many(cancellationRequests),
   dataExportRequests: many(dataExportRequests),
+  onboardingMilestones: many(onboardingMilestones),
+  onboardingMilestoneActivities: many(onboardingMilestoneActivities),
+  onboardingSlaAlerts: many(onboardingSlaAlerts),
+  revenueLeakAudits: many(revenueLeakAudits),
   clientServices: many(clientServices),
   jobs: many(jobs),
   revenueEvents: many(revenueEvents),
@@ -104,6 +114,56 @@ export const dataExportRequestsRelations = relations(
     cancellationRequest: one(cancellationRequests, {
       fields: [dataExportRequests.cancellationRequestId],
       references: [cancellationRequests.id],
+    }),
+  })
+);
+
+export const onboardingMilestonesRelations = relations(
+  onboardingMilestones,
+  ({ one, many }) => ({
+    client: one(clients, {
+      fields: [onboardingMilestones.clientId],
+      references: [clients.id],
+    }),
+    activities: many(onboardingMilestoneActivities),
+    alerts: many(onboardingSlaAlerts),
+  })
+);
+
+export const onboardingMilestoneActivitiesRelations = relations(
+  onboardingMilestoneActivities,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [onboardingMilestoneActivities.clientId],
+      references: [clients.id],
+    }),
+    milestone: one(onboardingMilestones, {
+      fields: [onboardingMilestoneActivities.milestoneId],
+      references: [onboardingMilestones.id],
+    }),
+  })
+);
+
+export const onboardingSlaAlertsRelations = relations(
+  onboardingSlaAlerts,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [onboardingSlaAlerts.clientId],
+      references: [clients.id],
+    }),
+    milestone: one(onboardingMilestones, {
+      fields: [onboardingSlaAlerts.milestoneId],
+      references: [onboardingMilestones.id],
+    }),
+  })
+);
+
+export const revenueLeakAuditsRelations = relations(
+  revenueLeakAudits,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [revenueLeakAudits.clientId],
+      references: [clients.id],
     }),
   })
 );

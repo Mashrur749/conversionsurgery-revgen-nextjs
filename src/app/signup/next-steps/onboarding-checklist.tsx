@@ -13,6 +13,25 @@ interface Step {
   done: boolean;
 }
 
+interface DayOneMilestone {
+  key: string;
+  title: string;
+  status: 'pending' | 'completed' | 'overdue';
+  targetAt: string;
+  completedAt: string | null;
+}
+
+interface DayOneState {
+  milestones: DayOneMilestone[];
+  progress: { completed: number; total: number; percent: number };
+  audit: {
+    status: 'draft' | 'delivered';
+    summary: string | null;
+    artifactUrl: string | null;
+    deliveredAt: string | null;
+  } | null;
+}
+
 export function OnboardingChecklist() {
   const params = useSearchParams();
   const clientId = params.get('clientId') || '';
@@ -25,6 +44,7 @@ export function OnboardingChecklist() {
     steps: Step[];
     progress: { completed: number; total: number; percent: number };
     tutorials: { title: string; slug: string }[];
+    dayOne: DayOneState | null;
   } | null>(null);
   const [requestMessage, setRequestMessage] = useState('');
   const [requestSent, setRequestSent] = useState(false);
@@ -44,6 +64,7 @@ export function OnboardingChecklist() {
         steps?: Step[];
         progress?: { completed: number; total: number; percent: number };
         tutorials?: { title: string; slug: string }[];
+        dayOne?: DayOneState;
       };
 
       if (!res.ok) {
@@ -56,6 +77,7 @@ export function OnboardingChecklist() {
         steps: data.steps || [],
         progress: data.progress || { completed: 0, total: 0, percent: 0 },
         tutorials: data.tutorials || [],
+        dayOne: data.dayOne || null,
       });
     } catch {
       setError('Failed to load onboarding status');
@@ -135,6 +157,48 @@ export function OnboardingChecklist() {
                 </div>
               ))}
             </div>
+
+            {state.dayOne && (
+              <div className="space-y-2 rounded border p-3">
+                <p className="font-medium">Day-One Activation</p>
+                <p className="text-sm text-muted-foreground">
+                  {state.dayOne.progress.completed}/{state.dayOne.progress.total} milestones complete
+                  {' '}({state.dayOne.progress.percent}%)
+                </p>
+                <div className="space-y-2">
+                  {state.dayOne.milestones.map((milestone) => (
+                    <div
+                      key={milestone.key}
+                      className="flex items-center justify-between rounded border px-3 py-2"
+                    >
+                      <span>{milestone.title}</span>
+                      <span
+                        className={
+                          milestone.status === 'completed'
+                            ? 'text-forest'
+                            : milestone.status === 'overdue'
+                              ? 'text-destructive'
+                              : 'text-sienna'
+                        }
+                      >
+                        {milestone.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {state.dayOne.audit?.status === 'delivered' && (
+                  <div className="rounded border px-3 py-2 text-sm">
+                    <p className="font-medium">Revenue Leak Audit Delivered</p>
+                    <p className="text-muted-foreground">
+                      Delivered at: {state.dayOne.audit.deliveredAt || 'n/a'}
+                    </p>
+                    {state.dayOne.audit.summary && (
+                      <p className="text-muted-foreground">{state.dayOne.audit.summary}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div>
               <p className="font-medium mb-2">Tutorial Track</p>

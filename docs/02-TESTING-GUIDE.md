@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-08 working tree`
+Last verified commit: `MS-09 working tree`
 
 ## 0. Preflight (Run First)
 
@@ -64,11 +64,36 @@ Run in order. Do not skip prerequisites.
 
 Expected:
 - Checklist loads with `Workspace created: Done`.
+- Day-One milestones are visible in checklist (`number live`, `missed-call text-back`, `call-your-number proof`, `Revenue Leak Audit delivered`).
 - No `Client not found` / `Owner role template is missing` errors.
 
 If blocked:
 - `Owner role template is missing`: run `npx tsx src/scripts/seed-role-templates.ts`.
 - `Client not found`: verify exact `clientId` + `email` pair from signup response.
+
+### Step 1b: Day-One activation operator workflow (MS-09)
+1. Open `/admin/clients/<clientId>`.
+2. In `Day-One Activation` card, verify:
+- milestones are listed with target timestamps and status chips.
+- open alert count is visible.
+3. Save an audit draft:
+- fill summary
+- fill at least one structured finding row (title, detail, priority; optional impact range)
+- optional artifact URL and impact ranges
+- click `Save Draft`
+4. Deliver audit:
+- click `Save + Mark Delivered`
+5. Mark `Call-your-own-number proof` complete from the same card.
+6. Run SLA checker:
+```bash
+curl -i http://localhost:3000/api/cron/onboarding-sla-check -H "Authorization: Bearer $CRON_SECRET"
+```
+
+Expected:
+- Audit status transitions to `delivered` with delivery timestamp.
+- `revenue_leak_audit_delivered` milestone marks complete after delivery.
+- Activity trail logs draft/delivery/milestone events.
+- SLA checker responds successfully and creates alerts only for overdue pending milestones.
 
 ### Step 2: Access + tenant isolation checks
 Use two agency users if available: one full scope, one assigned scope.
@@ -266,6 +291,7 @@ Expected:
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
+4. Validate Day-One card and checklist remain in sync after audit delivery and manual milestone completion.
 
 ## 3. Useful Commands
 
@@ -279,6 +305,7 @@ npx vitest run src/lib/permissions/resolve.test.ts
 npx vitest run src/lib/automations/appointment-reminder.test.ts
 npx vitest run src/lib/compliance/quiet-hours-policy.test.ts
 npx vitest run src/lib/services/without-us-model.test.ts
+npx vitest run src/lib/services/day-one-policy.test.ts
 npx vitest run src/lib/services/cancellation-policy.test.ts src/lib/services/data-export-bundle.test.ts src/lib/services/data-export-requests.test.ts
 
 # Cron endpoints
@@ -288,6 +315,7 @@ curl -i http://localhost:3000/api/cron/monthly-reset -H "Authorization: Bearer $
 curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/onboarding-sla-check -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/quarterly-campaign-planner -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/quarterly-campaign-alerts -H "Authorization: Bearer $CRON_SECRET"
 ```

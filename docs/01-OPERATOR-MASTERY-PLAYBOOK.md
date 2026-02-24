@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `MS-08 working tree`
+Last verified commit: `MS-09 working tree`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -32,7 +32,10 @@ Objective: run the full test path manually without getting blocked.
 1. Execute `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md` Section `0` -> `4` in order.
 2. Create at least one fresh test client via `/signup`.
 3. Complete guided setup checks via `/signup/next-steps`.
-4. Validate cron auth and sub-jobs with real `CRON_SECRET`.
+4. Validate Day-One milestone/audit statuses from both:
+- client checklist (`/signup/next-steps`)
+- operator card (`/admin/clients/<id>`)
+5. Validate cron auth and sub-jobs with real `CRON_SECRET`.
 
 Exit gate:
 - Full guide completes with no unresolved blockers.
@@ -44,11 +47,15 @@ Objective: run live managed-service operations reliably.
 1. Execute `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md` daily checklist.
 2. Review escalation queue and SLA breaches every day.
 3. Review pending onboarding clients and remove blockers.
-4. Review guarantee refund-review queue and billing events.
-5. Review data-export SLA queue (requested/processing/ready/failed) and clear at-risk or breached items.
-6. Review Smart Assist pending approvals/manual categories and timeout sends.
-7. Review quarterly campaign status for each active client (planned/scheduled/launched/completed).
-8. Trigger cron sub-jobs manually if automation lag is detected.
+4. Use Day-One Activation card to confirm:
+- number and missed-call milestones complete on time
+- call-your-number proof is explicitly confirmed
+- Revenue Leak Audit is delivered with evidence link/summary
+5. Review guarantee refund-review queue and billing events.
+6. Review data-export SLA queue (requested/processing/ready/failed) and clear at-risk or breached items.
+7. Review Smart Assist pending approvals/manual categories and timeout sends.
+8. Review quarterly campaign status for each active client (planned/scheduled/launched/completed).
+9. Trigger cron sub-jobs manually if automation lag is detected.
 
 Exit gate:
 - You can run daily ops in under 30 minutes.
@@ -74,6 +81,10 @@ Run these drills on a staging/test environment:
 - Confirm expected send/queue behavior and `quiet_hours_policy_mode_changed` audit event.
 5. Reporting drill:
 - Run `/api/cron/biweekly-reports` twice and verify idempotency.
+6. Day-One SLA drill:
+- Create an onboarding client with pending milestones past target time in staging.
+- Run `/api/cron/onboarding-sla-check`.
+- Confirm open alerts appear in Day-One card and can be resolved.
 
 Exit gate:
 - You can diagnose and restore each drill without engineering help.
@@ -133,13 +144,14 @@ Exit gate:
 2. Cron orchestrator and key sub-jobs verified.
 3. Escalation queue healthy and SLA breaches addressed.
 4. Pending onboarding clients reviewed.
-5. Guarantee/refund-review queue reviewed.
-6. Export SLA queue reviewed (no unresolved breached requests).
-7. Smart Assist queue reviewed (pending manual approvals + delayed auto-sends).
-8. Quarterly campaign lifecycle reviewed (no overdue launch targets).
-9. Access-review outcomes reviewed.
-10. Bi-weekly reports generated and delivered.
-11. "Without Us" model status reviewed for every active client.
+5. Day-One milestones and SLA alerts reviewed for every pending onboarding client.
+6. Guarantee/refund-review queue reviewed.
+7. Export SLA queue reviewed (no unresolved breached requests).
+8. Smart Assist queue reviewed (pending manual approvals + delayed auto-sends).
+9. Quarterly campaign lifecycle reviewed (no overdue launch targets).
+10. Access-review outcomes reviewed.
+11. Bi-weekly reports generated and delivered.
+12. "Without Us" model status reviewed for every active client.
 
 ## Core References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`

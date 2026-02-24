@@ -26,10 +26,12 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 - `MS-07` Milestones A-D: complete.
   - Commit: `4bb3770`
 - `MS-08` Milestones A-D: complete.
+  - Commit: `cc97c11`
+- `MS-09` Milestones A-D: complete.
   - Commit: pending current change set
 
 ## Current Focus
-- Next spec: `MS-09` (Day-one activation tracking).
+- Next spec: `MS-10` (add-on billing transparency).
 - `MS-04` delivered end-to-end:
   - smart-assist config model on client (`enabled`, `delay`, `manual categories`)
   - centralized AI send-policy resolver with shared category constants

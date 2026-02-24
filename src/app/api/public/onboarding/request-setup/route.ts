@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getDb } from '@/db';
 import { clients, supportMessages } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
+import { recordDayOneActivity } from '@/lib/services/day-one-activation';
 
 const requestSchema = z.object({
   clientId: z.string().uuid(),
@@ -44,6 +45,25 @@ export async function POST(request: NextRequest) {
       `Self-serve onboarding assistance requested for ${client.businessName} (${client.id}). Please help with number provisioning and setup.`,
     status: 'open',
   });
+
+  try {
+    await recordDayOneActivity({
+      clientId: client.id,
+      eventType: 'managed_setup_requested',
+      actorType: 'client_owner',
+      actorId: email,
+      notes: 'Client requested managed onboarding support from self-serve checklist.',
+      metadata: {
+        source: 'public_onboarding_request_setup',
+        message: message ?? null,
+      },
+    });
+  } catch (dayOneError) {
+    console.error(
+      `[PublicOnboardingRequestSetup] Failed to log day-one activity for ${client.id}:`,
+      dayOneError
+    );
+  }
 
   return NextResponse.json({ success: true });
 }

@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `MS-08 working tree`
+Last verified commit: `MS-09 working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -104,6 +104,15 @@ Outcome: Acquisition funnel starts without manual data entry.
 3. User can request managed setup help directly from onboarding.
 
 Outcome: faster activation and fewer manual onboarding handoffs.
+
+### U8c. Day-One activation SLA + audit proof workflow
+1. System auto-creates Day-One milestones when onboarding starts.
+2. Number assignment and missed-call enablement auto-complete system milestones.
+3. Operator confirms `call-your-own-number` proof in admin client Day-One card.
+4. Operator drafts and delivers Revenue Leak Audit with timestamped delivery proof.
+5. SLA cron flags overdue milestones and opens operator alerts/tasks.
+
+Outcome: Day-One promises are timestamped, auditable, and operationally enforced.
 
 ### U9. Customer-controlled team management (future self-serve)
 1. Customer manages their own assistants and roles.

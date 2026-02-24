@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { clients, systemSettings, clientPhoneNumbers, conversations } from "@/db/schema";
 import { eq, and, isNotNull, gte, sql } from "drizzle-orm";
 import { sendOnboardingNotification } from "@/lib/services/agency-communication";
+import { syncDayOneSystemMilestones } from "@/lib/services/day-one-activation";
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
@@ -190,6 +191,23 @@ export async function purchaseNumber(
       })
       .where(eq(clients.id, clientId));
 
+    const [clientForMilestones] = await db
+      .select({
+        id: clients.id,
+        createdAt: clients.createdAt,
+        twilioNumber: clients.twilioNumber,
+        missedCallSmsEnabled: clients.missedCallSmsEnabled,
+      })
+      .from(clients)
+      .where(eq(clients.id, clientId))
+      .limit(1);
+
+    if (clientForMilestones) {
+      await syncDayOneSystemMilestones(clientForMilestones).catch((error) => {
+        console.error("[Twilio] Failed to sync day-one milestones:", error);
+      });
+    }
+
     // Also insert into junction table for multi-number support
     try {
       await db.insert(clientPhoneNumbers).values({
@@ -260,6 +278,23 @@ export async function assignExistingNumber(
         updatedAt: new Date(),
       })
       .where(eq(clients.id, clientId));
+
+    const [clientForMilestones] = await db
+      .select({
+        id: clients.id,
+        createdAt: clients.createdAt,
+        twilioNumber: clients.twilioNumber,
+        missedCallSmsEnabled: clients.missedCallSmsEnabled,
+      })
+      .from(clients)
+      .where(eq(clients.id, clientId))
+      .limit(1);
+
+    if (clientForMilestones) {
+      await syncDayOneSystemMilestones(clientForMilestones).catch((error) => {
+        console.error("[Twilio] Failed to sync day-one milestones:", error);
+      });
+    }
 
     console.log(
       `[Twilio] Assigned existing number ${phoneNumber} to client ${clientId} (status → active)`,

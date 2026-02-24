@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-08 working tree`
+Last verified commit: `MS-09 working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -82,6 +82,13 @@ Permission templates and overrides resolve effective access at runtime.
 - Quiet-hours policy diagnostics endpoint is agency-only and permission-wrapped:
 1. `GET /api/admin/compliance/quiet-hours-policy` requires `agency.settings.manage`.
 2. Visibility is read-only from admin compliance dashboard; no policy mutation route was introduced.
+
+## MS-09 Access Note
+- Day-One activation workflow adds one agency-only client-scoped route:
+1. `GET/PATCH /api/admin/clients/[id]/onboarding/day-one`
+2. Read requires `agency.clients.view`.
+3. Mutations require `agency.clients.edit`.
+- Public onboarding status/checklist endpoints remain client-identity scoped (`clientId + email` pair) and do not expose cross-client data.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

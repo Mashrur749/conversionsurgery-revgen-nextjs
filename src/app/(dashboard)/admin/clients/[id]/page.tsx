@@ -19,6 +19,8 @@ import { getRevenueStats, getRevenueByService } from '@/lib/services/revenue';
 import { getSpeedToLeadMetrics } from '@/lib/services/speed-to-lead';
 import { listClientQuarterlyCampaigns } from '@/lib/services/campaign-service';
 import { toQuarterlyCampaignSummaryDto } from '@/lib/services/quarterly-campaign-summary';
+import { getDayOneActivationSummary } from '@/lib/services/day-one-activation';
+import { DayOneActivationCard } from './day-one-activation-card';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -45,8 +47,17 @@ export default async function ClientDetailPage({ params }: Props) {
   }
 
   const { getTeamMembers } = await import('@/lib/services/team-bridge');
-  const members = await getTeamMembers(client.id);
-  const quarterlyCampaigns = await listClientQuarterlyCampaigns(client.id);
+  const [members, quarterlyCampaigns, dayOneSummary] = await Promise.all([
+    getTeamMembers(client.id),
+    listClientQuarterlyCampaigns(client.id),
+    getDayOneActivationSummary(client.id).catch((error) => {
+      console.error(
+        `[AdminClientPage] Failed to load day-one summary for client ${client.id}:`,
+        error
+      );
+      return null;
+    }),
+  ]);
 
   // Fetch ROI metrics in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -232,6 +243,22 @@ export default async function ClientDetailPage({ params }: Props) {
               </div>
             </CardContent>
           </Card>
+
+          {dayOneSummary ? (
+            <DayOneActivationCard
+              clientId={client.id}
+              initialSummary={dayOneSummary}
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Day-One Activation</CardTitle>
+                <CardDescription>
+                  Day-One tracker is temporarily unavailable. Retry after refreshing this page.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

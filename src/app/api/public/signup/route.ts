@@ -4,6 +4,10 @@ import { getDb } from '@/db';
 import { clients, people, clientMemberships, roleTemplates } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
+import {
+  ensureDayOneMilestones,
+  recordDayOneActivity,
+} from '@/lib/services/day-one-activation';
 
 const signupSchema = z.object({
   businessName: z.string().min(2).max(255),
@@ -76,7 +80,11 @@ export async function POST(request: NextRequest) {
           timezone: data.timezone,
           status: 'pending',
         })
-        .returning({ id: clients.id, businessName: clients.businessName });
+        .returning({
+          id: clients.id,
+          businessName: clients.businessName,
+          createdAt: clients.createdAt,
+        });
 
       let [person] = await tx
         .select({ id: people.id })
@@ -106,6 +114,25 @@ export async function POST(request: NextRequest) {
 
       return createdClient;
     });
+
+    try {
+      await ensureDayOneMilestones(client.id, new Date(client.createdAt!));
+      await recordDayOneActivity({
+        clientId: client.id,
+        eventType: 'onboarding_started',
+        actorType: 'client_owner',
+        actorId: data.email,
+        notes: 'Public self-serve signup created in pending state.',
+        metadata: {
+          source: 'public_signup',
+        },
+      });
+    } catch (dayOneError) {
+      console.error(
+        `[PublicSignup] Day-one initialization failed for client ${client.id}:`,
+        dayOneError
+      );
+    }
 
     return NextResponse.json(
       {

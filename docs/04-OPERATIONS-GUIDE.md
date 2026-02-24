@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-08 working tree`
+Last verified commit: `MS-09 working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -11,11 +11,12 @@ Last verified commit: `MS-08 working tree`
 4. Review message delivery failures and opt-out anomalies.
 5. Confirm quiet-hours policy mode in `/admin/compliance` (`Strict Queue` vs `Inbound Replies Allowed`) and check unexpected client overrides.
 6. Review onboarding clients in `pending` and move blockers (number, hours, knowledge, team).
-7. Review subscriptions in guarantee-v2 risk states (`proof_pending`, `recovery_pending`, `refund_review_required`) and action queues.
-8. Review data export SLA queue in admin billing (`requested`, `processing`, `ready`, `failed`) and clear at-risk/breached items.
-9. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
-10. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
-11. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
+7. Review Day-One activation panel per onboarding client (milestones, open SLA alerts, audit delivery proof).
+8. Review subscriptions in guarantee-v2 risk states (`proof_pending`, `recovery_pending`, `refund_review_required`) and action queues.
+9. Review data export SLA queue in admin billing (`requested`, `processing`, `ready`, `failed`) and clear at-risk/breached items.
+10. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
+11. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
+12. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
 
 ## Cron Operations
 
@@ -54,6 +55,9 @@ curl -s "$BASE_URL/api/cron/quarterly-campaign-alerts" \
 
 curl -s "$BASE_URL/api/cron/access-review" \
   -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/onboarding-sla-check" \
+  -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ### Expected behavior
@@ -64,6 +68,7 @@ curl -s "$BASE_URL/api/cron/access-review" \
 - Bi-weekly report payload includes directional "Without Us" model section or explicit insufficient-data state.
 - Cancellation-confirmed clients receive export requests with 5-business-day due date and monitored SLA states.
 - Quiet-hours policy mode is visible in admin compliance dashboard and should match current legal operating posture.
+- Onboarding SLA checker marks overdue Day-One milestones and opens operator alerts/tasks.
 
 ## Access Management Operations
 
