@@ -20,7 +20,7 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 - `MS-04` Milestones A-D: complete.
   - Commit: `4b1ab2f`
 - `MS-05` Milestones A-D: complete.
-  - Commit: current working session commit (pending)
+  - Commit: `edc545d`
 
 ## Current Focus
 - Next spec: `MS-06` (Bi-weekly "Without Us" model).
