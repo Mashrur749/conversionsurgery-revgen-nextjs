@@ -1,6 +1,7 @@
 import { getDb } from '@/db';
 import { cancellationRequests, clients, dailyStats, leads, jobs, subscriptions, plans } from '@/db/schema';
 import { eq, and, sql, inArray } from 'drizzle-orm';
+import { buildGuaranteeSummary } from '@/lib/services/guarantee-v2/summary';
 
 export interface ValueSummary {
   monthsActive: number;
@@ -9,6 +10,65 @@ export interface ValueSummary {
   estimatedRevenue: number;
   monthlyCost: number;
   roi: number;
+}
+
+export interface GuaranteeCancellationContext {
+  status: string;
+  statusLabel: string;
+  refundReviewRequired: boolean;
+  refundEligibleAt: string | null;
+}
+
+export async function getGuaranteeCancellationContext(
+  clientId: string
+): Promise<GuaranteeCancellationContext | null> {
+  const db = getDb();
+  const [subscription] = await db
+    .select({
+      guaranteeStatus: subscriptions.guaranteeStatus,
+      guaranteeProofStartAt: subscriptions.guaranteeProofStartAt,
+      guaranteeProofEndsAt: subscriptions.guaranteeProofEndsAt,
+      guaranteeRecoveryStartAt: subscriptions.guaranteeRecoveryStartAt,
+      guaranteeRecoveryEndsAt: subscriptions.guaranteeRecoveryEndsAt,
+      guaranteeAdjustedProofEndsAt: subscriptions.guaranteeAdjustedProofEndsAt,
+      guaranteeAdjustedRecoveryEndsAt: subscriptions.guaranteeAdjustedRecoveryEndsAt,
+      guaranteeObservedMonthlyLeadAverage: subscriptions.guaranteeObservedMonthlyLeadAverage,
+      guaranteeExtensionFactorBasisPoints: subscriptions.guaranteeExtensionFactorBasisPoints,
+      guaranteeProofQualifiedLeadEngagements: subscriptions.guaranteeProofQualifiedLeadEngagements,
+      guaranteeRecoveryAttributedOpportunities: subscriptions.guaranteeRecoveryAttributedOpportunities,
+      guaranteeRefundEligibleAt: subscriptions.guaranteeRefundEligibleAt,
+      guaranteeNotes: subscriptions.guaranteeNotes,
+    })
+    .from(subscriptions)
+    .where(eq(subscriptions.clientId, clientId))
+    .limit(1);
+
+  if (!subscription) {
+    return null;
+  }
+
+  const guarantee = buildGuaranteeSummary({
+    guaranteeStatus: subscription.guaranteeStatus,
+    guaranteeProofStartAt: subscription.guaranteeProofStartAt,
+    guaranteeProofEndsAt: subscription.guaranteeProofEndsAt,
+    guaranteeRecoveryStartAt: subscription.guaranteeRecoveryStartAt,
+    guaranteeRecoveryEndsAt: subscription.guaranteeRecoveryEndsAt,
+    guaranteeAdjustedProofEndsAt: subscription.guaranteeAdjustedProofEndsAt,
+    guaranteeAdjustedRecoveryEndsAt: subscription.guaranteeAdjustedRecoveryEndsAt,
+    guaranteeObservedMonthlyLeadAverage: subscription.guaranteeObservedMonthlyLeadAverage,
+    guaranteeExtensionFactorBasisPoints: subscription.guaranteeExtensionFactorBasisPoints,
+    guaranteeProofQualifiedLeadEngagements: subscription.guaranteeProofQualifiedLeadEngagements,
+    guaranteeRecoveryAttributedOpportunities: subscription.guaranteeRecoveryAttributedOpportunities,
+    guaranteeRefundEligibleAt: subscription.guaranteeRefundEligibleAt,
+    guaranteeNotes: subscription.guaranteeNotes,
+  });
+
+  return {
+    status: guarantee.status,
+    statusLabel: guarantee.statusLabel,
+    refundReviewRequired: guarantee.refundReviewRequired,
+    refundEligibleAt: guarantee.refundEligibleAt,
+  };
 }
 
 /**
@@ -108,6 +168,7 @@ export async function initiateCancellation(
 ): Promise<string> {
   const db = getDb();
   const valueSummary = await getValueSummary(clientId);
+  const guaranteeContext = await getGuaranteeCancellationContext(clientId);
 
   const [request] = await db
     .insert(cancellationRequests)
@@ -115,7 +176,10 @@ export async function initiateCancellation(
       clientId,
       reason,
       feedback,
-      valueShown: valueSummary,
+      valueShown: {
+        ...valueSummary,
+        guaranteeContext,
+      },
     })
     .returning();
 

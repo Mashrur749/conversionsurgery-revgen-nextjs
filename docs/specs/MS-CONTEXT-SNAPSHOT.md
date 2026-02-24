@@ -13,19 +13,20 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 ## Completed Work
 - `MS-01` Milestones A-D: complete.
   - Commits: `d01ac13`, `6c36d01`, `f138a66`, `ff00229`
-- `MS-02` Milestones A-D: complete.
-  - Commits: `c263613`, `e4e757d`, `a65e212`, plus current Milestone D commit
+- `MS-02` Milestones A-E: complete.
+  - Commits: `c263613`, `e4e757d`, `a65e212`, `c2d9d2c`, plus current Milestone E commit
 
 ## Current Focus
-- `MS-02` (Guarantee v2 parity)
-- Milestones A-D delivered:
+- `MS-03` (Estimate trigger stack)
+- `MS-02` delivered end-to-end:
   - guarantee-v2 domain module and status mapping
   - schema fields for proof/recovery windows and extension metadata
   - migration with safe backfill mapping
   - QLE proof-of-life evaluator + metrics query module
   - 90-day recovery evaluator + transition/audit persistence
   - low-volume extension formula with persisted adjusted windows and audit events
-- Next: Milestone E (visibility + operations alignment)
+  - admin/client guarantee visibility + cancellation workflow guarantee context
+- Next: MS-03 Milestone A (SMS keyword estimate trigger)
 
 ## Required Skills For Any MS Milestone
 - `ms-spec-delivery`
@@ -45,5 +46,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-02 Milestone E only.
+Continue with MS-03 Milestone A only.
 ```

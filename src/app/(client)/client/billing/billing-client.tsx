@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SubscriptionCard } from '@/components/billing/SubscriptionCard';
 import { PaymentMethodCard } from '@/components/billing/PaymentMethodCard';
 import { InvoiceList } from '@/components/billing/InvoiceList';
 import { UsageDisplay } from '@/components/billing/UsageDisplay';
+import { GuaranteeStatusCard, type GuaranteeSummary } from '@/components/billing/GuaranteeStatusCard';
 import {
   cancelSubscription,
   pauseSubscription,
@@ -73,6 +75,34 @@ interface BillingPageClientProps {
 export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
   const router = useRouter();
   const { subscription, paymentMethods, invoices, usage } = data;
+  const [guarantee, setGuarantee] = useState<GuaranteeSummary | null>(null);
+  const [guaranteeLoading, setGuaranteeLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadGuaranteeStatus() {
+      try {
+        const res = await fetch('/api/client/billing/guarantee');
+        if (!res.ok) return;
+        const json = (await res.json()) as { guarantee: GuaranteeSummary | null };
+        if (mounted) {
+          setGuarantee(json.guarantee);
+        }
+      } catch (error) {
+        console.error('Failed to load guarantee status:', error);
+      } finally {
+        if (mounted) {
+          setGuaranteeLoading(false);
+        }
+      }
+    }
+
+    loadGuaranteeStatus();
+    return () => {
+      mounted = false;
+    };
+  }, [clientId]);
 
   return (
     <div className="space-y-6">
@@ -148,6 +178,8 @@ export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
           />
         </div>
       </div>
+
+      {!guaranteeLoading && guarantee && <GuaranteeStatusCard guarantee={guarantee} />}
 
       <InvoiceList
         invoices={invoices}

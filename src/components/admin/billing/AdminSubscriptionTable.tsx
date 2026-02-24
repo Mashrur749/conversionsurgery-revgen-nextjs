@@ -18,12 +18,38 @@ interface SubscriptionRow {
   clientName: string;
   planName: string;
   status: string;
-  guaranteeStatus: string | null;
-  guaranteeEndsAt: string | null;
-  guaranteeRefundEligibleAt: string | null;
   priceMonthly: number;
   currentPeriodEnd: string | null;
   createdAt: string;
+  guarantee: {
+    status: string;
+    statusLabel: string;
+    stage: 'proof' | 'recovery' | 'fulfilled' | 'refund_review';
+    refundReviewRequired: boolean;
+    refundEligibleAt: string | null;
+    notes: string | null;
+    proofQualifiedLeadEngagements: number;
+    recoveryAttributedOpportunities: number;
+    proofWindow: {
+      startAt: string | null;
+      adjustedEndAt: string | null;
+    };
+    recoveryWindow: {
+      startAt: string | null;
+      adjustedEndAt: string | null;
+    };
+    extension: {
+      factorMultiplier: number;
+      observedMonthlyLeadAverage: number | null;
+      adjusted: boolean;
+    };
+    timeline: {
+      key: 'proof' | 'recovery';
+      label: string;
+      state: 'pending' | 'active' | 'completed' | 'failed';
+      detail: string;
+    }[];
+  };
 }
 
 const statusColors: Record<string, string> = {
@@ -36,10 +62,19 @@ const statusColors: Record<string, string> = {
 };
 
 const guaranteeColors: Record<string, string> = {
-  pending: 'bg-[#FFF3E0] text-sienna',
-  fulfilled: 'bg-sage-light text-forest',
-  refund_review_required: 'bg-[#FDEAE4] text-sienna',
-  refunded: 'bg-muted text-foreground',
+  proof_pending: 'bg-[#FFF3E0] text-sienna',
+  proof_passed: 'bg-sage-light text-forest',
+  proof_failed_refund_review: 'bg-[#FDEAE4] text-sienna',
+  recovery_pending: 'bg-[#FFF3E0] text-sienna',
+  recovery_passed: 'bg-sage-light text-forest',
+  recovery_failed_refund_review: 'bg-[#FDEAE4] text-sienna',
+};
+
+const timelineStateLabel: Record<string, string> = {
+  pending: 'Pending',
+  active: 'Active',
+  completed: 'Done',
+  failed: 'Failed',
 };
 
 export function AdminSubscriptionTable() {
@@ -109,17 +144,39 @@ export function AdminSubscriptionTable() {
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <Badge className={guaranteeColors[sub.guaranteeStatus || 'pending'] || 'bg-muted text-foreground'}>
-                        {sub.guaranteeStatus || 'pending'}
+                      <Badge
+                        className={
+                          guaranteeColors[sub.guarantee.status] || 'bg-muted text-foreground'
+                        }
+                      >
+                        {sub.guarantee.statusLabel}
                       </Badge>
-                      {sub.guaranteeStatus === 'pending' && sub.guaranteeEndsAt && (
+                      {sub.guarantee.proofWindow.startAt && sub.guarantee.proofWindow.adjustedEndAt && (
                         <span className="text-xs text-muted-foreground">
-                          Ends {format(new Date(sub.guaranteeEndsAt), 'MMM d')}
+                          Proof {format(new Date(sub.guarantee.proofWindow.startAt), 'MMM d')} - {format(new Date(sub.guarantee.proofWindow.adjustedEndAt), 'MMM d')}
                         </span>
                       )}
-                      {sub.guaranteeStatus === 'refund_review_required' && sub.guaranteeRefundEligibleAt && (
+                      {sub.guarantee.recoveryWindow.startAt && sub.guarantee.recoveryWindow.adjustedEndAt && (
                         <span className="text-xs text-muted-foreground">
-                          Flagged {format(new Date(sub.guaranteeRefundEligibleAt), 'MMM d')}
+                          Recovery {format(new Date(sub.guarantee.recoveryWindow.startAt), 'MMM d')} - {format(new Date(sub.guarantee.recoveryWindow.adjustedEndAt), 'MMM d')}
+                        </span>
+                      )}
+                      {sub.guarantee.timeline.map((item) => (
+                        <span key={item.key} className="text-xs text-muted-foreground">
+                          {item.label}: {timelineStateLabel[item.state]} ({item.detail})
+                        </span>
+                      ))}
+                      {sub.guarantee.extension.adjusted && (
+                        <span className="text-xs text-muted-foreground">
+                          Extension x{sub.guarantee.extension.factorMultiplier.toFixed(2)}
+                          {sub.guarantee.extension.observedMonthlyLeadAverage !== null
+                            ? ` (${sub.guarantee.extension.observedMonthlyLeadAverage}/mo)`
+                            : ''}
+                        </span>
+                      )}
+                      {sub.guarantee.refundReviewRequired && sub.guarantee.refundEligibleAt && (
+                        <span className="text-xs text-muted-foreground">
+                          Refund review flagged {format(new Date(sub.guarantee.refundEligibleAt), 'MMM d')}
                         </span>
                       )}
                     </div>

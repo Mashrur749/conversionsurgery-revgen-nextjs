@@ -16,7 +16,6 @@ The current platform is launch-ready for the earlier managed-service baseline, b
 
 Highest-risk mismatches for paying clients are:
 - Unlimited messaging/no caps/no overages is not implemented.
-- 30-day + 90-day guarantee model (with low-volume extension formula) is not implemented.
 - Smart assist auto-send behavior is not implemented.
 - Low-friction estimate trigger stack is incomplete.
 - Quarterly Growth Blitz operations are not productized.
@@ -27,7 +26,7 @@ Highest-risk mismatches for paying clients are:
 | Gap ID | Priority | Spec | Status |
 |---|---|---|---|
 | GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Done |
-| GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | In Progress (Milestones A-D Done) |
+| GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Done |
 | GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Spec Ready |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
@@ -56,7 +55,7 @@ Highest-risk mismatches for paying clients are:
 | Day-One Activation package | Number + missed-call path exist; audit/SLA tracking workflow not productized | Partial |
 | Smart assist mode (5-minute auto-send window) | Not implemented | Gap |
 | KB QA process with gap closure loop | Gap tracking primitives exist; full operational closure loop missing | Partial |
-| 30-day proof-of-life + 90-day recovery guarantee | Current guarantee logic is 30-day recovered-lead workflow | Gap |
+| 30-day proof-of-life + 90-day recovery guarantee | Dual-layer evaluator + low-volume extension + visibility workflows implemented | Ready |
 | Low-volume guarantee extension formula | Not implemented | Gap |
 | Quarterly Growth Blitz | No quarterly campaign scheduler/workflow | Gap |
 | Bi-weekly scoreboard + "Without Us" line | Bi-weekly reports exist; "Without Us" methodology not implemented | Gap |
@@ -107,7 +106,11 @@ Highest-risk mismatches for paying clients are:
 - Progress (2026-02-24): `MS-02` Milestone D completed.
 - Implemented low-volume extension formula (15 / observed monthly volume) with deterministic basis-point storage.
 - Persisted adjusted proof/recovery windows, observed monthly lead averages, and extension audit events.
-- Remaining: Milestone E (admin/client visibility + cancellation workflow alignment).
+- Progress (2026-02-24): `MS-02` Milestone E completed.
+- Added admin billing guarantee timeline visibility using shared v2 guarantee summary DTO.
+- Added client billing guarantee status endpoint and rendered guarantee summary card in the client billing experience.
+- Cancellation workflow now includes guarantee refund-review context for operator/admin handling.
+- Remaining: none (`MS-02` complete).
 - Evidence:
   - `src/lib/services/guarantee-monitor.ts`
   - `src/lib/services/subscription.ts`

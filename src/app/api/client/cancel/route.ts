@@ -4,6 +4,7 @@ import {
   initiateCancellation,
   scheduleRetentionCall,
   confirmCancellation,
+  getGuaranteeCancellationContext,
 } from '@/lib/services/cancellation';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
@@ -68,6 +69,7 @@ export const POST = portalRoute(
     }
 
     if (action === 'confirm') {
+      const guaranteeContext = await getGuaranteeCancellationContext(clientId);
       await confirmCancellation(requestId, 7);
 
       // Notify admin
@@ -78,10 +80,18 @@ export const POST = portalRoute(
          <p><strong>Business:</strong> ${client?.businessName}</p>
          <p><strong>Reason:</strong> ${reason}</p>
          <p><strong>Feedback:</strong> ${feedback || 'None provided'}</p>
+         <p><strong>Guarantee status:</strong> ${guaranteeContext?.statusLabel || 'Unknown'}</p>
+         ${guaranteeContext?.refundReviewRequired
+           ? `<p><strong>Refund review required:</strong> Yes${guaranteeContext.refundEligibleAt ? ` (eligible since ${new Date(guaranteeContext.refundEligibleAt).toLocaleDateString()})` : ''}</p>`
+           : '<p><strong>Refund review required:</strong> No</p>'}
          <p><strong>Grace Period:</strong> 7 days</p>`,
       });
 
-      return NextResponse.json({ success: true, action: 'cancelled' });
+      return NextResponse.json({
+        success: true,
+        action: 'cancelled',
+        guarantee: guaranteeContext,
+      });
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
