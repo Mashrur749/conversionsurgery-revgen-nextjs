@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `6a89bf0`
+Last verified commit: `273a105`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -99,7 +99,10 @@ Objective: maintain service quality and retention.
 - booking rate
 - recovered revenue
 - ROI multiple
-3. Run churn prevention checks:
+3. Verify "Without Us" directional model quality on each bi-weekly report:
+- assumptions/disclaimer present for `ready` model states
+- insufficient-data states are tracked and corrected (missing inputs)
+4. Run churn prevention checks:
 - low ROI early warning
 - high escalation load
 - message delivery degradation
@@ -130,6 +133,7 @@ Exit gate:
 7. Quarterly campaign lifecycle reviewed (no overdue launch targets).
 8. Access-review outcomes reviewed.
 9. Bi-weekly reports generated and delivered.
+10. "Without Us" model status reviewed for every active client.
 
 ## Core References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`

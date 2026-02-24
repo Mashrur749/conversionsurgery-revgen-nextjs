@@ -21,9 +21,11 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Commit: `4b1ab2f`
 - `MS-05` Milestones A-D: complete.
   - Commit: `edc545d`
+- `MS-06` Milestones A-D: complete.
+  - Commit: pending (current working tree, not yet committed)
 
 ## Current Focus
-- Next spec: `MS-06` (Bi-weekly "Without Us" model).
+- Next spec: `MS-07` (Cancellation/export parity).
 - `MS-04` delivered end-to-end:
   - smart-assist config model on client (`enabled`, `delay`, `manual categories`)
   - centralized AI send-policy resolver with shared category constants
@@ -39,6 +41,13 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - cron planner and quarterly digest/alert endpoints integrated into orchestrator
   - admin workflow APIs and admin client execution UI card
   - client dashboard campaign status visibility and report-context campaign summary
+- `MS-06` delivered end-to-end:
+  - pure deterministic "Without Us" model service with model-versioned output
+  - period input enrichment (after-hours leads, observed response speed, delayed follow-up count)
+  - configurable assumption loading from `system_settings` with safe fallbacks
+  - report persistence + admin report detail rendering + bi-weekly email summary integration
+  - explicit insufficient-data guardrails
+  - typed report DTO parsing in report UI paths
 
 ## Required Skills For Any MS Milestone
 - `ms-spec-delivery`
@@ -58,5 +67,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-06 Milestone A only.
+Continue with MS-07 Milestone A only.
 ```

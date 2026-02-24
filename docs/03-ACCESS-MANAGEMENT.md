@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `48740fa`
+Last verified commit: `273a105`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -67,6 +67,10 @@ Permission templates and overrides resolve effective access at runtime.
 ## Remaining Gaps
 - No dedicated invitation lifecycle UI for role approvals/workflows.
 - No MFA policy layer yet (OTP exists, but no mandatory MFA policy engine).
+
+## MS-06 Continuity Note
+- Bi-weekly report "Without Us" model implementation (`MS-06`) introduced no new role surfaces or access paths.
+- Existing agency-only report access boundaries remain unchanged.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

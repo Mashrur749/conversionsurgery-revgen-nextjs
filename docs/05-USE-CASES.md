@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `6a89bf0`
+Last verified commit: `273a105`
 
 ## 1. Founder/Agency Use Cases
 
@@ -111,3 +111,10 @@ Outcome: SaaS-ready control model with low operational risk.
 3. Status appears in reporting and client dashboard summary.
 
 Outcome: retention anchor is operationalized with auditable delivery.
+
+### U11. Bi-weekly "Without Us" directional reporting
+1. Bi-weekly report generation collects after-hours lead volume, observed response speed, and delayed follow-up signals.
+2. System computes low/base/high directional risk ranges with explicit assumptions and disclaimer text.
+3. Report detail view shows either model ranges or an explicit insufficient-data state.
+
+Outcome: retention narrative is evidence-backed and transparent, without fabricated certainty.

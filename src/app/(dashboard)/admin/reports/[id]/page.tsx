@@ -8,40 +8,22 @@ import { eq } from 'drizzle-orm';
 import ReportDetailCard from '../components/report-detail-card';
 import ReportMetricsGrid from '../components/report-metrics-grid';
 import ReportPerformanceChart from '../components/report-performance-chart';
+import {
+  parseReportMetrics,
+  parseReportPerformanceData,
+  parseReportRoiSummary,
+  parseReportTeamPerformance,
+  parseReportTestResults,
+} from '@/lib/services/report-dto';
 
-interface ReportMetrics {
-  messagesSent?: number;
-  conversationsStarted?: number;
-  appointmentsReminded?: number;
-  formsResponded?: number;
-  estimatesFollowedUp?: number;
-  missedCallsCaptured?: number;
-  days?: number;
-}
+const CAD_FORMATTER = new Intl.NumberFormat('en-CA', {
+  style: 'currency',
+  currency: 'CAD',
+  maximumFractionDigits: 0,
+});
 
-interface ReportRoiSummary {
-  averagePerDay?: string;
-}
-
-interface ReportTeamPerformance {
-  totalMembers?: number;
-  activeMembers?: number;
-}
-
-interface ReportTestResult {
-  name?: string;
-  description?: string;
-  testType?: string;
-}
-
-interface ReportDailyStats {
-  date: string;
-  messagesSent?: number;
-  conversationsStarted?: number;
-  appointmentsReminded?: number;
-  formsResponded?: number;
-  estimatesFollowedUp?: number;
-  missedCallsCaptured?: number;
+function formatCad(value: number): string {
+  return CAD_FORMATTER.format(value);
 }
 
 interface Props {
@@ -83,15 +65,15 @@ export default async function ReportDetailPage({ params }: Props) {
     .where(eq(clients.id, report.clientId))
     .limit(1);
 
-  const metrics = (report.metrics as unknown as ReportMetrics) || {};
-  const roiSummary = (report.roiSummary as unknown as ReportRoiSummary) || {};
-  const teamPerformance = (report.teamPerformance as unknown as ReportTeamPerformance) || {};
-  const performanceData = (report.performanceData as unknown as ReportDailyStats[]) || [];
-  const testResults = (report.testResults as unknown as ReportTestResult[]) || [];
+  const metrics = parseReportMetrics(report.metrics);
+  const roiSummary = parseReportRoiSummary(report.roiSummary);
+  const teamPerformance = parseReportTeamPerformance(report.teamPerformance);
+  const performanceData = parseReportPerformanceData(report.performanceData);
+  const testResults = parseReportTestResults(report.testResults);
+  const withoutUsModel = roiSummary.withoutUsModel || null;
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold">{report.title}</h1>
@@ -111,17 +93,13 @@ export default async function ReportDetailPage({ params }: Props) {
         </span>
       </div>
 
-      {/* ROI Summary */}
       <ReportMetricsGrid roiSummary={roiSummary} metrics={metrics} />
 
-      {/* Performance Chart */}
       {performanceData.length > 0 && (
         <ReportPerformanceChart data={performanceData} />
       )}
 
-      {/* Details Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Team Performance */}
         <ReportDetailCard title="Team Performance">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -139,7 +117,6 @@ export default async function ReportDetailPage({ params }: Props) {
           </div>
         </ReportDetailCard>
 
-        {/* Period Summary */}
         <ReportDetailCard title="Period Summary">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -148,23 +125,17 @@ export default async function ReportDetailPage({ params }: Props) {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Avg Messages/Day</span>
-              <span className="font-semibold">
-                {roiSummary.averagePerDay || '0'}
-              </span>
+              <span className="font-semibold">{roiSummary.averagePerDay || '0'}</span>
             </div>
           </div>
         </ReportDetailCard>
       </div>
 
-      {/* A/B Test Results */}
       {testResults.length > 0 && (
         <ReportDetailCard title="A/B Tests Running During Period">
           <div className="space-y-4">
-            {testResults.map((test: ReportTestResult, idx: number) => (
-              <div
-                key={idx}
-                className="p-3 rounded-md bg-[#F8F9FA] border"
-              >
+            {testResults.map((test, idx) => (
+              <div key={idx} className="p-3 rounded-md bg-[#F8F9FA] border">
                 <h4 className="font-semibold text-foreground">{test.name}</h4>
                 <p className="text-sm text-muted-foreground mt-1">
                   {test.description}
@@ -178,14 +149,11 @@ export default async function ReportDetailPage({ params }: Props) {
         </ReportDetailCard>
       )}
 
-      {/* Detailed Metrics */}
       <ReportDetailCard title="Detailed Metrics">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <p className="text-muted-foreground text-sm">Messages Sent</p>
-            <p className="text-2xl font-bold mt-1">
-              {metrics.messagesSent || 0}
-            </p>
+            <p className="text-2xl font-bold mt-1">{metrics.messagesSent || 0}</p>
           </div>
           <div>
             <p className="text-muted-foreground text-sm">Conversations</p>
@@ -201,9 +169,7 @@ export default async function ReportDetailPage({ params }: Props) {
           </div>
           <div>
             <p className="text-muted-foreground text-sm">Forms Responded</p>
-            <p className="text-2xl font-bold mt-1">
-              {metrics.formsResponded || 0}
-            </p>
+            <p className="text-2xl font-bold mt-1">{metrics.formsResponded || 0}</p>
           </div>
           <div>
             <p className="text-muted-foreground text-sm">Estimates Followed Up</p>
@@ -220,14 +186,87 @@ export default async function ReportDetailPage({ params }: Props) {
         </div>
       </ReportDetailCard>
 
-      {/* Notes */}
+      {withoutUsModel && (
+        <ReportDetailCard title='Without Us (Directional Model)'>
+          {withoutUsModel.status === 'ready' ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="rounded-md border p-3">
+                  <p className="text-sm text-muted-foreground">Low</p>
+                  <p className="text-xl font-semibold mt-1">
+                    {formatCad(withoutUsModel.ranges.low.estimatedRevenueRisk)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {withoutUsModel.ranges.low.atRiskLeads.toFixed(1)} modeled at-risk leads
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-sm text-muted-foreground">Base</p>
+                  <p className="text-xl font-semibold mt-1">
+                    {formatCad(withoutUsModel.ranges.base.estimatedRevenueRisk)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {withoutUsModel.ranges.base.atRiskLeads.toFixed(1)} modeled at-risk leads
+                  </p>
+                </div>
+                <div className="rounded-md border p-3">
+                  <p className="text-sm text-muted-foreground">High</p>
+                  <p className="text-xl font-semibold mt-1">
+                    {formatCad(withoutUsModel.ranges.high.estimatedRevenueRisk)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {withoutUsModel.ranges.high.atRiskLeads.toFixed(1)} modeled at-risk leads
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="rounded-md bg-[#F8F9FA] p-3">
+                  <p className="text-muted-foreground">After-hours leads</p>
+                  <p className="font-semibold mt-1">
+                    {withoutUsModel.inputs.afterHoursLeadCount}
+                  </p>
+                </div>
+                <div className="rounded-md bg-[#F8F9FA] p-3">
+                  <p className="text-muted-foreground">Observed avg first response</p>
+                  <p className="font-semibold mt-1">
+                    {withoutUsModel.inputs.averageObservedResponseMinutes !== null
+                      ? `${withoutUsModel.inputs.averageObservedResponseMinutes.toFixed(2)} min`
+                      : 'n/a'}
+                  </p>
+                </div>
+                <div className="rounded-md bg-[#F8F9FA] p-3">
+                  <p className="text-muted-foreground">Delayed follow-up count</p>
+                  <p className="font-semibold mt-1">
+                    {withoutUsModel.inputs.delayedFollowupCount}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                {withoutUsModel.assumptions.disclaimer}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm">
+                Insufficient data for this period to compute a directional "Without Us"
+                range.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Missing inputs: {withoutUsModel.missingInputs.join(', ')}
+              </p>
+            </div>
+          )}
+        </ReportDetailCard>
+      )}
+
       {report.notes && (
         <ReportDetailCard title="Notes">
           <p className="text-foreground whitespace-pre-wrap">{report.notes}</p>
         </ReportDetailCard>
       )}
 
-      {/* Navigation */}
       <div className="flex gap-3 pt-4">
         <Link href="/admin/reports">
           <Button variant="ghost">← Back to Reports</Button>

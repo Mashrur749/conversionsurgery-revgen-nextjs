@@ -4,14 +4,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getDb } from '@/db';
 import { reports, clients } from '@/db/schema';
-
-interface ReportListMetrics {
-  messagesSent?: number;
-}
-
-interface ReportListRoiSummary {
-  conversionRate?: number;
-}
+import {
+  parseReportMetrics,
+  parseReportRoiSummary,
+} from '@/lib/services/report-dto';
 
 export default async function ReportsPage() {
   const session = await auth();
@@ -107,8 +103,8 @@ export default async function ReportsPage() {
               <tbody className="divide-y">
                 {allReports.map((report) => {
                   const client = clientMap.get(report.clientId);
-                  const metrics = (report.metrics as ReportListMetrics) || {};
-                  const roiSummary = (report.roiSummary as ReportListRoiSummary) || {};
+                  const metrics = parseReportMetrics(report.metrics);
+                  const roiSummary = parseReportRoiSummary(report.roiSummary);
 
                   return (
                     <tr key={report.id} className="hover:bg-[#F8F9FA]">

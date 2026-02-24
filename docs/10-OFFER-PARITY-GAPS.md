@@ -9,13 +9,12 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: 6a89bf0`
+- `LAST_VERIFIED_COMMIT: 273a105`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Bi-weekly "Without Us" reporting methodology is not implemented.
 - Cancellation/data-export contract terms are not fully implemented in product workflows.
 - Quiet-hours legal classification decision is still pending for full claim expansion.
 
@@ -28,7 +27,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Done |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Done |
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Done |
-| GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
+| GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Done |
 | GAP-007 | P0 | `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | Spec Ready |
 | GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Spec Ready |
 | GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Spec Ready |
@@ -56,7 +55,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | 30-day proof-of-life + 90-day recovery guarantee | Dual-layer evaluator + low-volume extension + visibility workflows implemented | Ready |
 | Low-volume guarantee extension formula | Implemented in guarantee v2 evaluator and persisted windows | Ready |
 | Quarterly Growth Blitz | Quarterly campaign ledger + planner + transitions + reporting summary + admin digest/alerts implemented | Ready |
-| Bi-weekly scoreboard + "Without Us" line | Bi-weekly reports exist; "Without Us" methodology not implemented | Gap |
+| Bi-weekly scoreboard + "Without Us" line | Modeled low/base/high risk ranges + assumptions + disclaimer are persisted and rendered with insufficient-data safeguards | Ready |
 | Month-to-month, 30-day cancellation, 5-day export SLA | Current cancellation workflow uses 7-day grace path; full export workflow incomplete | Gap |
 
 ## P0 — Must Close Before Selling v2.1 As-Written
@@ -202,11 +201,26 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `src/app/api/admin/clients/[id]/quarterly-campaigns/route.ts`
   - `src/app/api/admin/clients/[id]/quarterly-campaigns/[campaignId]/route.ts`
 
-6. `GAP-006` Bi-weekly "Without Us" methodology not implemented
+6. `GAP-006` Bi-weekly "Without Us" methodology parity
 - Offer promise: standardized modeled low/base/high risk line in bi-weekly report.
-- Current behavior: report generation includes raw metrics/ROI summary but no "Without Us" modeled section.
+- Progress (2026-02-24): `MS-06` Milestones A-D completed.
+- Added pure deterministic model service with versioned output, assumptions merge, and ready/insufficient-data states.
+- Added report input enrichment for:
+  - after-hours lead count
+  - observed first-response timing from conversation logs
+  - delayed estimate follow-up count
+- Added system-settings assumption override path (`without_us_model_assumptions`).
+- Persisted model payload inside report summary and rendered full "Without Us" section in admin report details.
+- Added disclaimer + range summary in bi-weekly report email delivery.
+- Added typed report DTO parsers to remove ad hoc JSON casting in report UI paths.
+- Added model unit tests covering ready, insufficient-data, and assumptions merge behavior.
+- Remaining: none (`MS-06` complete).
 - Evidence:
+  - `src/lib/services/without-us-model.ts`
   - `src/lib/services/report-generation.ts`
+  - `src/lib/services/report-dto.ts`
+  - `src/app/(dashboard)/admin/reports/[id]/page.tsx`
+  - `src/lib/services/without-us-model.test.ts`
 
 7. `GAP-007` Cancellation/export terms mismatch
 - Offer promise: 30 calendar day cancellation notice and full export delivery within 5 business days.

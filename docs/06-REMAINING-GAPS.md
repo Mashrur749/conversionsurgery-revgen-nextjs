@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: 6a89bf0`
+- `LAST_VERIFIED_COMMIT: 273a105`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -39,6 +39,7 @@ Offer parity gaps against the reviewed v2.1 offer architecture are tracked separ
 - Dual-layer guarantee lifecycle automation with refund-review flagging.
 - Monthly reset policy gating (`skippedByPolicy`) for unlimited-plan overage paths.
 - Deterministic bi-weekly report generation and delivery.
+- Bi-weekly "Without Us" directional model parity (ranges + assumptions + disclaimer + insufficient-data safeguards).
 - Appointment reminder parity for homeowner + contractor plus regression tests.
 - Non-lead quiet-hours durable replay automation.
 - Monthly access-review automation.

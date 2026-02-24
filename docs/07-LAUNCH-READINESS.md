@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: 6a89bf0`
+- `LAST_VERIFIED_COMMIT: 273a105`
 
 ## Executive Status
 
@@ -43,6 +43,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Dual-layer guarantee lifecycle automation added: daily evaluator handles proof/recovery windows and marks `fulfilled` or `refund_review_required` with billing-event audit trail.
 - Monthly reset now records billing-policy outcomes (`processed` vs `skippedByPolicy`) for audit-safe unlimited-plan handling.
 - Bi-weekly report cron now generates and emails managed-service reports deterministically (idempotent by period).
+- Bi-weekly reports now include "Without Us" directional model payload (low/base/high), assumptions, disclaimers, and insufficient-data guard state.
 - Appointment reminders now include both homeowner and contractor reminder scheduling paths.
 - Quiet-hours replay now includes non-lead durable queue processing.
 - Monthly access-review automation sends stale-access digest to agency owners.
@@ -69,7 +70,8 @@ Current snapshot at this commit:
 3. Done: `GAP-003` estimate trigger stack parity.
 4. Done: `GAP-004` smart assist auto-send parity.
 5. Done: `GAP-005` quarterly growth blitz productization.
-6. Remaining P0: `GAP-006` bi-weekly "Without Us" model, `GAP-007` cancellation/export parity.
+6. Done: `GAP-006` bi-weekly "Without Us" model parity.
+7. Remaining P0: `GAP-007` cancellation/export parity.
 
 ## Go-Live Gate (Managed Service)
 Release only when all are true:

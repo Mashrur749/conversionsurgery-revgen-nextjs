@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `6a89bf0`
+Last verified commit: `273a105`
 
 ## 0. Preflight (Run First)
 
@@ -209,7 +209,22 @@ Expected:
 - Invalid lifecycle jumps are blocked.
 - Campaign summary appears in client dashboard and report context.
 
-### Step 12: Final smoke
+### Step 12: Bi-weekly "Without Us" model parity (MS-06)
+1. Generate bi-weekly report (or run cron in-window):
+```bash
+curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
+```
+2. Open latest report detail in `/admin/reports/<id>`.
+3. Verify "Without Us (Directional Model)" section behavior:
+- If sufficient data: low/base/high ranges, inputs, and disclaimer are visible.
+- If insufficient data: explicit missing-input state is shown (no fabricated values).
+
+Expected:
+- Report payload includes a model status (`ready` or `insufficient_data`) with versioned output.
+- UI renders assumptions/disclaimer when status is `ready`.
+- UI shows clear insufficiency state without fake metrics when status is `insufficient_data`.
+
+### Step 13: Final smoke
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
@@ -224,6 +239,7 @@ npm run build
 # Focused tests
 npx vitest run src/lib/permissions/resolve.test.ts
 npx vitest run src/lib/automations/appointment-reminder.test.ts
+npx vitest run src/lib/services/without-us-model.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"

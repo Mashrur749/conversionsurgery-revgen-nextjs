@@ -1,6 +1,8 @@
+import type { ReportMetrics, ReportRoiSummary } from '@/lib/services/report-dto';
+
 interface Props {
-  roiSummary: any;
-  metrics: any;
+  roiSummary: ReportRoiSummary;
+  metrics: ReportMetrics;
 }
 
 export default function ReportMetricsGrid({ roiSummary, metrics }: Props) {

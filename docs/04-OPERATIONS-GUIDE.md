@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `6a89bf0`
+Last verified commit: `273a105`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -13,6 +13,7 @@ Last verified commit: `6a89bf0`
 6. Review subscriptions in guarantee-v2 risk states (`proof_pending`, `recovery_pending`, `refund_review_required`) and action queues.
 7. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
 8. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
+9. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
 
 ## Cron Operations
 
@@ -58,6 +59,7 @@ curl -s "$BASE_URL/api/cron/access-review" \
 - Any non-empty error bucket is an incident candidate.
 - Quarterly planner is idempotent (no duplicate client/quarter campaign records).
 - Quarterly alerts include overdue campaign count for launch-risk visibility.
+- Bi-weekly report payload includes directional "Without Us" model section or explicit insufficient-data state.
 
 ## Access Management Operations
 

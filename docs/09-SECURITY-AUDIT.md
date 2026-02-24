@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `48740fa`
+**Last verified commit:** `273a105`
 
 ---
 
@@ -209,7 +209,7 @@ npx tsc --noEmit
 
 ## Post-Audit Continuity Note (2026-02-24)
 
-Since the original audit window, new managed-service features (Smart Assist workflow and Quarterly Campaign workflows) were added using existing hardened patterns:
+Since the original audit window, new managed-service features (Smart Assist workflow, Quarterly Campaign workflows, and bi-weekly "Without Us" reporting model) were added using existing hardened patterns:
 1. Admin/client API routes use permission-wrapped handlers (`adminClientRoute`, `portalRoute`).
 2. Cron surfaces use `verifyCronSecret()` with bearer auth.
 3. Data writes remain client-scoped and route-scoped.

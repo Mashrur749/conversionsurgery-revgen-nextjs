@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
-Last verified commit: `6a89bf0`
+Last verified commit: `273a105`
 
 ## Canonical Order (Read + Execute)
 
@@ -56,7 +56,8 @@ Cadence rule:
 2. Run one mock client onboarding from signup to checklist progression.
 3. Run one incident drill from `01-OPERATOR-MASTERY-PLAYBOOK.md` (cron auth failure or escalation fallback).
 4. Validate your wife/internal monitor can access only assigned clients.
-5. Review all `P0` items in `10-OFFER-PARITY-GAPS.md` and close or qualify before selling.
+5. Validate one generated report includes the "Without Us (Directional Model)" section with assumptions/disclaimer or explicit insufficient-data state.
+6. Review all `P0` items in `10-OFFER-PARITY-GAPS.md` and close or qualify before selling (current remaining P0: `GAP-007`).
 
 ## Confidence Criteria (Go/No-Go)
 
