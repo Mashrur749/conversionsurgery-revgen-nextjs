@@ -32,6 +32,37 @@ interface DayOneState {
   } | null;
 }
 
+interface OnboardingQualityGate {
+  key: string;
+  title: string;
+  score: number;
+  passed: boolean;
+  reasons: string[];
+}
+
+interface OnboardingQualityAction {
+  gateKey: string;
+  action: string;
+  impact: 'high' | 'medium' | 'low';
+}
+
+interface OnboardingQualityState {
+  evaluation: {
+    totalScore: number;
+    maxScore: number;
+    passedCritical: boolean;
+    passedAll: boolean;
+    gates: OnboardingQualityGate[];
+    recommendedActions: OnboardingQualityAction[];
+  };
+  decision: {
+    mode: 'enforce' | 'warn' | 'off';
+    allowed: boolean;
+    reason: string;
+    requiresOverride: boolean;
+  };
+}
+
 export function OnboardingChecklist() {
   const params = useSearchParams();
   const clientId = params.get('clientId') || '';
@@ -45,6 +76,7 @@ export function OnboardingChecklist() {
     progress: { completed: number; total: number; percent: number };
     tutorials: { title: string; slug: string }[];
     dayOne: DayOneState | null;
+    onboardingQuality: OnboardingQualityState | null;
   } | null>(null);
   const [requestMessage, setRequestMessage] = useState('');
   const [requestSent, setRequestSent] = useState(false);
@@ -65,6 +97,7 @@ export function OnboardingChecklist() {
         progress?: { completed: number; total: number; percent: number };
         tutorials?: { title: string; slug: string }[];
         dayOne?: DayOneState;
+        onboardingQuality?: OnboardingQualityState | null;
       };
 
       if (!res.ok) {
@@ -78,6 +111,7 @@ export function OnboardingChecklist() {
         progress: data.progress || { completed: 0, total: 0, percent: 0 },
         tutorials: data.tutorials || [],
         dayOne: data.dayOne || null,
+        onboardingQuality: data.onboardingQuality || null,
       });
     } catch {
       setError('Failed to load onboarding status');
@@ -195,6 +229,44 @@ export function OnboardingChecklist() {
                     {state.dayOne.audit.summary && (
                       <p className="text-muted-foreground">{state.dayOne.audit.summary}</p>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {state.onboardingQuality && (
+              <div className="space-y-2 rounded border p-3">
+                <p className="font-medium">Production Readiness Quality Gates</p>
+                <p className="text-sm text-muted-foreground">
+                  Score {state.onboardingQuality.evaluation.totalScore}/{state.onboardingQuality.evaluation.maxScore}
+                  {' '}· Policy mode: {state.onboardingQuality.decision.mode}
+                </p>
+                <div className="space-y-2">
+                  {state.onboardingQuality.evaluation.gates.map((gate) => (
+                    <div key={gate.key} className="flex items-center justify-between rounded border px-3 py-2">
+                      <div>
+                        <p>{gate.title}</p>
+                        {!gate.passed && gate.reasons[0] && (
+                          <p className="text-xs text-muted-foreground">{gate.reasons[0]}</p>
+                        )}
+                      </div>
+                      <span className={gate.passed ? 'text-forest' : 'text-sienna'}>
+                        {gate.passed ? 'Pass' : 'Fix'} ({gate.score}/100)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {state.onboardingQuality.evaluation.recommendedActions.length > 0 && (
+                  <div className="rounded border px-3 py-2">
+                    <p className="text-sm font-medium">What to fix next</p>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                      {state.onboardingQuality.evaluation.recommendedActions.slice(0, 3).map((action, index) => (
+                        <li key={`${action.gateKey}-${index}`}>
+                          [{action.impact}] {action.action}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>

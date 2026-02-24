@@ -38,6 +38,7 @@ export * from './notification-preferences';
 export * from './cancellation-requests';
 export * from './data-export-requests';
 export * from './onboarding-day-one';
+export * from './onboarding-quality';
 export * from './client-services';
 export * from './jobs';
 export * from './revenue-events';

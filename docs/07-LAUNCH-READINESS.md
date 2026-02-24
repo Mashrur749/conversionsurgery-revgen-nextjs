@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-13 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-15 Milestone D working tree`
 
 ## Executive Status
 
@@ -52,6 +52,8 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Self-serve onboarding now includes guided checklist and managed-setup request flow.
 - Day-One Activation workflow now has tracked milestones, SLA breach alerts, and Revenue Leak Audit delivery proof.
 - Cron catch-up guarantees are now cursor-based for monthly reset and bi-weekly reports, with admin backlog visibility and manual run controls.
+- Onboarding Quality Gates now enforce production-readiness thresholds before autonomous mode, with override reason/audit trace.
+- Reminder routing now supports role-based primary/fallback/secondary recipients with policy UI and delivery audit events.
 
 ## Remaining Launch Blockers (Managed Service)
 
@@ -82,6 +84,8 @@ Current snapshot at this commit:
 11. Done: `GAP-104` report delivery observability (`MS-11` Milestones A-D complete).
 12. Done: `GAP-105` cron catch-up guarantees (`MS-12` Milestones A-D complete).
 13. Done: `GAP-201` knowledge-gap closure queue (`MS-13` Milestones A-D complete).
+14. Done: `GAP-202` onboarding quality gates (`MS-14` Milestones A-D complete).
+15. Done: `GAP-203` reminder routing flexibility (`MS-15` Milestones A-D complete).
 
 ## Go-Live Gate (Managed Service)
 Release only when all are true:

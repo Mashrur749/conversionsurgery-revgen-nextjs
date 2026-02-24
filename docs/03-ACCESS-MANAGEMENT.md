@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-13 Milestone D working tree`
+Last verified commit: `MS-15 Milestone D working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -140,6 +140,20 @@ Permission templates and overrides resolve effective access at runtime.
 3. `POST /api/admin/clients/[id]/knowledge/gaps/bulk` requires `agency.knowledge.edit`.
 4. `GET /api/cron/knowledge-gap-alerts` remains `verifyCronSecret` guarded.
 - No new portal/client-facing permission scopes were introduced.
+
+## MS-14 Access Note
+- Onboarding quality gate enforcement and override workflow add agency client-scoped routes only:
+1. `GET /api/admin/clients/[id]/onboarding/quality` requires `agency.clients.view`.
+2. `PATCH /api/admin/clients/[id]/onboarding/quality` requires `agency.clients.edit`.
+3. Autonomous transition check in `PATCH /api/admin/clients/[id]` remains `agency.clients.edit` and now returns `409` when quality gates fail in enforce mode.
+- Public onboarding checklist receives read-only quality readiness summary through existing `clientId + email` scoped endpoint.
+
+## MS-15 Access Note
+- Reminder routing policy and history add agency client-scoped routes only:
+1. `GET /api/admin/clients/[id]/reminder-routing` requires `agency.clients.view`.
+2. `PATCH /api/admin/clients/[id]/reminder-routing` requires `agency.clients.edit`.
+- Reminder delivery outcomes are written to existing `audit_log` with client scope (`reminder_delivery_sent`, `reminder_delivery_no_recipient`) and are queryable through existing audit permissions.
+- No new client-portal edit surfaces were introduced for routing policy in this milestone.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

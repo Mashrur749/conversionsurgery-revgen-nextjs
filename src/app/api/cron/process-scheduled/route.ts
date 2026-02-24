@@ -7,6 +7,8 @@ import { getClientUsagePolicy } from '@/lib/services/subscription';
 import { isMessageLimitReached, type ClientUsagePolicy } from '@/lib/services/usage-policy';
 import { processDueSmartAssistDrafts } from '@/lib/services/smart-assist-lifecycle';
 import { SMART_ASSIST_SEQUENCE_TYPE } from '@/lib/services/smart-assist-state';
+import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
+import { auditLog } from '@/db/schema';
 import { eq, and, lte, sql, ne, or, isNull } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { sendSMS } from '@/lib/services/twilio';
@@ -51,6 +53,7 @@ export async function GET(request: NextRequest) {
     let skipped = smartAssistResult.skipped;
     let failed = smartAssistResult.failed;
     const usagePolicyByClient = new Map<string, ClientUsagePolicy | null>();
+    const routingByClient = new Map<string, Awaited<ReturnType<typeof resolveReminderRecipients>>>();
 
     for (const { message, lead, client } of dueMessages) {
       const isContractorReminder = message.sequenceType === 'appointment_reminder_contractor';
@@ -141,13 +144,126 @@ export async function GET(request: NextRequest) {
         }
 
         if (isContractorReminder) {
-          if (!client.phone) {
-            await markCancelled(db, message.id, 'Client owner phone missing');
+          const routingCacheKey = `${client.id}:appointment_reminder_contractor`;
+          let routing = routingByClient.get(routingCacheKey);
+          if (!routing) {
+            routing = await resolveReminderRecipients(client.id, 'appointment_reminder_contractor');
+            routingByClient.set(routingCacheKey, routing);
+          }
+
+          if (routing.primaryChain.length === 0) {
+            await markCancelled(db, message.id, 'No valid reminder recipient configured');
+            await db.insert(auditLog).values({
+              personId: null,
+              clientId: client.id,
+              action: 'reminder_delivery_no_recipient',
+              resourceType: 'scheduled_message',
+              resourceId: message.id,
+              metadata: {
+                reminderType: 'appointment_reminder_contractor',
+                reason: 'no_valid_recipient',
+                policy: routing.policy,
+                steps: routing.primarySteps,
+              },
+              createdAt: new Date(),
+            });
             skipped++;
             continue;
           }
 
-          await sendSMS(client.phone, messageBody, client.twilioNumber);
+          const attempts: Array<{
+            role: string;
+            phone: string;
+            status: 'sent' | 'failed';
+            stage: 'primary_chain' | 'secondary';
+            error?: string;
+          }> = [];
+          let deliveredRecipient: (typeof routing.primaryChain)[number] | null = null;
+
+          for (const recipient of routing.primaryChain) {
+            try {
+              await sendSMS(recipient.phone, messageBody, client.twilioNumber);
+              deliveredRecipient = recipient;
+              attempts.push({
+                role: recipient.role,
+                phone: recipient.phone,
+                status: 'sent',
+                stage: 'primary_chain',
+              });
+              break;
+            } catch (sendError) {
+              attempts.push({
+                role: recipient.role,
+                phone: recipient.phone,
+                status: 'failed',
+                stage: 'primary_chain',
+                error: sendError instanceof Error ? sendError.message : 'Unknown send error',
+              });
+            }
+          }
+
+          if (!deliveredRecipient) {
+            await markCancelled(db, message.id, 'No reachable reminder recipient');
+            await db.insert(auditLog).values({
+              personId: null,
+              clientId: client.id,
+              action: 'reminder_delivery_no_recipient',
+              resourceType: 'scheduled_message',
+              resourceId: message.id,
+              metadata: {
+                reminderType: 'appointment_reminder_contractor',
+                reason: 'all_recipients_unreachable',
+                attempts,
+              },
+              createdAt: new Date(),
+            });
+            skipped++;
+            continue;
+          }
+
+          for (const secondaryRecipient of routing.secondaryRecipients) {
+            try {
+              await sendSMS(secondaryRecipient.phone, messageBody, client.twilioNumber);
+              attempts.push({
+                role: secondaryRecipient.role,
+                phone: secondaryRecipient.phone,
+                status: 'sent',
+                stage: 'secondary',
+              });
+            } catch (sendError) {
+              attempts.push({
+                role: secondaryRecipient.role,
+                phone: secondaryRecipient.phone,
+                status: 'failed',
+                stage: 'secondary',
+                error: sendError instanceof Error ? sendError.message : 'Unknown send error',
+              });
+            }
+          }
+
+          await db.insert(auditLog).values({
+            personId: null,
+            clientId: client.id,
+            action: 'reminder_delivery_sent',
+            resourceType: 'scheduled_message',
+            resourceId: message.id,
+            metadata: {
+              reminderType: 'appointment_reminder_contractor',
+              primaryRole: routing.rule.primaryRole,
+              fallbackRoles: routing.rule.fallbackRoles,
+              secondaryRoles: routing.rule.secondaryRoles,
+              deliveredTo: {
+                role: deliveredRecipient.role,
+                phone: deliveredRecipient.phone,
+                personId: deliveredRecipient.personId,
+                membershipId: deliveredRecipient.membershipId,
+                label: deliveredRecipient.label,
+              },
+              fallbackUsed: routing.primaryChain[0]?.phone !== deliveredRecipient.phone,
+              attempts,
+            },
+            createdAt: new Date(),
+          });
         } else {
           const sendResult = await sendCompliantMessage({
             clientId: client.id,

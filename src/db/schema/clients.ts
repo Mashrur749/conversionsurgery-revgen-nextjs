@@ -72,6 +72,20 @@ export const clients = pgTable(
     webhookEvents: jsonb('webhook_events').default(
       sql`'["lead.created", "lead.qualified", "appointment.booked"]'`
     ),
+    reminderRoutingPolicy: jsonb('reminder_routing_policy').default(
+      sql`'{
+        "appointment_reminder_contractor": {
+          "primaryRole": "owner",
+          "fallbackRoles": ["assistant", "escalation_team"],
+          "secondaryRoles": []
+        },
+        "booking_notification": {
+          "primaryRole": "owner",
+          "fallbackRoles": ["assistant", "escalation_team"],
+          "secondaryRoles": []
+        }
+      }'::jsonb`
+    ),
     messagesSentThisMonth: integer('messages_sent_this_month').default(0),
     monthlyMessageLimit: integer('monthly_message_limit').default(500),
     stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),

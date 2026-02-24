@@ -32,8 +32,8 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 | MS-11 | GAP-104 | DONE | DONE | DONE | DONE | MS-11 complete: lifecycle model + retry engine + operator observability + client-facing status/download parity. |
 | MS-12 | GAP-105 | DONE | DONE | DONE | DONE | MS-12 complete: cursor model + shared catch-up runner + idempotent billing/report period replay + admin catch-up controls. |
 | MS-13 | GAP-201 | DONE | DONE | DONE | DONE | MS-13 complete: lifecycle queue model + admin queue APIs/UI + KB-linked resolve/verify enforcement + weekly metrics + stale-priority digest alerts. |
-| MS-14 | GAP-202 | OPEN | OPEN | OPEN | OPEN | |
-| MS-15 | GAP-203 | OPEN | OPEN | OPEN | OPEN | |
+| MS-14 | GAP-202 | DONE | DONE | DONE | DONE | MS-14 complete: centralized quality policy + evaluator snapshots + autonomous transition enforcement + override audit trail + admin/public readiness surfaces. |
+| MS-15 | GAP-203 | DONE | DONE | DONE | DONE | MS-15 complete: reminder routing policy model + centralized resolver + fallback/de-dup delivery integration + admin policy/audit UI. |
 
 ## Execution Order
 1. P0: `MS-01` to `MS-07`

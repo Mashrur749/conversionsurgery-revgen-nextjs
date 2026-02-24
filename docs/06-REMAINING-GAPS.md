@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-13 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-15 Milestone D working tree`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -21,6 +21,8 @@ Current offer-parity note:
 - `GAP-104` (report delivery observability) is complete with `MS-11` Milestones A-D implemented.
 - `GAP-105` (cron catch-up guarantees) is complete with `MS-12` Milestones A-D implemented.
 - `GAP-201` (knowledge-gap closure queue) is complete with `MS-13` Milestones A-D implemented.
+- `GAP-202` (onboarding quality gates) is complete with `MS-14` Milestones A-D implemented.
+- `GAP-203` (reminder routing flexibility) is complete with `MS-15` Milestones A-D implemented.
 
 ## P1 (Must complete before scale-up)
 1. None.
@@ -54,6 +56,8 @@ Current offer-parity note:
 - Self-serve onboarding checklist and managed setup request path.
 - Day-One Activation milestone tracking, SLA breach alerting, and Revenue Leak Audit delivery workflow.
 - Cursor-based cron catch-up guarantees for monthly reset and bi-weekly reporting with operator backlog controls.
+- Onboarding quality readiness gates with enforce/warn/off policy, transition blocking, and override audit trail.
+- Reminder recipient routing policy with owner/assistant/team fallback chain, de-duplication, and delivery audit visibility.
 
 ## Tracking Rule
 Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `99-ARCHIVE-SYSTEM-BLOCKERS.md` archive form.

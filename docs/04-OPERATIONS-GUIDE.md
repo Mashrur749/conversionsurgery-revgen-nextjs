@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-13 Milestone D working tree`
+Last verified commit: `MS-15 Milestone D working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -24,6 +24,8 @@ Last verified commit: `MS-13 Milestone D working tree`
 17. Spot-check invoice UX parity: invoice line items include add-on labels for matching periods and CSV download works from client billing usage card.
 18. Review admin client `Add-On Charge Provenance` card and clear any unresolved `disputed`/`reviewing` annotations.
 19. Review Knowledge Gap Queue (`/admin/clients/<id>/knowledge?tab=queue`) for stale high-priority items and unresolved owners.
+20. Review `Onboarding Quality Gates` panel for onboarding clients and clear critical failures before autonomous mode.
+21. Review reminder delivery audit outcomes (`reminder_delivery_sent`, `reminder_delivery_no_recipient`) and fix routing-policy gaps for any no-recipient cases.
 
 ## Cron Operations
 
@@ -92,6 +94,8 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Onboarding SLA checker marks overdue Day-One milestones and opens operator alerts/tasks.
 - Voice usage rollup upserts add-on ledger rows by billing period with idempotency protection.
 - Knowledge-gap alert cron sends one stale high-priority digest/day to agency owners when overdue queue items exist.
+- Autonomous mode transitions are blocked when onboarding quality critical gates fail (unless audited override is active).
+- Internal appointment/booking reminders resolve recipients via routing policy (owner/assistant/team fallback chain) instead of owner-only assumptions.
 
 ## Access Management Operations
 

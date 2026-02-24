@@ -7,15 +7,15 @@ Objective: Ensure paying-client delivery matches every sold promise.
 ## Status Tags
 - `P0: DONE`
 - `P1: DONE`
-- `P2: OPEN`
+- `P2: DONE`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-13 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-15 Milestone D working tree`
 
 ## Executive Summary
-The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
+The current platform is launch-ready and implementation-complete for reviewed offer parity (`GAP-001..GAP-203`).
 
-Highest-risk mismatches for paying clients are now concentrated in:
-- Process/scale hardening (`GAP-202..GAP-203`).
+Remaining non-code launch dependency:
+- Legal sign-off items listed in `docs/GRAND-SLAM-OFFER.md` Part 10.
 
 ## Spec Mapping (One Spec Per Gap)
 
@@ -34,8 +34,8 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Done |
 | GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Done |
 | GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Done |
-| GAP-202 | P2 | `docs/specs/MS-14-ONBOARDING-QUALITY-GATES.md` | Spec Ready |
-| GAP-203 | P2 | `docs/specs/MS-15-REMINDER-ROUTING-FLEXIBILITY.md` | Spec Ready |
+| GAP-202 | P2 | `docs/specs/MS-14-ONBOARDING-QUALITY-GATES.md` | Done |
+| GAP-203 | P2 | `docs/specs/MS-15-REMINDER-ROUTING-FLEXIBILITY.md` | Done |
 
 ## Component Parity Matrix
 
@@ -487,15 +487,39 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `src/app/api/cron/route.ts`
 
 2. `GAP-202` Onboarding quality gates beyond "presence checks"
-- Current checklist uses binary existence; offer assumes production-quality setup.
+- Progress (2026-02-24): `MS-14` Milestones A-D completed.
+- Added policy-based onboarding quality gate model (`enforce/warn/off`) with centralized thresholds and weighted scoring.
+- Added deterministic evaluator + persisted snapshot trail + override lifecycle with reason and actor audit events.
+- Added autonomous transition enforcement in admin client update flow (`409` with gate failures when blocked).
+- Added admin onboarding-quality API and operator panel with re-evaluate, override, and clear-override controls.
+- Added self-serve onboarding checklist visibility for quality readiness and action guidance.
+- Remaining: none (`MS-14` complete).
 - Evidence:
+  - `src/lib/services/onboarding-quality-policy.ts`
+  - `src/lib/services/onboarding-quality.ts`
+  - `src/db/schema/onboarding-quality.ts`
+  - `src/app/api/admin/clients/[id]/route.ts`
+  - `src/app/api/admin/clients/[id]/onboarding/quality/route.ts`
+  - `src/app/(dashboard)/admin/clients/[id]/onboarding-quality-panel.tsx`
   - `src/app/api/public/onboarding/status/route.ts`
+  - `src/app/signup/next-steps/onboarding-checklist.tsx`
 
 3. `GAP-203` Reminder recipient routing flexibility
-- Contractor reminders currently target owner phone; offer operations may require routing to assistant/office role by policy.
+- Progress (2026-02-24): `MS-15` Milestones A-D completed.
+- Added client-level reminder routing policy model with role-based primary/fallback/secondary recipient configuration by reminder type.
+- Added centralized recipient resolver with deterministic chain ordering and phone de-duplication.
+- Updated appointment reminder scheduling to depend on routed recipient availability (not owner-phone assumptions).
+- Updated scheduled reminder processing to execute fallback chain, log final recipient/fallback path, and emit no-recipient audit alerts.
+- Updated booking notification flow to use routing policy with fallback/secondary sends and delivery audit events.
+- Added admin reminder-routing API + settings panel with recipient-chain preview and policy-change history.
+- Remaining: none (`MS-15` complete).
 - Evidence:
+  - `src/lib/services/reminder-routing.ts`
+  - `src/app/api/admin/clients/[id]/reminder-routing/route.ts`
+  - `src/app/(dashboard)/admin/clients/[id]/reminder-routing-panel.tsx`
   - `src/app/api/cron/process-scheduled/route.ts`
   - `src/lib/automations/appointment-reminder.ts`
+  - `src/lib/services/appointment-booking.ts`
 
 ## Recommended Execution Order
 

@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-13 Milestone D working tree`
+Last verified commit: `MS-15 Milestone D working tree`
 
 ## 0. Preflight (Run First)
 
@@ -373,11 +373,48 @@ Expected:
 - Bulk actions update selected rows with per-row success/failure handling.
 - Stale alert cron returns deterministic payload and dedupes to one digest/day.
 
-### Step 16: Final smoke
+### Step 16: Onboarding quality gates parity (MS-14)
+1. Open `/admin/clients/<id>` and locate `Onboarding Quality Gates` panel.
+2. Click `Re-evaluate` and confirm gate scores + action checklist render.
+3. Attempt to set client `aiAgentMode=autonomous` while at least one critical gate is failing.
+
+Expected:
+- API returns `409` with onboarding quality payload and failure reasons.
+- Admin panel shows failed gates and ordered action guidance.
+
+4. In panel, add override reason (>= 10 chars) and click `Approve Override`.
+5. Optionally toggle `Also enable autonomous mode now`.
+6. Re-run `Re-evaluate` and confirm override state and decision reflect allowed transition.
+7. Clear override and confirm decision returns to blocked (when critical failures still exist).
+
+Expected:
+- Override set/clear actions are persisted and auditable.
+- Autonomous mode transition is policy-controlled (`enforce/warn/off`) and deterministic.
+
+### Step 17: Reminder routing flexibility parity (MS-15)
+1. Open `/admin/clients/<id>` and locate `Reminder Routing Policy` panel.
+2. Configure:
+- `Appointment Reminder (Internal)`: primary=`assistant`, fallback1=`owner`
+- `Booking Notification`: primary=`owner`, fallback1=`assistant`, secondary=`escalation_team` (optional)
+3. Save policy and verify `Resolved chain preview` updates.
+4. Schedule an appointment and run:
+```bash
+curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bearer $CRON_SECRET"
+```
+5. Confirm internal reminder delivery follows configured route (assistant-first in this test).
+6. Temporarily remove/disable primary recipient phone and rerun reminder path.
+
+Expected:
+- Fallback chain engages deterministically when primary recipient is unavailable.
+- Duplicate phones are de-duplicated (no duplicate SMS to same number).
+- Audit entries include reminder delivery outcomes (`reminder_delivery_sent` / `reminder_delivery_no_recipient`).
+
+### Step 18: Final smoke
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
 4. Validate Day-One card and checklist remain in sync after audit delivery and manual milestone completion.
+5. Validate onboarding quality and reminder routing panels load without API/auth errors for assigned-scope agency users with client access.
 
 ## 3. Useful Commands
 
@@ -394,6 +431,7 @@ npx vitest run src/lib/services/without-us-model.test.ts
 npx vitest run src/lib/services/day-one-policy.test.ts
 npx vitest run src/lib/services/cancellation-policy.test.ts src/lib/services/data-export-bundle.test.ts src/lib/services/data-export-requests.test.ts
 npx vitest run src/lib/services/knowledge-gap-validation.test.ts src/lib/services/knowledge-gap-queue.test.ts
+npx vitest run src/lib/services/onboarding-quality.test.ts src/lib/services/reminder-routing.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"

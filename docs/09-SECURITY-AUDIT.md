@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `MS-13 Milestone D working tree`
+**Last verified commit:** `MS-15 Milestone D working tree`
 
 ---
 
@@ -229,5 +229,13 @@ Since the original audit window, new managed-service features (Smart Assist work
    - agency client-scoped queue endpoints (`GET /api/admin/clients/[id]/knowledge/gaps`, `PATCH /api/admin/clients/[id]/knowledge/gaps/[gapId]`, `POST /api/admin/clients/[id]/knowledge/gaps/bulk`) guarded by `agency.knowledge.edit`.
    - cron stale-gap digest endpoint (`GET /api/cron/knowledge-gap-alerts`) guarded by `verifyCronSecret()`.
    - no new public/auth-bypass surfaces.
+11. Onboarding quality gates (`MS-14`) add:
+   - agency client-scoped onboarding-quality endpoints (`GET/PATCH /api/admin/clients/[id]/onboarding/quality`) guarded by `adminClientRoute` permissions (`agency.clients.view` / `agency.clients.edit`).
+   - autonomous mode transition enforcement on `PATCH /api/admin/clients/[id]` (same permission boundary), returning deterministic `409` blocks instead of silent unsafe transitions.
+   - no new public auth exceptions; public checklist surface remains constrained by `clientId + email` pair.
+12. Reminder routing flexibility (`MS-15`) adds:
+   - agency client-scoped routing policy endpoints (`GET/PATCH /api/admin/clients/[id]/reminder-routing`) under existing client view/edit permissions.
+   - internal reminder delivery logs written to existing `audit_log` without expanding auth model.
+   - cron reminder execution remains under existing `verifyCronSecret()` guard on `/api/cron/process-scheduled`.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

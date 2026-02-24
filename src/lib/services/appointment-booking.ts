@@ -6,12 +6,13 @@
  */
 
 import { getDb } from '@/db';
-import { appointments, businessHours, clients, leads, scheduledMessages } from '@/db/schema';
+import { appointments, auditLog, businessHours, clients, leads, scheduledMessages } from '@/db/schema';
 import { eq, and, gte, lte, not, inArray } from 'drizzle-orm';
 import { scheduleAppointmentReminders } from '@/lib/automations/appointment-reminder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { createEvent } from '@/lib/services/calendar';
 import { format, addDays, addHours, parse, isBefore, isAfter } from 'date-fns';
+import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
 
 export interface TimeSlot {
   date: string;        // YYYY-MM-DD
@@ -197,18 +198,139 @@ export async function bookAppointment(
   const formattedDate = format(appointmentDateTime, 'EEEE, MMM d');
 
   // Notify contractor immediately
-  if (client.twilioNumber && client.phone) {
+  if (client.twilioNumber) {
     const contractorMsg = `New booking: ${lead.name || 'Customer'}, ${lead.projectType || 'service call'}, ${formattedDate} at ${formattedTime}${lead.address ? `, ${lead.address}` : ''}. Their #: ${lead.phone}`;
-    await sendCompliantMessage({
-      clientId,
-      to: client.phone,
-      from: client.twilioNumber,
-      body: contractorMsg,
-      messageClassification: 'proactive_outreach',
-      messageCategory: 'transactional',
-      consentBasis: { type: 'existing_consent' },
-      metadata: { source: 'booking_notification', appointmentId: result.appointmentId },
-    }).catch(() => {}); // Don't block on contractor notification failure
+    const routing = await resolveReminderRecipients(clientId, 'booking_notification');
+    const attempts: Array<{
+      role: string;
+      phone: string;
+      status: 'sent' | 'failed';
+      stage: 'primary_chain' | 'secondary';
+      reason?: string;
+    }> = [];
+
+    let deliveredRecipient: (typeof routing.primaryChain)[number] | null = null;
+
+    for (const recipient of routing.primaryChain) {
+      try {
+        const sendOutcome = await sendCompliantMessage({
+          clientId,
+          to: recipient.phone,
+          from: client.twilioNumber,
+          body: contractorMsg,
+          messageClassification: 'proactive_outreach',
+          messageCategory: 'transactional',
+          consentBasis: { type: 'existing_consent' },
+          metadata: {
+            source: 'booking_notification',
+            appointmentId: result.appointmentId,
+            reminderRole: recipient.role,
+          },
+        });
+
+        if (sendOutcome.blocked) {
+          attempts.push({
+            role: recipient.role,
+            phone: recipient.phone,
+            status: 'failed',
+            stage: 'primary_chain',
+            reason: `blocked:${sendOutcome.blockReason || 'unknown'}`,
+          });
+          continue;
+        }
+
+        attempts.push({
+          role: recipient.role,
+          phone: recipient.phone,
+          status: 'sent',
+          stage: 'primary_chain',
+        });
+        deliveredRecipient = recipient;
+        break;
+      } catch (error) {
+        attempts.push({
+          role: recipient.role,
+          phone: recipient.phone,
+          status: 'failed',
+          stage: 'primary_chain',
+          reason: error instanceof Error ? error.message : 'send_failed',
+        });
+      }
+    }
+
+    if (deliveredRecipient) {
+      for (const secondaryRecipient of routing.secondaryRecipients) {
+        try {
+          const secondaryResult = await sendCompliantMessage({
+            clientId,
+            to: secondaryRecipient.phone,
+            from: client.twilioNumber,
+            body: contractorMsg,
+            messageClassification: 'proactive_outreach',
+            messageCategory: 'transactional',
+            consentBasis: { type: 'existing_consent' },
+            metadata: {
+              source: 'booking_notification_secondary',
+              appointmentId: result.appointmentId,
+              reminderRole: secondaryRecipient.role,
+            },
+          });
+
+          attempts.push({
+            role: secondaryRecipient.role,
+            phone: secondaryRecipient.phone,
+            status: secondaryResult.blocked ? 'failed' : 'sent',
+            stage: 'secondary',
+            reason: secondaryResult.blocked
+              ? `blocked:${secondaryResult.blockReason || 'unknown'}`
+              : undefined,
+          });
+        } catch (error) {
+          attempts.push({
+            role: secondaryRecipient.role,
+            phone: secondaryRecipient.phone,
+            status: 'failed',
+            stage: 'secondary',
+            reason: error instanceof Error ? error.message : 'send_failed',
+          });
+        }
+      }
+
+      await db.insert(auditLog).values({
+        personId: null,
+        clientId,
+        action: 'reminder_delivery_sent',
+        resourceType: 'appointment',
+        resourceId: result.appointmentId,
+        metadata: {
+          reminderType: 'booking_notification',
+          deliveredTo: {
+            role: deliveredRecipient.role,
+            phone: deliveredRecipient.phone,
+            personId: deliveredRecipient.personId,
+            membershipId: deliveredRecipient.membershipId,
+            label: deliveredRecipient.label,
+          },
+          fallbackUsed: routing.primaryChain[0]?.phone !== deliveredRecipient.phone,
+          attempts,
+        },
+        createdAt: new Date(),
+      });
+    } else {
+      await db.insert(auditLog).values({
+        personId: null,
+        clientId,
+        action: 'reminder_delivery_no_recipient',
+        resourceType: 'appointment',
+        resourceId: result.appointmentId,
+        metadata: {
+          reminderType: 'booking_notification',
+          reason: routing.primaryChain.length === 0 ? 'no_valid_recipient' : 'all_recipients_unreachable',
+          attempts,
+        },
+        createdAt: new Date(),
+      });
+    }
   }
 
   // Create calendar event if client has calendar integration

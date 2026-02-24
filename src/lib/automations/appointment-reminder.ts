@@ -1,7 +1,8 @@
 import { getDb, clients, leads, appointments, scheduledMessages } from '@/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { renderTemplate } from '@/lib/utils/templates';
 import { subDays, subHours, parse, format } from 'date-fns';
+import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
 
 interface AppointmentPayload {
   leadId: string;
@@ -100,7 +101,7 @@ export async function scheduleAppointmentReminders(payload: AppointmentPayload):
     })
     .where(and(
       eq(scheduledMessages.leadId, leadId),
-      eq(scheduledMessages.sequenceType, 'appointment_reminder'),
+      inArray(scheduledMessages.sequenceType, ['appointment_reminder', 'appointment_reminder_contractor']),
       eq(scheduledMessages.sent, false),
       eq(scheduledMessages.cancelled, false)
     ));
@@ -111,10 +112,14 @@ export async function scheduleAppointmentReminders(payload: AppointmentPayload):
   const appointmentAddress = address || lead.address || 'the scheduled location';
 
   const scheduledIds: string[] = [];
+  const contractorRouting = await resolveReminderRecipients(
+    clientId,
+    'appointment_reminder_contractor'
+  );
   const plan = buildAppointmentReminderPlan(
     appointmentDateTime,
     new Date(),
-    !!client.phone
+    contractorRouting.primaryChain.length > 0
   );
 
   // 5/6. Insert reminder plan entries

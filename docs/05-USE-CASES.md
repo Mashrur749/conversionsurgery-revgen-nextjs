@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `MS-13 Milestone D working tree`
+Last verified commit: `MS-15 Milestone D working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -160,6 +160,22 @@ Outcome: report delivery is auditable and operationally visible instead of silen
 4. Queue metrics track opened/closed/aging, and stale high-priority gaps trigger daily agency-owner digest alerts.
 
 Outcome: knowledge quality improvements are operationally owned and auditable, not ad hoc.
+
+### U11d. Onboarding quality-gated autonomous transition (MS-14 A-D)
+1. Operator reviews onboarding quality gates for a pending client from `/admin/clients/<id>`.
+2. Critical gate failures block autonomous mode transition automatically.
+3. Operator can approve temporary override with mandatory reason and audit trail when exceptional conditions apply.
+4. After remediation, operator re-evaluates and clears override to return to policy-driven readiness.
+
+Outcome: autonomous AI is enabled only when onboarding quality is production-ready (or explicitly risk-accepted).
+
+### U11e. Reminder recipient routing with fallback chain (MS-15 A-D)
+1. Operator configures reminder routing policy by type (appointment internal reminder, booking notification).
+2. System resolves primary recipient by role and applies deterministic fallback chain when unavailable.
+3. Optional secondary recipient receives mirrored reminder when configured.
+4. Delivery events log final recipient, fallback usage, and no-recipient failures for operator review.
+
+Outcome: operational reminders can be delegated to assistant/team without fragile owner-only dependency.
 
 ### U12. Cancellation + full data export fulfillment (MS-07)
 1. Client submits cancellation notice through `/client/cancel`.

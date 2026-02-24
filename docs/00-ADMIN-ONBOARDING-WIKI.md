@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
-Last verified commit: `MS-13 Milestone D working tree`
+Last verified commit: `MS-15 Milestone D working tree`
 
 ## Canonical Order (Read + Execute)
 
@@ -63,6 +63,8 @@ Cadence rule:
 9. Confirm `GAP-104` is fully done: delivery lifecycle, deterministic retries, operator dashboard/retry actions, and client-facing delivery/download status are all live.
 10. Confirm `GAP-105` is marked done: cron catch-up cursor controls are visible in `/admin/settings` and backlog can be manually cleared per job.
 11. Confirm `GAP-201` is marked done: operator can triage/assign/resolve/verify from `/admin/clients/<id>/knowledge?tab=queue`.
+12. Confirm `GAP-202` is marked done: autonomous-mode transition is blocked until onboarding quality gates pass (or an auditable override is approved).
+13. Confirm `GAP-203` is marked done: reminder routing policy can be set from `/admin/clients/<id>` and chain previews + delivery audit entries are visible.
 
 ## Confidence Criteria (Go/No-Go)
 
@@ -71,4 +73,4 @@ Go only if all are true:
 2. You can run daily ops from `04-OPERATIONS-GUIDE.md` in under 30 minutes.
 3. You can recover from one simulated operational failure without engineering help.
 4. `07-LAUNCH-READINESS.md` and `06-REMAINING-GAPS.md` show no open blockers.
-5. `10-OFFER-PARITY-GAPS.md` has no unresolved `P0/P1` items; remaining `P2` items (`GAP-202`, `GAP-203`) are tracked before scale-up.
+5. `10-OFFER-PARITY-GAPS.md` has no unresolved `P0/P1/P2` implementation items (`GAP-001..GAP-203` done); only legal-review dependencies remain from offer Part 10.

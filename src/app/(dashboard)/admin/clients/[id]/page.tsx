@@ -22,6 +22,8 @@ import { toQuarterlyCampaignSummaryDto } from '@/lib/services/quarterly-campaign
 import { getDayOneActivationSummary } from '@/lib/services/day-one-activation';
 import { DayOneActivationCard } from './day-one-activation-card';
 import { AddonProvenanceCard } from './addon-provenance-card';
+import { OnboardingQualityPanel } from './onboarding-quality-panel';
+import { ReminderRoutingPanel } from './reminder-routing-panel';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -260,6 +262,13 @@ export default async function ClientDetailPage({ params }: Props) {
               </CardHeader>
             </Card>
           )}
+
+          <OnboardingQualityPanel
+            clientId={client.id}
+            currentAiMode={(client.aiAgentMode as 'off' | 'assist' | 'autonomous') ?? 'assist'}
+          />
+
+          <ReminderRoutingPanel clientId={client.id} />
 
           <AddonProvenanceCard clientId={client.id} />
 

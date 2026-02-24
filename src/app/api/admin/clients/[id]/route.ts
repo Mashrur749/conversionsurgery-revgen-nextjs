@@ -5,6 +5,7 @@ import { clients, subscriptions, scheduledMessages } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { AI_ASSIST_CATEGORIES } from '@/lib/services/ai-send-policy';
+import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality';
 import { z } from 'zod';
 import { sendOnboardingNotification } from '@/lib/services/agency-communication';
 import { cancelSubscription } from '@/lib/services/subscription';
@@ -71,7 +72,7 @@ const updateClientSchema = z.object({
 
 export const PATCH = adminClientRoute<{ id: string }>(
   { permission: AGENCY_PERMISSIONS.CLIENTS_EDIT, clientIdFrom: (p) => p.id },
-  async ({ request, clientId }) => {
+  async ({ request, clientId, session }) => {
     const body = await request.json();
     const data = updateClientSchema.parse(body);
 
@@ -84,10 +85,36 @@ export const PATCH = adminClientRoute<{ id: string }>(
 
     // Check previous status to detect activation
     const [existing] = await db
-      .select({ status: clients.status })
+      .select({ status: clients.status, aiAgentMode: clients.aiAgentMode })
       .from(clients)
       .where(eq(clients.id, clientId))
       .limit(1);
+
+    const autonomousTransitionRequested =
+      data.aiAgentMode === 'autonomous' && existing?.aiAgentMode !== 'autonomous';
+
+    if (autonomousTransitionRequested) {
+      const readiness = await getOnboardingQualityReadiness({
+        clientId,
+        source: 'autonomous_transition',
+        evaluatedByPersonId: session.personId,
+        persistSnapshot: true,
+      });
+
+      if (!readiness.decision.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Autonomous mode blocked: onboarding quality gates are not ready.',
+            onboardingQuality: {
+              evaluation: readiness.evaluation,
+              decision: readiness.decision,
+              override: readiness.override,
+            },
+          },
+          { status: 409 }
+        );
+      }
+    }
 
     const [updated] = await db
       .update(clients)

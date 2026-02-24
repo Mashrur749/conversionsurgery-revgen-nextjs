@@ -232,6 +232,20 @@
       "when": 1772005800000,
       "tag": "0032_bright_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1772009400000,
+      "tag": "0033_solid_nightmask",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1772013000000,
+      "tag": "0034_abstract_sebastian_shaw",
+      "breakpoints": true
     }
   ]
 }

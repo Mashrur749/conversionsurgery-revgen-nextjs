@@ -6,6 +6,7 @@ import {
   getDayOneActivationSummary,
   syncDayOneSystemMilestones,
 } from '@/lib/services/day-one-activation';
+import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality';
 
 export async function GET(request: NextRequest) {
   const clientId = request.nextUrl.searchParams.get('clientId');
@@ -32,6 +33,9 @@ export async function GET(request: NextRequest) {
     db.select({ count: count() }).from(clientMemberships).where(eq(clientMemberships.clientId, clientId)),
   ]);
   let dayOne: Awaited<ReturnType<typeof getDayOneActivationSummary>> | null = null;
+  let onboardingQuality:
+    | Awaited<ReturnType<typeof getOnboardingQualityReadiness>>
+    | null = null;
   try {
     await syncDayOneSystemMilestones({
       id: client.id,
@@ -39,7 +43,14 @@ export async function GET(request: NextRequest) {
       twilioNumber: client.twilioNumber,
       missedCallSmsEnabled: client.missedCallSmsEnabled,
     });
-    dayOne = await getDayOneActivationSummary(client.id);
+    [dayOne, onboardingQuality] = await Promise.all([
+      getDayOneActivationSummary(client.id),
+      getOnboardingQualityReadiness({
+        clientId: client.id,
+        source: 'public_status',
+        persistSnapshot: false,
+      }),
+    ]);
   } catch (dayOneError) {
     console.error(
       `[PublicOnboardingStatus] Failed to load day-one status for ${client.id}:`,
@@ -101,5 +112,6 @@ export async function GET(request: NextRequest) {
       { title: 'Review compliance settings', slug: 'compliance-basics' },
     ],
     dayOne,
+    onboardingQuality,
   });
 }
