@@ -7,6 +7,7 @@ import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { initiateRingGroup } from '@/lib/services/ring-group';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 import { checkAndSuggestFlows, handleApprovalResponse } from '@/lib/services/flow-suggestions';
+import { triggerEstimateFollowupFromSmsCommand } from '@/lib/services/estimate-triggers';
 import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
 import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/services/media';
 import { processIncomingMessage } from '@/lib/agent/orchestrator';
@@ -64,6 +65,21 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     const approvalCheck = await handleApprovalResponse(client.id, messageBody);
     if (approvalCheck.handled) {
       return { processed: true, action: approvalCheck.action };
+    }
+
+    const estimateCommandResult = await triggerEstimateFollowupFromSmsCommand({
+      clientId: client.id,
+      messageBody,
+    });
+    if (estimateCommandResult.handled) {
+      await sendSMS(senderPhone, estimateCommandResult.message, client.twilioNumber!);
+      return {
+        processed: true,
+        action: estimateCommandResult.success
+          ? 'estimate_sequence_triggered_sms'
+          : 'estimate_sequence_command_error',
+        leadId: estimateCommandResult.leadId,
+      };
     }
   }
 
