@@ -17,7 +17,6 @@ The current platform is launch-ready for the earlier managed-service baseline, b
 Highest-risk mismatches for paying clients are:
 - Unlimited messaging/no caps/no overages is not implemented.
 - Smart assist auto-send behavior is not implemented.
-- Low-friction estimate trigger stack is incomplete.
 - Quarterly Growth Blitz operations are not productized.
 - Cancellation/data-export contract terms are not fully implemented in product workflows.
 
@@ -27,7 +26,7 @@ Highest-risk mismatches for paying clients are:
 |---|---|---|---|
 | GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Done |
 | GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Done |
-| GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | In Progress (Milestones A-C Done) |
+| GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Done |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
 | GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
@@ -47,7 +46,7 @@ Highest-risk mismatches for paying clients are:
 |---|---|---|
 | Revenue Recovery Engine core automations (missed call, follow-up, reminders, re-engagement) | Core automation paths exist | Partial |
 | Near-instant response during compliant hours | Implemented with quiet-hours blocking/queue behavior | Partial |
-| Estimate Trigger Methods (SMS keyword, quick-reply, dashboard, fallback nudge) | Dashboard/API exists; full low-friction trigger stack missing | Gap |
+| Estimate Trigger Methods (SMS keyword, quick-reply, dashboard, fallback nudge) | All trigger paths implemented with unified service + cron fallback | Ready |
 | Unlimited conversations/messages, no caps/no overages | Message limits + overage billing active | Gap |
 | Dedicated number + CRM | Implemented | Ready |
 | Additional team/number paid add-ons | Limits enforced; add-on billing workflow not fully productized | Gap |
@@ -131,11 +130,17 @@ Highest-risk mismatches for paying clients are:
 - Replaced `start_sequences` throw-path with action dispatch map and working prompt quick-reply execution.
 - Wired prompt `YES` handling to unified estimate trigger service with `prompt_quick_reply` source metadata.
 - Added expiry-safe fallback behavior and operator notification for expired/missing prompts or execution failures.
-- Remaining: Milestone D (fallback nudge cron).
+- Progress (2026-02-24): `MS-03` Milestone D completed.
+- Added fallback nudge cron endpoint for stale `contacted` leads (5+ days) without active estimate sequences.
+- Added reusable stale-lead query helper with nudge cooldown enforcement (72h) and eligibility tests.
+- Wired orchestrator dispatch for daily execution and one-tap prompt semantics (`YES` to start sequence).
+- Remaining: none (`MS-03` complete).
 - Evidence:
   - `src/lib/services/estimate-command-parser.ts`
   - `src/lib/services/estimate-triggers.ts`
+  - `src/lib/services/estimate-nudge.ts`
   - `src/app/api/sequences/estimate/route.ts`
+  - `src/app/api/cron/estimate-fallback-nudges/route.ts`
   - `src/lib/automations/incoming-sms.ts`
   - `src/lib/services/agency-communication.ts`
 

@@ -20,7 +20,9 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 - `MS-03` Milestone B: complete.
   - Commits: `650a32c`
 - `MS-03` Milestone C: complete.
-  - Commits: plus current Milestone C commit
+  - Commits: `e90a35e`
+- `MS-03` Milestone D: complete.
+  - Commits: plus current Milestone D commit
 
 ## Current Focus
 - `MS-03` (Estimate trigger stack)
@@ -44,7 +46,11 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - quick-reply `YES` dispatch map wiring for prompt actions
   - working `start_sequences` execution path via unified trigger service
   - expiry-safe fallback + operator notifications for manual follow-up
-- Next: MS-03 Milestone D (fallback nudge cron)
+- `MS-03` Milestone D delivered:
+  - fallback nudge cron for stale contacted leads
+  - cooldown-safe stale-lead query helper and eligibility checks
+  - daily orchestrator dispatch wiring
+- Next: MS-04 Milestone A (smart assist scheduling primitives)
 
 ## Required Skills For Any MS Milestone
 - `ms-spec-delivery`
@@ -64,5 +70,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-03 Milestone D only.
+Continue with MS-04 Milestone A only.
 ```

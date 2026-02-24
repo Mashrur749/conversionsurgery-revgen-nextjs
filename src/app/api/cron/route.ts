@@ -176,6 +176,11 @@ export async function POST(request: NextRequest) {
     // ── Daily 10am UTC ───────────────────────────────────────
     if (hour === 10 && minute < 10) {
       results.winBack = await dispatch(baseUrl, '/api/cron/win-back', cronSecret!);
+      results.estimateFallbackNudges = await dispatch(
+        baseUrl,
+        '/api/cron/estimate-fallback-nudges',
+        cronSecret!
+      );
     }
 
     // ── Weekly Monday 7am UTC ────────────────────────────────
