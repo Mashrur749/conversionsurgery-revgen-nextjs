@@ -9,7 +9,7 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-10 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-11 Milestone A working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
@@ -31,7 +31,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Done |
 | GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Done |
 | GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Done |
-| GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Spec Ready |
+| GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | In Progress |
 | GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
 | GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
 | GAP-202 | P2 | `docs/specs/MS-14-ONBOARDING-QUALITY-GATES.md` | Spec Ready |
@@ -382,9 +382,18 @@ Highest-risk mismatches for paying clients are now concentrated in:
 
 4. `GAP-104` Report delivery observability and retry UX
 - Offer depends on trust through reporting; current docs note delivery visibility is limited.
+- Progress (2026-02-24): `MS-11` Milestone A completed.
+- Added explicit report delivery lifecycle model (`generated`, `queued`, `sent`, `failed`, `retried`) with per-cycle records and transition event audit trail.
+- Added centralized lifecycle service and moved bi-weekly cron delivery-state mutation into the service.
+- Added latest-delivery query helper for client-scoped status retrieval.
+- Remaining: Milestones B-D (retry engine, operator dashboard/retry UX, client-facing delivery clarity).
 - Evidence:
+  - `src/db/schema/report-deliveries.ts`
+  - `drizzle/0030_lively_rage.sql`
+  - `src/lib/services/report-delivery.ts`
+  - `src/lib/services/report-delivery.test.ts`
   - `src/lib/services/report-generation.ts`
-  - `docs/08-UX-AUDIT.md`
+  - `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md`
 
 5. `GAP-105` Guaranteed operational catch-up when cron windows are missed
 - Offer relies on deterministic monthly/biweekly outcomes; current jobs use strict run windows without explicit catch-up semantics.

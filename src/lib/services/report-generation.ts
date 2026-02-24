@@ -14,6 +14,10 @@ import { getTeamMembers } from '@/lib/services/team-bridge';
 import { sendEmail } from '@/lib/services/resend';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
 import {
+  ensureReportDeliveryCycle,
+  transitionReportDeliveryState,
+} from '@/lib/services/report-delivery';
+import {
   calculateWithoutUsModel,
   mergeWithoutUsAssumptions,
   type WithoutUsModelAssumptionOverrides,
@@ -238,6 +242,16 @@ function buildWithoutUsEmailSummary(withoutUsModel: WithoutUsModelResult | null)
   `;
 }
 
+function stringifyError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return 'Unknown error';
+  }
+}
+
 export async function generateClientReport(
   clientId: string,
   startDate: string,
@@ -417,16 +431,62 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
 
   let generated = 0;
   let emailed = 0;
+  let failed = 0;
 
   for (const client of activeClients) {
+    let delivery: Awaited<ReturnType<typeof ensureReportDeliveryCycle>> | null = null;
+
     try {
-      const report = await generateClientReport(
-        client.id,
-        periodStartStr,
-        periodEndStr,
-        'bi-weekly'
-      );
-      generated++;
+      delivery = await ensureReportDeliveryCycle({
+        clientId: client.id,
+        reportType: 'bi-weekly',
+        periodStart: periodStartStr,
+        periodEnd: periodEndStr,
+        channel: 'email',
+        recipient: client.email ?? null,
+        channelMetadata: {
+          recipient: client.email ?? null,
+        },
+      });
+
+      if (delivery.state === 'sent') {
+        continue;
+      }
+
+      let report = null as Awaited<ReturnType<typeof generateClientReport>> | null;
+
+      if (delivery.reportId) {
+        const [existingReport] = await db
+          .select()
+          .from(reports)
+          .where(eq(reports.id, delivery.reportId))
+          .limit(1);
+        report = existingReport ?? null;
+      }
+
+      if (!report) {
+        report = await generateClientReport(
+          client.id,
+          periodStartStr,
+          periodEndStr,
+          'bi-weekly'
+        );
+        generated++;
+
+        await transitionReportDeliveryState(delivery.id, 'generated', {
+          reportId: report.id,
+          recipient: client.email ?? null,
+          channelMetadata: {
+            recipient: client.email ?? null,
+            reportId: report.id,
+          },
+          metadata: {
+            reportId: report.id,
+            periodStart: periodStartStr,
+            periodEnd: periodEndStr,
+          },
+        });
+      }
 
       if (client.email) {
         const summary = (report.roiSummary as { withoutUsModel?: WithoutUsModelResult } | null) || null;
@@ -434,7 +494,20 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
           summary?.withoutUsModel || null
         );
 
-        await sendEmail({
+        await transitionReportDeliveryState(delivery.id, 'queued', {
+          reportId: report.id,
+          recipient: client.email,
+          channelMetadata: {
+            recipient: client.email,
+            reportId: report.id,
+          },
+          incrementAttempt: true,
+          metadata: {
+            queuedFor: client.email,
+          },
+        });
+
+        const emailResult = await sendEmail({
           to: client.email,
           subject: `${client.businessName} — Bi-weekly Performance Report`,
           html: `
@@ -446,24 +519,83 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
             </div>
           `,
         });
-        emailed++;
+
+        if (emailResult.success) {
+          emailed++;
+          await transitionReportDeliveryState(delivery.id, 'sent', {
+            reportId: report.id,
+            recipient: client.email,
+            channelMetadata: {
+              recipient: client.email,
+              providerMessageId: emailResult.id,
+            },
+            metadata: {
+              provider: 'resend',
+              providerMessageId: emailResult.id,
+            },
+            errorCode: null,
+            errorMessage: null,
+          });
+        } else {
+          failed++;
+          await transitionReportDeliveryState(delivery.id, 'failed', {
+            reportId: report.id,
+            recipient: client.email,
+            errorCode: 'email_send_failed',
+            errorMessage: stringifyError(emailResult.error),
+            metadata: {
+              provider: 'resend',
+            },
+          });
+        }
+      } else {
+        failed++;
+        await transitionReportDeliveryState(delivery.id, 'failed', {
+          reportId: report.id,
+          errorCode: 'missing_recipient',
+          errorMessage: 'Client email is missing',
+          metadata: {
+            reason: 'Client email not configured',
+          },
+        });
       }
     } catch (error) {
       console.error('[BiWeeklyReports] Failed for client', client.id, error);
+      failed++;
+      if (!delivery?.id) {
+        continue;
+      }
+
+      await transitionReportDeliveryState(delivery.id, 'failed', {
+        recipient: client.email ?? null,
+        errorCode: 'report_generation_failed',
+        errorMessage: stringifyError(error),
+        metadata: {
+          periodStart: periodStartStr,
+          periodEnd: periodEndStr,
+        },
+      }).catch((transitionError) => {
+        console.error(
+          '[BiWeeklyReports] Failed to transition report delivery state',
+          transitionError
+        );
+      });
     }
   }
 
-  await db
-    .insert(systemSettings)
-    .values({
-      key: 'last_biweekly_report_period_end',
-      value: periodEndStr,
-      description: 'Last bi-weekly report period end date processed',
-    })
-    .onConflictDoUpdate({
-      target: systemSettings.key,
-      set: { value: periodEndStr, updatedAt: new Date() },
-    });
+  if (failed === 0) {
+    await db
+      .insert(systemSettings)
+      .values({
+        key: 'last_biweekly_report_period_end',
+        value: periodEndStr,
+        description: 'Last bi-weekly report period end date processed',
+      })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value: periodEndStr, updatedAt: new Date() },
+      });
+  }
 
   return {
     skipped: false,
@@ -471,5 +603,8 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
     periodEnd: periodEndStr,
     generated,
     emailed,
+    failed,
+    lastRunUpdated: failed === 0,
+    requiresManualRetry: failed > 0,
   };
 }

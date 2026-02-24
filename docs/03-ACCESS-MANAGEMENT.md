@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-10 Milestone D working tree`
+Last verified commit: `MS-11 Milestone A working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -102,6 +102,12 @@ Permission templates and overrides resolve effective access at runtime.
 - Added admin provenance/dispute routes remain in existing billing permission surfaces:
 5. `GET /api/admin/clients/[id]/billing/addons` (`agency.billing.view`)
 6. `PATCH /api/admin/clients/[id]/billing/addons/[eventId]` (`agency.billing.manage`)
+
+## MS-11 Access Note (Milestone A)
+- Report delivery lifecycle model (`report_deliveries`, `report_delivery_events`) adds no new auth surface.
+- Existing report access boundaries remain:
+1. Admin report APIs: `agency.analytics.view`.
+2. Bi-weekly cron execution: `verifyCronSecret` bearer guard.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

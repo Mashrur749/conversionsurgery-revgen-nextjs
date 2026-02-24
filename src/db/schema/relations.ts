@@ -13,6 +13,8 @@ import { escalationClaims } from './escalation-claims';
 import { businessHours } from './business-hours';
 import { callAttempts } from './call-attempts';
 import { magicLinkTokens } from './magic-link-tokens';
+import { reports } from './reports';
+import { reportDeliveries, reportDeliveryEvents } from './report-deliveries';
 import { flowTemplates, flowTemplateSteps, flowTemplateVersions } from './flow-templates';
 import { flows, flowSteps } from './flows';
 import { flowExecutions, flowStepExecutions, suggestedActions } from './flow-executions';
@@ -71,6 +73,7 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   notificationPreferences: many(notificationPreferences),
   cancellationRequests: many(cancellationRequests),
   dataExportRequests: many(dataExportRequests),
+  reportDeliveries: many(reportDeliveries),
   onboardingMilestones: many(onboardingMilestones),
   onboardingMilestoneActivities: many(onboardingMilestoneActivities),
   onboardingSlaAlerts: many(onboardingSlaAlerts),
@@ -92,6 +95,39 @@ export const clientsRelations = relations(clients, ({ many }) => ({
   auditLogEntries: many(auditLog),
   quarterlyCampaigns: many(quarterlyCampaigns),
 }));
+
+export const reportsRelations = relations(reports, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [reports.clientId],
+    references: [clients.id],
+  }),
+  deliveries: many(reportDeliveries),
+}));
+
+export const reportDeliveriesRelations = relations(
+  reportDeliveries,
+  ({ one, many }) => ({
+    client: one(clients, {
+      fields: [reportDeliveries.clientId],
+      references: [clients.id],
+    }),
+    report: one(reports, {
+      fields: [reportDeliveries.reportId],
+      references: [reports.id],
+    }),
+    events: many(reportDeliveryEvents),
+  })
+);
+
+export const reportDeliveryEventsRelations = relations(
+  reportDeliveryEvents,
+  ({ one }) => ({
+    delivery: one(reportDeliveries, {
+      fields: [reportDeliveryEvents.deliveryId],
+      references: [reportDeliveries.id],
+    }),
+  })
+);
 
 export const cancellationRequestsRelations = relations(
   cancellationRequests,

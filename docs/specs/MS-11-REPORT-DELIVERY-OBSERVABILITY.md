@@ -1,5 +1,10 @@
 # MS-11: Report Delivery Observability and Retry UX
 
+## Status
+- `STATE: IN_PROGRESS`
+- `DONE: [Milestone A]`
+- `REMAINING: [Milestone B, Milestone C, Milestone D]`
+
 ## Goal
 Make bi-weekly report delivery operationally reliable and visible:
 - delivery status tracked end-to-end
@@ -31,6 +36,20 @@ The managed-service retention loop depends on consistent reporting. Invisible fa
 
 Refactor checkpoint A:
 - Move report state mutation out of ad-hoc cron logic into one service.
+
+Milestone A implementation status:
+- Done:
+1. Added report delivery cycle and transition event entities:
+   - `src/db/schema/report-deliveries.ts`
+   - `drizzle/0030_lively_rage.sql`
+2. Added centralized report delivery lifecycle service:
+   - `src/lib/services/report-delivery.ts`
+3. Added latest-delivery query helper:
+   - `getLatestReportDeliveryForClient(...)`
+4. Refactored bi-weekly cron flow to lifecycle service:
+   - `src/lib/services/report-generation.ts`
+5. Added lifecycle patch tests:
+   - `src/lib/services/report-delivery.test.ts`
 
 ### Milestone B: Retry engine
 1. Define retry policy (attempt count, backoff, terminal failure).

@@ -16,6 +16,7 @@ export * from './business-hours';
 export * from './call-attempts';
 export * from './ab-tests';
 export * from './reports';
+export * from './report-deliveries';
 export * from './template-variants';
 export * from './template-performance-metrics';
 export * from './api-usage';

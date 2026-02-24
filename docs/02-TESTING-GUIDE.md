@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-10 Milestone D working tree`
+Last verified commit: `MS-11 Milestone A working tree`
 
 ## 0. Preflight (Run First)
 
@@ -227,6 +227,9 @@ curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorizati
 Expected:
 - Monthly reset is idempotent by period and includes billing policy result (`processed` or `skippedByPolicy` for unlimited plans).
 - Bi-weekly report run is idempotent by period.
+- Bi-weekly report run now reports delivery counters (`generated`, `emailed`, `failed`) and whether the period lock was updated.
+- `report_deliveries` rows are created per active client and include lifecycle state + timestamps.
+- `report_delivery_events` rows reflect state transitions (`generated`, `queued`, `sent`, `failed`).
 - Queued compliance replay processes non-lead queued items without duplicates.
 
 Note:
