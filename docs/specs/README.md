@@ -5,6 +5,7 @@ Purpose: execution specs for launch-critical delivery and offer parity.
 
 ## Control Files
 - `MS-IMPLEMENTATION-BOARD.md` -> milestone-by-milestone execution state
+- `MS-CONTEXT-SNAPSHOT.md` -> compact continuity context for fresh sessions
 
 ## Active Offer-Parity Specs (Managed Service Priority)
 - `MS-01-UNLIMITED-MESSAGING-PARITY.md` -> `GAP-001`

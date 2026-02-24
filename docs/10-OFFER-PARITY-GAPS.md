@@ -27,7 +27,7 @@ Highest-risk mismatches for paying clients are:
 | Gap ID | Priority | Spec | Status |
 |---|---|---|---|
 | GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Done |
-| GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Spec Ready |
+| GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | In Progress (Milestone A Done) |
 | GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Spec Ready |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
@@ -91,6 +91,12 @@ Highest-risk mismatches for paying clients are:
 2. `GAP-002` Guarantee architecture mismatch (30-day + 90-day + extension formula)
 - Offer promise: dual-layer guarantee with explicit definitions and prorated low-volume extension.
 - Current behavior: 30-day recovered-lead evaluator and `refund_review_required` only.
+- Progress (2026-02-24): `MS-02` Milestone A completed.
+- Added guarantee-v2 state machine domain module (`src/lib/services/guarantee-v2/`).
+- Added explicit v2 statuses and legacy->v2 mapping/backfill helpers.
+- Added new subscription guarantee window/extension fields required for proof + recovery lifecycle.
+- Added safe migration SQL with `IF NOT EXISTS` and backfill mapping/initialization.
+- Remaining: Milestones B-E (QLE evaluator, 90-day recovery evaluator, low-volume extension formula, UI visibility).
 - Evidence:
   - `src/lib/services/guarantee-monitor.ts`
   - `src/lib/services/subscription.ts`

@@ -8,6 +8,7 @@ import {
   type ClientUsagePolicy,
   type PlanFeatures,
 } from '@/lib/services/usage-policy';
+import { buildInitialGuaranteeWindowState } from '@/lib/services/guarantee-v2/state-machine';
 import type Stripe from 'stripe';
 import type { Subscription } from '@/db/schema/subscriptions';
 import type { Plan } from '@/db/schema/plans';
@@ -134,7 +135,8 @@ export async function createSubscription(
     ? new Date(firstItem.current_period_end * 1000)
     : new Date();
   const guaranteeStartAt = new Date();
-  const guaranteeEndsAt = new Date(guaranteeStartAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const guaranteeWindow = buildInitialGuaranteeWindowState(guaranteeStartAt);
+  const guaranteeEndsAt = guaranteeWindow.proofEndsAt;
 
   // All DB writes after Stripe call are wrapped in a transaction.
   // If this transaction fails, the Stripe subscription still exists —
@@ -160,7 +162,16 @@ export async function createSubscription(
           : undefined,
         guaranteeStartAt,
         guaranteeEndsAt,
-        guaranteeStatus: 'pending',
+        guaranteeStatus: 'proof_pending',
+        guaranteeProofStartAt: guaranteeWindow.proofStartAt,
+        guaranteeProofEndsAt: guaranteeWindow.proofEndsAt,
+        guaranteeRecoveryStartAt: guaranteeWindow.recoveryStartAt,
+        guaranteeRecoveryEndsAt: guaranteeWindow.recoveryEndsAt,
+        guaranteeAdjustedProofEndsAt: guaranteeWindow.adjustedProofEndsAt,
+        guaranteeAdjustedRecoveryEndsAt: guaranteeWindow.adjustedRecoveryEndsAt,
+        guaranteeExtensionFactorBasisPoints: guaranteeWindow.extensionFactorBasisPoints,
+        guaranteeProofQualifiedLeadEngagements: 0,
+        guaranteeRecoveryAttributedOpportunities: 0,
       }).returning();
 
       await tx.update(clients).set({
