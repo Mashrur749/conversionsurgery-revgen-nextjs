@@ -29,6 +29,7 @@ interface UsageDisplayProps {
 }
 
 export function UsageDisplay({ usage, periodStart, periodEnd }: UsageDisplayProps) {
+  const isUnlimitedLeads = usage.leads.included === null;
   const leadsPercent = usage.leads.included
     ? Math.min((usage.leads.used / usage.leads.included) * 100, 100)
     : 0;
@@ -46,7 +47,7 @@ export function UsageDisplay({ usage, periodStart, periodEnd }: UsageDisplayProp
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Overage Warning */}
-        {usage.leads.overage > 0 && (
+        {!isUnlimitedLeads && usage.leads.overage > 0 && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>

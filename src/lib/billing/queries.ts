@@ -9,7 +9,7 @@ import {
 } from '@/db/schema';
 import { eq, desc, and, gte, lte, sql, count } from 'drizzle-orm';
 import { getTotalTeamMemberCount } from '@/lib/services/team-bridge';
-import type { PlanFeatures } from '@/lib/services/usage-policy';
+import { resolveClientUsagePolicy, type PlanFeatures } from '@/lib/services/usage-policy';
 
 export async function getBillingData(clientId: string) {
   const db = getDb();
@@ -141,6 +141,7 @@ async function getUsageForPeriod(clientId: string) {
 
   const usage = usageData[0] || { totalLeads: 0 };
   const features = plan.features as PlanFeatures;
+  const usagePolicy = resolveClientUsagePolicy(features, plan.slug);
 
   // Get team member count
   const teamMemberCount = await getTotalTeamMemberCount(clientId);
@@ -153,21 +154,21 @@ async function getUsageForPeriod(clientId: string) {
     .where(eq(clients.id, clientId))
     .limit(1);
 
-  const leadsOverage = features.maxLeadsPerMonth
-    ? Math.max(0, usage.totalLeads - features.maxLeadsPerMonth)
+  const leadsOverage = usagePolicy.leadLimit
+    ? Math.max(0, usage.totalLeads - usagePolicy.leadLimit)
     : 0;
 
-  const overageCostCents = leadsOverage > 0 && features.overagePerLeadCents
+  const overageCostCents = usagePolicy.chargesOverage && leadsOverage > 0 && features.overagePerLeadCents
     ? leadsOverage * features.overagePerLeadCents
     : 0;
 
   return {
     leads: {
       used: usage.totalLeads,
-      included: features.maxLeadsPerMonth,
+      included: usagePolicy.leadLimit,
       overage: leadsOverage,
       overageCostCents,
-      allowOverages: features.allowOverages ?? true,
+      allowOverages: usagePolicy.chargesOverage,
     },
     teamMembers: {
       used: teamMemberResult[0]?.count ?? 0,

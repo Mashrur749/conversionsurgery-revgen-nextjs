@@ -143,18 +143,27 @@ export function SubscriptionCard({
           </div>
 
           {/* Usage */}
-          {maxLeads && usage && (
+          {usage && (
             <div>
               <div className="mb-2 flex justify-between text-sm">
                 <span>Leads this period</span>
                 <span>
-                  {usage.leads} / {maxLeads}
+                  {usage.leads}
+                  {maxLeads ? ` / ${maxLeads}` : ' (Unlimited)'}
                 </span>
               </div>
-              <Progress value={leadsUsagePercent} className="h-2" />
-              {leadsUsagePercent >= 80 && (
-                <p className="mt-1 text-xs text-olive">
-                  Approaching lead limit. Consider upgrading for more capacity.
+              {maxLeads ? (
+                <>
+                  <Progress value={leadsUsagePercent} className="h-2" />
+                  {leadsUsagePercent >= 80 && (
+                    <p className="mt-1 text-xs text-olive">
+                      Approaching lead limit. Consider upgrading for more capacity.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Unlimited lead volume is enabled for your current plan.
                 </p>
               )}
             </div>
