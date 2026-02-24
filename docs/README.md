@@ -12,10 +12,11 @@ Purpose: single navigation map for all operational documents.
 6. `05-USE-CASES.md` — role-based business workflows.
 7. `07-LAUNCH-READINESS.md` — launch status and go-live gates.
 8. `10-OFFER-PARITY-GAPS.md` — offer-to-implementation gap tracker for selling/delivery parity.
-9. `06-REMAINING-GAPS.md` — closed launch-hardening gap archive and scope note.
-10. `08-UX-AUDIT.md` — operational UX risks and next iteration focus.
-11. `09-SECURITY-AUDIT.md` — auth and security findings.
-12. `99-ARCHIVE-SYSTEM-BLOCKERS.md` — historical archive only.
+9. `specs/README.md` — execution spec map (one spec per offer-parity gap).
+10. `06-REMAINING-GAPS.md` — closed launch-hardening gap archive and scope note.
+11. `08-UX-AUDIT.md` — operational UX risks and next iteration focus.
+12. `09-SECURITY-AUDIT.md` — auth and security findings.
+13. `99-ARCHIVE-SYSTEM-BLOCKERS.md` — historical archive only.
 
 ## File Labels (By Intent)
 - `00-10`: active operational documents.

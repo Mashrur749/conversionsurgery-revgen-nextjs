@@ -1,6 +1,6 @@
 # Offer Parity Gaps (v2.1)
 
-Last updated: 2026-02-23
+Last updated: 2026-02-24
 Scope: Gap register against the reviewed offer architecture ("ConversionSurgery Grand Slam Offer v2.1")
 Objective: Ensure paying-client delivery matches every sold promise.
 
@@ -21,6 +21,26 @@ Highest-risk mismatches for paying clients are:
 - Low-friction estimate trigger stack is incomplete.
 - Quarterly Growth Blitz operations are not productized.
 - Cancellation/data-export contract terms are not fully implemented in product workflows.
+
+## Spec Mapping (One Spec Per Gap)
+
+| Gap ID | Priority | Spec | Status |
+|---|---|---|---|
+| GAP-001 | P0 | `docs/specs/SPEC-07-UNLIMITED-MESSAGING-PARITY.md` | Spec Ready |
+| GAP-002 | P0 | `docs/specs/SPEC-08-GUARANTEE-V2-PARITY.md` | Spec Ready |
+| GAP-003 | P0 | `docs/specs/SPEC-09-ESTIMATE-TRIGGER-STACK.md` | Spec Ready |
+| GAP-004 | P0 | `docs/specs/SPEC-10-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
+| GAP-005 | P0 | `docs/specs/SPEC-11-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
+| GAP-006 | P0 | `docs/specs/SPEC-12-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
+| GAP-007 | P0 | `docs/specs/SPEC-13-CANCELLATION-EXPORT-PARITY.md` | Spec Ready |
+| GAP-101 | P1 | `docs/specs/SPEC-14-QUIET-HOURS-CLASSIFICATION.md` | Spec Ready |
+| GAP-102 | P1 | `docs/specs/SPEC-15-DAY-ONE-ACTIVATION-TRACKING.md` | Spec Ready |
+| GAP-103 | P1 | `docs/specs/SPEC-16-ADDON-BILLING-TRANSPARENCY.md` | Spec Ready |
+| GAP-104 | P1 | `docs/specs/SPEC-17-REPORT-DELIVERY-OBSERVABILITY.md` | Spec Ready |
+| GAP-105 | P1 | `docs/specs/SPEC-18-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
+| GAP-201 | P2 | `docs/specs/SPEC-19-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
+| GAP-202 | P2 | `docs/specs/SPEC-20-ONBOARDING-QUALITY-GATES.md` | Spec Ready |
+| GAP-203 | P2 | `docs/specs/SPEC-21-REMINDER-ROUTING-FLEXIBILITY.md` | Spec Ready |
 
 ## Component Parity Matrix
 
