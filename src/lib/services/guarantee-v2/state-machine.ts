@@ -48,9 +48,11 @@ export function normalizeGuaranteeV2Status(value: GuaranteeStatusValue): Guarant
 export function toLegacyGuaranteeStatus(value: GuaranteeStatusValue): LegacyGuaranteeStatus {
   const normalized = normalizeGuaranteeV2Status(value);
   if (normalized === 'proof_pending') return 'pending';
+  if (normalized === 'proof_passed') return 'pending';
+  if (normalized === 'recovery_pending') return 'pending';
   if (normalized === 'proof_failed_refund_review') return 'refund_review_required';
   if (normalized === 'recovery_failed_refund_review') return 'refund_review_required';
-  return 'fulfilled';
+  return 'fulfilled'; // recovery_passed
 }
 
 export interface GuaranteeWindowState {
@@ -105,4 +107,3 @@ export function buildGuaranteeBackfillState(input: LegacyBackfillInput): Guarant
     guaranteeStatus: normalizedStatus,
   };
 }
-

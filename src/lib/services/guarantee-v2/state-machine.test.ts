@@ -22,7 +22,9 @@ describe('guarantee-v2 state machine primitives', () => {
 
   it('can convert v2 status to legacy compatibility status', () => {
     expect(toLegacyGuaranteeStatus('proof_pending')).toBe('pending');
-    expect(toLegacyGuaranteeStatus('proof_passed')).toBe('fulfilled');
+    expect(toLegacyGuaranteeStatus('proof_passed')).toBe('pending');
+    expect(toLegacyGuaranteeStatus('recovery_pending')).toBe('pending');
+    expect(toLegacyGuaranteeStatus('recovery_passed')).toBe('fulfilled');
     expect(toLegacyGuaranteeStatus('proof_failed_refund_review')).toBe('refund_review_required');
     expect(toLegacyGuaranteeStatus('recovery_failed_refund_review')).toBe('refund_review_required');
   });

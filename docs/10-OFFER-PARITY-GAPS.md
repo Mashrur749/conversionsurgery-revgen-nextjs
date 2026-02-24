@@ -27,7 +27,7 @@ Highest-risk mismatches for paying clients are:
 | Gap ID | Priority | Spec | Status |
 |---|---|---|---|
 | GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Done |
-| GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | In Progress (Milestones A-B Done) |
+| GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | In Progress (Milestones A-C Done) |
 | GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Spec Ready |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
@@ -100,7 +100,11 @@ Highest-risk mismatches for paying clients are:
 - Implemented qualified lead engagement (QLE) proof evaluator (threshold: 5 engagements).
 - Extracted reusable guarantee metrics query module for proof window calculations.
 - Proof pass/fail transitions now emit explicit billing events and auditable notes.
-- Remaining: Milestones C-E (90-day recovery evaluator, low-volume extension formula, UI visibility).
+- Progress (2026-02-24): `MS-02` Milestone C completed.
+- Implemented 90-day recovery evaluator with explicit status transitions (`proof_passed` -> `recovery_pending` -> pass/fail).
+- Added attributed-opportunity metrics with auditable reason/evidence payloads (job won, appointment booked, resumed conversation).
+- Recovery pass/fail transitions now emit billing events with operator action hints for refund review states.
+- Remaining: Milestones D-E (low-volume extension formula, UI visibility).
 - Evidence:
   - `src/lib/services/guarantee-monitor.ts`
   - `src/lib/services/subscription.ts`

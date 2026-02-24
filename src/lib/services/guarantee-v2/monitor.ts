@@ -3,10 +3,17 @@ import { billingEvents, subscriptions } from '@/db/schema';
 import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import {
   buildGuaranteeBackfillState,
+  type GuaranteeV2Status,
   type GuaranteeStatusValue,
 } from '@/lib/services/guarantee-v2/state-machine';
-import { countQualifiedLeadEngagements } from '@/lib/services/guarantee-v2/metrics';
+import {
+  countQualifiedLeadEngagements,
+  countRecoveryAttributedOpportunities,
+  type AttributedOpportunity,
+  type RecoveryAttributedOpportunityMetrics,
+} from '@/lib/services/guarantee-v2/metrics';
 import { evaluateProofWindowStatus } from '@/lib/services/guarantee-v2/proof-evaluator';
+import { evaluateRecoveryWindowStatus } from '@/lib/services/guarantee-v2/recovery-evaluator';
 
 const GUARANTEE_ELIGIBLE_STATUSES = [
   'pending',
@@ -24,15 +31,283 @@ export interface GuaranteeRunResult {
   checked: number;
   proofPassed: number;
   proofFailedRefundReview: number;
+  recoveryPendingStarted: number;
+  recoveryPassed: number;
+  recoveryFailedRefundReview: number;
   initialized: number;
 }
 
-/**
- * Transitional guarantee evaluator during v2 rollout.
- * Milestone A responsibilities:
- * - Backfill guarantee v2 windows + status mapping safely.
- * - Keep legacy recovered-lead behavior operational until v2 evaluators ship.
- */
+interface GuaranteeCandidate {
+  id: string;
+  clientId: string;
+  createdAt: Date;
+  guaranteeStartAt: Date | null;
+  guaranteeEndsAt: Date | null;
+  guaranteeStatus: string | null;
+  guaranteeProofStartAt: Date | null;
+  guaranteeProofEndsAt: Date | null;
+  guaranteeRecoveryStartAt: Date | null;
+  guaranteeRecoveryEndsAt: Date | null;
+  guaranteeAdjustedProofEndsAt: Date | null;
+  guaranteeAdjustedRecoveryEndsAt: Date | null;
+  guaranteeExtensionFactorBasisPoints: number | null;
+}
+
+interface GuaranteeWindowContext {
+  proofWindowStart: Date;
+  proofWindowEnd: Date;
+  recoveryWindowStart: Date;
+  recoveryWindowEnd: Date;
+}
+
+function buildWindowContext(
+  sub: GuaranteeCandidate,
+  backfill: ReturnType<typeof buildGuaranteeBackfillState>
+): GuaranteeWindowContext {
+  return {
+    proofWindowStart: sub.guaranteeProofStartAt ?? backfill.proofStartAt,
+    proofWindowEnd: sub.guaranteeAdjustedProofEndsAt ?? backfill.adjustedProofEndsAt,
+    recoveryWindowStart: sub.guaranteeRecoveryStartAt ?? backfill.recoveryStartAt,
+    recoveryWindowEnd: sub.guaranteeAdjustedRecoveryEndsAt ?? backfill.adjustedRecoveryEndsAt,
+  };
+}
+
+function toOpportunityAuditPayload(opportunities: AttributedOpportunity[]) {
+  return opportunities.map((opportunity) => ({
+    leadId: opportunity.leadId,
+    reason: opportunity.reason,
+    evidenceAt: opportunity.evidenceAt.toISOString(),
+    firstAutomationAt: opportunity.firstAutomationAt.toISOString(),
+  }));
+}
+
+function getPrimaryAttributedOpportunity(opportunities: AttributedOpportunity[]) {
+  if (opportunities.length === 0) return null;
+
+  const sorted = [...opportunities].sort(
+    (a, b) => a.evidenceAt.getTime() - b.evidenceAt.getTime()
+  );
+  return sorted[0];
+}
+
+async function transitionProofPassed(
+  sub: GuaranteeCandidate,
+  now: Date,
+  windowContext: GuaranteeWindowContext,
+  qleMetrics: { count: number; qualifiedLeadIds: string[] }
+) {
+  const db = getDb();
+  await db.transaction(async (tx) => {
+    await tx
+      .update(subscriptions)
+      .set({
+        guaranteeStatus: 'proof_passed',
+        guaranteeProofQualifiedLeadEngagements: qleMetrics.count,
+        guaranteeFulfilledAt: null,
+        guaranteeRefundEligibleAt: null,
+        guaranteeNotes:
+          `Proof-of-life passed with ${qleMetrics.count} qualified lead engagements. Recovery window now active.`,
+        updatedAt: now,
+      })
+      .where(eq(subscriptions.id, sub.id));
+
+    await tx.insert(billingEvents).values({
+      clientId: sub.clientId,
+      subscriptionId: sub.id,
+      eventType: 'guarantee_proof_passed',
+      description: `Proof-of-life passed (${qleMetrics.count} qualified lead engagements).`,
+      rawData: {
+        qualifiedLeadEngagements: qleMetrics.count,
+        qualifiedLeadIds: qleMetrics.qualifiedLeadIds,
+        proofWindowStart: windowContext.proofWindowStart.toISOString(),
+        proofWindowEnd: windowContext.proofWindowEnd.toISOString(),
+      },
+    });
+  });
+}
+
+async function transitionProofFailedRefundReview(
+  sub: GuaranteeCandidate,
+  now: Date,
+  windowContext: GuaranteeWindowContext,
+  qleMetrics: { count: number; qualifiedLeadIds: string[] }
+) {
+  const db = getDb();
+  await db.transaction(async (tx) => {
+    await tx
+      .update(subscriptions)
+      .set({
+        guaranteeStatus: 'proof_failed_refund_review',
+        guaranteeProofQualifiedLeadEngagements: qleMetrics.count,
+        guaranteeRefundEligibleAt: now,
+        guaranteeNotes:
+          `Proof-of-life missed: ${qleMetrics.count} qualified lead engagements in proof window. Action: review first-month refund eligibility.`,
+        updatedAt: now,
+      })
+      .where(eq(subscriptions.id, sub.id));
+
+    await tx.insert(billingEvents).values({
+      clientId: sub.clientId,
+      subscriptionId: sub.id,
+      eventType: 'guarantee_proof_refund_review_required',
+      description:
+        `Proof-of-life missed (${qleMetrics.count} qualified lead engagements). Refund review required.`,
+      rawData: {
+        qualifiedLeadEngagements: qleMetrics.count,
+        qualifiedLeadIds: qleMetrics.qualifiedLeadIds,
+        proofWindowStart: windowContext.proofWindowStart.toISOString(),
+        proofWindowEnd: windowContext.proofWindowEnd.toISOString(),
+        actionHint: 'Review first-month proof-of-life refund criteria and process if eligible.',
+      },
+    });
+  });
+}
+
+async function transitionRecoveryPending(
+  sub: GuaranteeCandidate,
+  now: Date,
+  windowContext: GuaranteeWindowContext,
+  recoveryMetrics: RecoveryAttributedOpportunityMetrics
+) {
+  const db = getDb();
+  await db.transaction(async (tx) => {
+    await tx
+      .update(subscriptions)
+      .set({
+        guaranteeStatus: 'recovery_pending',
+        guaranteeRecoveryAttributedOpportunities: recoveryMetrics.count,
+        guaranteeNotes:
+          `Recovery window in progress: ${recoveryMetrics.count} attributed opportunities so far.`,
+        updatedAt: now,
+      })
+      .where(eq(subscriptions.id, sub.id));
+
+    await tx.insert(billingEvents).values({
+      clientId: sub.clientId,
+      subscriptionId: sub.id,
+      eventType: 'guarantee_recovery_started',
+      description: 'Proof-of-life passed. 90-day recovery window started.',
+      rawData: {
+        recoveryWindowStart: windowContext.recoveryWindowStart.toISOString(),
+        recoveryWindowEnd: windowContext.recoveryWindowEnd.toISOString(),
+        attributedOpportunities: recoveryMetrics.count,
+        opportunities: toOpportunityAuditPayload(recoveryMetrics.opportunities),
+      },
+    });
+  });
+}
+
+async function transitionRecoveryPassed(
+  sub: GuaranteeCandidate,
+  now: Date,
+  windowContext: GuaranteeWindowContext,
+  recoveryMetrics: RecoveryAttributedOpportunityMetrics
+) {
+  const db = getDb();
+  const primaryOpportunity = getPrimaryAttributedOpportunity(recoveryMetrics.opportunities);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(subscriptions)
+      .set({
+        guaranteeStatus: 'recovery_passed',
+        guaranteeRecoveryAttributedOpportunities: recoveryMetrics.count,
+        guaranteeRecoveredLeadId: primaryOpportunity?.leadId ?? null,
+        guaranteeFulfilledAt: now,
+        guaranteeRefundEligibleAt: null,
+        guaranteeNotes:
+          `Recovery guarantee passed with ${recoveryMetrics.count} attributed opportunities in recovery window.`,
+        updatedAt: now,
+      })
+      .where(eq(subscriptions.id, sub.id));
+
+    await tx.insert(billingEvents).values({
+      clientId: sub.clientId,
+      subscriptionId: sub.id,
+      eventType: 'guarantee_recovery_passed',
+      description:
+        `Recovery guarantee passed (${recoveryMetrics.count} attributed opportunities).`,
+      rawData: {
+        recoveryWindowStart: windowContext.recoveryWindowStart.toISOString(),
+        recoveryWindowEnd: windowContext.recoveryWindowEnd.toISOString(),
+        attributedOpportunities: recoveryMetrics.count,
+        primaryAttributedLeadId: primaryOpportunity?.leadId ?? null,
+        opportunities: toOpportunityAuditPayload(recoveryMetrics.opportunities),
+      },
+    });
+  });
+}
+
+async function transitionRecoveryFailedRefundReview(
+  sub: GuaranteeCandidate,
+  now: Date,
+  windowContext: GuaranteeWindowContext,
+  recoveryMetrics: RecoveryAttributedOpportunityMetrics
+) {
+  const db = getDb();
+  await db.transaction(async (tx) => {
+    await tx
+      .update(subscriptions)
+      .set({
+        guaranteeStatus: 'recovery_failed_refund_review',
+        guaranteeRecoveryAttributedOpportunities: recoveryMetrics.count,
+        guaranteeRefundEligibleAt: now,
+        guaranteeNotes:
+          `Recovery guarantee missed: ${recoveryMetrics.count} attributed opportunities by window end. Action: review 90-day refund eligibility.`,
+        updatedAt: now,
+      })
+      .where(eq(subscriptions.id, sub.id));
+
+    await tx.insert(billingEvents).values({
+      clientId: sub.clientId,
+      subscriptionId: sub.id,
+      eventType: 'guarantee_recovery_refund_review_required',
+      description:
+        `Recovery guarantee missed (${recoveryMetrics.count} attributed opportunities). Refund review required.`,
+      rawData: {
+        recoveryWindowStart: windowContext.recoveryWindowStart.toISOString(),
+        recoveryWindowEnd: windowContext.recoveryWindowEnd.toISOString(),
+        attributedOpportunities: recoveryMetrics.count,
+        opportunities: toOpportunityAuditPayload(recoveryMetrics.opportunities),
+        actionHint: 'Review 90-day refund criteria and process refund if eligible.',
+      },
+    });
+  });
+}
+
+async function persistProofProgress(
+  sub: GuaranteeCandidate,
+  now: Date,
+  qleCount: number
+) {
+  const db = getDb();
+  await db
+    .update(subscriptions)
+    .set({
+      guaranteeProofQualifiedLeadEngagements: qleCount,
+      guaranteeNotes: `Proof-of-life in progress: ${qleCount} qualified lead engagements so far.`,
+      updatedAt: now,
+    })
+    .where(eq(subscriptions.id, sub.id));
+}
+
+async function persistRecoveryProgress(
+  sub: GuaranteeCandidate,
+  now: Date,
+  recoveryMetrics: RecoveryAttributedOpportunityMetrics
+) {
+  const db = getDb();
+  await db
+    .update(subscriptions)
+    .set({
+      guaranteeRecoveryAttributedOpportunities: recoveryMetrics.count,
+      guaranteeNotes:
+        `Recovery window in progress: ${recoveryMetrics.count} attributed opportunities so far.`,
+      updatedAt: now,
+    })
+    .where(eq(subscriptions.id, sub.id));
+}
+
 export async function processGuaranteeStatus(): Promise<GuaranteeRunResult> {
   const db = getDb();
   const now = new Date();
@@ -40,6 +315,9 @@ export async function processGuaranteeStatus(): Promise<GuaranteeRunResult> {
     checked: 0,
     proofPassed: 0,
     proofFailedRefundReview: 0,
+    recoveryPendingStarted: 0,
+    recoveryPassed: 0,
+    recoveryFailedRefundReview: 0,
     initialized: 0,
   };
 
@@ -72,7 +350,7 @@ export async function processGuaranteeStatus(): Promise<GuaranteeRunResult> {
 
   result.checked = candidates.length;
 
-  for (const sub of candidates) {
+  for (const sub of candidates as GuaranteeCandidate[]) {
     const backfill = buildGuaranteeBackfillState({
       createdAt: sub.createdAt,
       guaranteeStartAt: sub.guaranteeStartAt,
@@ -110,92 +388,77 @@ export async function processGuaranteeStatus(): Promise<GuaranteeRunResult> {
       result.initialized++;
     }
 
-    const proofWindowStart = backfill.proofStartAt;
-    const proofWindowEnd = backfill.adjustedProofEndsAt;
+    const windowContext = buildWindowContext(sub, backfill);
+    let currentStatus: GuaranteeV2Status = backfill.guaranteeStatus;
+
     const qleMetrics = await countQualifiedLeadEngagements(
       sub.clientId,
-      proofWindowStart,
-      proofWindowEnd
+      windowContext.proofWindowStart,
+      windowContext.proofWindowEnd
     );
 
-    const action = evaluateProofWindowStatus({
-      status: backfill.guaranteeStatus,
+    const proofAction = evaluateProofWindowStatus({
+      status: currentStatus,
       qualifiedLeadEngagements: qleMetrics.count,
       now,
-      proofWindowEnd,
+      proofWindowEnd: windowContext.proofWindowEnd,
     });
 
-    if (action === 'proof_pass') {
-      await db.transaction(async (tx) => {
-        await tx
-          .update(subscriptions)
-          .set({
-            guaranteeStatus: 'proof_passed',
-            guaranteeProofQualifiedLeadEngagements: qleMetrics.count,
-            guaranteeFulfilledAt: now,
-            guaranteeNotes: `Proof-of-life passed with ${qleMetrics.count} qualified lead engagements.`,
-            updatedAt: now,
-          })
-          .where(eq(subscriptions.id, sub.id));
-
-        await tx.insert(billingEvents).values({
-          clientId: sub.clientId,
-          subscriptionId: sub.id,
-          eventType: 'guarantee_proof_passed',
-          description: `Proof-of-life passed (${qleMetrics.count} qualified lead engagements).`,
-          rawData: {
-            qualifiedLeadEngagements: qleMetrics.count,
-            qualifiedLeadIds: qleMetrics.qualifiedLeadIds,
-            proofWindowStart: proofWindowStart.toISOString(),
-            proofWindowEnd: proofWindowEnd.toISOString(),
-          },
-        });
-      });
+    if (proofAction === 'proof_pass') {
+      await transitionProofPassed(sub, now, windowContext, qleMetrics);
+      currentStatus = 'proof_passed';
       result.proofPassed++;
-      continue;
     }
 
-    if (action === 'proof_fail_refund_review') {
-      await db.transaction(async (tx) => {
-        await tx
-          .update(subscriptions)
-          .set({
-            guaranteeStatus: 'proof_failed_refund_review',
-            guaranteeProofQualifiedLeadEngagements: qleMetrics.count,
-            guaranteeRefundEligibleAt: now,
-            guaranteeNotes:
-              `Proof-of-life missed: ${qleMetrics.count} qualified lead engagements in proof window.`,
-            updatedAt: now,
-          })
-          .where(eq(subscriptions.id, sub.id));
-
-        await tx.insert(billingEvents).values({
-          clientId: sub.clientId,
-          subscriptionId: sub.id,
-          eventType: 'guarantee_proof_refund_review_required',
-          description: `Proof-of-life missed (${qleMetrics.count} qualified lead engagements). Refund review required.`,
-          rawData: {
-            qualifiedLeadEngagements: qleMetrics.count,
-            qualifiedLeadIds: qleMetrics.qualifiedLeadIds,
-            proofWindowStart: proofWindowStart.toISOString(),
-            proofWindowEnd: proofWindowEnd.toISOString(),
-          },
-        });
-      });
-
+    if (proofAction === 'proof_fail_refund_review') {
+      await transitionProofFailedRefundReview(sub, now, windowContext, qleMetrics);
+      currentStatus = 'proof_failed_refund_review';
       result.proofFailedRefundReview++;
       continue;
     }
 
-    if (backfill.guaranteeStatus === 'proof_pending') {
-      await db
-        .update(subscriptions)
-        .set({
-          guaranteeProofQualifiedLeadEngagements: qleMetrics.count,
-          guaranteeNotes: `Proof-of-life in progress: ${qleMetrics.count} qualified lead engagements so far.`,
-          updatedAt: now,
-        })
-        .where(eq(subscriptions.id, sub.id));
+    if (currentStatus === 'proof_pending') {
+      await persistProofProgress(sub, now, qleMetrics.count);
+      continue;
+    }
+
+    if (currentStatus !== 'proof_passed' && currentStatus !== 'recovery_pending') {
+      continue;
+    }
+
+    const recoveryMetrics = await countRecoveryAttributedOpportunities(
+      sub.clientId,
+      windowContext.recoveryWindowStart,
+      windowContext.recoveryWindowEnd
+    );
+
+    const recoveryAction = evaluateRecoveryWindowStatus({
+      status: currentStatus,
+      attributedOpportunities: recoveryMetrics.count,
+      now,
+      recoveryWindowEnd: windowContext.recoveryWindowEnd,
+    });
+
+    if (recoveryAction === 'move_to_recovery_pending') {
+      await transitionRecoveryPending(sub, now, windowContext, recoveryMetrics);
+      result.recoveryPendingStarted++;
+      continue;
+    }
+
+    if (recoveryAction === 'recovery_pass') {
+      await transitionRecoveryPassed(sub, now, windowContext, recoveryMetrics);
+      result.recoveryPassed++;
+      continue;
+    }
+
+    if (recoveryAction === 'recovery_fail_refund_review') {
+      await transitionRecoveryFailedRefundReview(sub, now, windowContext, recoveryMetrics);
+      result.recoveryFailedRefundReview++;
+      continue;
+    }
+
+    if (currentStatus === 'recovery_pending') {
+      await persistRecoveryProgress(sub, now, recoveryMetrics);
     }
   }
 
