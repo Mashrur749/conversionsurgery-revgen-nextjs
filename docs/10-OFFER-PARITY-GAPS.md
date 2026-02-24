@@ -27,7 +27,7 @@ Highest-risk mismatches for paying clients are:
 |---|---|---|---|
 | GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Done |
 | GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Done |
-| GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | In Progress (Milestones A-B Done) |
+| GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | In Progress (Milestones A-C Done) |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
 | GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
@@ -127,13 +127,17 @@ Highest-risk mismatches for paying clients are:
 - Added standalone SMS command parser for `EST <lead-id|lead-name|phone>` with test coverage.
 - Implemented deterministic lead resolution (resolved/not_found/ambiguous) for contractor keyword triggers.
 - Wired owner-side inbound SMS keyword handling to trigger estimate follow-up with confirmation/error responses.
-- Remaining: Milestones C-D (prompt quick-reply wiring, fallback nudge cron).
+- Progress (2026-02-24): `MS-03` Milestone C completed.
+- Replaced `start_sequences` throw-path with action dispatch map and working prompt quick-reply execution.
+- Wired prompt `YES` handling to unified estimate trigger service with `prompt_quick_reply` source metadata.
+- Added expiry-safe fallback behavior and operator notification for expired/missing prompts or execution failures.
+- Remaining: Milestone D (fallback nudge cron).
 - Evidence:
   - `src/lib/services/estimate-command-parser.ts`
   - `src/lib/services/estimate-triggers.ts`
   - `src/app/api/sequences/estimate/route.ts`
   - `src/lib/automations/incoming-sms.ts`
-  - `src/lib/services/agency-communication.ts` (`start_sequences` still pending Milestone C wiring)
+  - `src/lib/services/agency-communication.ts`
 
 4. `GAP-004` Smart assist auto-send window missing
 - Offer promise: assist mode with default 5-minute auto-send window and category controls.

@@ -3,12 +3,14 @@ import { getDb } from '@/db';
 import {
   agencyMessages,
   clients,
+  leads,
   systemSettings,
   dailyStats,
   notificationPreferences,
 } from '@/db/schema';
-import { eq, and, desc, gte, lte, lt, sql } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, lt, sql, inArray } from 'drizzle-orm';
 import { sendEmail, onboardingWelcomeEmail, agencyWeeklyDigestEmail } from './resend';
+import { triggerEstimateFollowup } from './estimate-triggers';
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
@@ -330,9 +332,23 @@ export async function handleAgencyInboundSMS(payload: {
     .orderBy(desc(agencyMessages.createdAt))
     .limit(1);
 
+  const normalizedReply = body.toUpperCase();
+
   if (!pendingPrompt) {
     console.log(`[Agency Inbound] No pending prompt for client: ${client.businessName}`);
-    // Send acknowledgment
+    if (normalizedReply === 'YES' || normalizedReply === 'Y') {
+      await notifyPromptFallback(client.id, client.businessName, body, 'expired_or_missing_prompt');
+      await sendAgencySMS({
+        clientId: client.id,
+        toPhone: client.phone,
+        body: 'This approval request has expired. Our team has been notified to handle it manually.',
+        category: 'reply',
+        inReplyTo: inboundMsg.id,
+      });
+      return;
+    }
+
+    // Send generic acknowledgment
     await sendAgencySMS({
       clientId: client.id,
       toPhone: client.phone,
@@ -349,8 +365,6 @@ export async function handleAgencyInboundSMS(payload: {
     .set({ inReplyTo: pendingPrompt.id })
     .where(eq(agencyMessages.id, inboundMsg.id));
 
-  const normalizedReply = body.toUpperCase();
-
   // Handle STOP/opt-out
   if (normalizedReply === 'STOP') {
     await db
@@ -366,7 +380,7 @@ export async function handleAgencyInboundSMS(payload: {
   if (normalizedReply === 'YES' || normalizedReply === 'Y') {
     try {
       // Execute first, then mark executed only on success.
-      await executePromptAction(
+      const actionResult = await executePromptAction(
         pendingPrompt.promptType!,
         pendingPrompt.actionPayload as Record<string, unknown>,
         client.id
@@ -380,7 +394,7 @@ export async function handleAgencyInboundSMS(payload: {
       await sendAgencySMS({
         clientId: client.id,
         toPhone: client.phone,
-        body: `Done! We've started the action for ${client.businessName}.`,
+        body: actionResult.ackMessage,
         category: 'reply',
         inReplyTo: pendingPrompt.id,
       });
@@ -399,6 +413,13 @@ export async function handleAgencyInboundSMS(payload: {
         category: 'reply',
         inReplyTo: pendingPrompt.id,
       });
+      await notifyPromptFallback(
+        client.id,
+        client.businessName,
+        body,
+        'execution_failure',
+        error instanceof Error ? error.message : String(error)
+      );
     }
     return;
   }
@@ -435,26 +456,155 @@ export async function handleAgencyInboundSMS(payload: {
   });
 }
 
+interface PromptActionResult {
+  ackMessage: string;
+}
+
+type PromptActionHandler = (
+  actionPayload: Record<string, unknown>,
+  clientId: string
+) => Promise<PromptActionResult>;
+
+async function resolveSequenceTargetLeadIds(
+  clientId: string,
+  actionPayload: Record<string, unknown>
+): Promise<string[]> {
+  if (typeof actionPayload.leadId === 'string' && actionPayload.leadId.length > 0) {
+    return [actionPayload.leadId];
+  }
+
+  if (Array.isArray(actionPayload.leadIds)) {
+    const leadIds = actionPayload.leadIds.filter(
+      (value): value is string => typeof value === 'string' && value.length > 0
+    );
+    if (leadIds.length > 0) {
+      return leadIds;
+    }
+  }
+
+  // Fallback for digest-level prompts: queue sequence starts for contacted leads.
+  const db = getDb();
+  const candidates = await db
+    .select({ id: leads.id })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.clientId, clientId),
+        inArray(leads.status, ['contacted'])
+      )
+    )
+    .limit(25);
+
+  return candidates.map((lead) => lead.id);
+}
+
+async function handleStartSequencesPrompt(
+  actionPayload: Record<string, unknown>,
+  clientId: string
+): Promise<PromptActionResult> {
+  const leadIds = await resolveSequenceTargetLeadIds(clientId, actionPayload);
+  if (leadIds.length === 0) {
+    throw new Error('No eligible leads available to start estimate follow-up sequences');
+  }
+
+  let started = 0;
+  let alreadyActive = 0;
+  let failed = 0;
+
+  for (const leadId of leadIds) {
+    const result = await triggerEstimateFollowup({
+      clientId,
+      leadId,
+      source: 'prompt_quick_reply',
+    });
+
+    if (!result.success) {
+      failed++;
+      continue;
+    }
+
+    if (result.alreadyActive) {
+      alreadyActive++;
+      continue;
+    }
+
+    started++;
+  }
+
+  if (started + alreadyActive === 0) {
+    throw new Error('Unable to start sequences from prompt action');
+  }
+
+  if (failed > 0) {
+    return {
+      ackMessage:
+        `Done. Started ${started} sequence(s), ${alreadyActive} already active, ${failed} failed and need review.`,
+    };
+  }
+
+  return {
+    ackMessage:
+      `Done. Started ${started} estimate sequence(s), ${alreadyActive} already active.`,
+  };
+}
+
+async function handleConfirmActionPrompt(
+  _actionPayload: Record<string, unknown>,
+  _clientId: string
+): Promise<PromptActionResult> {
+  return {
+    ackMessage: 'Done. Confirmation received and logged.',
+  };
+}
+
+async function handleScheduleCallbackPrompt(
+  _actionPayload: Record<string, unknown>,
+  _clientId: string
+): Promise<PromptActionResult> {
+  throw new Error('schedule_callback requires callback scheduler integration');
+}
+
+const PROMPT_ACTION_HANDLERS: Record<string, PromptActionHandler> = {
+  start_sequences: handleStartSequencesPrompt,
+  schedule_callback: handleScheduleCallbackPrompt,
+  confirm_action: handleConfirmActionPrompt,
+};
+
 /** Dispatch prompt action based on promptType. */
 async function executePromptAction(
   promptType: string,
   actionPayload: Record<string, unknown>,
   clientId: string,
-): Promise<void> {
+): Promise<PromptActionResult> {
   console.log(`[Agency] Executing action: ${promptType}`, { clientId, actionPayload });
 
-  switch (promptType) {
-    case 'start_sequences':
-      throw new Error('start_sequences requires flow engine integration');
-    case 'schedule_callback':
-      throw new Error('schedule_callback requires callback scheduler integration');
-    case 'confirm_action':
-      // Generic confirmation — action is simply marked as executed
-      console.log(`[Agency] Generic action confirmed for client: ${clientId}`);
-      break;
-    default:
-      throw new Error(`Unknown prompt type: ${promptType}`);
+  const handler = PROMPT_ACTION_HANDLERS[promptType];
+  if (!handler) {
+    throw new Error(`Unknown prompt type: ${promptType}`);
   }
+
+  return handler(actionPayload, clientId);
+}
+
+async function notifyPromptFallback(
+  clientId: string,
+  businessName: string,
+  clientReply: string,
+  reason: 'expired_or_missing_prompt' | 'execution_failure',
+  errorMessage?: string
+): Promise<void> {
+  await sendEmail({
+    to: process.env.ADMIN_EMAIL || 'admin@conversionsurgery.com',
+    subject: `Prompt fallback required — ${businessName}`,
+    html: `
+      <p>A client reply requires manual follow-up.</p>
+      <p><strong>Business:</strong> ${businessName}</p>
+      <p><strong>Client ID:</strong> ${clientId}</p>
+      <p><strong>Reason:</strong> ${reason}</p>
+      <p><strong>Reply:</strong> ${clientReply}</p>
+      ${errorMessage ? `<p><strong>Error:</strong> ${errorMessage}</p>` : ''}
+    `,
+  });
 }
 
 // ---------------------------------------------------------------------------
