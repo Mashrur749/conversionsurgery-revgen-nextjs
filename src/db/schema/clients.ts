@@ -41,6 +41,9 @@ export const clients = pgTable(
     aiAgentEnabled: boolean('ai_agent_enabled').default(true),
     aiAgentMode: varchar('ai_agent_mode', { length: 20 }).default('assist'), // 'off', 'assist', 'autonomous'
     autoEscalationEnabled: boolean('auto_escalation_enabled').default(true),
+    smartAssistEnabled: boolean('smart_assist_enabled').default(true),
+    smartAssistDelayMinutes: integer('smart_assist_delay_minutes').default(5),
+    smartAssistManualCategories: jsonb('smart_assist_manual_categories').default(sql`'["estimate_followup","payment"]'`),
 
     // Automation
     flowsEnabled: boolean('flows_enabled').default(true),

@@ -13,6 +13,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { AI_ASSIST_CATEGORIES, AI_ASSIST_CATEGORY } from '@/lib/services/ai-send-policy';
+
+const SMART_ASSIST_CATEGORY_LABELS: Record<string, string> = {
+  first_response: 'First response',
+  follow_up: 'Follow-up',
+  estimate_followup: 'Estimate follow-up',
+  payment: 'Payment reminders',
+  appointment: 'Appointment messages',
+  review: 'Review requests',
+  general: 'General outbound AI',
+};
 
 interface FeatureFlags {
   missedCallSmsEnabled: boolean | null;
@@ -20,6 +31,9 @@ interface FeatureFlags {
   aiAgentEnabled: boolean | null;
   aiAgentMode: string | null;
   autoEscalationEnabled: boolean | null;
+  smartAssistEnabled: boolean | null;
+  smartAssistDelayMinutes: number | null;
+  smartAssistManualCategories: string[] | null;
   voiceEnabled: boolean | null;
   flowsEnabled: boolean | null;
   leadScoringEnabled: boolean | null;
@@ -49,6 +63,12 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
     aiAgentEnabled: flags.aiAgentEnabled ?? true,
     aiAgentMode: flags.aiAgentMode ?? 'assist',
     autoEscalationEnabled: flags.autoEscalationEnabled ?? true,
+    smartAssistEnabled: flags.smartAssistEnabled ?? true,
+    smartAssistDelayMinutes: flags.smartAssistDelayMinutes ?? 5,
+    smartAssistManualCategories: flags.smartAssistManualCategories ?? [
+      AI_ASSIST_CATEGORY.ESTIMATE_FOLLOWUP,
+      AI_ASSIST_CATEGORY.PAYMENT,
+    ],
     voiceEnabled: flags.voiceEnabled ?? false,
     flowsEnabled: flags.flowsEnabled ?? true,
     leadScoringEnabled: flags.leadScoringEnabled ?? true,
@@ -64,6 +84,19 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
 
   function toggleFlag(key: keyof typeof formData) {
     setFormData((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function toggleManualCategory(category: string) {
+    setFormData((prev) => {
+      const current = prev.smartAssistManualCategories;
+      const exists = current.includes(category);
+      return {
+        ...prev,
+        smartAssistManualCategories: exists
+          ? current.filter((item) => item !== category)
+          : [...current, category],
+      };
+    });
   }
 
   async function handleSave() {
@@ -177,6 +210,64 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
             checked={formData.autoEscalationEnabled}
             onToggle={() => toggleFlag('autoEscalationEnabled')}
           />
+          <FeatureToggle
+            id="smartAssistEnabled"
+            label="Smart Assist Auto-Send"
+            description="Queue AI drafts for approval and auto-send after delay"
+            checked={formData.smartAssistEnabled}
+            onToggle={() => toggleFlag('smartAssistEnabled')}
+          />
+          {formData.smartAssistEnabled && (
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Auto-send delay</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Time before untouched AI drafts send automatically
+                  </p>
+                </div>
+                <Select
+                  value={String(formData.smartAssistDelayMinutes)}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      smartAssistDelayMinutes: Number(value),
+                    }))
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 minute</SelectItem>
+                    <SelectItem value="3">3 minutes</SelectItem>
+                    <SelectItem value="5">5 minutes</SelectItem>
+                    <SelectItem value="10">10 minutes</SelectItem>
+                    <SelectItem value="15">15 minutes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Manual-only categories</Label>
+                <p className="text-sm text-muted-foreground">
+                  These categories require explicit approval and never auto-send.
+                </p>
+                <div className="space-y-2">
+                  {AI_ASSIST_CATEGORIES.map((category) => (
+                    <FeatureToggle
+                      key={category}
+                      id={`manual-${category}`}
+                      label={SMART_ASSIST_CATEGORY_LABELS[category] || category}
+                      description="Require manual approval"
+                      checked={formData.smartAssistManualCategories.includes(category)}
+                      onToggle={() => toggleManualCategory(category)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Voice */}

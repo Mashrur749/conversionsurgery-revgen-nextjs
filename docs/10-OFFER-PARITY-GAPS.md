@@ -14,10 +14,9 @@ Objective: Ensure paying-client delivery matches every sold promise.
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
-Highest-risk mismatches for paying clients are:
-- Unlimited messaging/no caps/no overages is not implemented.
-- Smart assist auto-send behavior is not implemented.
+Highest-risk mismatches for paying clients are now concentrated in:
 - Quarterly Growth Blitz operations are not productized.
+- Bi-weekly "Without Us" reporting methodology is not implemented.
 - Cancellation/data-export contract terms are not fully implemented in product workflows.
 
 ## Spec Mapping (One Spec Per Gap)
@@ -27,7 +26,7 @@ Highest-risk mismatches for paying clients are:
 | GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Done |
 | GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Done |
 | GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Done |
-| GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
+| GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Done |
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
 | GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
 | GAP-007 | P0 | `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | Spec Ready |
@@ -47,15 +46,15 @@ Highest-risk mismatches for paying clients are:
 | Revenue Recovery Engine core automations (missed call, follow-up, reminders, re-engagement) | Core automation paths exist | Partial |
 | Near-instant response during compliant hours | Implemented with quiet-hours blocking/queue behavior | Partial |
 | Estimate Trigger Methods (SMS keyword, quick-reply, dashboard, fallback nudge) | All trigger paths implemented with unified service + cron fallback | Ready |
-| Unlimited conversations/messages, no caps/no overages | Message limits + overage billing active | Gap |
+| Unlimited conversations/messages, no caps/no overages | Unlimited plan policy active in runtime + billing UI paths | Ready |
 | Dedicated number + CRM | Implemented | Ready |
 | Additional team/number paid add-ons | Limits enforced; add-on billing workflow not fully productized | Gap |
 | Voice AI optional add-on at $0.15/min | Voice AI exists; transparent per-minute billing workflow not fully wired | Gap |
 | Day-One Activation package | Number + missed-call path exist; audit/SLA tracking workflow not productized | Partial |
-| Smart assist mode (5-minute auto-send window) | Not implemented | Gap |
+| Smart assist mode (5-minute auto-send window) | Smart-assist queue + owner approve/edit/cancel + auto-send lifecycle implemented | Ready |
 | KB QA process with gap closure loop | Gap tracking primitives exist; full operational closure loop missing | Partial |
 | 30-day proof-of-life + 90-day recovery guarantee | Dual-layer evaluator + low-volume extension + visibility workflows implemented | Ready |
-| Low-volume guarantee extension formula | Not implemented | Gap |
+| Low-volume guarantee extension formula | Implemented in guarantee v2 evaluator and persisted windows | Ready |
 | Quarterly Growth Blitz | No quarterly campaign scheduler/workflow | Gap |
 | Bi-weekly scoreboard + "Without Us" line | Bi-weekly reports exist; "Without Us" methodology not implemented | Gap |
 | Month-to-month, 30-day cancellation, 5-day export SLA | Current cancellation workflow uses 7-day grace path; full export workflow incomplete | Gap |
@@ -146,10 +145,28 @@ Highest-risk mismatches for paying clients are:
 
 4. `GAP-004` Smart assist auto-send window missing
 - Offer promise: assist mode with default 5-minute auto-send window and category controls.
-- Current behavior: no implemented timed auto-send approval window.
+- Progress (2026-02-24): `MS-04` Milestones A-D completed.
+- Added smart-assist client configuration model:
+  - `smartAssistEnabled`
+  - `smartAssistDelayMinutes` (default `5`)
+  - `smartAssistManualCategories`
+- Added centralized policy resolver (`resolveAiSendPolicy`) and shared category constants.
+- Implemented deferred smart-assist lifecycle:
+  - queue draft as pending artifact
+  - owner approve/edit/cancel commands via SMS
+  - auto-send on due drafts when untouched
+- Added manual-only category enforcement and operator visibility in scheduled views.
+- Added status transition model + retry-safe claim/send path + assist outcome counters in `daily_stats`.
+- Remaining: none (`MS-04` complete).
 - Evidence:
   - `src/lib/automations/incoming-sms.ts`
-  - `src/db/schema/clients.ts` (`aiAgentMode` exists but no smart-assist timing control)
+  - `src/lib/services/ai-send-policy.ts`
+  - `src/lib/services/smart-assist-lifecycle.ts`
+  - `src/lib/services/smart-assist-state.ts`
+  - `src/db/schema/clients.ts`
+  - `src/db/schema/scheduled-messages.ts`
+  - `src/db/schema/daily-stats.ts`
+  - `src/app/api/cron/process-scheduled/route.ts`
 
 5. `GAP-005` Quarterly Growth Blitz not productized
 - Offer promise: quarterly campaign cadence with scheduling/communication expectations.

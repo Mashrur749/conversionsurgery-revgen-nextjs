@@ -31,6 +31,14 @@ export const scheduledMessages = pgTable(
     cancelled: boolean('cancelled').default(false),
     cancelledAt: timestamp('cancelled_at'),
     cancelledReason: varchar('cancelled_reason', { length: 255 }),
+    assistStatus: varchar('assist_status', { length: 40 }), // pending_approval, auto_sent, approved_sent, cancelled
+    assistCategory: varchar('assist_category', { length: 40 }),
+    assistRequiresManual: boolean('assist_requires_manual').default(false),
+    assistOriginalContent: text('assist_original_content'),
+    assistReferenceCode: varchar('assist_reference_code', { length: 12 }),
+    assistNotifiedAt: timestamp('assist_notified_at'),
+    assistResolvedAt: timestamp('assist_resolved_at'),
+    assistResolutionSource: varchar('assist_resolution_source', { length: 40 }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
@@ -39,6 +47,10 @@ export const scheduledMessages = pgTable(
     ),
     index('idx_scheduled_messages_client_id').on(table.clientId),
     index('idx_scheduled_messages_lead_id').on(table.leadId),
+    index('idx_scheduled_messages_assist_status').on(table.assistStatus, table.sendAt).where(
+      sql`${table.assistStatus} = 'pending_approval' AND ${table.sent} = false AND ${table.cancelled} = false`
+    ),
+    index('idx_scheduled_messages_assist_reference').on(table.clientId, table.assistReferenceCode),
   ]
 );
 

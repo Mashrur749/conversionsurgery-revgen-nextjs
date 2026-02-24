@@ -4,16 +4,38 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { AI_ASSIST_CATEGORIES } from '@/lib/services/ai-send-policy';
 
 interface Props {
   defaults: {
     missedCallSmsEnabled: boolean;
     aiResponseEnabled: boolean;
+    smartAssistEnabled: boolean;
+    smartAssistDelayMinutes: number;
+    smartAssistManualCategories: string[];
     photoRequestsEnabled: boolean;
     notificationEmail: boolean;
     notificationSms: boolean;
   };
 }
+
+const SMART_ASSIST_CATEGORY_LABELS: Record<string, string> = {
+  first_response: 'First response',
+  follow_up: 'Follow-up',
+  estimate_followup: 'Estimate follow-up',
+  payment: 'Payment reminders',
+  appointment: 'Appointment messages',
+  review: 'Review requests',
+  general: 'General outbound AI',
+};
 
 const TOGGLE_LABELS: Record<string, { label: string; description: string }> = {
   missedCallSmsEnabled: {
@@ -23,6 +45,10 @@ const TOGGLE_LABELS: Record<string, { label: string; description: string }> = {
   aiResponseEnabled: {
     label: 'AI Responses',
     description: 'Let AI respond to incoming messages',
+  },
+  smartAssistEnabled: {
+    label: 'Smart Assist Auto-Send',
+    description: 'AI drafts auto-send after your review window',
   },
   photoRequestsEnabled: {
     label: 'Photo Requests',
@@ -43,8 +69,23 @@ export function FeatureTogglesForm({ defaults }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const toggle = (key: string) => {
-    setForm((prev) => ({ ...prev, [key]: !prev[key as keyof typeof prev] }));
+  const toggle = (
+    key: 'missedCallSmsEnabled' | 'aiResponseEnabled' | 'smartAssistEnabled' | 'photoRequestsEnabled' | 'notificationEmail' | 'notificationSms'
+  ) => {
+    setForm((prev) => ({ ...prev, [key]: !prev[key] }));
+    setSaved(false);
+  };
+
+  const toggleManualCategory = (category: string) => {
+    setForm((prev) => {
+      const exists = prev.smartAssistManualCategories.includes(category);
+      return {
+        ...prev,
+        smartAssistManualCategories: exists
+          ? prev.smartAssistManualCategories.filter((item) => item !== category)
+          : [...prev.smartAssistManualCategories, category],
+      };
+    });
     setSaved(false);
   };
 
@@ -70,13 +111,72 @@ export function FeatureTogglesForm({ defaults }: Props) {
             </div>
             <Switch
               id={key}
-              checked={form[key as keyof typeof form]}
-              onCheckedChange={() => toggle(key)}
+              checked={Boolean(form[key as keyof typeof form])}
+              onCheckedChange={() => toggle(key as 'missedCallSmsEnabled' | 'aiResponseEnabled' | 'smartAssistEnabled' | 'photoRequestsEnabled' | 'notificationEmail' | 'notificationSms')}
               aria-label={meta.label}
             />
           </CardContent>
         </Card>
       ))}
+
+      {form.smartAssistEnabled && (
+        <Card>
+          <CardContent className="space-y-4 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label>Auto-send delay</Label>
+                <p className="text-sm text-muted-foreground">
+                  Time before untouched AI drafts send automatically
+                </p>
+              </div>
+              <Select
+                value={String(form.smartAssistDelayMinutes)}
+                onValueChange={(value) => {
+                  setForm((prev) => ({ ...prev, smartAssistDelayMinutes: Number(value) }));
+                  setSaved(false);
+                }}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 minute</SelectItem>
+                  <SelectItem value="3">3 minutes</SelectItem>
+                  <SelectItem value="5">5 minutes</SelectItem>
+                  <SelectItem value="10">10 minutes</SelectItem>
+                  <SelectItem value="15">15 minutes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Manual-only categories</Label>
+              <p className="text-sm text-muted-foreground">
+                Sensitive categories require explicit approval before sending.
+              </p>
+              <div className="space-y-2">
+                {AI_ASSIST_CATEGORIES.map((category) => (
+                  <div key={category} className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">
+                        {SMART_ASSIST_CATEGORY_LABELS[category] || category}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Manual approval required
+                      </p>
+                    </div>
+                    <Switch
+                      id={`manual-${category}`}
+                      checked={form.smartAssistManualCategories.includes(category)}
+                      onCheckedChange={() => toggleManualCategory(category)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex items-center justify-end gap-3">
         {saved && <span className="text-sm text-[#3D7A50]">Saved</span>}

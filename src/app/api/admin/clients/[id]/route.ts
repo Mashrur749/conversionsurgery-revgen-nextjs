@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { clients, subscriptions, scheduledMessages } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
+import { AI_ASSIST_CATEGORIES } from '@/lib/services/ai-send-policy';
 import { z } from 'zod';
 import { sendOnboardingNotification } from '@/lib/services/agency-communication';
 import { cancelSubscription } from '@/lib/services/subscription';
@@ -50,6 +51,9 @@ const updateClientSchema = z.object({
   aiAgentEnabled: z.boolean().optional(),
   aiAgentMode: z.enum(['off', 'assist', 'autonomous']).optional(),
   autoEscalationEnabled: z.boolean().optional(),
+  smartAssistEnabled: z.boolean().optional(),
+  smartAssistDelayMinutes: z.number().int().min(1).max(60).optional(),
+  smartAssistManualCategories: z.array(z.enum(AI_ASSIST_CATEGORIES)).optional(),
   flowsEnabled: z.boolean().optional(),
   leadScoringEnabled: z.boolean().optional(),
   reputationMonitoringEnabled: z.boolean().optional(),

@@ -4,17 +4,30 @@ import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { AI_ASSIST_CATEGORIES, AI_ASSIST_CATEGORY } from '@/lib/services/ai-send-policy';
 
 // Subset of feature flags safe for client self-service
 const CLIENT_SAFE_TOGGLES = [
   'missedCallSmsEnabled',
   'aiResponseEnabled',
+  'smartAssistEnabled',
+  'smartAssistDelayMinutes',
+  'smartAssistManualCategories',
   'photoRequestsEnabled',
   'notificationEmail',
   'notificationSms',
 ] as const;
 
-type ClientToggle = typeof CLIENT_SAFE_TOGGLES[number];
+type ClientFeatureUpdates = {
+  missedCallSmsEnabled?: boolean;
+  aiResponseEnabled?: boolean;
+  smartAssistEnabled?: boolean;
+  smartAssistDelayMinutes?: number;
+  smartAssistManualCategories?: string[];
+  photoRequestsEnabled?: boolean;
+  notificationEmail?: boolean;
+  notificationSms?: boolean;
+};
 
 /** GET /api/client/features - Fetch safe feature toggles for the authenticated client. */
 export const GET = portalRoute(
@@ -31,9 +44,20 @@ export const GET = portalRoute(
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    const toggles: Record<string, boolean> = {};
+    const toggles: Record<string, boolean | number | string[]> = {};
     for (const key of CLIENT_SAFE_TOGGLES) {
-      toggles[key] = client[key] ?? true;
+      if (key === 'smartAssistDelayMinutes') {
+        toggles[key] = client.smartAssistDelayMinutes ?? 5;
+        continue;
+      }
+      if (key === 'smartAssistManualCategories') {
+        const raw = client.smartAssistManualCategories;
+        toggles[key] = Array.isArray(raw)
+          ? raw.filter((item): item is string => typeof item === 'string')
+          : [AI_ASSIST_CATEGORY.ESTIMATE_FOLLOWUP, AI_ASSIST_CATEGORY.PAYMENT];
+        continue;
+      }
+      toggles[key] = (client[key] as boolean | null) ?? true;
     }
 
     return NextResponse.json(toggles);
@@ -43,6 +67,9 @@ export const GET = portalRoute(
 const updateSchema = z.object({
   missedCallSmsEnabled: z.boolean().optional(),
   aiResponseEnabled: z.boolean().optional(),
+  smartAssistEnabled: z.boolean().optional(),
+  smartAssistDelayMinutes: z.number().int().min(1).max(60).optional(),
+  smartAssistManualCategories: z.array(z.enum(AI_ASSIST_CATEGORIES)).optional(),
   photoRequestsEnabled: z.boolean().optional(),
   notificationEmail: z.boolean().optional(),
   notificationSms: z.boolean().optional(),
@@ -63,11 +90,31 @@ export const PUT = portalRoute(
     }
 
     // Only allow the safe subset
-    const updates: Partial<Record<ClientToggle, boolean>> = {};
-    for (const [key, val] of Object.entries(parsed.data)) {
-      if (CLIENT_SAFE_TOGGLES.includes(key as ClientToggle) && val !== undefined) {
-        updates[key as ClientToggle] = val;
-      }
+    const updates: ClientFeatureUpdates = {};
+
+    if (parsed.data.missedCallSmsEnabled !== undefined) {
+      updates.missedCallSmsEnabled = parsed.data.missedCallSmsEnabled;
+    }
+    if (parsed.data.aiResponseEnabled !== undefined) {
+      updates.aiResponseEnabled = parsed.data.aiResponseEnabled;
+    }
+    if (parsed.data.smartAssistEnabled !== undefined) {
+      updates.smartAssistEnabled = parsed.data.smartAssistEnabled;
+    }
+    if (parsed.data.smartAssistDelayMinutes !== undefined) {
+      updates.smartAssistDelayMinutes = parsed.data.smartAssistDelayMinutes;
+    }
+    if (parsed.data.smartAssistManualCategories !== undefined) {
+      updates.smartAssistManualCategories = parsed.data.smartAssistManualCategories;
+    }
+    if (parsed.data.photoRequestsEnabled !== undefined) {
+      updates.photoRequestsEnabled = parsed.data.photoRequestsEnabled;
+    }
+    if (parsed.data.notificationEmail !== undefined) {
+      updates.notificationEmail = parsed.data.notificationEmail;
+    }
+    if (parsed.data.notificationSms !== undefined) {
+      updates.notificationSms = parsed.data.notificationSms;
     }
 
     if (Object.keys(updates).length === 0) {

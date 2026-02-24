@@ -15,42 +15,22 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Commits: `d01ac13`, `6c36d01`, `f138a66`, `ff00229`
 - `MS-02` Milestones A-E: complete.
   - Commits: `c263613`, `e4e757d`, `a65e212`, `c2d9d2c`, `bc6554e`
-- `MS-03` Milestone A: complete.
-  - Commits: `f25a9eb`
-- `MS-03` Milestone B: complete.
-  - Commits: `650a32c`
-- `MS-03` Milestone C: complete.
-  - Commits: `e90a35e`
-- `MS-03` Milestone D: complete.
-  - Commits: plus current Milestone D commit
+- `MS-03` Milestones A-D: complete.
+  - Commits: `f25a9eb`, `650a32c`, `e90a35e`, `9773ae3`
+- `MS-04` Milestones A-D: complete.
+  - Commit: current working session commit (pending)
 
 ## Current Focus
-- `MS-03` (Estimate trigger stack)
-- `MS-02` delivered end-to-end:
-  - guarantee-v2 domain module and status mapping
-  - schema fields for proof/recovery windows and extension metadata
-  - migration with safe backfill mapping
-  - QLE proof-of-life evaluator + metrics query module
-  - 90-day recovery evaluator + transition/audit persistence
-  - low-volume extension formula with persisted adjusted windows and audit events
-  - admin/client guarantee visibility + cancellation workflow guarantee context
-- `MS-03` Milestone A delivered:
-  - unified estimate trigger service (`triggerEstimateFollowup`)
-  - idempotency guard for duplicate sequence starts
-  - dashboard/API route migrated to service entrypoint
-- `MS-03` Milestone B delivered:
-  - SMS keyword parser (`EST <lead-id|lead-name|phone>`)
-  - deterministic lead resolution for command targets
-  - owner-side inbound keyword handling with confirmation/error replies
-- `MS-03` Milestone C delivered:
-  - quick-reply `YES` dispatch map wiring for prompt actions
-  - working `start_sequences` execution path via unified trigger service
-  - expiry-safe fallback + operator notifications for manual follow-up
-- `MS-03` Milestone D delivered:
-  - fallback nudge cron for stale contacted leads
-  - cooldown-safe stale-lead query helper and eligibility checks
-  - daily orchestrator dispatch wiring
-- Next: MS-04 Milestone A (smart assist scheduling primitives)
+- Next spec: `MS-05` (Quarterly Growth Blitz).
+- `MS-04` delivered end-to-end:
+  - smart-assist config model on client (`enabled`, `delay`, `manual categories`)
+  - centralized AI send-policy resolver with shared category constants
+  - deferred draft queue with owner prompt and approve/edit/cancel command handling
+  - auto-send processor for due smart-assist drafts in cron path
+  - manual-only category enforcement
+  - assist lifecycle statuses + transition helper + retry-safe send claim
+  - operator visibility in scheduled/lead views
+  - assist outcome counters in `daily_stats`
 
 ## Required Skills For Any MS Milestone
 - `ms-spec-delivery`
@@ -70,5 +50,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-04 Milestone A only.
+Continue with MS-05 Milestone A only.
 ```

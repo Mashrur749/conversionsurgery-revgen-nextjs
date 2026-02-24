@@ -5,7 +5,9 @@ import { processNoShowFollowUp } from '@/lib/automations/no-show-recovery';
 import { processWinBackFollowUp } from '@/lib/automations/win-back';
 import { getClientUsagePolicy } from '@/lib/services/subscription';
 import { isMessageLimitReached, type ClientUsagePolicy } from '@/lib/services/usage-policy';
-import { eq, and, lte, sql } from 'drizzle-orm';
+import { processDueSmartAssistDrafts } from '@/lib/services/smart-assist-lifecycle';
+import { SMART_ASSIST_SEQUENCE_TYPE } from '@/lib/services/smart-assist-state';
+import { eq, and, lte, sql, ne, or, isNull } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { sendSMS } from '@/lib/services/twilio';
 
@@ -20,6 +22,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = getDb();
+    const smartAssistResult = await processDueSmartAssistDrafts(25);
 
     // Monthly message count reset moved to dedicated /api/cron/monthly-reset (D9)
 
@@ -36,13 +39,17 @@ export async function GET(request: NextRequest) {
       .where(and(
         eq(scheduledMessages.sent, false),
         eq(scheduledMessages.cancelled, false),
+        or(
+          isNull(scheduledMessages.sequenceType),
+          ne(scheduledMessages.sequenceType, SMART_ASSIST_SEQUENCE_TYPE)
+        ),
         lte(scheduledMessages.sendAt, new Date())
       ))
       .limit(50);
 
-    let sent = 0;
-    let skipped = 0;
-    let failed = 0;
+    let sent = smartAssistResult.sent;
+    let skipped = smartAssistResult.skipped;
+    let failed = smartAssistResult.failed;
     const usagePolicyByClient = new Map<string, ClientUsagePolicy | null>();
 
     for (const { message, lead, client } of dueMessages) {
@@ -193,10 +200,11 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      processed: dueMessages.length,
+      processed: dueMessages.length + smartAssistResult.processed,
       sent,
       skipped,
       failed,
+      smartAssist: smartAssistResult,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

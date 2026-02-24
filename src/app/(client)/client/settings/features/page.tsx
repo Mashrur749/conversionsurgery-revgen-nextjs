@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { FeatureTogglesForm } from './feature-toggles-form';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
+import { AI_ASSIST_CATEGORY } from '@/lib/services/ai-send-policy';
 
 export default async function ClientFeaturesPage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.SETTINGS_EDIT);
@@ -14,6 +15,12 @@ export default async function ClientFeaturesPage() {
   const defaults = {
     missedCallSmsEnabled: client.missedCallSmsEnabled ?? true,
     aiResponseEnabled: client.aiResponseEnabled ?? true,
+    smartAssistEnabled: client.smartAssistEnabled ?? true,
+    smartAssistDelayMinutes: client.smartAssistDelayMinutes ?? 5,
+    smartAssistManualCategories: (client.smartAssistManualCategories as string[] | null) ?? [
+      AI_ASSIST_CATEGORY.ESTIMATE_FOLLOWUP,
+      AI_ASSIST_CATEGORY.PAYMENT,
+    ],
     photoRequestsEnabled: client.photoRequestsEnabled ?? true,
     notificationEmail: client.notificationEmail ?? true,
     notificationSms: client.notificationSms ?? true,

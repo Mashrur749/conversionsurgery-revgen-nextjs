@@ -26,6 +26,10 @@ export const dailyStats = pgTable(
     referralsRequested: integer('referrals_requested').default(0),
     paymentsReminded: integer('payments_reminded').default(0),
     messagesSent: integer('messages_sent').default(0),
+    smartAssistPending: integer('smart_assist_pending').default(0),
+    smartAssistAutoSent: integer('smart_assist_auto_sent').default(0),
+    smartAssistApprovedSent: integer('smart_assist_approved_sent').default(0),
+    smartAssistCancelled: integer('smart_assist_cancelled').default(0),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
+import { SMART_ASSIST_STATUS } from '@/lib/services/smart-assist-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,10 @@ export default async function ScheduledPage() {
       sendAt: scheduledMessages.sendAt,
       sequenceType: scheduledMessages.sequenceType,
       sequenceStep: scheduledMessages.sequenceStep,
+      assistStatus: scheduledMessages.assistStatus,
+      assistRequiresManual: scheduledMessages.assistRequiresManual,
+      assistCategory: scheduledMessages.assistCategory,
+      assistReferenceCode: scheduledMessages.assistReferenceCode,
       leadId: scheduledMessages.leadId,
       leadName: leads.name,
       leadPhone: leads.phone,
@@ -82,6 +87,16 @@ export default async function ScheduledPage() {
                       <div className="flex gap-2 mt-1 flex-wrap">
                         <Badge variant="outline">{msg.sequenceType}</Badge>
                         <Badge variant="secondary">Step {msg.sequenceStep}</Badge>
+                        {msg.assistStatus === SMART_ASSIST_STATUS.PENDING_APPROVAL && (
+                          <Badge variant="secondary" className="bg-[#FFF3E0] text-sienna">
+                            Awaiting approval
+                          </Badge>
+                        )}
+                        {msg.assistRequiresManual && msg.assistStatus === SMART_ASSIST_STATUS.PENDING_APPROVAL && (
+                          <Badge variant="outline">
+                            Manual required
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground shrink-0">
@@ -91,6 +106,14 @@ export default async function ScheduledPage() {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {msg.content}
                   </p>
+                  {msg.assistStatus === SMART_ASSIST_STATUS.PENDING_APPROVAL && msg.assistReferenceCode && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Ref {msg.assistReferenceCode}
+                      {msg.assistRequiresManual
+                        ? ' • Waiting for explicit approval'
+                        : ' • Auto-send scheduled if untouched'}
+                    </p>
+                  )}
                 </Link>
               ))
             )}

@@ -8,6 +8,8 @@ import { initiateRingGroup } from '@/lib/services/ring-group';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 import { checkAndSuggestFlows, handleApprovalResponse } from '@/lib/services/flow-suggestions';
 import { triggerEstimateFollowupFromSmsCommand } from '@/lib/services/estimate-triggers';
+import { AI_ASSIST_CATEGORY, resolveAiSendPolicy } from '@/lib/services/ai-send-policy';
+import { handleSmartAssistOwnerCommand, queueSmartAssistDraft } from '@/lib/services/smart-assist-lifecycle';
 import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
 import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/services/media';
 import { processIncomingMessage } from '@/lib/agent/orchestrator';
@@ -79,6 +81,19 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
           ? 'estimate_sequence_triggered_sms'
           : 'estimate_sequence_command_error',
         leadId: estimateCommandResult.leadId,
+      };
+    }
+
+    const smartAssistCommandResult = await handleSmartAssistOwnerCommand({
+      clientId: client.id,
+      fromPhone: senderPhone,
+      fromTwilioNumber: client.twilioNumber!,
+      messageBody,
+    });
+    if (smartAssistCommandResult.handled) {
+      return {
+        processed: true,
+        action: smartAssistCommandResult.action,
       };
     }
   }
@@ -531,6 +546,47 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   }
 
   // 10. Send AI response via compliance gateway
+  const assistCategory = isNewLead
+    ? AI_ASSIST_CATEGORY.FIRST_RESPONSE
+    : AI_ASSIST_CATEGORY.FOLLOW_UP;
+  const sendPolicy = resolveAiSendPolicy(client, assistCategory);
+
+  if (sendPolicy.mode === 'disabled') {
+    return {
+      processed: true,
+      leadId: lead.id,
+      aiResponseDisabled: true,
+      policyReason: sendPolicy.reason,
+    };
+  }
+
+  if (sendPolicy.mode === 'delayed_auto_send' || sendPolicy.mode === 'pending_manual') {
+    const queued = await queueSmartAssistDraft({
+      clientId: client.id,
+      leadId: lead.id,
+      leadPhone: senderPhone,
+      leadName: lead.name,
+      ownerPhone: client.phone,
+      fromTwilioNumber: client.twilioNumber!,
+      content: aiResult.response,
+      category: assistCategory,
+      delayMinutes: sendPolicy.delayMinutes,
+      requiresManualApproval: sendPolicy.requiresManualApproval,
+    });
+
+    checkAndSuggestFlows(lead.id, client.id, conversationHistory).catch(console.error);
+
+    return {
+      processed: true,
+      leadId: lead.id,
+      smartAssistPending: true,
+      smartAssistReferenceCode: queued.referenceCode,
+      smartAssistSendAt: queued.sendAt.toISOString(),
+      smartAssistRequiresManualApproval: sendPolicy.requiresManualApproval,
+      category: assistCategory,
+    };
+  }
+
   try {
     const sendResult = await sendCompliantMessage({
       clientId: client.id,

@@ -17,6 +17,7 @@ import { LeadTabs } from './lead-tabs';
 import { LeadHeader } from './lead-header';
 import { FlowStatus } from './flow-status';
 import { LeadTags } from './lead-tags';
+import { SMART_ASSIST_STATUS } from '@/lib/services/smart-assist-state';
 
 export const dynamic = 'force-dynamic';
 
@@ -163,9 +164,29 @@ export default async function LeadDetailPage({ params }: Props) {
                       {format(new Date(msg.sendAt), 'MMM d, h:mm a')}
                     </p>
                     <p className="truncate">{msg.content.substring(0, 50)}...</p>
-                    <Badge variant="outline" className="mt-1">
-                      {msg.sequenceType}
-                    </Badge>
+                    <div className="flex gap-2 mt-1 flex-wrap">
+                      <Badge variant="outline">
+                        {msg.sequenceType}
+                      </Badge>
+                      {msg.assistStatus === SMART_ASSIST_STATUS.PENDING_APPROVAL && (
+                        <Badge variant="secondary" className="bg-[#FFF3E0] text-sienna">
+                          Awaiting approval
+                        </Badge>
+                      )}
+                      {msg.assistRequiresManual && msg.assistStatus === SMART_ASSIST_STATUS.PENDING_APPROVAL && (
+                        <Badge variant="outline">
+                          Manual required
+                        </Badge>
+                      )}
+                    </div>
+                    {msg.assistStatus === SMART_ASSIST_STATUS.PENDING_APPROVAL && msg.assistReferenceCode && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ref {msg.assistReferenceCode}
+                        {msg.assistRequiresManual
+                          ? ' • Waiting for explicit approval'
+                          : ' • Auto-send pending at scheduled time'}
+                      </p>
+                    )}
                   </div>
                 ))}
               </CardContent>

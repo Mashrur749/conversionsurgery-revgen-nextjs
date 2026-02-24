@@ -22,7 +22,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 | MS-01 | GAP-001 | DONE | DONE | DONE | DONE | MS-01 complete: unlimited policy model + runtime + billing + UI alignment. |
 | MS-02 | GAP-002 | DONE | DONE | DONE | DONE | MS-02 complete (A-E): guarantee model, evaluators, extension logic, visibility, cancellation alignment. |
 | MS-03 | GAP-003 | DONE | DONE | DONE | DONE | MS-03 complete: unified triggers + SMS keyword + quick-reply + fallback nudge cron. |
-| MS-04 | GAP-004 | OPEN | OPEN | OPEN | OPEN | |
+| MS-04 | GAP-004 | DONE | DONE | DONE | DONE | MS-04 complete: policy model + deferred lifecycle + category controls + observability. |
 | MS-05 | GAP-005 | OPEN | OPEN | OPEN | OPEN | |
 | MS-06 | GAP-006 | OPEN | OPEN | OPEN | OPEN | |
 | MS-07 | GAP-007 | OPEN | OPEN | OPEN | OPEN | |
