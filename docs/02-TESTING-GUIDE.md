@@ -1,8 +1,9 @@
 # Testing Guide
 
-Last updated: 2026-02-21
+Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
+Last verified commit: `48740fa`
 
 ## 0. Preflight (Run First)
 
@@ -45,7 +46,7 @@ npm run build
 ```
 
 Expected:
-- Unit tests: 49 passing.
+- Unit tests pass.
 - Build passes.
 - Known non-blocking warning today: Next.js middleware deprecation warning (`middleware` -> `proxy`).
 
@@ -169,7 +170,46 @@ curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bear
 ```
 3. Confirm contractor reminder path (`appointment_reminder_contractor`) is delivered to client owner phone.
 
-### Step 10: Final smoke
+### Step 10: Smart Assist parity (MS-04)
+1. Ensure test client has:
+- `aiAgentMode = assist`
+- `smartAssistEnabled = true`
+- `smartAssistDelayMinutes = 1` (for quick validation)
+2. Send inbound message from a lead.
+3. Verify a pending smart-assist draft appears with reference code.
+4. Validate command paths from owner phone:
+- `SEND <ref>` sends immediately.
+- `EDIT <ref>: <new message>` sends edited message.
+- `CANCEL <ref>` cancels draft.
+5. For non-manual category drafts, leave untouched and run:
+```bash
+curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bearer $CRON_SECRET"
+```
+Expected:
+- Draft auto-sends after delay when untouched.
+- Manual-only categories do not auto-send.
+
+### Step 11: Quarterly Growth Blitz parity (MS-05)
+1. Run planner:
+```bash
+curl -i http://localhost:3000/api/cron/quarterly-campaign-planner -H "Authorization: Bearer $CRON_SECRET"
+```
+2. In admin client page, confirm campaign draft exists for current/next quarter.
+3. Execute lifecycle:
+- approve plan
+- launch campaign (only after required assets complete)
+- mark completed (with outcome summary)
+4. Run alerts/digest:
+```bash
+curl -i http://localhost:3000/api/cron/quarterly-campaign-alerts -H "Authorization: Bearer $CRON_SECRET"
+curl -i "http://localhost:3000/api/cron/quarterly-campaign-alerts?mode=weekly" -H "Authorization: Bearer $CRON_SECRET"
+```
+Expected:
+- Planner is idempotent.
+- Invalid lifecycle jumps are blocked.
+- Campaign summary appears in client dashboard and report context.
+
+### Step 12: Final smoke
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
@@ -192,6 +232,8 @@ curl -i http://localhost:3000/api/cron/monthly-reset -H "Authorization: Bearer $
 curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/quarterly-campaign-planner -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/quarterly-campaign-alerts -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ## 4. Release Gate

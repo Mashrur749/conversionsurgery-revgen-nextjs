@@ -1,7 +1,8 @@
 # Operations Guide
 
-Last updated: 2026-02-21
+Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
+Last verified commit: `48740fa`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -10,6 +11,8 @@ Audience: Founder, operations monitor, on-call engineer
 4. Review message delivery failures and opt-out anomalies.
 5. Review onboarding clients in `pending` and move blockers (number, hours, knowledge, team).
 6. Review subscriptions flagged `refund_review_required` under 30-day guarantee workflow.
+7. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
+8. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
 
 ## Cron Operations
 
@@ -40,6 +43,12 @@ curl -s "$BASE_URL/api/cron/biweekly-reports" \
 curl -s "$BASE_URL/api/cron/process-queued-compliance" \
   -H "Authorization: Bearer $CRON_SECRET"
 
+curl -s "$BASE_URL/api/cron/quarterly-campaign-planner" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/quarterly-campaign-alerts" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
 curl -s "$BASE_URL/api/cron/access-review" \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
@@ -47,6 +56,8 @@ curl -s "$BASE_URL/api/cron/access-review" \
 ### Expected behavior
 - 2xx responses with per-job result payloads.
 - Any non-empty error bucket is an incident candidate.
+- Quarterly planner is idempotent (no duplicate client/quarter campaign records).
+- Quarterly alerts include overdue campaign count for launch-risk visibility.
 
 ## Access Management Operations
 

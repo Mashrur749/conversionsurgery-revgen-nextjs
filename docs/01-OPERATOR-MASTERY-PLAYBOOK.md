@@ -1,8 +1,9 @@
 # Operator Mastery Playbook
 
-Last updated: 2026-02-21
+Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
+Last verified commit: `48740fa`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -44,7 +45,9 @@ Objective: run live managed-service operations reliably.
 2. Review escalation queue and SLA breaches every day.
 3. Review pending onboarding clients and remove blockers.
 4. Review guarantee refund-review queue and billing events.
-5. Trigger cron sub-jobs manually if automation lag is detected.
+5. Review Smart Assist pending approvals/manual categories and timeout sends.
+6. Review quarterly campaign status for each active client (planned/scheduled/launched/completed).
+7. Trigger cron sub-jobs manually if automation lag is detected.
 
 Exit gate:
 - You can run daily ops in under 30 minutes.
@@ -123,8 +126,10 @@ Exit gate:
 3. Escalation queue healthy and SLA breaches addressed.
 4. Pending onboarding clients reviewed.
 5. Guarantee/refund-review queue reviewed.
-6. Access-review outcomes reviewed.
-7. Bi-weekly reports generated and delivered.
+6. Smart Assist queue reviewed (pending manual approvals + delayed auto-sends).
+7. Quarterly campaign lifecycle reviewed (no overdue launch targets).
+8. Access-review outcomes reviewed.
+9. Bi-weekly reports generated and delivered.
 
 ## Core References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`

@@ -1,6 +1,6 @@
 # Remaining Gaps
 
-Last updated: 2026-02-23
+Last updated: 2026-02-24
 Scope: Open items after security + access hardening wave
 
 ## Status Tags
@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: 2f4253c`
+- `LAST_VERIFIED_COMMIT: 48740fa`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.

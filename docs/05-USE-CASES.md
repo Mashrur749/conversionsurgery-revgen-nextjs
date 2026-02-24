@@ -1,7 +1,8 @@
 # Use Cases
 
-Last updated: 2026-02-21
+Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
+Last verified commit: `48740fa`
 
 ## 1. Founder/Agency Use Cases
 
@@ -38,7 +39,7 @@ Outcome: Assistant can operate within controlled permissions.
 
 ### U5. Monitor and intervene in lead conversations
 1. Assistant/owner views conversations.
-2. AI handles routine flow; humans intervene on exceptions.
+2. AI handles routine flow; Smart Assist applies delayed auto-send or manual approval by category.
 3. Escalations route to configured recipients.
 
 Outcome: Faster responses and less lead leakage.
@@ -65,6 +66,13 @@ Outcome: predictable revenue capture and proactive access governance.
 3. Owner is notified as fallback.
 
 Outcome: No escalation is silently dropped.
+
+### U7c. Smart Assist review + auto-send workflow
+1. Inbound lead message generates AI draft.
+2. Owner gets reference-code commands (`SEND`, `EDIT`, `CANCEL`).
+3. Safe categories auto-send on timeout; sensitive categories remain manual.
+
+Outcome: speed-to-lead is preserved without losing operator control.
 
 ### U7b. 30-day guarantee automation
 1. A new subscription starts with guarantee window metadata.
@@ -96,3 +104,10 @@ Outcome: faster activation and fewer manual onboarding handoffs.
 3. Tutorial-led setup reduces support overhead and activation time.
 
 Outcome: SaaS-ready control model with low operational risk.
+
+### U10. Quarterly Growth Blitz execution (managed service)
+1. Quarterly campaign draft is planned per active client.
+2. Operator approves, launches, and completes campaign with evidence/outcome logs.
+3. Status appears in reporting and client dashboard summary.
+
+Outcome: retention anchor is operationalized with auditable delivery.

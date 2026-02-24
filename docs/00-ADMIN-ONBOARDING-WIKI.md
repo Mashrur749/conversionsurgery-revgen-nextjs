@@ -1,8 +1,9 @@
 # Admin Onboarding Wiki
 
-Last updated: 2026-02-23
+Last updated: 2026-02-24
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
+Last verified commit: `48740fa`
 
 ## Canonical Order (Read + Execute)
 
@@ -29,6 +30,22 @@ Purpose: verify offer promises are matched by implementation before selling.
 
 8. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
 Purpose: confirm earlier launch-hardening wave is closed and historical context is preserved.
+
+## Documentation Sync Contract (Mandatory)
+For every implementation milestone (code change), documentation must be updated in the same execution stream before moving to the next spec.
+
+Required docs to sync each milestone:
+1. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
+2. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/specs/MS-IMPLEMENTATION-BOARD.md`
+3. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/specs/MS-CONTEXT-SNAPSHOT.md`
+4. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md` (if testing flow changed)
+5. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md` (if ops flow/cron changed)
+
+Cadence rule:
+1. Implement milestone.
+2. Run verification gate (`npm run ms:gate` + targeted tests).
+3. Sync docs.
+4. Commit code/docs.
 
 ## Mandatory Execution Before Selling Next Week
 

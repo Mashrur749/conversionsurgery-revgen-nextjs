@@ -9,7 +9,7 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: edc545d`
+- `LAST_VERIFIED_COMMIT: 48740fa`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
@@ -278,3 +278,13 @@ Highest-risk mismatches for paying clients are now concentrated in:
 A gap can move to done only when both are true:
 1. Functional verification exists (`02-TESTING-GUIDE.md` updated with explicit pass criteria).
 2. Client-facing and operations docs are updated to match behavior exactly.
+
+## Documentation Sync Rule (Mandatory)
+For every completed MS milestone:
+1. Update this file (`10-OFFER-PARITY-GAPS.md`).
+2. Update `docs/specs/MS-IMPLEMENTATION-BOARD.md`.
+3. Update `docs/specs/MS-CONTEXT-SNAPSHOT.md`.
+4. If workflows changed, update:
+- `docs/02-TESTING-GUIDE.md`
+- `docs/04-OPERATIONS-GUIDE.md`
+- `docs/05-USE-CASES.md`

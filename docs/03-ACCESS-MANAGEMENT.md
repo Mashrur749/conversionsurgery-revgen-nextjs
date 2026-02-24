@@ -1,7 +1,8 @@
 # Access Management
 
-Last updated: 2026-02-21
+Last updated: 2026-02-24
 Owner: Operations + Engineering
+Last verified commit: `48740fa`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
