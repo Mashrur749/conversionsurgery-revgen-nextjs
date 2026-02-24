@@ -8,6 +8,12 @@ import { z } from 'zod';
 import { NextRequest } from 'next/server';
 import { getTeamMembers, getTotalTeamMemberCount } from '@/lib/services/team-bridge';
 import { canAccessClient, getAgencySession } from '@/lib/permissions';
+import {
+  ADDON_PRICING_KEYS,
+  formatAddonPrice,
+  getAddonPricing,
+} from '@/lib/services/addon-pricing';
+import { recordTeamMemberAddonEventForMembership } from '@/lib/services/addon-billing-ledger';
 
 async function resolveAuthorizedClientId(
   session: { user?: { isAgency?: boolean } } | null,
@@ -94,8 +100,15 @@ export async function POST(req: Request) {
     const currentCount = await getTotalTeamMemberCount(clientId);
     const usageCheck = await checkUsageLimit(clientId, 'team_members', currentCount);
     if (!usageCheck.allowed) {
+      const addonPricing = await getAddonPricing(clientId);
+      const seatPrice =
+        addonPricing[ADDON_PRICING_KEYS.EXTRA_TEAM_MEMBER].unitPriceCents;
       return Response.json(
-        { error: `Team member limit reached (${usageCheck.current}/${usageCheck.limit}). Upgrade your plan for more capacity.` },
+        {
+          error: `Team member limit reached (${usageCheck.current}/${usageCheck.limit}). Additional seats are ${formatAddonPrice(
+            seatPrice
+          )}/month each.`,
+        },
         { status: 403 }
       );
     }
@@ -191,6 +204,7 @@ export async function POST(req: Request) {
           isActive: updated.isActive,
           createdAt: updated.createdAt,
           updatedAt: updated.updatedAt,
+          addedForBilling: !existingMembership.isActive,
         };
       }
 
@@ -219,10 +233,18 @@ export async function POST(req: Request) {
         isActive: membership.isActive,
         createdAt: membership.createdAt,
         updatedAt: membership.updatedAt,
+        addedForBilling: true,
       };
     });
 
-    return Response.json({ success: true, member, teamMember: member });
+    if (member.addedForBilling) {
+      await recordTeamMemberAddonEventForMembership(clientId, member.id).catch((error) => {
+        console.error('[TeamHours] Failed to record add-on billing event:', error);
+      });
+    }
+
+    const { addedForBilling: _addedForBilling, ...memberResponse } = member;
+    return Response.json({ success: true, member: memberResponse, teamMember: memberResponse });
   } catch (error) {
     console.error('[TeamHours] Team member creation error:', error);
     return Response.json({ error: 'Failed to create team member' }, { status: 500 });

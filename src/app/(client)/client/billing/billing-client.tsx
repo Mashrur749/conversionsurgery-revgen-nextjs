@@ -67,6 +67,16 @@ interface BillingPageClientProps {
       leads: { used: number; included: number | null; overage: number };
       teamMembers: { used: number; included: number };
       phoneNumbers: { used: number; included: number };
+      addOnPricing?: {
+        extraTeamMemberUnitCents: number;
+        extraNumberUnitCents: number;
+        voiceMinuteUnitCents: number;
+      };
+      addOnExposure?: {
+        extraTeamMembers: number;
+        extraPhoneNumbers: number;
+        projectedMonthlyAddOnCents: number;
+      };
     } | null;
   };
 }

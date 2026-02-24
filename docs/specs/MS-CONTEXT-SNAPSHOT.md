@@ -28,10 +28,21 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 - `MS-08` Milestones A-D: complete.
   - Commit: `cc97c11`
 - `MS-09` Milestones A-D: complete.
-  - Commit: pending current change set
+  - Commit: `11f9737`
+- `MS-10` Milestones A-B: complete in current working tree.
+  - Milestone A: pricing catalog normalization and visibility baseline
+  - Milestone B: idempotent add-on billing ledger + event emitters + voice rollup cron
 
 ## Current Focus
-- Next spec: `MS-10` (add-on billing transparency).
+- Next spec: `MS-10` (add-on billing transparency), Milestone C.
+- `MS-10` Milestones A-B are implemented in the working tree:
+  - centralized add-on pricing catalog keys and effective-date resolver
+  - route limit messaging for team seats/phone numbers now sourced from add-on pricing resolver
+  - client billing usage card now shows explicit add-on rates and projected recurring add-on subtotal
+  - add-on billing ledger table + idempotency key model
+  - unified ledger writer service for add-on billable events
+  - event emission wired for team-seat over-base and phone-number purchases
+  - voice-minute rollup cron endpoint integrated into orchestrator
 - `MS-04` delivered end-to-end:
   - smart-assist config model on client (`enabled`, `delay`, `manual categories`)
   - centralized AI send-policy resolver with shared category constants
@@ -90,5 +101,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-09 Milestone A only.
+Continue with MS-10 Milestone C only.
 ```

@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `MS-09 working tree`
+**Last verified commit:** `MS-10 Milestone B working tree`
 
 ---
 
@@ -219,5 +219,6 @@ Since the original audit window, new managed-service features (Smart Assist work
    - client-scoped agency route (`/api/admin/clients/[id]/onboarding/day-one`) guarded by `adminClientRoute` permissions.
    - cron sub-route (`/api/cron/onboarding-sla-check`) guarded by `verifyCronSecret()`.
    - public onboarding status surface remains constrained to verified `clientId + email` pair.
+7. Add-on pricing transparency (`MS-10` Milestones A-B) adds add-on billing ledger writes and `/api/cron/voice-usage-rollup`; both stay within existing auth boundaries (`/api/team-members` scoped session, `/api/admin/twilio/purchase` agency permission, cron bearer guard).
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

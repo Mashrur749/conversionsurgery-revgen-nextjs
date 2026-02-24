@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `MS-09 working tree`
+Last verified commit: `MS-10 Milestone B working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -143,3 +143,11 @@ Outcome: retention narrative is evidence-backed and transparent, without fabrica
 5. Operations monitors SLA queue in admin billing and handles any failed or overdue requests.
 
 Outcome: cancellation terms are contract-aligned and auditable without manual ad hoc export handling.
+
+### U13. Add-on billing transparency reference (MS-10 A-B)
+1. Client reaches team-member or phone-number plan limit.
+2. API/UI limit messaging shows explicit add-on rate per unit.
+3. Client billing usage card shows add-on rates and projected recurring add-on subtotal.
+4. Team-member over-base events, phone-number purchase events, and voice-minute rollups are recorded in an idempotent add-on billing ledger.
+
+Outcome: add-on pricing is visible before invoicing and billable add-on events are auditable before invoice itemization.

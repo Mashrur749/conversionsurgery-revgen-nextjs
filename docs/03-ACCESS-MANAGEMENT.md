@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-09 working tree`
+Last verified commit: `MS-10 Milestone B working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -89,6 +89,14 @@ Permission templates and overrides resolve effective access at runtime.
 2. Read requires `agency.clients.view`.
 3. Mutations require `agency.clients.edit`.
 - Public onboarding status/checklist endpoints remain client-identity scoped (`clientId + email` pair) and do not expose cross-client data.
+
+## MS-10 Access Note (Milestones A-B)
+- Add-on pricing resolver + add-on billing ledger integration introduced no new permission scopes.
+- Updated limit-copy behavior remains on existing permission-guarded routes:
+1. `/api/team-members` (session + client scope)
+2. `/api/admin/twilio/purchase` (`agency.phones.manage`)
+- Added cron route remains on existing cron bearer guard:
+3. `/api/cron/voice-usage-rollup` (`verifyCronSecret`)
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-09 working tree`
+Last verified commit: `MS-10 Milestone B working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -17,6 +17,8 @@ Last verified commit: `MS-09 working tree`
 10. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
 11. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
 12. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
+13. Spot-check billing transparency: team/phone limit responses and client billing usage card should show explicit add-on rates.
+14. Verify add-on billing ledger health: recent `addon_billing_events` rows for team seats, numbers, and voice rollups exist for active clients.
 
 ## Cron Operations
 
@@ -58,6 +60,9 @@ curl -s "$BASE_URL/api/cron/access-review" \
 
 curl -s "$BASE_URL/api/cron/onboarding-sla-check" \
   -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/voice-usage-rollup" \
+  -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ### Expected behavior
@@ -69,6 +74,7 @@ curl -s "$BASE_URL/api/cron/onboarding-sla-check" \
 - Cancellation-confirmed clients receive export requests with 5-business-day due date and monitored SLA states.
 - Quiet-hours policy mode is visible in admin compliance dashboard and should match current legal operating posture.
 - Onboarding SLA checker marks overdue Day-One milestones and opens operator alerts/tasks.
+- Voice usage rollup upserts add-on ledger rows by billing period with idempotency protection.
 
 ## Access Management Operations
 

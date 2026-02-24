@@ -157,6 +157,11 @@ export async function POST(request: NextRequest) {
       results.trialReminders = await dispatch(baseUrl, '/api/cron/trial-reminders', cronSecret!, 'POST');
       results.noShowRecovery = await dispatch(baseUrl, '/api/cron/no-show-recovery', cronSecret!);
       results.stripeReconciliation = await dispatch(baseUrl, '/api/cron/stripe-reconciliation', cronSecret!);
+      results.voiceUsageRollup = await dispatch(
+        baseUrl,
+        '/api/cron/voice-usage-rollup',
+        cronSecret!
+      );
       results.guaranteeCheck = await dispatch(baseUrl, '/api/cron/guarantee-check', cronSecret!);
 
       // Monthly: update cohort retention (1st of month)

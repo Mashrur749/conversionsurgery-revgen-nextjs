@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `MS-09 working tree`
+Last verified commit: `MS-10 Milestone B working tree`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -152,6 +152,8 @@ Exit gate:
 10. Access-review outcomes reviewed.
 11. Bi-weekly reports generated and delivered.
 12. "Without Us" model status reviewed for every active client.
+13. Add-on pricing transparency verified in client billing usage view and limit responses.
+14. Add-on billing ledger freshness verified (recent team/number/voice rows present with no duplicate idempotency conflicts).
 
 ## Core References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`

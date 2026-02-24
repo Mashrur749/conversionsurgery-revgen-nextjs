@@ -23,9 +23,23 @@ interface UsageDisplayProps {
       used: number;
       included: number;
     };
+    addOnPricing?: {
+      extraTeamMemberUnitCents: number;
+      extraNumberUnitCents: number;
+      voiceMinuteUnitCents: number;
+    };
+    addOnExposure?: {
+      extraTeamMembers: number;
+      extraPhoneNumbers: number;
+      projectedMonthlyAddOnCents: number;
+    };
   };
   periodStart: Date;
   periodEnd: Date;
+}
+
+function formatMoney(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
 }
 
 export function UsageDisplay({ usage, periodStart, periodEnd }: UsageDisplayProps) {
@@ -102,6 +116,37 @@ export function UsageDisplay({ usage, periodStart, periodEnd }: UsageDisplayProp
             className="h-2"
           />
         </div>
+
+        {/* Add-on pricing transparency */}
+        {usage.addOnPricing && (
+          <div className="rounded-md border p-3 space-y-2 text-sm">
+            <p className="font-medium">Add-On Pricing (CAD)</p>
+            <div className="flex justify-between">
+              <span>Additional Team Member</span>
+              <span>{formatMoney(usage.addOnPricing.extraTeamMemberUnitCents)}/month</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Additional Phone Number</span>
+              <span>{formatMoney(usage.addOnPricing.extraNumberUnitCents)}/month</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Voice AI Minutes</span>
+              <span>{formatMoney(usage.addOnPricing.voiceMinuteUnitCents)}/minute</span>
+            </div>
+            {usage.addOnExposure && (
+              <div className="pt-2 border-t text-muted-foreground">
+                <p>
+                  Current extras: {usage.addOnExposure.extraTeamMembers} team member(s),{' '}
+                  {usage.addOnExposure.extraPhoneNumbers} number(s)
+                </p>
+                <p>
+                  Projected monthly add-on subtotal:{' '}
+                  {formatMoney(usage.addOnExposure.projectedMonthlyAddOnCents)}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

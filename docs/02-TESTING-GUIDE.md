@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-09 working tree`
+Last verified commit: `MS-10 Milestone B working tree`
 
 ## 0. Preflight (Run First)
 
@@ -120,6 +120,34 @@ Expected:
 
 If blocked:
 - `Default team member role not configured`: rerun role seed script.
+
+### Step 3b: Add-on pricing transparency baseline (MS-10 A)
+1. Trigger a team-member limit failure and confirm response copy includes explicit per-seat price.
+2. Trigger a phone-number limit failure and confirm response copy includes explicit per-number price.
+3. Open `/client/billing` and inspect `Usage This Period` card.
+
+Expected:
+- Add-on pricing section shows:
+  - Additional Team Member price
+  - Additional Phone Number price
+  - Voice AI per-minute price
+- Projected recurring add-on subtotal appears when extra seats/numbers exist.
+
+### Step 3c: Add-on billing ledger + voice rollup baseline (MS-10 B)
+1. Add/reactivate a team member above included seat limit.
+2. Purchase an additional phone number above included number limit.
+3. Run voice rollup cron:
+```bash
+curl -i http://localhost:3000/api/cron/voice-usage-rollup -H "Authorization: Bearer $CRON_SECRET"
+```
+4. Query `addon_billing_events` and confirm idempotent rows exist for:
+- `extra_team_member` (`source_type=team_membership`)
+- `extra_number` (`source_type=phone_number`)
+- `voice_minutes` (`source_type=voice_calls_rollup`, when voice duration exists)
+
+Expected:
+- Events include period start/end, quantity, unit price, total, and idempotency key.
+- Re-running the same actions/cron updates existing idempotent rows instead of creating duplicates.
 
 ### Step 4: Onboarding persistence checks
 1. Use onboarding wizard (`/admin/clients/new/wizard` or current onboarding flow in your environment).

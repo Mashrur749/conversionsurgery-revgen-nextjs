@@ -9,7 +9,7 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-09 working tree`
+- `LAST_VERIFIED_COMMIT: MS-10 Milestone B working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
@@ -31,7 +31,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-007 | P0 | `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | Done |
 | GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Done |
 | GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Done |
-| GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Spec Ready |
+| GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | In Progress |
 | GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Spec Ready |
 | GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
 | GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
@@ -47,8 +47,8 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | Estimate Trigger Methods (SMS keyword, quick-reply, dashboard, fallback nudge) | All trigger paths implemented with unified service + cron fallback | Ready |
 | Unlimited conversations/messages, no caps/no overages | Unlimited plan policy active in runtime + billing UI paths | Ready |
 | Dedicated number + CRM | Implemented | Ready |
-| Additional team/number paid add-ons | Limits enforced; add-on billing workflow not fully productized | Gap |
-| Voice AI optional add-on at $0.15/min | Voice AI exists; transparent per-minute billing workflow not fully wired | Gap |
+| Additional team/number paid add-ons | Limits enforced; add-on ledger events now recorded with idempotent billing period keys; invoice itemization/support UX still pending | Partial |
+| Voice AI optional add-on at $0.15/min | Voice rollup now records per-minute add-on ledger events; invoice itemization/support UX still pending | Partial |
 | Day-One Activation package | Milestone tracker, audit artifact workflow, SLA alerting, and operator/client visibility implemented | Ready |
 | Smart assist mode (5-minute auto-send window) | Smart-assist queue + owner approve/edit/cancel + auto-send lifecycle implemented | Ready |
 | KB QA process with gap closure loop | Gap tracking primitives exist; full operational closure loop missing | Partial |
@@ -334,9 +334,36 @@ Highest-risk mismatches for paying clients are now concentrated in:
 
 3. `GAP-103` Add-on billing clarity for extra team members/phone numbers/voice
 - Offer positions transparent add-ons; system currently enforces limits and usage tracking but does not fully expose end-to-end add-on invoice transparency.
+- Progress (2026-02-24): `MS-10` Milestone A completed.
+- Added normalized add-on price catalog with effective-date resolver:
+  - keys: `extra_team_member`, `extra_number`, `voice_minutes`
+  - default CAD pricing and system-settings override hook (`addon_pricing_catalog`)
+- Route limit-copy now sources add-on prices from resolver (no hard-coded amounts):
+  - team member limit response
+  - phone number limit response
+- Client billing usage view now shows add-on pricing reference and projected recurring add-on subtotal for extra seats/numbers.
+- Progress (2026-02-24): `MS-10` Milestone B completed.
+- Added add-on billing ledger table with idempotency keys and period windows.
+- Added centralized ledger writer service and routed all new add-on events through it.
+- Emission paths now implemented for:
+  - team seats over included base (membership create/reactivate)
+  - additional number purchases
+  - voice usage rollup cron (`/api/cron/voice-usage-rollup`)
+- Remaining: Milestones C-D (invoice itemization + CSV detail, dispute/support traceability).
 - Evidence:
-  - team/phone limits: `src/app/api/team-members/route.ts`, `src/app/api/admin/twilio/purchase/route.ts`
-  - voice usage tracking only: `src/lib/services/usage-tracking.ts`, `src/db/schema/api-usage-monthly.ts`
+  - `src/lib/services/addon-pricing.ts`
+  - `src/lib/services/addon-pricing.test.ts`
+  - `src/db/schema/addon-billing-events.ts`
+  - `drizzle/0028_fancy_smasher.sql`
+  - `src/lib/services/addon-billing-ledger.ts`
+  - `src/lib/services/addon-billing-ledger.test.ts`
+  - `src/app/api/cron/voice-usage-rollup/route.ts`
+  - `src/app/api/cron/route.ts`
+  - `src/app/api/team-members/route.ts`
+  - `src/app/api/admin/twilio/purchase/route.ts`
+  - `src/lib/billing/queries.ts`
+  - `src/components/billing/UsageDisplay.tsx`
+  - `src/app/(client)/client/billing/billing-client.tsx`
 
 4. `GAP-104` Report delivery observability and retry UX
 - Offer depends on trust through reporting; current docs note delivery visibility is limited.

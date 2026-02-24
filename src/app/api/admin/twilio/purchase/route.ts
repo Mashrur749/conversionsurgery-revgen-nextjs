@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { purchaseNumber } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
+import {
+  ADDON_PRICING_KEYS,
+  formatAddonPrice,
+  getAddonPricing,
+} from '@/lib/services/addon-pricing';
+import { recordPhoneNumberAddonEventForPurchase } from '@/lib/services/addon-billing-ledger';
 
 const purchaseSchema = z.object({
   phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters'),
@@ -43,8 +49,15 @@ export const POST = adminRoute(
     const currentPhoneCount = (phoneCount[0]?.count ?? 0) + 1;
     const usageCheck = await checkUsageLimit(clientId, 'phone_numbers', currentPhoneCount);
     if (!usageCheck.allowed) {
+      const addonPricing = await getAddonPricing(clientId);
+      const numberPrice =
+        addonPricing[ADDON_PRICING_KEYS.EXTRA_NUMBER].unitPriceCents;
       return NextResponse.json(
-        { error: `Phone number limit reached (${usageCheck.current}/${usageCheck.limit}). Upgrade plan for more numbers.` },
+        {
+          error: `Phone number limit reached (${usageCheck.current}/${usageCheck.limit}). Additional numbers are ${formatAddonPrice(
+            numberPrice
+          )}/month each.`,
+        },
         { status: 403 }
       );
     }
@@ -60,6 +73,10 @@ export const POST = adminRoute(
         { status: 400 }
       );
     }
+
+    await recordPhoneNumberAddonEventForPurchase(clientId, phoneNumber).catch((error) => {
+      console.error('[Twilio] Failed to record phone number add-on billing event:', error);
+    });
 
     console.log(`[Twilio] Purchase success: SID=${result.sid}`);
     return NextResponse.json({ success: true, sid: result.sid });

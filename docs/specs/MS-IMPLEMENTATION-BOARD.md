@@ -28,7 +28,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 | MS-07 | GAP-007 | DONE | DONE | DONE | DONE | MS-07 complete: 30-day cancellation policy + export request lifecycle + full bundle + secure download + admin SLA queue. |
 | MS-08 | GAP-101 | DONE | DONE | DONE | DONE | MS-08 complete: policy mode resolver + required message classification + pure decision tests + diagnostics API/widget + mode-change audit events. |
 | MS-09 | GAP-102 | DONE | DONE | DONE | DONE | MS-09 complete: Day-One milestone model + audit artifact lifecycle + SLA cron alerting + operator/client visibility. |
-| MS-10 | GAP-103 | OPEN | OPEN | OPEN | OPEN | |
+| MS-10 | GAP-103 | DONE | DONE | OPEN | OPEN | Milestone B complete: add-on billing ledger entity + idempotent writer + emitters for team seats, number purchases, and voice usage rollup cron. |
 | MS-11 | GAP-104 | OPEN | OPEN | OPEN | OPEN | |
 | MS-12 | GAP-105 | OPEN | OPEN | OPEN | OPEN | |
 | MS-13 | GAP-201 | OPEN | OPEN | OPEN | OPEN | |

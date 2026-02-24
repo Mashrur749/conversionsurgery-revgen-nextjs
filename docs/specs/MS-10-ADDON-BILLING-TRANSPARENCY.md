@@ -1,5 +1,10 @@
 # MS-10: Add-On Billing Transparency Parity
 
+## Status
+- `STATE: IN_PROGRESS`
+- `DONE: [Milestone A, Milestone B]`
+- `REMAINING: [Milestone C, Milestone D]`
+
 ## Goal
 Make add-on pricing fully transparent and traceable for paying clients:
 - additional team members
@@ -46,6 +51,23 @@ Refactor checkpoint A:
 
 Refactor checkpoint B:
 - Route all add-on billing through one ledger writer service.
+
+Milestone B implementation status:
+- Done:
+1. Added add-on billing ledger entity:
+   - `src/db/schema/addon-billing-events.ts`
+   - `drizzle/0028_fancy_smasher.sql`
+2. Added unified ledger writer + idempotent upsert path:
+   - `src/lib/services/addon-billing-ledger.ts`
+3. Wired team seat over-base emission:
+   - `src/app/api/team-members/route.ts`
+4. Wired number purchase emission:
+   - `src/app/api/admin/twilio/purchase/route.ts`
+5. Wired voice usage monthly rollup emission:
+   - `src/app/api/cron/voice-usage-rollup/route.ts`
+   - dispatch from `src/app/api/cron/route.ts`
+6. Added helper tests:
+   - `src/lib/services/addon-billing-ledger.test.ts`
 
 ### Milestone C: Invoice itemization + UI
 1. Convert ledger events into invoice line items with clear labels.

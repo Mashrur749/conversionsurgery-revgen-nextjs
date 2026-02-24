@@ -10,6 +10,7 @@ import {
 import { eq, desc, and, gte, lte, sql, count } from 'drizzle-orm';
 import { getTotalTeamMemberCount } from '@/lib/services/team-bridge';
 import { resolveClientUsagePolicy, type PlanFeatures } from '@/lib/services/usage-policy';
+import { ADDON_PRICING_KEYS, getAddonPricing } from '@/lib/services/addon-pricing';
 
 export async function getBillingData(clientId: string) {
   const db = getDb();
@@ -162,6 +163,18 @@ async function getUsageForPeriod(clientId: string) {
     ? leadsOverage * features.overagePerLeadCents
     : 0;
 
+  const addonPricing = await getAddonPricing(clientId);
+  const includedTeamMembers = features.maxTeamMembers ?? 3;
+  const includedPhoneNumbers = features.maxPhoneNumbers ?? 1;
+  const extraTeamMembers = Math.max(
+    0,
+    (teamMemberResult[0]?.count ?? 0) - includedTeamMembers
+  );
+  const extraPhoneNumbers = Math.max(
+    0,
+    (client?.twilioNumber ? 1 : 0) - includedPhoneNumbers
+  );
+
   return {
     leads: {
       used: usage.totalLeads,
@@ -172,11 +185,28 @@ async function getUsageForPeriod(clientId: string) {
     },
     teamMembers: {
       used: teamMemberResult[0]?.count ?? 0,
-      included: features.maxTeamMembers ?? 3,
+      included: includedTeamMembers,
     },
     phoneNumbers: {
       used: client?.twilioNumber ? 1 : 0,
-      included: features.maxPhoneNumbers ?? 1,
+      included: includedPhoneNumbers,
+    },
+    addOnPricing: {
+      extraTeamMemberUnitCents:
+        addonPricing[ADDON_PRICING_KEYS.EXTRA_TEAM_MEMBER].unitPriceCents,
+      extraNumberUnitCents:
+        addonPricing[ADDON_PRICING_KEYS.EXTRA_NUMBER].unitPriceCents,
+      voiceMinuteUnitCents:
+        addonPricing[ADDON_PRICING_KEYS.VOICE_MINUTES].unitPriceCents,
+    },
+    addOnExposure: {
+      extraTeamMembers,
+      extraPhoneNumbers,
+      projectedMonthlyAddOnCents:
+        extraTeamMembers *
+          addonPricing[ADDON_PRICING_KEYS.EXTRA_TEAM_MEMBER].unitPriceCents +
+        extraPhoneNumbers *
+          addonPricing[ADDON_PRICING_KEYS.EXTRA_NUMBER].unitPriceCents,
     },
   };
 }

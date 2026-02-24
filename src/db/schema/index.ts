@@ -76,6 +76,7 @@ export * from './billing-payment-methods';
 export * from './subscription-invoices';
 export * from './usage-records';
 export * from './billing-events';
+export * from './addon-billing-events';
 export * from './coupons';
 
 // Analytics
