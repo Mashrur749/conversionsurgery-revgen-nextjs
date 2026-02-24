@@ -1,4 +1,4 @@
-# SPEC-19: Knowledge Gap Closure Queue
+# MS-13: Knowledge Gap Closure Queue
 
 ## Goal
 Turn knowledge-gap detection into an operator-owned closure workflow:

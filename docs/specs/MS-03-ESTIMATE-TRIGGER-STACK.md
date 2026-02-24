@@ -1,4 +1,4 @@
-# SPEC-09: Estimate Trigger Stack Parity
+# MS-03: Estimate Trigger Stack Parity
 
 ## Goal
 Deliver all low-friction estimate trigger methods promised in offer v2.1:

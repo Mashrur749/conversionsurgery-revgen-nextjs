@@ -1,4 +1,4 @@
-# SPEC-07: Unlimited Messaging Parity
+# MS-01: Unlimited Messaging Parity
 
 ## Goal
 Align the application with the sold promise for Professional managed-service clients:

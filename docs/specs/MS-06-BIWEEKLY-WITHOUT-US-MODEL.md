@@ -1,4 +1,4 @@
-# SPEC-12: Bi-Weekly "Without Us" Model Parity
+# MS-06: Bi-Weekly "Without Us" Model Parity
 
 ## Goal
 Implement the standardized "Without Us" modeled risk line in bi-weekly reports with explicit assumptions and low/base/high ranges.

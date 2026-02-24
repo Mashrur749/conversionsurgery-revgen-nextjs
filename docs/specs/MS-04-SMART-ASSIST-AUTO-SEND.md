@@ -1,4 +1,4 @@
-# SPEC-10: Smart Assist Auto-Send Parity
+# MS-04: Smart Assist Auto-Send Parity
 
 ## Goal
 Implement smart assist mode with default 5-minute auto-send window:

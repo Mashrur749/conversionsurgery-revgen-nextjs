@@ -1,4 +1,4 @@
-# SPEC-16: Add-On Billing Transparency Parity
+# MS-10: Add-On Billing Transparency Parity
 
 ## Goal
 Make add-on pricing fully transparent and traceable for paying clients:

@@ -1,4 +1,4 @@
-# SPEC-18: Cron Catch-Up Guarantees for Managed Service
+# MS-12: Cron Catch-Up Guarantees for Managed Service
 
 ## Goal
 Guarantee critical automations recover deterministically if scheduled windows are missed:

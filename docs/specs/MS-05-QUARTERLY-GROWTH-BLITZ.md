@@ -1,4 +1,4 @@
-# SPEC-11: Quarterly Growth Blitz Productization
+# MS-05: Quarterly Growth Blitz Productization
 
 ## Goal
 Operationalize the quarterly campaign promise into trackable, repeatable platform workflows.

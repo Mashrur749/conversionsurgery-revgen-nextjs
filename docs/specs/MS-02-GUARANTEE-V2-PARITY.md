@@ -1,4 +1,4 @@
-# SPEC-08: Guarantee v2 Parity (30-Day Proof + 90-Day Recovery)
+# MS-02: Guarantee v2 Parity (30-Day Proof + 90-Day Recovery)
 
 ## Goal
 Implement the sold two-layer guarantee model:

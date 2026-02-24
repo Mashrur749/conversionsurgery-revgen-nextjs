@@ -26,21 +26,21 @@ Highest-risk mismatches for paying clients are:
 
 | Gap ID | Priority | Spec | Status |
 |---|---|---|---|
-| GAP-001 | P0 | `docs/specs/SPEC-07-UNLIMITED-MESSAGING-PARITY.md` | Spec Ready |
-| GAP-002 | P0 | `docs/specs/SPEC-08-GUARANTEE-V2-PARITY.md` | Spec Ready |
-| GAP-003 | P0 | `docs/specs/SPEC-09-ESTIMATE-TRIGGER-STACK.md` | Spec Ready |
-| GAP-004 | P0 | `docs/specs/SPEC-10-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
-| GAP-005 | P0 | `docs/specs/SPEC-11-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
-| GAP-006 | P0 | `docs/specs/SPEC-12-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
-| GAP-007 | P0 | `docs/specs/SPEC-13-CANCELLATION-EXPORT-PARITY.md` | Spec Ready |
-| GAP-101 | P1 | `docs/specs/SPEC-14-QUIET-HOURS-CLASSIFICATION.md` | Spec Ready |
-| GAP-102 | P1 | `docs/specs/SPEC-15-DAY-ONE-ACTIVATION-TRACKING.md` | Spec Ready |
-| GAP-103 | P1 | `docs/specs/SPEC-16-ADDON-BILLING-TRANSPARENCY.md` | Spec Ready |
-| GAP-104 | P1 | `docs/specs/SPEC-17-REPORT-DELIVERY-OBSERVABILITY.md` | Spec Ready |
-| GAP-105 | P1 | `docs/specs/SPEC-18-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
-| GAP-201 | P2 | `docs/specs/SPEC-19-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
-| GAP-202 | P2 | `docs/specs/SPEC-20-ONBOARDING-QUALITY-GATES.md` | Spec Ready |
-| GAP-203 | P2 | `docs/specs/SPEC-21-REMINDER-ROUTING-FLEXIBILITY.md` | Spec Ready |
+| GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Spec Ready |
+| GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Spec Ready |
+| GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Spec Ready |
+| GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
+| GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
+| GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
+| GAP-007 | P0 | `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | Spec Ready |
+| GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Spec Ready |
+| GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Spec Ready |
+| GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Spec Ready |
+| GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Spec Ready |
+| GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
+| GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
+| GAP-202 | P2 | `docs/specs/MS-14-ONBOARDING-QUALITY-GATES.md` | Spec Ready |
+| GAP-203 | P2 | `docs/specs/MS-15-REMINDER-ROUTING-FLEXIBILITY.md` | Spec Ready |
 
 ## Component Parity Matrix
 

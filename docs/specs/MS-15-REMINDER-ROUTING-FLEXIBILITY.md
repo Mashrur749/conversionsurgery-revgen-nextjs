@@ -1,4 +1,4 @@
-# SPEC-21: Reminder Recipient Routing Flexibility
+# MS-15: Reminder Recipient Routing Flexibility
 
 ## Goal
 Allow appointment and operational reminders to route by role/policy:

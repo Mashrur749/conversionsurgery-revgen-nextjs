@@ -1,4 +1,4 @@
-# SPEC-14: Quiet-Hours Classification Switch
+# MS-08: Quiet-Hours Classification Switch
 
 ## Goal
 Implement a legally controlled switch for quiet-hours handling so behavior can be changed immediately after counsel decision:

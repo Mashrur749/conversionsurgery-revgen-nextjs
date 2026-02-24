@@ -1,4 +1,4 @@
-# SPEC-17: Report Delivery Observability and Retry UX
+# MS-11: Report Delivery Observability and Retry UX
 
 ## Goal
 Make bi-weekly report delivery operationally reliable and visible:

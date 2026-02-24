@@ -1,4 +1,4 @@
-# SPEC-20: Onboarding Quality Gates
+# MS-14: Onboarding Quality Gates
 
 ## Goal
 Upgrade onboarding completion from presence checks to production-readiness gates:

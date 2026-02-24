@@ -1,4 +1,4 @@
-# SPEC-13: Cancellation and Data Export Parity
+# MS-07: Cancellation and Data Export Parity
 
 ## Goal
 Align product behavior to sold cancellation/export terms:

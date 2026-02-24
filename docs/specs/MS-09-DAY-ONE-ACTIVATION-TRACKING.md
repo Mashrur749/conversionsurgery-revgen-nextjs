@@ -1,4 +1,4 @@
-# SPEC-15: Day-One Activation and Revenue Leak Audit Tracking
+# MS-09: Day-One Activation and Revenue Leak Audit Tracking
 
 ## Goal
 Productize Day-One Activation promises with tracked SLA checkpoints:
