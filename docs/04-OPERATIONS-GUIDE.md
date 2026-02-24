@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-11 Milestone C working tree`
+Last verified commit: `MS-11 Milestone D working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -80,6 +80,7 @@ curl -s "$BASE_URL/api/cron/voice-usage-rollup" \
 - Bi-weekly report payload includes delivery counters and indicates whether period lock was updated (`lastRunUpdated`) or manual rerun is required.
 - Report delivery retry payload includes `retried/sent/failed/backoffPending/terminal` counters and should trend to zero failed terminal items.
 - Terminal report-delivery failures trigger daily agency-owner email alert digest (deduped per UTC date).
+- Client dashboard report-delivery card should mirror latest delivery state and expose report artifact download when available.
 - Cancellation-confirmed clients receive export requests with 5-business-day due date and monitored SLA states.
 - Quiet-hours policy mode is visible in admin compliance dashboard and should match current legal operating posture.
 - Onboarding SLA checker marks overdue Day-One milestones and opens operator alerts/tasks.

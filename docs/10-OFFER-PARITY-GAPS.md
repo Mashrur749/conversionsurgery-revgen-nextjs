@@ -9,13 +9,13 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-11 Milestone C working tree`
+- `LAST_VERIFIED_COMMIT: MS-11 Milestone D working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Client-facing report-delivery visibility surfaces and cron catch-up guarantees.
+- Cron catch-up guarantees.
 
 ## Spec Mapping (One Spec Per Gap)
 
@@ -31,7 +31,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Done |
 | GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Done |
 | GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Done |
-| GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | In Progress |
+| GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Done |
 | GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
 | GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
 | GAP-202 | P2 | `docs/specs/MS-14-ONBOARDING-QUALITY-GATES.md` | Spec Ready |
@@ -393,7 +393,10 @@ Highest-risk mismatches for paying clients are now concentrated in:
 - Progress (2026-02-24): `MS-11` Milestone C completed.
 - Added operator delivery observability APIs and admin reports panel filters (`pending_retry`, `failed`, `terminal`, `sent`) with one-click retry.
 - Added terminal-failure alert digest to agency owners (daily dedupe).
-- Remaining: Milestone D (client-facing delivery clarity).
+- Progress (2026-02-24): `MS-11` Milestone D completed.
+- Added client dashboard delivery-status panel with fallback state messaging and latest report download link.
+- Added client report-delivery status endpoint and tenant-safe artifact download endpoint.
+- Remaining: none (`MS-11` complete).
 - Evidence:
   - `src/db/schema/report-deliveries.ts`
   - `drizzle/0030_lively_rage.sql`
@@ -407,6 +410,10 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `src/app/api/admin/reports/deliveries/[deliveryId]/retry/route.ts`
   - `src/app/(dashboard)/admin/reports/components/report-delivery-ops-panel.tsx`
   - `src/app/(dashboard)/admin/reports/page.tsx`
+  - `src/lib/services/client-report-delivery.ts`
+  - `src/app/api/client/reports/delivery/route.ts`
+  - `src/app/api/client/reports/[id]/download/route.ts`
+  - `src/app/(client)/client/page.tsx`
   - `src/app/api/cron/report-delivery-retries/route.ts`
   - `src/app/api/cron/route.ts`
   - `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md`

@@ -10,6 +10,7 @@ import { DollarSign } from 'lucide-react';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
+import { getClientLatestReportDelivery } from '@/lib/services/client-report-delivery';
 
 export default async function ClientDashboardPage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.DASHBOARD);
@@ -40,7 +41,10 @@ export default async function ClientDashboardPage() {
 
   // Revenue stats (last 30 days)
   const revenueStats = await getRevenueStats(clientId);
-  const quarterlyCampaign = await getCurrentQuarterlyCampaignSummary(clientId);
+  const [quarterlyCampaign, latestReportDelivery] = await Promise.all([
+    getCurrentQuarterlyCampaignSummary(clientId),
+    getClientLatestReportDelivery(clientId),
+  ]);
 
   // Recent activity
   const recentLeads = await db
@@ -132,6 +136,46 @@ export default async function ClientDashboardPage() {
                 <p className="text-xs text-muted-foreground">
                   Waiting on assets: {quarterlyCampaign.missingAssetLabels.join(', ')}
                 </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            Bi-Weekly Report Delivery
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!latestReportDelivery ? (
+            <p className="text-sm text-muted-foreground">
+              Your first bi-weekly report has not been generated yet.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <p className="font-medium">
+                {latestReportDelivery.periodStart} to {latestReportDelivery.periodEnd}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {latestReportDelivery.statusSummary}
+              </p>
+              {latestReportDelivery.state === 'failed' && (
+                <p className="text-xs text-muted-foreground">
+                  Last issue:{' '}
+                  {latestReportDelivery.lastErrorCode ||
+                    latestReportDelivery.lastErrorMessage ||
+                    'unknown'}
+                </p>
+              )}
+              {latestReportDelivery.downloadPath && (
+                <a
+                  href={latestReportDelivery.downloadPath}
+                  className="inline-flex text-sm font-medium text-primary hover:underline"
+                >
+                  Download Latest Report
+                </a>
               )}
             </div>
           )}

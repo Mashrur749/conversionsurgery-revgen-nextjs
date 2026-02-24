@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
-Last verified commit: `MS-11 Milestone C working tree`
+Last verified commit: `MS-11 Milestone D working tree`
 
 ## Canonical Order (Read + Execute)
 
@@ -60,7 +60,7 @@ Cadence rule:
 6. Confirm `P0` is fully closed in `10-OFFER-PARITY-GAPS.md`; `GAP-101` (quiet-hours classification switch) should be marked done; review remaining open `P1` items with claim-language qualifiers before selling.
 7. Confirm `GAP-102` is marked done and you can execute Day-One card actions from `/admin/clients/<id>` without escalation help.
 8. Confirm `GAP-103` is marked done in offer parity docs: add-on pricing, ledger, invoice itemization, CSV export, and dispute provenance workflow are all active.
-9. Confirm `GAP-104` progress state before scaling: Milestones A-C are live (delivery lifecycle + deterministic retry engine + operator retry dashboard); only client-facing delivery status remains.
+9. Confirm `GAP-104` is fully done: delivery lifecycle, deterministic retries, operator dashboard/retry actions, and client-facing delivery/download status are all live.
 
 ## Confidence Criteria (Go/No-Go)
 

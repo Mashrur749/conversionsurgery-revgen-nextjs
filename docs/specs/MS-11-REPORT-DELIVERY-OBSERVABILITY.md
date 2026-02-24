@@ -1,9 +1,9 @@
 # MS-11: Report Delivery Observability and Retry UX
 
 ## Status
-- `STATE: IN_PROGRESS`
-- `DONE: [Milestone A, Milestone B, Milestone C]`
-- `REMAINING: [Milestone D]`
+- `STATE: DONE`
+- `DONE: [Milestone A, Milestone B, Milestone C, Milestone D]`
+- `REMAINING: []`
 
 ## Goal
 Make bi-weekly report delivery operationally reliable and visible:
@@ -98,6 +98,17 @@ Milestone C implementation status:
 
 Refactor checkpoint D:
 - Reuse shared report card component; avoid duplicate rendering paths.
+
+Milestone D implementation status:
+- Done:
+1. Added client report-delivery summary service:
+   - `src/lib/services/client-report-delivery.ts`
+2. Added client portal delivery-status endpoint:
+   - `GET /api/client/reports/delivery`
+3. Added client report artifact download endpoint:
+   - `GET /api/client/reports/[id]/download`
+4. Added bi-weekly report delivery status panel on client dashboard with fallback messaging + download link:
+   - `src/app/(client)/client/page.tsx`
 
 ## Immediate Deprecated Cleanup (Pre-Launch)
 - Remove undocumented manual resend process where product retry exists.

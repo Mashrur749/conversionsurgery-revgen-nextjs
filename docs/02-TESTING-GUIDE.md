@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-11 Milestone C working tree`
+Last verified commit: `MS-11 Milestone D working tree`
 
 ## 0. Preflight (Run First)
 
@@ -235,6 +235,8 @@ Expected:
 - Re-running retry cron immediately should keep most failed rows in `backoffPending` until backoff windows are reached.
 - If terminal rows exist, retry cron response includes terminal alert digest result.
 - `/admin/reports` now includes `Report Delivery Operations` panel and manual retry actions.
+- Client dashboard now includes `Bi-Weekly Report Delivery` card with current status summary.
+- If report artifact exists, `Download Latest Report` link resolves to `/api/client/reports/[id]/download` and returns attachment JSON.
 - Queued compliance replay processes non-lead queued items without duplicates.
 
 Note:

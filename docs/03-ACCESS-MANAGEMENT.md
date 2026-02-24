@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-11 Milestone C working tree`
+Last verified commit: `MS-11 Milestone D working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -119,6 +119,12 @@ Permission templates and overrides resolve effective access at runtime.
 1. `GET /api/admin/reports/deliveries` requires `agency.analytics.view`.
 2. `POST /api/admin/reports/deliveries/[deliveryId]/retry` requires `agency.analytics.view`.
 - No additional cross-client scope exceptions were introduced.
+
+## MS-11 Access Note (Milestone D)
+- Client-facing delivery clarity adds portal-scoped endpoints only:
+1. `GET /api/client/reports/delivery` requires `portal.dashboard`.
+2. `GET /api/client/reports/[id]/download` requires `portal.dashboard` and matching `clientId`.
+- Report download endpoint enforces tenant ownership (`reports.client_id == session.clientId`) before returning artifact.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`
