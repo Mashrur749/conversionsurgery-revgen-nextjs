@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getClientSession } from '@/lib/client-auth';
-import { startEstimateFollowup } from '@/lib/automations/estimate-followup';
+import { triggerEstimateFollowup } from '@/lib/services/estimate-triggers';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -30,7 +30,11 @@ export async function POST(request: NextRequest) {
     const { leadId } = validation.data;
     const clientId = session.clientId;
 
-    const result = await startEstimateFollowup({ leadId, clientId });
+    const result = await triggerEstimateFollowup({
+      leadId,
+      clientId,
+      source: 'dashboard_api',
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error('[Payments] Estimate followup error:', error);

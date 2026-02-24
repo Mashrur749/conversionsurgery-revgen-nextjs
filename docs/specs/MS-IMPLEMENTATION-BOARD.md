@@ -21,7 +21,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 |---|---|---|---|---|---|---|
 | MS-01 | GAP-001 | DONE | DONE | DONE | DONE | MS-01 complete: unlimited policy model + runtime + billing + UI alignment. |
 | MS-02 | GAP-002 | DONE | DONE | DONE | DONE | MS-02 complete (A-E): guarantee model, evaluators, extension logic, visibility, cancellation alignment. |
-| MS-03 | GAP-003 | OPEN | OPEN | OPEN | OPEN | |
+| MS-03 | GAP-003 | DONE | OPEN | OPEN | OPEN | Milestone A complete: unified trigger service + route migration + idempotency guard. |
 | MS-04 | GAP-004 | OPEN | OPEN | OPEN | OPEN | |
 | MS-05 | GAP-005 | OPEN | OPEN | OPEN | OPEN | |
 | MS-06 | GAP-006 | OPEN | OPEN | OPEN | OPEN | |

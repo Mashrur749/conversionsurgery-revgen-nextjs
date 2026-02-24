@@ -27,7 +27,7 @@ Highest-risk mismatches for paying clients are:
 |---|---|---|---|
 | GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Done |
 | GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Done |
-| GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Spec Ready |
+| GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | In Progress (Milestone A Done) |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Spec Ready |
 | GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Spec Ready |
@@ -119,7 +119,13 @@ Highest-risk mismatches for paying clients are:
 3. `GAP-003` Estimate trigger stack incomplete
 - Offer promise: SMS keyword trigger, notification quick-reply trigger, dashboard trigger, and fallback nudge.
 - Current behavior: dashboard/API trigger exists; action-prompt "YES" path for `start_sequences` is not integrated.
+- Progress (2026-02-24): `MS-03` Milestone A completed.
+- Added unified trigger entrypoint (`triggerEstimateFollowup`) with source tagging and lead/client validation.
+- Added idempotency guard to prevent duplicate estimate follow-up sequence starts.
+- Routed existing `/api/sequences/estimate` dashboard/API trigger path through the unified service.
+- Remaining: Milestones B-D (SMS keyword trigger, prompt quick-reply wiring, fallback nudge cron).
 - Evidence:
+  - `src/lib/services/estimate-triggers.ts`
   - `src/app/api/sequences/estimate/route.ts`
   - `src/lib/automations/estimate-followup.ts`
   - `src/lib/services/agency-communication.ts` (`start_sequences` throws integration error)
