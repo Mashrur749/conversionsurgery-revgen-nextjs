@@ -7,6 +7,8 @@ cd "$ROOT_DIR"
 echo "==> Running MS doc structure checks"
 ./scripts/specs/check-ms-line-limits.sh
 ./scripts/specs/check-ms-gap-map.sh
+./scripts/specs/check-ms-spec-structure.sh
+./scripts/specs/check-no-legacy-spec-refs.sh
 
 echo "==> Running typecheck"
 npm run typecheck

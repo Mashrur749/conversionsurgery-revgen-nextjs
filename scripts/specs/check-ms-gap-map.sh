@@ -10,7 +10,7 @@ if [ ! -f docs/10-OFFER-PARITY-GAPS.md ]; then
 fi
 
 missing=0
-for f in docs/specs/MS-*.md; do
+for f in docs/specs/MS-[0-9][0-9]-*.md; do
   [ -e "$f" ] || continue
   base=$(basename "$f")
   if ! rg -q "$base" docs/10-OFFER-PARITY-GAPS.md; then

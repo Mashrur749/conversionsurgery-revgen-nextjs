@@ -3,6 +3,9 @@
 Last updated: 2026-02-24
 Purpose: execution specs for launch-critical delivery and offer parity.
 
+## Control Files
+- `MS-IMPLEMENTATION-BOARD.md` -> milestone-by-milestone execution state
+
 ## Active Offer-Parity Specs (Managed Service Priority)
 - `MS-01-UNLIMITED-MESSAGING-PARITY.md` -> `GAP-001`
 - `MS-02-GUARANTEE-V2-PARITY.md` -> `GAP-002`

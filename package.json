@@ -19,6 +19,13 @@
     "db:seed": "npx tsx scripts/seed.ts",
     "db:setup": "npm run db:migrate && npm run db:seed",
     "db:reset": "npx drizzle-kit drop && npm run db:setup",
+    "ms:check:line-limits": "./scripts/specs/check-ms-line-limits.sh",
+    "ms:check:gap-map": "./scripts/specs/check-ms-gap-map.sh",
+    "ms:check:spec-structure": "./scripts/specs/check-ms-spec-structure.sh",
+    "ms:check:no-legacy-spec-refs": "./scripts/specs/check-no-legacy-spec-refs.sh",
+    "ms:gate": "./scripts/specs/ms-quality-gate.sh",
+    "ms:gate:build": "./scripts/specs/ms-quality-gate.sh --with-build",
+    "ms:gate:full": "./scripts/specs/ms-quality-gate.sh --with-build --with-tests",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

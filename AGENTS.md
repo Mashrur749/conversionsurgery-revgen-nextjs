@@ -32,6 +32,8 @@ A skill is a set of local instructions to follow that is stored in a `SKILL.md` 
   - Declare which skills are being used before coding.
   - For `MS-*` implementation, execute one milestone at a time.
   - Refactor checkpoint and verification are mandatory before commit.
+  - Run `npm run ms:gate` before marking milestone done.
+  - Update `docs/specs/MS-IMPLEMENTATION-BOARD.md` milestone status in every milestone commit.
 - Context hygiene:
   - Keep changes tightly scoped to current milestone.
   - Avoid unrelated refactors.

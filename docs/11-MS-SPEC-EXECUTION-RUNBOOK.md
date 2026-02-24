@@ -44,7 +44,7 @@ Constraints:
 
 ## 5) Mandatory Gate Before "Done"
 Before marking any milestone done:
-- run `scripts/specs/ms-quality-gate.sh`
+- run `npm run ms:gate` (or `npm run ms:gate:build` for broader validation)
 - run milestone-specific tests/manual checks from the spec
 - verify docs updated to match behavior
 
@@ -53,6 +53,9 @@ Before marking any milestone done:
 - `OPEN`: not started
 - `IN_PROGRESS`: partial milestone delivery
 - `DONE`: verified and documented
+
+Also update:
+- `docs/specs/MS-IMPLEMENTATION-BOARD.md` for milestone A/B/C/D state.
 
 ## 7) Common Beginner Mistakes to Avoid
 - Implementing multiple milestones at once
