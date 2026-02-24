@@ -34,6 +34,12 @@ Purpose: verify offer promises are matched by implementation before selling.
 9. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
 Purpose: confirm earlier launch-hardening wave is closed and historical context is preserved.
 
+10. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/12-LEGAL-COUNSEL-BRIEF.md`
+Purpose: run pre-client legal review with exact must-have decisions.
+
+11. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/13-LEGAL-CLAUSE-REDLINES.md`
+Purpose: provide counsel with contract-ready clause drafts for final legal wording.
+
 ## Documentation Sync Contract (Mandatory)
 For every implementation milestone (code change), documentation must be updated in the same execution stream before moving to the next spec.
 
@@ -65,6 +71,7 @@ Cadence rule:
 11. Confirm `GAP-201` is marked done: operator can triage/assign/resolve/verify from `/admin/clients/<id>/knowledge?tab=queue`.
 12. Confirm `GAP-202` is marked done: autonomous-mode transition is blocked until onboarding quality gates pass (or an auditable override is approved).
 13. Confirm `GAP-203` is marked done: reminder routing policy can be set from `/admin/clients/<id>` and chain previews + delivery audit entries are visible.
+14. Send legal packet (`12` + `13`) to Canadian counsel and receive written signoff on quiet-hours, guarantees, extension formula, and unlimited clause before first paid contract.
 
 ## Confidence Criteria (Go/No-Go)
 
