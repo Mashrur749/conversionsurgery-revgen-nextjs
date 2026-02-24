@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: 48740fa`
+- `LAST_VERIFIED_COMMIT: 6a89bf0`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -35,9 +35,9 @@ Offer parity gaps against the reviewed v2.1 offer architecture are tracked separ
 - Public signup baseline and owner membership creation.
 - Voice AI guardrail injection and SMS history context (lead-linked).
 - Quiet-hours queue persistence via `scheduled_messages` (lead-linked).
-- Billing seed + subscription-tier message limit consistency improvements.
-- 30-day guarantee lifecycle automation with refund-review flagging.
-- Overage billing line-item automation in monthly cycle.
+- Billing-policy alignment for unlimited Professional plan defaults + observability-safe usage tracking.
+- Dual-layer guarantee lifecycle automation with refund-review flagging.
+- Monthly reset policy gating (`skippedByPolicy`) for unlimited-plan overage paths.
 - Deterministic bi-weekly report generation and delivery.
 - Appointment reminder parity for homeowner + contractor plus regression tests.
 - Non-lead quiet-hours durable replay automation.

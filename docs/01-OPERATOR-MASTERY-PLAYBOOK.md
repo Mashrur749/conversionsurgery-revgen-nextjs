@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `48740fa`
+Last verified commit: `6a89bf0`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -24,7 +24,7 @@ npm run build
 
 Exit gate:
 - You can explain who can access what (agency vs client scopes).
-- You can explain all currently automated launch-critical flows (guarantee, overage, bi-weekly reports, queue replay, access review).
+- You can explain all currently automated launch-critical flows (guarantee v2, monthly billing-policy cycle, bi-weekly reports, queue replay, access review).
 
 ## Phase 2: Controlled Walkthrough (Day 1-2)
 Objective: run the full test path manually without getting blocked.

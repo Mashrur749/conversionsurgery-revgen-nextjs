@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: 48740fa`
+- `LAST_VERIFIED_COMMIT: 6a89bf0`
 
 ## Executive Status
 
@@ -24,7 +24,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 | Client onboarding baseline | Ready with caveats | Owner membership auto-created; wizard persistence improved |
 | Team operations | Ready with caveats | Team limit enforcement added; escalation fallback added |
 | Compliance gateway | Ready | Consent/opt-out/quiet hours enforced; durable replay covers lead + non-lead flows |
-| Billing + plan limits | Ready | Team/lead/message controls + overage line-item automation in monthly cycle |
+| Billing + plan policy | Ready with caveats | Unlimited policy defaults enforced for active offer; add-on transparency + cancellation/export parity tracked in offer gaps |
 | Cron + reliability | Ready with caveats | Master cron now requires bearer secret; runbook updated |
 | Self-serve foundation | Ready | Public signup + guided onboarding checklist + setup request path |
 | Reporting | Ready | Deterministic bi-weekly report generation/delivery with idempotency guard |
@@ -39,9 +39,9 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Public signup baseline (`/signup`, `/api/public/signup`) with owner membership creation.
 - Quiet-hours queue now persists into `scheduled_messages` and replays via cron for lead-linked messages.
 - Voice AI gather path now uses guardrails and includes recent SMS context when `leadId` exists.
-- Billing seed limits aligned to business plan limits; subscription create/change now sync monthly message limits by tier.
-- 30-day guarantee lifecycle automation added: daily guarantee evaluator marks `fulfilled` or `refund_review_required` and logs billing events for review workflow.
-- Overage billing line-item automation runs during monthly reset cycle with billing event audit trail.
+- Billing policy aligned with offer defaults; Professional seeds now use unlimited messaging/leads with overage-disabled behavior and retained usage observability.
+- Dual-layer guarantee lifecycle automation added: daily evaluator handles proof/recovery windows and marks `fulfilled` or `refund_review_required` with billing-event audit trail.
+- Monthly reset now records billing-policy outcomes (`processed` vs `skippedByPolicy`) for audit-safe unlimited-plan handling.
 - Bi-weekly report cron now generates and emails managed-service reports deterministically (idempotent by period).
 - Appointment reminders now include both homeowner and contractor reminder scheduling paths.
 - Quiet-hours replay now includes non-lead durable queue processing.

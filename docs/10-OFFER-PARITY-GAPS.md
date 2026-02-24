@@ -9,7 +9,7 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: 48740fa`
+- `LAST_VERIFIED_COMMIT: 6a89bf0`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
@@ -63,7 +63,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 
 1. `GAP-001` Unlimited messaging/no caps/no overage parity
 - Offer promise: no message caps, no lead limits, no overage charges.
-- Current behavior: `monthlyMessageLimit` checks and overage billing are active.
+- Historical pre-fix behavior: `monthlyMessageLimit` checks and overage billing were active.
 - Progress (2026-02-24): `MS-01` Milestone A completed.
 - Progress (2026-02-24): `MS-01` Milestone B completed.
 - `sendCompliantMessage()` now uses shared usage-policy resolver, so unlimited plans are not blocked.
@@ -87,7 +87,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 
 2. `GAP-002` Guarantee architecture mismatch (30-day + 90-day + extension formula)
 - Offer promise: dual-layer guarantee with explicit definitions and prorated low-volume extension.
-- Current behavior: 30-day recovered-lead evaluator and `refund_review_required` only.
+- Historical pre-fix behavior: 30-day recovered-lead evaluator and `refund_review_required` only.
 - Progress (2026-02-24): `MS-02` Milestone A completed.
 - Added guarantee-v2 state machine domain module (`src/lib/services/guarantee-v2/`).
 - Added explicit v2 statuses and legacy->v2 mapping/backfill helpers.
@@ -116,7 +116,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 
 3. `GAP-003` Estimate trigger stack incomplete
 - Offer promise: SMS keyword trigger, notification quick-reply trigger, dashboard trigger, and fallback nudge.
-- Current behavior: dashboard/API trigger exists; action-prompt "YES" path for `start_sequences` is not integrated.
+- Historical pre-fix behavior: dashboard/API trigger existed; action-prompt "YES" path for `start_sequences` was not integrated.
 - Progress (2026-02-24): `MS-03` Milestone A completed.
 - Added unified trigger entrypoint (`triggerEstimateFollowup`) with source tagging and lead/client validation.
 - Added idempotency guard to prevent duplicate estimate follow-up sequence starts.
@@ -231,7 +231,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `src/app/api/public/onboarding/request-setup/route.ts`
 
 3. `GAP-103` Add-on billing clarity for extra team members/phone numbers/voice
-- Offer positions transparent add-ons; system currently emphasizes plan limits and overages but does not fully expose end-to-end add-on invoice transparency.
+- Offer positions transparent add-ons; system currently enforces limits and usage tracking but does not fully expose end-to-end add-on invoice transparency.
 - Evidence:
   - team/phone limits: `src/app/api/team-members/route.ts`, `src/app/api/admin/twilio/purchase/route.ts`
   - voice usage tracking only: `src/lib/services/usage-tracking.ts`, `src/db/schema/api-usage-monthly.ts`

@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `48740fa`
+Last verified commit: `6a89bf0`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -10,7 +10,7 @@ Last verified commit: `48740fa`
 3. Review unresolved escalations and SLA breaches.
 4. Review message delivery failures and opt-out anomalies.
 5. Review onboarding clients in `pending` and move blockers (number, hours, knowledge, team).
-6. Review subscriptions flagged `refund_review_required` under 30-day guarantee workflow.
+6. Review subscriptions in guarantee-v2 risk states (`proof_pending`, `recovery_pending`, `refund_review_required`) and action queues.
 7. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
 8. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
 

@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `48740fa`
+Last verified commit: `6a89bf0`
 
 ## 0. Preflight (Run First)
 
@@ -128,17 +128,17 @@ Expected:
 If blocked:
 - If both fail, verify `CRON_SECRET` matches app env exactly.
 
-### Step 7: 30-day guarantee workflow
+### Step 7: Dual-layer guarantee workflow
 ```bash
 curl -i http://localhost:3000/api/cron/guarantee-check -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 Expected:
 - Endpoint responds with success payload.
-- Eligible subscriptions transition to `fulfilled` or `refund_review_required`.
+- Eligible subscriptions progress through guarantee-v2 states (`proof_pending`/`recovery_pending`) then to `fulfilled` or `refund_review_required`.
 - Billing events logged for transition states.
 
-### Step 8: Overage + reporting + queue replay
+### Step 8: Monthly policy cycle + reporting + queue replay
 ```bash
 curl -i http://localhost:3000/api/cron/monthly-reset -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
@@ -146,7 +146,7 @@ curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorizati
 ```
 
 Expected:
-- Monthly reset is idempotent by period and includes overage processing result.
+- Monthly reset is idempotent by period and includes billing policy result (`processed` or `skippedByPolicy` for unlimited plans).
 - Bi-weekly report run is idempotent by period.
 - Queued compliance replay processes non-lead queued items without duplicates.
 

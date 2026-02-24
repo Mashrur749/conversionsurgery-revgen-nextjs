@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `48740fa`
+Last verified commit: `6a89bf0`
 
 ## 1. Founder/Agency Use Cases
 
@@ -53,12 +53,12 @@ Outcome: Faster responses and less lead leakage.
 
 Outcome: Predictable automation operations.
 
-### U6b. Monthly overage and access-review automation
-1. Monthly cron computes SMS/lead overages and creates invoice line items.
-2. Billing events are logged for every overage invoice action.
+### U6b. Monthly billing-policy and access-review automation
+1. Monthly cron closes usage period and applies billing policy by plan.
+2. Unlimited Professional plans skip overage charging by policy while retaining usage/billing audit events.
 3. Monthly access-review digest is sent to agency owners.
 
-Outcome: predictable revenue capture and proactive access governance.
+Outcome: predictable billing behavior and proactive access governance.
 
 ### U7. No-team escalation fallback
 1. Lead requires escalation.
@@ -74,13 +74,13 @@ Outcome: No escalation is silently dropped.
 
 Outcome: speed-to-lead is preserved without losing operator control.
 
-### U7b. 30-day guarantee automation
+### U7b. Dual-layer guarantee automation
 1. A new subscription starts with guarantee window metadata.
-2. Daily guarantee cron evaluates recovered-lead fulfillment.
-3. Subscription is automatically marked `fulfilled` or `refund_review_required`.
-4. Billing events are logged for audit and operator action.
+2. Daily guarantee cron evaluates 30-day proof-of-life and low-volume extension windows.
+3. Qualified subscriptions transition into 90-day recovery tracking with attributed-opportunity checks.
+4. Subscription is automatically marked `fulfilled` or `refund_review_required`, with billing events logged for audit and operator action.
 
-Outcome: guarantee promise is enforced operationally instead of manual tracking.
+Outcome: 30-day + 90-day guarantee promise is enforced operationally instead of manual tracking.
 
 ## 4. SaaS Transition Use Cases (Near-Term)
 

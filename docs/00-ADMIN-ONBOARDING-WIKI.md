@@ -3,32 +3,35 @@
 Last updated: 2026-02-24
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
-Last verified commit: `48740fa`
+Last verified commit: `6a89bf0`
 
 ## Canonical Order (Read + Execute)
 
-1. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/BUSINESS-CASE.md`
-Purpose: master positioning, ICP, offer, pricing, guarantee, and sales narrative.
+1. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/GRAND-SLAM-OFFER.md`
+Purpose: master the finalized offer source-of-truth, client promises, guarantee language, and delivery commitments.
 
-2. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
+2. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/BUSINESS-CASE.md`
+Purpose: internal company context, ICP details, and operating assumptions behind the offer.
+
+3. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
 Purpose: understand the complete operator path from setup to ongoing service delivery.
 
-3. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`
+4. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`
 Purpose: execute hands-on validation so you can operate confidently under real conditions.
 
-4. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md`
+5. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md`
 Purpose: lock in daily operations, cron checks, and incident response rhythm.
 
-5. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/03-ACCESS-MANAGEMENT.md`
+6. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/03-ACCESS-MANAGEMENT.md`
 Purpose: safely onboard your spouse/internal monitor and client-side assistants.
 
-6. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`
+7. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`
 Purpose: verify launch gate status and confirm operational readiness.
 
-7. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
+8. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
 Purpose: verify offer promises are matched by implementation before selling.
 
-8. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
+9. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
 Purpose: confirm earlier launch-hardening wave is closed and historical context is preserved.
 
 ## Documentation Sync Contract (Mandatory)
