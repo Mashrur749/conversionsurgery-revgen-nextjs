@@ -21,6 +21,7 @@ A skill is a set of local instructions to follow that is stored in a `SKILL.md` 
     - `ms-test-and-doc-sync`
     - `ms-gap-status-governance`
   - Also use `ms-cx-offer-guardrails` for all client-facing behavior changes.
+  - For every `MS-*` implementation, treat `/docs/GRAND-SLAM-OFFER.md` as business source-of-truth and validate milestone outcomes against the offer promise.
   - Use `create-migration` + `neon-postgres` whenever schema/migration work is involved.
   - Use `ux-standards` whenever a frontend UI is changed.
 - Missing/blocked: If a named skill is missing or unreadable, state that and continue with best fallback.

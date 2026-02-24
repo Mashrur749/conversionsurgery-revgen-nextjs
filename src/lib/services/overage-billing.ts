@@ -1,15 +1,8 @@
 import { getStripeClient } from '@/lib/clients/stripe';
 import { getDb } from '@/db';
 import { billingEvents, clients, leads, plans, subscriptions } from '@/db/schema';
+import type { PlanFeatures } from '@/lib/services/usage-policy';
 import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm';
-
-interface PlanFeatures {
-  maxLeadsPerMonth: number | null;
-  maxMessagesPerMonth?: number | null;
-  overagePerLeadCents?: number;
-  overagePerSmsCents?: number;
-  allowOverages?: boolean;
-}
 
 interface OverageRunResult {
   processed: number;

@@ -9,6 +9,7 @@ import {
 } from '@/db/schema';
 import { eq, desc, and, gte, lte, sql, count } from 'drizzle-orm';
 import { getTotalTeamMemberCount } from '@/lib/services/team-bridge';
+import type { PlanFeatures } from '@/lib/services/usage-policy';
 
 export async function getBillingData(clientId: string) {
   const db = getDb();
@@ -45,17 +46,7 @@ export async function getBillingData(clientId: string) {
             id: subscription.plan.id,
             name: subscription.plan.name,
             priceMonthly: subscription.plan.priceMonthly,
-            features: subscription.plan.features as {
-              maxLeadsPerMonth: number | null;
-              maxTeamMembers: number | null;
-              maxPhoneNumbers: number;
-              includesVoiceAi: boolean;
-              includesCalendarSync: boolean;
-              includesAdvancedAnalytics: boolean;
-              includesWhiteLabel: boolean;
-              supportLevel: string;
-              apiAccess: boolean;
-            },
+            features: subscription.plan.features as PlanFeatures,
           },
           currentPeriodStart: subscription.subscription.currentPeriodStart!,
           currentPeriodEnd: subscription.subscription.currentPeriodEnd!,
@@ -149,13 +140,7 @@ async function getUsageForPeriod(clientId: string) {
     );
 
   const usage = usageData[0] || { totalLeads: 0 };
-  const features = plan.features as {
-    maxLeadsPerMonth: number | null;
-    maxTeamMembers: number | null;
-    maxPhoneNumbers: number;
-    overagePerLeadCents?: number;
-    allowOverages?: boolean;
-  };
+  const features = plan.features as PlanFeatures;
 
   // Get team member count
   const teamMemberCount = await getTotalTeamMemberCount(clientId);

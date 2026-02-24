@@ -3,6 +3,10 @@
 Last updated: 2026-02-24
 Audience: beginner operator using coding agents to implement `MS-*` specs safely.
 
+Business source-of-truth for all implementations:
+- `/docs/GRAND-SLAM-OFFER.md`
+- `/docs/specs/MS-*.md` must be implemented in a way that satisfies the offer promise.
+
 ## 1) One Milestone at a Time
 Never ask the agent to implement a full spec in one request.
 Use one prompt per milestone (`A`, then `B`, etc.).

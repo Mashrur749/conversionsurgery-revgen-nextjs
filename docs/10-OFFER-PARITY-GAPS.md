@@ -26,7 +26,7 @@ Highest-risk mismatches for paying clients are:
 
 | Gap ID | Priority | Spec | Status |
 |---|---|---|---|
-| GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Spec Ready |
+| GAP-001 | P0 | `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | In Progress (Milestone A Done) |
 | GAP-002 | P0 | `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | Spec Ready |
 | GAP-003 | P0 | `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | Spec Ready |
 | GAP-004 | P0 | `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | Spec Ready |
@@ -67,6 +67,11 @@ Highest-risk mismatches for paying clients are:
 1. `GAP-001` Unlimited messaging/no caps/no overage parity
 - Offer promise: no message caps, no lead limits, no overage charges.
 - Current behavior: `monthlyMessageLimit` checks and overage billing are active.
+- Progress (2026-02-24): `MS-01` Milestone A completed.
+  - Added plan policy flags (`isUnlimitedMessaging`, `isUnlimitedLeads`, `chargesOverage`).
+  - Added shared usage policy resolver + `getClientUsagePolicy(clientId)`.
+  - Updated Professional plan seeds to unlimited + overage-disabled defaults.
+  - Remaining: Milestones B-D (runtime enforcement, billing no-op, UI copy alignment).
 - Evidence:
   - `src/lib/compliance/compliance-gateway.ts`
   - `src/lib/services/overage-billing.ts`

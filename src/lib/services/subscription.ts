@@ -3,35 +3,21 @@ import { subscriptions, plans, clients, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
 import { validateAndRedeemCoupon } from '@/lib/services/coupon-validation';
+import {
+  resolveClientUsagePolicy,
+  type ClientUsagePolicy,
+  type PlanFeatures,
+} from '@/lib/services/usage-policy';
 import type Stripe from 'stripe';
 import type { Subscription } from '@/db/schema/subscriptions';
 import type { Plan } from '@/db/schema/plans';
 
 type PlanInterval = 'month' | 'year';
 
-interface PlanFeatures {
-  maxLeadsPerMonth: number | null;
-  maxMessagesPerMonth?: number | null;
-  maxTeamMembers: number | null;
-  maxPhoneNumbers: number;
-  includesVoiceAi: boolean;
-  includesCalendarSync: boolean;
-  includesAdvancedAnalytics: boolean;
-  includesWhiteLabel: boolean;
-  supportLevel: 'email' | 'priority' | 'dedicated';
-  apiAccess: boolean;
-}
-
-function resolveMonthlyMessageLimit(plan: Plan): number {
+function resolveMonthlyMessageLimit(plan: Plan): number | null {
   const features = plan.features as PlanFeatures;
-  if (features.maxMessagesPerMonth && features.maxMessagesPerMonth > 0) {
-    return features.maxMessagesPerMonth;
-  }
-
-  const slug = (plan.slug || '').toLowerCase();
-  if (slug.includes('enterprise')) return 20000;
-  if (slug.includes('starter')) return 1000;
-  return 5000; // Professional/default
+  const usagePolicy = resolveClientUsagePolicy(features, plan.slug);
+  return usagePolicy.messageLimit;
 }
 
 /**
@@ -430,6 +416,17 @@ export async function getSubscriptionWithPlan(clientId: string) {
 }
 
 /**
+ * Resolve usage policy from a client's active plan configuration.
+ */
+export async function getClientUsagePolicy(clientId: string): Promise<ClientUsagePolicy | null> {
+  const result = await getSubscriptionWithPlan(clientId);
+  if (!result) return null;
+
+  const features = result.plan.features as PlanFeatures;
+  return resolveClientUsagePolicy(features, result.plan.slug);
+}
+
+/**
  * Check if client has access to a feature
  */
 export async function hasFeatureAccess(
@@ -464,9 +461,10 @@ export async function checkUsageLimit(
   }
 
   const features = result.plan.features as PlanFeatures;
+  const usagePolicy = resolveClientUsagePolicy(features, result.plan.slug);
 
   const limitMap: Record<string, number | null> = {
-    leads: features.maxLeadsPerMonth,
+    leads: usagePolicy.leadLimit,
     team_members: features.maxTeamMembers,
     phone_numbers: features.maxPhoneNumbers,
   };

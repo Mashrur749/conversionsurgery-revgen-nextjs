@@ -45,6 +45,10 @@ export const plans = pgTable(
       overagePerLeadCents?: number;
       overagePerSmsCents?: number;
       allowOverages?: boolean; // false = hard cap at limit
+      // Offer-parity policy flags
+      isUnlimitedMessaging?: boolean;
+      isUnlimitedLeads?: boolean;
+      chargesOverage?: boolean;
     }>().notNull(),
 
     // Trial settings
