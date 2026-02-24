@@ -10,6 +10,7 @@ import {
 import { eq, and, gte, count } from 'drizzle-orm';
 import { subDays } from 'date-fns';
 import { ComplianceDashboardClient } from './compliance-dashboard-client';
+import { getQuietHoursPolicyDiagnostics } from '@/lib/compliance/quiet-hours-policy';
 
 /** Compliance stats displayed on the admin dashboard */
 interface ComplianceStats {
@@ -86,6 +87,7 @@ export default async function CompliancePage() {
     activeConsents > 0 ? (totalOptOuts / activeConsents) * 100 : 0;
   const complianceScore = calculateComplianceScore(optOutRate, messagesBlocked);
   const risks = generateRisks(optOutRate, messagesBlocked);
+  const quietHoursPolicy = await getQuietHoursPolicyDiagnostics();
 
   const stats: ComplianceStats = {
     activeConsents,
@@ -105,7 +107,11 @@ export default async function CompliancePage() {
         </p>
       </div>
 
-      <ComplianceDashboardClient stats={stats} risks={risks} />
+      <ComplianceDashboardClient
+        stats={stats}
+        risks={risks}
+        quietHoursPolicy={quietHoursPolicy}
+      />
     </div>
   );
 }

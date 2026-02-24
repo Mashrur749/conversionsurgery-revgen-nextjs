@@ -66,6 +66,7 @@ export const POST = portalRoute<{ id: string }>(
         to: lead.phone,
         from: client.twilioNumber,
         body: message,
+        messageClassification: 'proactive_outreach',
         messageCategory: 'transactional',
         consentBasis: { type: 'existing_consent' },
         leadId: lead.id,

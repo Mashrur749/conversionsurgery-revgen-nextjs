@@ -49,6 +49,10 @@ export interface ComplianceCheckResult {
   warnings: string[];
 }
 
+export interface ComplianceCheckOptions {
+  skipQuietHoursCheck?: boolean;
+}
+
 export class ComplianceService {
   /**
    * Hash phone number for privacy-preserving storage
@@ -104,7 +108,8 @@ export class ComplianceService {
     clientId: string,
     phoneNumber: string,
     messageType: 'marketing' | 'transactional' = 'marketing',
-    recipientTimezone?: string
+    recipientTimezone?: string,
+    options?: ComplianceCheckOptions
   ): Promise<ComplianceCheckResult> {
     const db = getDb();
     const normalizedPhone = this.normalizePhoneNumber(phoneNumber);
@@ -114,24 +119,26 @@ export class ComplianceService {
     // Check cache first
     const cached = await this.getCachedCheck(clientId, normalizedPhone);
     if (cached && cached.expiresAt > new Date()) {
-      const quietHoursResult = await this.isQuietHours(
-        clientId,
-        recipientTimezone
-      );
+      if (!options?.skipQuietHoursCheck) {
+        const quietHoursResult = await this.isQuietHours(
+          clientId,
+          recipientTimezone
+        );
 
-      if (quietHoursResult.isQuietHours) {
-        return {
-          canSend: false,
-          canSendMarketing: false,
-          canSendTransactional: false,
-          blockReason: quietHoursResult.reason,
-          hasConsent: cached.hasValidConsent,
-          isOptedOut: cached.isOptedOut,
-          isOnDnc: cached.isOnDnc,
-          isQuietHours: true,
-          consentId: cached.consentId || undefined,
-          warnings,
-        };
+        if (quietHoursResult.isQuietHours) {
+          return {
+            canSend: false,
+            canSendMarketing: false,
+            canSendTransactional: false,
+            blockReason: quietHoursResult.reason,
+            hasConsent: cached.hasValidConsent,
+            isOptedOut: cached.isOptedOut,
+            isOnDnc: cached.isOnDnc,
+            isQuietHours: true,
+            consentId: cached.consentId || undefined,
+            warnings,
+          };
+        }
       }
 
       return {
@@ -261,24 +268,26 @@ export class ComplianceService {
       consent.consentScope.transactional || consent.consentScope.reminders;
 
     // Check quiet hours
-    const quietHoursResult = await this.isQuietHours(
-      clientId,
-      recipientTimezone
-    );
+    if (!options?.skipQuietHoursCheck) {
+      const quietHoursResult = await this.isQuietHours(
+        clientId,
+        recipientTimezone
+      );
 
-    if (quietHoursResult.isQuietHours) {
-      return {
-        canSend: false,
-        canSendMarketing: false,
-        canSendTransactional: false,
-        blockReason: quietHoursResult.reason,
-        hasConsent: true,
-        isOptedOut: false,
-        isOnDnc: false,
-        isQuietHours: true,
-        consentId: consent.id,
-        warnings,
-      };
+      if (quietHoursResult.isQuietHours) {
+        return {
+          canSend: false,
+          canSendMarketing: false,
+          canSendTransactional: false,
+          blockReason: quietHoursResult.reason,
+          hasConsent: true,
+          isOptedOut: false,
+          isOnDnc: false,
+          isQuietHours: true,
+          consentId: consent.id,
+          warnings,
+        };
+      }
     }
 
     // CASL consent expiry enforcement

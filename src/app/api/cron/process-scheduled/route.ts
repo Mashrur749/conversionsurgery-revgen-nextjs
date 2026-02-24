@@ -154,6 +154,7 @@ export async function GET(request: NextRequest) {
             to: lead.phone,
             from: client.twilioNumber,
             body: messageBody,
+            messageClassification: 'proactive_outreach',
             messageCategory: 'marketing',
             consentBasis: { type: 'existing_consent' },
             leadId: lead.id,

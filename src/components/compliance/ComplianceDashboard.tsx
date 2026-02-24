@@ -16,10 +16,22 @@ export interface ComplianceStats {
   complianceScore: number;
 }
 
+interface QuietHoursPolicyStats {
+  environmentMode: 'STRICT_ALL_OUTBOUND_QUEUE' | 'INBOUND_REPLY_ALLOWED';
+  overrideCount: number;
+  overrides: Array<{
+    clientId: string;
+    businessName: string | null;
+    mode: 'STRICT_ALL_OUTBOUND_QUEUE' | 'INBOUND_REPLY_ALLOWED';
+    updatedAt: string;
+  }>;
+}
+
 /** Props for the ComplianceDashboard component */
 interface ComplianceDashboardProps {
   stats: ComplianceStats;
   risks: string[];
+  quietHoursPolicy: QuietHoursPolicyStats;
   onDownloadReport: () => void;
 }
 
@@ -45,6 +57,13 @@ function getScoreBadge(score: number): ScoreBadge {
   return { label: 'Needs Attention', color: 'bg-[#FDEAE4] text-sienna' };
 }
 
+function formatPolicyMode(mode: QuietHoursPolicyStats['environmentMode']): string {
+  if (mode === 'INBOUND_REPLY_ALLOWED') {
+    return 'Inbound Replies Allowed';
+  }
+  return 'Strict Queue (All Outbound)';
+}
+
 /**
  * Displays TCPA compliance metrics, score, risks, and a report download button.
  * Used as the main visual component on the admin compliance page.
@@ -52,6 +71,7 @@ function getScoreBadge(score: number): ScoreBadge {
 export function ComplianceDashboard({
   stats,
   risks,
+  quietHoursPolicy,
   onDownloadReport,
 }: ComplianceDashboardProps) {
   const scoreBadge = getScoreBadge(stats.complianceScore);
@@ -132,6 +152,36 @@ export function ComplianceDashboard({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Quiet-Hours Policy</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">
+              Active Mode: {formatPolicyMode(quietHoursPolicy.environmentMode)}
+            </Badge>
+            <Badge variant="secondary">
+              Overrides: {quietHoursPolicy.overrideCount}
+            </Badge>
+          </div>
+
+          {quietHoursPolicy.overrides.length > 0 && (
+            <div className="space-y-2 text-sm text-muted-foreground">
+              {quietHoursPolicy.overrides.slice(0, 8).map((override) => (
+                <div
+                  key={override.clientId}
+                  className="flex items-center justify-between rounded-md border p-2"
+                >
+                  <span>{override.businessName || override.clientId}</span>
+                  <span>{formatPolicyMode(override.mode)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Risks */}
       {risks.length > 0 && (

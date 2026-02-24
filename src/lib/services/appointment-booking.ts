@@ -204,6 +204,7 @@ export async function bookAppointment(
       to: client.phone,
       from: client.twilioNumber,
       body: contractorMsg,
+      messageClassification: 'proactive_outreach',
       messageCategory: 'transactional',
       consentBasis: { type: 'existing_consent' },
       metadata: { source: 'booking_notification', appointmentId: result.appointmentId },

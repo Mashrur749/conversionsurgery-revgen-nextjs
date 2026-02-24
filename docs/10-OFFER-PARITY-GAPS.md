@@ -9,14 +9,15 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-07 working tree`
+- `LAST_VERIFIED_COMMIT: MS-08 working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Quiet-hours legal classification decision is still pending for full claim expansion.
-- Day-one activation SLA/audit tracking and add-on billing transparency remain open.
+- Day-one activation SLA/audit tracking.
+- Add-on billing transparency.
+- Report delivery observability and cron catch-up guarantees.
 
 ## Spec Mapping (One Spec Per Gap)
 
@@ -29,7 +30,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-005 | P0 | `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Done |
 | GAP-006 | P0 | `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Done |
 | GAP-007 | P0 | `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | Done |
-| GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Spec Ready |
+| GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Done |
 | GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Spec Ready |
 | GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Spec Ready |
 | GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Spec Ready |
@@ -43,7 +44,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | Offer component | Current state | Parity |
 |---|---|---|
 | Revenue Recovery Engine core automations (missed call, follow-up, reminders, re-engagement) | Core automation paths exist | Partial |
-| Near-instant response during compliant hours | Implemented with quiet-hours blocking/queue behavior | Partial |
+| Near-instant response during compliant hours | Quiet-hours classification policy switch implemented (`STRICT_ALL_OUTBOUND_QUEUE` vs `INBOUND_REPLY_ALLOWED`) with auditable decision logs | Ready |
 | Estimate Trigger Methods (SMS keyword, quick-reply, dashboard, fallback nudge) | All trigger paths implemented with unified service + cron fallback | Ready |
 | Unlimited conversations/messages, no caps/no overages | Unlimited plan policy active in runtime + billing UI paths | Ready |
 | Dedicated number + CRM | Implemented | Ready |
@@ -267,9 +268,30 @@ Highest-risk mismatches for paying clients are now concentrated in:
 ## P1 — High Priority CX Parity (First 30 Days)
 
 1. `GAP-101` Quiet-hours inbound-reply classification decision path
-- Offer posture is qualifier-based pending legal review; operational behavior should be explicitly configurable after legal decision.
+- Offer posture remains qualifier-based pending legal review, and operational behavior is now policy-switch controlled.
+- Progress (2026-02-24): `MS-08` Milestones A-D completed.
+- Added quiet-hours policy module with strict default + optional inbound-reply mode:
+  - `STRICT_ALL_OUTBOUND_QUEUE`
+  - `INBOUND_REPLY_ALLOWED`
+- Added required `messageClassification` contract on every compliant outbound send path:
+  - `inbound_reply`
+  - `proactive_outreach`
+- Added fail-closed handling for missing classification at gateway entrypoint.
+- Added pure quiet-hours decision function + unit tests for strict/inbound-allowed/missing-classification cases.
+- Added policy mode override field (`quiet_hours_config.policy_mode_override`) and migration.
+- Added policy diagnostics API + admin dashboard widget for active mode + per-client overrides.
+- Added mode-change compliance audit event (`quiet_hours_policy_mode_changed`) for operator visibility.
+- Added quiet-hours decision metadata (`policy mode`, `classification`, `decision`) to send/queue/block audit paths.
+- Remaining: none (`MS-08` complete).
 - Evidence:
+  - `src/lib/compliance/quiet-hours-policy.ts`
+  - `src/lib/compliance/quiet-hours-policy.test.ts`
   - `src/lib/compliance/compliance-gateway.ts`
+  - `src/lib/compliance/compliance-service.ts`
+  - `src/app/api/admin/compliance/quiet-hours-policy/route.ts`
+  - `src/app/(dashboard)/admin/compliance/page.tsx`
+  - `src/components/compliance/ComplianceDashboard.tsx`
+  - `drizzle/0026_fair_rocket_racer.sql`
 
 2. `GAP-102` Day-One Activation SLA and Revenue Leak Audit workflow tracking
 - Offer commits explicit activation/audit timelines; product lacks a dedicated tracked workflow for these deliverables.

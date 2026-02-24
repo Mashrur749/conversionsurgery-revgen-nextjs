@@ -24,10 +24,12 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 - `MS-06` Milestones A-D: complete.
   - Commit: `9388e70`
 - `MS-07` Milestones A-D: complete.
+  - Commit: `4bb3770`
+- `MS-08` Milestones A-D: complete.
   - Commit: pending current change set
 
 ## Current Focus
-- Next spec: `MS-08` (Quiet-hours classification).
+- Next spec: `MS-09` (Day-one activation tracking).
 - `MS-04` delivered end-to-end:
   - smart-assist config model on client (`enabled`, `delay`, `manual categories`)
   - centralized AI send-policy resolver with shared category constants
@@ -58,6 +60,15 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - secure tokenized download endpoint with expiry and delivered-state tracking
   - admin billing SLA queue for pending/at-risk/breached exports
   - billing cancel-path bypass removed in favor of unified `/client/cancel` workflow
+- `MS-08` delivered end-to-end:
+  - quiet-hours policy module with strict default mode + inbound-reply-allowed mode
+  - required message classification contract (`inbound_reply` / `proactive_outreach`) on all compliant outbound sends
+  - fail-closed behavior when classification is missing
+  - pure quiet-hours decision function with unit tests
+  - compliance-service bypass option for policy-approved inbound replies during quiet hours
+  - policy mode override storage (`quiet_hours_config.policy_mode_override`) + migration
+  - policy diagnostics endpoint and admin compliance widget
+  - mode-change compliance audit events and decision metadata logging on send/queue/block
 
 ## Required Skills For Any MS Milestone
 - `ms-spec-delivery`
@@ -77,5 +88,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-08 Milestone A only.
+Continue with MS-09 Milestone A only.
 ```

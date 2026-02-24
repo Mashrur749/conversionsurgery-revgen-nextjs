@@ -41,6 +41,7 @@ export async function processQueuedComplianceMessages(limit = 100): Promise<Queu
     const from = data.from as string | undefined;
     const body = data.body as string | undefined;
     const messageCategory = (data.messageCategory as 'marketing' | 'transactional') || 'transactional';
+    const messageClassification = (data.messageClassification as 'inbound_reply' | 'proactive_outreach') || 'proactive_outreach';
 
     if (!event.clientId || !to || !from || !body) {
       result.skipped++;
@@ -69,6 +70,7 @@ export async function processQueuedComplianceMessages(limit = 100): Promise<Queu
         to,
         from,
         body,
+        messageClassification,
         messageCategory,
         consentBasis: { type: 'existing_consent' },
         queueOnQuietHours: false,

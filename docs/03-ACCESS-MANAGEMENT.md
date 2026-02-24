@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-07 working tree`
+Last verified commit: `MS-08 working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -77,6 +77,11 @@ Permission templates and overrides resolve effective access at runtime.
 1. `GET /api/client/exports` requires `portal.settings.view`.
 2. `POST /api/client/exports` requires `portal.settings.edit`.
 3. Download endpoint requires both client session scope and matching expiring token.
+
+## MS-08 Access Note
+- Quiet-hours policy diagnostics endpoint is agency-only and permission-wrapped:
+1. `GET /api/admin/compliance/quiet-hours-policy` requires `agency.settings.manage`.
+2. Visibility is read-only from admin compliance dashboard; no policy mutation route was introduced.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

@@ -68,6 +68,7 @@ export async function sendDashboardLink(clientId: string, phone: string, twilioN
     to: phone,
     from: twilioNumber,
     body: `Here's your dashboard link (valid for 7 days):\n${link}`,
+    messageClassification: 'inbound_reply',
     messageCategory: 'transactional',
     consentBasis: { type: 'lead_reply' },
     queueOnQuietHours: false,

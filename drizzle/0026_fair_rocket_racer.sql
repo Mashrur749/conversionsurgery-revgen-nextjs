@@ -1,0 +1,1 @@
+ALTER TABLE "quiet_hours_config" ADD COLUMN "policy_mode_override" varchar(40);

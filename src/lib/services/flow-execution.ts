@@ -177,6 +177,7 @@ async function executeStep(
       to: lead.phone,
       from: client.twilioNumber,
       body: messageContent,
+      messageClassification: 'proactive_outreach',
       messageCategory: 'marketing',
       consentBasis: { type: 'existing_consent' },
       leadId,

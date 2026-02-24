@@ -60,6 +60,7 @@ export async function POST(
     from: client.twilioNumber,
     body: parsed.data.body,
     mediaUrl: parsed.data.mediaUrl,
+    messageClassification: 'proactive_outreach',
     messageCategory: 'transactional',
     consentBasis: { type: 'existing_consent' },
     leadId: lead.id,

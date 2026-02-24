@@ -129,6 +129,7 @@ export async function handleMissedCall(payload: MissedCallPayload) {
       to: callerPhone,
       from: clientData.twilioNumber!,
       body: messageContent,
+      messageClassification: 'inbound_reply',
       messageCategory: 'transactional',
       consentBasis: { type: 'missed_call', callSid: payload.CallSid },
       leadId: lead.id,

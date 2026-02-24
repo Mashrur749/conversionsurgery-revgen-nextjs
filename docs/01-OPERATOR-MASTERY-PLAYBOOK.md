@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `MS-07 working tree`
+Last verified commit: `MS-08 working tree`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -68,7 +68,11 @@ Run these drills on a staging/test environment:
 3. Quiet-hours replay drill:
 - Queue non-lead message during quiet-hours conditions.
 - Run `/api/cron/process-queued-compliance` and verify replay.
-4. Reporting drill:
+4. Quiet-hours policy mode drill:
+- Verify active mode in admin compliance dashboard (`Strict Queue` vs `Inbound Replies Allowed`).
+- Switch environment policy mode in staging and rerun inbound SMS vs proactive sequence test.
+- Confirm expected send/queue behavior and `quiet_hours_policy_mode_changed` audit event.
+5. Reporting drill:
 - Run `/api/cron/biweekly-reports` twice and verify idempotency.
 
 Exit gate:

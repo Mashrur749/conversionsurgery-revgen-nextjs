@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `MS-07 working tree`
+Last verified commit: `MS-08 working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -59,6 +59,13 @@ Outcome: Predictable automation operations.
 3. Monthly access-review digest is sent to agency owners.
 
 Outcome: predictable billing behavior and proactive access governance.
+
+### U6c. Quiet-hours policy mode governance
+1. Operator checks active quiet-hours policy mode in admin compliance dashboard.
+2. Legal posture changes are applied by policy mode switch (`STRICT_ALL_OUTBOUND_QUEUE` or `INBOUND_REPLY_ALLOWED`).
+3. Compliance audit logs capture policy mode, message classification, and decision for send/queue/block.
+
+Outcome: legal/compliance operating mode can change without code edits and remains auditable.
 
 ### U7. No-team escalation fallback
 1. Lead requires escalation.

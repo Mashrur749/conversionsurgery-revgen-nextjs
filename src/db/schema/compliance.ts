@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   timestamp,
+  varchar,
   index,
   pgEnum,
 } from 'drizzle-orm/pg-core';
@@ -214,6 +215,7 @@ export const quietHoursConfig = pgTable('quiet_hours_config', {
   // Enforcement
   enforceQuietHours: boolean('enforce_quiet_hours').notNull().default(true),
   queueDuringQuietHours: boolean('queue_during_quiet_hours').notNull().default(true),
+  policyModeOverride: varchar('policy_mode_override', { length: 40 }),
 
   // Metadata
   createdAt: timestamp('created_at').notNull().defaultNow(),

@@ -131,6 +131,7 @@ export async function processWinBacks(): Promise<{
           to: lead.phone,
           from: client.twilioNumber!,
           body: message,
+          messageClassification: 'proactive_outreach',
           messageCategory: 'marketing',
           consentBasis: { type: 'existing_consent' },
           leadId: lead.id,

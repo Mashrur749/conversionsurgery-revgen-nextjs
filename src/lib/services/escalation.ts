@@ -207,6 +207,7 @@ async function createEscalationInternal(params: CreateEscalationParams): Promise
           to: lead.phone,
           from: client.twilioNumber,
           body: autoResponse,
+          messageClassification: 'proactive_outreach',
           messageCategory: 'transactional',
           consentBasis: { type: 'existing_consent' },
           leadId,

@@ -5,6 +5,12 @@ import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessa
 import { isMessageLimitReached } from '@/lib/services/usage-policy';
 import { eq, and, sql } from 'drizzle-orm';
 import { getTimezoneOffset } from 'date-fns-tz';
+import {
+  getQuietHoursPolicy,
+  resolveQuietHoursDecision,
+  type QuietHoursPolicyMode,
+  type QuietHoursMessageClassification,
+} from '@/lib/compliance/quiet-hours-policy';
 
 /**
  * Consent basis for first-contact messages.
@@ -25,6 +31,7 @@ export interface SendCompliantMessageParams {
   to: string;
   from: string;
   body: string;
+  messageClassification: QuietHoursMessageClassification;
   messageCategory?: MessageCategory;
   consentBasis?: ConsentBasis;
   leadId?: string;
@@ -46,10 +53,6 @@ export interface SendCompliantMessageResult {
   warnings: string[];
   auditId?: string;
 }
-
-// CASL implied consent expiry: 6 months for inquiries, 2 years for customers
-const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000;
-const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 
 /**
  * The single gateway for ALL outbound SMS in ConversionSurgery.
@@ -73,6 +76,7 @@ export async function sendCompliantMessage(
     to,
     from,
     body,
+    messageClassification,
     messageCategory = 'marketing',
     consentBasis,
     leadId,
@@ -135,6 +139,40 @@ export async function sendCompliantMessage(
   }
 
   // -----------------------------------------------------------
+  // Step 0.5: Resolve quiet-hours policy and delivery decision
+  // -----------------------------------------------------------
+  const quietHoursResult = await ComplianceService.isQuietHours(
+    clientId,
+    clientData.timezone || undefined
+  );
+  const quietHoursPolicy = await getQuietHoursPolicy(clientId, { trackModeChanges: true });
+  const quietHoursDecision = resolveQuietHoursDecision({
+    isQuietHours: quietHoursResult.isQuietHours,
+    queueOnQuietHours,
+    policyMode: quietHoursPolicy.mode,
+    messageClassification,
+  });
+  const quietHoursAuditMetadata = buildQuietHoursDecisionAuditMetadata({
+    policyMode: quietHoursPolicy.mode,
+    messageClassification,
+    decision: quietHoursDecision.decision,
+    quietHoursReason: quietHoursResult.reason,
+  });
+
+  if (quietHoursDecision.decision === 'block' && quietHoursDecision.reason === 'Missing quiet-hours message classification') {
+    return blocked(
+      quietHoursDecision.reason,
+      normalizedPhone,
+      phoneHash,
+      clientId,
+      {
+        ...metadata,
+        ...quietHoursAuditMetadata,
+      }
+    );
+  }
+
+  // -----------------------------------------------------------
   // Step 1: Auto-record implied consent if this is first contact
   // -----------------------------------------------------------
   if (consentBasis && consentBasis.type !== 'existing_consent') {
@@ -148,14 +186,21 @@ export async function sendCompliantMessage(
     clientId,
     normalizedPhone,
     messageCategory,
-    clientData.timezone || undefined
+    clientData.timezone || undefined,
+    {
+      skipQuietHoursCheck:
+        quietHoursResult.isQuietHours && quietHoursDecision.decision === 'send',
+    }
   );
 
   // -----------------------------------------------------------
   // Step 3: Handle blocked scenarios
   // -----------------------------------------------------------
   if (complianceResult.isOptedOut) {
-    return blocked('Recipient has opted out', normalizedPhone, phoneHash, clientId, metadata);
+    return blocked('Recipient has opted out', normalizedPhone, phoneHash, clientId, {
+      ...quietHoursAuditMetadata,
+      ...metadata,
+    });
   }
 
   if (complianceResult.isOnDnc) {
@@ -164,7 +209,10 @@ export async function sendCompliantMessage(
       normalizedPhone,
       phoneHash,
       clientId,
-      metadata
+      {
+        ...quietHoursAuditMetadata,
+        ...metadata,
+      }
     );
   }
 
@@ -180,7 +228,10 @@ export async function sendCompliantMessage(
         normalizedPhone,
         phoneHash,
         clientId,
-        metadata
+        {
+          ...quietHoursAuditMetadata,
+          ...metadata,
+        }
       );
     }
   }
@@ -188,8 +239,8 @@ export async function sendCompliantMessage(
   // -----------------------------------------------------------
   // Step 4: Handle quiet hours
   // -----------------------------------------------------------
-  if (complianceResult.isQuietHours) {
-    if (queueOnQuietHours) {
+  if (quietHoursResult.isQuietHours) {
+    if (quietHoursDecision.decision === 'queue') {
       let queuedSendAt: Date | null = null;
       if (leadId) {
         queuedSendAt = await getNextAllowedSendAt(clientId, clientData.timezone || 'America/Edmonton');
@@ -210,9 +261,11 @@ export async function sendCompliantMessage(
         mediaUrl,
         reason: 'quiet_hours',
         messageCategory,
+        messageClassification,
         leadId,
         queuedSendAt: queuedSendAt?.toISOString(),
         persistedToSchedule: !!queuedSendAt,
+        ...quietHoursAuditMetadata,
         ...metadata,
       });
 
@@ -220,18 +273,39 @@ export async function sendCompliantMessage(
         sent: false,
         queued: true,
         blocked: false,
-        blockReason: complianceResult.blockReason,
+        blockReason: quietHoursResult.reason,
         consentId: complianceResult.consentId,
         warnings: [...warnings, 'Message queued for next available window (quiet hours)'],
       };
     }
-    return blocked(
-      complianceResult.blockReason || 'Quiet hours — cannot send',
-      normalizedPhone,
+
+    if (quietHoursDecision.decision === 'block') {
+      return blocked(
+        quietHoursDecision.reason || quietHoursResult.reason || 'Quiet hours — cannot send',
+        normalizedPhone,
+        phoneHash,
+        clientId,
+        {
+          ...metadata,
+          ...quietHoursAuditMetadata,
+        }
+      );
+    }
+
+    await ComplianceService.logComplianceEvent(clientId, 'message_quiet_hours_allowed', {
+      phoneNumber: normalizedPhone,
       phoneHash,
-      clientId,
-      metadata
-    );
+      from,
+      body,
+      mediaUrl,
+      reason: quietHoursResult.reason,
+      messageCategory,
+      messageClassification,
+      leadId,
+      ...quietHoursAuditMetadata,
+      ...metadata,
+    });
+    warnings.push('Quiet-hours send allowed by active inbound-reply policy mode');
   }
 
   // -----------------------------------------------------------
@@ -243,7 +317,10 @@ export async function sendCompliantMessage(
       normalizedPhone,
       phoneHash,
       clientId,
-      metadata
+      {
+        ...quietHoursAuditMetadata,
+        ...metadata,
+      }
     );
   }
 
@@ -262,6 +339,8 @@ export async function sendCompliantMessage(
       phoneNumber: normalizedPhone,
       phoneHash,
       messageCategory,
+      messageClassification,
+      quietHoursPolicyMode: quietHoursPolicy.mode,
       error: error instanceof Error ? error.message : String(error),
       consentId: complianceResult.consentId,
       ...metadata,
@@ -278,6 +357,8 @@ export async function sendCompliantMessage(
     phoneHash,
     messageSid,
     messageCategory,
+    messageClassification,
+    quietHoursPolicyMode: quietHoursPolicy.mode,
     consentId: complianceResult.consentId,
     leadId,
     ...metadata,
@@ -416,6 +497,20 @@ async function blocked(
     blocked: true,
     blockReason: reason,
     warnings: [],
+  };
+}
+
+function buildQuietHoursDecisionAuditMetadata(input: {
+  policyMode: QuietHoursPolicyMode;
+  messageClassification?: QuietHoursMessageClassification | null;
+  decision: 'send' | 'queue' | 'block';
+  quietHoursReason?: string;
+}): Record<string, unknown> {
+  return {
+    quietHoursPolicyMode: input.policyMode,
+    messageClassification: input.messageClassification ?? 'unclassified',
+    quietHoursDecision: input.decision,
+    quietHoursReason: input.quietHoursReason,
   };
 }
 

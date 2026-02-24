@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-07 working tree`
+Last verified commit: `MS-08 working tree`
 
 ## 0. Preflight (Run First)
 
@@ -241,7 +241,28 @@ Expected:
 - Export request lifecycle exists (`requested|processing|ready|delivered|failed`).
 - Downloaded package contains `leads.csv`, `conversations.csv`, and `pipeline_jobs.csv` sections.
 
-### Step 14: Final smoke
+### Step 14: Quiet-hours policy switch parity (MS-08)
+1. Run policy decision unit tests:
+```bash
+npx vitest run src/lib/compliance/quiet-hours-policy.test.ts
+```
+2. In admin UI, open `/admin/compliance` and confirm `Quiet-Hours Policy` card renders:
+- active mode label
+- override count
+- override rows (if any)
+3. Verify diagnostics endpoint permissions from an agency admin session:
+```bash
+curl -i http://localhost:3000/api/admin/compliance/quiet-hours-policy
+```
+4. In staging, set `QUIET_HOURS_POLICY_MODE=INBOUND_REPLY_ALLOWED` and restart app.
+5. Re-run one inbound-reply path (incoming SMS response) during quiet hours and one proactive path (scheduled follow-up) during quiet hours.
+
+Expected:
+- Inbound reply path can send under inbound-allowed mode.
+- Proactive path still queues under inbound-allowed mode.
+- Missing `messageClassification` is rejected fail-closed in tests/typecheck.
+
+### Step 15: Final smoke
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
@@ -256,6 +277,7 @@ npm run build
 # Focused tests
 npx vitest run src/lib/permissions/resolve.test.ts
 npx vitest run src/lib/automations/appointment-reminder.test.ts
+npx vitest run src/lib/compliance/quiet-hours-policy.test.ts
 npx vitest run src/lib/services/without-us-model.test.ts
 npx vitest run src/lib/services/cancellation-policy.test.ts src/lib/services/data-export-bundle.test.ts src/lib/services/data-export-requests.test.ts
 

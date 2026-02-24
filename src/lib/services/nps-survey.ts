@@ -50,6 +50,7 @@ export async function sendNpsSurvey(
     to: lead.phone,
     from: client.twilioNumber,
     body,
+    messageClassification: 'proactive_outreach',
     messageCategory: 'transactional',
     consentBasis: { type: 'existing_consent' },
     leadId,

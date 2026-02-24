@@ -5,6 +5,24 @@ Implement a legally controlled switch for quiet-hours handling so behavior can b
 - mode A: queue all outbound during quiet hours
 - mode B: allow inbound-reply messages during quiet hours; queue proactive outreach
 
+## Implementation Status (2026-02-24)
+- `DONE`
+- All milestones A-D implemented in application code and docs.
+- Verification run:
+1. `npx vitest run src/lib/compliance/quiet-hours-policy.test.ts`
+2. `npm run typecheck`
+3. `npm run ms:gate`
+4. `npm run build`
+
+## Implemented Artifacts
+- Policy module: `src/lib/compliance/quiet-hours-policy.ts`
+- Policy tests: `src/lib/compliance/quiet-hours-policy.test.ts`
+- Gateway enforcement + audit metadata: `src/lib/compliance/compliance-gateway.ts`
+- Compliance quiet-hours bypass option (policy-governed): `src/lib/compliance/compliance-service.ts`
+- Admin diagnostics API: `src/app/api/admin/compliance/quiet-hours-policy/route.ts`
+- Admin diagnostics widget: `src/components/compliance/ComplianceDashboard.tsx`
+- Schema + migration: `src/db/schema/compliance.ts`, `drizzle/0026_fair_rocket_racer.sql`
+
 ## Why This Matters
 Offer language is currently qualification-based. Operations need one controlled flag to move from interim policy to approved policy without risky code edits.
 

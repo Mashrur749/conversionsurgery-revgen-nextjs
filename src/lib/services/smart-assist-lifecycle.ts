@@ -266,6 +266,7 @@ export async function sendSmartAssistDraftNow(params: {
       to: lead.phone,
       from: client.twilioNumber,
       body: finalContent,
+      messageClassification: 'inbound_reply',
       messageCategory: 'marketing',
       consentBasis: { type: 'existing_consent' },
       leadId: lead.id,

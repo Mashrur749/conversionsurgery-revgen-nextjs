@@ -122,6 +122,7 @@ export async function handleFormSubmission(payload: FormPayload) {
       to: normalizedPhone,
       from: client.twilioNumber,
       body: messageContent,
+      messageClassification: 'inbound_reply',
       messageCategory: 'transactional',
       consentBasis: { type: 'form_submission', formSubmissionId: lead.id },
       leadId: lead.id,

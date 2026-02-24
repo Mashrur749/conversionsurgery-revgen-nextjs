@@ -99,6 +99,7 @@ export async function processNoShows(): Promise<{
           to: lead.phone,
           from: client.twilioNumber!,
           body: message,
+          messageClassification: 'proactive_outreach',
           messageCategory: 'transactional',
           consentBasis: { type: 'existing_consent' },
           leadId: lead.id,

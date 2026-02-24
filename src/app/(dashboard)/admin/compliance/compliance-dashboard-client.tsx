@@ -12,9 +12,19 @@ interface Props {
     complianceScore: number;
   };
   risks: string[];
+  quietHoursPolicy: {
+    environmentMode: 'STRICT_ALL_OUTBOUND_QUEUE' | 'INBOUND_REPLY_ALLOWED';
+    overrideCount: number;
+    overrides: Array<{
+      clientId: string;
+      businessName: string | null;
+      mode: 'STRICT_ALL_OUTBOUND_QUEUE' | 'INBOUND_REPLY_ALLOWED';
+      updatedAt: string;
+    }>;
+  };
 }
 
-export function ComplianceDashboardClient({ stats, risks }: Props) {
+export function ComplianceDashboardClient({ stats, risks, quietHoursPolicy }: Props) {
   const handleDownloadReport = async () => {
     try {
       const res = await fetch('/api/compliance/report?months=1');
@@ -37,6 +47,7 @@ export function ComplianceDashboardClient({ stats, risks }: Props) {
     <ComplianceDashboard
       stats={stats}
       risks={risks}
+      quietHoursPolicy={quietHoursPolicy}
       onDownloadReport={handleDownloadReport}
     />
   );

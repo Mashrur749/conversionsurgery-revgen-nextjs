@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-07 working tree`
+- `LAST_VERIFIED_COMMIT: MS-08 working tree`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -41,6 +41,7 @@ Offer parity gaps against the reviewed v2.1 offer architecture are tracked separ
 - Deterministic bi-weekly report generation and delivery.
 - Bi-weekly "Without Us" directional model parity (ranges + assumptions + disclaimer + insufficient-data safeguards).
 - Cancellation/export parity: 30-day cancellation notice and full data export lifecycle with 5-business-day SLA tracking.
+- Quiet-hours policy mode switch parity with required message classification, policy diagnostics, and audit-mode change tracking.
 - Appointment reminder parity for homeowner + contractor plus regression tests.
 - Non-lead quiet-hours durable replay automation.
 - Monthly access-review automation.

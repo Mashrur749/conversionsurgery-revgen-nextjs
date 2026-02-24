@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-07 working tree`
+- `LAST_VERIFIED_COMMIT: MS-08 working tree`
 
 ## Executive Status
 
@@ -45,6 +45,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Bi-weekly report cron now generates and emails managed-service reports deterministically (idempotent by period).
 - Bi-weekly reports now include "Without Us" directional model payload (low/base/high), assumptions, disclaimers, and insufficient-data guard state.
 - Cancellation workflow now enforces 30-day notice with tracked export SLA and expiring secure download links for full lead/conversation/pipeline exports.
+- Quiet-hours policy mode switch is now implemented with auditable classification decisions and admin diagnostics visibility.
 - Appointment reminders now include both homeowner and contractor reminder scheduling paths.
 - Quiet-hours replay now includes non-lead durable queue processing.
 - Monthly access-review automation sends stale-access digest to agency owners.
@@ -73,6 +74,7 @@ Current snapshot at this commit:
 5. Done: `GAP-005` quarterly growth blitz productization.
 6. Done: `GAP-006` bi-weekly "Without Us" model parity.
 7. Done: `GAP-007` cancellation/export parity.
+8. Done: `GAP-101` quiet-hours policy classification switch parity.
 
 ## Go-Live Gate (Managed Service)
 Release only when all are true:
