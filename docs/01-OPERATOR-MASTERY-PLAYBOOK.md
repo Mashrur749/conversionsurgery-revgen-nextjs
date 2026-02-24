@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `MS-12 Milestone D working tree`
+Last verified commit: `MS-13 Milestone D working tree`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -57,6 +57,7 @@ Objective: run live managed-service operations reliably.
 8. Review quarterly campaign status for each active client (planned/scheduled/launched/completed).
 9. Review `Cron Catch-Up Controls` in `/admin/settings` and clear any backlog/stale state (`monthly_reset`, `biweekly_reports`).
 10. Trigger cron sub-jobs manually if automation lag is detected.
+11. Review Knowledge Gap Queue in `/admin/clients/<id>/knowledge?tab=queue` and clear stale high-priority items.
 
 Exit gate:
 - You can run daily ops in under 30 minutes.
@@ -164,6 +165,7 @@ Exit gate:
 16. Add-on dispute/provenance annotations reviewed and unresolved dispute states triaged.
 17. Bi-weekly report delivery lifecycle reviewed (`generated/queued/retried/sent/failed`) from admin delivery panel and failed/backoff/terminal states triaged.
 18. Cron catch-up backlog state reviewed in `/admin/settings` (no stale backlog for monthly reset or bi-weekly reports).
+19. Knowledge Gap Queue reviewed (open vs closed trend, stale high-priority count, ownership coverage).
 
 ## Core References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`

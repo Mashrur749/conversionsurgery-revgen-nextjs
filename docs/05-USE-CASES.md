@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `MS-12 Milestone D working tree`
+Last verified commit: `MS-13 Milestone D working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -152,6 +152,14 @@ Outcome: retention narrative is evidence-backed and transparent, without fabrica
 6. Client dashboard shows latest delivery status and provides report download link when artifact exists.
 
 Outcome: report delivery is auditable and operationally visible instead of silent best-effort.
+
+### U11c. Knowledge-gap closure queue lifecycle (MS-13 A-D)
+1. Low-confidence AI responses upsert into the client knowledge-gap queue with status, priority score, due date, and owner.
+2. Operator triages queue from `/admin/clients/<id>/knowledge?tab=queue` using filters and bulk assignment/status actions.
+3. Resolve transition requires linked KB entry + resolution note; high-priority items require reviewer-based verification.
+4. Queue metrics track opened/closed/aging, and stale high-priority gaps trigger daily agency-owner digest alerts.
+
+Outcome: knowledge quality improvements are operationally owned and auditable, not ad hoc.
 
 ### U12. Cancellation + full data export fulfillment (MS-07)
 1. Client submits cancellation notice through `/client/cancel`.

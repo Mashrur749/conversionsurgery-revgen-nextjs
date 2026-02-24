@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-12 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-13 Milestone D working tree`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -20,6 +20,7 @@ Current offer-parity note:
 - `GAP-103` (add-on billing transparency) is complete with `MS-10` Milestones A-D implemented.
 - `GAP-104` (report delivery observability) is complete with `MS-11` Milestones A-D implemented.
 - `GAP-105` (cron catch-up guarantees) is complete with `MS-12` Milestones A-D implemented.
+- `GAP-201` (knowledge-gap closure queue) is complete with `MS-13` Milestones A-D implemented.
 
 ## P1 (Must complete before scale-up)
 1. None.

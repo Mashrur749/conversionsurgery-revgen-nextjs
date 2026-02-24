@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `MS-12 Milestone D working tree`
+**Last verified commit:** `MS-13 Milestone D working tree`
 
 ---
 
@@ -224,6 +224,10 @@ Since the original audit window, new managed-service features (Smart Assist work
 9. Cron catch-up guarantees (`MS-12`) add:
    - agency settings-scoped admin endpoint (`GET/POST /api/admin/cron-catchup`) requiring `agency.settings.manage`.
    - cron sub-route refactors (`/api/cron/monthly-reset`, `/api/cron/biweekly-reports`) that keep existing `verifyCronSecret()` bearer guard.
+   - no new public/auth-bypass surfaces.
+10. Knowledge-gap closure queue (`MS-13`) adds:
+   - agency client-scoped queue endpoints (`GET /api/admin/clients/[id]/knowledge/gaps`, `PATCH /api/admin/clients/[id]/knowledge/gaps/[gapId]`, `POST /api/admin/clients/[id]/knowledge/gaps/bulk`) guarded by `agency.knowledge.edit`.
+   - cron stale-gap digest endpoint (`GET /api/cron/knowledge-gap-alerts`) guarded by `verifyCronSecret()`.
    - no new public/auth-bypass surfaces.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

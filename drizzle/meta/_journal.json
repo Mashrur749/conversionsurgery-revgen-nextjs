@@ -225,6 +225,13 @@
       "when": 1772002200000,
       "tag": "0031_gigantic_hourglass",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1772005800000,
+      "tag": "0032_bright_gauntlet",
+      "breakpoints": true
     }
   ]
 }

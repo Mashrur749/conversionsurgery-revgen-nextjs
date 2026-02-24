@@ -1,5 +1,7 @@
 # MS-13: Knowledge Gap Closure Queue
 
+Status: DONE (Milestones A-D)
+
 ## Goal
 Turn knowledge-gap detection into an operator-owned closure workflow:
 - capture gaps
@@ -79,3 +81,16 @@ Refactor checkpoint D:
 
 ## Definition of Done
 - Knowledge gaps are operationally owned and closed, not only logged.
+
+## Implementation Outcome (2026-02-24)
+1. Lifecycle model shipped in `knowledge_gaps` with status/ownership/priority/due/resolution/verification fields.
+2. Detection path now writes through queue service (`upsertKnowledgeGapFromDetection`) from `trackKnowledgeGap`.
+3. Admin operator queue shipped:
+- `GET /api/admin/clients/[id]/knowledge/gaps`
+- `PATCH /api/admin/clients/[id]/knowledge/gaps/[gapId]`
+- `POST /api/admin/clients/[id]/knowledge/gaps/bulk`
+- UI tab: `/admin/clients/[id]/knowledge?tab=queue`
+4. Resolve/verify transitions enforce KB linkage + resolution note + reviewer policy for high-priority gaps.
+5. Queue metrics and stale high-priority alerting shipped:
+- per-client opened/closed/aging metrics in queue API/UI
+- cron digest endpoint `/api/cron/knowledge-gap-alerts` (called hourly via orchestrator)

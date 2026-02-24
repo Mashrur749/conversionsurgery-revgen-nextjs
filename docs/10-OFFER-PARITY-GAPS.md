@@ -9,13 +9,13 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: DONE`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-12 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-13 Milestone D working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Process/scale hardening (`GAP-201..GAP-203`).
+- Process/scale hardening (`GAP-202..GAP-203`).
 
 ## Spec Mapping (One Spec Per Gap)
 
@@ -33,7 +33,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Done |
 | GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Done |
 | GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Done |
-| GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
+| GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Done |
 | GAP-202 | P2 | `docs/specs/MS-14-ONBOARDING-QUALITY-GATES.md` | Spec Ready |
 | GAP-203 | P2 | `docs/specs/MS-15-REMINDER-ROUTING-FLEXIBILITY.md` | Spec Ready |
 
@@ -50,7 +50,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | Voice AI optional add-on at $0.15/min | Voice rollup ledger, invoice linkage, CSV visibility, and dispute workflow implemented | Ready |
 | Day-One Activation package | Milestone tracker, audit artifact workflow, SLA alerting, and operator/client visibility implemented | Ready |
 | Smart assist mode (5-minute auto-send window) | Smart-assist queue + owner approve/edit/cancel + auto-send lifecycle implemented | Ready |
-| KB QA process with gap closure loop | Gap tracking primitives exist; full operational closure loop missing | Partial |
+| KB QA process with gap closure loop | Detection writes into lifecycle queue with assignment, KB-linked resolve/verify, metrics, and stale-priority digest alerting | Ready |
 | 30-day proof-of-life + 90-day recovery guarantee | Dual-layer evaluator + low-volume extension + visibility workflows implemented | Ready |
 | Low-volume guarantee extension formula | Implemented in guarantee v2 evaluator and persisted windows | Ready |
 | Quarterly Growth Blitz | Quarterly campaign ledger + planner + transitions + reporting summary + admin digest/alerts implemented | Ready |
@@ -460,10 +460,31 @@ Highest-risk mismatches for paying clients are now concentrated in:
 ## P2 — Process/Scale Hardening
 
 1. `GAP-201` Knowledge gap closure workflow UI + ownership
-- Tracking primitives exist, but no explicit operator queue for closure and reporting.
+- Progress (2026-02-24): `MS-13` Milestones A-D completed.
+- Added lifecycle queue model with status transitions, owner assignment, due-date policy, and priority scoring.
+- Refactored low-confidence detection path to upsert into queue service from context builder.
+- Added operator APIs:
+  - `GET /api/admin/clients/[id]/knowledge/gaps`
+  - `PATCH /api/admin/clients/[id]/knowledge/gaps/[gapId]`
+  - `POST /api/admin/clients/[id]/knowledge/gaps/bulk`
+- Added operator UI tab in client knowledge base (`/admin/clients/[id]/knowledge?tab=queue`) with:
+  - filters and summary cards
+  - assignment/status updates
+  - bulk actions for repeated gaps
+  - resolve/verify form requiring KB link + resolution note
+- Added stale high-priority alert digest cron (`/api/cron/knowledge-gap-alerts`) and orchestrator dispatch integration.
+- Remaining: none (`MS-13` complete).
 - Evidence:
   - `src/db/schema/knowledge-gaps.ts`
   - `src/lib/agent/context-builder.ts`
+  - `src/lib/services/knowledge-gap-validation.ts`
+  - `src/lib/services/knowledge-gap-queue.ts`
+  - `src/app/api/admin/clients/[id]/knowledge/gaps/route.ts`
+  - `src/app/api/admin/clients/[id]/knowledge/gaps/[gapId]/route.ts`
+  - `src/app/api/admin/clients/[id]/knowledge/gaps/bulk/route.ts`
+  - `src/app/(dashboard)/admin/clients/[id]/knowledge/knowledge-gap-queue.tsx`
+  - `src/app/api/cron/knowledge-gap-alerts/route.ts`
+  - `src/app/api/cron/route.ts`
 
 2. `GAP-202` Onboarding quality gates beyond "presence checks"
 - Current checklist uses binary existence; offer assumes production-quality setup.

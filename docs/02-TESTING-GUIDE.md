@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-12 Milestone D working tree`
+Last verified commit: `MS-13 Milestone D working tree`
 
 ## 0. Preflight (Run First)
 
@@ -349,7 +349,31 @@ Expected:
 - Proactive path still queues under inbound-allowed mode.
 - Missing `messageClassification` is rejected fail-closed in tests/typecheck.
 
-### Step 15: Final smoke
+### Step 15: Knowledge Gap closure queue parity (MS-13)
+1. Open `/admin/clients/<id>/knowledge?tab=queue`.
+2. Confirm queue rows load with summary cards (`open`, `stale high priority`, `opened 7d`, `avg open age`).
+3. Select one row and assign owner using bulk action.
+4. Open `Manage` dialog for one row and set status `resolved` without KB link/note.
+
+Expected:
+- API blocks resolution with validation error (KB link + resolution note required).
+
+5. Update same row with:
+- status `resolved`
+- linked KB entry
+- resolution note >= 10 chars
+6. For high-priority row (`priority >= 8`), verify `verified` transition requires reviewer policy.
+7. Trigger stale gap digest:
+```bash
+curl -i http://localhost:3000/api/cron/knowledge-gap-alerts -H "Authorization: Bearer $CRON_SECRET"
+```
+
+Expected:
+- Row lifecycle updates are persisted and visible on reload.
+- Bulk actions update selected rows with per-row success/failure handling.
+- Stale alert cron returns deterministic payload and dedupes to one digest/day.
+
+### Step 16: Final smoke
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
@@ -369,6 +393,7 @@ npx vitest run src/lib/compliance/quiet-hours-policy.test.ts
 npx vitest run src/lib/services/without-us-model.test.ts
 npx vitest run src/lib/services/day-one-policy.test.ts
 npx vitest run src/lib/services/cancellation-policy.test.ts src/lib/services/data-export-bundle.test.ts src/lib/services/data-export-requests.test.ts
+npx vitest run src/lib/services/knowledge-gap-validation.test.ts src/lib/services/knowledge-gap-queue.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
@@ -380,6 +405,7 @@ curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bear
 curl -i http://localhost:3000/api/cron/onboarding-sla-check -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/quarterly-campaign-planner -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/quarterly-campaign-alerts -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/knowledge-gap-alerts -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ## 4. Release Gate

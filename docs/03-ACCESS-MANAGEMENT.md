@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-12 Milestone D working tree`
+Last verified commit: `MS-13 Milestone D working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -132,6 +132,14 @@ Permission templates and overrides resolve effective access at runtime.
 2. `POST /api/admin/cron-catchup` requires `agency.settings.manage`.
 3. `GET /api/cron/monthly-reset` and `GET /api/cron/biweekly-reports` remain `verifyCronSecret` guarded.
 - No new client-portal permission surfaces were introduced.
+
+## MS-13 Access Note
+- Knowledge-gap closure queue adds agency knowledge-edit surfaces only:
+1. `GET /api/admin/clients/[id]/knowledge/gaps` requires `agency.knowledge.edit`.
+2. `PATCH /api/admin/clients/[id]/knowledge/gaps/[gapId]` requires `agency.knowledge.edit`.
+3. `POST /api/admin/clients/[id]/knowledge/gaps/bulk` requires `agency.knowledge.edit`.
+4. `GET /api/cron/knowledge-gap-alerts` remains `verifyCronSecret` guarded.
+- No new portal/client-facing permission scopes were introduced.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

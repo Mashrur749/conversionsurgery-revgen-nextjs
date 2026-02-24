@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { KnowledgeList } from './knowledge-list';
 import KnowledgeForm from './knowledge-form';
+import KnowledgeGapQueue from './knowledge-gap-queue';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -33,7 +34,10 @@ export default async function KnowledgeBasePage({ params, searchParams }: Props)
   const entries = await getClientKnowledge(id);
   const structuredData = await loadStructuredKnowledge(id);
 
-  const activeTab = tab === 'entries' ? 'entries' : 'interview';
+  const activeTab =
+    tab === 'entries' || tab === 'queue'
+      ? tab
+      : 'interview';
 
   return (
     <div className="space-y-6">
@@ -66,6 +70,12 @@ export default async function KnowledgeBasePage({ params, searchParams }: Props)
         >
           All Entries ({entries.length})
         </Link>
+        <Link
+          href={`/admin/clients/${id}/knowledge?tab=queue`}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${activeTab === 'queue' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+        >
+          Gap Queue
+        </Link>
       </div>
 
       {activeTab === 'interview' ? (
@@ -79,7 +89,7 @@ export default async function KnowledgeBasePage({ params, searchParams }: Props)
           </div>
           <KnowledgeForm clientId={id} initialData={structuredData} />
         </div>
-      ) : (
+      ) : activeTab === 'entries' ? (
         <div>
           <div className="flex justify-end mb-4">
             <Button asChild>
@@ -88,6 +98,15 @@ export default async function KnowledgeBasePage({ params, searchParams }: Props)
           </div>
           <KnowledgeList clientId={id} entries={entries} />
         </div>
+      ) : (
+        <KnowledgeGapQueue
+          clientId={id}
+          entries={entries.map((entry) => ({
+            id: entry.id,
+            title: entry.title,
+            category: entry.category,
+          }))}
+        />
       )}
     </div>
   );

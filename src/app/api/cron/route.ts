@@ -124,6 +124,11 @@ export async function POST(request: NextRequest) {
       results.sendNps = await dispatch(baseUrl, '/api/cron/send-nps', cronSecret!, 'POST');
       results.agentCheck = await dispatch(baseUrl, '/api/cron/agent-check', cronSecret!);
       results.queuedCompliance = await dispatch(baseUrl, '/api/cron/process-queued-compliance', cronSecret!);
+      results.knowledgeGapAlerts = await dispatch(
+        baseUrl,
+        '/api/cron/knowledge-gap-alerts',
+        cronSecret!
+      );
       results.onboardingSlaCheck = await dispatch(
         baseUrl,
         '/api/cron/onboarding-sla-check',

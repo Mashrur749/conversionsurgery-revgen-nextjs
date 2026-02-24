@@ -22,11 +22,11 @@ import {
   businessHours,
   flowExecutions,
   knowledgeBase,
-  knowledgeGaps,
 } from '@/db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { buildKnowledgeContext, searchKnowledge } from '@/lib/services/knowledge-base';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
+import { upsertKnowledgeGapFromDetection } from '@/lib/services/knowledge-gap-queue';
 import { buildGuardrailPrompt, assessConfidence, type ConfidenceLevel } from './guardrails';
 
 // ============================================================
@@ -444,35 +444,10 @@ export async function trackKnowledgeGap(
 ): Promise<void> {
   if (confidenceLevel === 'high') return; // No gap to track
 
-  const db = getDb();
-  const normalizedQuestion = question.toLowerCase().trim().substring(0, 500);
-
-  // Check for existing similar gap (simple substring match)
-  const existing = await db
-    .select()
-    .from(knowledgeGaps)
-    .where(and(
-      eq(knowledgeGaps.clientId, clientId),
-      sql`LOWER(${knowledgeGaps.question}) LIKE ${'%' + normalizedQuestion.substring(0, 50) + '%'}`
-    ))
-    .limit(1);
-
-  if (existing.length > 0) {
-    // Increment occurrences
-    await db
-      .update(knowledgeGaps)
-      .set({
-        occurrences: sql`${knowledgeGaps.occurrences} + 1`,
-        lastSeenAt: new Date(),
-      })
-      .where(eq(knowledgeGaps.id, existing[0].id));
-  } else {
-    // Create new gap
-    await db.insert(knowledgeGaps).values({
-      clientId,
-      question: question.substring(0, 500),
-      category,
-      confidenceLevel,
-    });
-  }
+  await upsertKnowledgeGapFromDetection({
+    clientId,
+    question,
+    category: category ?? null,
+    confidenceLevel,
+  });
 }

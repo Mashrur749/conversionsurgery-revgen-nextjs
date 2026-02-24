@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-12 Milestone D working tree`
+Last verified commit: `MS-13 Milestone D working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -23,6 +23,7 @@ Last verified commit: `MS-12 Milestone D working tree`
 16. Verify add-on billing ledger health: recent `addon_billing_events` rows for team seats, numbers, and voice rollups exist for active clients.
 17. Spot-check invoice UX parity: invoice line items include add-on labels for matching periods and CSV download works from client billing usage card.
 18. Review admin client `Add-On Charge Provenance` card and clear any unresolved `disputed`/`reviewing` annotations.
+19. Review Knowledge Gap Queue (`/admin/clients/<id>/knowledge?tab=queue`) for stale high-priority items and unresolved owners.
 
 ## Cron Operations
 
@@ -70,6 +71,9 @@ curl -s "$BASE_URL/api/cron/onboarding-sla-check" \
 
 curl -s "$BASE_URL/api/cron/voice-usage-rollup" \
   -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
+  -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ### Expected behavior
@@ -87,6 +91,7 @@ curl -s "$BASE_URL/api/cron/voice-usage-rollup" \
 - Quiet-hours policy mode is visible in admin compliance dashboard and should match current legal operating posture.
 - Onboarding SLA checker marks overdue Day-One milestones and opens operator alerts/tasks.
 - Voice usage rollup upserts add-on ledger rows by billing period with idempotency protection.
+- Knowledge-gap alert cron sends one stale high-priority digest/day to agency owners when overdue queue items exist.
 
 ## Access Management Operations
 

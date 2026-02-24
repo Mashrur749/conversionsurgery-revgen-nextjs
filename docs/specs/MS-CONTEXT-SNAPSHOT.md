@@ -1,6 +1,6 @@
 # MS Context Snapshot
 
-Last updated: 2026-02-24
+Last updated: 2026-02-24 (MS-13 Milestones A-D)
 Purpose: compact handoff context for fresh sessions without replaying chat history.
 
 ## Source of Truth
@@ -38,14 +38,20 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Commit: `257b1e0`
 - `MS-11` Milestones B-D: complete.
   - Commits: `5863974`, `17a16df`, `03953cf`
-- `MS-12` Milestones A-D: complete in current working tree.
+- `MS-12` Milestones A-D: complete.
   - cursor model + migration + legacy backfill bootstrap
   - shared catch-up runner and job registry (monthly + bi-weekly)
   - period-level idempotency key module + billing/report replay safety
   - admin catch-up status + manual run controls
+- `MS-13` Milestones A-D: complete in current working tree.
+  - knowledge-gap lifecycle model (`new`, `in_progress`, `blocked`, `resolved`, `verified`)
+  - detection upsert now routes through queue service with scoring/due-date policy
+  - admin queue APIs (`list`, `bulk`, `single-update`) and Knowledge Base `Gap Queue` operator UI
+  - resolve/verify enforcement requires KB entry link + resolution note + reviewer separation for high-priority gaps
+  - queue metrics (opened/closed/aging) and stale high-priority digest cron (`/api/cron/knowledge-gap-alerts`)
 
 ## Current Focus
-- Next spec: `MS-13` (knowledge gap closure queue), Milestone A.
+- Next spec: `MS-14` (onboarding quality gates), Milestone A.
 - `MS-12` Milestones A-D are implemented in the working tree:
   - `cron_job_cursors` model + migration (`drizzle/0031_gigantic_hourglass.sql`)
   - shared catch-up engine (`src/lib/services/cron-catchup.ts`)
@@ -127,5 +133,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-13 Milestone A only.
+Continue with MS-14 Milestone A only.
 ```
