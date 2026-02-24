@@ -6,16 +6,22 @@ import {
   plans,
   usageRecords,
   clients,
+  addonBillingEvents,
 } from '@/db/schema';
-import { eq, desc, and, gte, lte, sql, count } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, sql } from 'drizzle-orm';
 import { getTotalTeamMemberCount } from '@/lib/services/team-bridge';
 import { resolveClientUsagePolicy, type PlanFeatures } from '@/lib/services/usage-policy';
-import { ADDON_PRICING_KEYS, getAddonPricing } from '@/lib/services/addon-pricing';
+import {
+  ADDON_PRICING_KEYS,
+  type AddonPricingKey,
+  getAddonPricing,
+} from '@/lib/services/addon-pricing';
+import { formatAddonLineItemDescription } from '@/lib/services/addon-billing-format';
 
 export async function getBillingData(clientId: string) {
   const db = getDb();
 
-  const [subscription, methods, invoiceList, usage] = await Promise.all([
+  const [subscription, methods, invoiceList, usage, addOnEvents] = await Promise.all([
     // Get subscription with plan via join
     getSubscriptionWithPlan(clientId),
 
@@ -36,7 +42,24 @@ export async function getBillingData(clientId: string) {
 
     // Get current period usage
     getUsageForPeriod(clientId),
+
+    db
+      .select()
+      .from(addonBillingEvents)
+      .where(eq(addonBillingEvents.clientId, clientId))
+      .orderBy(desc(addonBillingEvents.periodStart)),
   ]);
+
+  const eventsByPeriod = new Map<string, typeof addOnEvents>();
+  for (const event of addOnEvents) {
+    const key = `${event.periodStart.toISOString()}::${event.periodEnd.toISOString()}`;
+    const bucket = eventsByPeriod.get(key);
+    if (bucket) {
+      bucket.push(event);
+    } else {
+      eventsByPeriod.set(key, [event]);
+    }
+  }
 
   return {
     subscription: subscription
@@ -77,7 +100,21 @@ export async function getBillingData(clientId: string) {
             }
           : undefined,
     })),
-    invoices: invoiceList.map((inv) => ({
+    invoices: invoiceList.map((inv) => {
+      const periodEvents =
+        inv.periodStart && inv.periodEnd
+          ? eventsByPeriod.get(`${inv.periodStart.toISOString()}::${inv.periodEnd.toISOString()}`) ?? []
+          : [];
+      const addOnLineItems = periodEvents.map((event) => ({
+        description: formatAddonLineItemDescription(
+          event.addonType as AddonPricingKey,
+          event.quantity
+        ),
+        totalCents: event.totalCents,
+        quantity: event.quantity,
+      }));
+
+      return {
       id: inv.id,
       number: inv.invoiceNumber || '',
       status: inv.status || 'draft',
@@ -88,12 +125,16 @@ export async function getBillingData(clientId: string) {
       paidAt: inv.paidAt,
       pdfUrl: inv.pdfUrl,
       hostedInvoiceUrl: inv.hostedInvoiceUrl,
-      lineItems: (inv.lineItems || []).map((item) => ({
-        description: item.description,
-        totalCents: item.totalCents,
-        quantity: item.quantity,
-      })),
-    })),
+      lineItems: [
+        ...(inv.lineItems || []).map((item) => ({
+          description: item.description,
+          totalCents: item.totalCents,
+          quantity: item.quantity,
+        })),
+        ...addOnLineItems,
+      ],
+    };
+    }),
     usage,
   };
 }
@@ -164,6 +205,16 @@ async function getUsageForPeriod(clientId: string) {
     : 0;
 
   const addonPricing = await getAddonPricing(clientId);
+  const addOnCycleEvents = await db
+    .select()
+    .from(addonBillingEvents)
+    .where(and(
+      eq(addonBillingEvents.clientId, clientId),
+      eq(addonBillingEvents.periodStart, periodStart),
+      eq(addonBillingEvents.periodEnd, periodEnd)
+    ))
+    .orderBy(addonBillingEvents.createdAt);
+
   const includedTeamMembers = features.maxTeamMembers ?? 3;
   const includedPhoneNumbers = features.maxPhoneNumbers ?? 1;
   const extraTeamMembers = Math.max(
@@ -207,6 +258,24 @@ async function getUsageForPeriod(clientId: string) {
           addonPricing[ADDON_PRICING_KEYS.EXTRA_TEAM_MEMBER].unitPriceCents +
         extraPhoneNumbers *
           addonPricing[ADDON_PRICING_KEYS.EXTRA_NUMBER].unitPriceCents,
+    },
+    addOnCycle: {
+      subtotalCents: addOnCycleEvents.reduce((sum, event) => sum + event.totalCents, 0),
+      events: addOnCycleEvents.map((event) => ({
+        id: event.id,
+        addonType: event.addonType,
+        sourceType: event.sourceType,
+        sourceRef: event.sourceRef,
+        quantity: event.quantity,
+        unitPriceCents: event.unitPriceCents,
+        totalCents: event.totalCents,
+        periodStart: event.periodStart,
+        periodEnd: event.periodEnd,
+        description: formatAddonLineItemDescription(
+          event.addonType as AddonPricingKey,
+          event.quantity
+        ),
+      })),
     },
   };
 }

@@ -77,6 +77,21 @@ interface BillingPageClientProps {
         extraPhoneNumbers: number;
         projectedMonthlyAddOnCents: number;
       };
+      addOnCycle?: {
+        subtotalCents: number;
+        events: Array<{
+          id: string;
+          addonType: string;
+          sourceType: string;
+          sourceRef: string | null;
+          quantity: number;
+          unitPriceCents: number;
+          totalCents: number;
+          periodStart: Date;
+          periodEnd: Date;
+          description: string;
+        }>;
+      };
     } | null;
   };
 }

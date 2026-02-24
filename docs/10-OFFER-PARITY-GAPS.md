@@ -9,13 +9,13 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-10 Milestone B working tree`
+- `LAST_VERIFIED_COMMIT: MS-10 Milestone C working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Add-on billing transparency.
+- Add-on billing dispute/support traceability.
 - Report delivery observability and cron catch-up guarantees.
 
 ## Spec Mapping (One Spec Per Gap)
@@ -349,7 +349,11 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - team seats over included base (membership create/reactivate)
   - additional number purchases
   - voice usage rollup cron (`/api/cron/voice-usage-rollup`)
-- Remaining: Milestones C-D (invoice itemization + CSV detail, dispute/support traceability).
+- Progress (2026-02-24): `MS-10` Milestone C completed.
+- Added shared formatter for add-on labels/units/currency.
+- Added add-on ledger to invoice line-item merge for matching billing periods.
+- Added client billing cycle add-on breakdown section and CSV export endpoint.
+- Remaining: Milestone D (dispute/support traceability and provenance workflow).
 - Evidence:
   - `src/lib/services/addon-pricing.ts`
   - `src/lib/services/addon-pricing.test.ts`
@@ -357,6 +361,9 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `drizzle/0028_fancy_smasher.sql`
   - `src/lib/services/addon-billing-ledger.ts`
   - `src/lib/services/addon-billing-ledger.test.ts`
+  - `src/lib/services/addon-billing-format.ts`
+  - `src/lib/services/addon-billing-format.test.ts`
+  - `src/app/api/client/billing/addons/export/route.ts`
   - `src/app/api/cron/voice-usage-rollup/route.ts`
   - `src/app/api/cron/route.ts`
   - `src/app/api/team-members/route.ts`

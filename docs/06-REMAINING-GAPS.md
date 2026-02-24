@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-10 Milestone B working tree`
+- `LAST_VERIFIED_COMMIT: MS-10 Milestone C working tree`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -17,7 +17,7 @@ Offer parity gaps against the reviewed v2.1 offer architecture are tracked separ
 - `docs/10-OFFER-PARITY-GAPS.md`
 
 Current offer-parity note:
-- `GAP-103` (add-on billing transparency) is in progress with `MS-10` Milestones A-B complete.
+- `GAP-103` (add-on billing transparency) is in progress with `MS-10` Milestones A-C complete.
 
 ## P1 (Must complete before scale-up)
 1. None.

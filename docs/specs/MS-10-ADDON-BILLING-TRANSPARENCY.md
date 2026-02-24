@@ -2,8 +2,8 @@
 
 ## Status
 - `STATE: IN_PROGRESS`
-- `DONE: [Milestone A, Milestone B]`
-- `REMAINING: [Milestone C, Milestone D]`
+- `DONE: [Milestone A, Milestone B, Milestone C]`
+- `REMAINING: [Milestone D]`
 
 ## Goal
 Make add-on pricing fully transparent and traceable for paying clients:
@@ -76,6 +76,20 @@ Milestone B implementation status:
 
 Refactor checkpoint C:
 - Use shared formatter for labels, units, and currency.
+
+Milestone C implementation status:
+- Done:
+1. Added shared add-on formatter service for labels, units, and currency:
+   - `src/lib/services/addon-billing-format.ts`
+2. Added formatter tests:
+   - `src/lib/services/addon-billing-format.test.ts`
+3. Billing query now merges add-on ledger events into invoice line items by billing period:
+   - `src/lib/billing/queries.ts`
+4. Client billing usage section now shows cycle add-on breakdown with subtotal and CSV download action:
+   - `src/components/billing/UsageDisplay.tsx`
+   - `src/app/(client)/client/billing/billing-client.tsx`
+5. Added CSV export endpoint for add-on event detail:
+   - `src/app/api/client/billing/addons/export/route.ts`
 
 ### Milestone D: Dispute and support traceability
 1. Link each invoice line to underlying event rows.

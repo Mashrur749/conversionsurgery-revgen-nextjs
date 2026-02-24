@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-10 Milestone B working tree`
+Last verified commit: `MS-10 Milestone C working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -19,6 +19,7 @@ Last verified commit: `MS-10 Milestone B working tree`
 12. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
 13. Spot-check billing transparency: team/phone limit responses and client billing usage card should show explicit add-on rates.
 14. Verify add-on billing ledger health: recent `addon_billing_events` rows for team seats, numbers, and voice rollups exist for active clients.
+15. Spot-check invoice UX parity: invoice line items include add-on labels for matching periods and CSV download works from client billing usage card.
 
 ## Cron Operations
 

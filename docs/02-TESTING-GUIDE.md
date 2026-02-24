@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-10 Milestone B working tree`
+Last verified commit: `MS-10 Milestone C working tree`
 
 ## 0. Preflight (Run First)
 
@@ -148,6 +148,17 @@ curl -i http://localhost:3000/api/cron/voice-usage-rollup -H "Authorization: Bea
 Expected:
 - Events include period start/end, quantity, unit price, total, and idempotency key.
 - Re-running the same actions/cron updates existing idempotent rows instead of creating duplicates.
+
+### Step 3d: Add-on invoice itemization + CSV UX (MS-10 C)
+1. Open `/client/billing`.
+2. In `Usage This Period`, verify `Add-On Charges This Cycle` renders when cycle events exist.
+3. Click `Download CSV` and verify export contains event-level rows with unit price, total, idempotency key, and source reference.
+4. Expand recent invoices and confirm add-on line items appear with `Add-on:` labels for matching period events.
+
+Expected:
+- Billing UI surfaces event-level add-on charges for the cycle.
+- Invoice history line items include add-on entries with clear labels and quantities.
+- CSV export is permission-gated and matches ledger event totals.
 
 ### Step 4: Onboarding persistence checks
 1. Use onboarding wizard (`/admin/clients/new/wizard` or current onboarding flow in your environment).

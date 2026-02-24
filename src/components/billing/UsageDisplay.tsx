@@ -33,6 +33,21 @@ interface UsageDisplayProps {
       extraPhoneNumbers: number;
       projectedMonthlyAddOnCents: number;
     };
+    addOnCycle?: {
+      subtotalCents: number;
+      events: Array<{
+        id: string;
+        addonType: string;
+        sourceType: string;
+        sourceRef: string | null;
+        quantity: number;
+        unitPriceCents: number;
+        totalCents: number;
+        periodStart: Date;
+        periodEnd: Date;
+        description: string;
+      }>;
+    };
   };
   periodStart: Date;
   periodEnd: Date;
@@ -145,6 +160,36 @@ export function UsageDisplay({ usage, periodStart, periodEnd }: UsageDisplayProp
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {usage.addOnCycle && usage.addOnCycle.events.length > 0 && (
+          <div className="rounded-md border p-3 space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <p className="font-medium">Add-On Charges This Cycle</p>
+              <a
+                href={`/api/client/billing/addons/export?periodStart=${encodeURIComponent(
+                  periodStart.toISOString()
+                )}&periodEnd=${encodeURIComponent(periodEnd.toISOString())}`}
+                className="text-primary hover:underline"
+              >
+                Download CSV
+              </a>
+            </div>
+            <div className="space-y-2">
+              {usage.addOnCycle.events.map((event) => (
+                <div key={event.id} className="flex justify-between">
+                  <span>
+                    {event.description} @ {formatMoney(event.unitPriceCents)}
+                  </span>
+                  <span>{formatMoney(event.totalCents)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="pt-2 border-t flex justify-between font-medium">
+              <span>Cycle add-on subtotal</span>
+              <span>{formatMoney(usage.addOnCycle.subtotalCents)}</span>
+            </div>
           </div>
         )}
       </CardContent>

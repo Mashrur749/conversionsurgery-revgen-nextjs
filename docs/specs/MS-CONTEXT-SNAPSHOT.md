@@ -29,13 +29,14 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Commit: `cc97c11`
 - `MS-09` Milestones A-D: complete.
   - Commit: `11f9737`
-- `MS-10` Milestones A-B: complete in current working tree.
+- `MS-10` Milestones A-C: complete in current working tree.
   - Milestone A: pricing catalog normalization and visibility baseline
   - Milestone B: idempotent add-on billing ledger + event emitters + voice rollup cron
+  - Milestone C: shared add-on formatter + invoice line-item merge + cycle breakdown + CSV export
 
 ## Current Focus
-- Next spec: `MS-10` (add-on billing transparency), Milestone C.
-- `MS-10` Milestones A-B are implemented in the working tree:
+- Next spec: `MS-10` (add-on billing transparency), Milestone D.
+- `MS-10` Milestones A-C are implemented in the working tree:
   - centralized add-on pricing catalog keys and effective-date resolver
   - route limit messaging for team seats/phone numbers now sourced from add-on pricing resolver
   - client billing usage card now shows explicit add-on rates and projected recurring add-on subtotal
@@ -43,6 +44,10 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - unified ledger writer service for add-on billable events
   - event emission wired for team-seat over-base and phone-number purchases
   - voice-minute rollup cron endpoint integrated into orchestrator
+  - shared add-on formatter for labels/units/currency used by billing paths
+  - billing invoice DTO now includes add-on line items merged from ledger by period
+  - client billing UI now renders cycle add-on breakdown and CSV export action
+  - client add-on CSV export endpoint added for support-ready event evidence
 - `MS-04` delivered end-to-end:
   - smart-assist config model on client (`enabled`, `delay`, `manual categories`)
   - centralized AI send-policy resolver with shared category constants
@@ -101,5 +106,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-10 Milestone C only.
+Continue with MS-10 Milestone D only.
 ```
