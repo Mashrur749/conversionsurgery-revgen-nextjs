@@ -18,7 +18,7 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 - `MS-03` Milestones A-D: complete.
   - Commits: `f25a9eb`, `650a32c`, `e90a35e`, `9773ae3`
 - `MS-04` Milestones A-D: complete.
-  - Commit: current working session commit (pending)
+  - Commit: `4b1ab2f`
 
 ## Current Focus
 - Next spec: `MS-05` (Quarterly Growth Blitz).
