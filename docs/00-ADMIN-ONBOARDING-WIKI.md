@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
-Last verified commit: `MS-11 Milestone D working tree`
+Last verified commit: `MS-12 Milestone D working tree`
 
 ## Canonical Order (Read + Execute)
 
@@ -61,6 +61,7 @@ Cadence rule:
 7. Confirm `GAP-102` is marked done and you can execute Day-One card actions from `/admin/clients/<id>` without escalation help.
 8. Confirm `GAP-103` is marked done in offer parity docs: add-on pricing, ledger, invoice itemization, CSV export, and dispute provenance workflow are all active.
 9. Confirm `GAP-104` is fully done: delivery lifecycle, deterministic retries, operator dashboard/retry actions, and client-facing delivery/download status are all live.
+10. Confirm `GAP-105` is marked done: cron catch-up cursor controls are visible in `/admin/settings` and backlog can be manually cleared per job.
 
 ## Confidence Criteria (Go/No-Go)
 

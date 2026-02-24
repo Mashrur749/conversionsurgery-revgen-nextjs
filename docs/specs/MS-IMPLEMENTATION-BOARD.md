@@ -30,7 +30,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 | MS-09 | GAP-102 | DONE | DONE | DONE | DONE | MS-09 complete: Day-One milestone model + audit artifact lifecycle + SLA cron alerting + operator/client visibility. |
 | MS-10 | GAP-103 | DONE | DONE | DONE | DONE | Milestone D complete: invoice provenance linkage + admin dispute annotation workflow + charge traceability surfaces. |
 | MS-11 | GAP-104 | DONE | DONE | DONE | DONE | MS-11 complete: lifecycle model + retry engine + operator observability + client-facing status/download parity. |
-| MS-12 | GAP-105 | OPEN | OPEN | OPEN | OPEN | |
+| MS-12 | GAP-105 | DONE | DONE | DONE | DONE | MS-12 complete: cursor model + shared catch-up runner + idempotent billing/report period replay + admin catch-up controls. |
 | MS-13 | GAP-201 | OPEN | OPEN | OPEN | OPEN | |
 | MS-14 | GAP-202 | OPEN | OPEN | OPEN | OPEN | |
 | MS-15 | GAP-203 | OPEN | OPEN | OPEN | OPEN | |

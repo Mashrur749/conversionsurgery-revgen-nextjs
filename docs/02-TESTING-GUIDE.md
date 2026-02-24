@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-11 Milestone D working tree`
+Last verified commit: `MS-12 Milestone D working tree`
 
 ## 0. Preflight (Run First)
 
@@ -226,9 +226,8 @@ curl -i http://localhost:3000/api/cron/process-queued-compliance -H "Authorizati
 ```
 
 Expected:
-- Monthly reset is idempotent by period and includes billing policy result (`processed` or `skippedByPolicy` for unlimited plans).
-- Bi-weekly report run is idempotent by period.
-- Bi-weekly report run now reports delivery counters (`generated`, `emailed`, `failed`) and whether the period lock was updated.
+- Monthly reset returns `catchup` payload with processed periods/backlog and is idempotent by period.
+- Bi-weekly report returns `catchup` payload with processed periods/backlog and is idempotent by period.
 - `report_deliveries` rows are created per active client and include lifecycle state + timestamps.
 - `report_delivery_events` rows reflect state transitions (`generated`, `queued`, `sent`, `failed`).
 - Retry cron reports deterministic counters (`scanned`, `retried`, `sent`, `failed`, `backoffPending`, `terminal`) and only retries eligible failed deliveries.
@@ -238,9 +237,8 @@ Expected:
 - Client dashboard now includes `Bi-Weekly Report Delivery` card with current status summary.
 - If report artifact exists, `Download Latest Report` link resolves to `/api/client/reports/[id]/download` and returns attachment JSON.
 - Queued compliance replay processes non-lead queued items without duplicates.
-
-Note:
-- `monthly-reset` only executes full reset on day 1 (defensive guard).
+- `/admin/settings` `Cron Catch-Up Controls` should show latest cursor state for `monthly_reset` and `biweekly_reports`.
+- Manual run via `/api/admin/cron-catchup` should update backlog/cursor state without duplicate side effects on rerun.
 
 ### Step 9: Appointment reminder parity
 Verification path A (required):

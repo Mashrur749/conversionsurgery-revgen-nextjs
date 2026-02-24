@@ -168,6 +168,7 @@ export async function POST(request: NextRequest) {
         cronSecret!
       );
       results.guaranteeCheck = await dispatch(baseUrl, '/api/cron/guarantee-check', cronSecret!);
+      results.monthlyReset = await dispatch(baseUrl, '/api/cron/monthly-reset', cronSecret!);
 
       // Monthly: update cohort retention (1st of month)
       if (now.getUTCDate() === 1) {
@@ -186,6 +187,7 @@ export async function POST(request: NextRequest) {
     // ── Daily 7am UTC ────────────────────────────────────────
     if (hour === 7 && minute < 10) {
       results.dailySummary = await dispatch(baseUrl, '/api/cron/daily-summary', cronSecret!);
+      results.biweeklyReports = await dispatch(baseUrl, '/api/cron/biweekly-reports', cronSecret!);
     }
 
     // ── Daily 10am UTC ───────────────────────────────────────
@@ -212,7 +214,6 @@ export async function POST(request: NextRequest) {
     if (day === 1 && hour === 7 && minute < 10) {
       results.weeklySummary = await dispatch(baseUrl, '/api/cron/weekly-summary', cronSecret!);
       results.agencyDigest = await dispatch(baseUrl, '/api/cron/agency-digest', cronSecret!);
-      results.biweeklyReports = await dispatch(baseUrl, '/api/cron/biweekly-reports', cronSecret!);
       results.quarterlyCampaignDigest = await dispatch(
         baseUrl,
         '/api/cron/quarterly-campaign-alerts?mode=weekly',

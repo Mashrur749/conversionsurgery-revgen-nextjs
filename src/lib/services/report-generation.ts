@@ -17,6 +17,7 @@ import {
   ensureReportDeliveryCycle,
   transitionReportDeliveryState,
 } from '@/lib/services/report-delivery';
+import { describeBiweeklyPeriod, getIsoWeek, getLatestBiweeklyPeriodEnd } from '@/lib/services/cron-catchup';
 import {
   calculateWithoutUsModel,
   mergeWithoutUsAssumptions,
@@ -356,48 +357,33 @@ export async function generateClientReport(
   return newReport;
 }
 
-function isoWeek(date: Date): number {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-}
-
-/**
- * Generates and emails bi-weekly reports with idempotency.
- * Runs on even ISO weeks only.
- */
-export async function processBiWeeklyReports(now: Date = new Date()) {
+async function findExistingPeriodReport(
+  clientId: string,
+  periodStart: string,
+  periodEnd: string
+) {
   const db = getDb();
-  const weekday = now.getUTCDay(); // 1 = Monday
-  const week = isoWeek(now);
-
-  if (weekday !== 1 || week % 2 !== 0) {
-    return {
-      skipped: true,
-      reason: 'Not scheduled bi-weekly run window',
-      generated: 0,
-      emailed: 0,
-    };
-  }
-
-  const periodEnd = new Date(now);
-  periodEnd.setUTCDate(periodEnd.getUTCDate() - 1);
-  const periodEndStr = periodEnd.toISOString().slice(0, 10);
-  const periodStart = new Date(periodEnd);
-  periodStart.setUTCDate(periodStart.getUTCDate() - 13);
-  const periodStartStr = periodStart.toISOString().slice(0, 10);
-
-  const [lastRun] = await db
-    .select({ value: systemSettings.value })
-    .from(systemSettings)
-    .where(eq(systemSettings.key, 'last_biweekly_report_period_end'))
+  const [report] = await db
+    .select()
+    .from(reports)
+    .where(
+      and(
+        eq(reports.clientId, clientId),
+        eq(reports.reportType, 'bi-weekly'),
+        eq(reports.startDate, periodStart),
+        eq(reports.endDate, periodEnd)
+      )
+    )
     .limit(1);
 
-  if (lastRun?.value === periodEndStr) {
-    return { skipped: true, reason: 'Already processed this period', generated: 0, emailed: 0 };
-  }
+  return report ?? null;
+}
+
+export async function processBiWeeklyReportPeriod(periodEndDate: Date) {
+  const db = getDb();
+  const descriptor = describeBiweeklyPeriod(periodEndDate);
+  const periodStartStr = descriptor.periodStart;
+  const periodEndStr = descriptor.periodEnd;
 
   const activeClients = await db
     .select({ id: clients.id, businessName: clients.businessName, email: clients.email })
@@ -440,6 +426,10 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
       }
 
       if (!report) {
+        report = await findExistingPeriodReport(client.id, periodStartStr, periodEndStr);
+      }
+
+      if (!report) {
         report = await generateClientReport(
           client.id,
           periodStartStr,
@@ -447,21 +437,21 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
           'bi-weekly'
         );
         generated++;
-
-        await transitionReportDeliveryState(delivery.id, 'generated', {
-          reportId: report.id,
-          recipient: client.email ?? null,
-          channelMetadata: {
-            recipient: client.email ?? null,
-            reportId: report.id,
-          },
-          metadata: {
-            reportId: report.id,
-            periodStart: periodStartStr,
-            periodEnd: periodEndStr,
-          },
-        });
       }
+
+      await transitionReportDeliveryState(delivery.id, 'generated', {
+        reportId: report.id,
+        recipient: client.email ?? null,
+        channelMetadata: {
+          recipient: client.email ?? null,
+          reportId: report.id,
+        },
+        metadata: {
+          reportId: report.id,
+          periodStart: periodStartStr,
+          periodEnd: periodEndStr,
+        },
+      });
 
       if (client.email) {
         const summary = (report.roiSummary as { withoutUsModel?: WithoutUsModelResult } | null) || null;
@@ -551,20 +541,6 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
     }
   }
 
-  if (failed === 0) {
-    await db
-      .insert(systemSettings)
-      .values({
-        key: 'last_biweekly_report_period_end',
-        value: periodEndStr,
-        description: 'Last bi-weekly report period end date processed',
-      })
-      .onConflictDoUpdate({
-        target: systemSettings.key,
-        set: { value: periodEndStr, updatedAt: new Date() },
-      });
-  }
-
   return {
     skipped: false,
     periodStart: periodStartStr,
@@ -572,7 +548,28 @@ export async function processBiWeeklyReports(now: Date = new Date()) {
     generated,
     emailed,
     failed,
-    lastRunUpdated: failed === 0,
+    lastRunUpdated: true,
     requiresManualRetry: failed > 0,
   };
+}
+
+export function isBiWeeklyRunWindow(now: Date = new Date()): boolean {
+  return now.getUTCDay() === 1 && getIsoWeek(now) % 2 === 0;
+}
+
+/**
+ * Generates and emails bi-weekly reports for the currently scheduled window.
+ */
+export async function processBiWeeklyReports(now: Date = new Date()) {
+  if (!isBiWeeklyRunWindow(now)) {
+    return {
+      skipped: true,
+      reason: 'Not scheduled bi-weekly run window',
+      generated: 0,
+      emailed: 0,
+    };
+  }
+
+  const periodEnd = getLatestBiweeklyPeriodEnd(now);
+  return processBiWeeklyReportPeriod(periodEnd);
 }

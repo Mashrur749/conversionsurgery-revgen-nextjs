@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-11 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-12 Milestone D working tree`
 
 ## Executive Status
 
@@ -25,7 +25,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 | Team operations | Ready with caveats | Team limit enforcement added; escalation fallback added |
 | Compliance gateway | Ready | Consent/opt-out/quiet hours enforced; durable replay covers lead + non-lead flows |
 | Billing + plan policy | Ready with caveats | Unlimited policy defaults and cancellation/export parity are implemented; add-on transparency remains tracked in offer gaps |
-| Cron + reliability | Ready with caveats | Master cron now requires bearer secret; runbook updated |
+| Cron + reliability | Ready | Master cron bearer auth + cursor-based catch-up guarantees + operator controls are implemented |
 | Self-serve foundation | Ready | Public signup + guided onboarding checklist + setup request path |
 | Reporting | Ready | Deterministic bi-weekly report generation/delivery with idempotency guard |
 
@@ -51,6 +51,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Monthly access-review automation sends stale-access digest to agency owners.
 - Self-serve onboarding now includes guided checklist and managed-setup request flow.
 - Day-One Activation workflow now has tracked milestones, SLA breach alerts, and Revenue Leak Audit delivery proof.
+- Cron catch-up guarantees are now cursor-based for monthly reset and bi-weekly reports, with admin backlog visibility and manual run controls.
 
 ## Remaining Launch Blockers (Managed Service)
 
@@ -79,6 +80,7 @@ Current snapshot at this commit:
 9. Done: `GAP-102` Day-One Activation SLA + Revenue Leak Audit tracking parity.
 10. Done: `GAP-103` add-on billing transparency (`MS-10` Milestones A-D complete).
 11. Done: `GAP-104` report delivery observability (`MS-11` Milestones A-D complete).
+12. Done: `GAP-105` cron catch-up guarantees (`MS-12` Milestones A-D complete).
 
 ## Go-Live Gate (Managed Service)
 Release only when all are true:

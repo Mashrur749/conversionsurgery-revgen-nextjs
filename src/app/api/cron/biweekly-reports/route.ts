@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
-import { processBiWeeklyReports } from '@/lib/services/report-generation';
+import { runBiweeklyReportsCatchup } from '@/lib/services/biweekly-report-job';
 
 /** GET /api/cron/biweekly-reports - Deterministic bi-weekly report generation and delivery. */
 export async function GET(request: NextRequest) {
@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const result = await processBiWeeklyReports();
-    return NextResponse.json({ success: true, ...result });
+    const catchup = await runBiweeklyReportsCatchup();
+    return NextResponse.json({ success: true, catchup });
   } catch (error) {
     console.error('[Cron] Bi-weekly reports error:', error);
     return NextResponse.json({ error: 'Failed' }, { status: 500 });

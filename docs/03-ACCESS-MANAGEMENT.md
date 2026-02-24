@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `MS-11 Milestone D working tree`
+Last verified commit: `MS-12 Milestone D working tree`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -125,6 +125,13 @@ Permission templates and overrides resolve effective access at runtime.
 1. `GET /api/client/reports/delivery` requires `portal.dashboard`.
 2. `GET /api/client/reports/[id]/download` requires `portal.dashboard` and matching `clientId`.
 - Report download endpoint enforces tenant ownership (`reports.client_id == session.clientId`) before returning artifact.
+
+## MS-12 Access Note
+- Cron catch-up guarantees add one agency settings surface and preserve existing cron bearer guard:
+1. `GET /api/admin/cron-catchup` requires `agency.settings.manage`.
+2. `POST /api/admin/cron-catchup` requires `agency.settings.manage`.
+3. `GET /api/cron/monthly-reset` and `GET /api/cron/biweekly-reports` remain `verifyCronSecret` guarded.
+- No new client-portal permission surfaces were introduced.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`

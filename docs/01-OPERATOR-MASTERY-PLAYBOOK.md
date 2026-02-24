@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `MS-11 Milestone D working tree`
+Last verified commit: `MS-12 Milestone D working tree`
 
 ## How to Use This Playbook
 1. Execute phases in order.
@@ -55,7 +55,8 @@ Objective: run live managed-service operations reliably.
 6. Review data-export SLA queue (requested/processing/ready/failed) and clear at-risk or breached items.
 7. Review Smart Assist pending approvals/manual categories and timeout sends.
 8. Review quarterly campaign status for each active client (planned/scheduled/launched/completed).
-9. Trigger cron sub-jobs manually if automation lag is detected.
+9. Review `Cron Catch-Up Controls` in `/admin/settings` and clear any backlog/stale state (`monthly_reset`, `biweekly_reports`).
+10. Trigger cron sub-jobs manually if automation lag is detected.
 
 Exit gate:
 - You can run daily ops in under 30 minutes.
@@ -86,6 +87,10 @@ Run these drills on a staging/test environment:
 - Create an onboarding client with pending milestones past target time in staging.
 - Run `/api/cron/onboarding-sla-check`.
 - Confirm open alerts appear in Day-One card and can be resolved.
+7. Cron catch-up drill:
+- Simulate missed monthly/bi-weekly windows by setting cursor to an older period in staging.
+- Run `/api/cron/monthly-reset` and `/api/cron/biweekly-reports`.
+- Confirm cursor/backlog transitions in `/admin/settings` and idempotent replay on rerun.
 
 Exit gate:
 - You can diagnose and restore each drill without engineering help.
@@ -158,6 +163,7 @@ Exit gate:
 15. Add-on cycle CSV export and invoice line-item add-on labels validated for one active client.
 16. Add-on dispute/provenance annotations reviewed and unresolved dispute states triaged.
 17. Bi-weekly report delivery lifecycle reviewed (`generated/queued/retried/sent/failed`) from admin delivery panel and failed/backoff/terminal states triaged.
+18. Cron catch-up backlog state reviewed in `/admin/settings` (no stale backlog for monthly reset or bi-weekly reports).
 
 ## Core References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`

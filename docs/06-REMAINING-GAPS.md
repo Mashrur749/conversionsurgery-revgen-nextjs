@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-11 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-12 Milestone D working tree`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -19,6 +19,7 @@ Offer parity gaps against the reviewed v2.1 offer architecture are tracked separ
 Current offer-parity note:
 - `GAP-103` (add-on billing transparency) is complete with `MS-10` Milestones A-D implemented.
 - `GAP-104` (report delivery observability) is complete with `MS-11` Milestones A-D implemented.
+- `GAP-105` (cron catch-up guarantees) is complete with `MS-12` Milestones A-D implemented.
 
 ## P1 (Must complete before scale-up)
 1. None.
@@ -51,6 +52,7 @@ Current offer-parity note:
 - Monthly access-review automation.
 - Self-serve onboarding checklist and managed setup request path.
 - Day-One Activation milestone tracking, SLA breach alerting, and Revenue Leak Audit delivery workflow.
+- Cursor-based cron catch-up guarantees for monthly reset and bi-weekly reporting with operator backlog controls.
 
 ## Tracking Rule
 Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `99-ARCHIVE-SYSTEM-BLOCKERS.md` archive form.

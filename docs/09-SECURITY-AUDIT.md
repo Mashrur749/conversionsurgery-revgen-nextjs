@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `MS-11 Milestone D working tree`
+**Last verified commit:** `MS-12 Milestone D working tree`
 
 ---
 
@@ -221,5 +221,9 @@ Since the original audit window, new managed-service features (Smart Assist work
    - public onboarding status surface remains constrained to verified `clientId + email` pair.
 7. Add-on pricing transparency (`MS-10` Milestones A-D) adds add-on billing ledger writes, `/api/cron/voice-usage-rollup`, `/api/client/billing/addons/export`, and admin provenance/dispute routes; all stay within existing auth boundaries (`/api/team-members` scoped session, `/api/admin/twilio/purchase` agency phones permission, cron bearer guard, portal settings-view permission, agency billing view/manage permissions).
 8. Report delivery observability (`MS-11` Milestones A-D) adds lifecycle/retry services, cron retry endpoint, analytics-scoped admin delivery ops APIs, and portal-scoped client report-delivery/download endpoints (`/api/client/reports/delivery`, `/api/client/reports/[id]/download`) with tenant ownership checks; no elevated auth model exceptions were introduced.
+9. Cron catch-up guarantees (`MS-12`) add:
+   - agency settings-scoped admin endpoint (`GET/POST /api/admin/cron-catchup`) requiring `agency.settings.manage`.
+   - cron sub-route refactors (`/api/cron/monthly-reset`, `/api/cron/biweekly-reports`) that keep existing `verifyCronSecret()` bearer guard.
+   - no new public/auth-bypass surfaces.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

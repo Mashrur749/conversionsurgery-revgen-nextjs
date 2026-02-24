@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-11 Milestone D working tree`
+Last verified commit: `MS-12 Milestone D working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -18,10 +18,11 @@ Last verified commit: `MS-11 Milestone D working tree`
 11. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
 12. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
 13. Review `Report Delivery Operations` panel for latest cycle states (`generated`, `queued`, `retried`, `sent`, `failed`) and clear failed/terminal queues.
-14. Spot-check billing transparency: team/phone limit responses and client billing usage card should show explicit add-on rates.
-15. Verify add-on billing ledger health: recent `addon_billing_events` rows for team seats, numbers, and voice rollups exist for active clients.
-16. Spot-check invoice UX parity: invoice line items include add-on labels for matching periods and CSV download works from client billing usage card.
-17. Review admin client `Add-On Charge Provenance` card and clear any unresolved `disputed`/`reviewing` annotations.
+14. Review `/admin/settings` `Cron Catch-Up Controls` for monthly reset and bi-weekly backlog/staleness.
+15. Spot-check billing transparency: team/phone limit responses and client billing usage card should show explicit add-on rates.
+16. Verify add-on billing ledger health: recent `addon_billing_events` rows for team seats, numbers, and voice rollups exist for active clients.
+17. Spot-check invoice UX parity: invoice line items include add-on labels for matching periods and CSV download works from client billing usage card.
+18. Review admin client `Add-On Charge Provenance` card and clear any unresolved `disputed`/`reviewing` annotations.
 
 ## Cron Operations
 
@@ -77,7 +78,8 @@ curl -s "$BASE_URL/api/cron/voice-usage-rollup" \
 - Quarterly planner is idempotent (no duplicate client/quarter campaign records).
 - Quarterly alerts include overdue campaign count for launch-risk visibility.
 - Bi-weekly report payload includes directional "Without Us" model section or explicit insufficient-data state.
-- Bi-weekly report payload includes delivery counters and indicates whether period lock was updated (`lastRunUpdated`) or manual rerun is required.
+- Monthly reset and bi-weekly report cron responses now include `catchup` payloads (processed periods, backlog remaining, stale-backlog indicators).
+- `/admin/settings` `Cron Catch-Up Controls` must reflect the same backlog state shown by `/api/admin/cron-catchup`.
 - Report delivery retry payload includes `retried/sent/failed/backoffPending/terminal` counters and should trend to zero failed terminal items.
 - Terminal report-delivery failures trigger daily agency-owner email alert digest (deduped per UTC date).
 - Client dashboard report-delivery card should mirror latest delivery state and expose report artifact download when available.

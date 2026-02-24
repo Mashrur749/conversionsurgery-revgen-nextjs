@@ -1,8 +1,16 @@
 import { getStripeClient } from '@/lib/clients/stripe';
 import { getDb } from '@/db';
-import { billingEvents, clients, leads, plans, subscriptions } from '@/db/schema';
+import {
+  billingEvents,
+  clients,
+  conversations,
+  leads,
+  plans,
+  subscriptions,
+} from '@/db/schema';
 import { resolveOverageBillingPolicy } from '@/lib/services/billing-policy';
 import type { PlanFeatures } from '@/lib/services/usage-policy';
+import { buildMonthlyOverageIdempotencyKey } from '@/lib/services/idempotency-keys';
 import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 
 interface OverageRunResult {
@@ -11,25 +19,55 @@ interface OverageRunResult {
   skippedByPolicy: number;
   totalOverageCents: number;
   errors: number;
+  billingMonth: string;
+}
+
+interface ApplyMonthlyOveragesOptions {
+  cyclePeriodStart?: Date;
+}
+
+function startOfUtcMonth(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1, 0, 0, 0, 0));
+}
+
+function formatMonthKey(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function resolveBillingWindow(cyclePeriodStart: Date): { monthStart: Date; monthEnd: Date; monthKey: string } {
+  const monthEnd = startOfUtcMonth(cyclePeriodStart);
+  const monthStart = new Date(
+    Date.UTC(monthEnd.getUTCFullYear(), monthEnd.getUTCMonth() - 1, 1, 0, 0, 0, 0)
+  );
+
+  return {
+    monthStart,
+    monthEnd,
+    monthKey: formatMonthKey(monthStart),
+  };
 }
 
 /**
  * Apply monthly overage line items for the previous calendar month.
  * Creates Stripe invoice items and billing events for auditability.
  */
-export async function applyMonthlyOverages(now: Date = new Date()): Promise<OverageRunResult> {
+export async function applyMonthlyOverages(
+  input: Date | ApplyMonthlyOveragesOptions = new Date()
+): Promise<OverageRunResult> {
   const db = getDb();
   const stripe = getStripeClient();
+  const cyclePeriodStart =
+    input instanceof Date ? startOfUtcMonth(input) : startOfUtcMonth(input.cyclePeriodStart ?? new Date());
+  const { monthStart, monthEnd, monthKey } = resolveBillingWindow(cyclePeriodStart);
+
   const result: OverageRunResult = {
     processed: 0,
     invoiced: 0,
     skippedByPolicy: 0,
     totalOverageCents: 0,
     errors: 0,
+    billingMonth: monthKey,
   };
-
-  const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
-  const monthStart = new Date(Date.UTC(monthEnd.getUTCFullYear(), monthEnd.getUTCMonth() - 1, 1, 0, 0, 0, 0));
 
   const activeSubs = await db
     .select({
@@ -40,7 +78,6 @@ export async function applyMonthlyOverages(now: Date = new Date()): Promise<Over
       additionalLeadsCents: subscriptions.additionalLeadsCents,
       additionalSmsCents: subscriptions.additionalSmsCents,
       plan: plans,
-      clientMessagesSent: clients.messagesSentThisMonth,
       clientName: clients.businessName,
     })
     .from(subscriptions)
@@ -55,6 +92,18 @@ export async function applyMonthlyOverages(now: Date = new Date()): Promise<Over
 
   for (const row of activeSubs) {
     result.processed++;
+    const idempotencyKey = buildMonthlyOverageIdempotencyKey(row.clientId, monthKey);
+
+    const [alreadyInvoiced] = await db
+      .select({ id: billingEvents.id })
+      .from(billingEvents)
+      .where(eq(billingEvents.idempotencyKey, idempotencyKey))
+      .limit(1);
+
+    if (alreadyInvoiced) {
+      continue;
+    }
+
     const features = row.plan.features as PlanFeatures;
     const billingPolicy = resolveOverageBillingPolicy(features, row.plan.slug);
 
@@ -74,7 +123,18 @@ export async function applyMonthlyOverages(now: Date = new Date()): Promise<Over
         )
       );
     const leadsUsed = Number(leadCount?.count || 0);
-    const messagesUsed = row.clientMessagesSent || 0;
+    const [messageCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.clientId, row.clientId),
+          eq(conversations.direction, 'outbound'),
+          gte(conversations.createdAt, monthStart),
+          lt(conversations.createdAt, monthEnd)
+        )
+      );
+    const messagesUsed = Number(messageCount?.count || 0);
 
     const leadOver = features.maxLeadsPerMonth ? Math.max(0, leadsUsed - features.maxLeadsPerMonth) : 0;
     const msgLimit = features.maxMessagesPerMonth ?? null;
@@ -98,11 +158,13 @@ export async function applyMonthlyOverages(now: Date = new Date()): Promise<Over
             subscription: row.stripeSubscriptionId,
             currency: 'cad',
             amount: leadsOverageCents,
-            description: `Lead overage (${leadOver}) for ${monthStart.toISOString().slice(0, 7)}`,
+            description: `Lead overage (${leadOver}) for ${monthKey}`,
             metadata: {
               type: 'lead_overage',
               clientId: row.clientId,
             },
+          }, {
+            idempotencyKey: `${idempotencyKey}:lead`,
           });
         }
 
@@ -112,11 +174,13 @@ export async function applyMonthlyOverages(now: Date = new Date()): Promise<Over
             subscription: row.stripeSubscriptionId,
             currency: 'cad',
             amount: smsOverageCents,
-            description: `SMS overage (${msgOver}) for ${monthStart.toISOString().slice(0, 7)}`,
+            description: `SMS overage (${msgOver}) for ${monthKey}`,
             metadata: {
               type: 'sms_overage',
               clientId: row.clientId,
             },
+          }, {
+            idempotencyKey: `${idempotencyKey}:sms`,
           });
         }
       }
@@ -136,14 +200,17 @@ export async function applyMonthlyOverages(now: Date = new Date()): Promise<Over
           subscriptionId: row.subscriptionId,
           eventType: 'overage_invoiced',
           amountCents: totalOverageCents,
-          description: `Monthly overage invoiced for ${row.clientName} (${monthStart.toISOString().slice(0, 7)})`,
+          description: `Monthly overage invoiced for ${row.clientName} (${monthKey})`,
+          idempotencyKey,
           rawData: {
+            billingMonth: monthKey,
             leadsUsed,
             messagesUsed,
             leadOver,
             msgOver,
             leadsOverageCents,
             smsOverageCents,
+            cyclePeriodStart: cyclePeriodStart.toISOString().slice(0, 10),
           },
         });
       });

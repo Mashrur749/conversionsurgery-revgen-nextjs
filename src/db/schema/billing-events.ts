@@ -37,6 +37,7 @@ export const billingEvents = pgTable(
     // Stripe event data
     stripeEventId: varchar('stripe_event_id', { length: 100 }),
     stripeEventType: varchar('stripe_event_type', { length: 100 }),
+    idempotencyKey: varchar('idempotency_key', { length: 200 }),
     rawData: jsonb('raw_data').$type<Record<string, unknown>>(),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -45,6 +46,7 @@ export const billingEvents = pgTable(
     index('billing_events_client_idx').on(table.clientId),
     index('billing_events_type_idx').on(table.eventType),
     uniqueIndex('billing_events_stripe_idx').on(table.stripeEventId),
+    uniqueIndex('billing_events_idempotency_idx').on(table.idempotencyKey),
     index('billing_events_created_idx').on(table.createdAt),
   ]
 );

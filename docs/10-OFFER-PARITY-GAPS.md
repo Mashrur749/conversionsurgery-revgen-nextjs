@@ -6,16 +6,16 @@ Objective: Ensure paying-client delivery matches every sold promise.
 
 ## Status Tags
 - `P0: DONE`
-- `P1: OPEN`
+- `P1: DONE`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-11 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: MS-12 Milestone D working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Cron catch-up guarantees.
+- Process/scale hardening (`GAP-201..GAP-203`).
 
 ## Spec Mapping (One Spec Per Gap)
 
@@ -32,7 +32,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Done |
 | GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Done |
 | GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Done |
-| GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
+| GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Done |
 | GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
 | GAP-202 | P2 | `docs/specs/MS-14-ONBOARDING-QUALITY-GATES.md` | Spec Ready |
 | GAP-203 | P2 | `docs/specs/MS-15-REMINDER-ROUTING-FLEXIBILITY.md` | Spec Ready |
@@ -419,10 +419,43 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md`
 
 5. `GAP-105` Guaranteed operational catch-up when cron windows are missed
-- Offer relies on deterministic monthly/biweekly outcomes; current jobs use strict run windows without explicit catch-up semantics.
+- Offer relies on deterministic monthly/biweekly outcomes; strict run windows previously created silent misses.
+- Progress (2026-02-24): `MS-12` Milestones A-D completed.
+- Added shared cron cursor + catch-up model:
+  - `cron_job_cursors` table with status, last-successful period, backlog, and error metadata.
+  - migration includes legacy period bootstrap from prior `system_settings` markers.
+- Added shared catch-up runner and per-job definitions:
+  - monthly reset catch-up job
+  - bi-weekly report catch-up job
+  - capped per-run backlog processing with checkpoint updates.
+- Refactored cron routes and orchestrator cadence:
+  - `/api/cron/monthly-reset` and `/api/cron/biweekly-reports` now run catch-up jobs directly.
+  - orchestrator dispatch now includes daily catch-up opportunities for both jobs.
+- Added period-level idempotency and replay safety:
+  - centralized idempotency key helper.
+  - `billing_events.idempotency_key` unique guard.
+  - monthly overage billing now uses explicit period windows and idempotent monthly keys.
+  - bi-weekly report processing now reuses existing period reports when present.
+- Added operator observability and control:
+  - `GET/POST /api/admin/cron-catchup` (status + manual run).
+  - `/admin/settings` `Cron Catch-Up Controls` panel with backlog age/staleness indicators.
+- Remaining: none (`MS-12` complete).
 - Evidence:
-  - `src/app/api/cron/monthly-reset/route.ts`
+  - `src/db/schema/cron-job-cursors.ts`
+  - `drizzle/0031_gigantic_hourglass.sql`
+  - `src/lib/services/cron-catchup.ts`
+  - `src/lib/services/monthly-reset-job.ts`
+  - `src/lib/services/biweekly-report-job.ts`
+  - `src/lib/services/cron-catchup-jobs.ts`
+  - `src/lib/services/idempotency-keys.ts`
+  - `src/lib/services/overage-billing.ts`
   - `src/lib/services/report-generation.ts`
+  - `src/app/api/cron/monthly-reset/route.ts`
+  - `src/app/api/cron/biweekly-reports/route.ts`
+  - `src/app/api/cron/route.ts`
+  - `src/app/api/admin/cron-catchup/route.ts`
+  - `src/app/(dashboard)/admin/settings/cron-catchup-manager.tsx`
+  - `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md`
 
 ## P2 — Process/Scale Hardening
 

@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `MS-11 Milestone D working tree`
+Last verified commit: `MS-12 Milestone D working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -66,6 +66,14 @@ Outcome: predictable billing behavior and proactive access governance.
 3. Compliance audit logs capture policy mode, message classification, and decision for send/queue/block.
 
 Outcome: legal/compliance operating mode can change without code edits and remains auditable.
+
+### U6d. Cron catch-up recovery guarantees (MS-12)
+1. A periodic cron window is missed (monthly reset or bi-weekly reporting).
+2. Next successful cron run processes missed periods via cursor-based catch-up.
+3. Operator validates backlog/staleness and can force run from `/admin/settings` catch-up controls.
+4. Re-running same period does not duplicate overage billing or report artifacts.
+
+Outcome: period-bound managed-service promises remain deterministic despite cron timing drift/outage.
 
 ### U7. No-team escalation fallback
 1. Lead requires escalation.

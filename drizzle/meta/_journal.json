@@ -218,6 +218,13 @@
       "when": 1771998600000,
       "tag": "0030_lively_rage",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1772002200000,
+      "tag": "0031_gigantic_hourglass",
+      "breakpoints": true
     }
   ]
 }

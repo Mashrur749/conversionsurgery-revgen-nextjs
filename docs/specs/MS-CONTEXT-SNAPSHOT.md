@@ -36,26 +36,25 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Milestone D: invoice linkage + provenance metadata + admin dispute annotation workflow
 - `MS-11` Milestone A: complete.
   - Commit: `257b1e0`
-- `MS-11` Milestones B-C: complete.
-  - Commits: `5863974`, `17a16df`
+- `MS-11` Milestones B-D: complete.
+  - Commits: `5863974`, `17a16df`, `03953cf`
+- `MS-12` Milestones A-D: complete in current working tree.
+  - cursor model + migration + legacy backfill bootstrap
+  - shared catch-up runner and job registry (monthly + bi-weekly)
+  - period-level idempotency key module + billing/report replay safety
+  - admin catch-up status + manual run controls
 
 ## Current Focus
-- Next spec: `MS-12` (cron catch-up guarantees), Milestone A.
-- `MS-11` Milestones A-D are implemented in the working tree:
-  - report delivery cycle table + transition event table
-  - centralized lifecycle state transition service (`generated`, `queued`, `sent`, `failed`, `retried`)
-  - latest client delivery query helper
-  - bi-weekly cron flow refactored to lifecycle service (state transitions out of ad-hoc cron mutation)
-  - delivery failure now keeps period unlocked for manual rerun (`lastRunUpdated=false` when failures exist)
-  - deterministic retry policy with exponential backoff and terminal retry handling
-  - idempotent retry claim transition (`failed` -> `retried`) before resend
-  - dedicated retry cron endpoint + orchestrator dispatch
-  - shared bi-weekly report email sender used by primary and retry flows
-  - operator report-delivery panel with filter views (`all`, `pending_retry`, `failed`, `terminal`, `sent`)
-  - one-click manual retry API + UI action from admin reports page
-  - terminal failure alert digest to agency owners with daily dedupe
-  - client dashboard delivery-status panel with fallback messaging for retry/backoff/terminal states
-  - client report delivery summary endpoint + report artifact download endpoint
+- Next spec: `MS-13` (knowledge gap closure queue), Milestone A.
+- `MS-12` Milestones A-D are implemented in the working tree:
+  - `cron_job_cursors` model + migration (`drizzle/0031_gigantic_hourglass.sql`)
+  - shared catch-up engine (`src/lib/services/cron-catchup.ts`)
+  - monthly + bi-weekly catch-up job definitions and registry
+  - cron routes now invoke catch-up jobs (`monthly-reset`, `biweekly-reports`)
+  - orchestrator dispatch cadence updated for catch-up recovery
+  - overage billing now uses period windows + idempotency keys (`billing_events.idempotency_key`)
+  - centralized idempotency key helper (`src/lib/services/idempotency-keys.ts`)
+  - admin observability + manual catch-up execution (`/api/admin/cron-catchup`, `/admin/settings`)
 - `MS-10` Milestones A-D are implemented in the working tree:
   - centralized add-on pricing catalog keys and effective-date resolver
   - route limit messaging for team seats/phone numbers now sourced from add-on pricing resolver
@@ -128,5 +127,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-12 Milestone A only.
+Continue with MS-13 Milestone A only.
 ```
