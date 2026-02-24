@@ -8,6 +8,7 @@ import {
   parseReportMetrics,
   parseReportRoiSummary,
 } from '@/lib/services/report-dto';
+import ReportDeliveryOpsPanel from './components/report-delivery-ops-panel';
 
 export default async function ReportsPage() {
   const session = await auth();
@@ -65,6 +66,9 @@ export default async function ReportsPage() {
           <p className="text-xs text-muted-foreground mt-1">Sent every month</p>
         </div>
       </div>
+
+      {/* Report Delivery Operations */}
+      <ReportDeliveryOpsPanel />
 
       {/* Reports Table */}
       <div className="bg-white rounded-lg border overflow-hidden">

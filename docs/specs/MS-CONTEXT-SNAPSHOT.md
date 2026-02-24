@@ -38,8 +38,8 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - Commit: `257b1e0`
 
 ## Current Focus
-- Next spec: `MS-11` (report delivery observability), Milestone C.
-- `MS-11` Milestones A-B are implemented in the working tree:
+- Next spec: `MS-11` (report delivery observability), Milestone D.
+- `MS-11` Milestones A-C are implemented in the working tree:
   - report delivery cycle table + transition event table
   - centralized lifecycle state transition service (`generated`, `queued`, `sent`, `failed`, `retried`)
   - latest client delivery query helper
@@ -49,6 +49,9 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
   - idempotent retry claim transition (`failed` -> `retried`) before resend
   - dedicated retry cron endpoint + orchestrator dispatch
   - shared bi-weekly report email sender used by primary and retry flows
+  - operator report-delivery panel with filter views (`all`, `pending_retry`, `failed`, `terminal`, `sent`)
+  - one-click manual retry API + UI action from admin reports page
+  - terminal failure alert digest to agency owners with daily dedupe
 - `MS-10` Milestones A-D are implemented in the working tree:
   - centralized add-on pricing catalog keys and effective-date resolver
   - route limit messaging for team seats/phone numbers now sourced from add-on pricing resolver
@@ -121,5 +124,5 @@ Reload from repo state only.
 Use AGENTS.md skills and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
 Read docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md.
-Continue with MS-11 Milestone C only.
+Continue with MS-11 Milestone D only.
 ```

@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-11 Milestone B working tree`
+Last verified commit: `MS-11 Milestone C working tree`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -17,7 +17,7 @@ Last verified commit: `MS-11 Milestone B working tree`
 10. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
 11. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
 12. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
-13. Review report delivery lifecycle states for latest bi-weekly cycle (`generated`, `queued`, `retried`, `sent`, `failed`) and clear failed/terminal queues.
+13. Review `Report Delivery Operations` panel for latest cycle states (`generated`, `queued`, `retried`, `sent`, `failed`) and clear failed/terminal queues.
 14. Spot-check billing transparency: team/phone limit responses and client billing usage card should show explicit add-on rates.
 15. Verify add-on billing ledger health: recent `addon_billing_events` rows for team seats, numbers, and voice rollups exist for active clients.
 16. Spot-check invoice UX parity: invoice line items include add-on labels for matching periods and CSV download works from client billing usage card.
@@ -79,6 +79,7 @@ curl -s "$BASE_URL/api/cron/voice-usage-rollup" \
 - Bi-weekly report payload includes directional "Without Us" model section or explicit insufficient-data state.
 - Bi-weekly report payload includes delivery counters and indicates whether period lock was updated (`lastRunUpdated`) or manual rerun is required.
 - Report delivery retry payload includes `retried/sent/failed/backoffPending/terminal` counters and should trend to zero failed terminal items.
+- Terminal report-delivery failures trigger daily agency-owner email alert digest (deduped per UTC date).
 - Cancellation-confirmed clients receive export requests with 5-business-day due date and monitored SLA states.
 - Quiet-hours policy mode is visible in admin compliance dashboard and should match current legal operating posture.
 - Onboarding SLA checker marks overdue Day-One milestones and opens operator alerts/tasks.

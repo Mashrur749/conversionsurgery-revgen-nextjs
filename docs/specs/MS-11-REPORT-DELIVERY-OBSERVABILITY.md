@@ -2,8 +2,8 @@
 
 ## Status
 - `STATE: IN_PROGRESS`
-- `DONE: [Milestone A, Milestone B]`
-- `REMAINING: [Milestone C, Milestone D]`
+- `DONE: [Milestone A, Milestone B, Milestone C]`
+- `REMAINING: [Milestone D]`
 
 ## Goal
 Make bi-weekly report delivery operationally reliable and visible:
@@ -80,6 +80,16 @@ Milestone B implementation status:
 
 Refactor checkpoint C:
 - Reuse existing alerting channel abstraction.
+
+Milestone C implementation status:
+- Done:
+1. Added admin delivery observability APIs:
+   - `GET /api/admin/reports/deliveries`
+   - `POST /api/admin/reports/deliveries/[deliveryId]/retry`
+2. Added operator delivery panel with filters + one-click retry on `/admin/reports`:
+   - `src/app/(dashboard)/admin/reports/components/report-delivery-ops-panel.tsx`
+3. Added terminal failure digest alerting to agency owners (daily dedupe):
+   - `src/lib/services/report-delivery-retry.ts`
 
 ### Milestone D: Client-facing clarity
 1. Add "last report delivered" panel in client portal.

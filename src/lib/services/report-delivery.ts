@@ -161,6 +161,7 @@ export async function getLatestReportDeliveryForClient(
 interface ClaimRetryOptions {
   at?: Date;
   metadata?: Record<string, unknown>;
+  allowBeyondMaxAttempts?: boolean;
 }
 
 export async function claimReportDeliveryForRetry(
@@ -180,6 +181,17 @@ export async function claimReportDeliveryForRetry(
 
     if (!current) return null;
 
+    const whereClause = options.allowBeyondMaxAttempts
+      ? and(
+          eq(reportDeliveries.id, deliveryId),
+          eq(reportDeliveries.state, 'failed')
+        )
+      : and(
+          eq(reportDeliveries.id, deliveryId),
+          eq(reportDeliveries.state, 'failed'),
+          lt(reportDeliveries.attemptCount, maxAttempts)
+        );
+
     const [claimed] = await tx
       .update(reportDeliveries)
       .set({
@@ -189,13 +201,7 @@ export async function claimReportDeliveryForRetry(
         lastStateAt: now,
         updatedAt: now,
       })
-      .where(
-        and(
-          eq(reportDeliveries.id, deliveryId),
-          eq(reportDeliveries.state, 'failed'),
-          lt(reportDeliveries.attemptCount, maxAttempts)
-        )
-      )
+      .where(whereClause)
       .returning();
 
     if (!claimed) return null;

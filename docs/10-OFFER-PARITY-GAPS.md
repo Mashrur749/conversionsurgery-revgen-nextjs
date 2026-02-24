@@ -9,13 +9,13 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-11 Milestone B working tree`
+- `LAST_VERIFIED_COMMIT: MS-11 Milestone C working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Operator/client report-delivery visibility surfaces and cron catch-up guarantees.
+- Client-facing report-delivery visibility surfaces and cron catch-up guarantees.
 
 ## Spec Mapping (One Spec Per Gap)
 
@@ -390,7 +390,10 @@ Highest-risk mismatches for paying clients are now concentrated in:
 - Added deterministic retry policy (attempt cap + exponential backoff + terminal classification).
 - Added idempotent retry claim transition and dedicated retry cron endpoint.
 - Refactored report email sending into a shared service used by primary and retry flows.
-- Remaining: Milestones C-D (operator dashboard/retry UX, client-facing delivery clarity).
+- Progress (2026-02-24): `MS-11` Milestone C completed.
+- Added operator delivery observability APIs and admin reports panel filters (`pending_retry`, `failed`, `terminal`, `sent`) with one-click retry.
+- Added terminal-failure alert digest to agency owners (daily dedupe).
+- Remaining: Milestone D (client-facing delivery clarity).
 - Evidence:
   - `src/db/schema/report-deliveries.ts`
   - `drizzle/0030_lively_rage.sql`
@@ -400,6 +403,10 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `src/lib/services/report-delivery.test.ts`
   - `src/lib/services/report-delivery-retry.test.ts`
   - `src/lib/services/report-generation.ts`
+  - `src/app/api/admin/reports/deliveries/route.ts`
+  - `src/app/api/admin/reports/deliveries/[deliveryId]/retry/route.ts`
+  - `src/app/(dashboard)/admin/reports/components/report-delivery-ops-panel.tsx`
+  - `src/app/(dashboard)/admin/reports/page.tsx`
   - `src/app/api/cron/report-delivery-retries/route.ts`
   - `src/app/api/cron/route.ts`
   - `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md`
