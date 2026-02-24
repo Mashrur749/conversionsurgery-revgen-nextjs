@@ -9,9 +9,11 @@ import {
 import {
   countQualifiedLeadEngagements,
   countRecoveryAttributedOpportunities,
+  calculateObservedMonthlyLeadAverage,
   type AttributedOpportunity,
   type RecoveryAttributedOpportunityMetrics,
 } from '@/lib/services/guarantee-v2/metrics';
+import { applyLowVolumeExtensionFormula } from '@/lib/services/guarantee-v2/extension-formula';
 import { evaluateProofWindowStatus } from '@/lib/services/guarantee-v2/proof-evaluator';
 import { evaluateRecoveryWindowStatus } from '@/lib/services/guarantee-v2/recovery-evaluator';
 
@@ -34,6 +36,7 @@ export interface GuaranteeRunResult {
   recoveryPendingStarted: number;
   recoveryPassed: number;
   recoveryFailedRefundReview: number;
+  extensionUpdated: number;
   initialized: number;
 }
 
@@ -50,7 +53,9 @@ interface GuaranteeCandidate {
   guaranteeRecoveryEndsAt: Date | null;
   guaranteeAdjustedProofEndsAt: Date | null;
   guaranteeAdjustedRecoveryEndsAt: Date | null;
+  guaranteeObservedMonthlyLeadAverage: number | null;
   guaranteeExtensionFactorBasisPoints: number | null;
+  guaranteeNotes: string | null;
 }
 
 interface GuaranteeWindowContext {
@@ -60,15 +65,115 @@ interface GuaranteeWindowContext {
   recoveryWindowEnd: Date;
 }
 
-function buildWindowContext(
+async function applyLowVolumeExtensionAndSync(
   sub: GuaranteeCandidate,
-  backfill: ReturnType<typeof buildGuaranteeBackfillState>
-): GuaranteeWindowContext {
+  backfill: ReturnType<typeof buildGuaranteeBackfillState>,
+  now: Date
+): Promise<{
+  windowContext: GuaranteeWindowContext;
+  extensionUpdated: boolean;
+}> {
+  const db = getDb();
+
+  const proofStartAt = sub.guaranteeProofStartAt ?? backfill.proofStartAt;
+  const proofEndsAt = sub.guaranteeProofEndsAt ?? backfill.proofEndsAt;
+  const recoveryStartAt = sub.guaranteeRecoveryStartAt ?? backfill.recoveryStartAt;
+  const recoveryEndsAt = sub.guaranteeRecoveryEndsAt ?? backfill.recoveryEndsAt;
+
+  const currentAdjustedProofEndsAt =
+    sub.guaranteeAdjustedProofEndsAt ?? backfill.adjustedProofEndsAt;
+  const currentAdjustedRecoveryEndsAt =
+    sub.guaranteeAdjustedRecoveryEndsAt ?? backfill.adjustedRecoveryEndsAt;
+  const currentExtensionFactorBasisPoints =
+    sub.guaranteeExtensionFactorBasisPoints ?? backfill.extensionFactorBasisPoints;
+
+  const observedPeriodEnd =
+    now < currentAdjustedRecoveryEndsAt ? now : currentAdjustedRecoveryEndsAt;
+  const { observedMonthlyLeadAverage, leadCount } =
+    await calculateObservedMonthlyLeadAverage(
+      sub.clientId,
+      proofStartAt,
+      observedPeriodEnd
+    );
+
+  const extensionComputation = applyLowVolumeExtensionFormula({
+    observedMonthlyLeadAverage,
+    currentExtensionFactorBasisPoints,
+    proofStartAt,
+    proofEndsAt,
+    recoveryStartAt,
+    recoveryEndsAt,
+  });
+
+  const extensionFactorIncreased =
+    extensionComputation.extensionFactorBasisPoints >
+    currentExtensionFactorBasisPoints;
+
+  const extensionChanged =
+    extensionComputation.extensionFactorBasisPoints !==
+      currentExtensionFactorBasisPoints ||
+    extensionComputation.adjustedProofEndsAt.getTime() !==
+      currentAdjustedProofEndsAt.getTime() ||
+    extensionComputation.adjustedRecoveryEndsAt.getTime() !==
+      currentAdjustedRecoveryEndsAt.getTime();
+
+  const observedAverageChanged =
+    (sub.guaranteeObservedMonthlyLeadAverage ?? null) !==
+    observedMonthlyLeadAverage;
+
+  const needsUpdate = extensionChanged || observedAverageChanged;
+  if (needsUpdate) {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(subscriptions)
+        .set({
+          guaranteeObservedMonthlyLeadAverage: observedMonthlyLeadAverage,
+          guaranteeExtensionFactorBasisPoints:
+            extensionComputation.extensionFactorBasisPoints,
+          guaranteeAdjustedProofEndsAt:
+            extensionComputation.adjustedProofEndsAt,
+          guaranteeAdjustedRecoveryEndsAt:
+            extensionComputation.adjustedRecoveryEndsAt,
+          guaranteeNotes: extensionFactorIncreased
+            ? `${sub.guaranteeNotes ? `${sub.guaranteeNotes} ` : ''}Low-volume extension applied: observed ${observedMonthlyLeadAverage} leads/month (${leadCount} leads over ${proofStartAt.toISOString().slice(0, 10)}-${observedPeriodEnd.toISOString().slice(0, 10)}).`
+            : sub.guaranteeNotes,
+          updatedAt: now,
+        })
+        .where(eq(subscriptions.id, sub.id));
+
+      if (extensionFactorIncreased) {
+        await tx.insert(billingEvents).values({
+          clientId: sub.clientId,
+          subscriptionId: sub.id,
+          eventType: 'guarantee_extension_applied',
+          description:
+            `Low-volume extension applied at ${observedMonthlyLeadAverage} leads/month average.`,
+          rawData: {
+            observedMonthlyLeadAverage,
+            observedLeadCount: leadCount,
+            proofStartAt: proofStartAt.toISOString(),
+            observedPeriodEnd: observedPeriodEnd.toISOString(),
+            previousFactorBasisPoints: currentExtensionFactorBasisPoints,
+            newFactorBasisPoints:
+              extensionComputation.extensionFactorBasisPoints,
+            adjustedProofEndsAt:
+              extensionComputation.adjustedProofEndsAt.toISOString(),
+            adjustedRecoveryEndsAt:
+              extensionComputation.adjustedRecoveryEndsAt.toISOString(),
+          },
+        });
+      }
+    });
+  }
+
   return {
-    proofWindowStart: sub.guaranteeProofStartAt ?? backfill.proofStartAt,
-    proofWindowEnd: sub.guaranteeAdjustedProofEndsAt ?? backfill.adjustedProofEndsAt,
-    recoveryWindowStart: sub.guaranteeRecoveryStartAt ?? backfill.recoveryStartAt,
-    recoveryWindowEnd: sub.guaranteeAdjustedRecoveryEndsAt ?? backfill.adjustedRecoveryEndsAt,
+    extensionUpdated: needsUpdate,
+    windowContext: {
+      proofWindowStart: proofStartAt,
+      proofWindowEnd: extensionComputation.adjustedProofEndsAt,
+      recoveryWindowStart: recoveryStartAt,
+      recoveryWindowEnd: extensionComputation.adjustedRecoveryEndsAt,
+    },
   };
 }
 
@@ -318,6 +423,7 @@ export async function processGuaranteeStatus(): Promise<GuaranteeRunResult> {
     recoveryPendingStarted: 0,
     recoveryPassed: 0,
     recoveryFailedRefundReview: 0,
+    extensionUpdated: 0,
     initialized: 0,
   };
 
@@ -335,7 +441,9 @@ export async function processGuaranteeStatus(): Promise<GuaranteeRunResult> {
       guaranteeRecoveryEndsAt: subscriptions.guaranteeRecoveryEndsAt,
       guaranteeAdjustedProofEndsAt: subscriptions.guaranteeAdjustedProofEndsAt,
       guaranteeAdjustedRecoveryEndsAt: subscriptions.guaranteeAdjustedRecoveryEndsAt,
+      guaranteeObservedMonthlyLeadAverage: subscriptions.guaranteeObservedMonthlyLeadAverage,
       guaranteeExtensionFactorBasisPoints: subscriptions.guaranteeExtensionFactorBasisPoints,
+      guaranteeNotes: subscriptions.guaranteeNotes,
     })
     .from(subscriptions)
     .where(
@@ -388,7 +496,15 @@ export async function processGuaranteeStatus(): Promise<GuaranteeRunResult> {
       result.initialized++;
     }
 
-    const windowContext = buildWindowContext(sub, backfill);
+    const lowVolumeExtensionResult = await applyLowVolumeExtensionAndSync(
+      sub,
+      backfill,
+      now
+    );
+    const windowContext = lowVolumeExtensionResult.windowContext;
+    if (lowVolumeExtensionResult.extensionUpdated) {
+      result.extensionUpdated++;
+    }
     let currentStatus: GuaranteeV2Status = backfill.guaranteeStatus;
 
     const qleMetrics = await countQualifiedLeadEngagements(

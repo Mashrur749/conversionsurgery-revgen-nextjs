@@ -1,8 +1,9 @@
 import { getDb } from '@/db';
 import { appointments, conversations, funnelEvents, jobs, leads } from '@/db/schema';
-import { and, asc, eq, gte, inArray, lte, or } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lte, or, sql } from 'drizzle-orm';
 
 const INBOUND_LEAD_SOURCES = ['missed_call', 'form', 'sms', 'inbound_sms'] as const;
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
 const MANUAL_OUTBOUND_MESSAGE_TYPES = [
   'contractor_response',
   'manual',
@@ -365,5 +366,45 @@ export async function countRecoveryAttributedOpportunities(
   return {
     count: opportunities.length,
     opportunities,
+  };
+}
+
+export async function calculateObservedMonthlyLeadAverage(
+  clientId: string,
+  periodStart: Date,
+  periodEnd: Date
+): Promise<{ leadCount: number; observedMonthlyLeadAverage: number }> {
+  if (periodEnd <= periodStart) {
+    return {
+      leadCount: 0,
+      observedMonthlyLeadAverage: 0,
+    };
+  }
+
+  const db = getDb();
+  const [leadCountResult] = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.clientId, clientId),
+        inArray(leads.source, [...INBOUND_LEAD_SOURCES]),
+        gte(leads.createdAt, periodStart),
+        lte(leads.createdAt, periodEnd)
+      )
+    );
+
+  const leadCount = Number(leadCountResult?.count || 0);
+  const elapsedDays = Math.max(
+    1,
+    Math.ceil((periodEnd.getTime() - periodStart.getTime()) / MS_IN_DAY)
+  );
+  const observedMonthlyLeadAverage = Math.round((leadCount / elapsedDays) * 30);
+
+  return {
+    leadCount,
+    observedMonthlyLeadAverage,
   };
 }
