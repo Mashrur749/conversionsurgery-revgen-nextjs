@@ -13,10 +13,11 @@ Purpose: single navigation map for all operational documents.
 7. `07-LAUNCH-READINESS.md` — launch status and go-live gates.
 8. `10-OFFER-PARITY-GAPS.md` — offer-to-implementation gap tracker for selling/delivery parity.
 9. `specs/README.md` — execution spec map (one spec per offer-parity gap).
-10. `06-REMAINING-GAPS.md` — closed launch-hardening gap archive and scope note.
-11. `08-UX-AUDIT.md` — operational UX risks and next iteration focus.
-12. `09-SECURITY-AUDIT.md` — auth and security findings.
-13. `99-ARCHIVE-SYSTEM-BLOCKERS.md` — historical archive only.
+10. `11-MS-SPEC-EXECUTION-RUNBOOK.md` — beginner operator runbook for milestone-by-milestone agent execution.
+11. `06-REMAINING-GAPS.md` — closed launch-hardening gap archive and scope note.
+12. `08-UX-AUDIT.md` — operational UX risks and next iteration focus.
+13. `09-SECURITY-AUDIT.md` — auth and security findings.
+14. `99-ARCHIVE-SYSTEM-BLOCKERS.md` — historical archive only.
 
 ## File Labels (By Intent)
 - `00-10`: active operational documents.
