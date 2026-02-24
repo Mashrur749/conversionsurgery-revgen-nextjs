@@ -19,7 +19,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 
 | Spec | Gap | Milestone A | Milestone B | Milestone C | Milestone D | Notes |
 |---|---|---|---|---|---|---|
-| MS-01 | GAP-001 | DONE | OPEN | OPEN | OPEN | Milestone A complete: usage policy flags + resolver + seed parity baseline. |
+| MS-01 | GAP-001 | DONE | DONE | OPEN | OPEN | Milestones A-B complete: policy model + runtime enforcement via shared helper. |
 | MS-02 | GAP-002 | OPEN | OPEN | OPEN | OPEN | |
 | MS-03 | GAP-003 | OPEN | OPEN | OPEN | OPEN | |
 | MS-04 | GAP-004 | OPEN | OPEN | OPEN | OPEN | |

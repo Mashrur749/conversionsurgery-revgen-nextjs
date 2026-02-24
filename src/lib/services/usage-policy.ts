@@ -27,6 +27,11 @@ export interface ClientUsagePolicy {
   leadLimit: number | null;
 }
 
+export interface MessageLimitCheck {
+  reached: boolean;
+  limit: number | null;
+}
+
 function fallbackMessageLimitFromSlug(planSlug: string | null | undefined): number {
   const slug = (planSlug || '').toLowerCase();
   if (slug.includes('enterprise')) return 20000;
@@ -66,3 +71,36 @@ export function resolveClientUsagePolicy(
   };
 }
 
+function normalizeFallbackLimit(limit: number | null | undefined): number | null {
+  if (limit === null || limit === undefined) return null;
+  return limit > 0 ? limit : null;
+}
+
+export function resolveEffectiveMessageLimit(
+  usagePolicy: ClientUsagePolicy | null,
+  fallbackLimit?: number | null
+): number | null {
+  if (usagePolicy) return usagePolicy.messageLimit;
+  return normalizeFallbackLimit(fallbackLimit);
+}
+
+export function isMessageLimitReached(
+  messagesSentThisMonth: number | null | undefined,
+  usagePolicy: ClientUsagePolicy | null,
+  fallbackLimit?: number | null
+): MessageLimitCheck {
+  const limit = resolveEffectiveMessageLimit(usagePolicy, fallbackLimit);
+  const sent = messagesSentThisMonth ?? 0;
+
+  if (limit === null) {
+    return {
+      reached: false,
+      limit: null,
+    };
+  }
+
+  return {
+    reached: sent >= limit,
+    limit,
+  };
+}

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveClientUsagePolicy, type PlanFeatures } from './usage-policy';
+import {
+  isMessageLimitReached,
+  resolveClientUsagePolicy,
+  type PlanFeatures,
+} from './usage-policy';
 
 function buildFeatures(overrides: Partial<PlanFeatures> = {}): PlanFeatures {
   return {
@@ -79,5 +83,42 @@ describe('resolveClientUsagePolicy', () => {
     );
 
     expect(policy.chargesOverage).toBe(false);
+  });
+});
+
+describe('isMessageLimitReached', () => {
+  it('does not block when usage policy is unlimited', () => {
+    const policy = resolveClientUsagePolicy(
+      buildFeatures({
+        isUnlimitedMessaging: true,
+        isUnlimitedLeads: true,
+        chargesOverage: false,
+      }),
+      'professional'
+    );
+
+    const check = isMessageLimitReached(100000, policy, 500);
+    expect(check.reached).toBe(false);
+    expect(check.limit).toBeNull();
+  });
+
+  it('blocks when capped policy reaches limit', () => {
+    const policy = resolveClientUsagePolicy(
+      buildFeatures({
+        isUnlimitedMessaging: false,
+        maxMessagesPerMonth: 1000,
+      }),
+      'starter'
+    );
+
+    const check = isMessageLimitReached(1000, policy, 500);
+    expect(check.reached).toBe(true);
+    expect(check.limit).toBe(1000);
+  });
+
+  it('falls back to client-level limit when plan policy is unavailable', () => {
+    const check = isMessageLimitReached(500, null, 500);
+    expect(check.reached).toBe(true);
+    expect(check.limit).toBe(500);
   });
 });

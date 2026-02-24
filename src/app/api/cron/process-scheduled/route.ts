@@ -3,6 +3,8 @@ import { getDb, scheduledMessages, leads, clients, conversations, blockedNumbers
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { processNoShowFollowUp } from '@/lib/automations/no-show-recovery';
 import { processWinBackFollowUp } from '@/lib/automations/win-back';
+import { getClientUsagePolicy } from '@/lib/services/subscription';
+import { isMessageLimitReached, type ClientUsagePolicy } from '@/lib/services/usage-policy';
 import { eq, and, lte, sql } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { sendSMS } from '@/lib/services/twilio';
@@ -41,6 +43,7 @@ export async function GET(request: NextRequest) {
     let sent = 0;
     let skipped = 0;
     let failed = 0;
+    const usagePolicyByClient = new Map<string, ClientUsagePolicy | null>();
 
     for (const { message, lead, client } of dueMessages) {
       const isContractorReminder = message.sequenceType === 'appointment_reminder_contractor';
@@ -70,10 +73,17 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Skip if over monthly limit
-      const messagesSent = client.messagesSentThisMonth || 0;
-      const limit = client.monthlyMessageLimit || 10000;
-      if (messagesSent >= limit) {
+      if (!usagePolicyByClient.has(client.id)) {
+        usagePolicyByClient.set(client.id, await getClientUsagePolicy(client.id));
+      }
+      const usagePolicy = usagePolicyByClient.get(client.id) ?? null;
+      const limitCheck = isMessageLimitReached(
+        client.messagesSentThisMonth,
+        usagePolicy,
+        client.monthlyMessageLimit
+      );
+
+      if (limitCheck.reached) {
         skipped++;
         continue;
       }

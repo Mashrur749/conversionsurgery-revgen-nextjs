@@ -1,6 +1,8 @@
 import { sendSMS } from '@/lib/services/twilio';
 import { ComplianceService } from './compliance-service';
+import { getClientUsagePolicy } from '@/lib/services/subscription';
 import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessages } from '@/db';
+import { isMessageLimitReached } from '@/lib/services/usage-policy';
 import { eq, and, sql } from 'drizzle-orm';
 import { getTimezoneOffset } from 'date-fns-tz';
 
@@ -115,12 +117,16 @@ export async function sendCompliantMessage(
     };
   }
 
-  if (
-    clientData.monthlyMessageLimit &&
-    (clientData.messagesSentThisMonth ?? 0) >= clientData.monthlyMessageLimit
-  ) {
+  const usagePolicy = await getClientUsagePolicy(clientId);
+  const limitCheck = isMessageLimitReached(
+    clientData.messagesSentThisMonth,
+    usagePolicy,
+    clientData.monthlyMessageLimit
+  );
+
+  if (limitCheck.reached) {
     return blocked(
-      `Monthly message limit reached (${clientData.monthlyMessageLimit})`,
+      `Monthly message limit reached (${limitCheck.limit})`,
       normalizedPhone,
       phoneHash,
       clientId,
