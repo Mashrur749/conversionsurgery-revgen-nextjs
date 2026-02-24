@@ -77,6 +77,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       reset: result.length,
       overage,
+      overagePolicy: {
+        skippedByPolicy: overage.skippedByPolicy,
+        billingDisabledClientsCount: overage.skippedByPolicy,
+      },
       period: periodKey,
       timestamp: now.toISOString(),
     });

@@ -1,12 +1,14 @@
 import { getStripeClient } from '@/lib/clients/stripe';
 import { getDb } from '@/db';
 import { billingEvents, clients, leads, plans, subscriptions } from '@/db/schema';
+import { resolveOverageBillingPolicy } from '@/lib/services/billing-policy';
 import type { PlanFeatures } from '@/lib/services/usage-policy';
 import { and, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 
 interface OverageRunResult {
   processed: number;
   invoiced: number;
+  skippedByPolicy: number;
   totalOverageCents: number;
   errors: number;
 }
@@ -18,7 +20,13 @@ interface OverageRunResult {
 export async function applyMonthlyOverages(now: Date = new Date()): Promise<OverageRunResult> {
   const db = getDb();
   const stripe = getStripeClient();
-  const result: OverageRunResult = { processed: 0, invoiced: 0, totalOverageCents: 0, errors: 0 };
+  const result: OverageRunResult = {
+    processed: 0,
+    invoiced: 0,
+    skippedByPolicy: 0,
+    totalOverageCents: 0,
+    errors: 0,
+  };
 
   const monthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
   const monthStart = new Date(Date.UTC(monthEnd.getUTCFullYear(), monthEnd.getUTCMonth() - 1, 1, 0, 0, 0, 0));
@@ -48,8 +56,10 @@ export async function applyMonthlyOverages(now: Date = new Date()): Promise<Over
   for (const row of activeSubs) {
     result.processed++;
     const features = row.plan.features as PlanFeatures;
+    const billingPolicy = resolveOverageBillingPolicy(features, row.plan.slug);
 
-    if (features.allowOverages === false) {
+    if (!billingPolicy.chargesOverage) {
+      result.skippedByPolicy++;
       continue;
     }
 

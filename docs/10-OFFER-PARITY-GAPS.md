@@ -72,10 +72,13 @@ Highest-risk mismatches for paying clients are:
 - `sendCompliantMessage()` now uses shared usage-policy resolver, so unlimited plans are not blocked.
 - `process-scheduled` runtime limit checks now use policy helper; direct `monthlyMessageLimit` comparisons removed.
 - Message counters remain intact for observability.
+- Progress (2026-02-24): `MS-01` Milestone C completed.
+- Overage eligibility moved to dedicated billing-policy helper.
+- Monthly reset response now reports `skippedByPolicy` for overage runs.
 - Added plan policy flags (`isUnlimitedMessaging`, `isUnlimitedLeads`, `chargesOverage`).
 - Added shared usage policy resolver + `getClientUsagePolicy(clientId)`.
 - Updated Professional plan seeds to unlimited + overage-disabled defaults.
-- Remaining: Milestones C-D (billing no-op, UI copy alignment).
+- Remaining: Milestone D (UI copy alignment).
 - Evidence:
   - `src/lib/compliance/compliance-gateway.ts`
   - `src/lib/services/overage-billing.ts`
