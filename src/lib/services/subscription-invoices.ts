@@ -3,6 +3,7 @@ import { subscriptionInvoices, subscriptions } from '@/db/schema';
 import { eq, desc, and, gte, lte } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
 import type { SubscriptionInvoice } from '@/db/schema/subscription-invoices';
+import { linkAddonEventsToInvoice } from '@/lib/services/addon-billing-ledger';
 
 /**
  * Sync invoice from Stripe
@@ -84,9 +85,25 @@ export async function syncInvoiceFromStripe(stripeInvoiceId: string): Promise<Su
       .set(invoiceData)
       .where(eq(subscriptionInvoices.id, existing.id))
       .returning();
+    if (updated.periodStart && updated.periodEnd) {
+      await linkAddonEventsToInvoice({
+        invoiceId: updated.id,
+        clientId: updated.clientId,
+        periodStart: updated.periodStart,
+        periodEnd: updated.periodEnd,
+      });
+    }
     return updated;
   } else {
     const [created] = await db.insert(subscriptionInvoices).values(invoiceData).returning();
+    if (created.periodStart && created.periodEnd) {
+      await linkAddonEventsToInvoice({
+        invoiceId: created.id,
+        clientId: created.clientId,
+        periodStart: created.periodStart,
+        periodEnd: created.periodEnd,
+      });
+    }
     return created;
   }
 }

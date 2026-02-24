@@ -30,6 +30,7 @@ interface Invoice {
     description: string;
     totalCents: number;
     quantity: number;
+    eventIds: string[];
   }[];
 }
 
@@ -165,6 +166,11 @@ export function InvoiceList({ invoices, onLoadMore, hasMore, onRetryPayment }: I
                                   <span>
                                     {item.description}
                                     {item.quantity > 1 && ` x ${item.quantity}`}
+                                    {item.eventIds.length > 0 && (
+                                      <span className="ml-2 text-xs text-muted-foreground">
+                                        ({item.eventIds.length} source event)
+                                      </span>
+                                    )}
                                   </span>
                                   <span>${(item.totalCents / 100).toFixed(2)}</span>
                                 </div>

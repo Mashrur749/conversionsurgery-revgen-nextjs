@@ -1,9 +1,9 @@
 # MS-10: Add-On Billing Transparency Parity
 
 ## Status
-- `STATE: IN_PROGRESS`
-- `DONE: [Milestone A, Milestone B, Milestone C]`
-- `REMAINING: [Milestone D]`
+- `STATE: DONE`
+- `DONE: [Milestone A, Milestone B, Milestone C, Milestone D]`
+- `REMAINING: []`
 
 ## Goal
 Make add-on pricing fully transparent and traceable for paying clients:
@@ -98,6 +98,22 @@ Milestone C implementation status:
 
 Refactor checkpoint D:
 - Reuse existing billing support notes model where possible.
+
+Milestone D implementation status:
+- Done:
+1. Added provenance/dispute fields on add-on ledger events:
+   - `invoiceId`, `invoiceLineItemRef`, `disputeStatus`, `disputeNote`, `disputedAt`, `resolvedAt`, `resolvedBy`
+   - migration: `drizzle/0029_solid_captain_britain.sql`
+2. Added invoice linkage sync from Stripe invoice periods to add-on events:
+   - `linkAddonEventsToInvoice(...)` in `src/lib/services/addon-billing-ledger.ts`
+   - wired from `src/lib/services/subscription-invoices.ts`
+3. Invoice line items now carry add-on source-event linkage metadata for provenance:
+   - `src/lib/billing/queries.ts`
+   - `src/components/billing/InvoiceList.tsx`
+4. Added operator provenance/dispute workflow:
+   - `GET /api/admin/clients/[id]/billing/addons`
+   - `PATCH /api/admin/clients/[id]/billing/addons/[eventId]`
+   - UI card: `src/app/(dashboard)/admin/clients/[id]/addon-provenance-card.tsx`
 
 ## Immediate Deprecated Cleanup (Pre-Launch)
 - Remove generic "extra usage" labels without add-on type detail.

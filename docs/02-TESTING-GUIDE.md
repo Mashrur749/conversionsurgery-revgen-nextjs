@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-10 Milestone C working tree`
+Last verified commit: `MS-10 Milestone D working tree`
 
 ## 0. Preflight (Run First)
 
@@ -159,6 +159,21 @@ Expected:
 - Billing UI surfaces event-level add-on charges for the cycle.
 - Invoice history line items include add-on entries with clear labels and quantities.
 - CSV export is permission-gated and matches ledger event totals.
+
+### Step 3e: Add-on dispute/provenance workflow (MS-10 D)
+1. Open `/admin/clients/<clientId>`.
+2. In `Add-On Charge Provenance`, verify each add-on event shows:
+- source + period
+- invoice linkage (`invoice_number` or unlinked state)
+- dispute status + note fields
+3. Set one event to `reviewing` with a note and save.
+4. Set the same event to `resolved` and save.
+5. Download CSV again from client billing and verify dispute/invoice columns are populated.
+
+Expected:
+- Admin API enforces billing permissions for read/update.
+- Dispute annotation saves and persists across refresh.
+- Provenance linkage is visible from event to invoice context.
 
 ### Step 4: Onboarding persistence checks
 1. Use onboarding wizard (`/admin/clients/new/wizard` or current onboarding flow in your environment).

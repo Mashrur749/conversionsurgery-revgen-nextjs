@@ -204,6 +204,13 @@
       "when": 1771988400000,
       "tag": "0028_fancy_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1771993200000,
+      "tag": "0029_solid_captain_britain",
+      "breakpoints": true
     }
   ]
 }

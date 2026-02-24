@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `MS-10 Milestone C working tree`
+Last verified commit: `MS-10 Milestone D working tree`
 
 ## 1. Founder/Agency Use Cases
 
@@ -144,11 +144,12 @@ Outcome: retention narrative is evidence-backed and transparent, without fabrica
 
 Outcome: cancellation terms are contract-aligned and auditable without manual ad hoc export handling.
 
-### U13. Add-on billing transparency reference (MS-10 A-C)
+### U13. Add-on billing transparency reference (MS-10 A-D)
 1. Client reaches team-member or phone-number plan limit.
 2. API/UI limit messaging shows explicit add-on rate per unit.
 3. Client billing usage card shows add-on rates and projected recurring add-on subtotal.
 4. Team-member over-base events, phone-number purchase events, and voice-minute rollups are recorded in an idempotent add-on billing ledger.
 5. Client billing view shows cycle add-on breakdown and allows CSV export of add-on events.
+6. Operator reviews add-on event provenance in admin client view and annotates disputes through billing-manage workflow.
 
-Outcome: add-on pricing, event ledger, invoice line-item visibility, and event export are all available pre-dispute.
+Outcome: add-on pricing, event ledger, invoice linkage, event export, and dispute workflow are all operational.

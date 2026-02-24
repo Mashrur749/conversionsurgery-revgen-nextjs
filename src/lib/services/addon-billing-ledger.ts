@@ -8,7 +8,7 @@ import {
   subscriptions,
   voiceCalls,
 } from '@/db/schema';
-import { and, eq, gte, lt, sql, desc } from 'drizzle-orm';
+import { and, eq, gte, lt, sql, desc, isNull } from 'drizzle-orm';
 import {
   ADDON_PRICING_KEYS,
   type AddonPricingKey,
@@ -303,4 +303,36 @@ export async function rollupVoiceUsageAddonEvents(now: Date = new Date()): Promi
     clientsEvaluated: activeClients.length,
     eventsUpserted,
   };
+}
+
+export async function linkAddonEventsToInvoice(params: {
+  invoiceId: string;
+  clientId: string;
+  periodStart: Date;
+  periodEnd: Date;
+}): Promise<void> {
+  const db = getDb();
+  const events = await db
+    .select({
+      id: addonBillingEvents.id,
+      addonType: addonBillingEvents.addonType,
+    })
+    .from(addonBillingEvents)
+    .where(and(
+      eq(addonBillingEvents.clientId, params.clientId),
+      eq(addonBillingEvents.periodStart, params.periodStart),
+      eq(addonBillingEvents.periodEnd, params.periodEnd),
+      isNull(addonBillingEvents.invoiceId)
+    ));
+
+  for (const event of events) {
+    await db
+      .update(addonBillingEvents)
+      .set({
+        invoiceId: params.invoiceId,
+        invoiceLineItemRef: `addon:${event.addonType}:${event.id}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(addonBillingEvents.id, event.id));
+  }
 }

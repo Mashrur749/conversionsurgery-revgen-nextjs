@@ -61,7 +61,7 @@ interface BillingPageClientProps {
       paidAt: Date | null;
       pdfUrl: string | null;
       hostedInvoiceUrl: string | null;
-      lineItems: { description: string; totalCents: number; quantity: number }[];
+      lineItems: { description: string; totalCents: number; quantity: number; eventIds: string[] }[];
     }[];
     usage: {
       leads: { used: number; included: number | null; overage: number };

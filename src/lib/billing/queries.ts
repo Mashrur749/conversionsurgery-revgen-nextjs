@@ -51,6 +51,7 @@ export async function getBillingData(clientId: string) {
   ]);
 
   const eventsByPeriod = new Map<string, typeof addOnEvents>();
+  const eventsByInvoiceId = new Map<string, typeof addOnEvents>();
   for (const event of addOnEvents) {
     const key = `${event.periodStart.toISOString()}::${event.periodEnd.toISOString()}`;
     const bucket = eventsByPeriod.get(key);
@@ -58,6 +59,14 @@ export async function getBillingData(clientId: string) {
       bucket.push(event);
     } else {
       eventsByPeriod.set(key, [event]);
+    }
+    if (event.invoiceId) {
+      const invoiceBucket = eventsByInvoiceId.get(event.invoiceId);
+      if (invoiceBucket) {
+        invoiceBucket.push(event);
+      } else {
+        eventsByInvoiceId.set(event.invoiceId, [event]);
+      }
     }
   }
 
@@ -101,10 +110,10 @@ export async function getBillingData(clientId: string) {
           : undefined,
     })),
     invoices: invoiceList.map((inv) => {
-      const periodEvents =
-        inv.periodStart && inv.periodEnd
+      const periodEvents = eventsByInvoiceId.get(inv.id)
+        ?? (inv.periodStart && inv.periodEnd
           ? eventsByPeriod.get(`${inv.periodStart.toISOString()}::${inv.periodEnd.toISOString()}`) ?? []
-          : [];
+          : []);
       const addOnLineItems = periodEvents.map((event) => ({
         description: formatAddonLineItemDescription(
           event.addonType as AddonPricingKey,
@@ -112,6 +121,7 @@ export async function getBillingData(clientId: string) {
         ),
         totalCents: event.totalCents,
         quantity: event.quantity,
+        eventIds: [event.id],
       }));
 
       return {
@@ -130,6 +140,7 @@ export async function getBillingData(clientId: string) {
           description: item.description,
           totalCents: item.totalCents,
           quantity: item.quantity,
+          eventIds: [],
         })),
         ...addOnLineItems,
       ],

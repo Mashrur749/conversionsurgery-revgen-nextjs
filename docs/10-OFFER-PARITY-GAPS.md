@@ -9,13 +9,12 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: OPEN`
 - `P2: OPEN`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-10 Milestone C working tree`
+- `LAST_VERIFIED_COMMIT: MS-10 Milestone D working tree`
 
 ## Executive Summary
 The current platform is launch-ready for the earlier managed-service baseline, but it is not yet promise-parity complete for the reviewed v2.1 offer.
 
 Highest-risk mismatches for paying clients are now concentrated in:
-- Add-on billing dispute/support traceability.
 - Report delivery observability and cron catch-up guarantees.
 
 ## Spec Mapping (One Spec Per Gap)
@@ -31,7 +30,7 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | GAP-007 | P0 | `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | Done |
 | GAP-101 | P1 | `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Done |
 | GAP-102 | P1 | `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Done |
-| GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | In Progress |
+| GAP-103 | P1 | `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Done |
 | GAP-104 | P1 | `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Spec Ready |
 | GAP-105 | P1 | `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Spec Ready |
 | GAP-201 | P2 | `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | Spec Ready |
@@ -47,8 +46,8 @@ Highest-risk mismatches for paying clients are now concentrated in:
 | Estimate Trigger Methods (SMS keyword, quick-reply, dashboard, fallback nudge) | All trigger paths implemented with unified service + cron fallback | Ready |
 | Unlimited conversations/messages, no caps/no overages | Unlimited plan policy active in runtime + billing UI paths | Ready |
 | Dedicated number + CRM | Implemented | Ready |
-| Additional team/number paid add-ons | Limits enforced; add-on ledger events now recorded with idempotent billing period keys; invoice itemization/support UX still pending | Partial |
-| Voice AI optional add-on at $0.15/min | Voice rollup now records per-minute add-on ledger events; invoice itemization/support UX still pending | Partial |
+| Additional team/number paid add-ons | Pricing visibility, ledger events, invoice itemization, CSV export, and dispute provenance workflow implemented | Ready |
+| Voice AI optional add-on at $0.15/min | Voice rollup ledger, invoice linkage, CSV visibility, and dispute workflow implemented | Ready |
 | Day-One Activation package | Milestone tracker, audit artifact workflow, SLA alerting, and operator/client visibility implemented | Ready |
 | Smart assist mode (5-minute auto-send window) | Smart-assist queue + owner approve/edit/cancel + auto-send lifecycle implemented | Ready |
 | KB QA process with gap closure loop | Gap tracking primitives exist; full operational closure loop missing | Partial |
@@ -353,7 +352,11 @@ Highest-risk mismatches for paying clients are now concentrated in:
 - Added shared formatter for add-on labels/units/currency.
 - Added add-on ledger to invoice line-item merge for matching billing periods.
 - Added client billing cycle add-on breakdown section and CSV export endpoint.
-- Remaining: Milestone D (dispute/support traceability and provenance workflow).
+- Progress (2026-02-24): `MS-10` Milestone D completed.
+- Added invoice linkage fields and dispute/provenance fields on add-on ledger events.
+- Added invoice-to-add-on linking during Stripe invoice sync.
+- Added admin add-on provenance/dispute APIs and admin client workflow card.
+- Remaining: none (`MS-10` complete).
 - Evidence:
   - `src/lib/services/addon-pricing.ts`
   - `src/lib/services/addon-pricing.test.ts`
@@ -364,6 +367,11 @@ Highest-risk mismatches for paying clients are now concentrated in:
   - `src/lib/services/addon-billing-format.ts`
   - `src/lib/services/addon-billing-format.test.ts`
   - `src/app/api/client/billing/addons/export/route.ts`
+  - `src/app/api/admin/clients/[id]/billing/addons/route.ts`
+  - `src/app/api/admin/clients/[id]/billing/addons/[eventId]/route.ts`
+  - `src/app/(dashboard)/admin/clients/[id]/addon-provenance-card.tsx`
+  - `src/lib/services/subscription-invoices.ts`
+  - `drizzle/0029_solid_captain_britain.sql`
   - `src/app/api/cron/voice-usage-rollup/route.ts`
   - `src/app/api/cron/route.ts`
   - `src/app/api/team-members/route.ts`

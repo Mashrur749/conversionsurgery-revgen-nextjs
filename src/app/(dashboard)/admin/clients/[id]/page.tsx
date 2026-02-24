@@ -21,6 +21,7 @@ import { listClientQuarterlyCampaigns } from '@/lib/services/campaign-service';
 import { toQuarterlyCampaignSummaryDto } from '@/lib/services/quarterly-campaign-summary';
 import { getDayOneActivationSummary } from '@/lib/services/day-one-activation';
 import { DayOneActivationCard } from './day-one-activation-card';
+import { AddonProvenanceCard } from './addon-provenance-card';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -259,6 +260,8 @@ export default async function ClientDetailPage({ params }: Props) {
               </CardHeader>
             </Card>
           )}
+
+          <AddonProvenanceCard clientId={client.id} />
 
           <Card>
             <CardHeader>
