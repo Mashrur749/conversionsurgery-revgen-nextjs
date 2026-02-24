@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Owner: Operations + Engineering
-Last verified commit: `273a105`
+Last verified commit: `9388e70`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.

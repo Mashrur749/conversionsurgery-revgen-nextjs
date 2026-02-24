@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `273a105`
+Last verified commit: `9388e70`
 
 ## 0. Preflight (Run First)
 

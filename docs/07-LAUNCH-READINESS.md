@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: 273a105`
+- `LAST_VERIFIED_COMMIT: 9388e70`
 
 ## Executive Status
 

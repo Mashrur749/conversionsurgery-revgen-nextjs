@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `273a105`
+Last verified commit: `9388e70`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.

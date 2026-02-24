@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `273a105`
+Last verified commit: `9388e70`
 
 ## 1. Founder/Agency Use Cases
 

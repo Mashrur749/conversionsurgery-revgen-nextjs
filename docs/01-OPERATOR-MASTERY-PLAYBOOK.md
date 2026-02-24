@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `273a105`
+Last verified commit: `9388e70`
 
 ## How to Use This Playbook
 1. Execute phases in order.

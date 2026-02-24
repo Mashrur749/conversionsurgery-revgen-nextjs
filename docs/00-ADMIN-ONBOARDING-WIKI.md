@@ -3,7 +3,7 @@
 Last updated: 2026-02-24
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
-Last verified commit: `273a105`
+Last verified commit: `9388e70`
 
 ## Canonical Order (Read + Execute)
 

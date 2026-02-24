@@ -22,7 +22,7 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 - `MS-05` Milestones A-D: complete.
   - Commit: `edc545d`
 - `MS-06` Milestones A-D: complete.
-  - Commit: pending (current working tree, not yet committed)
+  - Commit: `9388e70`
 
 ## Current Focus
 - Next spec: `MS-07` (Cancellation/export parity).
