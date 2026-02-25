@@ -4,6 +4,7 @@ import { deleteMedia } from '@/lib/services/media';
 import { getDb, mediaAttachments } from '@/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const paramsSchema = z.object({
   id: z.string().uuid('Invalid media attachment ID'),
@@ -41,9 +42,8 @@ export async function GET(
     }
 
     return NextResponse.json(item);
-  } catch (err) {
-    console.error('[Media API] GET /api/media/[id] error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    return safeErrorResponse('[Media API][media.get]', error, 'Internal server error');
   }
 }
 
@@ -69,8 +69,7 @@ export async function DELETE(
     const { id } = parsed.data;
     await deleteMedia(id);
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('[Media API] DELETE /api/media/[id] error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    return safeErrorResponse('[Media API][media.delete]', error, 'Internal server error');
   }
 }

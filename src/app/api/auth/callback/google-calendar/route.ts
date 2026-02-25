@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAgencySession } from '@/lib/permissions';
 import { handleGoogleCallback } from '@/lib/services/calendar';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /** GET /api/auth/callback/google-calendar - OAuth callback handler for Google Calendar */
 export async function GET(request: NextRequest) {
@@ -38,7 +39,9 @@ export async function GET(request: NextRequest) {
       `${appUrl}/admin/clients/${state}/settings?success=google_connected`
     );
   } catch (err) {
-    console.error('[Google Calendar Callback] Token exchange failed:', err);
+    logSanitizedConsoleError('[Google Calendar Callback] Token exchange failed:', err, {
+      clientId: state,
+    });
 
     return NextResponse.redirect(
       `${appUrl}/admin/clients/${state}/settings?error=google_failed`

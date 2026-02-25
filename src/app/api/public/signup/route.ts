@@ -8,6 +8,8 @@ import {
   ensureDayOneMilestones,
   recordDayOneActivity,
 } from '@/lib/services/day-one-activation';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 const signupSchema = z.object({
   businessName: z.string().min(2).max(255),
@@ -128,10 +130,9 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (dayOneError) {
-      console.error(
-        `[PublicSignup] Day-one initialization failed for client ${client.id}:`,
-        dayOneError
-      );
+      logSanitizedConsoleError('[PublicSignup] Day-one initialization failed:', dayOneError, {
+        clientId: client.id,
+      });
     }
 
     return NextResponse.json(
@@ -144,10 +145,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('[PublicSignup] Failed to create signup:', error);
-    return NextResponse.json(
-      { error: 'Failed to create account. Please try again.' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[PublicSignup][signup.post]', error, 'Failed to create account. Please try again.');
   }
 }

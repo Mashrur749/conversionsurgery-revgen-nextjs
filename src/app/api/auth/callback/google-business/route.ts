@@ -3,6 +3,7 @@ import { getAgencySession } from '@/lib/permissions';
 import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 interface GoogleTokenResponse {
   access_token?: string;
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error');
 
   if (error) {
-    console.error('[Google OAuth] Error:', error);
+    logSanitizedConsoleError('[Google OAuth] Error:', error, { clientId: state });
     return NextResponse.redirect(
       new URL(`/admin/clients/${state}/reviews?error=google_auth_denied`, request.url)
     );
@@ -66,7 +67,9 @@ export async function GET(request: NextRequest) {
     const tokenData = (await tokenRes.json()) as GoogleTokenResponse;
 
     if (!tokenData.access_token) {
-      console.error('[Google OAuth] Token exchange failed:', tokenData.error);
+      logSanitizedConsoleError('[Google OAuth] Token exchange failed:', tokenData.error, {
+        clientId: state,
+      });
       return NextResponse.redirect(
         new URL(`/admin/clients/${state}/reviews?error=token_exchange_failed`, request.url)
       );
@@ -106,7 +109,7 @@ export async function GET(request: NextRequest) {
       new URL(`/admin/clients/${state}/reviews?google=connected`, request.url)
     );
   } catch (err) {
-    console.error('[Google OAuth] Callback error:', err);
+    logSanitizedConsoleError('[Google OAuth] Callback error:', err, { clientId: state });
     return NextResponse.redirect(
       new URL(`/admin/clients/${state}/reviews?error=callback_failed`, request.url)
     );

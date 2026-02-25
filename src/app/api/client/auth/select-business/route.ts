@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { clientMemberships, clients, people, auditLog } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { setClientSessionCookieWithPermissions, verifyBusinessSelectionToken } from '@/lib/client-auth';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const selectBusinessSchema = z
   .object({
@@ -91,10 +92,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[SelectBusiness] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to select business' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[ClientAuth][select-business]', error, 'Failed to select business');
   }
 }

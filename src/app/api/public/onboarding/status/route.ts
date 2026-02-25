@@ -7,6 +7,7 @@ import {
   syncDayOneSystemMilestones,
 } from '@/lib/services/day-one-activation';
 import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 export async function GET(request: NextRequest) {
   const clientId = request.nextUrl.searchParams.get('clientId');
@@ -52,10 +53,9 @@ export async function GET(request: NextRequest) {
       }),
     ]);
   } catch (dayOneError) {
-    console.error(
-      `[PublicOnboardingStatus] Failed to load day-one status for ${client.id}:`,
-      dayOneError
-    );
+    logSanitizedConsoleError('[PublicOnboardingStatus] Failed to load day-one status:', dayOneError, {
+      clientId: client.id,
+    });
   }
 
   const dayOneCompleted = (milestoneKey: string) =>

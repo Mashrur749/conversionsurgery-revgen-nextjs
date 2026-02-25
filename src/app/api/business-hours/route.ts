@@ -50,8 +50,7 @@ export async function GET(request: NextRequest) {
 
     return Response.json({ hours });
   } catch (error) {
-    console.error('[BusinessHours] Fetch error:', error);
-    return Response.json({ error: 'Failed to fetch business hours' }, { status: 500 });
+    return safeErrorResponse('[BusinessHours] Fetch error', error, 'Failed to fetch business hours');
   }
 }
 

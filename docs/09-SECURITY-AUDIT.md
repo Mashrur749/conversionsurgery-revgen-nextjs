@@ -265,5 +265,9 @@ Since the original audit window, new managed-service features (Smart Assist work
    - claims, sequence automations, escalation actions, and client analytics/escalation-rules APIs now route failures through `safeErrorResponse()`.
    - raw `console.error` catch logging was removed from these route groups and replaced with sanitized centralized error handling.
    - no auth boundary changes were introduced as part of this logging refactor.
+20. Public/auth route logging hardening (2026-02-25):
+   - public onboarding/signup + client auth OTP/business-switching + media and business-hours GET routes now use centralized safe/sanitized error handling.
+   - Google callback error paths were migrated to sanitized logger helpers to avoid raw provider error leakage.
+   - no auth boundary changes were introduced as part of this logging refactor.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

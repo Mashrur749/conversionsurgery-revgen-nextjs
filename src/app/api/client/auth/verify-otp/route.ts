@@ -5,6 +5,7 @@ import { setClientSessionCookie, setClientSessionCookieWithPermissions, signBusi
 import { getDb } from '@/db';
 import { people, auditLog } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const verifyOtpSchema = z
   .object({
@@ -120,10 +121,6 @@ export async function POST(request: NextRequest) {
       { status: 403 }
     );
   } catch (error) {
-    console.error('[OTP] Verify error:', error);
-    return NextResponse.json(
-      { error: 'Verification failed' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[ClientAuth][verify-otp]', error, 'Verification failed');
   }
 }

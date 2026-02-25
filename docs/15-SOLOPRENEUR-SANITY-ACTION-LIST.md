@@ -41,8 +41,8 @@ Status values:
 | `S-003` | Operator | P0 | TODO | Founder | Enforce incident severity + postmortem standard |
 | `S-004` | Operator | P0 | TODO | Founder | Set pilot client/onboarding capacity cap |
 | `S-005` | Developer | P0 | DONE | Founder | Enforce hooks + CI gate coverage |
-| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave G complete: claims/sequences/escalations/analytics migrated; continue remaining direct-route migration |
-| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave G complete: additional core API raw logs removed; continue broader API redaction sweep |
+| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave H complete: public/auth/onboarding/media routes migrated; continue remaining direct-route migration |
+| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave H complete: additional auth/public raw logs removed; continue broader API redaction sweep |
 | `S-008` | Developer | P1 | DONE | Founder | Global kill switches implemented and documented |
 | `S-009` | Developer | P1 | DONE | Founder | Single deploy + rollback command path documented |
 | `S-010` | Developer | P1 | IN_PROGRESS | Founder | Weekly maintenance budget protocol documented (calendar lock remains operator action) |
@@ -104,6 +104,15 @@ Update rule:
     - escalation queue/detail/action endpoints
     - client analytics/outcomes/scores/escalation-rules endpoints
   - Removed raw `console.error` from the above catch paths and standardized generic external error responses.
+  - Validation run: full `quality:no-regressions` green.
+- 2026-02-25 (Wave H):
+  - Migrated public/auth/onboarding/media route catches to centralized safe telemetry where applicable:
+    - `/api/media/[id]`
+    - `/api/public/onboarding/request-setup`, `/api/public/onboarding/status`, `/api/public/signup`
+    - `/api/auth/callback/google-business`, `/api/auth/callback/google-calendar`
+    - `/api/client/auth/send-otp`, `/api/client/auth/verify-otp`, `/api/client/auth/select-business`, `/api/client/auth/switch-business`
+    - `/api/business-hours` (GET failure path)
+  - Replaced raw catch logging in these routes with `safeErrorResponse` and/or sanitized logger usage with bounded context.
   - Validation run: full `quality:no-regressions` green.
 
 ## 4) Must-Do Actions (This Week)

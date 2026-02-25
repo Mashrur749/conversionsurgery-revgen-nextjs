@@ -63,9 +63,10 @@ Additional runtime logging sanity check:
 rg -n "console\\.error" src/app/api/cron
 rg -n "console\\.error" src/app/api/leads src/app/api/payments src/app/api/support-messages
 rg -n "console\\.error" src/app/api/claims src/app/api/sequences src/app/api/escalations src/app/api/clients/[id]/analytics src/app/api/clients/[id]/escalation-rules
+rg -n "console\\.error" src/app/api/public src/app/api/client/auth src/app/api/auth/callback src/app/api/media src/app/api/business-hours
 ```
 Expected:
-- No matches (high-traffic cron/lead/payment/support/claims/sequences/escalation/analytics routes should use centralized safe error logging paths).
+- No matches (high-traffic cron/lead/payment/support/claims/sequences/escalation/analytics/public/auth/media routes should use centralized safe error logging paths).
 
 ## 2. Sequential Manual Test Run
 

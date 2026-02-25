@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isValidPhoneNumber } from '@/lib/utils/phone';
 import { createAndSendPhoneOTP, createAndSendEmailOTP } from '@/lib/services/otp';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const sendOtpSchema = z
   .object({
@@ -59,10 +60,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[OTP] Send error:', error);
-    return NextResponse.json(
-      { error: 'Failed to send code' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[ClientAuth][send-otp]', error, 'Failed to send code');
   }
 }
