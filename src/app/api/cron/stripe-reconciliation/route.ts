@@ -4,6 +4,8 @@ import { getDb } from '@/db';
 import { subscriptions, clients, billingEvents } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * GET /api/cron/stripe-reconciliation
@@ -156,7 +158,9 @@ export async function GET(request: NextRequest) {
                 `[Reconciliation] Orphaned sub ${localSub.id}: not found in Stripe, marked canceled`
               );
             } else {
-              console.error(`[Reconciliation] Sub ${localSub.id} error:`, error);
+              logSanitizedConsoleError('[Reconciliation] Subscription fetch failed:', error, {
+                subscriptionId: localSub.id,
+              });
               results.errors.push(`Sub ${localSub.id}: retrieval failed`);
             }
           }
@@ -175,11 +179,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(results);
   } catch (error) {
-    console.error('[Reconciliation] Fatal error:', error);
-    return NextResponse.json(
-      { error: 'Reconciliation failed' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Cron][stripe-reconciliation]', error, 'Reconciliation failed');
   }
 }
 

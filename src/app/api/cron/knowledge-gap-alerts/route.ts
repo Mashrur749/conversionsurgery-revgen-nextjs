@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { processStaleKnowledgeGapAlerts } from '@/lib/services/knowledge-gap-queue';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/cron/knowledge-gap-alerts - Send stale high-priority knowledge gap alerts. */
 export async function GET(request: NextRequest) {
@@ -15,7 +16,6 @@ export async function GET(request: NextRequest) {
       ...result,
     });
   } catch (error) {
-    console.error('[CronScheduling] Knowledge gap stale alert error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][knowledge-gap-alerts]', error, 'Failed');
   }
 }

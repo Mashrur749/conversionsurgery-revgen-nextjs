@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { runDayOneActivationSlaCheck } from '@/lib/services/day-one-activation';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/cron/onboarding-sla-check - marks overdue day-one milestones and creates operator alerts. */
 export async function GET(request: NextRequest) {
@@ -15,10 +16,10 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[Cron] onboarding-sla-check failed:', error);
-    return NextResponse.json(
-      { error: 'Failed to run onboarding SLA check' },
-      { status: 500 }
+    return safeErrorResponse(
+      '[Cron][onboarding-sla-check]',
+      error,
+      'Failed to run onboarding SLA check'
     );
   }
 }

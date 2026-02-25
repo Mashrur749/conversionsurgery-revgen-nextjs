@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processAgencyWeeklyDigests } from '@/lib/services/agency-communication';
 import { verifyCronSecret } from '@/lib/utils/cron';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * Weekly cron to send agency digests to all active clients.
@@ -15,7 +16,6 @@ export async function GET(request: NextRequest) {
     const sent = await processAgencyWeeklyDigests();
     return NextResponse.json({ success: true, sent });
   } catch (error) {
-    console.error('[Cron] Agency digest error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][agency-digest]', error, 'Failed');
   }
 }

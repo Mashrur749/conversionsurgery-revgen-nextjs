@@ -9,6 +9,8 @@ import { updateCohortMetrics } from '@/lib/services/cohort-analysis';
 import { getDb, clients, reviewSources } from '@/db';
 import { eq, and, or, isNull, lt } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 // Helper to dispatch a cron sub-endpoint via fetch
 async function dispatch(
@@ -24,7 +26,7 @@ async function dispatch(
     });
     return await res.json();
   } catch (error) {
-    console.error(`[Cron] Failed to dispatch ${path}:`, error);
+    logSanitizedConsoleError('[Cron] Failed to dispatch sub-job:', error, { path, method });
     return { error: 'dispatch failed' };
   }
 }
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
         await checkAllClientAlerts();
         results.usageTracking = { success: true };
       } catch (error) {
-        console.error('[Cron] Usage tracking error:', error);
+        logSanitizedConsoleError('[Cron] Usage tracking error:', error);
         results.usageTracking = { error: 'Failed' };
       }
 
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
         const breachedCount = await checkSlaBreaches();
         results.escalationSla = { success: true, breached: breachedCount };
       } catch (error) {
-        console.error('[Cron] Escalation SLA check error:', error);
+        logSanitizedConsoleError('[Cron] Escalation SLA check error:', error);
         results.escalationSla = { error: 'Failed' };
       }
 
@@ -110,13 +112,13 @@ export async function POST(request: NextRequest) {
             alerts += await checkAndAlertNegativeReviews(clientId);
             synced++;
           } catch (err) {
-            console.error(`[Cron] Error syncing reviews for client ${clientId}:`, err);
+            logSanitizedConsoleError('[Cron] Review sync failed for client:', err, { clientId });
           }
         }
 
         results.reviewSync = { success: true, synced, alerts };
       } catch (error) {
-        console.error('[Cron] Review sync error:', error);
+        logSanitizedConsoleError('[Cron] Review sync error:', error);
         results.reviewSync = { error: 'Failed' };
       }
 
@@ -152,7 +154,7 @@ export async function POST(request: NextRequest) {
         }
         results.leadScoring = { success: true, clients: activeClients.length, leadsScored: totalScored };
       } catch (error) {
-        console.error('[Cron] Lead scoring error:', error);
+        logSanitizedConsoleError('[Cron] Lead scoring error:', error);
         results.leadScoring = { error: 'Failed' };
       }
 
@@ -160,7 +162,7 @@ export async function POST(request: NextRequest) {
         await runDailyAnalyticsJob();
         results.analytics = { success: true };
       } catch (error) {
-        console.error('[Cron] Analytics error:', error);
+        logSanitizedConsoleError('[Cron] Analytics error:', error);
         results.analytics = { error: 'Failed' };
       }
 
@@ -181,7 +183,7 @@ export async function POST(request: NextRequest) {
           const cohortResult = await updateCohortMetrics();
           results.cohortUpdate = { success: true, ...cohortResult };
         } catch (error) {
-          console.error('[Cron] Cohort analysis error:', error);
+          logSanitizedConsoleError('[Cron] Cohort analysis error:', error);
           results.cohortUpdate = { error: 'Failed' };
         }
 
@@ -228,7 +230,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(results);
   } catch (error) {
-    console.error('[Cron] Handler error:', error);
-    return NextResponse.json({ error: 'Cron failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][orchestrator]', error, 'Cron failed');
   }
 }

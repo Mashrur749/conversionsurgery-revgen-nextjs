@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { sendPendingNpsSurveys } from '@/lib/services/nps-survey';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function POST(request: NextRequest) {
   if (!verifyCronSecret(request)) {
@@ -11,7 +12,6 @@ export async function POST(request: NextRequest) {
     const result = await sendPendingNpsSurveys();
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
-    console.error('[NPS Cron] Error:', error);
-    return NextResponse.json({ error: 'Cron failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][send-nps]', error, 'Cron failed');
   }
 }

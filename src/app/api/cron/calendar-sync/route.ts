@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, calendarIntegrations } from '@/db';
 import { eq, and, lt, or, isNull } from 'drizzle-orm';
 import { fullSync } from '@/lib/services/calendar';
+import { verifyCronSecret } from '@/lib/utils/cron';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /** GET /api/cron/calendar-sync - Cron job to sync all active calendar integrations */
 export async function GET(request: NextRequest) {
-  // Verify cron secret
-  const authHeader = request.headers.get('authorization');
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest) {
         await fullSync(clientId);
         synced++;
       } catch (err) {
-        console.error(`[Calendar Sync Cron] Sync failed for client ${clientId}:`, err);
+        logSanitizedConsoleError('[Calendar Sync Cron] Sync failed:', err, { clientId });
         errors++;
       }
     }
@@ -55,10 +54,6 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[Calendar Sync Cron] Batch sync failed:', error);
-    return NextResponse.json(
-      { error: 'Calendar sync failed' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Cron][calendar-sync]', error, 'Calendar sync failed');
   }
 }

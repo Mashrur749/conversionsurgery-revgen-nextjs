@@ -253,5 +253,9 @@ Since the original audit window, new managed-service features (Smart Assist work
 16. Solo reliability operations surface (2026-02-25):
    - added agency settings-scoped reliability summary endpoint (`/api/admin/reliability/summary`).
    - deterministic replay scripts call existing cron secret-protected endpoints; no new unauthenticated operational paths introduced.
+17. Cron route logging hardening (2026-02-25):
+   - cron route catch handlers now use centralized `safeErrorResponse()` for internal error telemetry and generic external responses.
+   - direct raw `console.error` usage was removed from `/api/cron/*` route files in favor of sanitized logging helpers.
+   - no auth boundary changes were introduced as part of this logging refactor.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

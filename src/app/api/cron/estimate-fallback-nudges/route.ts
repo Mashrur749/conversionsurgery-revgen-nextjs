@@ -5,6 +5,7 @@ import {
   buildEstimateFallbackNudgeMessage,
   findEstimateNudgeEligibleLeads,
 } from '@/lib/services/estimate-nudge';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/cron/estimate-fallback-nudges - Send fallback estimate nudges for stale contacted leads. */
 export async function GET(request: NextRequest) {
@@ -49,10 +50,10 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[Cron] estimate-fallback-nudges failed:', error);
-    return NextResponse.json(
-      { error: 'Failed to process estimate fallback nudges' },
-      { status: 500 }
+    return safeErrorResponse(
+      '[Cron][estimate-fallback-nudges]',
+      error,
+      'Failed to process estimate fallback nudges'
     );
   }
 }

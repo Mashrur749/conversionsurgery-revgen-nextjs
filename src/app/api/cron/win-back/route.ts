@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processWinBacks } from '@/lib/automations/win-back';
+import { verifyCronSecret } from '@/lib/utils/cron';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * Cron endpoint: identify stale leads and send win-back messages.
  * Should run daily at 10am.
  */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -23,10 +24,6 @@ export async function GET(request: NextRequest) {
       ...result,
     });
   } catch (error) {
-    console.error('[WinBack] Cron error:', error);
-    return NextResponse.json(
-      { error: 'Processing failed' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Cron][win-back]', error, 'Processing failed');
   }
 }

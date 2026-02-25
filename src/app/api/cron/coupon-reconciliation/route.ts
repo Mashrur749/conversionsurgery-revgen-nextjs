@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { coupons, subscriptions } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * Daily coupon redemption count reconciliation cron.
@@ -74,7 +75,6 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[CouponReconciliation] Failed:', error);
-    return NextResponse.json({ error: 'Reconciliation failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][coupon-reconciliation]', error, 'Reconciliation failed');
   }
 }

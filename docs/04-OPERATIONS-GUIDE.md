@@ -104,6 +104,7 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Autonomous mode transitions are blocked when onboarding quality critical gates fail (unless audited override is active).
 - Internal appointment/booking reminders resolve recipients via routing policy (owner/assistant/team fallback chain) instead of owner-only assumptions.
 - Twilio webhook failures should appear in `error_log` with redacted context (no full phone numbers/body text/secrets).
+- Cron endpoint failures should also appear in `error_log` via `safeErrorResponse` with sanitized context (no raw stack/body leakage).
 - If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
 
 ## Deterministic Replay Commands

@@ -4,6 +4,7 @@ import { leadContext } from '@/db/schema';
 import { and, lt, notInArray } from 'drizzle-orm';
 import { processScheduledCheck } from '@/lib/agent/orchestrator';
 import { verifyCronSecret } from '@/lib/utils/cron';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * GET handler to check stale leads and trigger AI agent follow-ups.
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       const result = await processScheduledCheck(leadId);
       if (result) processed++;
     } catch (error) {
-      console.error(`[CronScheduling] Error processing lead ${leadId}:`, error);
+      logSanitizedConsoleError('[CronScheduling] Error processing lead:', error, { leadId });
     }
   }
 

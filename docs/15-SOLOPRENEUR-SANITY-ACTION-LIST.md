@@ -41,8 +41,8 @@ Status values:
 | `S-003` | Operator | P0 | TODO | Founder | Enforce incident severity + postmortem standard |
 | `S-004` | Operator | P0 | TODO | Founder | Set pilot client/onboarding capacity cap |
 | `S-005` | Developer | P0 | DONE | Founder | Enforce hooks + CI gate coverage |
-| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave A complete: Twilio webhook + Twilio service telemetry |
-| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave A complete: redaction on Twilio hot paths + guardrails |
+| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave E complete: cron routes migrated to safe error telemetry; continue direct-route migration |
+| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave E complete: cron route raw error logs removed; continue non-cron redaction sweep |
 | `S-008` | Developer | P1 | DONE | Founder | Global kill switches implemented and documented |
 | `S-009` | Developer | P1 | DONE | Founder | Single deploy + rollback command path documented |
 | `S-010` | Developer | P1 | IN_PROGRESS | Founder | Weekly maintenance budget protocol documented (calendar lock remains operator action) |
@@ -84,6 +84,12 @@ Update rule:
   - Added export recovery drill script: `npm run ops:drill:export -- --client-id <client-id>`.
   - Added policy guardrail for no-client-specific code in `AGENTS.md` and `CLAUDE.md`.
   - Added pilot exit criteria to launch readiness docs.
+- 2026-02-25 (Wave E):
+  - Migrated cron catch/failure paths to `safeErrorResponse()` for centralized sanitized internal telemetry.
+  - Removed raw `console.error` usage from `/api/cron/*` routes; replaced with sanitized logger calls where needed.
+  - Normalized cron auth checks to `verifyCronSecret()` on no-show and win-back routes.
+  - Reduced sensitive runtime logging from missed-call polling path (no raw Twilio to/from dumps).
+  - Validation run: `ms:gate`, `quality:logging-guard`, and full `quality:no-regressions` green.
 
 ## 4) Must-Do Actions (This Week)
 

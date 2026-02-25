@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { processWeeklySummaries } from '@/lib/services/weekly-summary';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/cron/weekly-summary - Process weekly summaries for all eligible clients. */
 export async function GET(request: NextRequest) {
@@ -12,7 +13,6 @@ export async function GET(request: NextRequest) {
     const sent = await processWeeklySummaries();
     return NextResponse.json({ success: true, sent });
   } catch (error) {
-    console.error('[CronScheduling] Weekly summary error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][weekly-summary]', error, 'Failed');
   }
 }

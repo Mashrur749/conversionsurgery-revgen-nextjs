@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { runMonthlyResetCatchup } from '@/lib/services/monthly-reset-job';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * Monthly reset cron with cursor-based catch-up semantics.
@@ -14,7 +15,6 @@ export async function GET(request: NextRequest) {
     const catchup = await runMonthlyResetCatchup();
     return NextResponse.json({ success: true, catchup });
   } catch (error) {
-    console.error('[MonthlyReset] Failed:', error);
-    return NextResponse.json({ error: 'Reset failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][monthly-reset]', error, 'Reset failed');
   }
 }

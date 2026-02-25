@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { rollupVoiceUsageAddonEvents } from '@/lib/services/addon-billing-ledger';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(request: NextRequest) {
   if (!verifyCronSecret(request)) {
@@ -14,7 +15,6 @@ export async function GET(request: NextRequest) {
       ...result,
     });
   } catch (error) {
-    console.error('[Cron][VoiceUsageRollup] Failed:', error);
-    return NextResponse.json({ error: 'Voice usage rollup failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][voice-usage-rollup]', error, 'Voice usage rollup failed');
   }
 }

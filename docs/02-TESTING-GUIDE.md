@@ -58,6 +58,13 @@ Expected:
 
 Stop and fix before continuing if the command fails.
 
+Additional runtime logging sanity check:
+```bash
+rg -n "console\\.error" src/app/api/cron
+```
+Expected:
+- No matches (cron routes should use centralized safe error logging paths).
+
 ## 2. Sequential Manual Test Run
 
 Run in order. Do not skip prerequisites.

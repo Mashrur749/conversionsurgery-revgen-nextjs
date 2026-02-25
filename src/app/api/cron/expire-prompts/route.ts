@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { expirePendingPrompts } from '@/lib/services/agency-communication';
 import { verifyCronSecret } from '@/lib/utils/cron';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * Hourly cron to expire pending action prompts that have passed their expiresAt.
@@ -14,7 +15,6 @@ export async function GET(request: NextRequest) {
     const expired = await expirePendingPrompts();
     return NextResponse.json({ success: true, expired });
   } catch (error) {
-    console.error('[Cron] Expire prompts error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][expire-prompts]', error, 'Failed');
   }
 }

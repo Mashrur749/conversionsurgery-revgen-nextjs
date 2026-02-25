@@ -4,6 +4,7 @@ import {
   autoGenerateReviewDrafts,
   autoPostApprovedResponses,
 } from '@/lib/automations/auto-review-response';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function POST(request: NextRequest) {
   if (!verifyCronSecret(request)) {
@@ -22,7 +23,6 @@ export async function POST(request: NextRequest) {
       postErrors: posts.errors,
     });
   } catch (error) {
-    console.error('[AutoReviewCron] Error:', error);
-    return NextResponse.json({ error: 'Cron failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][auto-review-response]', error, 'Cron failed');
   }
 }

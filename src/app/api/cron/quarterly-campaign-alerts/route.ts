@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { sendQuarterlyCampaignAdminDigest } from '@/lib/services/campaign-service';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/cron/quarterly-campaign-alerts - Send quarterly campaign progress digest/alerts for operators. */
 export async function GET(request: NextRequest) {
@@ -15,7 +16,6 @@ export async function GET(request: NextRequest) {
     const result = await sendQuarterlyCampaignAdminDigest({ alertsOnly });
     return NextResponse.json({ success: true, mode: alertsOnly ? 'alerts' : 'weekly', ...result });
   } catch (error) {
-    console.error('[Cron] Quarterly campaign digest/alerts error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][quarterly-campaign-alerts]', error, 'Failed');
   }
 }

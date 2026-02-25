@@ -12,6 +12,8 @@ import { auditLog } from '@/db/schema';
 import { eq, and, lte, sql, ne, or, isNull } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { sendSMS } from '@/lib/services/twilio';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * GET handler to process scheduled messages.
@@ -306,7 +308,12 @@ export async function GET(request: NextRequest) {
           await new Promise(resolve => setTimeout(resolve, 100));
         }
       } catch (error) {
-        console.error('[CronScheduling] Failed to send scheduled message:', message.id, error);
+        logSanitizedConsoleError('[CronScheduling] Failed to send scheduled message:', error, {
+          messageId: message.id,
+          clientId: client.id,
+          leadId: lead.id,
+          sequenceType: message.sequenceType,
+        });
         // Unclaim: mark back as unsent so it can be retried on next cron run
         await db
           .update(scheduledMessages)
@@ -325,8 +332,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[CronScheduling] Cron error:', error);
-    return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][process-scheduled]', error, 'Processing failed');
   }
 }
 

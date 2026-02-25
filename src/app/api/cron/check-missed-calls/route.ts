@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, activeCalls, clients } from '@/db';
-import { eq, and, lte, sql } from 'drizzle-orm';
+import { eq, and, lte } from 'drizzle-orm';
 import { handleMissedCall } from '@/lib/automations/missed-call';
 import twilio from 'twilio';
 import { verifyCronSecret } from '@/lib/utils/cron';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * GET handler to check for missed calls via Twilio API polling fallback.
@@ -20,7 +22,10 @@ export async function GET(request: NextRequest) {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
 
     if (!accountSid || !authToken) {
-      console.error('[Check Missed Calls] Missing Twilio credentials');
+      logSanitizedConsoleError(
+        '[Check Missed Calls] Missing Twilio credentials',
+        new Error('TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN is missing')
+      );
       return NextResponse.json({ error: 'Missing Twilio credentials' }, { status: 500 });
     }
 
@@ -54,15 +59,10 @@ export async function GET(request: NextRequest) {
         // Query Twilio API to get final call status
         const callData = await client.calls(call.callSid).fetch();
 
-        console.log(`[Check Missed Calls] Call ${call.callSid} full Twilio data:`, {
+        console.log(`[Check Missed Calls] Call ${call.callSid} Twilio snapshot:`, {
           status: callData.status,
           duration: callData.duration,
           answeredBy: (callData as any).answeredBy,
-          direction: callData.direction,
-          to: callData.to,
-          from: callData.from,
-          // Log all available properties
-          allKeys: Object.keys(callData).filter(k => !k.startsWith('_'))
         });
 
         // Check if call ended with a missed/failed status
@@ -107,7 +107,9 @@ export async function GET(request: NextRequest) {
           await db.delete(activeCalls).where(eq(activeCalls.id, call.id));
           processed++;
         } else {
-          console.error(`[CronScheduling] Error checking call ${call.callSid}:`, error.message);
+          logSanitizedConsoleError('[CronScheduling] Error checking call:', error, {
+            callSid: call.callSid,
+          });
         }
       }
     }
@@ -119,7 +121,6 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('[CronScheduling] Check missed calls cron error:', error);
-    return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
+    return safeErrorResponse('[Cron][check-missed-calls]', error, 'Processing failed');
   }
 }
