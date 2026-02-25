@@ -1,6 +1,6 @@
 # MS Context Snapshot
 
-Last updated: 2026-02-24 (MS-15 Milestones A-D)
+Last updated: 2026-02-25 (MS-15 complete + API logging hardening)
 Purpose: compact handoff context for fresh sessions without replaying chat history.
 
 ## Source of Truth
@@ -26,6 +26,8 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 ## Current Focus
 - Spec implementation wave is complete (`MS-01..MS-15` all done).
 - Active focus is release hardening and managed-service execution:
+  - keep API failure handling standardized on centralized safe/sanitized telemetry
+  - preserve zero raw `console.error` baseline in `src/app/api`
   - run `npm run ms:gate`, targeted tests, and build on release candidates
   - keep docs in sync with any operational behavior changes
   - track only legal-review dependencies from offer Part 10 as launch prerequisites

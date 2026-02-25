@@ -1,9 +1,9 @@
 # Operator Mastery Playbook
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Audience: Founder, spouse/operations monitor, future operators
 Goal: become fully confident operating ConversionSurgery end-to-end for managed service delivery, while preparing for SaaS transition.
-Last verified commit: `MS-15 Milestone D working tree`
+Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
 
 ## How to Use This Playbook
 1. Execute phases in order.

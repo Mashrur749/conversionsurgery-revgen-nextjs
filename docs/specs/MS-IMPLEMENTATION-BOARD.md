@@ -1,6 +1,6 @@
 # MS Implementation Board
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Purpose: single session-to-session execution board for `MS-01..MS-15`.
 
 ## Status Legend
@@ -39,3 +39,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 1. P0: `MS-01` to `MS-07`
 2. P1: `MS-08` to `MS-12`
 3. P2: `MS-13` to `MS-15`
+
+## Post-Spec Hardening Continuity
+- 2026-02-25: API-wide safe error logging hardening completed after MS-15.
+- Baseline check now expects zero raw `console.error` in `src/app/api`.

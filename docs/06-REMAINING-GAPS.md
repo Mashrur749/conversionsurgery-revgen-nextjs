@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: Runtime hardening + kill-switch working tree (2026-02-25)`
+- `LAST_VERIFIED_COMMIT: API-wide safe error logging hardening working tree (2026-02-25)`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -61,6 +61,7 @@ Current offer-parity note:
 - Twilio webhook observability hardening: centralized internal error telemetry and sanitized logging across webhook + Twilio client service paths.
 - Operator containment controls: kill switches for outbound automations, Smart Assist auto-send, and Voice AI via system settings.
 - Solo reliability operations hardening: `/admin/settings` reliability dashboard + deterministic replay script + export recovery drill tooling.
+- API-wide centralized safe error logging hardening: all `src/app/api` routes now avoid raw `console.error` and route failures through sanitized handlers.
 
 ## Tracking Rule
 Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `99-ARCHIVE-SYSTEM-BLOCKERS.md` archive form.

@@ -1,6 +1,6 @@
 # Offer Parity Gaps (v2.1)
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Scope: Gap register against the reviewed offer architecture ("ConversionSurgery Grand Slam Offer v2.1")
 Objective: Ensure paying-client delivery matches every sold promise.
 
@@ -9,13 +9,17 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: DONE`
 - `P2: DONE`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: MS-15 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: API-wide safe error logging hardening working tree (2026-02-25)`
 
 ## Executive Summary
 The current platform is launch-ready and implementation-complete for reviewed offer parity (`GAP-001..GAP-203`).
 
 Remaining non-code launch dependency:
 - Legal sign-off items listed in `docs/GRAND-SLAM-OFFER.md` Part 10.
+
+Operational continuity hardening (2026-02-25):
+- API failure paths were standardized to centralized safe/sanitized handling across `src/app/api`.
+- `src/app/api` raw `console.error` baseline is now zero.
 
 ## Spec Mapping (One Spec Per Gap)
 

@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: Runtime hardening + kill-switch working tree (2026-02-25)`
+- `LAST_VERIFIED_COMMIT: API-wide safe error logging hardening working tree (2026-02-25)`
 
 ## Executive Status
 
@@ -57,6 +57,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Twilio webhook runtime hardening now uses sanitized internal error telemetry and redacted logging across all Twilio webhook routes and shared Twilio service paths.
 - Operator kill switches now allow immediate containment for outbound automations, Smart Assist auto-send, and Voice AI without code deploy.
 - Solo Reliability Dashboard is now available in `/admin/settings` for hourly triage.
+- API route logging hardening is now complete: `src/app/api` has zero raw `console.error` call sites and uses centralized safe/sanitized error handling paths.
 - Deterministic replay tooling is now available via `./scripts/ops/replay.sh`.
 
 ## Remaining Launch Blockers (Managed Service)

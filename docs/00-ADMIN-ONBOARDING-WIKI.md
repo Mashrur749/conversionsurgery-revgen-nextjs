@@ -3,7 +3,7 @@
 Last updated: 2026-02-25
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
-Last verified commit: `MS-15 Milestone D working tree`
+Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
 
 ## Canonical Order (Read + Execute)
 

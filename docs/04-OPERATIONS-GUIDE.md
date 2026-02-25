@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-25
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `Runtime hardening + kill-switch working tree (2026-02-25)`
+Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -109,6 +109,7 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Claims, sequences, escalations, and analytics API failures should also use the same centralized `safeErrorResponse` path.
 - Public onboarding/signup and client-auth workflow failures should use centralized safe/sanitized logging without raw provider/token/PII leakage.
 - Calendar, team-member, and client conversation/team workflow failures should also use centralized safe/sanitized logging.
+- API routes should have zero raw `console.error`; verify with `rg -n "console\\.error" src/app/api`.
 - If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
 
 ## Deterministic Replay Commands
@@ -141,6 +142,7 @@ Mandatory weekly command set:
 ```bash
 npm run quality:no-regressions
 npm run quality:feature-sweep
+npm run quality:logging-guard
 ```
 
 ## Backup/Export Recovery Drill

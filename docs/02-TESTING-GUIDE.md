@@ -3,7 +3,7 @@
 Last updated: 2026-02-25
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `Runtime hardening + kill-switch working tree (2026-02-25)`
+Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
 
 ## 0. Preflight (Run First)
 
@@ -60,14 +60,12 @@ Stop and fix before continuing if the command fails.
 
 Additional runtime logging sanity check:
 ```bash
-rg -n "console\\.error" src/app/api/cron
-rg -n "console\\.error" src/app/api/leads src/app/api/payments src/app/api/support-messages
-rg -n "console\\.error" src/app/api/claims src/app/api/sequences src/app/api/escalations src/app/api/clients/[id]/analytics src/app/api/clients/[id]/escalation-rules
-rg -n "console\\.error" src/app/api/public src/app/api/client/auth src/app/api/auth/callback src/app/api/media src/app/api/business-hours
-rg -n "console\\.error" src/app/api/calendar src/app/api/team-members src/app/api/client/team src/app/api/client/conversations src/app/api/client/notifications src/app/api/client/billing/invoices
+rg -n "console\\.error" src/app/api
+npm run quality:logging-guard
 ```
 Expected:
-- No matches (high-traffic cron/lead/payment/support/claims/sequences/escalation/analytics/public/auth/media/calendar/team routes should use centralized safe error logging paths).
+- No matches in `src/app/api`.
+- `quality:logging-guard` passes.
 
 ## 2. Sequential Manual Test Run
 

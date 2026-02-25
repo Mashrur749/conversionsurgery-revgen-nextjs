@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `Runtime hardening + kill-switch working tree (2026-02-25)`
+**Last verified commit:** `API-wide safe error logging hardening working tree (2026-02-25)`
 
 ---
 
@@ -272,6 +272,10 @@ Since the original audit window, new managed-service features (Smart Assist work
 21. Calendar/team/conversation route logging hardening (2026-02-25):
    - calendar APIs, team-member management APIs, client conversation actions, client team APIs, and invoice retry/notification APIs now use centralized safe/sanitized error handling paths.
    - raw `console.error` catch logging was removed for these route groups to reduce plaintext leakage and improve consistency.
+   - no auth boundary changes were introduced as part of this logging refactor.
+22. API-wide route logging hardening completion (2026-02-25):
+   - remaining admin client/twilio, flow-template, webhook/form/stripe/ring-group route paths now use sanitized logger helpers or `safeErrorResponse()`.
+   - `src/app/api` now has zero raw `console.error` call sites.
    - no auth boundary changes were introduced as part of this logging refactor.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

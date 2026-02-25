@@ -41,8 +41,8 @@ Status values:
 | `S-003` | Operator | P0 | TODO | Founder | Enforce incident severity + postmortem standard |
 | `S-004` | Operator | P0 | TODO | Founder | Set pilot client/onboarding capacity cap |
 | `S-005` | Developer | P0 | DONE | Founder | Enforce hooks + CI gate coverage |
-| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave I complete: calendar/team/conversation routes migrated; continue remaining direct-route migration |
-| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave I complete: additional operations/team raw logs removed; continue broader API redaction sweep |
+| `S-006` | Developer | P0 | DONE | Founder | Centralized safe error telemetry now covers all API routes; no raw `console.error` remains in `src/app/api` |
+| `S-007` | Developer | P0 | DONE | Founder | Sensitive-log redaction sweep complete for API route error paths with centralized safe handlers |
 | `S-008` | Developer | P1 | DONE | Founder | Global kill switches implemented and documented |
 | `S-009` | Developer | P1 | DONE | Founder | Single deploy + rollback command path documented |
 | `S-010` | Developer | P1 | IN_PROGRESS | Founder | Weekly maintenance budget protocol documented (calendar lock remains operator action) |
@@ -121,6 +121,10 @@ Update rule:
     - client conversations + team management + notification + invoice retry routes
   - Removed raw `console.error` usage from these route groups and replaced with centralized safe/sanitized logging.
   - Validation run: full `quality:no-regressions` green.
+- 2026-02-25 (Wave J):
+  - Completed remaining API logging hardening for admin Twilio, admin clients, flow-templates, Stripe webhook, form webhook, and ring-group webhook routes.
+  - Removed the final raw `console.error` call sites in `src/app/api` (current grep baseline: zero matches).
+  - Validation run: `ms:gate`, `quality:logging-guard`, and full `quality:no-regressions` all green.
 
 ## 4) Must-Do Actions (This Week)
 
@@ -149,12 +153,12 @@ Update rule:
   - Action: ensure hooks are installed and CI runs full sweep.
   - Done when: `npm run quality:install-agent-hooks` completed locally and CI green.
 
-- [ ] `S-006` Centralized Error Telemetry Rollout
+- [x] `S-006` Centralized Error Telemetry Rollout
   - Lens: Developer
   - Action: migrate high-volume cron/webhook/direct routes to shared sanitized internal logging.
   - Done when: top 20 error-prone routes persist errors to `error_log`.
 
-- [ ] `S-007` Sensitive Log Redaction Sweep
+- [x] `S-007` Sensitive Log Redaction Sweep
   - Lens: Developer
   - Action: remove/plaintext-redact message bodies, full phone numbers, tokens, and secrets from logs.
   - Done when: grep audit shows no known sensitive log patterns in hot paths.

@@ -1,8 +1,8 @@
 # Access Management
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Owner: Operations + Engineering
-Last verified commit: `MS-15 Milestone D working tree`
+Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
 
 ## Purpose
 This document is the current source of truth for access control across agency and client portals.
@@ -154,6 +154,10 @@ Permission templates and overrides resolve effective access at runtime.
 2. `PATCH /api/admin/clients/[id]/reminder-routing` requires `agency.clients.edit`.
 - Reminder delivery outcomes are written to existing `audit_log` with client scope (`reminder_delivery_sent`, `reminder_delivery_no_recipient`) and are queryable through existing audit permissions.
 - No new client-portal edit surfaces were introduced for routing policy in this milestone.
+
+## Logging Hardening Access Note (2026-02-25)
+- API-wide error-path logging hardening introduced no new auth or scope surfaces.
+- Route changes were limited to centralized safe/sanitized failure handling behavior.
 
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`
