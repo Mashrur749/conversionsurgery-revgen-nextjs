@@ -6,6 +6,7 @@ import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { canAccessClient, getAgencySession } from '@/lib/permissions';
 import { getClientId } from '@/lib/get-client-id';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -125,8 +126,7 @@ export async function PATCH(
 
     return Response.json({ success: true, member });
   } catch (error) {
-    console.error('[TeamHours] Team member update error:', error);
-    return Response.json({ error: 'Failed to update team member' }, { status: 500 });
+    return safeErrorResponse('[TeamHours][team-member.patch]', error, 'Failed to update team member');
   }
 }
 
@@ -191,7 +191,6 @@ export async function DELETE(
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('[TeamHours] Team member deletion error:', error);
-    return Response.json({ error: 'Failed to delete team member' }, { status: 500 });
+    return safeErrorResponse('[TeamHours][team-member.delete]', error, 'Failed to delete team member');
   }
 }

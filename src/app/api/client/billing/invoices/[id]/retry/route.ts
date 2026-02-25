@@ -4,6 +4,7 @@ import { retryInvoicePayment } from '@/lib/services/subscription-invoices';
 import { getDb } from '@/db';
 import { subscriptionInvoices } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** POST /api/client/billing/invoices/[id]/retry — Retry a failed invoice payment */
 export const POST = portalRoute<{ id: string }>(
@@ -30,8 +31,7 @@ export const POST = portalRoute<{ id: string }>(
       const updated = await retryInvoicePayment(id);
       return NextResponse.json({ success: true, invoice: updated });
     } catch (error) {
-      console.error('[Billing] Invoice retry error:', error);
-      return NextResponse.json({ error: 'Payment retry failed' }, { status: 400 });
+      return safeErrorResponse('[Billing][invoice-retry.post]', error, 'Payment retry failed', 400);
     }
   }
 );

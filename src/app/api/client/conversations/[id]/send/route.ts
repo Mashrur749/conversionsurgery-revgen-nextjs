@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { z } from 'zod';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const sendMessageSchema = z.object({
   message: z.string().min(1, 'Message is required'),
@@ -24,7 +25,6 @@ export const POST = portalRoute<{ id: string }>(
     const validation = sendMessageSchema.safeParse(body);
 
     if (!validation.success) {
-      console.error('[Messaging] Invalid message payload:', validation.error.flatten().fieldErrors);
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.flatten().fieldErrors },
         { status: 400 }
@@ -45,7 +45,6 @@ export const POST = portalRoute<{ id: string }>(
       .limit(1);
 
     if (!lead) {
-      console.error('[Messaging] Lead not found:', id);
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
@@ -56,7 +55,6 @@ export const POST = portalRoute<{ id: string }>(
       .limit(1);
 
     if (!client?.twilioNumber) {
-      console.error('[Messaging] No phone number configured for client:', clientId);
       return NextResponse.json({ error: 'No phone number configured' }, { status: 400 });
     }
 
@@ -105,11 +103,7 @@ export const POST = portalRoute<{ id: string }>(
         },
       });
     } catch (error) {
-      console.error('[Messaging] Failed to send message:', error);
-      return NextResponse.json(
-        { error: 'Failed to send message' },
-        { status: 500 }
-      );
+      return safeErrorResponse('[Messaging][client-conversation.send]', error, 'Failed to send message');
     }
   }
 );

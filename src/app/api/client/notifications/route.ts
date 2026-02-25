@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getNotificationPrefs, updateNotificationPrefs } from '@/lib/services/notification-preferences';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const updateSchema = z.object({
   smsNewLead: z.boolean().optional(),
@@ -28,8 +29,7 @@ export const GET = portalRoute(
       const prefs = await getNotificationPrefs(clientId);
       return NextResponse.json({ prefs });
     } catch (error) {
-      console.error('Get notification prefs error:', error);
-      return NextResponse.json({ error: 'Failed to get preferences' }, { status: 500 });
+      return safeErrorResponse('[ClientNotifications][get]', error, 'Failed to get preferences');
     }
   }
 );

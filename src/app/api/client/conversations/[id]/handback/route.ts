@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { leads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * POST /api/client/conversations/[id]/handback
@@ -31,11 +32,7 @@ export const POST = portalRoute<{ id: string }>(
       console.log('[Messaging] Conversation handback successful:', id);
       return NextResponse.json({ success: true });
     } catch (error) {
-      console.error('[Messaging] Handback failed:', error);
-      return NextResponse.json(
-        { error: 'Failed to hand back conversation' },
-        { status: 500 }
-      );
+      return safeErrorResponse('[Messaging][client-conversation.handback]', error, 'Failed to hand back conversation');
     }
   }
 );

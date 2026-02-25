@@ -14,6 +14,8 @@ import {
   getAddonPricing,
 } from '@/lib/services/addon-pricing';
 import { recordTeamMemberAddonEventForMembership } from '@/lib/services/addon-billing-ledger';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 async function resolveAuthorizedClientId(
   session: { user?: { isAgency?: boolean } } | null,
@@ -57,8 +59,7 @@ export async function GET(req: NextRequest) {
 
     return Response.json({ success: true, members, teamMembers: members });
   } catch (error) {
-    console.error('[TeamHours] Team members fetch error:', error);
-    return Response.json({ error: 'Failed to fetch team members' }, { status: 500 });
+    return safeErrorResponse('[TeamHours][team-members.get]', error, 'Failed to fetch team members');
   }
 }
 
@@ -239,15 +240,17 @@ export async function POST(req: Request) {
 
     if (member.addedForBilling) {
       await recordTeamMemberAddonEventForMembership(clientId, member.id).catch((error) => {
-        console.error('[TeamHours] Failed to record add-on billing event:', error);
+        logSanitizedConsoleError('[TeamHours] Failed to record add-on billing event:', error, {
+          clientId,
+          membershipId: member.id,
+        });
       });
     }
 
     const { addedForBilling: _addedForBilling, ...memberResponse } = member;
     return Response.json({ success: true, member: memberResponse, teamMember: memberResponse });
   } catch (error) {
-    console.error('[TeamHours] Team member creation error:', error);
-    return Response.json({ error: 'Failed to create team member' }, { status: 500 });
+    return safeErrorResponse('[TeamHours][team-members.post]', error, 'Failed to create team member');
   }
 }
 
@@ -290,7 +293,6 @@ export async function DELETE(req: NextRequest) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('[TeamHours] Team member deletion error:', error);
-    return Response.json({ error: 'Failed to delete team member' }, { status: 500 });
+    return safeErrorResponse('[TeamHours][team-members.delete]', error, 'Failed to delete team member');
   }
 }

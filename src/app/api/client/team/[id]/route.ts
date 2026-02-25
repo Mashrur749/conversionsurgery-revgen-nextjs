@@ -8,6 +8,7 @@ import {
   preventEscalation,
   invalidateClientSession,
 } from '@/lib/permissions';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const updateMemberSchema = z
   .object({
@@ -161,11 +162,7 @@ export const PATCH = portalRoute<{ id: string }>(
 
       return NextResponse.json({ success: true });
     } catch (error) {
-      console.error('[ClientTeam PATCH] Error:', error);
-      return NextResponse.json(
-        { error: 'Failed to update team member' },
-        { status: 500 }
-      );
+      return safeErrorResponse('[ClientTeam][team-member.patch]', error, 'Failed to update team member');
     }
   }
 );
@@ -242,11 +239,7 @@ export const DELETE = portalRoute<{ id: string }>(
 
       return NextResponse.json({ success: true });
     } catch (error) {
-      console.error('[ClientTeam DELETE] Error:', error);
-      return NextResponse.json(
-        { error: 'Failed to remove team member' },
-        { status: 500 }
-      );
+      return safeErrorResponse('[ClientTeam][team-member.delete]', error, 'Failed to remove team member');
     }
   }
 );

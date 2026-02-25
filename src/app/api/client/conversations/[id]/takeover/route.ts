@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { leads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * POST /api/client/conversations/[id]/takeover
@@ -32,11 +33,7 @@ export const POST = portalRoute<{ id: string }>(
       console.log('[Messaging] Conversation takeover successful:', id);
       return NextResponse.json({ success: true });
     } catch (error) {
-      console.error('[Messaging] Takeover failed:', error);
-      return NextResponse.json(
-        { error: 'Failed to take over conversation' },
-        { status: 500 }
-      );
+      return safeErrorResponse('[Messaging][client-conversation.takeover]', error, 'Failed to take over conversation');
     }
   }
 );

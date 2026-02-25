@@ -269,5 +269,9 @@ Since the original audit window, new managed-service features (Smart Assist work
    - public onboarding/signup + client auth OTP/business-switching + media and business-hours GET routes now use centralized safe/sanitized error handling.
    - Google callback error paths were migrated to sanitized logger helpers to avoid raw provider error leakage.
    - no auth boundary changes were introduced as part of this logging refactor.
+21. Calendar/team/conversation route logging hardening (2026-02-25):
+   - calendar APIs, team-member management APIs, client conversation actions, client team APIs, and invoice retry/notification APIs now use centralized safe/sanitized error handling paths.
+   - raw `console.error` catch logging was removed for these route groups to reduce plaintext leakage and improve consistency.
+   - no auth boundary changes were introduced as part of this logging refactor.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

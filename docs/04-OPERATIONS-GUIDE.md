@@ -108,6 +108,7 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Lead/payment/support API failures should also appear in `error_log` via `safeErrorResponse` without exposing internal details in API responses.
 - Claims, sequences, escalations, and analytics API failures should also use the same centralized `safeErrorResponse` path.
 - Public onboarding/signup and client-auth workflow failures should use centralized safe/sanitized logging without raw provider/token/PII leakage.
+- Calendar, team-member, and client conversation/team workflow failures should also use centralized safe/sanitized logging.
 - If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
 
 ## Deterministic Replay Commands

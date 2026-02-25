@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { createEvent, getEvents } from '@/lib/services/calendar';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const listEventsQuerySchema = z.object({
   clientId: z.string().uuid('clientId must be a valid UUID'),
@@ -53,11 +54,7 @@ export async function GET(request: NextRequest) {
     const events = await getEvents(clientId, startDate, endDate);
     return NextResponse.json(events);
   } catch (error) {
-    console.error('[Calendar Events GET] Failed to fetch:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch events' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Calendar][events.get]', error, 'Failed to fetch events');
   }
 }
 
@@ -89,10 +86,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ eventId });
   } catch (error) {
-    console.error('[Calendar Events POST] Failed to create:', error);
-    return NextResponse.json(
-      { error: 'Failed to create event' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Calendar][events.post]', error, 'Failed to create event');
   }
 }

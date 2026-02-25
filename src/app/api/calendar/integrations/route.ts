@@ -4,6 +4,7 @@ import { getDb, calendarIntegrations } from '@/db';
 import { eq } from 'drizzle-orm';
 import { getGoogleAuthUrl } from '@/lib/services/calendar';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const listQuerySchema = z.object({
   clientId: z.string().uuid('clientId must be a valid UUID'),
@@ -51,11 +52,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(integrations);
   } catch (error) {
-    console.error('[Calendar Integrations GET] Failed to fetch:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch integrations' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Calendar][integrations.get]', error, 'Failed to fetch integrations');
   }
 }
 
@@ -93,10 +90,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ authUrl });
   } catch (error) {
-    console.error('[Calendar Integrations POST] Failed to start OAuth:', error);
-    return NextResponse.json(
-      { error: 'Failed to start OAuth flow' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Calendar][integrations.post]', error, 'Failed to start OAuth flow');
   }
 }

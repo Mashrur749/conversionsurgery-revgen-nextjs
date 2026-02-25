@@ -41,8 +41,8 @@ Status values:
 | `S-003` | Operator | P0 | TODO | Founder | Enforce incident severity + postmortem standard |
 | `S-004` | Operator | P0 | TODO | Founder | Set pilot client/onboarding capacity cap |
 | `S-005` | Developer | P0 | DONE | Founder | Enforce hooks + CI gate coverage |
-| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave H complete: public/auth/onboarding/media routes migrated; continue remaining direct-route migration |
-| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave H complete: additional auth/public raw logs removed; continue broader API redaction sweep |
+| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave I complete: calendar/team/conversation routes migrated; continue remaining direct-route migration |
+| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave I complete: additional operations/team raw logs removed; continue broader API redaction sweep |
 | `S-008` | Developer | P1 | DONE | Founder | Global kill switches implemented and documented |
 | `S-009` | Developer | P1 | DONE | Founder | Single deploy + rollback command path documented |
 | `S-010` | Developer | P1 | IN_PROGRESS | Founder | Weekly maintenance budget protocol documented (calendar lock remains operator action) |
@@ -113,6 +113,13 @@ Update rule:
     - `/api/client/auth/send-otp`, `/api/client/auth/verify-otp`, `/api/client/auth/select-business`, `/api/client/auth/switch-business`
     - `/api/business-hours` (GET failure path)
   - Replaced raw catch logging in these routes with `safeErrorResponse` and/or sanitized logger usage with bounded context.
+  - Validation run: full `quality:no-regressions` green.
+- 2026-02-25 (Wave I):
+  - Migrated additional ops-heavy API route groups to `safeErrorResponse()`:
+    - calendar routes (`events`, `integrations`, `sync`)
+    - agency team-member routes (`/api/team-members`, `/api/team-members/[id]`)
+    - client conversations + team management + notification + invoice retry routes
+  - Removed raw `console.error` usage from these route groups and replaced with centralized safe/sanitized logging.
   - Validation run: full `quality:no-regressions` green.
 
 ## 4) Must-Do Actions (This Week)

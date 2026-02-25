@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { getDb, calendarIntegrations } from '@/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const paramsSchema = z.object({
   id: z.string().uuid('Integration ID must be a valid UUID'),
@@ -57,10 +58,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Calendar Integration DELETE] Failed to disconnect:', error);
-    return NextResponse.json(
-      { error: 'Failed to disconnect integration' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Calendar][integrations.delete]', error, 'Failed to disconnect integration');
   }
 }

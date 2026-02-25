@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { fullSync } from '@/lib/services/calendar';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const syncSchema = z.object({
   clientId: z.string().uuid('clientId must be a valid UUID'),
@@ -30,10 +31,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(results);
   } catch (error) {
-    console.error('[Calendar Sync POST] Full sync failed:', error);
-    return NextResponse.json(
-      { error: 'Sync failed' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Calendar][sync.post]', error, 'Sync failed');
   }
 }

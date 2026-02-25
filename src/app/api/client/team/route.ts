@@ -12,6 +12,7 @@ import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 import { preventEscalation } from '@/lib/permissions';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { getActiveTeamMemberCount } from '@/lib/services/team-bridge';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/client/team
@@ -49,11 +50,7 @@ export const GET = portalRoute(
 
       return NextResponse.json({ members });
     } catch (error) {
-      console.error('[ClientTeam GET] Error:', error);
-      return NextResponse.json(
-        { error: 'Failed to load team members' },
-        { status: 500 }
-      );
+      return safeErrorResponse('[ClientTeam][team.get]', error, 'Failed to load team members');
     }
   }
 );
@@ -271,11 +268,7 @@ export const POST = portalRoute(
         { status: 201 }
       );
     } catch (error) {
-      console.error('[ClientTeam POST] Error:', error);
-      return NextResponse.json(
-        { error: 'Failed to add team member' },
-        { status: 500 }
-      );
+      return safeErrorResponse('[ClientTeam][team.post]', error, 'Failed to add team member');
     }
   }
 );

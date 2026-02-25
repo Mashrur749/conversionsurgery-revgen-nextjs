@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { roleTemplates } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/client/team/roles
@@ -33,11 +34,7 @@ export const GET = portalRoute(
 
       return NextResponse.json({ roles: filteredTemplates });
     } catch (error) {
-      console.error('[ClientTeamRoles GET] Error:', error);
-      return NextResponse.json(
-        { error: 'Failed to load roles' },
-        { status: 500 }
-      );
+      return safeErrorResponse('[ClientTeam][roles.get]', error, 'Failed to load roles');
     }
   }
 );
