@@ -250,5 +250,8 @@ Since the original audit window, new managed-service features (Smart Assist work
    - emergency kill switches are now supported via secured admin system settings API (`agency.settings.manage`).
    - switches cover outbound automations, Smart Assist auto-send, and Voice AI behavior without requiring emergency code deploys.
    - no new public/auth-bypass surfaces were introduced.
+16. Solo reliability operations surface (2026-02-25):
+   - added agency settings-scoped reliability summary endpoint (`/api/admin/reliability/summary`).
+   - deterministic replay scripts call existing cron secret-protected endpoints; no new unauthenticated operational paths introduced.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

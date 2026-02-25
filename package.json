@@ -33,6 +33,9 @@
     "quality:install-pre-commit-hook": "./scripts/quality/install-pre-commit-hook.sh",
     "quality:install-pre-push-hook": "./scripts/quality/install-pre-push-hook.sh",
     "quality:install-agent-hooks": "./scripts/quality/install-agent-hooks.sh",
+    "ops:replay": "./scripts/ops/replay.sh",
+    "ops:replay:core": "./scripts/ops/replay.sh all-core",
+    "ops:drill:export": "npx tsx scripts/ops/export-recovery-drill.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

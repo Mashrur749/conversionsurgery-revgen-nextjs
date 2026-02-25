@@ -84,6 +84,12 @@ npm run quality:install-agent-hooks
 13. Confirm `GAP-203` is marked done: reminder routing policy can be set from `/admin/clients/<id>` and chain previews + delivery audit entries are visible.
 14. Send legal packet (`12` + `13`) to Canadian counsel and receive written signoff on quiet-hours, guarantees, extension formula, and unlimited clause before first paid contract.
 15. Run `npm run quality:feature-sweep` with a green result before any production release.
+16. Validate deterministic replay and export recovery tooling:
+```bash
+./scripts/ops/replay.sh all-core
+npm run ops:drill:export -- --client-id <client-id>
+```
+17. Confirm `/admin/settings` `Solo Reliability Dashboard` is available and usable for hourly triage.
 
 ## Confidence Criteria (Go/No-Go)
 

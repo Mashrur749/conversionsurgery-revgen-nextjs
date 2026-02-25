@@ -28,6 +28,8 @@ Last verified commit: `Runtime hardening + kill-switch working tree (2026-02-25)
 21. Review reminder delivery audit outcomes (`reminder_delivery_sent`, `reminder_delivery_no_recipient`) and fix routing-policy gaps for any no-recipient cases.
 22. Review internal `error_log` records for new unresolved 5xx issues and triage by `source` + `created_at`.
 23. Verify kill-switch settings in `/admin/settings` are in expected state (`false`) before normal campaign operations.
+24. Review `Solo Reliability Dashboard` in `/admin/settings` and clear top failure clusters before end of day.
+25. Confirm no active client requests are being fulfilled via one-off custom code paths (policy enforcement check).
 
 ## Cron Operations
 
@@ -78,6 +80,9 @@ curl -s "$BASE_URL/api/cron/voice-usage-rollup" \
 
 curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
   -H "Authorization: Bearer $CRON_SECRET"
+
+# Deterministic replay helper (preferred)
+./scripts/ops/replay.sh all-core
 ```
 
 ### Expected behavior
@@ -100,6 +105,75 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Internal appointment/booking reminders resolve recipients via routing policy (owner/assistant/team fallback chain) instead of owner-only assumptions.
 - Twilio webhook failures should appear in `error_log` with redacted context (no full phone numbers/body text/secrets).
 - If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
+
+## Deterministic Replay Commands
+Preferred replay path for critical jobs:
+```bash
+export BASE_URL="http://localhost:3000"
+export CRON_SECRET="<secret>"
+
+./scripts/ops/replay.sh process-scheduled
+./scripts/ops/replay.sh process-queued-compliance
+./scripts/ops/replay.sh report-delivery-retries
+./scripts/ops/replay.sh guarantee-check
+./scripts/ops/replay.sh all-core
+```
+
+Rules:
+- Use replay script commands instead of ad-hoc curl for incident response.
+- Every replay command must return 2xx; otherwise incident stays open.
+
+## Weekly Maintenance Budget (Solo)
+Reserve protected engineering maintenance time every week:
+- Minimum: `4 hours/week` in one protected block (or two 2-hour blocks).
+- Focus only on:
+  - reliability fixes
+  - refactors
+  - test expansion
+  - documentation synchronization
+
+Mandatory weekly command set:
+```bash
+npm run quality:no-regressions
+npm run quality:feature-sweep
+```
+
+## Backup/Export Recovery Drill
+Run once per week for one pilot client:
+```bash
+npm run ops:drill:export -- --client-id <client-id>
+```
+
+Success criteria:
+- export bundle builds successfully
+- required sections exist (`leads.csv`, `conversations.csv`, `pipeline_jobs.csv`)
+- drill result is logged in weekly notes
+
+## Alert Compression Policy (Solo)
+- `Sev1`: immediate response, no batching.
+- `Sev2/Sev3`: triage in hourly digest windows via `Solo Reliability Dashboard`.
+- Do not send immediate notifications for non-Sev1 unless legal/compliance breach risk exists.
+
+Hourly digest sweep:
+1. Open `/admin/settings` -> `Solo Reliability Dashboard`.
+2. Triage by this order:
+   - failed/stale cron jobs
+   - unresolved internal errors
+   - report delivery failures
+   - escalation SLA breaches
+3. Execute replay commands for affected pipelines.
+
+## No-Custom-Code Client Policy
+Do not ship one-off code for a single client.
+
+Required approach:
+- solve with reusable settings, templates, role permissions, or policy flags
+- document behavior in operations/testing docs in same commit
+
+Reject requests that require:
+- hardcoded client IDs in logic
+- private fork behavior in main codebase
+- hidden behavior toggles without documented policy keys
 
 ## Access Management Operations
 

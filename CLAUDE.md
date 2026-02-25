@@ -135,6 +135,7 @@ Two-tier verification protocol (mandatory):
 - Run `db:push` or `db:migrate` without explicit user confirmation
 - Modify `package-lock.json` or `node_modules/`
 - Skip admin auth checks on `/api/admin/*` routes
+- Implement one-off client-specific code paths; always use reusable config/policy/template mechanisms
 - Use `any` TypeScript type — always use proper types. Use schema-inferred types (`Lead`, `Client`, etc.), generic parameters, `unknown` with type guards, or explicit interfaces. Zero tolerance for `any`.
 - Use literal quotes in JSX text content — use HTML character entity references instead:
   - `'` → `&apos;` (or `&rsquo;` for curly)

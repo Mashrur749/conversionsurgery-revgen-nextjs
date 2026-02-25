@@ -75,3 +75,17 @@ This runs build + full tests + extended runtime smoke profile (`SMOKE_PROFILE=fu
 
 ### Blocker rule
 - If any gate fails, stop, fix root cause, and re-run the same gate until green.
+
+## No-Custom-Code Policy (Mandatory)
+
+For managed service delivery, do not ship one-off client-specific code paths.
+
+Allowed:
+- Reusable capabilities behind tenant config, role templates, or policy settings.
+- Generic automation templates applicable to multiple clients.
+- Feature flags/system settings with documented defaults and guardrails.
+
+Not allowed:
+- Hardcoded client IDs/names/phones in logic.
+- Branches that change behavior for a single client without reusable policy controls.
+- Private per-client forks in this repository.

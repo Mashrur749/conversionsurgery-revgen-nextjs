@@ -45,13 +45,13 @@ Status values:
 | `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave A complete: redaction on Twilio hot paths + guardrails |
 | `S-008` | Developer | P1 | DONE | Founder | Global kill switches implemented and documented |
 | `S-009` | Developer | P1 | DONE | Founder | Single deploy + rollback command path documented |
-| `S-010` | Developer | P1 | TODO | Founder | Protect weekly maintenance budget |
-| `S-011` | Both | P1 | TODO | Founder | Run backup/export recovery drill |
-| `S-012` | Both | P1 | TODO | Founder | Enforce no-custom-code client policy |
-| `S-013` | Developer | P2 | TODO | Founder | Build solo reliability dashboard |
-| `S-014` | Operator | P2 | TODO | Founder | Implement alert compression policy |
-| `S-015` | Developer | P2 | TODO | Founder | Ensure deterministic replay commands |
-| `S-016` | Both | P2 | TODO | Founder | Define pilot exit criteria for paid scale |
+| `S-010` | Developer | P1 | IN_PROGRESS | Founder | Weekly maintenance budget protocol documented (calendar lock remains operator action) |
+| `S-011` | Both | P1 | DONE | Founder | Export recovery drill command + validation script implemented |
+| `S-012` | Both | P1 | DONE | Founder | No-custom-code policy codified in agent + operations docs |
+| `S-013` | Developer | P2 | DONE | Founder | Solo reliability dashboard shipped in admin settings |
+| `S-014` | Operator | P2 | DONE | Founder | Alert compression policy documented with hourly digest triage workflow |
+| `S-015` | Developer | P2 | DONE | Founder | Deterministic replay command system shipped |
+| `S-016` | Both | P2 | DONE | Founder | Pilot exit criteria documented in launch readiness |
 
 Update rule:
 - Update this board in the same commit whenever any item status changes.
@@ -78,6 +78,12 @@ Update rule:
   - Standardized one deploy path and one rollback path in `04-OPERATIONS-GUIDE.md`.
   - Deploy path: `quality:feature-sweep` -> `cf:deploy` -> `wrangler deployments status`.
   - Rollback path: `wrangler versions list` -> `wrangler versions deploy <version-id>@100`.
+- 2026-02-25 (Wave D):
+  - Added `Solo Reliability Dashboard` to `/admin/settings` with aggregated high-signal runtime/ops metrics.
+  - Added deterministic replay tooling: `./scripts/ops/replay.sh` + npm aliases (`ops:replay`, `ops:replay:core`).
+  - Added export recovery drill script: `npm run ops:drill:export -- --client-id <client-id>`.
+  - Added policy guardrail for no-client-specific code in `AGENTS.md` and `CLAUDE.md`.
+  - Added pilot exit criteria to launch readiness docs.
 
 ## 4) Must-Do Actions (This Week)
 
@@ -131,28 +137,28 @@ Update rule:
   - Action: reserve weekly hardening time (tests, refactors, debt cleanup) even during sales push.
   - Done when: recurring weekly block is active and protected.
 
-- [ ] `S-011` Backup/Export Recovery Drill
+- [x] `S-011` Backup/Export Recovery Drill
   - Lens: Both
   - Action: run one export + restore validation drill for client data.
   - Done when: drill completed and restore timing is recorded.
 
-- [ ] `S-012` No-Custom-Code Client Policy
+- [x] `S-012` No-Custom-Code Client Policy
   - Lens: Both
   - Action: reject one-off client code changes unless they become reusable platform capability.
   - Done when: policy is documented and applied to all new requests.
 
 ## 5) Next 30 Days (Scale-Safe Additions)
 
-- [ ] `S-013` Solo Reliability Dashboard
+- [x] `S-013` Solo Reliability Dashboard
   - One page: failed cron jobs, webhook failures, unresolved escalations, report delivery failures, error-log trends.
 
-- [ ] `S-014` Alert Compression
+- [x] `S-014` Alert Compression
   - Hourly digest for warnings; immediate alerts only for Sev1.
 
-- [ ] `S-015` Deterministic Replay Commands
+- [x] `S-015` Deterministic Replay Commands
   - Every critical pipeline has a verified manual replay command and runbook step.
 
-- [ ] `S-016` Pilot Exit Criteria
+- [x] `S-016` Pilot Exit Criteria
   - Move from pilot to paid scale only after defined reliability and support-load thresholds are met for 2+ weeks.
 
 ## 6) Weekly Solo Review (30 Minutes)

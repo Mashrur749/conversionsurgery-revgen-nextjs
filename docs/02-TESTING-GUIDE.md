@@ -456,6 +456,42 @@ Expected:
 - No plaintext message bodies, full phone numbers, or secrets are present in logged fields.
 - Route still returns safe/generic response body to caller.
 
+### Step 21: Solo reliability dashboard validation
+1. Open `/admin/settings`.
+2. Confirm `Solo Reliability Dashboard` renders without permission/API errors.
+3. Click `Refresh` and verify snapshot updates.
+4. Validate cards and sections show:
+- failed/stale cron jobs
+- webhook failures (24h)
+- open escalations + SLA breaches
+- report delivery failure counts
+- unresolved internal errors + top sources
+
+Expected:
+- Data loads successfully for agency admin users with settings access.
+- Dashboard is usable as an hourly triage cockpit.
+
+### Step 22: Deterministic replay tooling validation
+Run:
+```bash
+export CRON_SECRET="<secret>"
+./scripts/ops/replay.sh all-core
+```
+
+Expected:
+- Every replay call returns 2xx.
+- Script exits non-zero on any failed job.
+
+### Step 23: Export recovery drill validation
+Run:
+```bash
+npm run ops:drill:export -- --client-id <client-id>
+```
+
+Expected:
+- Script exits successfully.
+- Output confirms required bundle sections: `leads.csv`, `conversations.csv`, `pipeline_jobs.csv`.
+
 ## 3. Useful Commands
 
 ```bash
@@ -478,6 +514,7 @@ npx vitest run src/lib/services/cancellation-policy.test.ts src/lib/services/dat
 npx vitest run src/lib/services/knowledge-gap-validation.test.ts src/lib/services/knowledge-gap-queue.test.ts
 npx vitest run src/lib/services/onboarding-quality.test.ts src/lib/services/reminder-routing.test.ts
 npx vitest run src/lib/services/internal-error-log.test.ts
+npx vitest run src/lib/services/ops-kill-switches.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
@@ -490,6 +527,13 @@ curl -i http://localhost:3000/api/cron/onboarding-sla-check -H "Authorization: B
 curl -i http://localhost:3000/api/cron/quarterly-campaign-planner -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/quarterly-campaign-alerts -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/knowledge-gap-alerts -H "Authorization: Bearer $CRON_SECRET"
+
+# Deterministic replay helpers
+./scripts/ops/replay.sh all-core
+./scripts/ops/replay.sh report-delivery-retries
+
+# Export recovery drill
+npm run ops:drill:export -- --client-id <client-id>
 ```
 
 ## 4. Release Gate

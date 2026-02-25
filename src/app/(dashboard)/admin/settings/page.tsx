@@ -5,6 +5,7 @@ import { systemSettings } from '@/db/schema';
 import { asc } from 'drizzle-orm';
 import { SystemSettingsManager } from './settings-manager';
 import { CronCatchupManager } from './cron-catchup-manager';
+import { ReliabilityDashboard } from './reliability-dashboard';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,7 @@ export default async function SystemSettingsPage() {
         <h1 className="text-2xl font-bold">System Settings</h1>
         <p className="text-muted-foreground">Global configuration for the platform</p>
       </div>
+      <ReliabilityDashboard />
       <CronCatchupManager />
       <SystemSettingsManager settings={settings} />
     </div>

@@ -94,6 +94,12 @@ Run these drills on a staging/test environment:
 - Simulate missed monthly/bi-weekly windows by setting cursor to an older period in staging.
 - Run `/api/cron/monthly-reset` and `/api/cron/biweekly-reports`.
 - Confirm cursor/backlog transitions in `/admin/settings` and idempotent replay on rerun.
+8. Deterministic replay drill:
+- Run `./scripts/ops/replay.sh all-core`.
+- Confirm every replayed endpoint returns 2xx and no silent failures.
+9. Export recovery drill:
+- Run `npm run ops:drill:export -- --client-id <client-id>`.
+- Confirm bundle validation passes and includes required datasets.
 
 Exit gate:
 - You can diagnose and restore each drill without engineering help.
@@ -170,6 +176,10 @@ Exit gate:
 19. Knowledge Gap Queue reviewed (open vs closed trend, stale high-priority count, ownership coverage).
 20. Onboarding quality gate failures reviewed and unresolved override paths triaged.
 21. Reminder routing delivery audit entries reviewed for no-recipient/fallback anomalies.
+22. `Solo Reliability Dashboard` reviewed at least once during operating hours.
+23. Deterministic replay tooling validated after incidents (`./scripts/ops/replay.sh all-core`).
+24. Weekly export recovery drill passed (`npm run ops:drill:export -- --client-id <client-id>`).
+25. No active one-off client-specific code exceptions in delivery paths.
 
 ## Core References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`

@@ -60,6 +60,7 @@ Current offer-parity note:
 - Reminder recipient routing policy with owner/assistant/team fallback chain, de-duplication, and delivery audit visibility.
 - Twilio webhook observability hardening: centralized internal error telemetry and sanitized logging across webhook + Twilio client service paths.
 - Operator containment controls: kill switches for outbound automations, Smart Assist auto-send, and Voice AI via system settings.
+- Solo reliability operations hardening: `/admin/settings` reliability dashboard + deterministic replay script + export recovery drill tooling.
 
 ## Tracking Rule
 Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `99-ARCHIVE-SYSTEM-BLOCKERS.md` archive form.

@@ -56,6 +56,8 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Reminder routing now supports role-based primary/fallback/secondary recipients with policy UI and delivery audit events.
 - Twilio webhook runtime hardening now uses sanitized internal error telemetry and redacted logging across all Twilio webhook routes and shared Twilio service paths.
 - Operator kill switches now allow immediate containment for outbound automations, Smart Assist auto-send, and Voice AI without code deploy.
+- Solo Reliability Dashboard is now available in `/admin/settings` for hourly triage.
+- Deterministic replay tooling is now available via `./scripts/ops/replay.sh`.
 
 ## Remaining Launch Blockers (Managed Service)
 
@@ -95,6 +97,15 @@ Release only when all are true:
 - Test suite + build pass in CI for release commit.
 - Ops runbook validated by one dry-run incident simulation.
 - One full onboarding dry run from create client -> number -> first lead -> report.
+
+## Pilot Exit Criteria (Pilot -> Paid Scale)
+All must be true for at least 2 consecutive weeks:
+1. `quality:feature-sweep` passes on every release commit.
+2. No unresolved Sev1 incident older than 24 hours.
+3. Cron stale backlog count for tracked jobs remains zero after daily checks.
+4. Export recovery drill passes weekly.
+5. No active one-off client-specific code exceptions in production path.
+6. Solo operator can complete daily operations checklist in <= 30 minutes.
 
 ## SaaS Positioning (Next Phase)
 - Keep managed-service defaults but expose controlled self-serve paths behind feature flags.
