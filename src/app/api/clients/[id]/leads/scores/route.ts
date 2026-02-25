@@ -4,7 +4,7 @@ import { scoreClientLeads, getLeadsByTemperature } from '@/lib/services/lead-sco
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { eq, sql } from 'drizzle-orm';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/clients/[id]/leads/scores - Get score distribution and top hot leads for a client. */
 export async function GET(
@@ -39,8 +39,7 @@ export async function GET(
       hotLeads: hotLeads.slice(0, 10),
     });
   } catch (error) {
-    console.error('[LeadManagement] Get score distribution error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[LeadManagement][client-scores.get]', error, 'Failed');
   }
 }
 
@@ -64,7 +63,6 @@ export async function POST(
     const result = await scoreClientLeads(id, { useAI });
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[LeadManagement] Batch rescore error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[LeadManagement][client-scores.post]', error, 'Failed');
   }
 }

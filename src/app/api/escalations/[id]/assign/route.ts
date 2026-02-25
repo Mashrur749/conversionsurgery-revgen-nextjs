@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { assignEscalation } from '@/lib/services/escalation';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function POST(
   request: NextRequest,
@@ -25,7 +26,6 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Escalation API] Error assigning:', error);
-    return NextResponse.json({ error: 'Failed to assign escalation' }, { status: 500 });
+    return safeErrorResponse('[Escalation API][assign.post]', error, 'Failed to assign escalation');
   }
 }

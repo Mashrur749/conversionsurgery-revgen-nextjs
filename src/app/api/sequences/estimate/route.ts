@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getClientSession } from '@/lib/client-auth';
 import { triggerEstimateFollowup } from '@/lib/services/estimate-triggers';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const schema = z.object({
   leadId: z.string().uuid(),
@@ -37,7 +38,6 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[Payments] Estimate followup error:', error);
-    return NextResponse.json({ error: 'Failed to start sequence' }, { status: 500 });
+    return safeErrorResponse('[Sequences][estimate.post]', error, 'Failed to start sequence');
   }
 }

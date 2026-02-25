@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getClientOutcomes } from '@/lib/services/flow-metrics';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/clients/[id]/outcomes
@@ -26,10 +26,6 @@ export async function GET(
     const outcomes = await getClientOutcomes(id, period);
     return NextResponse.json(outcomes);
   } catch (error) {
-    console.error('[FlowEngine] Failed to fetch client outcomes:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch client outcomes' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[FlowEngine][client-outcomes]', error, 'Failed to fetch client outcomes');
   }
 }

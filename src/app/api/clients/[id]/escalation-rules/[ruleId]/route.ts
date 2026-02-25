@@ -3,7 +3,7 @@ import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permiss
 import { getDb, escalationRules } from '@/db';
 import { type NewEscalationRule } from '@/db/schema/escalation-rules';
 import { eq, and } from 'drizzle-orm';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 // PUT - Update rule
 export async function PUT(
@@ -49,8 +49,7 @@ export async function PUT(
 
     return NextResponse.json(rule);
   } catch (error) {
-    console.error('[Escalation Rules API] Error updating:', error);
-    return NextResponse.json({ error: 'Failed to update rule' }, { status: 500 });
+    return safeErrorResponse('[EscalationRules][update]', error, 'Failed to update rule');
   }
 }
 
@@ -79,7 +78,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Escalation Rules API] Error deleting:', error);
-    return NextResponse.json({ error: 'Failed to delete rule' }, { status: 500 });
+    return safeErrorResponse('[EscalationRules][delete]', error, 'Failed to delete rule');
   }
 }

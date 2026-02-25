@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { claimEscalation } from '@/lib/services/team-escalation';
 import { getTeamMembers } from '@/lib/services/team-bridge';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * POST /api/claims/claim
@@ -47,7 +48,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[Claims Claim API] Error:', error);
-    return NextResponse.json({ error: 'Failed to claim escalation' }, { status: 500 });
+    return safeErrorResponse('[Claims API][claim]', error, 'Failed to claim escalation');
   }
 }

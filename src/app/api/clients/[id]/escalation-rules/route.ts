@@ -3,7 +3,7 @@ import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permiss
 import { getDb, escalationRules } from '@/db';
 import { type NewEscalationRule } from '@/db/schema/escalation-rules';
 import { eq, asc } from 'drizzle-orm';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 // GET - List all rules for a client
 export async function GET(
@@ -29,8 +29,7 @@ export async function GET(
 
     return NextResponse.json(rules);
   } catch (error) {
-    console.error('[Escalation Rules API] Error listing:', error);
-    return NextResponse.json({ error: 'Failed to fetch rules' }, { status: 500 });
+    return safeErrorResponse('[EscalationRules][list]', error, 'Failed to fetch rules');
   }
 }
 
@@ -71,7 +70,6 @@ export async function POST(
 
     return NextResponse.json(rule);
   } catch (error) {
-    console.error('[Escalation Rules API] Error creating:', error);
-    return NextResponse.json({ error: 'Failed to create rule' }, { status: 500 });
+    return safeErrorResponse('[EscalationRules][create]', error, 'Failed to create rule');
   }
 }

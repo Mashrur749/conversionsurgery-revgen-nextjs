@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { resolveEscalation } from '@/lib/services/escalation';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function POST(
   request: NextRequest,
@@ -30,7 +31,6 @@ export async function POST(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[Escalation API] Error resolving:', error);
-    return NextResponse.json({ error: 'Failed to resolve escalation' }, { status: 500 });
+    return safeErrorResponse('[Escalation API][resolve.post]', error, 'Failed to resolve escalation');
   }
 }

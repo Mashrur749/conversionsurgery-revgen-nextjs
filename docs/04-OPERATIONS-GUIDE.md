@@ -106,6 +106,7 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Twilio webhook failures should appear in `error_log` with redacted context (no full phone numbers/body text/secrets).
 - Cron endpoint failures should also appear in `error_log` via `safeErrorResponse` with sanitized context (no raw stack/body leakage).
 - Lead/payment/support API failures should also appear in `error_log` via `safeErrorResponse` without exposing internal details in API responses.
+- Claims, sequences, escalations, and analytics API failures should also use the same centralized `safeErrorResponse` path.
 - If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
 
 ## Deterministic Replay Commands

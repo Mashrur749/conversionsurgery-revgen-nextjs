@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getClientDashboardSummary } from '@/lib/services/analytics-queries';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(
   request: NextRequest,
@@ -19,7 +19,6 @@ export async function GET(
     const summary = await getClientDashboardSummary(clientId);
     return NextResponse.json(summary);
   } catch (error) {
-    console.error('[Analytics] Error fetching dashboard summary:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return safeErrorResponse('[Analytics][dashboard-summary]', error, 'Internal server error');
   }
 }

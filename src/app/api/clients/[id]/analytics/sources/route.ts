@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getLeadSourceBreakdown } from '@/lib/services/analytics-queries';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(
   request: NextRequest,
@@ -23,8 +23,7 @@ export async function GET(
     const sources = await getLeadSourceBreakdown(clientId, startDate, endDate);
     return NextResponse.json(sources);
   } catch (error) {
-    console.error('[Analytics] Error fetching sources:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return safeErrorResponse('[Analytics][sources]', error, 'Internal server error');
   }
 }
 

@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { getEscalationQueue } from '@/lib/services/escalation';
 import { getDb, escalationQueue } from '@/db';
 import { eq, and, or, sql } from 'drizzle-orm';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -68,7 +69,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ queue, summary });
   } catch (error) {
-    console.error('[Escalation API] Error fetching queue:', error);
-    return NextResponse.json({ error: 'Failed to fetch escalation queue' }, { status: 500 });
+    return safeErrorResponse('[Escalation API][queue.get]', error, 'Failed to fetch escalation queue');
   }
 }

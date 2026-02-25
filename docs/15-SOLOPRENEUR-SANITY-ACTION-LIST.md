@@ -41,8 +41,8 @@ Status values:
 | `S-003` | Operator | P0 | TODO | Founder | Enforce incident severity + postmortem standard |
 | `S-004` | Operator | P0 | TODO | Founder | Set pilot client/onboarding capacity cap |
 | `S-005` | Developer | P0 | DONE | Founder | Enforce hooks + CI gate coverage |
-| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave F complete: leads/payments/support routes migrated; continue remaining direct-route migration |
-| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave F complete: high-traffic non-cron raw error logs removed; continue broader API redaction sweep |
+| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave G complete: claims/sequences/escalations/analytics migrated; continue remaining direct-route migration |
+| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave G complete: additional core API raw logs removed; continue broader API redaction sweep |
 | `S-008` | Developer | P1 | DONE | Founder | Global kill switches implemented and documented |
 | `S-009` | Developer | P1 | DONE | Founder | Single deploy + rollback command path documented |
 | `S-010` | Developer | P1 | IN_PROGRESS | Founder | Weekly maintenance budget protocol documented (calendar lock remains operator action) |
@@ -96,6 +96,14 @@ Update rule:
     - `/api/payments`, `/api/payments/[id]/send`
     - `/api/support-messages`, `/api/support-messages/[id]`, `/api/support-messages/[id]/replies`
   - Removed raw `console.error` from the above routes and standardized generic client-safe error responses.
+  - Validation run: full `quality:no-regressions` green.
+- 2026-02-25 (Wave G):
+  - Migrated additional core API route groups to `safeErrorResponse()`:
+    - claims + claim endpoints
+    - sequence endpoints (`appointment`, `cancel`, `estimate`, `payment`, `review`)
+    - escalation queue/detail/action endpoints
+    - client analytics/outcomes/scores/escalation-rules endpoints
+  - Removed raw `console.error` from the above catch paths and standardized generic external error responses.
   - Validation run: full `quality:no-regressions` green.
 
 ## 4) Must-Do Actions (This Week)

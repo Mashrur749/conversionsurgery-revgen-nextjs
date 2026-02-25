@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getClientSession } from '@/lib/client-auth';
 import { scheduleAppointmentReminders } from '@/lib/automations/appointment-reminder';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const schema = z.object({
   leadId: z.string().uuid(),
@@ -44,7 +45,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[AppointmentSystem] Appointment error:', error);
-    return NextResponse.json({ error: 'Failed to schedule' }, { status: 500 });
+    return safeErrorResponse('[Sequences][appointment.post]', error, 'Failed to schedule');
   }
 }

@@ -3,6 +3,7 @@ import { getClientSession } from '@/lib/client-auth';
 import { getDb, scheduledMessages } from '@/db';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const schema = z.object({
   leadId: z.string().uuid(),
@@ -75,7 +76,6 @@ export async function POST(request: NextRequest) {
       cancelledCount: result.length,
     });
   } catch (error) {
-    console.error('[AppointmentSystem] Cancel sequence error:', error);
-    return NextResponse.json({ error: 'Failed to cancel' }, { status: 500 });
+    return safeErrorResponse('[Sequences][cancel.post]', error, 'Failed to cancel');
   }
 }

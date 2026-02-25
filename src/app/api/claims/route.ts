@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { escalationClaims, leads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/claims
@@ -46,7 +47,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ claims });
   } catch (error) {
-    console.error('[Claims API] Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch claims' }, { status: 500 });
+    return safeErrorResponse('[Claims API][list]', error, 'Failed to fetch claims');
   }
 }

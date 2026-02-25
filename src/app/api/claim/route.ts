@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { claimEscalation } from '@/lib/services/team-escalation';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const schema = z.object({
   token: z.string().min(1),
@@ -19,7 +20,6 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ success: false, error: 'Invalid input' }, { status: 400 });
     }
-    console.error('Claim error:', error);
-    return NextResponse.json({ success: false, error: 'Failed to claim' }, { status: 500 });
+    return safeErrorResponse('Claim', error, 'Failed to claim');
   }
 }

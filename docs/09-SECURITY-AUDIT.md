@@ -261,5 +261,9 @@ Since the original audit window, new managed-service features (Smart Assist work
    - lead management, payments, and support-message API routes now use `safeErrorResponse()` on catch/failure paths.
    - raw `console.error` calls were removed from these routes to reduce plaintext error leakage risk.
    - no auth boundary changes were introduced as part of this logging refactor.
+19. Core workflow route logging hardening (2026-02-25):
+   - claims, sequence automations, escalation actions, and client analytics/escalation-rules APIs now route failures through `safeErrorResponse()`.
+   - raw `console.error` catch logging was removed from these route groups and replaced with sanitized centralized error handling.
+   - no auth boundary changes were introduced as part of this logging refactor.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

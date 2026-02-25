@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getClientSession } from '@/lib/client-auth';
 import { startPaymentReminder, markInvoicePaid } from '@/lib/automations/payment-reminder';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const createSchema = z.object({
   leadId: z.string().uuid(),
@@ -41,8 +42,7 @@ export async function POST(request: NextRequest) {
     const result = await startPaymentReminder({ ...data, clientId });
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[Payments] Payment reminder error:', error);
-    return NextResponse.json({ error: 'Failed to start sequence' }, { status: 500 });
+    return safeErrorResponse('[Sequences][payment.post]', error, 'Failed to start sequence');
   }
 }
 
@@ -70,7 +70,6 @@ export async function PATCH(request: NextRequest) {
     const result = await markInvoicePaid(invoiceId);
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[Payments] Mark paid error:', error);
-    return NextResponse.json({ error: 'Failed to mark paid' }, { status: 500 });
+    return safeErrorResponse('[Sequences][payment.patch]', error, 'Failed to mark paid');
   }
 }

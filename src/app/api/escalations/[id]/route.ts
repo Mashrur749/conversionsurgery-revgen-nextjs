@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { getDb, escalationQueue, leads, conversations } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import { getTeamMemberById } from '@/lib/services/team-bridge';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(
   request: NextRequest,
@@ -55,7 +56,6 @@ export async function GET(
       assignee,
     });
   } catch (error) {
-    console.error('[Escalation API] Error fetching detail:', error);
-    return NextResponse.json({ error: 'Failed to fetch escalation' }, { status: 500 });
+    return safeErrorResponse('[Escalation API][detail.get]', error, 'Failed to fetch escalation');
   }
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAgencyClientPermission, AGENCY_PERMISSIONS } from '@/lib/permissions';
 import { getDb, analyticsMonthly, clients } from '@/db';
 import { eq, desc } from 'drizzle-orm';
-import { permissionErrorResponse } from '@/lib/utils/api-errors';
+import { permissionErrorResponse, safeErrorResponse } from '@/lib/utils/api-errors';
 
 export async function GET(
   request: NextRequest,
@@ -86,10 +86,6 @@ export async function GET(
       data,
     });
   } catch (error) {
-    console.error('[Analytics Export] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Analytics][export]', error, 'Internal server error');
   }
 }
