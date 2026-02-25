@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getLeadMedia } from '@/lib/services/media';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const paramsSchema = z.object({
   id: z.string().uuid('Invalid lead ID'),
@@ -29,8 +30,7 @@ export async function GET(
     const { id } = parsed.data;
     const media = await getLeadMedia(id);
     return NextResponse.json(media);
-  } catch (err) {
-    console.error('[Media API] GET /api/leads/[id]/media error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (error) {
+    return safeErrorResponse('[Media API][leads.media.get]', error, 'Internal server error');
   }
 }

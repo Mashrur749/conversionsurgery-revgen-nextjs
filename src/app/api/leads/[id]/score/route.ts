@@ -4,6 +4,7 @@ import { scoreLead } from '@/lib/services/lead-scoring';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { eq } from 'drizzle-orm';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** GET /api/leads/[id]/score - Retrieve the current score and factors for a lead. */
 export async function GET(
@@ -37,8 +38,7 @@ export async function GET(
 
     return NextResponse.json(lead[0]);
   } catch (error) {
-    console.error('[LeadManagement] Get lead score error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[LeadManagement][leads.score.get]', error, 'Failed');
   }
 }
 
@@ -60,7 +60,6 @@ export async function POST(
     const result = await scoreLead(id, { useAI });
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[LeadManagement] Recalculate lead score error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[LeadManagement][leads.score.post]', error, 'Failed');
   }
 }

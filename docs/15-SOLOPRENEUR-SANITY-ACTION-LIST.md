@@ -41,8 +41,8 @@ Status values:
 | `S-003` | Operator | P0 | TODO | Founder | Enforce incident severity + postmortem standard |
 | `S-004` | Operator | P0 | TODO | Founder | Set pilot client/onboarding capacity cap |
 | `S-005` | Developer | P0 | DONE | Founder | Enforce hooks + CI gate coverage |
-| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave E complete: cron routes migrated to safe error telemetry; continue direct-route migration |
-| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave E complete: cron route raw error logs removed; continue non-cron redaction sweep |
+| `S-006` | Developer | P0 | IN_PROGRESS | Founder | Wave F complete: leads/payments/support routes migrated; continue remaining direct-route migration |
+| `S-007` | Developer | P0 | IN_PROGRESS | Founder | Wave F complete: high-traffic non-cron raw error logs removed; continue broader API redaction sweep |
 | `S-008` | Developer | P1 | DONE | Founder | Global kill switches implemented and documented |
 | `S-009` | Developer | P1 | DONE | Founder | Single deploy + rollback command path documented |
 | `S-010` | Developer | P1 | IN_PROGRESS | Founder | Weekly maintenance budget protocol documented (calendar lock remains operator action) |
@@ -90,6 +90,13 @@ Update rule:
   - Normalized cron auth checks to `verifyCronSecret()` on no-show and win-back routes.
   - Reduced sensitive runtime logging from missed-call polling path (no raw Twilio to/from dumps).
   - Validation run: `ms:gate`, `quality:logging-guard`, and full `quality:no-regressions` green.
+- 2026-02-25 (Wave F):
+  - Migrated high-traffic direct routes to centralized safe telemetry:
+    - `/api/leads/[id]`, `/api/leads/[id]/reply`, `/api/leads/[id]/score`, `/api/leads/[id]/media`
+    - `/api/payments`, `/api/payments/[id]/send`
+    - `/api/support-messages`, `/api/support-messages/[id]`, `/api/support-messages/[id]/replies`
+  - Removed raw `console.error` from the above routes and standardized generic client-safe error responses.
+  - Validation run: full `quality:no-regressions` green.
 
 ## 4) Must-Do Actions (This Week)
 

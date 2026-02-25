@@ -5,6 +5,7 @@ import { payments } from '@/db/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { createPaymentLink, createInvoiceWithLink } from '@/lib/services/stripe';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * GET /api/payments - List payments for a client or lead
@@ -94,10 +95,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[Payments] Create error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create payment' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Payments][payments.post]', error, 'Failed to create payment');
   }
 }

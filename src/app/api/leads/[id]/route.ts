@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const leadUpdateSchema = z.object({
   status: z.string().max(50).optional(),
@@ -63,7 +64,6 @@ export async function PATCH(
 
     return NextResponse.json(updated[0]);
   } catch (error) {
-    console.error('[LeadManagement] Update lead error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[LeadManagement][leads.patch]', error, 'Failed');
   }
 }

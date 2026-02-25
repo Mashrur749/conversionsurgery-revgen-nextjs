@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/services/resend';
 import { sendSlackSupportNotification } from '@/lib/services/slack';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const replySchema = z.object({
   content: z.string().min(1).max(5000),
@@ -114,10 +115,6 @@ export async function POST(
         { status: 400 }
       );
     }
-    console.error('[Support Replies API] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to post reply' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[SupportMessages][replies.post]', error, 'Failed to post reply');
   }
 }

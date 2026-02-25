@@ -7,6 +7,7 @@ import { conversations } from '@/db/schema/conversations';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const replySchema = z.object({
   message: z.string().min(1).max(1600),
@@ -107,7 +108,6 @@ export async function POST(
 
     return NextResponse.json({ success: true, sid: sendResult.messageSid });
   } catch (error) {
-    console.error('[LeadManagement] Reply error:', error);
-    return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    return safeErrorResponse('[LeadManagement][leads.reply]', error, 'Failed');
   }
 }

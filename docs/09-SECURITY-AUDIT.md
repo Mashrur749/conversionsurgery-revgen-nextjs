@@ -257,5 +257,9 @@ Since the original audit window, new managed-service features (Smart Assist work
    - cron route catch handlers now use centralized `safeErrorResponse()` for internal error telemetry and generic external responses.
    - direct raw `console.error` usage was removed from `/api/cron/*` route files in favor of sanitized logging helpers.
    - no auth boundary changes were introduced as part of this logging refactor.
+18. High-traffic direct route logging hardening (2026-02-25):
+   - lead management, payments, and support-message API routes now use `safeErrorResponse()` on catch/failure paths.
+   - raw `console.error` calls were removed from these routes to reduce plaintext error leakage risk.
+   - no auth boundary changes were introduced as part of this logging refactor.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

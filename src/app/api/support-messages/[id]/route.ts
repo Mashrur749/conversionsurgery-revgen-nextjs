@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { getClientSession } from '@/lib/client-auth';
 import { getDb, supportMessages, supportReplies } from '@/db';
 import { eq, asc } from 'drizzle-orm';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 async function getCallerIdentity(): Promise<{
   userEmail: string;
@@ -63,11 +64,7 @@ export async function GET(
 
     return NextResponse.json({ message, replies });
   } catch (error) {
-    console.error('[Support Message Detail] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch message' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[SupportMessages][detail.get]', error, 'Failed to fetch message');
   }
 }
 
@@ -110,10 +107,6 @@ export async function PATCH(
 
     return NextResponse.json({ message: updated });
   } catch (error) {
-    console.error('[Support Message PATCH] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update message' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[SupportMessages][detail.patch]', error, 'Failed to update message');
   }
 }

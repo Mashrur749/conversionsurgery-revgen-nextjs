@@ -5,6 +5,7 @@ import { getDb, supportMessages, supportReplies } from '@/db';
 import { z } from 'zod';
 import { eq, desc, sql, count, and } from 'drizzle-orm';
 import { sendSlackSupportNotification } from '@/lib/services/slack';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const supportMessageSchema = z.object({
   page: z.string().min(1).max(500),
@@ -74,11 +75,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error('[Support Messages API] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to submit message' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[SupportMessages][post]', error, 'Failed to submit message');
   }
 }
 
@@ -128,10 +125,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ messages });
   } catch (error) {
-    console.error('[Support Messages API] GET Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch messages' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[SupportMessages][get]', error, 'Failed to fetch messages');
   }
 }

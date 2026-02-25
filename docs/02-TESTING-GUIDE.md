@@ -61,9 +61,10 @@ Stop and fix before continuing if the command fails.
 Additional runtime logging sanity check:
 ```bash
 rg -n "console\\.error" src/app/api/cron
+rg -n "console\\.error" src/app/api/leads src/app/api/payments src/app/api/support-messages
 ```
 Expected:
-- No matches (cron routes should use centralized safe error logging paths).
+- No matches (high-traffic cron/lead/payment/support routes should use centralized safe error logging paths).
 
 ## 2. Sequential Manual Test Run
 

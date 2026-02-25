@@ -5,6 +5,7 @@ import { payments, leads, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { generatePaymentMessage } from '@/lib/services/stripe';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * POST /api/payments/[id]/send - Send payment link via SMS
@@ -81,8 +82,7 @@ export async function POST(
       return NextResponse.json({ error: `Message blocked: ${sendResult.blockReason}` }, { status: 422 });
     }
   } catch (error) {
-    console.error('[Payments] Failed to send SMS:', error);
-    return NextResponse.json({ error: 'Failed to send SMS' }, { status: 500 });
+    return safeErrorResponse('[Payments][payments.send]', error, 'Failed to send SMS');
   }
 
   // Update sent timestamp
