@@ -128,6 +128,9 @@ Update rule:
 
 ## 4) Must-Do Actions (This Week)
 
+Execution note:
+- Remaining open items in this section are operator cadence/governance tasks, not application feature gaps.
+
 - [ ] `S-001` Operator/Developer Time Blocks
   - Lens: Both
   - Action: enforce daily split in calendar (example: mornings Operator, afternoons Developer).
@@ -148,7 +151,7 @@ Update rule:
   - Action: set hard cap for active pilot clients and new onboardings per week.
   - Done when: cap documented and tracked in weekly review.
 
-- [ ] `S-005` Gate Enforcement Everywhere
+- [x] `S-005` Gate Enforcement Everywhere
   - Lens: Developer
   - Action: ensure hooks are installed and CI runs full sweep.
   - Done when: `npm run quality:install-agent-hooks` completed locally and CI green.
