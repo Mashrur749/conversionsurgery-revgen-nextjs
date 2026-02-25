@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { releaseNumber } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 const releaseSchema = z.object({
   clientId: z.string().uuid('Client ID must be a valid UUID'),
@@ -34,7 +35,9 @@ export const POST = adminRoute(
     const result = await releaseNumber(clientId);
 
     if (!result.success) {
-      console.error(`[Twilio] Release failed: ${result.error}`);
+      logSanitizedConsoleError('[Twilio][release.post.failed]', new Error(result.error), {
+        clientId,
+      });
       return NextResponse.json(
         { error: result.error },
         { status: 400 }

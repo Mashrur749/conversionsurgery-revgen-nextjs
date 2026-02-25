@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { assignExistingNumber } from '@/lib/services/twilio-provisioning';
 import { z } from 'zod';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 const assignSchema = z.object({
   phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters'),
@@ -35,7 +36,10 @@ export const POST = adminRoute(
     const result = await assignExistingNumber(phoneNumber, clientId);
 
     if (!result.success) {
-      console.error(`[Twilio] Assign failed: ${result.error}`);
+      logSanitizedConsoleError('[Twilio][assign.post.failed]', new Error(result.error), {
+        clientId,
+        phoneNumber,
+      });
       return NextResponse.json(
         { error: result.error },
         { status: 400 }

@@ -8,6 +8,7 @@ import {
   getAddonPricing,
 } from '@/lib/services/addon-pricing';
 import { recordPhoneNumberAddonEventForPurchase } from '@/lib/services/addon-billing-ledger';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 const purchaseSchema = z.object({
   phoneNumber: z.string().min(10, 'Phone number must be at least 10 characters'),
@@ -67,7 +68,10 @@ export const POST = adminRoute(
     const result = await purchaseNumber(phoneNumber, clientId);
 
     if (!result.success) {
-      console.error(`[Twilio] Purchase failed: ${result.error}`);
+      logSanitizedConsoleError('[Twilio][purchase.post.failed]', new Error(result.error), {
+        clientId,
+        phoneNumber,
+      });
       return NextResponse.json(
         { error: result.error },
         { status: 400 }
@@ -75,7 +79,10 @@ export const POST = adminRoute(
     }
 
     await recordPhoneNumberAddonEventForPurchase(clientId, phoneNumber).catch((error) => {
-      console.error('[Twilio] Failed to record phone number add-on billing event:', error);
+      logSanitizedConsoleError('[Twilio][purchase.post.record-addon-event]', error, {
+        clientId,
+        phoneNumber,
+      });
     });
 
     console.log(`[Twilio] Purchase success: SID=${result.sid}`);

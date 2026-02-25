@@ -5,6 +5,7 @@ import { flowTemplates } from '@/db/schema';
 import { desc } from 'drizzle-orm';
 import { createTemplate } from '@/lib/services/flow-templates';
 import { z } from 'zod';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * GET /api/admin/flow-templates
@@ -71,7 +72,11 @@ export const POST = adminRoute(
 
     if (!validation.success) {
       const errors = validation.error.flatten().fieldErrors;
-      console.error('[FlowEngine] Template creation validation failed:', errors);
+      logSanitizedConsoleError(
+        '[FlowEngine][flow-templates.post.validation]',
+        new Error('Template creation validation failed'),
+        { errors }
+      );
       return NextResponse.json(
         { error: 'Invalid input', details: errors },
         { status: 400 }

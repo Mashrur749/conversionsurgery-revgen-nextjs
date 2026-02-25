@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleFormSubmission } from '@/lib/automations/form-response';
 import { z } from 'zod';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const formSchema = z.object({
   clientId: z.string().uuid(),
@@ -29,9 +31,14 @@ export async function POST(request: NextRequest) {
     const validation = formSchema.safeParse(body);
 
     if (!validation.success) {
-      console.error('[Messaging] Invalid form payload:', validation.error.flatten().fieldErrors);
+      const fieldErrors = validation.error.flatten().fieldErrors;
+      logSanitizedConsoleError(
+        '[Messaging][form-webhook.validation]',
+        new Error('Invalid form payload'),
+        { fieldErrors }
+      );
       return NextResponse.json(
-        { error: 'Invalid payload', details: validation.error.flatten().fieldErrors },
+        { error: 'Invalid payload', details: fieldErrors },
         { status: 400 }
       );
     }
@@ -41,10 +48,6 @@ export async function POST(request: NextRequest) {
     console.log('[Messaging] Form submission processed successfully:', result);
     return NextResponse.json(result);
   } catch (error) {
-    console.error('[Messaging] Form webhook error:', error);
-    return NextResponse.json(
-      { error: 'Processing failed' },
-      { status: 500 }
-    );
+    return safeErrorResponse('[Messaging][form-webhook.post]', error, 'Processing failed');
   }
 }

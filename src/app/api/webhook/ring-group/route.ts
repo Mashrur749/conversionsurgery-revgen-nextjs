@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recordCallAnswered, recordCallMissed } from '@/lib/services/hot-transfer';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /**
  * [Voice] POST /api/webhook/ring-group
@@ -51,7 +52,10 @@ export async function POST(request: NextRequest) {
       headers: { 'Content-Type': 'application/xml' },
     });
   } catch (error) {
-    console.error('[Voice] Ring Group Webhook Error:', error);
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+    return safeErrorResponse(
+      '[Voice][ring-group-webhook.post]',
+      error,
+      'Webhook processing failed'
+    );
   }
 }

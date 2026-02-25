@@ -9,6 +9,7 @@ import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality
 import { z } from 'zod';
 import { sendOnboardingNotification } from '@/lib/services/agency-communication';
 import { cancelSubscription } from '@/lib/services/subscription';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 export const GET = adminClientRoute<{ id: string }>(
   { permission: AGENCY_PERMISSIONS.CLIENTS_VIEW, clientIdFrom: (p) => p.id },
@@ -132,7 +133,9 @@ export const PATCH = adminClientRoute<{ id: string }>(
     // Fire onboarding notification when status changes to 'active'
     if (data.status === 'active' && existing?.status !== 'active') {
       sendOnboardingNotification(clientId).catch((err) =>
-        console.error('[Admin] Onboarding notification failed:', err)
+        logSanitizedConsoleError('[Admin][clients.patch.onboarding-notification]', err, {
+          clientId,
+        })
       );
     }
 
@@ -172,7 +175,10 @@ export const DELETE = adminClientRoute<{ id: string }>(
       try {
         await cancelSubscription(sub.id, 'Client account cancelled', true);
       } catch (err) {
-        console.error(`[Admin] Failed to cancel subscription ${sub.id} for deleted client ${clientId}:`, err);
+        logSanitizedConsoleError('[Admin][clients.delete.cancel-subscription]', err, {
+          clientId,
+          subscriptionId: sub.id,
+        });
       }
     }
 

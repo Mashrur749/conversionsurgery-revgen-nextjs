@@ -9,6 +9,8 @@ import { getStripeClient } from '@/lib/clients/stripe';
 import { syncInvoiceFromStripe } from '@/lib/services/subscription-invoices';
 import { addPaymentMethod } from '@/lib/services/payment-methods';
 import { sendEmail } from '@/lib/services/resend';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 /** POST /api/webhooks/stripe */
 export async function POST(request: NextRequest) {
@@ -21,7 +23,10 @@ export async function POST(request: NextRequest) {
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.error('[Billing] STRIPE_WEBHOOK_SECRET is not configured — cannot verify webhook signatures');
+    logSanitizedConsoleError(
+      '[Billing][stripe-webhook.config]',
+      new Error('STRIPE_WEBHOOK_SECRET is not configured')
+    );
     return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
   }
 
@@ -35,8 +40,12 @@ export async function POST(request: NextRequest) {
       webhookSecret
     );
   } catch (err) {
-    console.error('[Billing] Stripe webhook signature verification failed:', err);
-    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
+    return safeErrorResponse(
+      '[Billing][stripe-webhook.signature]',
+      err,
+      'Invalid signature',
+      400
+    );
   }
 
   const db = getDb();
@@ -222,7 +231,11 @@ type DB = ReturnType<typeof getDb>;
 async function handleSubscriptionUpdate(db: DB, sub: Stripe.Subscription, event: Stripe.Event) {
   const clientId = sub.metadata?.clientId;
   if (!clientId) {
-    console.error('[Billing] No clientId in subscription metadata');
+    logSanitizedConsoleError(
+      '[Billing][subscription-update.missing-client-id]',
+      new Error('No clientId in subscription metadata'),
+      { stripeSubscriptionId: sub.id, stripeEventId: event.id }
+    );
     return;
   }
 
@@ -301,7 +314,10 @@ async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe
   try {
     await syncInvoiceFromStripe(invoice.id);
   } catch (err) {
-    console.error('[Billing] Failed to sync invoice:', err);
+    logSanitizedConsoleError('[Billing][invoice.sync-failed]', err, {
+      invoiceId: invoice.id,
+      stripeEventId: event.id,
+    });
   }
 
   // In Stripe v20, subscription is in parent.subscription_details
