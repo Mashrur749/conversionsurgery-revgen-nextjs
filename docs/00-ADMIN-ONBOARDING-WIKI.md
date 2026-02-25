@@ -7,54 +7,54 @@ Last verified commit: `API-wide safe error logging hardening working tree (2026-
 
 ## Canonical Order (Read + Execute)
 
-1. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/GRAND-SLAM-OFFER.md`
+1. `docs/GRAND-SLAM-OFFER.md`
 Purpose: master the finalized offer source-of-truth, client promises, guarantee language, and delivery commitments.
 
-2. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/BUSINESS-CASE.md`
+2. `BUSINESS-CASE.md`
 Purpose: internal company context, ICP details, and operating assumptions behind the offer.
 
-3. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
+3. `docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
 Purpose: understand the complete operator path from setup to ongoing service delivery.
 
-4. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`
+4. `docs/02-TESTING-GUIDE.md`
 Purpose: execute hands-on validation so you can operate confidently under real conditions.
 
-4.1 `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/14-RUNTIME-RELIABILITY-SYSTEM.md`
+4.1 `docs/14-RUNTIME-RELIABILITY-SYSTEM.md`
 Purpose: enforce no-regression quality gates and runtime smoke checks for every release.
 
-5. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md`
+5. `docs/04-OPERATIONS-GUIDE.md`
 Purpose: lock in daily operations, cron checks, and incident response rhythm.
 
-5.1 `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/15-SOLOPRENEUR-SANITY-ACTION-LIST.md`
+5.1 `docs/15-SOLOPRENEUR-SANITY-ACTION-LIST.md`
 Purpose: run the operator/developer split model and protect solo execution sanity.
 
-6. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/03-ACCESS-MANAGEMENT.md`
+6. `docs/03-ACCESS-MANAGEMENT.md`
 Purpose: safely onboard your spouse/internal monitor and client-side assistants.
 
-7. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`
+7. `docs/07-LAUNCH-READINESS.md`
 Purpose: verify launch gate status and confirm operational readiness.
 
-8. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
+8. `docs/10-OFFER-PARITY-GAPS.md`
 Purpose: verify offer promises are matched by implementation before selling.
 
-9. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
+9. `docs/06-REMAINING-GAPS.md`
 Purpose: confirm earlier launch-hardening wave is closed and historical context is preserved.
 
-10. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/12-LEGAL-COUNSEL-BRIEF.md`
+10. `docs/12-LEGAL-COUNSEL-BRIEF.md`
 Purpose: run pre-client legal review with exact must-have decisions.
 
-11. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/13-LEGAL-CLAUSE-REDLINES.md`
+11. `docs/13-LEGAL-CLAUSE-REDLINES.md`
 Purpose: provide counsel with contract-ready clause drafts for final legal wording.
 
 ## Documentation Sync Contract (Mandatory)
 For every implementation milestone (code change), documentation must be updated in the same execution stream before moving to the next spec.
 
 Required docs to sync each milestone:
-1. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
-2. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/specs/MS-IMPLEMENTATION-BOARD.md`
-3. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/specs/MS-CONTEXT-SNAPSHOT.md`
-4. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md` (if testing flow changed)
-5. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md` (if ops flow/cron changed)
+1. `docs/10-OFFER-PARITY-GAPS.md`
+2. `docs/specs/MS-IMPLEMENTATION-BOARD.md`
+3. `docs/specs/MS-CONTEXT-SNAPSHOT.md`
+4. `docs/02-TESTING-GUIDE.md` (if testing flow changed)
+5. `docs/04-OPERATIONS-GUIDE.md` (if ops flow/cron changed)
 
 Cadence rule:
 1. Implement milestone.

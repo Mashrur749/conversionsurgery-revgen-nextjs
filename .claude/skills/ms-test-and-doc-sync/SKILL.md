@@ -27,5 +27,5 @@ Update all relevant docs when behavior changes:
 - Any unresolved risks
 
 ## Templates and Scripts
-- Template: `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-test-and-doc-sync/templates/verification-report.md`
+- Template: `.claude/skills/ms-test-and-doc-sync/templates/verification-report.md`
 - Script: `scripts/specs/ms-quality-gate.sh`

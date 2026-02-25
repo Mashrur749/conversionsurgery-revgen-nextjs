@@ -279,9 +279,9 @@ Rule:
 - Do not use ad-hoc deploy/rollback commands outside this path.
 
 ## References
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/app/api/cron/route.ts`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/utils/cron.ts`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/14-RUNTIME-RELIABILITY-SYSTEM.md`
+- `src/app/api/cron/route.ts`
+- `src/lib/utils/cron.ts`
+- `docs/02-TESTING-GUIDE.md`
+- `docs/06-REMAINING-GAPS.md`
+- `docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
+- `docs/14-RUNTIME-RELIABILITY-SYSTEM.md`

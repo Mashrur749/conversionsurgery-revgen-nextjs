@@ -22,4 +22,4 @@ Before finalizing changes, confirm:
 - Operations workflow updated
 
 ## Template
-Use `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-cx-offer-guardrails/templates/cx-offer-check.md`.
+Use `.claude/skills/ms-cx-offer-guardrails/templates/cx-offer-check.md`.

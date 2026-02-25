@@ -2,14 +2,14 @@
 A skill is a set of local instructions to follow that is stored in a `SKILL.md` file.
 
 ### Available skills
-- create-migration: Safe Drizzle schema and migration workflow (file: /Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/create-migration/SKILL.md)
-- neon-postgres: Neon operational workflow for branching, migration safety, and rollback readiness (file: /Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/neon-postgres/SKILL.md)
-- ux-standards: UI/UX standards for ConversionSurgery interfaces (file: /Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ux-standards/SKILL.md)
-- ms-spec-delivery: Execute one managed-service spec milestone in small, auditable units (file: /Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-spec-delivery/SKILL.md)
-- ms-refactor-checkpoint: Required refactor checkpoint after each major milestone implementation (file: /Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-refactor-checkpoint/SKILL.md)
-- ms-test-and-doc-sync: Verification gate and required docs alignment before commit (file: /Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-test-and-doc-sync/SKILL.md)
-- ms-gap-status-governance: Keep `/docs/10-OFFER-PARITY-GAPS.md` and spec statuses synchronized with implementation truth (file: /Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-gap-status-governance/SKILL.md)
-- ms-cx-offer-guardrails: Client-experience and offer-parity checks to prevent regressions in sold promises (file: /Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-cx-offer-guardrails/SKILL.md)
+- create-migration: Safe Drizzle schema and migration workflow (file: .claude/skills/create-migration/SKILL.md)
+- neon-postgres: Neon operational workflow for branching, migration safety, and rollback readiness (file: .claude/skills/neon-postgres/SKILL.md)
+- ux-standards: UI/UX standards for ConversionSurgery interfaces (file: .claude/skills/ux-standards/SKILL.md)
+- ms-spec-delivery: Execute one managed-service spec milestone in small, auditable units (file: .claude/skills/ms-spec-delivery/SKILL.md)
+- ms-refactor-checkpoint: Required refactor checkpoint after each major milestone implementation (file: .claude/skills/ms-refactor-checkpoint/SKILL.md)
+- ms-test-and-doc-sync: Verification gate and required docs alignment before commit (file: .claude/skills/ms-test-and-doc-sync/SKILL.md)
+- ms-gap-status-governance: Keep `/docs/10-OFFER-PARITY-GAPS.md` and spec statuses synchronized with implementation truth (file: .claude/skills/ms-gap-status-governance/SKILL.md)
+- ms-cx-offer-guardrails: Client-experience and offer-parity checks to prevent regressions in sold promises (file: .claude/skills/ms-cx-offer-guardrails/SKILL.md)
 
 ### How to use skills
 - Discovery: The list above is the authoritative skill registry for this repository.

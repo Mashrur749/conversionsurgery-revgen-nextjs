@@ -73,7 +73,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 
 ## Offer Parity Progress Snapshot
 Active offer parity tracking lives in:
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
+- `docs/10-OFFER-PARITY-GAPS.md`
 
 Current snapshot at this commit:
 1. Done: `GAP-001` unlimited messaging parity.

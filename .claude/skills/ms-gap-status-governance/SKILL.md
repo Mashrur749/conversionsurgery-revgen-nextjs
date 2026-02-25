@@ -19,4 +19,4 @@ Use when any MS milestone changes implementation state.
 - Remaining work note if not fully complete
 
 ## Template
-Use `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-gap-status-governance/templates/gap-update-entry.md`.
+Use `.claude/skills/ms-gap-status-governance/templates/gap-update-entry.md`.

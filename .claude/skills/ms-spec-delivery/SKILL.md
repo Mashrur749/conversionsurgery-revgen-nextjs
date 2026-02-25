@@ -28,4 +28,4 @@ Use for implementing `MS-*` specs under `/docs/specs/`.
 - Keep client-facing behavior aligned to offer language guardrails.
 
 ## Template
-Use `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-spec-delivery/templates/milestone-execution-checklist.md`.
+Use `.claude/skills/ms-spec-delivery/templates/milestone-execution-checklist.md`.

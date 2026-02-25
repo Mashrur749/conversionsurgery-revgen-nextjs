@@ -13,9 +13,9 @@ Last verified commit: `API-wide safe error logging hardening working tree (2026-
 ## Phase 1: System Foundation (Day 1)
 Objective: understand architecture, auth boundaries, and mission-critical automations.
 
-1. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`.
-2. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/03-ACCESS-MANAGEMENT.md`.
-3. Read `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/05-USE-CASES.md`.
+1. Read `docs/07-LAUNCH-READINESS.md`.
+2. Read `docs/03-ACCESS-MANAGEMENT.md`.
+3. Read `docs/05-USE-CASES.md`.
 4. Run baseline validation:
 ```bash
 npm test
@@ -29,7 +29,7 @@ Exit gate:
 ## Phase 2: Controlled Walkthrough (Day 1-2)
 Objective: run the full test path manually without getting blocked.
 
-1. Execute `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md` Section `0` -> `4` in order.
+1. Execute `docs/02-TESTING-GUIDE.md` Section `0` -> `4` in order.
 2. Create at least one fresh test client via `/signup`.
 3. Complete guided setup checks via `/signup/next-steps`.
 4. Validate Day-One milestone/audit statuses from both:
@@ -44,7 +44,7 @@ Exit gate:
 ## Phase 3: Daily Service Operations (Week 1)
 Objective: run live managed-service operations reliably.
 
-1. Execute `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md` daily checklist.
+1. Execute `docs/04-OPERATIONS-GUIDE.md` daily checklist.
 2. Review escalation queue and SLA breaches every day.
 3. Review pending onboarding clients and remove blockers.
 4. Use Day-One Activation card to confirm:
@@ -182,8 +182,8 @@ Exit gate:
 25. No active one-off client-specific code exceptions in delivery paths.
 
 ## Core References
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/03-ACCESS-MANAGEMENT.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/05-USE-CASES.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`
+- `docs/02-TESTING-GUIDE.md`
+- `docs/04-OPERATIONS-GUIDE.md`
+- `docs/03-ACCESS-MANAGEMENT.md`
+- `docs/05-USE-CASES.md`
+- `docs/07-LAUNCH-READINESS.md`

@@ -4,8 +4,8 @@ Last updated: 2026-02-24
 Owner: ConversionSurgery leadership
 Status: Required before first paid client contract
 Source references:
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/GRAND-SLAM-OFFER.md` (Part 10)
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
+- `docs/GRAND-SLAM-OFFER.md` (Part 10)
+- `docs/10-OFFER-PARITY-GAPS.md`
 
 ## Objective
 Obtain written legal guidance from a licensed Canadian lawyer on four must-have items that directly affect client-facing promises and contract exposure.
@@ -52,12 +52,12 @@ Please provide:
 ## Evidence Package to Share with Counsel
 Attach:
 1. Current offer source:
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/GRAND-SLAM-OFFER.md`
+- `docs/GRAND-SLAM-OFFER.md`
 2. Proposed legal redlines draft:
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/13-LEGAL-CLAUSE-REDLINES.md`
+- `docs/13-LEGAL-CLAUSE-REDLINES.md`
 3. Current launch/parity status:
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/07-LAUNCH-READINESS.md`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/10-OFFER-PARITY-GAPS.md`
+- `docs/07-LAUNCH-READINESS.md`
+- `docs/10-OFFER-PARITY-GAPS.md`
 
 ## Internal Go/No-Go Rule
 - No paid client signatures until written counsel signoff on items 1-4 above.

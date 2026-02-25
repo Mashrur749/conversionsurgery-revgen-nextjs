@@ -160,7 +160,7 @@ Permission templates and overrides resolve effective access at runtime.
 - Route changes were limited to centralized safe/sanitized failure handling behavior.
 
 ## References
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/permissions/require-portal-page-permission.ts`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/get-client-id.ts`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/app/(dashboard)/layout.tsx`
-- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/app/api/admin/clients/route.ts`
+- `src/lib/permissions/require-portal-page-permission.ts`
+- `src/lib/get-client-id.ts`
+- `src/app/(dashboard)/layout.tsx`
+- `src/app/api/admin/clients/route.ts`

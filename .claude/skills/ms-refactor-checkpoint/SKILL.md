@@ -21,4 +21,4 @@ Use immediately after completing a major milestone implementation.
 - [ ] Deprecated copy/config removed where replaced.
 
 ## Template
-Use `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/.claude/skills/ms-refactor-checkpoint/templates/refactor-report.md` for summary notes.
+Use `.claude/skills/ms-refactor-checkpoint/templates/refactor-report.md` for summary notes.
