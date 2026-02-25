@@ -11,6 +11,12 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+      NEXTAUTH_SECRET: "ci-build-secret"
+      NEXTAUTH_URL: "http://127.0.0.1:4100"
+      AUTH_SECRET: "ci-build-secret"
+      CRON_SECRET: "ci-smoke-cron-secret"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,13 +24,6 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run ms:gate
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
-        env:
-          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
-          NEXTAUTH_SECRET: "ci-build-secret"
-          NEXTAUTH_URL: "http://localhost:3000"
+      - run: npm run quality:feature-sweep
       - run: npm audit --audit-level=moderate
         continue-on-error: true

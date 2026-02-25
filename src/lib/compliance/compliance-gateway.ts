@@ -11,6 +11,7 @@ import {
   type QuietHoursPolicyMode,
   type QuietHoursMessageClassification,
 } from '@/lib/compliance/quiet-hours-policy';
+import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 
 /**
  * Consent basis for first-contact messages.
@@ -88,6 +89,25 @@ export async function sendCompliantMessage(
   const warnings: string[] = [];
   const normalizedPhone = ComplianceService.normalizePhoneNumber(to);
   const phoneHash = ComplianceService.hashPhoneNumber(normalizedPhone);
+
+  const outboundKillSwitchEnabled = await isOpsKillSwitchEnabled(
+    OPS_KILL_SWITCH_KEYS.OUTBOUND_AUTOMATIONS
+  );
+  if (outboundKillSwitchEnabled) {
+    return blocked(
+      'Outbound automations paused by operator kill switch',
+      normalizedPhone,
+      phoneHash,
+      clientId,
+      {
+        messageCategory,
+        messageClassification,
+        leadId,
+        killSwitch: OPS_KILL_SWITCH_KEYS.OUTBOUND_AUTOMATIONS,
+        ...metadata,
+      }
+    );
+  }
 
   // -----------------------------------------------------------
   // Step 0: Check monthly message limit BEFORE expensive checks

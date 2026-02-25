@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { conversations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * Twilio message status callback handler.
@@ -29,7 +30,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[TwilioStatus] Error processing status callback:', error);
+    void logInternalError({
+      source: '[TwilioStatus] Callback',
+      error,
+      context: { route: '/api/webhooks/twilio/status' },
+    });
+    logSanitizedConsoleError('[TwilioStatus] Error processing status callback:', error, {
+      route: '/api/webhooks/twilio/status',
+    });
     return NextResponse.json({ error: 'Failed' }, { status: 500 });
   }
 }

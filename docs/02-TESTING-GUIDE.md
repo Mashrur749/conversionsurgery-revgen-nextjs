@@ -1,9 +1,9 @@
 # Testing Guide
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `MS-15 Milestone D working tree`
+Last verified commit: `Runtime hardening + kill-switch working tree (2026-02-25)`
 
 ## 0. Preflight (Run First)
 
@@ -38,19 +38,25 @@ npm run dev
 
 Keep this terminal open. Use another terminal for commands below.
 
+Optional but recommended once per clone:
+```bash
+npm run quality:install-agent-hooks
+```
+This installs:
+- pre-commit (`npm run ms:gate`)
+- pre-push (`npm run quality:no-regressions`)
+
 ## 1. Fast Validation (Required)
 
 ```bash
-npm test
-npm run build
+npm run quality:no-regressions
 ```
 
 Expected:
-- Unit tests pass.
-- Build passes.
+- `ms:gate`, logging guard, build, unit tests, and runtime smoke pass in one run.
 - Known non-blocking warning today: Next.js middleware deprecation warning (`middleware` -> `proxy`).
 
-Stop and fix before continuing if either command fails.
+Stop and fix before continuing if the command fails.
 
 ## 2. Sequential Manual Test Run
 
@@ -409,12 +415,46 @@ Expected:
 - Duplicate phones are de-duplicated (no duplicate SMS to same number).
 - Audit entries include reminder delivery outcomes (`reminder_delivery_sent` / `reminder_delivery_no_recipient`).
 
-### Step 18: Final smoke
+### Step 18: Kill-switch control validation
+1. Open `/admin/settings`.
+2. Set `ops.kill_switch.outbound_automations=true`.
+3. Trigger one outbound automation path (for example, follow-up send path through normal workflow).
+4. Confirm message is blocked/paused and no outbound send occurs.
+5. Set `ops.kill_switch.outbound_automations=false`.
+6. Set `ops.kill_switch.smart_assist_auto_send=true`.
+7. Send inbound message to trigger Smart Assist draft.
+8. Confirm draft requires manual approval (no delayed auto-send).
+9. Set `ops.kill_switch.smart_assist_auto_send=false`.
+10. Set `ops.kill_switch.voice_ai=true`.
+11. Place test call through Voice AI number and confirm AI conversation is bypassed to human fallback path.
+12. Set `ops.kill_switch.voice_ai=false`.
+
+Expected:
+- Each switch changes behavior without code changes/redeploy.
+- Switching back to `false` restores normal behavior.
+
+### Step 19: Final smoke
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
 4. Validate Day-One card and checklist remain in sync after audit delivery and manual milestone completion.
 5. Validate onboarding quality and reminder routing panels load without API/auth errors for assigned-scope agency users with client access.
+
+### Step 20: Internal error telemetry + redaction check
+1. Trigger one controlled webhook failure (example: send malformed/invalid-signature request to a Twilio webhook route in local test setup).
+2. Query latest internal error rows in DB:
+```sql
+select source, error_type, error_message, error_details, created_at
+from error_log
+order by created_at desc
+limit 20;
+```
+3. Verify new row exists for the failed route and inspect `error_details`.
+
+Expected:
+- Error is captured in `error_log` with route/source context.
+- No plaintext message bodies, full phone numbers, or secrets are present in logged fields.
+- Route still returns safe/generic response body to caller.
 
 ## 3. Useful Commands
 
@@ -422,6 +462,11 @@ Expected:
 # Automated baseline
 npm test
 npm run build
+npm run quality:logging-guard
+npm run quality:no-regressions
+npm run quality:feature-sweep
+# If local environment cannot bind ports (restricted sandbox only):
+SKIP_RUNTIME_SMOKE=1 npm run quality:no-regressions
 
 # Focused tests
 npx vitest run src/lib/permissions/resolve.test.ts
@@ -432,6 +477,7 @@ npx vitest run src/lib/services/day-one-policy.test.ts
 npx vitest run src/lib/services/cancellation-policy.test.ts src/lib/services/data-export-bundle.test.ts src/lib/services/data-export-requests.test.ts
 npx vitest run src/lib/services/knowledge-gap-validation.test.ts src/lib/services/knowledge-gap-queue.test.ts
 npx vitest run src/lib/services/onboarding-quality.test.ts src/lib/services/reminder-routing.test.ts
+npx vitest run src/lib/services/internal-error-log.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
@@ -449,8 +495,10 @@ curl -i http://localhost:3000/api/cron/knowledge-gap-alerts -H "Authorization: B
 ## 4. Release Gate
 
 Release only if all pass:
-1. `npm test`
-2. `npm run build`
-3. Sequential manual run (Section 2) completed without blockers
-4. No open P1 items in `docs/06-REMAINING-GAPS.md`
-5. No unresolved auth/compliance regressions from cron checks
+1. `npm run quality:no-regressions`
+2. `npm run quality:feature-sweep`
+3. `npm test`
+4. `npm run build`
+5. Sequential manual run (Section 2) completed without blockers
+6. No open P1 items in `docs/06-REMAINING-GAPS.md`
+7. No unresolved auth/compliance regressions from cron checks

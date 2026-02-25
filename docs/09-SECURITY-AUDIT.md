@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `MS-15 Milestone D working tree`
+**Last verified commit:** `Runtime hardening + kill-switch working tree (2026-02-25)`
 
 ---
 
@@ -237,5 +237,18 @@ Since the original audit window, new managed-service features (Smart Assist work
    - agency client-scoped routing policy endpoints (`GET/PATCH /api/admin/clients/[id]/reminder-routing`) under existing client view/edit permissions.
    - internal reminder delivery logs written to existing `audit_log` without expanding auth model.
    - cron reminder execution remains under existing `verifyCronSecret()` guard on `/api/cron/process-scheduled`.
+13. Internal error telemetry hardening (2026-02-25):
+   - `safeErrorResponse()` now records sanitized internal error records into `error_log` (best-effort), while still returning generic client-facing messages.
+   - webhook logging was redacted to avoid storing raw inbound message/speech content in plaintext logs by default.
+   - quality gates now include `quality:logging-guard` to block direct `error.message/error.stack` exposure in API JSON responses.
+14. Twilio webhook logging hardening (2026-02-25):
+   - all Twilio webhook routes now use sanitized error logging and internal error telemetry on failure paths.
+   - Twilio shared service retries/validation paths no longer log raw error objects.
+   - logging redaction now masks phone numbers and key-named message body fields by default.
+   - `quality:logging-guard` enforces Twilio-specific checks against raw error object logs and raw payload logs.
+15. Operator containment controls (2026-02-25):
+   - emergency kill switches are now supported via secured admin system settings API (`agency.settings.manage`).
+   - switches cover outbound automations, Smart Assist auto-send, and Voice AI behavior without requiring emergency code deploys.
+   - no new public/auth-bypass surfaces were introduced.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

@@ -1,8 +1,8 @@
 # Operations Guide
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `MS-15 Milestone D working tree`
+Last verified commit: `Runtime hardening + kill-switch working tree (2026-02-25)`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -26,6 +26,8 @@ Last verified commit: `MS-15 Milestone D working tree`
 19. Review Knowledge Gap Queue (`/admin/clients/<id>/knowledge?tab=queue`) for stale high-priority items and unresolved owners.
 20. Review `Onboarding Quality Gates` panel for onboarding clients and clear critical failures before autonomous mode.
 21. Review reminder delivery audit outcomes (`reminder_delivery_sent`, `reminder_delivery_no_recipient`) and fix routing-policy gaps for any no-recipient cases.
+22. Review internal `error_log` records for new unresolved 5xx issues and triage by `source` + `created_at`.
+23. Verify kill-switch settings in `/admin/settings` are in expected state (`false`) before normal campaign operations.
 
 ## Cron Operations
 
@@ -96,6 +98,8 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Knowledge-gap alert cron sends one stale high-priority digest/day to agency owners when overdue queue items exist.
 - Autonomous mode transitions are blocked when onboarding quality critical gates fail (unless audited override is active).
 - Internal appointment/booking reminders resolve recipients via routing policy (owner/assistant/team fallback chain) instead of owner-only assumptions.
+- Twilio webhook failures should appear in `error_log` with redacted context (no full phone numbers/body text/secrets).
+- If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
 
 ## Access Management Operations
 
@@ -122,6 +126,15 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 4. Verify with smoke tests.
 5. Write incident notes and remediation actions.
 
+### Emergency Kill Switches
+Set via `/admin/settings` using System Settings Manager:
+
+| Setting Key | `true` behavior | Default |
+|---|---|---|
+| `ops.kill_switch.outbound_automations` | Blocks outbound automation sends through compliance gateway | `false` |
+| `ops.kill_switch.smart_assist_auto_send` | Forces Smart Assist drafts to manual approval (disables auto-send) | `false` |
+| `ops.kill_switch.voice_ai` | Bypasses Voice AI conversation and routes to human fallback | `false` |
+
 ## Smoke Tests After Incident
 1. Agency login and scoped client switch.
 2. Client portal login and permission-gated page access.
@@ -136,9 +149,58 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Message send failure rate.
 - API cost per active client.
 
+## Engineering Quality Gate (Required Before Deploy)
+```bash
+npm run quality:no-regressions
+npm run quality:feature-sweep
+```
+If this fails, do not deploy.
+
+Recommended local enforcement:
+```bash
+npm run quality:install-agent-hooks
+```
+
+## Deploy + Rollback (Single Path)
+
+### Deploy path (production)
+1. Run release gate:
+```bash
+npm run quality:feature-sweep
+```
+2. Deploy Cloudflare worker build:
+```bash
+npm run cf:deploy
+```
+3. Verify active deployment:
+```bash
+npx wrangler deployments status
+```
+4. Run post-deploy smoke validation checklist from `docs/02-TESTING-GUIDE.md` (Final smoke + telemetry checks).
+
+### Rollback path (production)
+1. List recent versions:
+```bash
+npx wrangler versions list
+```
+2. Select last known-good `version-id`.
+3. Roll traffic back to that version:
+```bash
+npx wrangler versions deploy <version-id>@100 --message "rollback to stable" -y
+```
+4. Confirm rollback state:
+```bash
+npx wrangler deployments status
+```
+5. Re-run smoke validation and confirm incident containment notes are updated.
+
+Rule:
+- Do not use ad-hoc deploy/rollback commands outside this path.
+
 ## References
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/app/api/cron/route.ts`
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/src/lib/utils/cron.ts`
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/06-REMAINING-GAPS.md`
 - `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
+- `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/14-RUNTIME-RELIABILITY-SYSTEM.md`

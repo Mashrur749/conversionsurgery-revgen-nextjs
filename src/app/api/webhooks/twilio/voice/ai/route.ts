@@ -6,6 +6,8 @@ import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { getWebhookBaseUrl, xmlAttr } from '@/lib/utils/webhook-url';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 
 function twimlResponse(twiml: string) {
   return new NextResponse(
@@ -29,7 +31,11 @@ export async function POST(request: NextRequest) {
     const to = payload.To;
     const callSid = payload.CallSid;
 
-    console.log('[Voice AI] Received webhook:', { callSid, from, to });
+    console.log('[Voice AI] Received webhook:', {
+      callSidSuffix: callSid ? callSid.slice(-8) : null,
+      fromSuffix: from ? from.slice(-4) : null,
+      toSuffix: to ? to.slice(-4) : null,
+    });
 
     if (!from || !to) {
       return twimlResponse('<Say>Sorry, we could not process your call.</Say><Hangup/>');
@@ -51,13 +57,29 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!client) {
-      console.log('[Voice AI] No client found for number:', twilioNumber);
+      console.log('[Voice AI] No client found for number suffix:', {
+        toSuffix: twilioNumber ? twilioNumber.slice(-4) : null,
+      });
       return twimlResponse('<Say>Sorry, this number is not configured.</Say><Hangup/>');
+    }
+
+    const voiceAiKillSwitchEnabled = await isOpsKillSwitchEnabled(
+      OPS_KILL_SWITCH_KEYS.VOICE_AI
+    );
+    if (voiceAiKillSwitchEnabled) {
+      console.log('[Voice AI] Global kill switch enabled - bypassing AI', {
+        clientId: client.id,
+      });
+      const forwardTo = client.phone;
+      if (forwardTo) {
+        return twimlResponse(`<Dial timeout="30"><Number>${forwardTo}</Number></Dial>`);
+      }
+      return twimlResponse('<Say>Sorry, no one is available right now.</Say><Hangup/>');
     }
 
     // Check if voice AI is enabled
     if (!client.voiceEnabled) {
-      console.log('[Voice AI] Voice AI not enabled for client:', client.id);
+      console.log('[Voice AI] Voice AI disabled for client', { clientId: client.id });
       // Standard behavior - ring through
       const forwardTo = client.phone;
       if (forwardTo) {
@@ -79,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     if (!shouldUseAI) {
       // During business hours - try to connect to owner
-      console.log('[Voice AI] Within business hours, forwarding to owner');
+      console.log('[Voice AI] Within business hours, forwarding to owner', { clientId: client.id });
       const appUrl = getWebhookBaseUrl(request);
       const actionUrl = new URL('/api/webhooks/twilio/voice/ai/dial-complete', appUrl);
       actionUrl.searchParams.set('origFrom', from);
@@ -132,7 +154,10 @@ export async function POST(request: NextRequest) {
       startedAt: new Date(),
     });
 
-    console.log('[Voice AI] Starting AI conversation for call:', callSid);
+    console.log('[Voice AI] Starting AI conversation for call', {
+      callSidSuffix: callSid ? callSid.slice(-8) : null,
+      clientId: client.id,
+    });
 
     // Start AI conversation
     const greeting = client.voiceGreeting ||
@@ -149,7 +174,14 @@ export async function POST(request: NextRequest) {
       `<Redirect>${transferAction}</Redirect>`
     );
   } catch (error) {
-    console.error('[Voice AI] Webhook error:', error);
+    void logInternalError({
+      source: '[Voice AI] Webhook',
+      error,
+      context: { route: '/api/webhooks/twilio/voice/ai' },
+    });
+    logSanitizedConsoleError('[Voice AI] Webhook error:', error, {
+      route: '/api/webhooks/twilio/voice/ai',
+    });
     return twimlResponse('<Say>Sorry, there was an error. Please try again later.</Say><Hangup/>');
   }
 }

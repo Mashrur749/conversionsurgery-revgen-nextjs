@@ -1,6 +1,6 @@
 # Launch Readiness
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Scope: Managed service launch now + SaaS-readiness foundation (next ~6 months)
 
 ## Scope Note
@@ -14,7 +14,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-15 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: Runtime hardening + kill-switch working tree (2026-02-25)`
 
 ## Executive Status
 
@@ -54,6 +54,8 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Cron catch-up guarantees are now cursor-based for monthly reset and bi-weekly reports, with admin backlog visibility and manual run controls.
 - Onboarding Quality Gates now enforce production-readiness thresholds before autonomous mode, with override reason/audit trace.
 - Reminder routing now supports role-based primary/fallback/secondary recipients with policy UI and delivery audit events.
+- Twilio webhook runtime hardening now uses sanitized internal error telemetry and redacted logging across all Twilio webhook routes and shared Twilio service paths.
+- Operator kill switches now allow immediate containment for outbound automations, Smart Assist auto-send, and Voice AI without code deploy.
 
 ## Remaining Launch Blockers (Managed Service)
 

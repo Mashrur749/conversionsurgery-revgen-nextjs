@@ -4,6 +4,7 @@ import { getDb } from '@/db';
 import { webhookLog, clients, clientPhoneNumbers, conversations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * POST /api/webhooks/twilio/sms
@@ -16,7 +17,13 @@ export async function POST(request: NextRequest) {
       return new NextResponse('Forbidden', { status: 403 });
     }
 
-    console.log('[Messaging] Twilio SMS webhook:', payload.From, payload.Body?.substring(0, 50));
+    console.log('[Messaging] Twilio SMS webhook received', {
+      messageSid: payload.MessageSid ?? null,
+      fromSuffix: payload.From ? payload.From.slice(-4) : null,
+      toSuffix: payload.To ? payload.To.slice(-4) : null,
+      bodyLength: payload.Body ? payload.Body.length : 0,
+      mediaCount: Number(payload.NumMedia || '0'),
+    });
 
     // Dedup check — prevent duplicate processing on Twilio webhook retry
     if (payload.MessageSid) {
@@ -27,7 +34,9 @@ export async function POST(request: NextRequest) {
         .where(eq(conversations.twilioSid, payload.MessageSid))
         .limit(1);
       if (existing) {
-        console.log(`[Messaging] Duplicate MessageSid ${payload.MessageSid} — skipping`);
+        console.log('[Messaging] Duplicate MessageSid detected — skipping', {
+          messageSidSuffix: payload.MessageSid.slice(-8),
+        });
         return new NextResponse(
           '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
           { headers: { 'Content-Type': 'text/xml' } }
@@ -90,7 +99,14 @@ export async function POST(request: NextRequest) {
       { headers: { 'Content-Type': 'text/xml' } }
     );
   } catch (error) {
-    console.error('[Messaging] SMS webhook error:', error);
+    void logInternalError({
+      source: '[Messaging] SMS webhook',
+      error,
+      context: { route: '/api/webhooks/twilio/sms' },
+    });
+    logSanitizedConsoleError('[Messaging] SMS webhook error:', error, {
+      route: '/api/webhooks/twilio/sms',
+    });
     return new NextResponse(
       '<?xml version="1.0" encoding="UTF-8"?><Response></Response>',
       { headers: { 'Content-Type': 'text/xml' } }

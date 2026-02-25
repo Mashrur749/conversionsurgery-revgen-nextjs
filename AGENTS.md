@@ -44,3 +44,34 @@ A skill is a set of local instructions to follow that is stored in a `SKILL.md` 
 - Safety:
   - Never run destructive migrations or schema drops without explicit approval.
   - Never mark a gap/spec as done without tests and docs alignment.
+
+## Mandatory Quality Protocol (Codex + Claude)
+
+These commands are required for every coding agent session in this repository.
+
+### Install once per clone
+```bash
+npm run quality:install-agent-hooks
+```
+- `pre-commit` runs `npm run ms:gate`
+- `pre-push` runs `npm run quality:no-regressions`
+
+### While implementing any change
+1. Run fast gate before/after major edits:
+```bash
+npm run ms:gate
+npm run quality:logging-guard
+```
+2. Before marking any task complete:
+```bash
+npm run quality:no-regressions
+```
+
+### Before release, major refactor, or feature deletion
+```bash
+npm run quality:feature-sweep
+```
+This runs build + full tests + extended runtime smoke profile (`SMOKE_PROFILE=full`), including auth/guardrail checks on protected routes.
+
+### Blocker rule
+- If any gate fails, stop, fix root cause, and re-run the same gate until green.

@@ -1,6 +1,6 @@
 # Admin Onboarding Wiki
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Audience: Founder/admin operator
 Goal: be fully confident selling and delivering the managed service.
 Last verified commit: `MS-15 Milestone D working tree`
@@ -19,8 +19,14 @@ Purpose: understand the complete operator path from setup to ongoing service del
 4. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/02-TESTING-GUIDE.md`
 Purpose: execute hands-on validation so you can operate confidently under real conditions.
 
+4.1 `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/14-RUNTIME-RELIABILITY-SYSTEM.md`
+Purpose: enforce no-regression quality gates and runtime smoke checks for every release.
+
 5. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/04-OPERATIONS-GUIDE.md`
 Purpose: lock in daily operations, cron checks, and incident response rhythm.
+
+5.1 `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/15-SOLOPRENEUR-SANITY-ACTION-LIST.md`
+Purpose: run the operator/developer split model and protect solo execution sanity.
 
 6. `/Users/mashrurrahman/Dev/conversionsurgery_projects/conversionsurgery-revgen-nextjs/docs/03-ACCESS-MANAGEMENT.md`
 Purpose: safely onboard your spouse/internal monitor and client-side assistants.
@@ -58,6 +64,11 @@ Cadence rule:
 
 ## Mandatory Execution Before Selling Next Week
 
+0. Install local quality hooks:
+```bash
+npm run quality:install-agent-hooks
+```
+
 1. Complete `02-TESTING-GUIDE.md` end-to-end.
 2. Run one mock client onboarding from signup to checklist progression.
 3. Run one incident drill from `01-OPERATOR-MASTERY-PLAYBOOK.md` (cron auth failure or escalation fallback).
@@ -72,6 +83,7 @@ Cadence rule:
 12. Confirm `GAP-202` is marked done: autonomous-mode transition is blocked until onboarding quality gates pass (or an auditable override is approved).
 13. Confirm `GAP-203` is marked done: reminder routing policy can be set from `/admin/clients/<id>` and chain previews + delivery audit entries are visible.
 14. Send legal packet (`12` + `13`) to Canadian counsel and receive written signoff on quiet-hours, guarantees, extension formula, and unlimited clause before first paid contract.
+15. Run `npm run quality:feature-sweep` with a green result before any production release.
 
 ## Confidence Criteria (Go/No-Go)
 

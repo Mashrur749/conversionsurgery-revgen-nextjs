@@ -85,15 +85,19 @@ This avoids stale patterns from training data. Always do this — don't rely on 
 - `npm test` — run Vitest test suite (46 tests: route-handler, permissions, phone utils)
 - `npm run test:watch` — run Vitest in watch mode
 - `npm run db:studio` — open Drizzle Studio for visual database browsing
+- `npm run quality:no-regressions` — required gate (`ms:gate` + build + tests + runtime smoke)
+- `npm run quality:feature-sweep` — release/refactor gate with extended smoke profile
+- `npm run quality:logging-guard` — blocks direct API error-detail leaks (`error.message`/`error.stack`)
+- `npm run quality:install-agent-hooks` — installs repo-enforced pre-commit + pre-push checks
 
 ## After Making Changes
 
-Two-tier verification — use the fast check often, full build at milestones:
+Two-tier verification protocol (mandatory):
 
-1. **After each file change**: run `npm run typecheck` (~13s) to catch type errors immediately. Fix before moving on.
-2. **After completing a task or major chunk**: run `npm run build` (full production build). Fix all errors before reporting done.
-3. For UI-only changes, at minimum run `npm run lint`
-4. Never leave a session with a broken build — the next session shouldn't start debugging your leftovers
+1. **Fast gate during implementation:** run `npm run ms:gate` and `npm run quality:logging-guard` frequently.
+2. **Completion gate for every coding task:** run `npm run quality:no-regressions`.
+3. **Release/refactor/deletion gate:** run `npm run quality:feature-sweep`.
+4. Never mark a task done with a red gate.
 
 ## Session Discipline
 

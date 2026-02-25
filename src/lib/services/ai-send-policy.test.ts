@@ -66,4 +66,19 @@ describe('resolveAiSendPolicy', () => {
 
     expect(policy.mode).toBe('immediate');
   });
+
+  it('forces pending manual when global auto-send kill switch is enabled', () => {
+    const policy = resolveAiSendPolicy(
+      {
+        aiResponseEnabled: true,
+        aiAgentMode: 'assist',
+        smartAssistEnabled: true,
+        smartAssistAutoSendKillSwitchEnabled: true,
+      },
+      AI_ASSIST_CATEGORY.FOLLOW_UP
+    );
+
+    expect(policy.mode).toBe('pending_manual');
+    expect(policy.reason).toBe('global_auto_send_disabled');
+  });
 });

@@ -6,6 +6,7 @@ import { getHotTransferMembers } from '@/lib/services/team-bridge';
 import twilio from 'twilio';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 const VoiceResponse = twilio.twiml.VoiceResponse;
 
@@ -14,21 +15,93 @@ const VoiceResponse = twilio.twiml.VoiceResponse;
  * Generates TwiML to ring all team members simultaneously
  */
 export async function POST(request: NextRequest) {
-  const payload = await validateAndParseTwilioWebhook(request);
-  if (!payload) {
+  try {
+    const payload = await validateAndParseTwilioWebhook(request);
+    if (!payload) {
+      const twiml = new VoiceResponse();
+      twiml.say('Request validation failed.');
+      twiml.hangup();
+      return new NextResponse(twiml.toString(), {
+        headers: { 'Content-Type': 'text/xml' },
+      });
+    }
+
+    const url = new URL(request.url);
+    const attemptId = url.searchParams.get('attemptId');
+    const leadPhone = url.searchParams.get('leadPhone');
+
+    if (!attemptId) {
+      const twiml = new VoiceResponse();
+      twiml.say('Sorry, there was an error connecting your call.');
+      twiml.hangup();
+      return new NextResponse(twiml.toString(), {
+        headers: { 'Content-Type': 'text/xml' },
+      });
+    }
+
+    const db = getDb();
+
+    const [attempt] = await db
+      .select()
+      .from(callAttempts)
+      .where(eq(callAttempts.id, attemptId))
+      .limit(1);
+
+    if (!attempt) {
+      const twiml = new VoiceResponse();
+      twiml.say('Sorry, there was an error.');
+      twiml.hangup();
+      return new NextResponse(twiml.toString(), {
+        headers: { 'Content-Type': 'text/xml' },
+      });
+    }
+
+    const members = await getHotTransferMembers(attempt.clientId);
+
+    if (members.length === 0) {
+      const twiml = new VoiceResponse();
+      twiml.say('Sorry, no one is available to take your call right now. We will call you back shortly.');
+      twiml.hangup();
+      return new NextResponse(twiml.toString(), {
+        headers: { 'Content-Type': 'text/xml' },
+      });
+    }
+
     const twiml = new VoiceResponse();
-    twiml.say('Request validation failed.');
-    twiml.hangup();
+    twiml.say({ voice: 'alice' }, 'Please hold while we connect you.');
+
+    const appUrl = getWebhookBaseUrl(request);
+
+    const dial = twiml.dial({
+      timeout: 25,
+      action: `${appUrl}/api/webhooks/twilio/ring-result?attemptId=${attemptId}`,
+      callerId: leadPhone || undefined,
+    });
+
+    for (const member of members) {
+      dial.number(
+        {
+          statusCallbackEvent: ['answered'],
+          statusCallback: `${appUrl}/api/webhooks/twilio/member-answered?attemptId=${attemptId}&memberId=${member.id}`,
+        },
+        member.phone
+      );
+    }
+
+    twiml.say({ voice: 'alice' }, 'Sorry, no one is available right now. We will call you back very shortly.');
+
     return new NextResponse(twiml.toString(), {
       headers: { 'Content-Type': 'text/xml' },
     });
-  }
-
-  const url = new URL(request.url);
-  const attemptId = url.searchParams.get('attemptId');
-  const leadPhone = url.searchParams.get('leadPhone');
-
-  if (!attemptId) {
+  } catch (error) {
+    void logInternalError({
+      source: '[Voice] Ring connect webhook',
+      error,
+      context: { route: '/api/webhooks/twilio/ring-connect' },
+    });
+    logSanitizedConsoleError('[Voice] Ring connect webhook failed', error, {
+      route: '/api/webhooks/twilio/ring-connect',
+    });
     const twiml = new VoiceResponse();
     twiml.say('Sorry, there was an error connecting your call.');
     twiml.hangup();
@@ -36,59 +109,4 @@ export async function POST(request: NextRequest) {
       headers: { 'Content-Type': 'text/xml' },
     });
   }
-
-  const db = getDb();
-
-  const [attempt] = await db
-    .select()
-    .from(callAttempts)
-    .where(eq(callAttempts.id, attemptId))
-    .limit(1);
-
-  if (!attempt) {
-    const twiml = new VoiceResponse();
-    twiml.say('Sorry, there was an error.');
-    twiml.hangup();
-    return new NextResponse(twiml.toString(), {
-      headers: { 'Content-Type': 'text/xml' },
-    });
-  }
-
-  const members = await getHotTransferMembers(attempt.clientId);
-
-  if (members.length === 0) {
-    const twiml = new VoiceResponse();
-    twiml.say('Sorry, no one is available to take your call right now. We will call you back shortly.');
-    twiml.hangup();
-    return new NextResponse(twiml.toString(), {
-      headers: { 'Content-Type': 'text/xml' },
-    });
-  }
-
-  const twiml = new VoiceResponse();
-  twiml.say({ voice: 'alice' }, 'Please hold while we connect you.');
-
-  const appUrl = getWebhookBaseUrl(request);
-
-  const dial = twiml.dial({
-    timeout: 25,
-    action: `${appUrl}/api/webhooks/twilio/ring-result?attemptId=${attemptId}`,
-    callerId: leadPhone || undefined,
-  });
-
-  for (const member of members) {
-    dial.number(
-      {
-        statusCallbackEvent: ['answered'],
-        statusCallback: `${appUrl}/api/webhooks/twilio/member-answered?attemptId=${attemptId}&memberId=${member.id}`,
-      },
-      member.phone
-    );
-  }
-
-  twiml.say({ voice: 'alice' }, 'Sorry, no one is available right now. We will call you back very shortly.');
-
-  return new NextResponse(twiml.toString(), {
-    headers: { 'Content-Type': 'text/xml' },
-  });
 }

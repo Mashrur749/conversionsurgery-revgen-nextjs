@@ -1,4 +1,5 @@
 import twilio from 'twilio';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
@@ -69,7 +70,10 @@ export async function sendSMS(
       lastError = error;
 
       if (!isRetryableError(error) || attempt === SMS_MAX_RETRIES) {
-        console.error(`[Messaging] Twilio SMS error (attempt ${attempt}/${SMS_MAX_RETRIES}):`, error);
+        logSanitizedConsoleError(
+          `[Messaging] Twilio SMS error (attempt ${attempt}/${SMS_MAX_RETRIES})`,
+          error
+        );
         throw error;
       }
 
@@ -107,7 +111,7 @@ export async function sendTrackedSMS(
     console.log('[Messaging] Tracked SMS sent:', message.sid, metadata);
     return message.sid;
   } catch (error) {
-    console.error('[Messaging] Twilio tracked SMS error:', error);
+    logSanitizedConsoleError('[Messaging] Twilio tracked SMS error', error);
     throw error;
   }
 }
@@ -140,7 +144,7 @@ export function validateTwilioWebhook(
 
     return isValid;
   } catch (error) {
-    console.error('[Messaging] Webhook validation error:', error);
+    logSanitizedConsoleError('[Messaging] Webhook validation error', error);
     return false;
   }
 }

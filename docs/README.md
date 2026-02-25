@@ -1,6 +1,6 @@
 # Docs Index
 
-Last updated: 2026-02-23
+Last updated: 2026-02-25
 Purpose: single navigation map for all operational documents.
 
 ## Recommended Reading Order
@@ -18,7 +18,9 @@ Purpose: single navigation map for all operational documents.
 12. `06-REMAINING-GAPS.md` — closed launch-hardening gap archive and scope note.
 13. `08-UX-AUDIT.md` — operational UX risks and next iteration focus.
 14. `09-SECURITY-AUDIT.md` — auth and security findings.
-15. `99-ARCHIVE-SYSTEM-BLOCKERS.md` — historical archive only.
+15. `14-RUNTIME-RELIABILITY-SYSTEM.md` — runtime/build/test regression protection system.
+16. `15-SOLOPRENEUR-SANITY-ACTION-LIST.md` — solo operator/developer sanity action board.
+17. `99-ARCHIVE-SYSTEM-BLOCKERS.md` — historical archive only.
 
 ## File Labels (By Intent)
 - `00-10`: active operational documents.

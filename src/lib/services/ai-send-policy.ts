@@ -48,7 +48,7 @@ export type AiSendPolicy =
     }
   | {
       mode: 'pending_manual';
-      reason: 'manual_category';
+      reason: 'manual_category' | 'global_auto_send_disabled';
       delayMinutes: 0;
       requiresManualApproval: true;
       category: AiAssistCategory;
@@ -67,6 +67,7 @@ interface AiSendPolicyInput {
   aiResponseEnabled?: boolean | null;
   aiAgentMode?: string | null;
   smartAssistEnabled?: boolean | null;
+  smartAssistAutoSendKillSwitchEnabled?: boolean | null;
   smartAssistDelayMinutes?: number | null;
   smartAssistManualCategories?: unknown;
 }
@@ -156,6 +157,17 @@ export function resolveAiSendPolicy(
       reason: 'smart_assist_disabled',
       delayMinutes: 0,
       requiresManualApproval: false,
+      category,
+      manualCategories,
+    };
+  }
+
+  if (input.smartAssistAutoSendKillSwitchEnabled) {
+    return {
+      mode: 'pending_manual',
+      reason: 'global_auto_send_disabled',
+      delayMinutes: 0,
+      requiresManualApproval: true,
       category,
       manualCategories,
     };

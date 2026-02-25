@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleAgencyInboundSMS } from '@/lib/services/agency-communication';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * Twilio SMS webhook for the agency number.
@@ -19,7 +20,12 @@ export async function POST(request: NextRequest) {
     const body = payload.Body || '';
     const messageSid = payload.MessageSid || '';
 
-    console.log('[Agency SMS] Inbound:', { from, to, body: body.substring(0, 50), messageSid });
+    console.log('[Agency SMS] Inbound webhook received', {
+      messageSid,
+      fromSuffix: from ? from.slice(-4) : null,
+      toSuffix: to ? to.slice(-4) : null,
+      bodyLength: body.length,
+    });
 
     if (!from || !body) {
       return emptyTwiml();
@@ -32,12 +38,31 @@ export async function POST(request: NextRequest) {
       Body: body,
       MessageSid: messageSid,
     }).catch((err) => {
-      console.error('[Agency SMS] Handler error:', err);
+      void logInternalError({
+        source: '[Agency SMS] Handler',
+        error: err,
+        context: {
+          route: '/api/webhooks/twilio/agency-sms',
+          messageSidSuffix: messageSid ? messageSid.slice(-8) : null,
+          fromSuffix: from ? from.slice(-4) : null,
+          toSuffix: to ? to.slice(-4) : null,
+        },
+      });
+      logSanitizedConsoleError('[Agency SMS] Handler error:', err, {
+        messageSidSuffix: messageSid ? messageSid.slice(-8) : null,
+      });
     });
 
     return emptyTwiml();
   } catch (error) {
-    console.error('[Agency SMS] Webhook error:', error);
+    void logInternalError({
+      source: '[Agency SMS] Webhook',
+      error,
+      context: { route: '/api/webhooks/twilio/agency-sms' },
+    });
+    logSanitizedConsoleError('[Agency SMS] Webhook error:', error, {
+      route: '/api/webhooks/twilio/agency-sms',
+    });
     return emptyTwiml();
   }
 }

@@ -14,6 +14,7 @@ import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
 import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/services/media';
 import { processIncomingMessage } from '@/lib/agent/orchestrator';
 import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
+import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -554,7 +555,16 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   const assistCategory = isNewLead
     ? AI_ASSIST_CATEGORY.FIRST_RESPONSE
     : AI_ASSIST_CATEGORY.FOLLOW_UP;
-  const sendPolicy = resolveAiSendPolicy(client, assistCategory);
+  const smartAssistAutoSendKillSwitchEnabled = await isOpsKillSwitchEnabled(
+    OPS_KILL_SWITCH_KEYS.SMART_ASSIST_AUTO_SEND
+  );
+  const sendPolicy = resolveAiSendPolicy(
+    {
+      ...client,
+      smartAssistAutoSendKillSwitchEnabled,
+    },
+    assistCategory
+  );
 
   if (sendPolicy.mode === 'disabled') {
     return {

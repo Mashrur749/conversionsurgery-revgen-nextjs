@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 /**
  * Safe error response utility.
@@ -9,9 +10,21 @@ export function safeErrorResponse(
   logPrefix: string,
   error: unknown,
   fallbackMessage = 'Internal server error',
-  status = 500
+  status = 500,
+  options?: {
+    clientId?: string | null;
+    context?: Record<string, unknown>;
+  }
 ): NextResponse {
-  console.error(`${logPrefix}:`, error);
+  void logInternalError({
+    source: logPrefix,
+    error,
+    status,
+    clientId: options?.clientId ?? null,
+    context: options?.context,
+  });
+
+  logSanitizedConsoleError(`${logPrefix}:`, error, options?.context);
   return NextResponse.json({ error: fallbackMessage }, { status });
 }
 

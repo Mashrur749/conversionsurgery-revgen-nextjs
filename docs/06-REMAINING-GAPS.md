@@ -1,6 +1,6 @@
 # Remaining Gaps
 
-Last updated: 2026-02-24
+Last updated: 2026-02-25
 Scope: Open items after security + access hardening wave
 
 ## Status Tags
@@ -8,7 +8,7 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: MS-15 Milestone D working tree`
+- `LAST_VERIFIED_COMMIT: Runtime hardening + kill-switch working tree (2026-02-25)`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
@@ -58,6 +58,8 @@ Current offer-parity note:
 - Cursor-based cron catch-up guarantees for monthly reset and bi-weekly reporting with operator backlog controls.
 - Onboarding quality readiness gates with enforce/warn/off policy, transition blocking, and override audit trail.
 - Reminder recipient routing policy with owner/assistant/team fallback chain, de-duplication, and delivery audit visibility.
+- Twilio webhook observability hardening: centralized internal error telemetry and sanitized logging across webhook + Twilio client service paths.
+- Operator containment controls: kill switches for outbound automations, Smart Assist auto-send, and Voice AI via system settings.
 
 ## Tracking Rule
 Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `99-ARCHIVE-SYSTEM-BLOCKERS.md` archive form.

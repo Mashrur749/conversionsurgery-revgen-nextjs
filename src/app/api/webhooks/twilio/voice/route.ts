@@ -6,6 +6,7 @@ import { normalizePhoneNumber } from "@/lib/utils/phone";
 import { getWebhookBaseUrl, xmlAttr } from "@/lib/utils/webhook-url";
 import { handleMissedCall } from "@/lib/automations/missed-call";
 import { validateAndParseTwilioWebhook } from "@/lib/services/twilio";
+import { logInternalError, logSanitizedConsoleError } from "@/lib/services/internal-error-log";
 
 const MISSED_STATUSES = new Set(["no-answer", "busy", "failed", "canceled"]);
 
@@ -49,21 +50,14 @@ export async function POST(request: NextRequest) {
     } catch {} // Don't block voice processing
     const dialCallStatus = (payload.DialCallStatus || "").toLowerCase();
 
-    // Helpful logging
-    console.log(
-      "[Twilio Voice] Received webhook at:",
-      new Date().toISOString(),
-    );
-    console.log("[Twilio Voice] payload keys:", Object.keys(payload));
-    console.log("[Twilio Voice] core:", {
-      CallSid: payload.CallSid,
-      ParentCallSid: payload.ParentCallSid,
-      from,
-      to,
+    console.log("[Twilio Voice] Webhook received", {
+      callSidSuffix: payload.CallSid ? payload.CallSid.slice(-8) : null,
+      parentCallSidSuffix: payload.ParentCallSid ? payload.ParentCallSid.slice(-8) : null,
+      fromSuffix: from ? from.slice(-4) : null,
+      toSuffix: to ? to.slice(-4) : null,
       callStatus,
       dialCallStatus,
       mode: request.nextUrl.searchParams.get("mode"),
-      fullUrl: request.nextUrl.toString(),
     });
 
     /**
@@ -82,9 +76,9 @@ export async function POST(request: NextRequest) {
         dialCallStatus,
         dialDuration,
         dialBridged,
-        originalFrom,
-        originalTo,
-        CallSid: payload.CallSid,
+        originalFromSuffix: originalFrom ? originalFrom.slice(-4) : null,
+        originalToSuffix: originalTo ? originalTo.slice(-4) : null,
+        callSidSuffix: payload.CallSid ? payload.CallSid.slice(-8) : null,
       });
 
       // Detect missed calls — explicit missed statuses OR voicemail pickup
@@ -120,10 +114,9 @@ export async function POST(request: NextRequest) {
           })
           .where(eq(activeCalls.callSid, payload.CallSid))
           .catch((err) => {
-            console.error(
-              "[Voice Phase 2] Failed to mark call as processed:",
-              err,
-            );
+            logSanitizedConsoleError("[Voice Phase 2] Failed to mark call as processed", err, {
+              callSidSuffix: payload.CallSid ? payload.CallSid.slice(-8) : null,
+            });
           });
       } else {
         console.log(
@@ -139,10 +132,9 @@ export async function POST(request: NextRequest) {
           })
           .where(eq(activeCalls.callSid, payload.CallSid))
           .catch((err) => {
-            console.error(
-              "[Voice Phase 2] Failed to mark answered call as processed:",
-              err,
-            );
+            logSanitizedConsoleError("[Voice Phase 2] Failed to mark answered call as processed", err, {
+              callSidSuffix: payload.CallSid ? payload.CallSid.slice(-8) : null,
+            });
           });
       }
 
@@ -195,14 +187,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log({
-      clientResult,
-      clientsTwilioNumber: clients.twilioNumber,
-      twilioNumber,
-    });
-
     if (!clientResult.length) {
-      console.log("[Voice] No client found for Twilio number:", twilioNumber);
+      console.log("[Voice] No client found for Twilio number", {
+        toSuffix: twilioNumber ? twilioNumber.slice(-4) : null,
+      });
       return new NextResponse(
         '<?xml version="1.0" encoding="UTF-8"?><Response><Say>Sorry, we could not process your call.</Say></Response>',
         { headers: { "Content-Type": "text/xml" } },
@@ -236,7 +224,10 @@ export async function POST(request: NextRequest) {
         receivedAt: new Date(),
       })
       .catch((err) => {
-        console.error("[Voice] Failed to store active call:", err);
+        logSanitizedConsoleError("[Voice] Failed to store active call", err, {
+          callSidSuffix: payload.CallSid ? payload.CallSid.slice(-8) : null,
+          clientId: client.id,
+        });
       });
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -246,15 +237,25 @@ export async function POST(request: NextRequest) {
   </Dial>
 </Response>`;
 
-    console.log("[Voice] Forwarding call to owner:", client.phone);
-    console.log("[Voice] TwiML response:", twiml);
+    console.log("[Voice] Forwarding call to owner", {
+      callSidSuffix: payload.CallSid ? payload.CallSid.slice(-8) : null,
+      clientId: client.id,
+      ownerPhoneSuffix: client.phone ? client.phone.slice(-4) : null,
+    });
 
     return new NextResponse(twiml, {
       status: 200,
       headers: { "Content-Type": "text/xml" },
     });
   } catch (error) {
-    console.error("[Voice] Webhook error:", error);
+    void logInternalError({
+      source: "[Voice] Webhook",
+      error,
+      context: { route: "/api/webhooks/twilio/voice" },
+    });
+    logSanitizedConsoleError("[Voice] Webhook error:", error, {
+      route: "/api/webhooks/twilio/voice",
+    });
     return emptyTwiml();
   }
 }

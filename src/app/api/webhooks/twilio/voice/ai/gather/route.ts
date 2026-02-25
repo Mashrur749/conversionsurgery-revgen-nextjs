@@ -6,6 +6,8 @@ import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 import OpenAI from 'openai';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 import { buildGuardrailPrompt } from '@/lib/agent/guardrails';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 
 function twimlResponse(twiml: string) {
   return new NextResponse(
@@ -36,10 +38,23 @@ export async function POST(request: NextRequest) {
 
     const callSid = payload.CallSid;
     const speechResult = payload.SpeechResult;
-
-    console.log('[Voice AI Gather] Speech result for call:', callSid, speechResult);
-
     const appUrl = getWebhookBaseUrl(request);
+
+    const voiceAiKillSwitchEnabled = await isOpsKillSwitchEnabled(
+      OPS_KILL_SWITCH_KEYS.VOICE_AI
+    );
+    if (voiceAiKillSwitchEnabled) {
+      const transferAction = `${appUrl}/api/webhooks/twilio/voice/ai/transfer`;
+      return twimlResponse(
+        '<Say voice="Polly.Matthew">Connecting you with our team now.</Say>' +
+        `<Redirect>${transferAction}</Redirect>`
+      );
+    }
+
+    console.log('[Voice AI Gather] Speech received', {
+      callSid,
+      speechLength: speechResult ? speechResult.length : 0,
+    });
 
     if (!speechResult) {
       return twimlResponse(
@@ -59,7 +74,17 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!call) {
-      console.error('[Voice AI Gather] No call record found for:', callSid);
+      void logInternalError({
+        source: '[Voice AI Gather] Missing call record',
+        error: new Error('Voice call record not found'),
+        context: {
+          route: '/api/webhooks/twilio/voice/ai/gather',
+          callSidSuffix: callSid ? callSid.slice(-8) : null,
+        },
+      });
+      logSanitizedConsoleError('[Voice AI Gather] No call record found', new Error('Missing voice call record'), {
+        callSidSuffix: callSid ? callSid.slice(-8) : null,
+      });
       return twimlResponse('<Say>Sorry, there was an error. Goodbye.</Say><Hangup/>');
     }
 
@@ -224,7 +249,16 @@ Return JSON:
       '<Say>I\'ll have someone call you back. Goodbye!</Say><Hangup/>'
     );
   } catch (error) {
-    console.error('[Voice AI Gather] Error:', error);
+    void logInternalError({
+      source: '[Voice AI Gather] Webhook',
+      error,
+      context: {
+        route: '/api/webhooks/twilio/voice/ai/gather',
+      },
+    });
+    logSanitizedConsoleError('[Voice AI Gather] Error:', error, {
+      route: '/api/webhooks/twilio/voice/ai/gather',
+    });
     return twimlResponse('<Say>Sorry, there was an error. Please try again later.</Say><Hangup/>');
   }
 }

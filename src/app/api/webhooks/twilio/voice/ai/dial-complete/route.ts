@@ -3,6 +3,7 @@ import { getDb } from '@/db';
 import { voiceCalls } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 const MISSED_STATUSES = new Set(['no-answer', 'busy', 'failed', 'canceled']);
 
@@ -27,7 +28,10 @@ export async function POST(request: NextRequest) {
     const callSid = payload.CallSid;
     const dialCallStatus = (payload.DialCallStatus || '').toLowerCase();
 
-    console.log('[Voice AI Dial Complete] Status:', dialCallStatus, 'CallSid:', callSid);
+    console.log('[Voice AI Dial Complete] Status update', {
+      dialCallStatus,
+      callSidSuffix: callSid ? callSid.slice(-8) : null,
+    });
 
     const db = getDb();
 
@@ -71,7 +75,14 @@ export async function POST(request: NextRequest) {
 
     return twimlResponse('');
   } catch (error) {
-    console.error('[Voice AI Dial Complete] Error:', error);
+    void logInternalError({
+      source: '[Voice AI Dial Complete] Webhook',
+      error,
+      context: { route: '/api/webhooks/twilio/voice/ai/dial-complete' },
+    });
+    logSanitizedConsoleError('[Voice AI Dial Complete] Error:', error, {
+      route: '/api/webhooks/twilio/voice/ai/dial-complete',
+    });
     return twimlResponse('');
   }
 }

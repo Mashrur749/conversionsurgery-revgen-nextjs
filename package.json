@@ -26,6 +26,13 @@
     "ms:gate": "./scripts/specs/ms-quality-gate.sh",
     "ms:gate:build": "./scripts/specs/ms-quality-gate.sh --with-build",
     "ms:gate:full": "./scripts/specs/ms-quality-gate.sh --with-build --with-tests",
+    "quality:runtime-smoke": "./scripts/quality/runtime-smoke.sh",
+    "quality:no-regressions": "./scripts/quality/no-regressions.sh",
+    "quality:feature-sweep": "./scripts/quality/feature-sweep.sh",
+    "quality:logging-guard": "./scripts/quality/logging-guard.sh",
+    "quality:install-pre-commit-hook": "./scripts/quality/install-pre-commit-hook.sh",
+    "quality:install-pre-push-hook": "./scripts/quality/install-pre-push-hook.sh",
+    "quality:install-agent-hooks": "./scripts/quality/install-agent-hooks.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

@@ -4,6 +4,7 @@ import { voiceCalls, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
+import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 function twimlResponse(twiml: string) {
   return new NextResponse(
@@ -25,7 +26,9 @@ export async function POST(request: NextRequest) {
 
     const callSid = payload.CallSid;
 
-    console.log('[Voice AI Transfer] Transfer requested for call:', callSid);
+    console.log('[Voice AI Transfer] Transfer requested', {
+      callSidSuffix: callSid ? callSid.slice(-8) : null,
+    });
 
     const db = getDb();
 
@@ -37,7 +40,17 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!call) {
-      console.error('[Voice AI Transfer] No call record found for:', callSid);
+      void logInternalError({
+        source: '[Voice AI Transfer] Missing call record',
+        error: new Error('Voice call record not found'),
+        context: {
+          route: '/api/webhooks/twilio/voice/ai/transfer',
+          callSidSuffix: callSid ? callSid.slice(-8) : null,
+        },
+      });
+      logSanitizedConsoleError('[Voice AI Transfer] No call record found', new Error('Missing voice call record'), {
+        callSidSuffix: callSid ? callSid.slice(-8) : null,
+      });
       return twimlResponse(
         '<Say>Unable to transfer. Please try again later.</Say><Hangup/>'
       );
@@ -80,7 +93,10 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(voiceCalls.id, call.id));
 
-    console.log('[Voice AI Transfer] Transferring to:', transferTo);
+    console.log('[Voice AI Transfer] Transferring call', {
+      callSidSuffix: callSid ? callSid.slice(-8) : null,
+      transferToSuffix: transferTo ? transferTo.slice(-4) : null,
+    });
 
     const appUrl = getWebhookBaseUrl(request);
     const dialAction = `${appUrl}/api/webhooks/twilio/voice/ai/dial-complete`;
@@ -92,7 +108,14 @@ export async function POST(request: NextRequest) {
       '</Dial>'
     );
   } catch (error) {
-    console.error('[Voice AI Transfer] Error:', error);
+    void logInternalError({
+      source: '[Voice AI Transfer] Webhook',
+      error,
+      context: { route: '/api/webhooks/twilio/voice/ai/transfer' },
+    });
+    logSanitizedConsoleError('[Voice AI Transfer] Error:', error, {
+      route: '/api/webhooks/twilio/voice/ai/transfer',
+    });
     return twimlResponse('<Say>Sorry, there was an error. Please try again later.</Say><Hangup/>');
   }
 }
