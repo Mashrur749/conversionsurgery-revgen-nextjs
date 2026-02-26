@@ -15,6 +15,7 @@ import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/service
 import { processIncomingMessage } from '@/lib/agent/orchestrator';
 import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
 import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
+import { ComplianceService } from '@/lib/compliance/compliance-service';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -104,6 +105,21 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     return await handleOptOut(db, client, senderPhone);
   }
 
+  // 2b. Handle HELP keyword (CTIA requirement — must work even for opted-out leads)
+  if (ComplianceService.isHelpMessage(messageBody)) {
+    const helpMessage = renderTemplate('help_response', {
+      businessName: client.businessName,
+      ownerPhone: formatPhoneNumber(client.phone),
+    });
+    await sendSMS(senderPhone, helpMessage, client.twilioNumber!);
+    await ComplianceService.logComplianceEvent(client.id, 'compliance_exempt_send', {
+      phoneNumber: senderPhone,
+      phoneHash: ComplianceService.hashPhoneNumber(senderPhone),
+      reason: 'help_keyword_response',
+    });
+    return { processed: true, action: 'help_response' };
+  }
+
   // 3. Check blocked
   const blockedResult = await db
     .select()
@@ -159,6 +175,12 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         `You've been re-subscribed to messages from ${client.businessName}. Reply STOP at any time to opt out.`,
         client.twilioNumber!
       );
+      await ComplianceService.logComplianceEvent(client.id, 'compliance_exempt_send', {
+        phoneNumber: senderPhone,
+        phoneHash: ComplianceService.hashPhoneNumber(senderPhone),
+        reason: 'opt_in_confirmation',
+        leadId: lead.id,
+      });
       return { processed: true, action: 'opted_in' };
     }
 
@@ -720,6 +742,12 @@ async function handleOptOut(db: ReturnType<typeof getDb>, client: typeof clients
   });
 
   await sendSMS(phone, confirmMessage, client.twilioNumber!);
+  await ComplianceService.logComplianceEvent(client.id, 'compliance_exempt_send', {
+    phoneNumber: phone,
+    phoneHash: ComplianceService.hashPhoneNumber(phone),
+    reason: 'opt_out_confirmation',
+    leadId: leadResult.length ? leadResult[0].id : undefined,
+  });
 
   return { processed: true, optedOut: true };
 }

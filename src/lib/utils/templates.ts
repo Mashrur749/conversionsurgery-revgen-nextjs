@@ -33,6 +33,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
   // System
   opt_out_confirmation: 'You\'ve been unsubscribed. You won\'t receive further messages from {{businessName}}.',
+  help_response: '{{businessName}}: For help, call {{ownerPhone}}. Reply STOP to opt out.',
 };
 
 /**

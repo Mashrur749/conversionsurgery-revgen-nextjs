@@ -36,6 +36,9 @@ const OPT_IN_KEYWORDS = [
   'opt in',
 ];
 
+// Standard HELP keywords (CTIA requirement)
+const HELP_KEYWORDS = ['help', 'info'];
+
 export interface ComplianceCheckResult {
   canSend: boolean;
   canSendMarketing: boolean;
@@ -98,6 +101,16 @@ export class ComplianceService {
     return OPT_IN_KEYWORDS.some(
       (keyword) =>
         normalized === keyword || normalized.startsWith(keyword + ' ')
+    );
+  }
+
+  /**
+   * Check if a message is a HELP/INFO request (CTIA requirement)
+   */
+  static isHelpMessage(message: string): boolean {
+    const normalized = message.toLowerCase().trim();
+    return HELP_KEYWORDS.some(
+      (keyword) => normalized === keyword || normalized.startsWith(keyword + ' ')
     );
   }
 
