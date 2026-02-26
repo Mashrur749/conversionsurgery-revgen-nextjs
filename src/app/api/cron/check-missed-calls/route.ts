@@ -56,13 +56,25 @@ export async function GET(request: NextRequest) {
 
     for (const { call, clientData } of recentCalls) {
       try {
+        // Atomic claim: prevent duplicate processing on concurrent cron runs
+        const [claimed] = await db
+          .update(activeCalls)
+          .set({ processed: true, processedAt: new Date() })
+          .where(and(
+            eq(activeCalls.id, call.id),
+            eq(activeCalls.processed, false)
+          ))
+          .returning({ id: activeCalls.id });
+
+        if (!claimed) continue;
+
         // Query Twilio API to get final call status
         const callData = await client.calls(call.callSid).fetch();
 
         console.log(`[Check Missed Calls] Call ${call.callSid} Twilio snapshot:`, {
           status: callData.status,
           duration: callData.duration,
-          answeredBy: (callData as any).answeredBy,
+          answeredBy: (callData as unknown as Record<string, unknown>).answeredBy,
         });
 
         // Check if call ended with a missed/failed status
@@ -87,26 +99,23 @@ export async function GET(request: NextRequest) {
           console.log(`[Check Missed Calls - FALLBACK] Call completed (answered): ${call.callSid}`);
         }
 
-        // Mark as processed and delete from active calls
-        await db
-          .update(activeCalls)
-          .set({
-            processed: true,
-            processedAt: new Date(),
-          })
-          .where(eq(activeCalls.id, call.id));
-
-        // Now delete it
+        // Delete from active calls (already marked processed by atomic claim)
         await db.delete(activeCalls).where(eq(activeCalls.id, call.id));
 
         processed++;
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errObj = error as Record<string, unknown>;
         // For test SIDs or invalid calls, just clean them up
-        if (error.status === 404 || error.code === 20404) {
+        if (errObj.status === 404 || errObj.code === 20404) {
           console.log(`[Check Missed Calls] Call ${call.callSid} not found in Twilio (test SID or invalid), cleaning up`);
           await db.delete(activeCalls).where(eq(activeCalls.id, call.id));
           processed++;
         } else {
+          // On non-404 errors, unclaim so the call retries next run
+          await db
+            .update(activeCalls)
+            .set({ processed: false, processedAt: null })
+            .where(eq(activeCalls.id, call.id));
           logSanitizedConsoleError('[CronScheduling] Error checking call:', error, {
             callSid: call.callSid,
           });
