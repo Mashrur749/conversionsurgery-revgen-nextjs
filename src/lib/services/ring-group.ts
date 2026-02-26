@@ -2,6 +2,7 @@ import twilio from 'twilio';
 import { getDb } from '@/db';
 import { callAttempts, leads } from '@/db/schema';
 import { sendSMS } from '@/lib/services/twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { eq } from 'drizzle-orm';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { getHotTransferMembers } from '@/lib/services/team-bridge';
@@ -132,11 +133,18 @@ export async function handleNoAnswer(payload: RingGroupPayload): Promise<void> {
     );
   }
 
-  await sendSMS(
-    leadPhone,
-    `Sorry we missed you! We'll call you right back. If urgent, you can also call us directly at this number.`,
-    twilioNumber
-  );
+  await sendCompliantMessage({
+    clientId,
+    to: leadPhone,
+    from: twilioNumber,
+    body: `Sorry we missed you! We'll call you right back. If urgent, you can also call us directly at this number.`,
+    messageClassification: 'inbound_reply',
+    messageCategory: 'transactional',
+    consentBasis: { type: 'lead_reply' },
+    leadId,
+    queueOnQuietHours: false,
+    metadata: { source: 'missed_hot_transfer' },
+  });
 
   await db
     .update(leads)

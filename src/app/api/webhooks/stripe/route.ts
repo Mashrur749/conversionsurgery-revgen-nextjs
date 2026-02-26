@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import { payments, leads, clients, subscriptions, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendSMS } from '@/lib/services/twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getStripeClient } from '@/lib/clients/stripe';
 import { syncInvoiceFromStripe } from '@/lib/services/subscription-invoices';
 import { addPaymentMethod } from '@/lib/services/payment-methods';
@@ -89,11 +90,18 @@ export async function POST(request: NextRequest) {
           if (lead && client && client.twilioNumber) {
             const amount = formatAmount(session.amount_total || 0);
 
-            await sendSMS(
-              lead.phone,
-              `Payment of ${amount} received! Thank you for your business. - ${client.businessName}`,
-              client.twilioNumber
-            );
+            await sendCompliantMessage({
+              clientId: client.id,
+              to: lead.phone,
+              from: client.twilioNumber,
+              body: `Payment of ${amount} received! Thank you for your business. - ${client.businessName}`,
+              messageClassification: 'inbound_reply',
+              messageCategory: 'transactional',
+              consentBasis: { type: 'existing_customer' },
+              leadId: lead.id,
+              queueOnQuietHours: false,
+              metadata: { source: 'payment_confirmation', stripeEventId: event.id },
+            });
           }
 
           // Notify client owner
