@@ -5,6 +5,7 @@ import {
   timestamp,
   boolean,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 
@@ -24,7 +25,7 @@ export const activeCalls = pgTable(
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
-    index('idx_active_calls_call_sid').on(table.callSid),
+    uniqueIndex('uq_active_calls_call_sid').on(table.callSid),
     index('idx_active_calls_client_id').on(table.clientId),
     index('idx_active_calls_received_at').on(table.receivedAt),
     index('idx_active_calls_processed').on(table.processed),

@@ -7,7 +7,9 @@ import {
   jsonb,
   timestamp,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
@@ -34,6 +36,9 @@ export const conversations = pgTable(
   (table) => [
     index('idx_conversations_lead_id').on(table.leadId),
     index('idx_conversations_client_id').on(table.clientId),
+    uniqueIndex('uq_conversations_twilio_sid')
+      .on(table.twilioSid)
+      .where(sql`twilio_sid IS NOT NULL`),
   ]
 );
 

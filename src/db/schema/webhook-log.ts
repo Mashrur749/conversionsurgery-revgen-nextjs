@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   timestamp,
+  index,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 
@@ -22,7 +23,10 @@ export const webhookLog = pgTable(
     responseBody: text('response_body'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
-  (table) => []
+  (table) => [
+    index('idx_webhook_log_client_event').on(table.clientId, table.eventType),
+    index('idx_webhook_log_created_at').on(table.createdAt),
+  ]
 );
 
 export type WebhookLog = typeof webhookLog.$inferSelect;

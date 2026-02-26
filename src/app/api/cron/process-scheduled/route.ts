@@ -335,11 +335,16 @@ export async function GET(request: NextRequest) {
           leadId: lead.id,
           sequenceType: message.sequenceType,
         });
-        // Unclaim: mark back as unsent so it can be retried on next cron run
-        await db
-          .update(scheduledMessages)
-          .set({ sent: false, sentAt: null })
-          .where(eq(scheduledMessages.id, message.id));
+        // Increment attempts; cancel if max reached, otherwise unclaim for retry
+        const newAttempts = (message.attempts ?? 0) + 1;
+        if (newAttempts >= (message.maxAttempts ?? 3)) {
+          await markCancelled(db, message.id, `Failed after ${newAttempts} attempts`);
+        } else {
+          await db
+            .update(scheduledMessages)
+            .set({ sent: false, sentAt: null, attempts: newAttempts })
+            .where(eq(scheduledMessages.id, message.id));
+        }
         failed++;
       }
     }

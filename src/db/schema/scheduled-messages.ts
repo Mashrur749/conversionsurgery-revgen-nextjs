@@ -39,6 +39,8 @@ export const scheduledMessages = pgTable(
     assistNotifiedAt: timestamp('assist_notified_at'),
     assistResolvedAt: timestamp('assist_resolved_at'),
     assistResolutionSource: varchar('assist_resolution_source', { length: 40 }),
+    attempts: integer('attempts').default(0).notNull(),
+    maxAttempts: integer('max_attempts').default(3).notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   (table) => [
