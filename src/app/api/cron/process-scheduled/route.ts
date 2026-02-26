@@ -9,7 +9,7 @@ import { processDueSmartAssistDrafts } from '@/lib/services/smart-assist-lifecyc
 import { SMART_ASSIST_SEQUENCE_TYPE } from '@/lib/services/smart-assist-state';
 import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
 import { auditLog } from '@/db/schema';
-import { eq, and, lte, sql, ne, or, isNull } from 'drizzle-orm';
+import { eq, and, lte, gte, sql, ne, or, isNull } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { sendSMS } from '@/lib/services/twilio';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
@@ -26,6 +26,27 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = getDb();
+
+    // Recover stuck messages: claimed (sent=true, sentAt set) >5 minutes ago
+    // but the process died before actual delivery. We limit to messages whose
+    // sendAt is within the last hour to avoid unclaiming legitimately-sent old messages.
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recovered = await db
+      .update(scheduledMessages)
+      .set({ sent: false, sentAt: null })
+      .where(and(
+        eq(scheduledMessages.sent, true),
+        eq(scheduledMessages.cancelled, false),
+        lte(scheduledMessages.sentAt, fiveMinutesAgo),
+        gte(scheduledMessages.sendAt, oneHourAgo)
+      ))
+      .returning({ id: scheduledMessages.id });
+
+    if (recovered.length > 0) {
+      console.log(`[CronScheduling] Recovered ${recovered.length} stuck messages`);
+    }
+
     const smartAssistResult = await processDueSmartAssistDrafts(25);
 
     // Monthly message count reset moved to dedicated /api/cron/monthly-reset (D9)
