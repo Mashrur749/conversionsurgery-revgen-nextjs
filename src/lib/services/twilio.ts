@@ -41,6 +41,18 @@ function isRetryableError(error: unknown): boolean {
  * @param from - Sender phone number (Twilio number)
  * @returns Message SID from Twilio
  */
+/**
+ * Indicates a send failure where Twilio may have already accepted the message.
+ * Callers should NOT retry — the message may have been delivered.
+ * The statusCallback will reconcile actual delivery status.
+ */
+export class TwilioAmbiguousError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = 'TwilioAmbiguousError';
+  }
+}
+
 export async function sendSMS(
   to: string,
   body: string,
@@ -69,12 +81,25 @@ export async function sendSMS(
     } catch (error) {
       lastError = error;
 
-      if (!isRetryableError(error) || attempt === SMS_MAX_RETRIES) {
+      if (!isRetryableError(error)) {
+        // Definitive rejection (4xx) — safe to retry at caller level
         logSanitizedConsoleError(
           `[Messaging] Twilio SMS error (attempt ${attempt}/${SMS_MAX_RETRIES})`,
           error
         );
         throw error;
+      }
+
+      if (attempt === SMS_MAX_RETRIES) {
+        // Exhausted retries on network/server errors — Twilio may have accepted
+        logSanitizedConsoleError(
+          `[Messaging] Twilio SMS ambiguous after ${SMS_MAX_RETRIES} attempts`,
+          error
+        );
+        throw new TwilioAmbiguousError(
+          `Send may have succeeded — exhausted ${SMS_MAX_RETRIES} retries on transient error`,
+          error
+        );
       }
 
       const delay = SMS_RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);

@@ -11,7 +11,7 @@ import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
 import { auditLog } from '@/db/schema';
 import { eq, and, lte, gte, sql, ne, or, isNull } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
-import { sendSMS } from '@/lib/services/twilio';
+import { sendSMS, TwilioAmbiguousError } from '@/lib/services/twilio';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
@@ -335,7 +335,17 @@ export async function GET(request: NextRequest) {
           leadId: lead.id,
           sequenceType: message.sequenceType,
         });
-        // Increment attempts; cancel if max reached, otherwise unclaim for retry
+
+        if (error instanceof TwilioAmbiguousError) {
+          // Twilio may have accepted the message — do NOT unclaim/retry.
+          // Leave sent=true so stuck recovery won't touch it for 5 minutes.
+          // The statusCallback will reconcile actual delivery status.
+          console.warn(`[CronScheduling] Ambiguous send for message ${message.id} — leaving claimed, awaiting status callback`);
+          failed++;
+          continue;
+        }
+
+        // Definitive failure — increment attempts; cancel if max reached, otherwise unclaim for retry
         const newAttempts = (message.attempts ?? 0) + 1;
         if (newAttempts >= (message.maxAttempts ?? 3)) {
           await markCancelled(db, message.id, `Failed after ${newAttempts} attempts`);
