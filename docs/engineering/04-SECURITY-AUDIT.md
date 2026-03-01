@@ -3,7 +3,7 @@
 **Audit date:** 2026-02-18 / 2026-02-19
 **Scope:** All API routes, auth flows, middleware, data access patterns
 **Methodology:** Automated code analysis + manual review of every API route
-**Last verified commit:** `API-wide safe error logging hardening working tree (2026-02-25)`
+**Last verified commit:** `Reliability audit: compliance gateway bypass closure (2026-02-26)`
 
 ---
 
@@ -115,7 +115,7 @@ The application underwent a comprehensive security hardening across 6 commits (5
 
 ## Related: System Blockers Remediation
 
-This audit covers **auth and access control** findings. A companion audit at `docs/99-ARCHIVE-SYSTEM-BLOCKERS.md` covers **data integrity, API resilience, and business logic** findings that also have security implications:
+This audit covers **auth and access control** findings. A companion audit at `docs/archive/SYSTEM-BLOCKERS.md` covers **data integrity, API resilience, and business logic** findings that also have security implications:
 
 - **Phase 1 (Critical):** Transactions on subscription lifecycle (D1), atomic race condition fixes on coupon redemption / escalation claims / OTP verification (D2-D4), Stripe idempotency keys (E1), SMS retry (E3), env validation (S2)
 - **Phase 2 (High):** FK constraints (D5-D6), webhook dedup (E4, E7), scheduled message atomic claims (E8), missing Stripe webhook handlers (E9), webhook secret fail-fast (S3)
@@ -277,5 +277,13 @@ Since the original audit window, new managed-service features (Smart Assist work
    - remaining admin client/twilio, flow-template, webhook/form/stripe/ring-group route paths now use sanitized logger helpers or `safeErrorResponse()`.
    - `src/app/api` now has zero raw `console.error` call sites.
    - no auth boundary changes were introduced as part of this logging refactor.
+
+23. Reliability audit — compliance gateway bypass closure (2026-02-26):
+   - Two remaining direct `sendSMS()` calls to lead phone numbers were identified and routed through `sendCompliantMessage()`:
+     - Stripe payment confirmation in `/api/webhooks/stripe/route.ts` (now uses `existing_customer` consent basis, `transactional` category).
+     - Ring-group missed-transfer notification in `src/lib/services/ring-group.ts` `handleNoAnswer()` (now uses `lead_reply` consent basis, `transactional` category).
+   - All internal team-facing `sendSMS()` calls (e.g., hot-transfer alerts to team members, HELP/opt-in/opt-out confirmations) remain correctly exempt from the compliance gateway.
+   - CTIA HELP keyword auto-reply added for regulatory compliance; all exempt sends now produce `compliance_exempt_send` audit events.
+   - no new auth model exceptions were introduced.
 
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

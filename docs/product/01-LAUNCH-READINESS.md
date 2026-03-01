@@ -1,20 +1,20 @@
 # Launch Readiness
 
-Last updated: 2026-02-25
+Last updated: 2026-02-26
 Scope: Managed service launch now + SaaS-readiness foundation (next ~6 months)
 
 ## Scope Note
 This document reflects the launch-hardening baseline that was completed in February 2026.
 
 Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately in:
-- `docs/10-OFFER-PARITY-GAPS.md`
+- `docs/product/02-OFFER-PARITY-GAPS.md`
 
 ## Status Tags
 - `P1: DONE`
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: API-wide safe error logging hardening working tree (2026-02-25)`
+- `LAST_VERIFIED_COMMIT: Reliability audit: compliance gateway bypass closure (2026-02-26)`
 
 ## Executive Status
 
@@ -25,7 +25,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 | Team operations | Ready with caveats | Team limit enforcement added; escalation fallback added |
 | Compliance gateway | Ready | Consent/opt-out/quiet hours enforced; durable replay covers lead + non-lead flows |
 | Billing + plan policy | Ready with caveats | Unlimited policy defaults and cancellation/export parity are implemented; add-on transparency remains tracked in offer gaps |
-| Cron + reliability | Ready | Master cron bearer auth + cursor-based catch-up guarantees + operator controls are implemented |
+| Cron + reliability | Ready | Master cron bearer auth + cursor-based catch-up guarantees + operator controls + atomic claims + stuck recovery + max-attempts retry cap are implemented |
 | Self-serve foundation | Ready | Public signup + guided onboarding checklist + setup request path |
 | Reporting | Ready | Deterministic bi-weekly report generation/delivery with idempotency guard |
 
@@ -59,6 +59,13 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 - Solo Reliability Dashboard is now available in `/admin/settings` for hourly triage.
 - API route logging hardening is now complete: `src/app/api` has zero raw `console.error` call sites and uses centralized safe/sanitized error handling paths.
 - Deterministic replay tooling is now available via `./scripts/ops/replay.sh`.
+- CTIA HELP keyword auto-reply now implemented with compliance exempt-send audit logging for all exempt sends (HELP, opt-in, opt-out confirmations).
+- Atomic claim pattern added to `check-missed-calls` cron to prevent double-processing on concurrent runs.
+- Stuck scheduled message recovery added to `process-scheduled` cron (reclaims messages stuck >5 min within 1-hour lookback).
+- Unique DB constraints added: `conversations.twilio_sid` (partial), `active_calls.call_sid`; webhook-log indexes for debugging.
+- Max-attempts retry cap on scheduled messages (default 3 attempts then permanent cancellation).
+- `TwilioAmbiguousError` classification prevents duplicate texts on Twilio send timeouts by leaving messages claimed for status-callback reconciliation.
+- All lead-facing outbound SMS now routed through `sendCompliantMessage()` (Stripe payment confirmation, ring-group missed transfer were previously bypassing compliance gateway).
 
 ## Remaining Launch Blockers (Managed Service)
 
@@ -73,7 +80,7 @@ Offer-to-implementation parity for the reviewed v2.1 offer is tracked separately
 
 ## Offer Parity Progress Snapshot
 Active offer parity tracking lives in:
-- `docs/10-OFFER-PARITY-GAPS.md`
+- `docs/product/02-OFFER-PARITY-GAPS.md`
 
 Current snapshot at this commit:
 1. Done: `GAP-001` unlimited messaging parity.

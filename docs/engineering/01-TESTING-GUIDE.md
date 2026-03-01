@@ -1,9 +1,9 @@
 # Testing Guide
 
-Last updated: 2026-02-25
+Last updated: 2026-02-26
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
+Last verified commit: `Reliability audit: compliance gateway bypass closure (2026-02-26)`
 
 ## 0. Preflight (Run First)
 
@@ -442,6 +442,39 @@ Expected:
 - Each switch changes behavior without code changes/redeploy.
 - Switching back to `false` restores normal behavior.
 
+### Step 18b: HELP keyword + compliance audit logging validation
+1. Send `HELP` as inbound SMS to a client Twilio number (via test or Twilio console).
+2. Verify auto-reply contains business name, owner phone, and STOP instructions.
+3. Send `INFO` — same expected behavior.
+4. Query `audit_log` for `compliance_exempt_send` events:
+```sql
+select action, metadata, created_at
+from audit_log
+where action = 'compliance_exempt_send'
+order by created_at desc
+limit 10;
+```
+5. Verify events exist for HELP response, and separately for opt-in and opt-out confirmations (test those paths too).
+
+Expected:
+- HELP/INFO messages trigger auto-reply even for opted-out leads.
+- All exempt sends (HELP, opt-in, opt-out confirmations) produce `compliance_exempt_send` audit events with `reason` in metadata.
+- No compliance gateway blocking on exempt sends.
+
+### Step 18c: Cron reliability controls validation
+1. Run process-scheduled cron:
+```bash
+curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bearer $CRON_SECRET"
+```
+2. Verify response payload includes `sent`, `skipped`, `failed` counters.
+3. To test stuck recovery: manually set a scheduled message to `sent=true, sent_at=<10 minutes ago>, cancelled=false` in DB, then rerun cron — message should be recovered (reset to `sent=false`).
+4. To test max-attempts: manually set a scheduled message to `attempts=2, max_attempts=3`, trigger a failure, and verify it is cancelled with reason `Failed after 3 attempts`.
+
+Expected:
+- Stuck messages (claimed >5 min, scheduled within last hour) are recovered.
+- Messages exceeding max attempts are permanently cancelled.
+- Concurrent cron runs do not double-process due to atomic claims.
+
 ### Step 19: Final smoke
 1. Validate one end-to-end lead lifecycle: inbound -> response -> escalation/no escalation -> follow-up event.
 2. Validate client portal permissions with at least two distinct roles.
@@ -553,5 +586,5 @@ Release only if all pass:
 3. `npm test`
 4. `npm run build`
 5. Sequential manual run (Section 2) completed without blockers
-6. No open P1 items in `docs/06-REMAINING-GAPS.md`
+6. No open P1 items in `docs/archive/REMAINING-GAPS.md`
 7. No unresolved auth/compliance regressions from cron checks

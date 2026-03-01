@@ -1,6 +1,6 @@
 # Offer Parity Gaps (v2.1)
 
-Last updated: 2026-02-25
+Last updated: 2026-02-26
 Scope: Gap register against the reviewed offer architecture ("ConversionSurgery Grand Slam Offer v2.1")
 Objective: Ensure paying-client delivery matches every sold promise.
 
@@ -9,7 +9,7 @@ Objective: Ensure paying-client delivery matches every sold promise.
 - `P1: DONE`
 - `P2: DONE`
 - `SOURCE_OFFER: GRAND-SLAM-v2.1 (2026-02-23)`
-- `LAST_VERIFIED_COMMIT: API-wide safe error logging hardening working tree (2026-02-25)`
+- `LAST_VERIFIED_COMMIT: Reliability audit: compliance gateway bypass closure (2026-02-26)`
 
 ## Executive Summary
 The current platform is launch-ready and implementation-complete for reviewed offer parity (`GAP-001..GAP-203`).
@@ -534,15 +534,15 @@ Operational continuity hardening (2026-02-25):
 ## Verification Rule
 
 A gap can move to done only when both are true:
-1. Functional verification exists (`02-TESTING-GUIDE.md` updated with explicit pass criteria).
+1. Functional verification exists (`engineering/01-TESTING-GUIDE.md` updated with explicit pass criteria).
 2. Client-facing and operations docs are updated to match behavior exactly.
 
 ## Documentation Sync Rule (Mandatory)
 For every completed MS milestone:
-1. Update this file (`10-OFFER-PARITY-GAPS.md`).
+1. Update this file (`product/02-OFFER-PARITY-GAPS.md`).
 2. Update `docs/specs/MS-IMPLEMENTATION-BOARD.md`.
 3. Update `docs/specs/MS-CONTEXT-SNAPSHOT.md`.
 4. If workflows changed, update:
-- `docs/02-TESTING-GUIDE.md`
-- `docs/04-OPERATIONS-GUIDE.md`
-- `docs/05-USE-CASES.md`
+- `docs/engineering/01-TESTING-GUIDE.md`
+- `docs/operations/01-OPERATIONS-GUIDE.md`
+- `docs/operations/02-USE-CASES.md`

@@ -5,9 +5,9 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 
 ## Source of Truth
 - Offer: `/docs/GRAND-SLAM-OFFER.md`
-- Gap register: `/docs/10-OFFER-PARITY-GAPS.md`
+- Gap register: `/docs/product/02-OFFER-PARITY-GAPS.md`
 - Milestone board: `/docs/specs/MS-IMPLEMENTATION-BOARD.md`
-- Execution runbook: `/docs/11-MS-SPEC-EXECUTION-RUNBOOK.md`
+- Execution runbook: `/docs/onboarding/03-MS-SPEC-EXECUTION-RUNBOOK.md`
 - Agent rules: `/AGENTS.md`
 
 ## Completion Status
@@ -41,8 +41,8 @@ Purpose: compact handoff context for fresh sessions without replaying chat histo
 ## New Session Prompt (Copy/Paste)
 ```text
 Reload from repo state only.
-Use AGENTS.md and docs/11-MS-SPEC-EXECUTION-RUNBOOK.md.
+Use AGENTS.md and docs/onboarding/03-MS-SPEC-EXECUTION-RUNBOOK.md.
 Business source-of-truth: docs/GRAND-SLAM-OFFER.md.
-Confirm docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/10-OFFER-PARITY-GAPS.md are still aligned with code.
+Confirm docs/specs/MS-IMPLEMENTATION-BOARD.md and docs/product/02-OFFER-PARITY-GAPS.md are still aligned with code.
 If implementing new work, keep docs 00/01/02/03/04/05/06/07/09/10 in sync in the same execution stream.
 ```

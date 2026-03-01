@@ -2,7 +2,7 @@
 
 Last updated: 2026-02-24
 Status: Draft language only, pending licensed legal review
-Related brief: `docs/12-LEGAL-COUNSEL-BRIEF.md`
+Related brief: `docs/legal/01-LEGAL-COUNSEL-BRIEF.md`
 
 ## How To Use
 For each section:

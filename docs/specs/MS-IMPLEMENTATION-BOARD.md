@@ -13,7 +13,7 @@ Purpose: single session-to-session execution board for `MS-01..MS-15`.
 1. Only one milestone can be `IN_PROGRESS` at a time.
 2. Each milestone must map to one commit.
 3. Move a milestone to `DONE` only after `npm run ms:gate` + milestone-specific checks pass.
-4. Reflect any milestone completion in `docs/10-OFFER-PARITY-GAPS.md`.
+4. Reflect any milestone completion in `docs/product/02-OFFER-PARITY-GAPS.md`.
 
 ## Board
 

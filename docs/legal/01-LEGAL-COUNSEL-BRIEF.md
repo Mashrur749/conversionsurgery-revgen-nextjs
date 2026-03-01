@@ -5,7 +5,7 @@ Owner: ConversionSurgery leadership
 Status: Required before first paid client contract
 Source references:
 - `docs/GRAND-SLAM-OFFER.md` (Part 10)
-- `docs/10-OFFER-PARITY-GAPS.md`
+- `docs/product/02-OFFER-PARITY-GAPS.md`
 
 ## Objective
 Obtain written legal guidance from a licensed Canadian lawyer on four must-have items that directly affect client-facing promises and contract exposure.
@@ -54,10 +54,10 @@ Attach:
 1. Current offer source:
 - `docs/GRAND-SLAM-OFFER.md`
 2. Proposed legal redlines draft:
-- `docs/13-LEGAL-CLAUSE-REDLINES.md`
+- `docs/legal/02-LEGAL-CLAUSE-REDLINES.md`
 3. Current launch/parity status:
-- `docs/07-LAUNCH-READINESS.md`
-- `docs/10-OFFER-PARITY-GAPS.md`
+- `docs/product/01-LAUNCH-READINESS.md`
+- `docs/product/02-OFFER-PARITY-GAPS.md`
 
 ## Internal Go/No-Go Rule
 - No paid client signatures until written counsel signoff on items 1-4 above.

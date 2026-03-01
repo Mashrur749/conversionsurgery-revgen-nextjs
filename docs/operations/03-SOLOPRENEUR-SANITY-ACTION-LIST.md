@@ -1,6 +1,6 @@
 # Solopreneur Sanity Action List
 
-Last updated: 2026-02-25
+Last updated: 2026-02-26
 Audience: Founder/operator/developer (solo)
 Goal: deliver managed-service results without burning out or destabilizing the platform.
 
@@ -75,7 +75,7 @@ Update rule:
   - Added tests for kill-switch parsing and global Smart Assist policy behavior.
   - Validation run: full `quality:no-regressions` green.
 - 2026-02-25 (Wave C):
-  - Standardized one deploy path and one rollback path in `04-OPERATIONS-GUIDE.md`.
+  - Standardized one deploy path and one rollback path in `operations/01-OPERATIONS-GUIDE.md`.
   - Deploy path: `quality:feature-sweep` -> `cf:deploy` -> `wrangler deployments status`.
   - Rollback path: `wrangler versions list` -> `wrangler versions deploy <version-id>@100`.
 - 2026-02-25 (Wave D):
@@ -138,7 +138,7 @@ Execution note:
 
 - [ ] `S-002` Daily Operator Cockpit Ritual
   - Lens: Operator
-  - Action: run daily checklist from `04-OPERATIONS-GUIDE.md` and record red/yellow/green status.
+  - Action: run daily checklist from `operations/01-OPERATIONS-GUIDE.md` and record red/yellow/green status.
   - Done when: 10 consecutive business days logged.
 
 - [ ] `S-003` Incident Escalation Standard

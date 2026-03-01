@@ -1,8 +1,8 @@
 # Operations Guide
 
-Last updated: 2026-02-25
+Last updated: 2026-02-26
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
+Last verified commit: `Reliability audit: compliance gateway bypass closure (2026-02-26)`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -111,6 +111,12 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Calendar, team-member, and client conversation/team workflow failures should also use centralized safe/sanitized logging.
 - API routes should have zero raw `console.error`; verify with `rg -n "console\\.error" src/app/api`.
 - If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
+- **HELP keyword (CTIA):** inbound `HELP`/`INFO` messages trigger auto-reply with business contact + opt-out info. Works even for opted-out leads. All exempt sends (HELP, opt-in, opt-out confirmations) produce `compliance_exempt_send` audit events.
+- **Stuck message recovery:** `process-scheduled` cron recovers messages claimed >5 minutes ago (within 1-hour lookback) by resetting them for retry. This handles serverless function kills mid-send.
+- **Max-attempts retry cap:** scheduled messages retry up to `maxAttempts` (default 3) before permanent cancellation. Prevents infinite retry loops on permanently-failing sends.
+- **Ambiguous send handling:** if Twilio may have accepted a message but the response was lost (network timeout after retries exhausted), the message stays claimed and is NOT retried. The Twilio status callback reconciles actual delivery. Look for `TwilioAmbiguousError` in logs.
+- **Atomic claims:** both `process-scheduled` and `check-missed-calls` crons use UPDATE-WHERE atomic claims to prevent double-processing on concurrent runs.
+- **Compliance gateway coverage:** all lead-facing outbound SMS (including Stripe payment confirmations and ring-group missed-transfer messages) route through `sendCompliantMessage()` for opt-out/DNC/consent/quiet-hours enforcement.
 
 ## Deterministic Replay Commands
 Preferred replay path for critical jobs:
@@ -257,7 +263,7 @@ npm run cf:deploy
 ```bash
 npx wrangler deployments status
 ```
-4. Run post-deploy smoke validation checklist from `docs/02-TESTING-GUIDE.md` (Final smoke + telemetry checks).
+4. Run post-deploy smoke validation checklist from `docs/engineering/01-TESTING-GUIDE.md` (Final smoke + telemetry checks).
 
 ### Rollback path (production)
 1. List recent versions:
@@ -281,7 +287,7 @@ Rule:
 ## References
 - `src/app/api/cron/route.ts`
 - `src/lib/utils/cron.ts`
-- `docs/02-TESTING-GUIDE.md`
-- `docs/06-REMAINING-GAPS.md`
-- `docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
-- `docs/14-RUNTIME-RELIABILITY-SYSTEM.md`
+- `docs/engineering/01-TESTING-GUIDE.md`
+- `docs/archive/REMAINING-GAPS.md`
+- `docs/onboarding/02-OPERATOR-MASTERY-PLAYBOOK.md`
+- `docs/engineering/03-RUNTIME-RELIABILITY-SYSTEM.md`

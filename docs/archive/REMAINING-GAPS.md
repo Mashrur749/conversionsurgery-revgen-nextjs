@@ -1,6 +1,6 @@
 # Remaining Gaps
 
-Last updated: 2026-02-25
+Last updated: 2026-02-26
 Scope: Open items after security + access hardening wave
 
 ## Status Tags
@@ -8,13 +8,13 @@ Scope: Open items after security + access hardening wave
 - `P2: DONE`
 - `P3: DONE`
 - `REMAINING: []`
-- `LAST_VERIFIED_COMMIT: API-wide safe error logging hardening working tree (2026-02-25)`
+- `LAST_VERIFIED_COMMIT: Reliability audit: compliance gateway bypass closure (2026-02-26)`
 
 ## Scope Note
 This file tracks the earlier launch-hardening wave (security/access/platform baseline), which is closed.
 
 Offer parity gaps against the reviewed v2.1 offer architecture are tracked separately in:
-- `docs/10-OFFER-PARITY-GAPS.md`
+- `docs/product/02-OFFER-PARITY-GAPS.md`
 
 Current offer-parity note:
 - `GAP-103` (add-on billing transparency) is complete with `MS-10` Milestones A-D implemented.
@@ -62,6 +62,13 @@ Current offer-parity note:
 - Operator containment controls: kill switches for outbound automations, Smart Assist auto-send, and Voice AI via system settings.
 - Solo reliability operations hardening: `/admin/settings` reliability dashboard + deterministic replay script + export recovery drill tooling.
 - API-wide centralized safe error logging hardening: all `src/app/api` routes now avoid raw `console.error` and route failures through sanitized handlers.
+- Reliability audit (2026-02-26): CTIA HELP keyword auto-reply with compliance exempt-send audit logging.
+- Reliability audit (2026-02-26): Atomic claim pattern in `check-missed-calls` cron to prevent double-processing on concurrent runs.
+- Reliability audit (2026-02-26): Stuck message recovery in `process-scheduled` cron (reclaims messages stuck >5 min within 1-hour lookback).
+- Reliability audit (2026-02-26): Schema unique constraints on `conversations.twilio_sid` (partial) and `active_calls.call_sid`; webhook-log indexes.
+- Reliability audit (2026-02-26): Max-attempts retry cap on scheduled messages (default 3 attempts before permanent cancellation).
+- Reliability audit (2026-02-26): `TwilioAmbiguousError` classification prevents duplicate texts on send timeouts (leaves message claimed for status-callback reconciliation).
+- Reliability audit (2026-02-26): All lead-facing outbound SMS (Stripe payment confirmation, ring-group missed transfer) now routed through `sendCompliantMessage()`.
 
 ## Tracking Rule
-Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `99-ARCHIVE-SYSTEM-BLOCKERS.md` archive form.
+Use this file as the live gap list. Historical resolved blocker inventories were collapsed into `archive/SYSTEM-BLOCKERS.md` archive form.

@@ -37,7 +37,7 @@ Constraints:
 - Keep scope to this milestone only.
 - Apply the milestone refactor checkpoint.
 - Run verification gate and report exact results.
-- Update docs/10-OFFER-PARITY-GAPS.md status accurately.
+- Update docs/product/02-OFFER-PARITY-GAPS.md status accurately.
 - Commit with message: ms-01 milestone-a: <summary>
 ```
 
@@ -53,7 +53,7 @@ Before marking any milestone done:
 - verify docs updated to match behavior
 
 ## 6) Status Discipline
-`docs/10-OFFER-PARITY-GAPS.md` must always reflect truth:
+`docs/product/02-OFFER-PARITY-GAPS.md` must always reflect truth:
 - `OPEN`: not started
 - `IN_PROGRESS`: partial milestone delivery
 - `DONE`: verified and documented

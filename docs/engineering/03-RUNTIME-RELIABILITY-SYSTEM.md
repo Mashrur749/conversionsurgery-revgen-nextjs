@@ -1,6 +1,6 @@
 # Runtime Reliability System
 
-Last updated: 2026-02-25
+Last updated: 2026-02-26
 Owner: Engineering + Operations
 Status: Active
 
@@ -46,7 +46,7 @@ This runs:
   - `/api/admin/clients`, `/api/client/revenue` deny unauthenticated calls (`401/403`)
 
 4. Full manual ops validation:
-- run `/docs/02-TESTING-GUIDE.md` sequentially before release.
+- run `/docs/engineering/01-TESTING-GUIDE.md` sequentially before release.
 
 Runtime smoke script behavior:
 - startup timeout is configurable with `SMOKE_STARTUP_TIMEOUT_SECONDS` (default `90`)
@@ -138,11 +138,32 @@ Emergency containment can be activated without deploy using `system_settings` ke
 
 These switches are intended for incident containment and should be reset after remediation and validation.
 
+## Pillar 5: Cron + Message Delivery Reliability (2026-02-26)
+
+Hardened controls to prevent double-texts, lost messages, and infinite retries:
+
+1. **Atomic claims:** Both `process-scheduled` and `check-missed-calls` crons use UPDATE-WHERE atomic claims to prevent double-processing on concurrent runs. If a row has already been claimed by another process, the claim returns 0 rows and the message/call is skipped.
+
+2. **Stuck message recovery:** `process-scheduled` recovers messages that were claimed (`sent=true`) more than 5 minutes ago but never completed (process killed mid-send). A 1-hour lookback guard prevents unclaiming legitimately-sent old messages.
+
+3. **Max-attempts retry cap:** Scheduled messages track `attempts` and `maxAttempts` (default 3). After exceeding max attempts, the message is permanently cancelled instead of retrying indefinitely.
+
+4. **Ambiguous send classification:** When Twilio may have accepted a message but the SDK response was lost (network timeout after retries), a `TwilioAmbiguousError` is thrown. The cron leaves the message claimed (does NOT retry) and relies on the Twilio status callback to reconcile actual delivery status.
+
+5. **Unique DB constraints:**
+   - `conversations.twilio_sid` partial unique index (prevents duplicate conversation records from webhook replays)
+   - `active_calls.call_sid` unique index (prevents duplicate call records)
+   - `webhook_log` indexes on `(client_id, event_type)` and `created_at` for debugging
+
+6. **Compliance gateway coverage:** All lead-facing outbound SMS routes through `sendCompliantMessage()` for opt-out/DNC/consent/quiet-hours enforcement. Direct `sendSMS()` is reserved for internal team notifications and compliance-exempt responses (HELP, opt-in/opt-out confirmations).
+
+7. **CTIA HELP keyword:** Inbound `HELP`/`INFO` messages trigger mandatory auto-reply (business contact + opt-out instructions). All exempt sends produce `compliance_exempt_send` audit events.
+
 ## Operational Notes
 - This system reduces runtime risk significantly but cannot prove "zero runtime errors" in all real-world conditions.
 - Production monitoring and incident response remain mandatory:
-  - `/docs/04-OPERATIONS-GUIDE.md`
-  - `/docs/01-OPERATOR-MASTERY-PLAYBOOK.md`
+  - `/docs/operations/01-OPERATIONS-GUIDE.md`
+  - `/docs/onboarding/02-OPERATOR-MASTERY-PLAYBOOK.md`
 
 ## Escalation Rule
 If `quality:no-regressions` fails:
