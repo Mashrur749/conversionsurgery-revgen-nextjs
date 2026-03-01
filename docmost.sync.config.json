@@ -1,0 +1,27 @@
+{
+  "sourceDir": "docs",
+  "managedRootTitle": "REPO_SYNC_MANAGED",
+  "spacePath": "/s/general",
+  "includeExtensions": [
+    ".md",
+    ".mdx",
+    ".txt",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".gif",
+    ".svg",
+    ".pdf"
+  ],
+  "excludeDirNames": [
+    ".git",
+    "node_modules",
+    ".next",
+    ".open-next",
+    ".wrangler"
+  ],
+  "excludeFileNames": [
+    ".DS_Store"
+  ]
+}
