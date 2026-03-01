@@ -69,3 +69,5 @@ external-backups/
 # testing artifacts
 .playwright-mcp/
 *.png
+.docmost-sync-artifacts/
+.husky/_/

@@ -25,7 +25,7 @@
 - [ ] Manual validation steps recorded
 
 ## 5) Docs + Status
-- [ ] Gap status updated in `/docs/10-OFFER-PARITY-GAPS.md`
+- [ ] Gap status updated in `/docs/product/02-OFFER-PARITY-GAPS.md`
 - [ ] Spec updated with progress notes if needed
 - [ ] Testing/ops docs updated if behavior changed
 

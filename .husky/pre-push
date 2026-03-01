@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "${ROOT_DIR}"
+
+REFS_FILE="$(mktemp)"
+trap 'rm -f "${REFS_FILE}"' EXIT
+cat > "${REFS_FILE}"
+
+echo "[pre-push] Checking docs changes for local Docmost sync..."
+cat "${REFS_FILE}" | "${ROOT_DIR}/scripts/docmost-sync/pre-push-docs-sync.sh"
+
+echo "[pre-push] Running no-regressions gate..."
+npm run quality:no-regressions

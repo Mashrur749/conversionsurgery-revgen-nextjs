@@ -21,7 +21,7 @@ for f in docs/specs/MS-[0-9][0-9]-*.md; do
   [ -e "$f" ] || continue
 
   for section in "${required_sections[@]}"; do
-    if ! rg -q "$section" "$f"; then
+    if ! grep -qE "$section" "$f"; then
       echo "FAIL: $f missing section/pattern: $section"
       failed=1
     fi

@@ -15,10 +15,10 @@ Use before marking any MS milestone done.
 
 ## Documentation Gate
 Update all relevant docs when behavior changes:
-- `/docs/10-OFFER-PARITY-GAPS.md`
+- `/docs/product/02-OFFER-PARITY-GAPS.md`
 - `/docs/specs/README.md` (if structure changed)
-- `/docs/02-TESTING-GUIDE.md` (when test flow changes)
-- `/docs/04-OPERATIONS-GUIDE.md` (when operator behavior changes)
+- `/docs/engineering/01-TESTING-GUIDE.md` (when test flow changes)
+- `/docs/operations/01-OPERATIONS-GUIDE.md` (when operator behavior changes)
 
 ## Required Output
 - What tests ran

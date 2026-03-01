@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "${ROOT_DIR}"
+
+echo "[pre-commit] Running ms:gate..."
+npm run ms:gate
+
+echo "[pre-commit] Running logging guard..."
+npm run quality:logging-guard

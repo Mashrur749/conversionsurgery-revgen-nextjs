@@ -11,7 +11,7 @@ check() {
   local pattern="$2"
   local scope="$3"
   local matches
-  matches="$(rg -n "$pattern" $scope || true)"
+  matches="$(grep -rn -E "$pattern" $scope || true)"
   if [[ -n "$matches" ]]; then
     echo "Logging guard violation: ${label}"
     echo "$matches"

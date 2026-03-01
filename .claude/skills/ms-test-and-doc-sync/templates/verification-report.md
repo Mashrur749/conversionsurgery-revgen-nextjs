@@ -13,7 +13,7 @@
 - Check 2:
 
 ## Docs updated
-- `/docs/10-OFFER-PARITY-GAPS.md`
+- `/docs/product/02-OFFER-PARITY-GAPS.md`
 - (additional docs)
 
 ## Residual risks
