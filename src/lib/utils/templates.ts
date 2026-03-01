@@ -3,10 +3,10 @@
  */
 export const DEFAULT_TEMPLATES: Record<string, string> = {
   // Automation 1: Missed Call
-  missed_call: 'Hey, this is {{ownerName}} from {{businessName}}. Sorry I missed your call — I\'m on a job site right now. What can I help you with? Reply STOP to opt out.',
+  missed_call: 'Hey, this is {{ownerName}} from {{businessName}}. Sorry I missed your call — I\'m with a customer right now. What can I help you with? Reply STOP to opt out.',
 
   // Automation 2: Form Response
-  form_response: 'Hey {{name}}, this is {{ownerName}} from {{businessName}}. Just got your request — thanks for reaching out! What project are you looking to get done? Reply STOP to opt out.',
+  form_response: 'Hey {{name}}, this is {{ownerName}} from {{businessName}}. Just got your request — thanks for reaching out! What can I help you with? Reply STOP to opt out.',
 
   // Automation 3: AI couldn't help — escalation ack
   escalation_ack: 'Thanks for your message. Let me get {{ownerName}} to personally follow up with you shortly.',
@@ -17,7 +17,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
   // Estimate Follow-up (Phase 4)
   estimate_day_2: 'Hi {{name}}, just checking in on the estimate I sent over. Any questions I can answer?',
-  estimate_day_5: 'Hey {{name}}, wanted to make sure my estimate didn\'t get buried. I\'m booking jobs for next month — let me know if you\'d like to get on the schedule.',
+  estimate_day_5: 'Hey {{name}}, wanted to make sure my estimate didn\'t get buried. I\'m booking for next month — let me know if you\'d like to get on the schedule.',
   estimate_day_10: 'Hi {{name}}, circling back one more time. If the project is on hold, no worries — just let me know. If you\'re ready to move forward, I\'ve got availability opening up.',
   estimate_day_14: 'Hi {{name}}, last check-in on the estimate. If you\'ve decided to go another direction, no hard feelings. If you\'re still thinking about it, I\'m here when you\'re ready.',
 
@@ -29,7 +29,7 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
 
   // Review & Referral (Phase 4)
   review_request: 'Hi {{name}}, thanks again for choosing {{businessName}}! If you were happy with the work, a quick Google review helps us a ton: {{googleBusinessUrl}}. Thanks so much!',
-  referral_request: 'Thanks so much for trusting us with your project! If you know anyone else who needs renovation work, we\'d love to help them out too. Referrals mean the world to a small business like ours.',
+  referral_request: 'Thanks so much for trusting {{businessName}}! If you know anyone else who could use our services, we\'d love to help them out too. Referrals mean the world to a small business like ours.',
 
   // System
   opt_out_confirmation: 'You\'ve been unsubscribed. You won\'t receive further messages from {{businessName}}.',

@@ -95,7 +95,7 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
             id="businessName"
             value={data.businessName}
             onChange={(e) => updateData({ businessName: e.target.value })}
-            placeholder="ABC Roofing Ltd."
+            placeholder="ABC Services Ltd."
           />
         </div>
 
@@ -118,7 +118,7 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
             type="email"
             value={data.email}
             onChange={(e) => updateData({ email: e.target.value })}
-            placeholder="john@abcroofing.com"
+            placeholder="john@abcservices.com"
           />
         </div>
 
@@ -161,7 +161,7 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
             type="url"
             value={data.googleBusinessUrl}
             onChange={(e) => updateData({ googleBusinessUrl: e.target.value })}
-            placeholder="https://g.page/abc-roofing"
+            placeholder="https://g.page/abc-services"
           />
         </div>
       </div>

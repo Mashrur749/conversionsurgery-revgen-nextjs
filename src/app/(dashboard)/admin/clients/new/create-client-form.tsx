@@ -76,7 +76,7 @@ export function CreateClientForm() {
             id="businessName"
             value={formData.businessName}
             onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-            placeholder="ABC Roofing Ltd."
+            placeholder="ABC Services Ltd."
             required
           />
         </div>
@@ -101,7 +101,7 @@ export function CreateClientForm() {
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            placeholder="john@abcroofing.com"
+            placeholder="john@abcservices.com"
             required
           />
         </div>
@@ -145,7 +145,7 @@ export function CreateClientForm() {
           type="url"
           value={formData.googleBusinessUrl}
           onChange={(e) => setFormData({ ...formData, googleBusinessUrl: e.target.value })}
-          placeholder="https://g.page/abc-roofing"
+          placeholder="https://g.page/abc-services"
         />
       </div>
 

@@ -112,7 +112,7 @@ export function VoiceSettings({ clientId, settings }: VoiceSettingsProps) {
                 onChange={(e) =>
                   setForm({ ...form, voiceGreeting: e.target.value })
                 }
-                placeholder="Hi! Thanks for calling ABC Roofing. How can I help you today?"
+                placeholder="Hi! Thanks for calling ABC Services. How can I help you today?"
                 rows={3}
               />
               <p className="text-xs text-muted-foreground">
