@@ -1,6 +1,4 @@
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { getAIProvider } from '@/lib/ai';
 
 export interface DetectedSignals {
   readyToSchedule: boolean;
@@ -58,32 +56,29 @@ export async function detectSignals(
     .join('\n');
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: SIGNAL_PROMPT },
-        { role: 'user', content: conversationText },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.3,
-      max_tokens: 500,
-    });
-
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const ai = getAIProvider();
+    const { data } = await ai.chatJSON<DetectedSignals>(
+      [{ role: 'user', content: conversationText }],
+      {
+        systemPrompt: SIGNAL_PROMPT,
+        temperature: 0.3,
+        maxTokens: 500,
+      },
+    );
 
     return {
-      readyToSchedule: result.readyToSchedule || false,
-      wantsEstimate: result.wantsEstimate || false,
-      jobComplete: result.jobComplete || false,
-      satisfied: result.satisfied || false,
-      frustrated: result.frustrated || false,
-      priceObjection: result.priceObjection || false,
-      urgentNeed: result.urgentNeed || false,
-      justBrowsing: result.justBrowsing || false,
-      referralMention: result.referralMention || false,
-      paymentMention: result.paymentMention || false,
-      confidence: result.confidence || 50,
-      rawSignals: result.rawSignals || [],
+      readyToSchedule: data.readyToSchedule || false,
+      wantsEstimate: data.wantsEstimate || false,
+      jobComplete: data.jobComplete || false,
+      satisfied: data.satisfied || false,
+      frustrated: data.frustrated || false,
+      priceObjection: data.priceObjection || false,
+      urgentNeed: data.urgentNeed || false,
+      justBrowsing: data.justBrowsing || false,
+      referralMention: data.referralMention || false,
+      paymentMention: data.paymentMention || false,
+      confidence: data.confidence || 50,
+      rawSignals: data.rawSignals || [],
     };
   } catch (error) {
     console.error('Signal detection error:', error);

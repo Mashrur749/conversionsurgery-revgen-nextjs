@@ -2,9 +2,7 @@ import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { conversations } from '@/db/schema/conversations';
 import { eq, desc, and, gte } from 'drizzle-orm';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { getAIProvider } from '@/lib/ai';
 
 /** Individual scoring factors that compose a lead's total score (each 0-25). */
 export interface ScoreFactors {
@@ -198,18 +196,22 @@ export async function calculateEngagement(leadId: string): Promise<number> {
 }
 
 /**
- * AI-powered lead scoring using GPT-4o-mini for deeper conversation analysis.
+ * AI-powered lead scoring using the active AI provider for deeper conversation analysis.
  * Falls back to `quickScore` if the AI response cannot be parsed.
  * @param conversationText - The full conversation text to analyze.
  * @returns Complete score factors with AI-determined urgency, budget, intent, and signals.
  */
 export async function aiScore(conversationText: string): Promise<ScoreFactors> {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
+  const ai = getAIProvider();
+  const result = await ai.chat(
+    [
       {
-        role: 'system',
-        content: `You are a lead scoring AI for a contractor. Analyze this conversation and return a JSON score.
+        role: 'user',
+        content: `Conversation:\n${conversationText}`,
+      },
+    ],
+    {
+      systemPrompt: `You are a lead scoring AI for a contractor. Analyze this conversation and return a JSON score.
 
 Score each factor 0-25:
 - urgency: How urgent is their need? (emergency=25, browsing=0)
@@ -225,24 +227,19 @@ Return ONLY valid JSON:
   "intent": <number>,
   "signals": ["signal1", "signal2"]
 }`,
-      },
-      {
-        role: 'user',
-        content: `Conversation:\n${conversationText}`,
-      },
-    ],
-    temperature: 0.3,
-    max_tokens: 200,
-  });
+      temperature: 0.3,
+      maxTokens: 200,
+    },
+  );
 
   try {
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    const parsed = JSON.parse(result.content || '{}');
     return {
-      urgency: Math.min(25, Math.max(0, result.urgency || 12)),
-      budget: Math.min(25, Math.max(0, result.budget || 12)),
-      intent: Math.min(25, Math.max(0, result.intent || 12)),
+      urgency: Math.min(25, Math.max(0, parsed.urgency || 12)),
+      budget: Math.min(25, Math.max(0, parsed.budget || 12)),
+      intent: Math.min(25, Math.max(0, parsed.intent || 12)),
       engagement: 0,
-      signals: result.signals || [],
+      signals: parsed.signals || [],
       lastAnalysis: new Date().toISOString(),
     };
   } catch {

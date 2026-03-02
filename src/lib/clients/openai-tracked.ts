@@ -1,74 +1,71 @@
-import OpenAI from 'openai';
+import { getAIProvider, getEmbeddingProvider } from '@/lib/ai';
+import type { ChatMessage, ChatOptions } from '@/lib/ai';
 import { trackUsage } from '@/lib/services/usage-tracking';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 interface TrackedCompletionParams {
   clientId: string;
   operation: string;
-  messages: OpenAI.ChatCompletionMessageParam[];
-  model?: string;
+  messages: ChatMessage[];
+  model?: 'fast' | 'quality';
   temperature?: number;
-  max_tokens?: number;
+  maxTokens?: number;
   leadId?: string;
-  response_format?: { type: 'json_object' } | { type: 'text' };
+  responseFormat?: 'json' | 'text';
 }
 
 /**
- * Create chat completion with usage tracking
+ * Create chat completion with usage tracking.
+ * Returns content string and token counts.
  */
 export async function chatCompletion(params: TrackedCompletionParams) {
-  const model = params.model || 'gpt-4o-mini';
+  const ai = getAIProvider();
 
-  const response = await openai.chat.completions.create({
-    model,
-    messages: params.messages,
+  const options: ChatOptions = {
+    model: params.model ?? 'fast',
     temperature: params.temperature ?? 0.7,
-    max_tokens: params.max_tokens,
-    response_format: params.response_format,
-  });
+    maxTokens: params.maxTokens,
+  };
+
+  const result = params.responseFormat === 'json'
+    ? await ai.chatJSON(params.messages, options)
+    : await ai.chat(params.messages, options);
 
   // Track usage asynchronously (don't block response)
   trackUsage({
     clientId: params.clientId,
     service: 'openai',
     operation: params.operation,
-    model,
-    inputTokens: response.usage?.prompt_tokens,
-    outputTokens: response.usage?.completion_tokens,
+    model: result.model,
+    inputTokens: result.inputTokens,
+    outputTokens: result.outputTokens,
     leadId: params.leadId,
-    externalId: response.id,
     metadata: {
-      finishReason: response.choices[0]?.finish_reason,
+      finishReason: result.finishReason,
     },
   }).catch(err => console.error('Usage tracking error:', err));
 
-  return response;
+  return result;
 }
 
 /**
- * Create embedding with usage tracking
+ * Create embedding with usage tracking.
+ * Always uses OpenAI (Anthropic has no embedding API).
  */
 export async function createEmbedding(params: {
   clientId: string;
   operation: string;
   input: string | string[];
 }) {
-  const response = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
-    input: params.input,
-  });
+  const embedder = getEmbeddingProvider();
+  const result = await embedder.embed(params.input);
 
   trackUsage({
     clientId: params.clientId,
     service: 'openai',
     operation: params.operation,
     model: 'text-embedding-3-small',
-    inputTokens: response.usage?.total_tokens,
+    inputTokens: result.totalTokens,
   }).catch(err => console.error('Usage tracking error:', err));
 
-  return response;
+  return result;
 }
-
-// Re-export for convenience
-export { openai };

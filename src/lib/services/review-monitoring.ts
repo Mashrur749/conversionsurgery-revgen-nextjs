@@ -5,9 +5,7 @@ import { syncGoogleReviews } from './google-places';
 import { sendSMS } from './twilio';
 import type { Review } from '@/db/schema/reviews';
 import type { ReviewSource } from '@/db/schema/review-sources';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { getAIProvider } from '@/lib/ai';
 
 /** Input shape for generating an AI review response suggestion. */
 interface ReviewResponseInput {
@@ -132,7 +130,7 @@ export async function checkAndAlertNegativeReviews(clientId: string): Promise<nu
 }
 
 /**
- * Generate an AI-powered response suggestion for a single review using OpenAI.
+ * Generate an AI-powered response suggestion for a single review.
  *
  * The prompt varies based on the review rating:
  * - 1-2 stars: empathetic, offers to make it right
@@ -159,13 +157,9 @@ export async function generateReviewResponse(review: ReviewResponseInput): Promi
        Keep it under 75 words.`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You write review responses for a contractor business. Be professional, authentic, and human. Never use phrases like "We apologize for any inconvenience" - be specific and genuine.`,
-        },
+    const ai = getAIProvider();
+    const result = await ai.chat(
+      [
         {
           role: 'user',
           content: `${prompt}
@@ -174,11 +168,14 @@ Review from ${review.authorName || 'a customer'} (${review.rating} stars):
 "${review.reviewText || 'No text provided'}"`,
         },
       ],
-      temperature: 0.7,
-      max_tokens: 200,
-    });
+      {
+        systemPrompt: `You write review responses for a contractor business. Be professional, authentic, and human. Never use phrases like "We apologize for any inconvenience" - be specific and genuine.`,
+        temperature: 0.7,
+        maxTokens: 200,
+      },
+    );
 
-    return response.choices[0].message.content || '';
+    return result.content;
   } catch (err) {
     console.error('[ReviewMonitoring] Error generating AI response:', err);
     return '';

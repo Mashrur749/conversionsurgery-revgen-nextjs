@@ -6,15 +6,13 @@
  * Max 2 attempts, then marks lead dormant.
  */
 
-import OpenAI from 'openai';
 import { getDb } from '@/db';
 import { leads, clients, conversations, scheduledMessages, consentRecords } from '@/db/schema';
 import { eq, and, lte, gte, not, inArray, sql, desc } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+import { getAIProvider } from '@/lib/ai';
 
 // Win-back window: 25-35 days since last message
 const MIN_DAYS_STALE = 25;
@@ -261,12 +259,16 @@ async function generateWinBackMessage(
       ? `This is the FIRST re-engagement. Reference their specific project naturally.`
       : `This is the FINAL follow-up. Even shorter — just a soft "still here if you need us" vibe. 1 sentence max.`;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
+    const ai = getAIProvider();
+    const result = await ai.chat(
+      [
         {
-          role: 'system',
-          content: `You're writing a casual follow-up text from ${ownerName} at ${businessName}.
+          role: 'user',
+          content: `Write a re-engagement text (attempt ${attempt} of 2) for ${leadName}.`,
+        },
+      ],
+      {
+        systemPrompt: `You're writing a casual follow-up text from ${ownerName} at ${businessName}.
 Write like a real person texting — not a marketer, not a chatbot.
 
 ${attemptPrompt}
@@ -292,24 +294,22 @@ Conversation context:
 ${context.conversationHistory.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n')}
 
 Project info: ${context.lead.projectInfo.type || 'unknown'}`,
-        },
-        {
-          role: 'user',
-          content: `Write a re-engagement text (attempt ${attempt} of 2) for ${leadName}.`,
-        },
-      ],
-      temperature: 0.9,
-      max_tokens: 100,
-    });
+        temperature: 0.9,
+        maxTokens: 100,
+      },
+    );
 
-    const text = response.choices[0]?.message?.content?.trim();
+    const text = result.content.trim();
 
     trackUsage({
       clientId,
       service: 'openai',
       operation: 'win_back',
+      model: result.model,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
       leadId,
-      metadata: { attempt, model: 'gpt-4o-mini' },
+      metadata: { attempt },
     }).catch(() => {});
 
     return text || null;

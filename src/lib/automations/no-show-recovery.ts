@@ -6,15 +6,13 @@
  * Max 2 attempts, all through compliance gateway.
  */
 
-import OpenAI from 'openai';
 import { getDb } from '@/db';
 import { appointments, leads, clients, conversations, scheduledMessages } from '@/db/schema';
 import { eq, and, lte, sql, inArray } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+import { getAIProvider } from '@/lib/ai';
 
 /**
  * Detects appointments that are 2+ hours past their time and still 'scheduled'.
@@ -216,12 +214,16 @@ async function generateNoShowMessage(
       ? `This is the FIRST follow-up after a no-show. Be warm and understanding. Reference their specific project if known.`
       : `This is the SECOND and FINAL follow-up. Be even shorter and more casual. Give them an easy out.`;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
+    const ai = getAIProvider();
+    const result = await ai.chat(
+      [
         {
-          role: 'system',
-          content: `You are writing a no-show follow-up SMS from ${ownerName} at ${businessName}.
+          role: 'user',
+          content: `Write a follow-up text message (attempt ${attempt} of 2).`,
+        },
+      ],
+      {
+        systemPrompt: `You are writing a no-show follow-up SMS from ${ownerName} at ${businessName}.
 The customer "${leadName}" missed their appointment on ${appointmentDate} at ${appointmentTime}.
 
 ${attemptPrompt}
@@ -242,24 +244,22 @@ Conversation context:
 ${context.conversationHistory.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n')}
 
 Project info: ${context.lead.projectInfo.type || 'unknown'}`,
-        },
-        {
-          role: 'user',
-          content: `Write a follow-up text message (attempt ${attempt} of 2).`,
-        },
-      ],
-      temperature: 0.8,
-      max_tokens: 150,
-    });
+        temperature: 0.8,
+        maxTokens: 150,
+      },
+    );
 
-    const text = response.choices[0]?.message?.content?.trim();
+    const text = result.content.trim();
 
     trackUsage({
       clientId,
       service: 'openai',
       operation: 'no_show_recovery',
+      model: result.model,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
       leadId,
-      metadata: { attempt, model: 'gpt-4o-mini' },
+      metadata: { attempt },
     }).catch(() => {});
 
     return text || null;

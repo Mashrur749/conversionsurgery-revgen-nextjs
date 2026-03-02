@@ -3,7 +3,7 @@ import type { MediaAttachment } from '@/db/schema/media-attachments';
 import { eq, desc, and } from 'drizzle-orm';
 import { uploadFile, uploadImage, deleteFile, getImageDimensions } from './storage';
 import { randomUUID } from 'crypto';
-import OpenAI from 'openai';
+import { getAIProvider } from '@/lib/ai';
 
 /** Supported media type categories */
 type MediaType = 'image' | 'video' | 'audio' | 'document' | 'other';
@@ -128,7 +128,7 @@ export async function processIncomingMedia(input: MediaInput): Promise<MediaAtta
 }
 
 /**
- * Analyze an image using OpenAI Vision to generate a description and tags.
+ * Analyze an image using AI Vision to generate a description and tags.
  * Used for contextual acknowledgment messages and media categorization.
  *
  * @param imageUrl - Public URL of the image to analyze
@@ -137,11 +137,9 @@ export async function processIncomingMedia(input: MediaInput): Promise<MediaAtta
 async function analyzeImage(
   imageUrl: string
 ): Promise<{ description: string; tags: string[] }> {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
+  const ai = getAIProvider();
+  const result = await ai.chat(
+    [
       {
         role: 'user',
         content: [
@@ -166,11 +164,11 @@ Respond in JSON format:
         ],
       },
     ],
-    max_tokens: 300,
-  });
+    { maxTokens: 300 },
+  );
 
   try {
-    const content = response.choices[0].message.content || '{}';
+    const content = result.content || '{}';
     // Handle markdown code blocks
     const jsonStr = content.replace(/```json\n?|\n?```/g, '').trim();
     return JSON.parse(jsonStr);

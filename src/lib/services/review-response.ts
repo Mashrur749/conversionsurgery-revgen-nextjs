@@ -11,9 +11,7 @@ import type { Review } from '@/db/schema/reviews';
 import type { ReviewResponse } from '@/db/schema/review-responses';
 import type { ResponseTemplate } from '@/db/schema/response-templates';
 import type { Client } from '@/db/schema/clients';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+import { getAIProvider } from '@/lib/ai';
 
 /** Options for AI review response generation. */
 interface ResponseGenerationOptions {
@@ -112,12 +110,19 @@ This is a positive review. Your response should:
 4. Keep it short and sweet - under ${Math.round(maxLength * 0.5)} words`;
   }
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
+  const ai = getAIProvider();
+  const result = await ai.chat(
+    [
       {
-        role: 'system',
-        content: `You write review responses for ${client?.businessName || 'a contractor business'}.
+        role: 'user',
+        content: `${contentInstructions}
+
+Review from ${review.authorName || 'a customer'} (${review.rating} stars):
+"${review.reviewText || 'No text provided'}"`,
+      },
+    ],
+    {
+      systemPrompt: `You write review responses for ${client?.businessName || 'a contractor business'}.
 
 ${toneInstructions}
 
@@ -130,20 +135,12 @@ CRITICAL:
 - Be authentic and human
 - Don't use excessive exclamation points
 - Sign with the owner's name: ${client?.ownerName || 'The Team'}`,
-      },
-      {
-        role: 'user',
-        content: `${contentInstructions}
+      temperature: 0.7,
+      maxTokens: 300,
+    },
+  );
 
-Review from ${review.authorName || 'a customer'} (${review.rating} stars):
-"${review.reviewText || 'No text provided'}"`,
-      },
-    ],
-    temperature: 0.7,
-    max_tokens: 300,
-  });
-
-  return response.choices[0].message.content || '';
+  return result.content;
 }
 
 /**
@@ -340,13 +337,9 @@ export async function regenerateResponse(
       .where(eq(reviews.id, existingResponse.reviewId))
       .limit(1);
 
-    const aiResponse = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You write review responses. Follow the user instructions exactly.',
-        },
+    const ai = getAIProvider();
+    const result = await ai.chat(
+      [
         {
           role: 'user',
           content: `Rewrite this response with the following changes: ${custom}
@@ -358,11 +351,14 @@ Original review (${review?.rating} stars):
 "${review?.reviewText || 'No text'}"`,
         },
       ],
-      temperature: 0.7,
-      max_tokens: 300,
-    });
+      {
+        systemPrompt: 'You write review responses. Follow the user instructions exactly.',
+        temperature: 0.7,
+        maxTokens: 300,
+      },
+    );
 
-    const newText = aiResponse.choices[0].message.content || existingResponse.responseText;
+    const newText = result.content || existingResponse.responseText;
 
     await db
       .update(reviewResponses)

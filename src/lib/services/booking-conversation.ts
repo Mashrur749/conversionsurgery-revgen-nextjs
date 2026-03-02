@@ -2,11 +2,10 @@
  * Booking Conversation Handler
  *
  * Manages conversational appointment booking over SMS.
- * Uses OpenAI to interpret booking intent, extract time preferences,
+ * Uses AI provider to interpret booking intent, extract time preferences,
  * and match responses to available slots.
  */
 
-import OpenAI from 'openai';
 import { getDb } from '@/db';
 import { leadContext, appointments } from '@/db/schema';
 import { eq, and, not, desc } from 'drizzle-orm';
@@ -19,8 +18,7 @@ import {
   type TimeSlot,
 } from './appointment-booking';
 import { trackUsage } from './usage-tracking';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+import { getAIProvider } from '@/lib/ai';
 
 export type BookingIntent =
   | 'book'          // Wants to schedule
@@ -338,28 +336,25 @@ async function extractTimePreference(
     .join('\n');
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You extract time preferences from customer messages and match them to available slots.
+    const ai = getAIProvider();
+    const result = await ai.chat(
+      [{ role: 'user', content: message }],
+      {
+        systemPrompt: `You extract time preferences from customer messages and match them to available slots.
 Available slots:
 ${slotDescriptions}
 
 If the customer's message mentions a specific time or day preference, return the BEST matching slot as JSON: {"date":"YYYY-MM-DD","time":"HH:mm"}
 If no clear preference is expressed, return {"date":null,"time":null}
 Return ONLY the JSON object, nothing else.`,
-        },
-        { role: 'user', content: message },
-      ],
-      temperature: 0,
-      max_tokens: 50,
-    });
+        temperature: 0,
+        maxTokens: 50,
+      },
+    );
 
-    trackUsage({ clientId, service: 'openai', operation: 'booking_extract_time', metadata: { model: 'gpt-4o-mini' } }).catch(() => {});
+    trackUsage({ clientId, service: 'openai', operation: 'booking_extract_time', metadata: { model: result.model } }).catch(() => {});
 
-    const text = response.choices[0]?.message?.content?.trim();
+    const text = result.content.trim();
     if (!text) return null;
 
     const parsed = JSON.parse(text);
@@ -382,12 +377,11 @@ async function matchSlotFromResponse(
   clientId: string
 ): Promise<TimeSlot | null> {
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You match a customer's response to a time slot from a list of options.
+    const ai = getAIProvider();
+    const result = await ai.chat(
+      [{ role: 'user', content: customerMessage }],
+      {
+        systemPrompt: `You match a customer's response to a time slot from a list of options.
 The assistant previously offered these options:
 ${assistantMessage}
 
@@ -397,16 +391,14 @@ ${available.slice(0, 20).map(s => `${s.date} ${s.time} (${s.displayDate} ${s.dis
 Based on the customer's response, return the matching slot as JSON: {"date":"YYYY-MM-DD","time":"HH:mm"}
 If you can't determine a match, return {"date":null,"time":null}
 Return ONLY the JSON object.`,
-        },
-        { role: 'user', content: customerMessage },
-      ],
-      temperature: 0,
-      max_tokens: 50,
-    });
+        temperature: 0,
+        maxTokens: 50,
+      },
+    );
 
-    trackUsage({ clientId, service: 'openai', operation: 'booking_match_slot', metadata: { model: 'gpt-4o-mini' } }).catch(() => {});
+    trackUsage({ clientId, service: 'openai', operation: 'booking_match_slot', metadata: { model: result.model } }).catch(() => {});
 
-    const text = response.choices[0]?.message?.content?.trim();
+    const text = result.content.trim();
     if (!text) return null;
 
     const parsed = JSON.parse(text);

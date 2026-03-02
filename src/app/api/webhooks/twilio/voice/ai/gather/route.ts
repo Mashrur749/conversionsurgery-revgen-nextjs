@@ -3,7 +3,7 @@ import { getDb } from '@/db';
 import { voiceCalls, clients, knowledgeBase, conversations, clientAgentSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
-import OpenAI from 'openai';
+import { getAIProvider } from '@/lib/ai';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 import { buildGuardrailPrompt } from '@/lib/agent/guardrails';
 import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
@@ -150,14 +150,16 @@ export async function POST(request: NextRequest) {
     const newTranscript = `${currentTranscript}\nCaller: ${speechResult}`;
 
     // Generate AI response
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-    const aiResponse = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
+    const ai = getAIProvider();
+    const aiResult = await ai.chat(
+      [
         {
-          role: 'system',
-          content: `You are a phone assistant for ${client?.businessName || 'the business'}, a contractor.
+          role: 'user',
+          content: `Conversation so far:\n${newTranscript}\n\nRespond to the caller.`,
+        },
+      ],
+      {
+        systemPrompt: `You are a phone assistant for ${client?.businessName || 'the business'}, a contractor.
 
 Your capabilities:
 1. Answer questions about services and pricing
@@ -189,15 +191,10 @@ Return JSON:
   "shouldTransfer": false,
   "callbackRequested": false
 }`,
-        },
-        {
-          role: 'user',
-          content: `Conversation so far:\n${newTranscript}\n\nRespond to the caller.`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 200,
-    });
+        temperature: 0.7,
+        maxTokens: 200,
+      },
+    );
 
     let result: {
       response: string;
@@ -207,7 +204,7 @@ Return JSON:
     };
 
     try {
-      const content = aiResponse.choices[0].message.content || '{}';
+      const content = aiResult.content || '{}';
       result = JSON.parse(content.replace(/```json\n?|\n?```/g, ''));
     } catch {
       result = {

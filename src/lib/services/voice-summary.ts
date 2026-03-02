@@ -1,7 +1,7 @@
 import { getDb } from '@/db';
 import { voiceCalls, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import OpenAI from 'openai';
+import { getAIProvider } from '@/lib/ai';
 import { sendSMS } from './twilio';
 
 /**
@@ -19,28 +19,20 @@ export async function generateCallSummary(callId: string): Promise<string> {
 
   if (!call?.transcript) return '';
 
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `Summarize this phone call transcript in 2-3 sentences. Include:
+  const ai = getAIProvider();
+  const result = await ai.chat(
+    [{ role: 'user', content: call.transcript }],
+    {
+      systemPrompt: `Summarize this phone call transcript in 2-3 sentences. Include:
 - What the caller wanted
 - Key details mentioned
 - Outcome or next steps`,
-      },
-      {
-        role: 'user',
-        content: call.transcript,
-      },
-    ],
-    temperature: 0.5,
-    max_tokens: 150,
-  });
+      temperature: 0.5,
+      maxTokens: 150,
+    },
+  );
 
-  const summary = response.choices[0].message.content || '';
+  const summary = result.content;
 
   await db
     .update(voiceCalls)

@@ -1,9 +1,7 @@
-import OpenAI from 'openai';
 import { getDb, clients, leads, conversations } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import { buildKnowledgeContext, searchKnowledge } from './knowledge-base';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { getAIProvider } from '@/lib/ai';
 
 interface ConversationMessage {
   role: 'user' | 'assistant';
@@ -78,21 +76,21 @@ RESPONSE GUIDELINES:
 
 Lead name: ${lead?.name || 'Customer'}`;
 
-  const messages = [
-    { role: 'system' as const, content: systemPrompt },
-    ...conversationHistory,
-    { role: 'user' as const, content: incomingMessage },
-  ];
-
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      temperature: 0.7,
-      max_tokens: 200,
-    });
+    const ai = getAIProvider();
+    const result = await ai.chat(
+      [
+        ...conversationHistory,
+        { role: 'user' as const, content: incomingMessage },
+      ],
+      {
+        systemPrompt,
+        temperature: 0.7,
+        maxTokens: 200,
+      },
+    );
 
-    return response.choices[0].message.content ||
+    return result.content ||
       `Thanks for reaching out! Let me have someone get back to you shortly.`;
   } catch (error) {
     console.error('AI response error:', error);

@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
-import OpenAI from 'openai';
+import { getAIProvider } from '@/lib/ai';
 import { buildKnowledgeContext, searchKnowledge } from '@/lib/services/knowledge-base';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const testSchema = z.object({
   message: z.string().min(1, 'Message is required'),
@@ -51,21 +49,21 @@ ${relevantSection}
 
 Keep responses SHORT (1-3 sentences). Be helpful and professional.`;
 
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: 'system', content: systemPrompt },
-      ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-      { role: 'user', content: message },
-    ];
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      temperature: 0.7,
-      max_tokens: 200,
-    });
+    const ai = getAIProvider();
+    const result = await ai.chat(
+      [
+        ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+        { role: 'user' as const, content: message },
+      ],
+      {
+        systemPrompt,
+        temperature: 0.7,
+        maxTokens: 200,
+      },
+    );
 
     return NextResponse.json({
-      response: response.choices[0].message.content,
+      response: result.content,
     });
   }
 );
