@@ -23,8 +23,8 @@ const requiredEnvSchema = z.object({
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1, 'Stripe secret key required'),
 
-  // OpenAI
-  OPENAI_API_KEY: z.string().min(1, 'OpenAI API key required'),
+  // AI Providers — at least one chat provider key is required
+  // (validated at runtime based on AI_PROVIDER setting)
 
   // Twilio
   TWILIO_ACCOUNT_SID: z.string().min(1, 'Twilio account SID required'),
@@ -35,6 +35,13 @@ const requiredEnvSchema = z.object({
 });
 
 const optionalEnvSchema = z.object({
+  // AI provider keys (at least one required based on AI_PROVIDER setting)
+  OPENAI_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+
+  // AI provider override (default: 'anthropic')
+  AI_PROVIDER: z.enum(['openai', 'anthropic']).optional(),
+
   // Email (graceful degradation if missing)
   RESEND_API_KEY: z.string().optional(),
 
@@ -109,6 +116,18 @@ export function validateEnv(): void {
 
   // Warn about optional but recommended variables
   const warnings: string[] = [];
+
+  // Warn if the active AI provider key is missing
+  const aiProvider = process.env.AI_PROVIDER || 'anthropic';
+  if (aiProvider === 'anthropic' && !process.env.ANTHROPIC_API_KEY) {
+    warnings.push('ANTHROPIC_API_KEY is not set — AI calls will fail (default provider is Anthropic)');
+  }
+  if (aiProvider === 'openai' && !process.env.OPENAI_API_KEY) {
+    warnings.push('OPENAI_API_KEY is not set — AI calls will fail (AI_PROVIDER is set to OpenAI)');
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    warnings.push('OPENAI_API_KEY is not set — embeddings will fail (OpenAI is always used for embeddings)');
+  }
 
   if (!process.env.STRIPE_WEBHOOK_SECRET) {
     warnings.push('STRIPE_WEBHOOK_SECRET is not set — Stripe webhook signature verification will be skipped');

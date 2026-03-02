@@ -5,7 +5,7 @@ import { AnthropicProvider } from './providers/anthropic';
 export type AIProviderName = 'openai' | 'anthropic';
 
 function getProviderName(): AIProviderName {
-  const name = (process.env.AI_PROVIDER || 'openai') as AIProviderName;
+  const name = (process.env.AI_PROVIDER || 'anthropic') as AIProviderName;
   if (name !== 'openai' && name !== 'anthropic') {
     throw new Error(`Unknown AI_PROVIDER: ${name}. Must be 'openai' or 'anthropic'.`);
   }
