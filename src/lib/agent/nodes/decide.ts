@@ -1,8 +1,7 @@
-import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import type { ConversationStateType } from '../state';
 import type { AgentAction } from '@/lib/types/agent';
+import { getAIProvider } from '@/lib/ai';
 
 const decisionSchema = z.object({
   action: z.enum([
@@ -21,11 +20,6 @@ const decisionSchema = z.object({
     reason: z.string(),
   })),
 });
-
-const model = new ChatOpenAI({
-  modelName: 'gpt-4o-mini',
-  temperature: 0.3,
-}).withStructuredOutput(decisionSchema);
 
 const DECISION_PROMPT = `You are the decision engine for an AI assistant helping a home services contractor.
 Your job is to decide the BEST action to take based on the conversation state.
@@ -117,10 +111,17 @@ export async function decideAction(
     .replace('{lastAction}', state.lastAction || 'None')
     .replace('{conversation}', conversationText);
 
-  const response = await model.invoke([
-    new SystemMessage(prompt),
-    new HumanMessage('Decide the best action to take.'),
-  ]);
+  const ai = getAIProvider();
+  const { data: response } = await ai.chatStructured(
+    [
+      { role: 'user', content: 'Decide the best action to take.' },
+    ],
+    decisionSchema,
+    {
+      systemPrompt: prompt,
+      temperature: 0.3,
+    },
+  );
 
   const action = response.action as AgentAction;
 

@@ -1,7 +1,7 @@
-import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { z } from 'zod';
 import type { ConversationStateType } from '../state';
+import type { EscalationReason } from '@/lib/types/agent';
+import { getAIProvider } from '@/lib/ai';
 
 const analysisSchema = z.object({
   sentiment: z.enum(['positive', 'neutral', 'negative', 'frustrated']),
@@ -26,11 +26,6 @@ const analysisSchema = z.object({
   escalationReason: z.string().optional(),
   keyInsights: z.array(z.string()),
 });
-
-const model = new ChatOpenAI({
-  modelName: 'gpt-4o-mini',
-  temperature: 0.1,
-}).withStructuredOutput(analysisSchema);
 
 const ANALYSIS_PROMPT = `You are analyzing a customer conversation for a home services contractor.
 Your job is to extract signals, sentiment, and key information from the conversation.
@@ -98,10 +93,17 @@ export async function analyzeConversation(
     .replace('{services}', clientSettings.services.join(', '))
     .replace('{conversation}', conversationText);
 
-  const response = await model.invoke([
-    new SystemMessage(prompt),
-    new HumanMessage('Analyze the conversation above.'),
-  ]);
+  const ai = getAIProvider();
+  const { data: response } = await ai.chatStructured(
+    [
+      { role: 'user', content: 'Analyze the conversation above.' },
+    ],
+    analysisSchema,
+    {
+      systemPrompt: prompt,
+      temperature: 0.1,
+    },
+  );
 
   // Update state with analysis results
   return {
@@ -119,7 +121,7 @@ export async function analyzeConversation(
     },
     needsEscalation: response.escalationNeeded,
     escalationReason: response.escalationNeeded
-      ? (response.escalationReason as any)
+      ? (response.escalationReason as EscalationReason ?? 'other')
       : null,
   };
 }

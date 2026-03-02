@@ -1,11 +1,6 @@
-import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage, SystemMessage, AIMessage } from '@langchain/core/messages';
+import { AIMessage } from '@langchain/core/messages';
 import type { ConversationStateType } from '../state';
-
-const model = new ChatOpenAI({
-  modelName: 'gpt-4o-mini',
-  temperature: 0.7,
-});
+import { getAIProvider } from '@/lib/ai';
 
 const RESPONSE_PROMPT = `You are {agentName}, a {agentTone} assistant for {businessName}. {ownerName} manages the business.
 
@@ -96,12 +91,18 @@ export async function generateResponse(
     .replace('{guardrails}', state.guardrailText || '')
     .replace('{strategy}', strategy);
 
-  const response = await model.invoke([
-    new SystemMessage(prompt),
-    new HumanMessage('Generate the response message.'),
-  ]);
+  const ai = getAIProvider();
+  const result = await ai.chat(
+    [
+      { role: 'user', content: 'Generate the response message.' },
+    ],
+    {
+      systemPrompt: prompt,
+      temperature: 0.7,
+    },
+  );
 
-  let responseText = response.content as string;
+  let responseText = result.content;
 
   // Trim to max length if needed
   if (responseText.length > clientSettings.maxResponseLength) {
