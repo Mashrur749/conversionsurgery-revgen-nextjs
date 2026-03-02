@@ -75,4 +75,6 @@ if [[ "${has_docs_changes}" -eq 0 ]]; then
 fi
 
 echo "[pre-push] Docs changes detected. Running Docmost sync..."
-npm run docmost:sync:local
+if ! npm run docmost:sync:local; then
+  echo "[pre-push] Docmost sync failed (missing env vars?). Continuing push."
+fi
