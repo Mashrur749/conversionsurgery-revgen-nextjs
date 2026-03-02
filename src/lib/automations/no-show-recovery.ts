@@ -253,7 +253,7 @@ Project info: ${context.lead.projectInfo.type || 'unknown'}`,
 
     trackUsage({
       clientId,
-      service: 'openai',
+      service: ai.name as 'openai' | 'anthropic',
       operation: 'no_show_recovery',
       model: result.model,
       inputTokens: result.inputTokens,

@@ -18,7 +18,7 @@ import {
   type TimeSlot,
 } from './appointment-booking';
 import { trackUsage } from './usage-tracking';
-import { getAIProvider } from '@/lib/ai';
+import { getAIProvider, getActiveProviderName } from '@/lib/ai';
 
 export type BookingIntent =
   | 'book'          // Wants to schedule
@@ -352,7 +352,7 @@ Return ONLY the JSON object, nothing else.`,
       },
     );
 
-    trackUsage({ clientId, service: 'openai', operation: 'booking_extract_time', metadata: { model: result.model } }).catch(() => {});
+    trackUsage({ clientId, service: getActiveProviderName(), operation: 'booking_extract_time', metadata: { model: result.model } }).catch(() => {});
 
     const text = result.content.trim();
     if (!text) return null;
@@ -396,7 +396,7 @@ Return ONLY the JSON object.`,
       },
     );
 
-    trackUsage({ clientId, service: 'openai', operation: 'booking_match_slot', metadata: { model: result.model } }).catch(() => {});
+    trackUsage({ clientId, service: getActiveProviderName(), operation: 'booking_match_slot', metadata: { model: result.model } }).catch(() => {});
 
     const text = result.content.trim();
     if (!text) return null;

@@ -1,4 +1,4 @@
-import { getAIProvider, getEmbeddingProvider } from '@/lib/ai';
+import { getAIProvider, getEmbeddingProvider, getActiveProviderName } from '@/lib/ai';
 import type { ChatMessage, ChatOptions } from '@/lib/ai';
 import { trackUsage } from '@/lib/services/usage-tracking';
 
@@ -33,7 +33,7 @@ export async function chatCompletion(params: TrackedCompletionParams) {
   // Track usage asynchronously (don't block response)
   trackUsage({
     clientId: params.clientId,
-    service: 'openai',
+    service: getActiveProviderName(),
     operation: params.operation,
     model: result.model,
     inputTokens: result.inputTokens,

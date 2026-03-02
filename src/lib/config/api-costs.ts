@@ -25,6 +25,18 @@ export const API_COSTS = {
     },
   },
 
+  // Anthropic - per 1K tokens
+  anthropic: {
+    'claude-haiku-4-5-20251001': {
+      input: 0.0008,   // $0.80 per 1M
+      output: 0.004,   // $4.00 per 1M
+    },
+    'claude-sonnet-4-6': {
+      input: 0.003,    // $3.00 per 1M
+      output: 0.015,   // $15.00 per 1M
+    },
+  },
+
   // Twilio SMS - per segment (US)
   twilio_sms: {
     outbound: 0.0079,
@@ -92,6 +104,17 @@ export function calculateCostCents(params: {
       if (modelCosts) {
         const inputCost = ((inputTokens || 0) / 1000) * modelCosts.input;
         const outputCost = ((outputTokens || 0) / 1000) * modelCosts.output;
+        costDollars = inputCost + outputCost;
+      }
+      break;
+    }
+
+    case 'anthropic': {
+      const anthropicModelKey = model || 'claude-haiku-4-5-20251001';
+      const anthropicCosts = API_COSTS.anthropic[anthropicModelKey as keyof typeof API_COSTS.anthropic];
+      if (anthropicCosts) {
+        const inputCost = ((inputTokens || 0) / 1000) * anthropicCosts.input;
+        const outputCost = ((outputTokens || 0) / 1000) * anthropicCosts.output;
         costDollars = inputCost + outputCost;
       }
       break;

@@ -1,5 +1,6 @@
 import type { AIProvider, EmbeddingProvider } from './types';
 import { OpenAIProvider, OpenAIEmbeddingProvider } from './providers/openai';
+import { AnthropicProvider } from './providers/anthropic';
 
 export type AIProviderName = 'openai' | 'anthropic';
 
@@ -22,8 +23,7 @@ export function getAIProvider(): AIProvider {
     case 'openai':
       return new OpenAIProvider();
     case 'anthropic':
-      // Anthropic provider added in C4 — throw clear error until then
-      throw new Error('Anthropic provider not yet installed. Set AI_PROVIDER=openai or install the anthropic provider.');
+      return new AnthropicProvider();
   }
 }
 

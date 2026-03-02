@@ -317,7 +317,7 @@ export async function updateMonthlySummaries(): Promise<void> {
         if (record.service === 'twilio_sms') {
           totalMessages += record.totalUnits;
         }
-        if (record.service === 'openai') {
+        if (record.service === 'openai' || record.service === 'anthropic') {
           totalAiCalls += record.totalRequests;
         }
         if (record.service === 'twilio_voice') {
