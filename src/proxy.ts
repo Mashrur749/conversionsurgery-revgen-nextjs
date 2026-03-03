@@ -89,7 +89,7 @@ function isOpenRoute(pathname: string): boolean {
 // ---------------------------------------------------------------------------
 // Middleware
 // ---------------------------------------------------------------------------
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ---- Auth guards (cookie existence — never validates) ----
