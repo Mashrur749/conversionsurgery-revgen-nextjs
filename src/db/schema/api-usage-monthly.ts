@@ -20,7 +20,7 @@ export const apiUsageMonthly = pgTable(
     month: varchar('month', { length: 7 }).notNull(), // "2026-02"
 
     // Cost by service (cents)
-    openaiCostCents: integer('openai_cost_cents').default(0).notNull(),
+    anthropicCostCents: integer('anthropic_cost_cents').default(0).notNull(),
     twilioSmsCostCents: integer('twilio_sms_cost_cents').default(0).notNull(),
     twilioVoiceCostCents: integer('twilio_voice_cost_cents').default(0).notNull(),
     twilioPhoneCostCents: integer('twilio_phone_cost_cents').default(0).notNull(),

@@ -36,7 +36,7 @@ export const GET = adminRoute(
         clientId: apiUsageMonthly.clientId,
         clientName: clients.businessName,
         month: apiUsageMonthly.month,
-        openaiCost: apiUsageMonthly.openaiCostCents,
+        aiCost: apiUsageMonthly.anthropicCostCents,
         twilioSmsCost: apiUsageMonthly.twilioSmsCostCents,
         twilioVoiceCost: apiUsageMonthly.twilioVoiceCostCents,
         totalCost: apiUsageMonthly.totalCostCents,
@@ -53,12 +53,12 @@ export const GET = adminRoute(
     const totals = usage.reduce(
       (acc, u) => ({
         totalCost: acc.totalCost + u.totalCost,
-        openaiCost: acc.openaiCost + u.openaiCost,
+        aiCost: acc.aiCost + u.aiCost,
         twilioSmsCost: acc.twilioSmsCost + u.twilioSmsCost,
         totalMessages: acc.totalMessages + u.totalMessages,
         totalAiCalls: acc.totalAiCalls + u.totalAiCalls,
       }),
-      { totalCost: 0, openaiCost: 0, twilioSmsCost: 0, totalMessages: 0, totalAiCalls: 0 }
+      { totalCost: 0, aiCost: 0, twilioSmsCost: 0, totalMessages: 0, totalAiCalls: 0 }
     );
 
     return NextResponse.json({

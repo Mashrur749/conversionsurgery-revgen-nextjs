@@ -303,7 +303,7 @@ Project info: ${context.lead.projectInfo.type || 'unknown'}`,
 
     trackUsage({
       clientId,
-      service: ai.name as 'openai' | 'anthropic',
+      service: 'anthropic',
       operation: 'win_back',
       model: result.model,
       inputTokens: result.inputTokens,

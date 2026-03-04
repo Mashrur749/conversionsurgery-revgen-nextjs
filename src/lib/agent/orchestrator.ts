@@ -312,7 +312,7 @@ export async function processIncomingMessage(
   // Track AI usage
   trackUsage({
     clientId: client.id,
-    service: 'openai',
+    service: 'anthropic',
     operation: 'conversation_agent',
     leadId,
     metadata: {

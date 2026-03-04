@@ -33,7 +33,7 @@ interface UsageData {
     clientId: string;
     clientName: string;
     totalCost: number;
-    openaiCost: number;
+    aiCost: number;
     twilioSmsCost: number;
     totalMessages: number;
     totalAiCalls: number;
@@ -41,7 +41,7 @@ interface UsageData {
   }>;
   totals: {
     totalCost: number;
-    openaiCost: number;
+    aiCost: number;
     twilioSmsCost: number;
     totalMessages: number;
     totalAiCalls: number;
@@ -104,12 +104,12 @@ export function UsageDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">OpenAI</CardTitle>
+              <CardTitle className="text-sm font-medium">AI (Anthropic)</CardTitle>
               <Bot className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {formatCost(data.totals.openaiCost)}
+                {formatCost(data.totals.aiCost)}
               </div>
               <p className="text-xs text-muted-foreground">
                 {data.totals.totalAiCalls.toLocaleString()} calls
@@ -162,7 +162,7 @@ export function UsageDashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Client</TableHead>
-                  <TableHead className="text-right">OpenAI</TableHead>
+                  <TableHead className="text-right">AI</TableHead>
                   <TableHead className="text-right">SMS</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead className="text-right">vs Last Month</TableHead>
@@ -180,7 +180,7 @@ export function UsageDashboard() {
                       </Link>
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCost(client.openaiCost)}
+                      {formatCost(client.aiCost)}
                     </TableCell>
                     <TableCell className="text-right">
                       {formatCost(client.twilioSmsCost)}

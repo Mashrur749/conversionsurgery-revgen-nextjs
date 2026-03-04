@@ -4,8 +4,26 @@ set -euo pipefail
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "${ROOT_DIR}"
 
-echo "[pre-commit] Running ms:gate..."
-npm run ms:gate
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
 
-echo "[pre-commit] Running logging guard..."
-npm run quality:logging-guard
+# TypeScript / config changes → run typecheck + logging guard
+if echo "$STAGED" | grep -qE '\.(ts|tsx|js|jsx|json)$'; then
+  echo "[pre-commit] Running typecheck..."
+  npm run typecheck
+
+  echo "[pre-commit] Running logging guard..."
+  npm run quality:logging-guard
+else
+  echo "[pre-commit] No TS/JS changes — skipping typecheck + logging guard"
+fi
+
+# MS doc changes → run doc structure checks
+if echo "$STAGED" | grep -qE '^docs/|^scripts/specs/'; then
+  echo "[pre-commit] Running MS doc checks..."
+  ./scripts/specs/check-ms-line-limits.sh
+  ./scripts/specs/check-ms-gap-map.sh
+  ./scripts/specs/check-ms-spec-structure.sh
+  ./scripts/specs/check-no-legacy-spec-refs.sh
+else
+  echo "[pre-commit] No docs/specs changes — skipping MS doc checks"
+fi

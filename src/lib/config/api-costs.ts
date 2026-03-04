@@ -5,26 +5,6 @@
  */
 
 export const API_COSTS = {
-  // OpenAI - per 1K tokens
-  openai: {
-    'gpt-4o-mini': {
-      input: 0.00015,  // $0.15 per 1M
-      output: 0.0006,  // $0.60 per 1M
-    },
-    'gpt-4o': {
-      input: 0.0025,   // $2.50 per 1M
-      output: 0.01,    // $10 per 1M
-    },
-    'gpt-4-turbo': {
-      input: 0.01,
-      output: 0.03,
-    },
-    'gpt-4-turbo-preview': {
-      input: 0.01,
-      output: 0.03,
-    },
-  },
-
   // Anthropic - per 1K tokens
   anthropic: {
     'claude-haiku-4-5-20251001': {
@@ -98,17 +78,6 @@ export function calculateCostCents(params: {
   let costDollars = 0;
 
   switch (service) {
-    case 'openai': {
-      const modelKey = model || 'gpt-4o-mini';
-      const modelCosts = API_COSTS.openai[modelKey as keyof typeof API_COSTS.openai];
-      if (modelCosts) {
-        const inputCost = ((inputTokens || 0) / 1000) * modelCosts.input;
-        const outputCost = ((outputTokens || 0) / 1000) * modelCosts.output;
-        costDollars = inputCost + outputCost;
-      }
-      break;
-    }
-
     case 'anthropic': {
       const anthropicModelKey = model || 'claude-haiku-4-5-20251001';
       const anthropicCosts = API_COSTS.anthropic[anthropicModelKey as keyof typeof API_COSTS.anthropic];

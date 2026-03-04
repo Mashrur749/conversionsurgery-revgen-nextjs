@@ -2,7 +2,7 @@ import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages
 import { sendSMS } from '@/lib/services/twilio';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
-import { generateAIResponse, detectHotIntent } from '@/lib/services/openai';
+import { generateAIResponse, detectHotIntent } from '@/lib/services/ai-response';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { initiateRingGroup } from '@/lib/services/ring-group';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';

@@ -5,7 +5,7 @@ const BASE_DELAY_MS = 1000;
  * Determines if an error is retryable (rate limit, server error, network issue).
  */
 function isRetryable(error: unknown): boolean {
-  // HTTP-status errors (works for both OpenAI and Anthropic SDKs)
+  // HTTP-status errors (Anthropic SDK throws errors with status property)
   if (error && typeof error === 'object' && 'status' in error) {
     const status = (error as { status: number }).status;
     if (status === 429 || status >= 500) return true;

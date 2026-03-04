@@ -12,7 +12,6 @@ import { clients } from './clients';
 import { leads } from './leads';
 
 export const apiServiceEnum = pgEnum('api_service', [
-  'openai',
   'anthropic',
   'twilio_sms',
   'twilio_voice',

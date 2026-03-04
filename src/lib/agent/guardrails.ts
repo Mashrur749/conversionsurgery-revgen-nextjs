@@ -2,7 +2,7 @@
  * Standard AI guardrails enforced across ALL AI-generated messages.
  *
  * These rules are injected into the system prompt for every AI generation point:
- * - Legacy generateAIResponse (openai.ts)
+ * - Legacy generateAIResponse (ai-response.ts)
  * - LangGraph respond node (nodes/respond.ts)
  * - Future: no-show recovery, win-back, conversational booking
  */

@@ -36,7 +36,3 @@ export interface AIProvider {
   chatJSON<T>(messages: ChatMessage[], options?: ChatOptions): Promise<{ data: T } & ChatResult>;
   chatStructured<T>(messages: ChatMessage[], schema: ZodSchema<T>, options?: ChatOptions): Promise<{ data: T } & ChatResult>;
 }
-
-export interface EmbeddingProvider {
-  embed(input: string | string[]): Promise<{ embeddings: number[][]; totalTokens?: number }>;
-}

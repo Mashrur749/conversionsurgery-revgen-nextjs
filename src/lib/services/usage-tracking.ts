@@ -317,7 +317,7 @@ export async function updateMonthlySummaries(): Promise<void> {
         if (record.service === 'twilio_sms') {
           totalMessages += record.totalUnits;
         }
-        if (record.service === 'openai' || record.service === 'anthropic') {
+        if (record.service === 'anthropic') {
           totalAiCalls += record.totalRequests;
         }
         if (record.service === 'twilio_voice') {
@@ -331,7 +331,7 @@ export async function updateMonthlySummaries(): Promise<void> {
         .values({
           clientId,
           month: currentMonth,
-          openaiCostCents: summary.byService['openai'] || 0,
+          anthropicCostCents: summary.byService['anthropic'] || 0,
           twilioSmsCostCents: summary.byService['twilio_sms'] || 0,
           twilioVoiceCostCents: summary.byService['twilio_voice'] || 0,
           twilioPhoneCostCents: summary.byService['twilio_phone'] || 0,
@@ -348,7 +348,7 @@ export async function updateMonthlySummaries(): Promise<void> {
         .onConflictDoUpdate({
           target: [apiUsageMonthly.clientId, apiUsageMonthly.month],
           set: {
-            openaiCostCents: summary.byService['openai'] || 0,
+            anthropicCostCents: summary.byService['anthropic'] || 0,
             twilioSmsCostCents: summary.byService['twilio_sms'] || 0,
             twilioVoiceCostCents: summary.byService['twilio_voice'] || 0,
             twilioPhoneCostCents: summary.byService['twilio_phone'] || 0,

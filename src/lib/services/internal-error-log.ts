@@ -24,7 +24,7 @@ const SECRET_FIELD_KEYS = new Set([
   'refresh_token',
   'secret',
   'api_key',
-  'openai_api_key',
+  'anthropic_api_key',
   'twilio_auth_token',
   'stripe_secret_key',
   'password',
