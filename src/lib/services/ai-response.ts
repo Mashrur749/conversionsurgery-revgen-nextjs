@@ -1,4 +1,4 @@
-import { getAIProvider } from '@/lib/ai';
+import { getAIProvider, getTrackedAI } from '@/lib/ai';
 import { buildKnowledgeContext, searchKnowledge } from './knowledge-base';
 import { buildGuardrailPrompt } from '@/lib/agent/guardrails';
 import { getDb } from '@/db';
@@ -134,7 +134,9 @@ export async function generateAIResponse(
 ${knowledgeSection}${guardrailSection}`;
 
   try {
-    const ai = getAIProvider();
+    const ai = clientId
+      ? getTrackedAI({ clientId, operation: 'ai_response' })
+      : getAIProvider();
     const result = await ai.chat(
       [
         ...conversationHistory.slice(-15).map(m => ({

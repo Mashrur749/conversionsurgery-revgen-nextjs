@@ -1,7 +1,7 @@
 import { getDb, clients, leads, conversations } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import { buildKnowledgeContext, searchKnowledge } from './knowledge-base';
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 interface ConversationMessage {
   role: 'user' | 'assistant';
@@ -77,7 +77,7 @@ RESPONSE GUIDELINES:
 Lead name: ${lead?.name || 'Customer'}`;
 
   try {
-    const ai = getAIProvider();
+    const ai = getTrackedAI({ clientId, operation: 'knowledge_query', leadId });
     const result = await ai.chat(
       [
         ...conversationHistory,

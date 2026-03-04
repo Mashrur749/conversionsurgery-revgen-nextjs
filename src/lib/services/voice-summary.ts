@@ -1,7 +1,7 @@
 import { getDb } from '@/db';
 import { voiceCalls, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 import { sendSMS } from './twilio';
 
 /**
@@ -19,7 +19,7 @@ export async function generateCallSummary(callId: string): Promise<string> {
 
   if (!call?.transcript) return '';
 
-  const ai = getAIProvider();
+  const ai = getTrackedAI({ clientId: call.clientId, operation: 'voice_summary' });
   const result = await ai.chat(
     [{ role: 'user', content: call.transcript }],
     {

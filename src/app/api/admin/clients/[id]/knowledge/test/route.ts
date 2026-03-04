@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 import { buildKnowledgeContext, searchKnowledge } from '@/lib/services/knowledge-base';
 import { getDb, clients } from '@/db';
 import { eq } from 'drizzle-orm';
@@ -49,7 +49,7 @@ ${relevantSection}
 
 Keep responses SHORT (1-3 sentences). Be helpful and professional.`;
 
-    const ai = getAIProvider();
+    const ai = getTrackedAI({ clientId, operation: 'knowledge_test' });
     const result = await ai.chat(
       [
         ...history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),

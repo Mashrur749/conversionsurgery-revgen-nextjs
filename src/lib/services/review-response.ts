@@ -11,7 +11,7 @@ import type { Review } from '@/db/schema/reviews';
 import type { ReviewResponse } from '@/db/schema/review-responses';
 import type { ResponseTemplate } from '@/db/schema/response-templates';
 import type { Client } from '@/db/schema/clients';
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 /** Options for AI review response generation. */
 interface ResponseGenerationOptions {
@@ -110,7 +110,7 @@ This is a positive review. Your response should:
 4. Keep it short and sweet - under ${Math.round(maxLength * 0.5)} words`;
   }
 
-  const ai = getAIProvider();
+  const ai = getTrackedAI({ clientId: review.clientId, operation: 'review_response' });
   const result = await ai.chat(
     [
       {
@@ -337,7 +337,7 @@ export async function regenerateResponse(
       .where(eq(reviews.id, existingResponse.reviewId))
       .limit(1);
 
-    const ai = getAIProvider();
+    const ai = getTrackedAI({ clientId: existingResponse.clientId, operation: 'review_response' });
     const result = await ai.chat(
       [
         {

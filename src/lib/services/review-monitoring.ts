@@ -5,7 +5,7 @@ import { syncGoogleReviews } from './google-places';
 import { sendSMS } from './twilio';
 import type { Review } from '@/db/schema/reviews';
 import type { ReviewSource } from '@/db/schema/review-sources';
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 /** Input shape for generating an AI review response suggestion. */
 interface ReviewResponseInput {
@@ -96,7 +96,7 @@ export async function checkAndAlertNegativeReviews(clientId: string): Promise<nu
 
   for (const review of negativeReviews) {
     // Generate AI suggested response
-    const suggestedResponse = await generateReviewResponse(review);
+    const suggestedResponse = await generateReviewResponse(review, clientId);
 
     // Save suggested response
     await db
@@ -140,7 +140,7 @@ export async function checkAndAlertNegativeReviews(clientId: string): Promise<nu
  * @param review - The review data to generate a response for
  * @returns The generated response text, or an empty string on failure
  */
-export async function generateReviewResponse(review: ReviewResponseInput): Promise<string> {
+export async function generateReviewResponse(review: ReviewResponseInput, clientId?: string): Promise<string> {
   const isNegative = review.rating <= 2;
   const isNeutral = review.rating === 3;
 
@@ -157,7 +157,9 @@ export async function generateReviewResponse(review: ReviewResponseInput): Promi
        Keep it under 75 words.`;
 
   try {
-    const ai = getAIProvider();
+    const ai = clientId
+      ? getTrackedAI({ clientId, operation: 'review_monitoring' })
+      : (await import('@/lib/ai')).getAIProvider();
     const result = await ai.chat(
       [
         {

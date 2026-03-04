@@ -11,8 +11,7 @@ import { appointments, leads, clients, conversations, scheduledMessages } from '
 import { eq, and, lte, sql, inArray } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
-import { trackUsage } from '@/lib/services/usage-tracking';
-import { getAIProvider, getActiveProviderName } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 /**
  * Detects appointments that are 2+ hours past their time and still 'scheduled'.
@@ -214,7 +213,7 @@ async function generateNoShowMessage(
       ? `This is the FIRST follow-up after a no-show. Be warm and understanding. Reference their specific project if known.`
       : `This is the SECOND and FINAL follow-up. Be even shorter and more casual. Give them an easy out.`;
 
-    const ai = getAIProvider();
+    const ai = getTrackedAI({ clientId, operation: 'no_show_recovery', leadId, metadata: { attempt } });
     const result = await ai.chat(
       [
         {
@@ -250,17 +249,6 @@ Project info: ${context.lead.projectInfo.type || 'unknown'}`,
     );
 
     const text = result.content.trim();
-
-    trackUsage({
-      clientId,
-      service: getActiveProviderName(),
-      operation: 'no_show_recovery',
-      model: result.model,
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
-      leadId,
-      metadata: { attempt },
-    }).catch(() => {});
 
     return text || null;
   } catch (err) {

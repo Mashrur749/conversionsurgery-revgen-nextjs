@@ -17,8 +17,7 @@ import {
   cancelAppointment,
   type TimeSlot,
 } from './appointment-booking';
-import { trackUsage } from './usage-tracking';
-import { getAIProvider, getActiveProviderName } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 export type BookingIntent =
   | 'book'          // Wants to schedule
@@ -336,7 +335,7 @@ async function extractTimePreference(
     .join('\n');
 
   try {
-    const ai = getAIProvider();
+    const ai = getTrackedAI({ clientId, operation: 'booking_extract_time' });
     const result = await ai.chat(
       [{ role: 'user', content: message }],
       {
@@ -351,8 +350,6 @@ Return ONLY the JSON object, nothing else.`,
         maxTokens: 50,
       },
     );
-
-    trackUsage({ clientId, service: getActiveProviderName(), operation: 'booking_extract_time', metadata: { model: result.model } }).catch(() => {});
 
     const text = result.content.trim();
     if (!text) return null;
@@ -377,7 +374,7 @@ async function matchSlotFromResponse(
   clientId: string
 ): Promise<TimeSlot | null> {
   try {
-    const ai = getAIProvider();
+    const ai = getTrackedAI({ clientId, operation: 'booking_match_slot' });
     const result = await ai.chat(
       [{ role: 'user', content: customerMessage }],
       {
@@ -395,8 +392,6 @@ Return ONLY the JSON object.`,
         maxTokens: 50,
       },
     );
-
-    trackUsage({ clientId, service: getActiveProviderName(), operation: 'booking_match_slot', metadata: { model: result.model } }).catch(() => {});
 
     const text = result.content.trim();
     if (!text) return null;

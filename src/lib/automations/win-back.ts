@@ -11,8 +11,7 @@ import { leads, clients, conversations, scheduledMessages, consentRecords } from
 import { eq, and, lte, gte, not, inArray, sql, desc } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
-import { trackUsage } from '@/lib/services/usage-tracking';
-import { getAIProvider, getActiveProviderName } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 // Win-back window: 25-35 days since last message
 const MIN_DAYS_STALE = 25;
@@ -259,7 +258,7 @@ async function generateWinBackMessage(
       ? `This is the FIRST re-engagement. Reference their specific project naturally.`
       : `This is the FINAL follow-up. Even shorter — just a soft "still here if you need us" vibe. 1 sentence max.`;
 
-    const ai = getAIProvider();
+    const ai = getTrackedAI({ clientId, operation: 'win_back', leadId, metadata: { attempt } });
     const result = await ai.chat(
       [
         {
@@ -300,17 +299,6 @@ Project info: ${context.lead.projectInfo.type || 'unknown'}`,
     );
 
     const text = result.content.trim();
-
-    trackUsage({
-      clientId,
-      service: getActiveProviderName(),
-      operation: 'win_back',
-      model: result.model,
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
-      leadId,
-      metadata: { attempt },
-    }).catch(() => {});
 
     return text || null;
   } catch (err) {

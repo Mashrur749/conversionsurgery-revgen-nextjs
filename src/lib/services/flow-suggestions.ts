@@ -19,7 +19,7 @@ export async function checkAndSuggestFlows(
   const db = getDb();
 
   // Detect signals
-  const signals = await detectSignals(conversationHistory);
+  const signals = await detectSignals(conversationHistory, clientId);
 
   if (signals.confidence < 60) {
     console.log('[FlowEngine] Signal confidence too low:', signals.confidence);

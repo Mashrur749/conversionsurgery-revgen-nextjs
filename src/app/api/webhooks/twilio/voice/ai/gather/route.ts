@@ -3,7 +3,7 @@ import { getDb } from '@/db';
 import { voiceCalls, clients, knowledgeBase, conversations, clientAgentSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 import { buildGuardrailPrompt } from '@/lib/agent/guardrails';
 import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
     const newTranscript = `${currentTranscript}\nCaller: ${speechResult}`;
 
     // Generate AI response
-    const ai = getAIProvider();
+    const ai = getTrackedAI({ clientId: call.clientId, operation: 'voice_ai_gather' });
     const aiResult = await ai.chat(
       [
         {

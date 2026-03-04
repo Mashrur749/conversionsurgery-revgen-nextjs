@@ -2,7 +2,7 @@ import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { conversations } from '@/db/schema/conversations';
 import { eq, desc, and, gte } from 'drizzle-orm';
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 /** Individual scoring factors that compose a lead's total score (each 0-25). */
 export interface ScoreFactors {
@@ -201,8 +201,10 @@ export async function calculateEngagement(leadId: string): Promise<number> {
  * @param conversationText - The full conversation text to analyze.
  * @returns Complete score factors with AI-determined urgency, budget, intent, and signals.
  */
-export async function aiScore(conversationText: string): Promise<ScoreFactors> {
-  const ai = getAIProvider();
+export async function aiScore(conversationText: string, clientId?: string, leadId?: string): Promise<ScoreFactors> {
+  const ai = clientId
+    ? getTrackedAI({ clientId, operation: 'lead_scoring', leadId })
+    : (await import('@/lib/ai')).getAIProvider();
   const result = await ai.chat(
     [
       {
@@ -292,7 +294,7 @@ export async function scoreLead(
   let factors: ScoreFactors;
 
   if (options.useAI && conversationText.length > 50) {
-    factors = await aiScore(conversationText);
+    factors = await aiScore(conversationText, currentLead?.clientId, leadId);
   } else {
     const quick = quickScore(conversationText);
     factors = {

@@ -3,7 +3,7 @@ import type { MediaAttachment } from '@/db/schema/media-attachments';
 import { eq, desc, and } from 'drizzle-orm';
 import { uploadFile, uploadImage, deleteFile, getImageDimensions } from './storage';
 import { randomUUID } from 'crypto';
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 /** Supported media type categories */
 type MediaType = 'image' | 'video' | 'audio' | 'document' | 'other';
@@ -93,7 +93,7 @@ export async function processIncomingMedia(input: MediaInput): Promise<MediaAtta
 
   if (mediaType === 'image') {
     try {
-      const analysis = await analyzeImage(uploadResult.url);
+      const analysis = await analyzeImage(uploadResult.url, input.clientId, input.leadId);
       aiDescription = analysis.description;
       aiTags = analysis.tags;
     } catch (err) {
@@ -135,9 +135,11 @@ export async function processIncomingMedia(input: MediaInput): Promise<MediaAtta
  * @returns Object containing a description string and an array of tags
  */
 async function analyzeImage(
-  imageUrl: string
+  imageUrl: string,
+  clientId: string,
+  leadId: string
 ): Promise<{ description: string; tags: string[] }> {
-  const ai = getAIProvider();
+  const ai = getTrackedAI({ clientId, operation: 'media_analysis', leadId });
   const result = await ai.chat(
     [
       {

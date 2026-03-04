@@ -1,4 +1,4 @@
-import { getAIProvider } from '@/lib/ai';
+import { getTrackedAI } from '@/lib/ai';
 
 export interface DetectedSignals {
   readyToSchedule: boolean;
@@ -46,7 +46,8 @@ Return format:
 }`;
 
 export async function detectSignals(
-  conversationHistory: { role: string; content: string }[]
+  conversationHistory: { role: string; content: string }[],
+  clientId?: string
 ): Promise<DetectedSignals> {
   // Only analyze last 10 messages for efficiency
   const recentMessages = conversationHistory.slice(-10);
@@ -56,7 +57,9 @@ export async function detectSignals(
     .join('\n');
 
   try {
-    const ai = getAIProvider();
+    const ai = clientId
+      ? getTrackedAI({ clientId, operation: 'signal_detection' })
+      : (await import('@/lib/ai')).getAIProvider();
     const { data } = await ai.chatJSON<DetectedSignals>(
       [{ role: 'user', content: conversationText }],
       {
