@@ -12,7 +12,7 @@ import { eq, and, lte, gte, not, inArray, sql, desc } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
-import { getAIProvider } from '@/lib/ai';
+import { getAIProvider, getActiveProviderName } from '@/lib/ai';
 
 // Win-back window: 25-35 days since last message
 const MIN_DAYS_STALE = 25;
@@ -303,7 +303,7 @@ Project info: ${context.lead.projectInfo.type || 'unknown'}`,
 
     trackUsage({
       clientId,
-      service: 'anthropic',
+      service: getActiveProviderName(),
       operation: 'win_back',
       model: result.model,
       inputTokens: result.inputTokens,

@@ -12,7 +12,7 @@ import { eq, and, lte, sql, inArray } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
-import { getAIProvider } from '@/lib/ai';
+import { getAIProvider, getActiveProviderName } from '@/lib/ai';
 
 /**
  * Detects appointments that are 2+ hours past their time and still 'scheduled'.
@@ -253,7 +253,7 @@ Project info: ${context.lead.projectInfo.type || 'unknown'}`,
 
     trackUsage({
       clientId,
-      service: 'anthropic',
+      service: getActiveProviderName(),
       operation: 'no_show_recovery',
       model: result.model,
       inputTokens: result.inputTokens,

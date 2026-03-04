@@ -14,6 +14,7 @@ import {
 import { eq, desc } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
+import { getActiveProviderName } from '@/lib/ai';
 import { startFlowExecution } from '@/lib/services/flow-execution';
 import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
 import { buildGuardrailPrompt } from './guardrails';
@@ -312,7 +313,7 @@ export async function processIncomingMessage(
   // Track AI usage
   trackUsage({
     clientId: client.id,
-    service: 'anthropic',
+    service: getActiveProviderName(),
     operation: 'conversation_agent',
     leadId,
     metadata: {
