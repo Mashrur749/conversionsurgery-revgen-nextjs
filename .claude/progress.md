@@ -310,7 +310,7 @@
 - [x] B2 — Phone number release conversation check (`668f677`)
 
 ### Medium — ALL COMPLETE
-- [x] E5 — OpenAI timeout + retry (`f93a952`)
+- [x] E5 — AI provider timeout + retry (`f93a952`)
 - [x] E6 — Google token refresh retry + failure notification (`f93a952`)
 - [x] D7 — Soft-delete filtering gaps (`f93a952`)
 
@@ -349,7 +349,7 @@
 - [x] D8 — Coupon count reconciliation cron (`fd63f62`)
 - [x] D11 — Add missing updatedAt to leads update in member-answered webhook (`fd63f62`)
 - [x] E10 — Twilio rate limit: 100ms inter-message throttle in process-scheduled (`fd63f62`)
-- [x] E11 — OpenAI rate limit handling already done in E5 (429 retry + timeout) — no further work needed
+- [x] E11 — AI provider rate limit handling already done in E5 (429 retry + timeout) — no further work needed
 - [x] E13 — ElevenLabs TTS retry (2 attempts) + fail-fast on missing API key (`fd63f62`)
 - [x] B3 — Cancel Stripe subscriptions + scheduled messages on client soft-delete (`fd63f62`)
 - [x] B5 — Stripe cancellation at period end when cancellation confirmed (`fd63f62`)

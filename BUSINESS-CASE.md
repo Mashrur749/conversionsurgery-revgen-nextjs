@@ -175,10 +175,10 @@ All features are marked **[LIVE]** — fully implemented and working.
 
 | Feature                   | Status | Behavior                                                                    |
 | ------------------------- | ------ | --------------------------------------------------------------------------- |
-| Per-client cost breakdown | [LIVE] | OpenAI + Twilio costs per client per month                                  |
+| Per-client cost breakdown | [LIVE] | Anthropic + Twilio costs per client per month                               |
 | Usage alerts              | [LIVE] | Threshold-based alerts when limits exceeded                                 |
 | Alert acknowledgment      | [LIVE] | Admin can acknowledge and dismiss alerts                                    |
-| API cost accounting       | [LIVE] | Tracks: OpenAI tokens, Twilio SMS/voice/numbers, Stripe fees, Google Places |
+| API cost accounting       | [LIVE] | Tracks: Anthropic tokens, Twilio SMS/voice/numbers, Stripe fees, Google Places |
 | Cost projections          | [LIVE] | Current month usage + projected total                                       |
 
 ### 1.12 Reputation Monitoring
@@ -710,7 +710,7 @@ The AI always pursues these goals in order:
 | Competitor mention | [LIVE] | Pattern matching                                                   |
 | Timeline mention   | [LIVE] | Pattern matching                                                   |
 
-Lead scoring: Quick score (pattern matching, instant) + Full AI score (GPT-4o-mini analysis, deeper). Score 0-100, temperature: hot/warm/cold.
+Lead scoring: Quick score (pattern matching, instant) + Full AI score (Claude Haiku analysis, deeper). Score 0-100, temperature: hot/warm/cold.
 
 ### 5.8 Multi-Service Catalog & Revenue Attribution
 
@@ -856,7 +856,7 @@ Plans support monthly and yearly billing with separate Stripe price IDs.
 | **Twilio SMS**      | [LIVE] | Inbound/outbound SMS, delivery tracking                                     |
 | **Twilio Voice**    | [LIVE] | Call routing, ring groups, hot transfer, missed call detection              |
 | **Twilio Numbers**  | [LIVE] | Provisioning, purchase, assign, release                                     |
-| **OpenAI**          | [LIVE] | AI conversation (gpt-4o-mini primary), lead scoring, service classification |
+| **Anthropic**       | [LIVE] | AI conversation (Claude Haiku primary), lead scoring, service classification |
 | **Stripe Payments** | [LIVE] | Payment links, deposits, invoices                                           |
 | **Stripe Billing**  | [LIVE] | Subscriptions, plan management, webhooks                                    |
 | **Resend**          | [LIVE] | Magic link auth, lead notifications, escalation alerts, weekly summaries    |
@@ -873,8 +873,8 @@ Plans support monthly and yearly billing with separate Stripe price IDs.
 
 | Service            | Tracked Costs                               |
 | ------------------ | ------------------------------------------- |
-| OpenAI gpt-4o-mini | $0.00015/1K input, $0.0006/1K output        |
-| OpenAI gpt-4o      | $0.0025/1K input, $0.01/1K output           |
+| Anthropic Haiku    | $0.0008/1K input, $0.004/1K output          |
+| Anthropic Sonnet   | $0.003/1K input, $0.015/1K output           |
 | Twilio SMS         | $0.0079 per message                         |
 | Twilio Voice       | $0.014 outbound, $0.0085 inbound per minute |
 | Twilio Phone       | $1.15 local, $2.15 toll-free per month      |

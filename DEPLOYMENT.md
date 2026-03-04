@@ -20,7 +20,7 @@
 - Node.js 20+
 - npm 10+
 - A Neon PostgreSQL database ([free tier](https://console.neon.tech))
-- Accounts for: Twilio, OpenAI, Resend (all have free/trial tiers)
+- Accounts for: Twilio, Anthropic, Resend (all have free/trial tiers)
 
 ### Quick Start
 
@@ -33,7 +33,7 @@ cp .env.example .env.local
 
 # 3. Fill in your values (see "Environment Variables Reference" below)
 #    At minimum you need: DATABASE_URL, AUTH_SECRET, CLIENT_SESSION_SECRET,
-#    RESEND_API_KEY, TWILIO_*, OPENAI_API_KEY, CRON_SECRET, FORM_WEBHOOK_SECRET
+#    RESEND_API_KEY, TWILIO_*, ANTHROPIC_API_KEY, CRON_SECRET, FORM_WEBHOOK_SECRET
 
 # 4. Push schema to database (first time only)
 npm run db:push
@@ -99,7 +99,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `TWILIO_AUTH_TOKEN` | Twilio Console | SMS/Voice API authentication |
 | `TWILIO_PHONE_NUMBER` | Twilio Console → Phone Numbers | Default outbound number |
 | `TWILIO_WEBHOOK_BASE_URL` | Your app URL (or ngrok for local) | Twilio callback URLs |
-| `OPENAI_API_KEY` | [OpenAI Platform](https://platform.openai.com/api-keys) | AI lead responses, scoring |
+| `ANTHROPIC_API_KEY` | [Anthropic Console](https://console.anthropic.com/settings/keys) | AI lead responses, scoring |
 | `CRON_SECRET` | `openssl rand -hex 32` | Authenticates cron job requests |
 | `FORM_WEBHOOK_SECRET` | `openssl rand -hex 32` | Authenticates inbound form webhooks |
 
@@ -164,12 +164,12 @@ openssl rand -hex 32
 2. Verify your sending domain (or use `onboarding@resend.dev` for testing)
 3. Create API key → `RESEND_API_KEY`
 
-### OpenAI
+### Anthropic
 
-1. Create account at [platform.openai.com](https://platform.openai.com)
+1. Create account at [console.anthropic.com](https://console.anthropic.com)
 2. Add billing (pay-as-you-go, ~$20-50/month typical usage)
-3. Create API key → `OPENAI_API_KEY`
-4. Model used: `gpt-4o-mini` for lead scoring and conversation responses
+3. Create API key → `ANTHROPIC_API_KEY`
+4. Models used: Claude Haiku (fast/scoring) and Claude Sonnet (quality/complex responses)
 
 ### Stripe (for billing features)
 
@@ -279,7 +279,7 @@ npx wrangler secret put TWILIO_ACCOUNT_SID
 npx wrangler secret put TWILIO_AUTH_TOKEN
 npx wrangler secret put TWILIO_PHONE_NUMBER
 npx wrangler secret put TWILIO_WEBHOOK_BASE_URL
-npx wrangler secret put OPENAI_API_KEY
+npx wrangler secret put ANTHROPIC_API_KEY
 npx wrangler secret put CRON_SECRET
 npx wrangler secret put FORM_WEBHOOK_SECRET
 
@@ -474,7 +474,7 @@ npm run cf-typegen
 | Neon PostgreSQL | 3 GB storage, 0.5 GB RAM | Free tier sufficient |
 | Resend Email | 3k emails/month | Free tier sufficient |
 | Twilio | — | ~$15/number + $0.0079/SMS |
-| OpenAI | — | ~$20-50 (gpt-4o-mini) |
+| Anthropic | — | ~$20-50 (Claude Haiku/Sonnet) |
 | Stripe | 2.9% + $0.30 per transaction | Usage-based |
 | ElevenLabs | 10k chars/month free | $5-22/month |
 

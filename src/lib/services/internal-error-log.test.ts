@@ -9,7 +9,7 @@ describe('sanitizeLogText', () => {
     expect(output).not.toContain('abc.def.ghi');
   });
 
-  it('redacts OpenAI-style keys', () => {
+  it('redacts sk-prefixed API keys', () => {
     const input = 'key=sk-1234567890abcdef1234567890abcdef';
     const output = sanitizeLogText(input);
     expect(output).toContain('sk-[REDACTED]');

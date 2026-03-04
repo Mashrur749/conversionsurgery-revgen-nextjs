@@ -73,7 +73,7 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     EXTERNAL SERVICES                        │
-│  Twilio (SMS/Voice)  │  Stripe (Billing)  │  OpenAI (AI)    │
+│  Twilio (SMS/Voice)  │  Stripe (Billing)  │  Anthropic (AI) │
 │  Resend (Email)      │  Google Calendar    │  Google Places   │
 └──────────┬───────────┴──────────┬──────────┴────────────────┘
            │ Webhooks             │ API calls
@@ -99,7 +99,7 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
 │                                                              │
 │  ┌──────────────────────────────────────────────────────────┐│
 │  │               Service Layer (50+ modules)                 ││
-│  │  openai.ts │ twilio.ts │ stripe.ts │ resend.ts           ││
+│  │  ai-response.ts │ twilio.ts │ stripe.ts │ resend.ts      ││
 │  │  lead-scoring.ts │ flow-execution.ts │ team-escalation.ts││
 │  └──────────────────────────────────────────────────────────┘│
 │                                                              │
@@ -167,8 +167,8 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
 | Service                 | Purpose                              | Key Files                                  |
 | ----------------------- | ------------------------------------ | ------------------------------------------ |
 | **Twilio**              | SMS sending, voice calls, webhooks   | `twilio.ts`, `twilio-provisioning.ts`      |
-| **OpenAI**              | AI response generation, lead scoring | `openai.ts`, `knowledge-ai.ts`             |
-| **LangChain/LangGraph** | Multi-step AI agent                  | `src/lib/agent/`                           |
+| **Anthropic**           | AI response generation, lead scoring | `ai-response.ts`, `knowledge-ai.ts`       |
+| **LangGraph**           | Multi-step AI agent                  | `src/lib/agent/`                           |
 | **Stripe**              | Subscription billing, payments       | `stripe.ts`, `subscription.ts`             |
 | **Resend**              | Transactional emails                 | `resend.ts`                                |
 | **Google APIs**         | Calendar sync, review monitoring     | `google-calendar.ts`, `google-business.ts` |
@@ -191,7 +191,7 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
 - Node.js 20+
 - A Neon PostgreSQL database
 - Twilio account (for SMS)
-- OpenAI API key
+- Anthropic API key
 - Resend account (for email)
 
 ### Step-by-Step Setup
@@ -211,7 +211,7 @@ cp .env.example .env.local
 #   AUTH_SECRET=$(openssl rand -base64 32)
 #   TWILIO_ACCOUNT_SID=AC...
 #   TWILIO_AUTH_TOKEN=...
-#   OPENAI_API_KEY=sk-...
+#   ANTHROPIC_API_KEY=sk-ant-...
 #   RESEND_API_KEY=re_...
 
 # 4. Run database migrations
@@ -344,7 +344,7 @@ src/
 │   ├── services/                 # Service modules (41 files)
 │   │   ├── twilio.ts             # SMS sending
 │   │   ├── twilio-provisioning.ts # Phone number management
-│   │   ├── openai.ts             # AI responses
+│   │   ├── ai-response.ts        # AI responses
 │   │   ├── stripe.ts             # Payment processing
 │   │   ├── resend.ts             # Email sending
 │   │   ├── lead-scoring.ts       # AI lead qualification
@@ -903,7 +903,7 @@ subscription.canceled → Soft delete client (status: 'cancelled')
 | ----------------------- | ------------------------ | ------------------------------------------------------------------------- |
 | **Twilio**              | `twilio.ts`              | `sendSMS()`, `validateTwilioWebhook()`                                    |
 | **Twilio Provisioning** | `twilio-provisioning.ts` | `searchPhoneNumbers()`, `purchasePhoneNumber()`, `configurePhoneNumber()` |
-| **OpenAI**              | `openai.ts`              | `generateAIResponse()`, `detectHotIntent()`, `scoreMessage()`             |
+| **Anthropic**           | `ai-response.ts`         | `generateAIResponse()`, `detectHotIntent()`                               |
 | **Email**               | `resend.ts`              | `sendEmail()`, email templates                                            |
 | **Stripe**              | `stripe.ts`              | Payment processing                                                        |
 | **Flow Execution**      | `flow-execution.ts`      | `executeFlow()`, `executeStep()`                                          |
@@ -985,7 +985,7 @@ DATABASE_URL          # Neon connection string
 AUTH_SECRET           # NextAuth secret (openssl rand -base64 32)
 TWILIO_ACCOUNT_SID    # Twilio credentials
 TWILIO_AUTH_TOKEN
-OPENAI_API_KEY        # OpenAI API key
+ANTHROPIC_API_KEY     # Anthropic API key
 RESEND_API_KEY        # Email service
 EMAIL_FROM            # Sender email address
 NEXT_PUBLIC_APP_URL   # Your domain

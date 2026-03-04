@@ -14,7 +14,7 @@ cat <<'REMINDER'
 - TypeScript: NEVER use `any` — use proper types, schema-inferred types, or `unknown` with type guards
 - JSX text: NEVER use literal quotes — use `&apos;` `&quot;` `&amp;` `&lt;` `&gt;` entity references
 - Verification: `npx tsc --noEmit` after each change, `npm run build` at task completion
-- External APIs: query Context7 BEFORE writing Twilio/Stripe/OpenAI code
+- External APIs: query Context7 BEFORE writing Twilio/Stripe/Anthropic code
 - Autonomy: resolve ambiguity by reading the codebase — only ask when genuinely blocked
 - Session end: commit all working code, ensure build passes, update progress.md if in worktree
 REMINDER

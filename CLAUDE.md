@@ -5,7 +5,7 @@
 - Next.js 16 (App Router), React 19, TypeScript
 - Drizzle ORM + Neon Serverless Postgres (`@neondatabase/serverless`)
 - NextAuth v4 (email magic links via Resend)
-- Twilio (SMS/Voice), Stripe (billing), OpenAI (AI responses)
+- Twilio (SMS/Voice), Stripe (billing), Anthropic (AI responses)
 - shadcn/ui + Tailwind 4 + Radix UI
 - Deploy: Cloudflare via OpenNext (`@opennextjs/cloudflare`)
 
@@ -66,11 +66,11 @@ Resolve ambiguity yourself by:
 6. Colors: green=active, yellow=pending, gray=inactive, red=error, blue=info
 7. Destructive actions: always AlertDialog confirmation
 
-### External API Integration (Twilio, Stripe, OpenAI)
+### External API Integration (Twilio, Stripe, Anthropic)
 Before writing integration code, query Context7 for current API patterns:
 - Twilio: resolve `/twilio/twilio-node`, then query for the specific API
 - Stripe: resolve the Stripe library, then query
-- OpenAI: resolve the OpenAI library, then query
+- Anthropic: resolve the Anthropic SDK, then query
 This avoids stale patterns from training data. Always do this — don't rely on memory.
 
 ## Commands

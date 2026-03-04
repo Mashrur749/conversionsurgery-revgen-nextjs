@@ -16,7 +16,7 @@ Minimum required to execute this guide locally:
 
 Optional but recommended for full managed-service simulation:
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
-- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `RESEND_API_KEY`
 

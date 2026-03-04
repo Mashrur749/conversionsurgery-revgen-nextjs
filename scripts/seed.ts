@@ -705,7 +705,7 @@ const SYSTEM_SETTINGS = [
   { key: 'sms.quiet_hours_start', value: '21:00', description: 'Default quiet hours start (9 PM)' },
   { key: 'sms.quiet_hours_end', value: '08:00', description: 'Default quiet hours end (8 AM)' },
   { key: 'sms.rate_limit_per_minute', value: '60', description: 'Max SMS per minute per client' },
-  { key: 'ai.default_model', value: 'gpt-4o-mini', description: 'Default AI model for responses' },
+  { key: 'ai.default_model', value: 'claude-haiku-4-5-20251001', description: 'Default AI model for responses' },
   { key: 'ai.max_tokens', value: '500', description: 'Max tokens for AI responses' },
   { key: 'billing.trial_days', value: '14', description: 'Free trial period in days' },
   { key: 'billing.grace_period_days', value: '3', description: 'Grace period for failed payments' },
