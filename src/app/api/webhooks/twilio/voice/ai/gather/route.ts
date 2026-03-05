@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { voiceCalls, clients, knowledgeBase, conversations, clientAgentSettings } from '@/db/schema';
+import { voiceCalls } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getWebhookBaseUrl } from '@/lib/utils/webhook-url';
-import { getTrackedAI } from '@/lib/ai';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
-import { buildGuardrailPrompt } from '@/lib/agent/guardrails';
 import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 
@@ -16,18 +14,15 @@ function twimlResponse(twiml: string) {
   );
 }
 
-function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
+const FILLER_PHRASES = [
+  'One moment please...',
+  'Let me look into that...',
+  'Sure, give me just a second...',
+];
 
 /**
- * [Voice] Twilio webhook for AI speech gathering
- * Processes caller speech and generates AI responses
+ * [Voice] Twilio webhook for AI speech gathering — thin handler
+ * Captures caller speech, returns filler phrase, redirects to /process for heavy AI work
  */
 export async function POST(request: NextRequest) {
   try {
@@ -64,11 +59,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Quick DB write: append caller speech to transcript
     const db = getDb();
-
-    // Get call record
     const [call] = await db
-      .select()
+      .select({ id: voiceCalls.id, transcript: voiceCalls.transcript })
       .from(voiceCalls)
       .where(eq(voiceCalls.twilioCallSid, callSid))
       .limit(1);
@@ -88,162 +82,21 @@ export async function POST(request: NextRequest) {
       return twimlResponse('<Say>Sorry, there was an error. Goodbye.</Say><Hangup/>');
     }
 
-    // Get client and knowledge base
-    const [client] = await db
-      .select()
-      .from(clients)
-      .where(eq(clients.id, call.clientId))
-      .limit(1);
-
-    const knowledge = await db
-      .select()
-      .from(knowledgeBase)
-      .where(eq(knowledgeBase.clientId, call.clientId));
-
-    const knowledgeContext = knowledge
-      .map((k) => `${k.category}: ${k.title} - ${k.content}`)
-      .join('\n');
-
-    const [agentSettings] = await db
-      .select()
-      .from(clientAgentSettings)
-      .where(eq(clientAgentSettings.clientId, call.clientId))
-      .limit(1);
-
-    let smsHistorySection = 'No prior SMS history available.';
-    if (call.leadId) {
-      const history = await db
-        .select({
-          direction: conversations.direction,
-          content: conversations.content,
-          createdAt: conversations.createdAt,
-        })
-        .from(conversations)
-        .where(eq(conversations.leadId, call.leadId))
-        .orderBy(conversations.createdAt)
-        .limit(15);
-
-      if (history.length > 0) {
-        smsHistorySection = history
-          .map((m) => `${m.direction === 'inbound' ? 'Caller' : 'Business'}: ${m.content}`)
-          .join('\n');
-      }
-    }
-
-    const messagesWithoutResponse = (call.transcript || '')
-      .split('\n')
-      .reverse()
-      .findIndex((line) => line.startsWith('Caller:'));
-
-    const guardrails = buildGuardrailPrompt({
-      ownerName: client?.ownerName || 'the owner',
-      businessName: client?.businessName || 'the business',
-      agentTone: (agentSettings?.agentTone || 'professional') as 'professional' | 'friendly' | 'casual',
-      messagesWithoutResponse: messagesWithoutResponse === -1
-        ? 0
-        : messagesWithoutResponse,
-      canDiscussPricing: agentSettings?.canDiscussPricing || false,
-    });
-
-    // Update transcript
+    // Update transcript with caller speech before redirecting
     const currentTranscript = call.transcript || '';
     const newTranscript = `${currentTranscript}\nCaller: ${speechResult}`;
-
-    // Generate AI response
-    const ai = getTrackedAI({ clientId: call.clientId, operation: 'voice_ai_gather' });
-    const aiResult = await ai.chat(
-      [
-        {
-          role: 'user',
-          content: `Conversation so far:\n${newTranscript}\n\nRespond to the caller.`,
-        },
-      ],
-      {
-        systemPrompt: `You are a phone assistant for ${client?.businessName || 'the business'}, a contractor.
-
-Your capabilities:
-1. Answer questions about services and pricing
-2. Collect lead information (name, project details)
-3. Schedule callbacks
-4. Transfer to a human if needed
-
-Knowledge base:
-${knowledgeContext}
-
-Recent SMS conversation history (if any):
-${smsHistorySection}
-
-${guardrails}
-
-Respond conversationally and briefly (under 50 words).
-End with a question or next step.
-
-If the caller wants to:
-- Get a quote: Collect project details, then offer callback
-- Schedule appointment: Collect preferred time, confirm callback
-- Speak to someone: Transfer immediately
-- Emergency: Transfer immediately
-
-Return JSON:
-{
-  "response": "What you say to caller",
-  "intent": "quote|schedule|question|complaint|transfer|other",
-  "shouldTransfer": false,
-  "callbackRequested": false
-}`,
-        temperature: 0.7,
-        maxTokens: 200,
-      },
-    );
-
-    let result: {
-      response: string;
-      intent: string;
-      shouldTransfer: boolean;
-      callbackRequested: boolean;
-    };
-
-    try {
-      const content = aiResult.content || '{}';
-      result = JSON.parse(content.replace(/```json\n?|\n?```/g, ''));
-    } catch {
-      result = {
-        response: "I'm sorry, I didn't quite understand. Could you repeat that?",
-        intent: 'other',
-        shouldTransfer: false,
-        callbackRequested: false,
-      };
-    }
-
-    // Update call record
     await db
       .update(voiceCalls)
-      .set({
-        transcript: `${newTranscript}\nAI: ${result.response}`,
-        callerIntent: result.intent,
-        callbackRequested: result.callbackRequested,
-        updatedAt: new Date(),
-      })
+      .set({ transcript: newTranscript, updatedAt: new Date() })
       .where(eq(voiceCalls.id, call.id));
 
-    const gatherAction = `${appUrl}/api/webhooks/twilio/voice/ai/gather`;
-    const transferAction = `${appUrl}/api/webhooks/twilio/voice/ai/transfer`;
+    // Return filler phrase + redirect to processing endpoint
+    const filler = FILLER_PHRASES[Date.now() % FILLER_PHRASES.length];
+    const processAction = `${appUrl}/api/webhooks/twilio/voice/ai/process`;
 
-    // Check if should transfer
-    if (result.shouldTransfer) {
-      return twimlResponse(
-        '<Say voice="Polly.Matthew">Let me connect you with someone right now.</Say>' +
-        `<Redirect>${transferAction}</Redirect>`
-      );
-    }
-
-    // Continue conversation
     return twimlResponse(
-      `<Say voice="Polly.Matthew">${escapeXml(result.response)}</Say>` +
-      `<Gather input="speech" speechTimeout="auto" speechModel="phone_call" enhanced="true" action="${gatherAction}" method="POST"/>` +
-      '<Say>Are you still there?</Say>' +
-      `<Gather input="speech" speechTimeout="3" action="${gatherAction}"/>` +
-      '<Say>I\'ll have someone call you back. Goodbye!</Say><Hangup/>'
+      `<Say voice="Polly.Matthew">${filler}</Say>` +
+      `<Redirect>${processAction}</Redirect>`
     );
   } catch (error) {
     void logInternalError({
