@@ -161,6 +161,7 @@ export async function analyzeAndDecide(
     {
       systemPrompt: prompt,
       temperature: 0.2,
+      model: 'fast',
     },
   );
 
