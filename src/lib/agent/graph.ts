@@ -1,21 +1,10 @@
 import { StateGraph, END } from '@langchain/langgraph';
 import { ConversationState, ConversationStateType } from './state';
-import { analyzeConversation } from './nodes/analyze';
-import { decideAction } from './nodes/decide';
+import { analyzeAndDecide } from './nodes/analyze-and-decide';
 import { generateResponse } from './nodes/respond';
 
 /**
- * Route after analysis - check if escalation needed
- */
-function routeAfterAnalysis(state: ConversationStateType): string {
-  if (state.needsEscalation) {
-    return 'escalate';
-  }
-  return 'decide';
-}
-
-/**
- * Route after decision - what to do next
+ * Route after analyze-and-decide — what to do next
  */
 function routeAfterDecision(state: ConversationStateType): string {
   switch (state.lastAction) {
@@ -97,8 +86,7 @@ async function handleSendPayment(
 export function buildConversationGraph() {
   const graph = new StateGraph(ConversationState)
     // Add nodes
-    .addNode('analyze', analyzeConversation)
-    .addNode('decide', decideAction)
+    .addNode('analyzeAndDecide', analyzeAndDecide)
     .addNode('respond', generateResponse)
     .addNode('escalate', handleEscalation)
     .addNode('trigger_flow', handleTriggerFlow)
@@ -106,16 +94,10 @@ export function buildConversationGraph() {
     .addNode('send_payment', handleSendPayment)
 
     // Set entry point
-    .addEdge('__start__', 'analyze')
+    .addEdge('__start__', 'analyzeAndDecide')
 
-    // Route after analysis
-    .addConditionalEdges('analyze', routeAfterAnalysis, {
-      decide: 'decide',
-      escalate: 'escalate',
-    })
-
-    // Route after decision
-    .addConditionalEdges('decide', routeAfterDecision, {
+    // Route after merged analyze-and-decide
+    .addConditionalEdges('analyzeAndDecide', routeAfterDecision, {
       respond: 'respond',
       escalate: 'escalate',
       trigger_flow: 'trigger_flow',
