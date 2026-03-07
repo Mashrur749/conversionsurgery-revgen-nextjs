@@ -1,8 +1,8 @@
 # Operations Guide
 
-Last updated: 2026-02-26
+Last updated: 2026-03-07
 Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `Reliability audit: compliance gateway bypass closure (2026-02-26)`
+Last verified commit: `perf(agent): use fast model tier (Haiku) for analyze-decide node (2026-03-07)`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -111,6 +111,7 @@ curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
 - Calendar, team-member, and client conversation/team workflow failures should also use centralized safe/sanitized logging.
 - API routes should have zero raw `console.error`; verify with `rg -n "console\\.error" src/app/api`.
 - If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
+- **Voice AI two-step flow:** The `/gather` route is a thin handler — it captures caller speech, saves it to the transcript, and returns a filler phrase ("One moment please...") with a `<Redirect>` to `/process`. The `/process` route loads full context (client, KB, agent settings, SMS history) and generates the AI response. If debugging voice AI issues, check the `/process` route for AI inference failures — the `/gather` route only handles speech capture and kill-switch bypass.
 - **HELP keyword (CTIA):** inbound `HELP`/`INFO` messages trigger auto-reply with business contact + opt-out info. Works even for opted-out leads. All exempt sends (HELP, opt-in, opt-out confirmations) produce `compliance_exempt_send` audit events.
 - **Stuck message recovery:** `process-scheduled` cron recovers messages claimed >5 minutes ago (within 1-hour lookback) by resetting them for retry. This handles serverless function kills mid-send.
 - **Max-attempts retry cap:** scheduled messages retry up to `maxAttempts` (default 3) before permanent cancellation. Prevents infinite retry loops on permanently-failing sends.

@@ -1,8 +1,8 @@
 # Use Cases
 
-Last updated: 2026-02-25
+Last updated: 2026-03-07
 Scope: Managed service operations now + SaaS-ready workflows next
-Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
+Last verified commit: `perf(agent): use fast model tier (Haiku) for analyze-decide node (2026-03-07)`
 
 ## 1. Founder/Agency Use Cases
 

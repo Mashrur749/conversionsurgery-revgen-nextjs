@@ -1,9 +1,9 @@
 # Testing Guide
 
-Last updated: 2026-02-26
+Last updated: 2026-03-07
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `Reliability audit: compliance gateway bypass closure (2026-02-26)`
+Last verified commit: `perf(agent): use fast model tier (Haiku) for analyze-decide node (2026-03-07)`
 
 ## 0. Preflight (Run First)
 
@@ -437,10 +437,15 @@ Expected:
 10. Set `ops.kill_switch.voice_ai=true`.
 11. Place test call through Voice AI number and confirm AI conversation is bypassed to human fallback path.
 12. Set `ops.kill_switch.voice_ai=false`.
+13. Place a normal test call (kill switch off) and confirm the two-step voice flow works:
+    - Caller speaks, hears a filler phrase ("One moment please..." / "Let me look into that..." / "Sure, give me just a second...")
+    - After a brief pause, the AI response plays and the conversation continues.
+    - The filler phrase is served by `/api/webhooks/twilio/voice/ai/gather` (thin handler), which redirects to `/api/webhooks/twilio/voice/ai/process` (heavy AI handler) for the actual response.
 
 Expected:
 - Each switch changes behavior without code changes/redeploy.
 - Switching back to `false` restores normal behavior.
+- Voice AI two-step flow: caller never hears extended dead silence — filler phrase bridges the AI processing gap.
 
 ### Step 18b: HELP keyword + compliance audit logging validation
 1. Send `HELP` as inbound SMS to a client Twilio number (via test or Twilio console).
