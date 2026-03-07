@@ -18,6 +18,11 @@ vi.mock('@/lib/permissions/require-portal-permission', () => ({
   requirePortalPermission: (...args: unknown[]) => mockRequirePortalPermission(...args),
 }));
 
+vi.mock('@/lib/services/internal-error-log', () => ({
+  logInternalError: vi.fn(),
+  logSanitizedConsoleError: vi.fn(),
+}));
+
 function makeRequest(method = 'GET', path = '/api/admin/test') {
   return new NextRequest(new URL(path, 'http://localhost:3000'), { method });
 }
