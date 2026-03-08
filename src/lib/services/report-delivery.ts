@@ -1,4 +1,4 @@
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { reportDeliveries, reportDeliveryEvents } from '@/db/schema';
 import { and, desc, eq, lt } from 'drizzle-orm';
 
@@ -103,7 +103,7 @@ export async function transitionReportDeliveryState(
   options: TransitionOptions = {}
 ) {
   const db = getDb();
-  return db.transaction(async (tx) => {
+  return withTransaction(async (tx) => {
     const [current] = await tx
       .select()
       .from(reportDeliveries)
@@ -172,7 +172,7 @@ export async function claimReportDeliveryForRetry(
   const db = getDb();
   const now = options.at ?? new Date();
 
-  return db.transaction(async (tx) => {
+  return withTransaction(async (tx) => {
     const [current] = await tx
       .select()
       .from(reportDeliveries)

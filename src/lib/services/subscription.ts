@@ -1,4 +1,4 @@
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { subscriptions, plans, clients, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
@@ -142,7 +142,7 @@ export async function createSubscription(
   // If this transaction fails, the Stripe subscription still exists —
   // the reconciliation cron (E2) will detect and fix the discrepancy.
   try {
-    const subscription = await db.transaction(async (tx) => {
+    const subscription = await withTransaction(async (tx) => {
       const [sub] = await tx.insert(subscriptions).values({
         clientId,
         planId,
@@ -240,7 +240,7 @@ export async function cancelSubscription(
   }
 
   // Wrap DB writes in transaction
-  const updated = await db.transaction(async (tx) => {
+  const updated = await withTransaction(async (tx) => {
     const [sub] = await tx.update(subscriptions).set({
       cancelAtPeriodEnd: !cancelImmediately,
       canceledAt: cancelImmediately ? new Date() : null,
@@ -307,7 +307,7 @@ export async function changePlan(
   });
 
   // Wrap DB writes in transaction
-  const updated = await db.transaction(async (tx) => {
+  const updated = await withTransaction(async (tx) => {
     const [sub] = await tx.update(subscriptions).set({
       planId: newPlanId,
       interval,

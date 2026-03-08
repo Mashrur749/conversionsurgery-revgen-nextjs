@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { clientMemberships, people, escalationClaims, escalationQueue } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
@@ -79,7 +79,7 @@ export async function PATCH(
     if (data.phone !== undefined) personUpdates.phone = data.phone;
     if (data.email !== undefined) personUpdates.email = data.email || null;
 
-    await db.transaction(async (tx) => {
+    await withTransaction(async (tx) => {
       if (Object.keys(membershipUpdates).length > 1) {
         await tx
           .update(clientMemberships)

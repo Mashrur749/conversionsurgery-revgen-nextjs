@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { clients, people, clientMemberships, roleTemplates } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const client = await db.transaction(async (tx) => {
+    const client = await withTransaction(async (tx) => {
       const [createdClient] = await tx
         .insert(clients)
         .values({

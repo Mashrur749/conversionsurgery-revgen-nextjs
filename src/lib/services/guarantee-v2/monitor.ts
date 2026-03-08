@@ -1,4 +1,4 @@
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { billingEvents, subscriptions } from '@/db/schema';
 import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 import {
@@ -123,7 +123,7 @@ async function applyLowVolumeExtensionAndSync(
 
   const needsUpdate = extensionChanged || observedAverageChanged;
   if (needsUpdate) {
-    await db.transaction(async (tx) => {
+    await withTransaction(async (tx) => {
       await tx
         .update(subscriptions)
         .set({
@@ -202,7 +202,7 @@ async function transitionProofPassed(
   qleMetrics: { count: number; qualifiedLeadIds: string[] }
 ) {
   const db = getDb();
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx
       .update(subscriptions)
       .set({
@@ -238,7 +238,7 @@ async function transitionProofFailedRefundReview(
   qleMetrics: { count: number; qualifiedLeadIds: string[] }
 ) {
   const db = getDb();
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx
       .update(subscriptions)
       .set({
@@ -275,7 +275,7 @@ async function transitionRecoveryPending(
   recoveryMetrics: RecoveryAttributedOpportunityMetrics
 ) {
   const db = getDb();
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx
       .update(subscriptions)
       .set({
@@ -311,7 +311,7 @@ async function transitionRecoveryPassed(
   const db = getDb();
   const primaryOpportunity = getPrimaryAttributedOpportunity(recoveryMetrics.opportunities);
 
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx
       .update(subscriptions)
       .set({
@@ -350,7 +350,7 @@ async function transitionRecoveryFailedRefundReview(
   recoveryMetrics: RecoveryAttributedOpportunityMetrics
 ) {
   const db = getDb();
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx
       .update(subscriptions)
       .set({

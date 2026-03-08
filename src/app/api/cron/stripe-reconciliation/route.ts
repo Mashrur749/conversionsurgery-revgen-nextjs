@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCronSecret } from '@/lib/utils/cron';
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { subscriptions, clients, billingEvents } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
               // Fix: update local to match Stripe (Stripe is the source of truth)
               const mappedStatus = mapStripeStatus(stripeStatus);
 
-              await db.transaction(async (tx) => {
+              await withTransaction(async (tx) => {
                 await tx.update(subscriptions).set({
                   status: mappedStatus,
                   canceledAt: stripeSub.canceled_at
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
               // Subscription doesn't exist in Stripe — mark as canceled locally
               results.mismatches++;
 
-              await db.transaction(async (tx) => {
+              await withTransaction(async (tx) => {
                 await tx.update(subscriptions).set({
                   status: 'canceled',
                   canceledAt: new Date(),

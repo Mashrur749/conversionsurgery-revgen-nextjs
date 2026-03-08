@@ -1,5 +1,5 @@
 import { getStripeClient } from '@/lib/clients/stripe';
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import {
   billingEvents,
   clients,
@@ -185,7 +185,7 @@ export async function applyMonthlyOverages(
         }
       }
 
-      await db.transaction(async (tx) => {
+      await withTransaction(async (tx) => {
         await tx
           .update(subscriptions)
           .set({

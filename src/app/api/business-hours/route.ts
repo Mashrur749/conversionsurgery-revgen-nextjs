@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 import { getClientId } from '@/lib/get-client-id';
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { businessHours } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -88,7 +88,7 @@ export async function PUT(req: Request) {
     const db = getDb();
 
     // Wrap delete + insert in transaction to prevent partial state (D12)
-    const result = await db.transaction(async (tx) => {
+    const result = await withTransaction(async (tx) => {
       await tx.delete(businessHours).where(eq(businessHours.clientId, validated.clientId));
 
       return tx

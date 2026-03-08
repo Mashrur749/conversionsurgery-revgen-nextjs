@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { clients, people, clientMemberships, roleTemplates } from '@/db/schema';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
@@ -76,7 +76,7 @@ export const POST = adminRoute(
       );
     }
 
-    const client = await db.transaction(async (tx) => {
+    const client = await withTransaction(async (tx) => {
       const [createdClient] = await tx
         .insert(clients)
         .values({

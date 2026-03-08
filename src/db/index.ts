@@ -35,3 +35,4 @@ export function getDb(env?: Record<string, string>): Database {
 export * from './schema';
 export * from './types';
 export type { Database } from './client';
+export { withTransaction, type Transaction } from './transaction';

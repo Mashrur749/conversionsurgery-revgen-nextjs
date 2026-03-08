@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { getClientId } from '@/lib/get-client-id';
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { people, clientMemberships, roleTemplates } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
@@ -136,7 +136,7 @@ export async function POST(req: Request) {
     }
 
     // Create person + membership in a transaction
-    const member = await db.transaction(async (tx) => {
+    const member = await withTransaction(async (tx) => {
       // Check if person already exists by phone or email
       let person;
       if (normalizedEmail) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { handlePaymentSuccess, formatAmount } from '@/lib/services/stripe';
-import { getDb } from '@/db';
+import { getDb, withTransaction } from '@/db';
 import { payments, leads, clients, subscriptions, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendSMS } from '@/lib/services/twilio';
@@ -259,7 +259,7 @@ async function handleSubscriptionUpdate(db: DB, sub: Stripe.Subscription, event:
   const firstItem = sub.items.data[0];
 
   // Wrap in transaction to ensure subscription update and billing event are atomic
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx.update(subscriptions).set({
       status: sub.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused',
       currentPeriodStart: firstItem ? new Date(firstItem.current_period_start * 1000) : undefined,
@@ -293,7 +293,7 @@ async function handleSubscriptionDeleted(db: DB, sub: Stripe.Subscription, event
 
   // Wrap all DB writes in transaction — prevents partial state where
   // subscription is canceled but client status stays active
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx.update(subscriptions).set({
       status: 'canceled',
       canceledAt: new Date(),
@@ -379,7 +379,7 @@ async function handleSubscriptionPaused(db: DB, sub: Stripe.Subscription, event:
     .limit(1);
   if (existingEvent) return;
 
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx.update(subscriptions).set({
       status: 'paused',
       pausedAt: new Date(),
@@ -408,7 +408,7 @@ async function handleSubscriptionResumed(db: DB, sub: Stripe.Subscription, event
     .limit(1);
   if (existingEvent) return;
 
-  await db.transaction(async (tx) => {
+  await withTransaction(async (tx) => {
     await tx.update(subscriptions).set({
       status: 'active',
       pausedAt: null,
