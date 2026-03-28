@@ -10,6 +10,7 @@ import {
 } from '@/lib/services/day-one-activation';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { setClientSessionCookieWithPermissions } from '@/lib/client-auth';
 
 const signupSchema = z.object({
   businessName: z.string().min(2).max(255),
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
         receiveHotTransfers: true,
       });
 
-      return createdClient;
+      return { ...createdClient, personId: person.id };
     });
 
     try {
@@ -135,12 +136,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Auto-establish portal session so contractor can proceed without re-authenticating
+    try {
+      await setClientSessionCookieWithPermissions(client.personId, client.id);
+    } catch (sessionError) {
+      // Non-fatal — contractor can still log in manually via /client-login
+      logSanitizedConsoleError('[PublicSignup] Auto-login failed:', sessionError, {
+        clientId: client.id,
+      });
+    }
+
     return NextResponse.json(
       {
         success: true,
         clientId: client.id,
-        message:
-          'Signup received. Your workspace has been created in pending state. Complete setup with the onboarding flow.',
+        authenticated: true,
+        message: 'Account created. You are now logged in.',
       },
       { status: 201 }
     );

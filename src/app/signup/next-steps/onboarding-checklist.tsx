@@ -230,7 +230,7 @@ export function OnboardingChecklist() {
                             href="/client/settings/phone"
                             className="text-xs text-olive underline hover:text-olive/80"
                           >
-                            Set up now
+                            Set up in portal &rarr;
                           </a>
                         )}
                         <span

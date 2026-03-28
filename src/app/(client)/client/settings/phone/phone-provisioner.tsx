@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Phone, CheckCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,6 +75,7 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [purchasedNumber, setPurchasedNumber] = useState<string | null>(null);
+  const [subscriptionRequired, setSubscriptionRequired] = useState(false);
 
   // Already has a number — show it
   if (currentNumber && !purchasedNumber) {
@@ -173,9 +175,14 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
         body: JSON.stringify({ phoneNumber }),
       });
 
-      const data: { error?: string; success?: boolean } = await res.json();
+      const data: { error?: string; success?: boolean; requiresSubscription?: boolean } = await res.json();
 
       if (!res.ok) {
+        if (data.requiresSubscription) {
+          setError(null);
+          setSubscriptionRequired(true);
+          return;
+        }
         setError(data.error || 'Failed to purchase number');
         return;
       }
@@ -200,6 +207,18 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {subscriptionRequired && (
+          <div className="p-4 rounded-md bg-moss-light border border-olive/30 space-y-2">
+            <p className="text-sm font-medium">Choose a plan first</p>
+            <p className="text-sm text-muted-foreground">
+              You need an active subscription before setting up your phone number.
+            </p>
+            <Button asChild size="sm">
+              <Link href="/client/billing/upgrade">Choose Plan</Link>
+            </Button>
+          </div>
+        )}
+
         {error && (
           <div className="p-3 text-sm text-sienna bg-[#FDEAE4] rounded-md" role="alert">
             {error}

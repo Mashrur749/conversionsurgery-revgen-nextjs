@@ -4,7 +4,7 @@ import { clientPhoneNumbers } from '@/db/schema';
 import { eq, count as countFn } from 'drizzle-orm';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 import { purchaseNumber } from '@/lib/services/twilio-provisioning';
-import { checkUsageLimit } from '@/lib/services/subscription';
+import { checkUsageLimit, getSubscriptionWithPlan } from '@/lib/services/subscription';
 import { recordPhoneNumberAddonEventForPurchase } from '@/lib/services/addon-billing-ledger';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import {
@@ -32,6 +32,15 @@ export const POST = portalRoute(
 
     const { phoneNumber } = parsed.data;
     const clientId = session.clientId;
+
+    // Require active subscription before purchasing a number
+    const subscription = await getSubscriptionWithPlan(clientId);
+    if (!subscription) {
+      return Response.json(
+        { error: 'Please choose a plan before setting up your phone number.', requiresSubscription: true },
+        { status: 402 }
+      );
+    }
 
     // Check phone number usage limit
     const db = getDb();

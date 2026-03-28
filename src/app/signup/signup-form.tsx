@@ -41,20 +41,23 @@ export function SignupForm() {
         body: JSON.stringify(form),
       });
 
-      const data = (await res.json()) as { error?: string; message?: string; clientId?: string };
+      const data = (await res.json()) as { error?: string; message?: string; clientId?: string; authenticated?: boolean };
       if (!res.ok) {
         setError(data.error || 'Signup failed');
         return;
       }
 
-      setSuccess(data.message || 'Signup completed');
-      const nextClientId = data.clientId;
+      setSuccess(data.message || 'Account created!');
       setTimeout(() => {
-        if (nextClientId) {
-          router.push(`/signup/next-steps?clientId=${nextClientId}&email=${encodeURIComponent(form.email)}`);
-          return;
+        if (data.authenticated) {
+          // Auto-logged in — go straight to client dashboard (setup banner guides next steps)
+          router.push('/client');
+        } else if (data.clientId) {
+          // Fallback: session not established, go to onboarding checklist
+          router.push(`/signup/next-steps?clientId=${data.clientId}&email=${encodeURIComponent(form.email)}`);
+        } else {
+          router.push('/client-login');
         }
-        router.push('/client-login');
       }, 800);
     } catch {
       setError('Signup failed');
