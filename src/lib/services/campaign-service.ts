@@ -5,10 +5,10 @@ import {
   leads,
   quarterlyCampaigns,
   systemSettings,
-} from '@/db';
-import type { QuarterlyCampaign } from '@/db/schema/quarterly-campaigns';
-import type { QuarterlyCampaignType } from '@/lib/constants/quarterly-campaigns';
-import { CAMPAIGN_REQUIRED_ASSETS } from '@/lib/constants/quarterly-campaigns';
+} from "@/db";
+import type { QuarterlyCampaign } from "@/db/schema/quarterly-campaigns";
+import type { QuarterlyCampaignType } from "@/lib/constants/quarterly-campaigns";
+import { CAMPAIGN_REQUIRED_ASSETS } from "@/lib/constants/quarterly-campaigns";
 import {
   deriveMissingQuarterKeys,
   getPlanningQuarterKeys,
@@ -16,14 +16,14 @@ import {
   getQuarterKey,
   parseQuarterKey,
   recommendCampaignTypeForAccount,
-} from '@/lib/services/quarterly-campaign-rules';
+} from "@/lib/services/quarterly-campaign-rules";
 import {
   type QuarterlyCampaignAction,
   validateQuarterlyCampaignTransition,
-} from '@/lib/services/quarterly-campaign-transition-guard';
-import { toQuarterlyCampaignSummaryDto } from '@/lib/services/quarterly-campaign-summary';
-import { sendEmail } from '@/lib/services/resend';
-import { and, asc, desc, eq, inArray, lte, or, sql } from 'drizzle-orm';
+} from "@/lib/services/quarterly-campaign-transition-guard";
+import { toQuarterlyCampaignSummaryDto } from "@/lib/services/quarterly-campaign-summary";
+import { sendEmail } from "@/lib/services/resend";
+import { and, asc, desc, eq, inArray, lte, or, sql } from "drizzle-orm";
 
 export interface CampaignPlanningResult {
   processedClients: number;
@@ -70,7 +70,10 @@ export function getDefaultScheduledAtForQuarter(quarterKey: string): Date {
   return scheduled;
 }
 
-async function getClientCampaignMetrics(clientId: string, now: Date): Promise<CampaignMetrics> {
+async function getClientCampaignMetrics(
+  clientId: string,
+  now: Date,
+): Promise<CampaignMetrics> {
   const db = getDb();
   const date30 = new Date(now);
   date30.setUTCDate(date30.getUTCDate() - 30);
@@ -88,12 +91,7 @@ async function getClientCampaignMetrics(clientId: string, now: Date): Promise<Ca
   const [dormant] = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(leads)
-    .where(
-      and(
-        eq(leads.clientId, clientId),
-        eq(leads.status, 'dormant')
-      )
-    );
+    .where(and(eq(leads.clientId, clientId), eq(leads.status, "dormant")));
 
   return {
     inboundLeads30: Number(rolling?.inboundLeads30 || 0),
@@ -103,7 +101,7 @@ async function getClientCampaignMetrics(clientId: string, now: Date): Promise<Ca
 }
 
 export async function createQuarterlyCampaignDraft(
-  params: CreateCampaignDraftParams
+  params: CreateCampaignDraftParams,
 ): Promise<QuarterlyCampaign | null> {
   const db = getDb();
   const [created] = await db
@@ -112,8 +110,10 @@ export async function createQuarterlyCampaignDraft(
       clientId: params.clientId,
       quarterKey: params.quarterKey,
       campaignType: params.campaignType,
-      status: 'planned',
-      scheduledAt: params.scheduledAt || getDefaultScheduledAtForQuarter(params.quarterKey),
+      status: "planned",
+      scheduledAt:
+        params.scheduledAt ||
+        getDefaultScheduledAtForQuarter(params.quarterKey),
       requiredAssets: CAMPAIGN_REQUIRED_ASSETS[params.campaignType],
       completedAssets: [],
       evidenceLinks: [],
@@ -130,12 +130,14 @@ export async function createQuarterlyCampaignDraft(
   return created || null;
 }
 
-export async function planQuarterlyCampaigns(now: Date = new Date()): Promise<CampaignPlanningResult> {
+export async function planQuarterlyCampaigns(
+  now: Date = new Date(),
+): Promise<CampaignPlanningResult> {
   const db = getDb();
   const activeClients = await db
     .select({ id: clients.id })
     .from(clients)
-    .where(eq(clients.status, 'active'));
+    .where(eq(clients.status, "active"));
 
   let created = 0;
   let skipped = 0;
@@ -148,13 +150,13 @@ export async function planQuarterlyCampaigns(now: Date = new Date()): Promise<Ca
       .where(
         and(
           eq(quarterlyCampaigns.clientId, client.id),
-          inArray(quarterlyCampaigns.quarterKey, targetQuarterKeys)
-        )
+          inArray(quarterlyCampaigns.quarterKey, targetQuarterKeys),
+        ),
       );
 
     const missingQuarterKeys = deriveMissingQuarterKeys(
       existing.map((entry) => entry.quarterKey),
-      targetQuarterKeys
+      targetQuarterKeys,
     );
 
     if (missingQuarterKeys.length === 0) {
@@ -187,17 +189,25 @@ export async function planQuarterlyCampaigns(now: Date = new Date()): Promise<Ca
   };
 }
 
-export async function listClientQuarterlyCampaigns(clientId: string): Promise<QuarterlyCampaign[]> {
+export async function listClientQuarterlyCampaigns(
+  clientId: string,
+): Promise<QuarterlyCampaign[]> {
   const db = getDb();
   return db
     .select()
     .from(quarterlyCampaigns)
     .where(eq(quarterlyCampaigns.clientId, clientId))
-    .orderBy(desc(quarterlyCampaigns.quarterKey), desc(quarterlyCampaigns.createdAt))
+    .orderBy(
+      desc(quarterlyCampaigns.quarterKey),
+      desc(quarterlyCampaigns.createdAt),
+    )
     .limit(8);
 }
 
-export async function getCurrentQuarterlyCampaignSummary(clientId: string, now: Date = new Date()) {
+export async function getCurrentQuarterlyCampaignSummary(
+  clientId: string,
+  now: Date = new Date(),
+) {
   const db = getDb();
   const currentQuarterKey = getQuarterKey(now);
 
@@ -207,8 +217,8 @@ export async function getCurrentQuarterlyCampaignSummary(clientId: string, now: 
     .where(
       and(
         eq(quarterlyCampaigns.clientId, clientId),
-        eq(quarterlyCampaigns.quarterKey, currentQuarterKey)
-      )
+        eq(quarterlyCampaigns.quarterKey, currentQuarterKey),
+      ),
     )
     .limit(1);
 
@@ -244,17 +254,17 @@ export async function toggleCampaignAsset(params: {
     .where(
       and(
         eq(quarterlyCampaigns.id, params.campaignId),
-        eq(quarterlyCampaigns.clientId, params.clientId)
-      )
+        eq(quarterlyCampaigns.clientId, params.clientId),
+      ),
     )
     .limit(1);
 
   if (!campaign) {
-    throw new Error('Campaign not found');
+    throw new Error("Campaign not found");
   }
 
   if (!campaign.requiredAssets.includes(params.assetKey)) {
-    throw new Error('Asset is not required for this campaign');
+    throw new Error("Asset is not required for this campaign");
   }
 
   const current = new Set(campaign.completedAssets || []);
@@ -290,21 +300,23 @@ export async function addCampaignEvidence(params: {
     .where(
       and(
         eq(quarterlyCampaigns.id, params.campaignId),
-        eq(quarterlyCampaigns.clientId, params.clientId)
-      )
+        eq(quarterlyCampaigns.clientId, params.clientId),
+      ),
     )
     .limit(1);
 
   if (!campaign) {
-    throw new Error('Campaign not found');
+    throw new Error("Campaign not found");
   }
 
   const evidence = params.evidence.trim();
   if (!evidence) {
-    throw new Error('Evidence cannot be empty');
+    throw new Error("Evidence cannot be empty");
   }
 
-  const links = Array.isArray(campaign.evidenceLinks) ? [...campaign.evidenceLinks] : [];
+  const links = Array.isArray(campaign.evidenceLinks)
+    ? [...campaign.evidenceLinks]
+    : [];
   links.push(evidence);
 
   const [updated] = await db
@@ -331,7 +343,9 @@ export async function updateCampaignNotes(params: {
   const [updated] = await db
     .update(quarterlyCampaigns)
     .set({
-      ...(params.planNotes !== undefined ? { planNotes: params.planNotes } : {}),
+      ...(params.planNotes !== undefined
+        ? { planNotes: params.planNotes }
+        : {}),
       ...(params.outcomeSummary !== undefined
         ? { outcomeSummary: params.outcomeSummary }
         : {}),
@@ -341,13 +355,13 @@ export async function updateCampaignNotes(params: {
     .where(
       and(
         eq(quarterlyCampaigns.id, params.campaignId),
-        eq(quarterlyCampaigns.clientId, params.clientId)
-      )
+        eq(quarterlyCampaigns.clientId, params.clientId),
+      ),
     )
     .returning();
 
   if (!updated) {
-    throw new Error('Campaign not found');
+    throw new Error("Campaign not found");
   }
 
   return updated;
@@ -367,23 +381,27 @@ export async function applyCampaignAction(params: {
     .where(
       and(
         eq(quarterlyCampaigns.id, params.campaignId),
-        eq(quarterlyCampaigns.clientId, params.clientId)
-      )
+        eq(quarterlyCampaigns.clientId, params.clientId),
+      ),
     )
     .limit(1);
 
   if (!campaign) {
-    throw new Error('Campaign not found');
+    throw new Error("Campaign not found");
   }
 
-  const transition = validateQuarterlyCampaignTransition(campaign.status, params.action, {
-    completedAssets: campaign.completedAssets || [],
-    requiredAssets: campaign.requiredAssets || [],
-    outcomeSummary: params.outcomeSummary ?? campaign.outcomeSummary,
-  });
+  const transition = validateQuarterlyCampaignTransition(
+    campaign.status,
+    params.action,
+    {
+      completedAssets: campaign.completedAssets || [],
+      requiredAssets: campaign.requiredAssets || [],
+      outcomeSummary: params.outcomeSummary ?? campaign.outcomeSummary,
+    },
+  );
 
   if (!transition.ok || !transition.nextStatus) {
-    throw new Error(transition.error || 'Invalid transition');
+    throw new Error(transition.error || "Invalid transition");
   }
 
   const now = new Date();
@@ -393,13 +411,13 @@ export async function applyCampaignAction(params: {
     updatedAt: now,
   };
 
-  if (params.action === 'approve_plan') {
+  if (params.action === "approve_plan") {
     patch.scheduledAt = campaign.scheduledAt || now;
   }
-  if (params.action === 'launch_campaign') {
+  if (params.action === "launch_campaign") {
     patch.launchedAt = now;
   }
-  if (params.action === 'complete_campaign') {
+  if (params.action === "complete_campaign") {
     patch.completedAt = now;
     patch.outcomeSummary = params.outcomeSummary || campaign.outcomeSummary;
   }
@@ -413,7 +431,9 @@ export async function applyCampaignAction(params: {
   return updated;
 }
 
-export async function getQuarterlyCampaignPortfolioSummary(now: Date = new Date()) {
+export async function getQuarterlyCampaignPortfolioSummary(
+  now: Date = new Date(),
+) {
   const db = getDb();
   const quarterKey = getQuarterKey(now);
 
@@ -431,25 +451,25 @@ export async function getQuarterlyCampaignPortfolioSummary(now: Date = new Date(
     .innerJoin(clients, eq(quarterlyCampaigns.clientId, clients.id))
     .where(
       and(
-        eq(clients.status, 'active'),
-        eq(quarterlyCampaigns.quarterKey, quarterKey)
-      )
+        eq(clients.status, "active"),
+        eq(quarterlyCampaigns.quarterKey, quarterKey),
+      ),
     )
     .orderBy(asc(clients.businessName));
 
   const counts = {
     total: rows.length,
-    planned: rows.filter((row) => row.status === 'planned').length,
-    scheduled: rows.filter((row) => row.status === 'scheduled').length,
-    launched: rows.filter((row) => row.status === 'launched').length,
-    completed: rows.filter((row) => row.status === 'completed').length,
+    planned: rows.filter((row) => row.status === "planned").length,
+    scheduled: rows.filter((row) => row.status === "scheduled").length,
+    launched: rows.filter((row) => row.status === "launched").length,
+    completed: rows.filter((row) => row.status === "completed").length,
   };
 
   const overdue = rows.filter(
     (row) =>
-      (row.status === 'planned' || row.status === 'scheduled') &&
+      (row.status === "planned" || row.status === "scheduled") &&
       !!row.scheduledAt &&
-      row.scheduledAt < now
+      row.scheduledAt < now,
   );
 
   return {
@@ -463,12 +483,16 @@ export async function getQuarterlyCampaignPortfolioSummary(now: Date = new Date(
 }
 
 function getIsoWeekKey(now: Date): string {
-  const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const date = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
   const dayNum = date.getUTCDay() || 7;
   date.setUTCDate(date.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `${date.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+  const week = Math.ceil(
+    ((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+  );
+  return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 
 async function getSettingValue(key: string): Promise<string | null> {
@@ -481,7 +505,11 @@ async function getSettingValue(key: string): Promise<string | null> {
   return row?.value || null;
 }
 
-async function setSettingValue(key: string, value: string, description: string): Promise<void> {
+async function setSettingValue(
+  key: string,
+  value: string,
+  description: string,
+): Promise<void> {
   const db = getDb();
   await db
     .insert(systemSettings)
@@ -498,13 +526,13 @@ export async function sendQuarterlyCampaignAdminDigest(params?: {
 }): Promise<CampaignDigestResult> {
   const now = params?.now || new Date();
   const alertsOnly = params?.alertsOnly ?? false;
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@conversionsurgery.com';
+  const adminEmail = process.env.ADMIN_EMAIL || "rmashrur749@gmail.com";
   const summary = await getQuarterlyCampaignPortfolioSummary(now);
 
   if (alertsOnly && summary.counts.overdue === 0) {
     return {
       skipped: true,
-      reason: 'No overdue campaigns',
+      reason: "No overdue campaigns",
       sent: false,
       summary: {
         quarterKey: summary.quarterKey,
@@ -517,14 +545,14 @@ export async function sendQuarterlyCampaignAdminDigest(params?: {
     ? `quarterly_campaign_alert_digest_${now.toISOString().slice(0, 10)}`
     : `quarterly_campaign_weekly_digest_${getIsoWeekKey(now)}`;
   const settingKey = alertsOnly
-    ? 'last_quarterly_campaign_alert_digest_key'
-    : 'last_quarterly_campaign_weekly_digest_key';
+    ? "last_quarterly_campaign_alert_digest_key"
+    : "last_quarterly_campaign_weekly_digest_key";
 
   const lastKey = await getSettingValue(settingKey);
   if (lastKey === idempotencyKey) {
     return {
       skipped: true,
-      reason: 'Digest already sent for this run key',
+      reason: "Digest already sent for this run key",
       sent: false,
       summary: {
         quarterKey: summary.quarterKey,
@@ -537,11 +565,11 @@ export async function sendQuarterlyCampaignAdminDigest(params?: {
     .slice(0, 20)
     .map(
       (item) =>
-        `<li><strong>${item.businessName}</strong> — ${item.campaignType} (${item.status}) target ${item.scheduledAt?.toISOString().slice(0, 10) || 'n/a'}</li>`
+        `<li><strong>${item.businessName}</strong> — ${item.campaignType} (${item.status}) target ${item.scheduledAt?.toISOString().slice(0, 10) || "n/a"}</li>`,
     )
-    .join('');
+    .join("");
 
-  const subjectPrefix = alertsOnly ? '[Alert]' : '[Digest]';
+  const subjectPrefix = alertsOnly ? "[Alert]" : "[Digest]";
 
   await sendEmail({
     to: adminEmail,
@@ -560,7 +588,7 @@ export async function sendQuarterlyCampaignAdminDigest(params?: {
         ${
           summary.counts.overdue > 0
             ? `<h3>Missed-quarter alert candidates</h3><ul>${overdueListHtml}</ul>`
-            : '<p>No overdue campaigns at this time.</p>'
+            : "<p>No overdue campaigns at this time.</p>"
         }
       </div>
     `,
@@ -570,8 +598,8 @@ export async function sendQuarterlyCampaignAdminDigest(params?: {
     settingKey,
     idempotencyKey,
     alertsOnly
-      ? 'Last quarterly campaign alert digest key'
-      : 'Last quarterly campaign weekly digest key'
+      ? "Last quarterly campaign alert digest key"
+      : "Last quarterly campaign weekly digest key",
   );
 
   return {

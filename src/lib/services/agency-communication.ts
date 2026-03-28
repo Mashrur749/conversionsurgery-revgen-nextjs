@@ -1,5 +1,5 @@
-import twilio from 'twilio';
-import { getDb } from '@/db';
+import twilio from "twilio";
+import { getDb } from "@/db";
 import {
   agencyMessages,
   clients,
@@ -7,10 +7,14 @@ import {
   systemSettings,
   dailyStats,
   notificationPreferences,
-} from '@/db/schema';
-import { eq, and, desc, gte, lte, lt, sql, inArray } from 'drizzle-orm';
-import { sendEmail, onboardingWelcomeEmail, agencyWeeklyDigestEmail } from './resend';
-import { triggerEstimateFollowup } from './estimate-triggers';
+} from "@/db/schema";
+import { eq, and, desc, gte, lte, lt, sql, inArray } from "drizzle-orm";
+import {
+  sendEmail,
+  onboardingWelcomeEmail,
+  agencyWeeklyDigestEmail,
+} from "./resend";
+import { triggerEstimateFollowup } from "./estimate-triggers";
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
@@ -27,7 +31,7 @@ export async function getAgencyNumber(): Promise<string | null> {
   const [row] = await db
     .select()
     .from(systemSettings)
-    .where(eq(systemSettings.key, 'agency_twilio_number'))
+    .where(eq(systemSettings.key, "agency_twilio_number"))
     .limit(1);
   return row?.value ?? null;
 }
@@ -36,7 +40,10 @@ export async function getAgencyNumber(): Promise<string | null> {
 // Quiet hours check
 // ---------------------------------------------------------------------------
 
-async function isInQuietHours(clientId: string, isUrgent = false): Promise<boolean> {
+async function isInQuietHours(
+  clientId: string,
+  isUrgent = false,
+): Promise<boolean> {
   const db = getDb();
   const [prefs] = await db
     .select()
@@ -48,7 +55,7 @@ async function isInQuietHours(clientId: string, isUrgent = false): Promise<boole
   if (isUrgent && prefs.urgentOverride) return false;
 
   const now = new Date();
-  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   const start = prefs.quietHoursStart;
   const end = prefs.quietHoursEnd;
 
@@ -75,7 +82,7 @@ async function sendAgencySMS(params: {
 }): Promise<string | null> {
   const agencyNumber = await getAgencyNumber();
   if (!agencyNumber) {
-    console.error('[Agency] No agency number configured');
+    console.error("[Agency] No agency number configured");
     return null;
   }
 
@@ -92,13 +99,13 @@ async function sendAgencySMS(params: {
       .insert(agencyMessages)
       .values({
         clientId: params.clientId,
-        direction: 'outbound',
-        channel: 'sms',
+        direction: "outbound",
+        channel: "sms",
         content: params.body,
         category: params.category,
         promptType: params.promptType ?? null,
         actionPayload: params.actionPayload ?? null,
-        actionStatus: params.promptType ? 'pending' : null,
+        actionStatus: params.promptType ? "pending" : null,
         inReplyTo: params.inReplyTo ?? null,
         twilioSid: message.sid,
         delivered: true,
@@ -109,20 +116,20 @@ async function sendAgencySMS(params: {
     console.log(`[Agency] SMS sent to ${params.toPhone}: ${message.sid}`);
     return inserted.id;
   } catch (error) {
-    console.error('[Agency] Failed to send SMS:', error);
+    console.error("[Agency] Failed to send SMS:", error);
 
     // Still log the attempt
     await db
       .insert(agencyMessages)
       .values({
         clientId: params.clientId,
-        direction: 'outbound',
-        channel: 'sms',
+        direction: "outbound",
+        channel: "sms",
         content: params.body,
         category: params.category,
         promptType: params.promptType ?? null,
         actionPayload: params.actionPayload ?? null,
-        actionStatus: params.promptType ? 'pending' : null,
+        actionStatus: params.promptType ? "pending" : null,
         delivered: false,
       })
       .catch(() => {});
@@ -136,7 +143,9 @@ async function sendAgencySMS(params: {
 // ---------------------------------------------------------------------------
 
 /** Send welcome SMS + email when a client is activated. */
-export async function sendOnboardingNotification(clientId: string): Promise<void> {
+export async function sendOnboardingNotification(
+  clientId: string,
+): Promise<void> {
   const db = getDb();
   const [client] = await db
     .select()
@@ -149,7 +158,8 @@ export async function sendOnboardingNotification(clientId: string): Promise<void
     return;
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.conversionsurgery.com';
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL || "https://app.conversionsurgery.com";
   const loginUrl = `${appUrl}/login`;
 
   // Send welcome SMS
@@ -160,7 +170,7 @@ export async function sendOnboardingNotification(clientId: string): Promise<void
       clientId: client.id,
       toPhone: client.phone,
       body: smsBody,
-      category: 'onboarding',
+      category: "onboarding",
     });
   }
 
@@ -183,17 +193,19 @@ export async function sendOnboardingNotification(clientId: string): Promise<void
       .insert(agencyMessages)
       .values({
         clientId: client.id,
-        direction: 'outbound',
-        channel: 'email',
+        direction: "outbound",
+        channel: "email",
         content: emailData.html,
         subject: emailData.subject,
-        category: 'onboarding',
+        category: "onboarding",
         delivered: result.success,
       })
       .catch(() => {});
   }
 
-  console.log(`[Agency] Onboarding notification sent for client: ${client.businessName}`);
+  console.log(
+    `[Agency] Onboarding notification sent for client: ${client.businessName}`,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -219,18 +231,20 @@ export async function sendActionPrompt(params: {
 
   // Check quiet hours
   if (await isInQuietHours(params.clientId)) {
-    console.log(`[Agency] Skipping prompt for ${client.businessName} — quiet hours`);
+    console.log(
+      `[Agency] Skipping prompt for ${client.businessName} — quiet hours`,
+    );
     return null;
   }
 
   // Expire any existing pending prompts for this client
   await db
     .update(agencyMessages)
-    .set({ actionStatus: 'expired' })
+    .set({ actionStatus: "expired" })
     .where(
       and(
         eq(agencyMessages.clientId, params.clientId),
-        eq(agencyMessages.actionStatus, 'pending'),
+        eq(agencyMessages.actionStatus, "pending"),
       ),
     );
 
@@ -241,7 +255,7 @@ export async function sendActionPrompt(params: {
     clientId: params.clientId,
     toPhone: client.phone,
     body: params.message,
-    category: 'action_prompt',
+    category: "action_prompt",
     promptType: params.promptType,
     actionPayload: params.actionPayload,
     expiresAt,
@@ -265,7 +279,9 @@ export async function sendAlert(params: {
 
   // Check quiet hours (urgent can override)
   if (await isInQuietHours(params.clientId, params.isUrgent)) {
-    console.log(`[Agency] Skipping alert for ${client.businessName} — quiet hours`);
+    console.log(
+      `[Agency] Skipping alert for ${client.businessName} — quiet hours`,
+    );
     return;
   }
 
@@ -273,7 +289,7 @@ export async function sendAlert(params: {
     clientId: params.clientId,
     toPhone: client.phone,
     body: params.message,
-    category: 'alert',
+    category: "alert",
   });
 }
 
@@ -309,10 +325,10 @@ export async function handleAgencyInboundSMS(payload: {
     .insert(agencyMessages)
     .values({
       clientId: client.id,
-      direction: 'inbound',
-      channel: 'sms',
+      direction: "inbound",
+      channel: "sms",
       content: body,
-      category: 'reply',
+      category: "reply",
       twilioSid: payload.MessageSid,
       delivered: true,
     })
@@ -325,7 +341,7 @@ export async function handleAgencyInboundSMS(payload: {
     .where(
       and(
         eq(agencyMessages.clientId, client.id),
-        eq(agencyMessages.actionStatus, 'pending'),
+        eq(agencyMessages.actionStatus, "pending"),
         gte(agencyMessages.expiresAt, new Date()),
       ),
     )
@@ -335,14 +351,21 @@ export async function handleAgencyInboundSMS(payload: {
   const normalizedReply = body.toUpperCase();
 
   if (!pendingPrompt) {
-    console.log(`[Agency Inbound] No pending prompt for client: ${client.businessName}`);
-    if (normalizedReply === 'YES' || normalizedReply === 'Y') {
-      await notifyPromptFallback(client.id, client.businessName, body, 'expired_or_missing_prompt');
+    console.log(
+      `[Agency Inbound] No pending prompt for client: ${client.businessName}`,
+    );
+    if (normalizedReply === "YES" || normalizedReply === "Y") {
+      await notifyPromptFallback(
+        client.id,
+        client.businessName,
+        body,
+        "expired_or_missing_prompt",
+      );
       await sendAgencySMS({
         clientId: client.id,
         toPhone: client.phone,
-        body: 'This approval request has expired. Our team has been notified to handle it manually.',
-        category: 'reply',
+        body: "This approval request has expired. Our team has been notified to handle it manually.",
+        category: "reply",
         inReplyTo: inboundMsg.id,
       });
       return;
@@ -353,7 +376,7 @@ export async function handleAgencyInboundSMS(payload: {
       clientId: client.id,
       toPhone: client.phone,
       body: `Thanks for your message. Our team will follow up shortly.`,
-      category: 'reply',
+      category: "reply",
       inReplyTo: inboundMsg.id,
     });
     return;
@@ -366,10 +389,10 @@ export async function handleAgencyInboundSMS(payload: {
     .where(eq(agencyMessages.id, inboundMsg.id));
 
   // Handle STOP/opt-out
-  if (normalizedReply === 'STOP') {
+  if (normalizedReply === "STOP") {
     await db
       .update(agencyMessages)
-      .set({ actionStatus: 'replied', clientReply: body })
+      .set({ actionStatus: "replied", clientReply: body })
       .where(eq(agencyMessages.id, pendingPrompt.id));
     // Twilio handles STOP automatically — no reply needed
     console.log(`[Agency Inbound] Client ${client.businessName} opted out`);
@@ -377,65 +400,65 @@ export async function handleAgencyInboundSMS(payload: {
   }
 
   // Handle YES/Y
-  if (normalizedReply === 'YES' || normalizedReply === 'Y') {
+  if (normalizedReply === "YES" || normalizedReply === "Y") {
     try {
       // Execute first, then mark executed only on success.
       const actionResult = await executePromptAction(
         pendingPrompt.promptType!,
         pendingPrompt.actionPayload as Record<string, unknown>,
-        client.id
+        client.id,
       );
 
       await db
         .update(agencyMessages)
-        .set({ actionStatus: 'executed', clientReply: body })
+        .set({ actionStatus: "executed", clientReply: body })
         .where(eq(agencyMessages.id, pendingPrompt.id));
 
       await sendAgencySMS({
         clientId: client.id,
         toPhone: client.phone,
         body: actionResult.ackMessage,
-        category: 'reply',
+        category: "reply",
         inReplyTo: pendingPrompt.id,
       });
     } catch (error) {
-      console.error('[Agency Inbound] Failed to execute prompt action:', error);
+      console.error("[Agency Inbound] Failed to execute prompt action:", error);
 
       await db
         .update(agencyMessages)
-        .set({ actionStatus: 'replied', clientReply: body })
+        .set({ actionStatus: "replied", clientReply: body })
         .where(eq(agencyMessages.id, pendingPrompt.id));
 
       await sendAgencySMS({
         clientId: client.id,
         toPhone: client.phone,
         body: `Thanks — we received your approval, but this action needs manual handling by our team.`,
-        category: 'reply',
+        category: "reply",
         inReplyTo: pendingPrompt.id,
       });
       await notifyPromptFallback(
         client.id,
         client.businessName,
         body,
-        'execution_failure',
-        error instanceof Error ? error.message : String(error)
+        "execution_failure",
+        error instanceof Error ? error.message : String(error),
       );
     }
     return;
   }
 
   // Handle NO/N
-  if (normalizedReply === 'NO' || normalizedReply === 'N') {
+  if (normalizedReply === "NO" || normalizedReply === "N") {
     await db
       .update(agencyMessages)
-      .set({ actionStatus: 'replied', clientReply: body })
+      .set({ actionStatus: "replied", clientReply: body })
       .where(eq(agencyMessages.id, pendingPrompt.id));
 
     await sendAgencySMS({
       clientId: client.id,
       toPhone: client.phone,
       body: `No problem — we'll skip this one.`,
-      category: 'reply',
+      category: "reply",
       inReplyTo: pendingPrompt.id,
     });
     return;
@@ -444,14 +467,14 @@ export async function handleAgencyInboundSMS(payload: {
   // Any other reply — store but don't execute
   await db
     .update(agencyMessages)
-    .set({ actionStatus: 'replied', clientReply: body })
+    .set({ actionStatus: "replied", clientReply: body })
     .where(eq(agencyMessages.id, pendingPrompt.id));
 
   await sendAgencySMS({
     clientId: client.id,
     toPhone: client.phone,
     body: `Got it — our team will review your response.`,
-    category: 'reply',
+    category: "reply",
     inReplyTo: pendingPrompt.id,
   });
 }
@@ -462,20 +485,23 @@ interface PromptActionResult {
 
 type PromptActionHandler = (
   actionPayload: Record<string, unknown>,
-  clientId: string
+  clientId: string,
 ) => Promise<PromptActionResult>;
 
 async function resolveSequenceTargetLeadIds(
   clientId: string,
-  actionPayload: Record<string, unknown>
+  actionPayload: Record<string, unknown>,
 ): Promise<string[]> {
-  if (typeof actionPayload.leadId === 'string' && actionPayload.leadId.length > 0) {
+  if (
+    typeof actionPayload.leadId === "string" &&
+    actionPayload.leadId.length > 0
+  ) {
     return [actionPayload.leadId];
   }
 
   if (Array.isArray(actionPayload.leadIds)) {
     const leadIds = actionPayload.leadIds.filter(
-      (value): value is string => typeof value === 'string' && value.length > 0
+      (value): value is string => typeof value === "string" && value.length > 0,
     );
     if (leadIds.length > 0) {
       return leadIds;
@@ -488,10 +514,7 @@ async function resolveSequenceTargetLeadIds(
     .select({ id: leads.id })
     .from(leads)
     .where(
-      and(
-        eq(leads.clientId, clientId),
-        inArray(leads.status, ['contacted'])
-      )
+      and(eq(leads.clientId, clientId), inArray(leads.status, ["contacted"])),
     )
     .limit(25);
 
@@ -500,11 +523,13 @@ async function resolveSequenceTargetLeadIds(
 
 async function handleStartSequencesPrompt(
   actionPayload: Record<string, unknown>,
-  clientId: string
+  clientId: string,
 ): Promise<PromptActionResult> {
   const leadIds = await resolveSequenceTargetLeadIds(clientId, actionPayload);
   if (leadIds.length === 0) {
-    throw new Error('No eligible leads available to start estimate follow-up sequences');
+    throw new Error(
+      "No eligible leads available to start estimate follow-up sequences",
+    );
   }
 
   let started = 0;
@@ -515,7 +540,7 @@ async function handleStartSequencesPrompt(
     const result = await triggerEstimateFollowup({
       clientId,
       leadId,
-      source: 'prompt_quick_reply',
+      source: "prompt_quick_reply",
     });
 
     if (!result.success) {
@@ -532,36 +557,34 @@ async function handleStartSequencesPrompt(
   }
 
   if (started + alreadyActive === 0) {
-    throw new Error('Unable to start sequences from prompt action');
+    throw new Error("Unable to start sequences from prompt action");
   }
 
   if (failed > 0) {
     return {
-      ackMessage:
-        `Done. Started ${started} sequence(s), ${alreadyActive} already active, ${failed} failed and need review.`,
+      ackMessage: `Done. Started ${started} sequence(s), ${alreadyActive} already active, ${failed} failed and need review.`,
     };
   }
 
   return {
-    ackMessage:
-      `Done. Started ${started} estimate sequence(s), ${alreadyActive} already active.`,
+    ackMessage: `Done. Started ${started} estimate sequence(s), ${alreadyActive} already active.`,
   };
 }
 
 async function handleConfirmActionPrompt(
   _actionPayload: Record<string, unknown>,
-  _clientId: string
+  _clientId: string,
 ): Promise<PromptActionResult> {
   return {
-    ackMessage: 'Done. Confirmation received and logged.',
+    ackMessage: "Done. Confirmation received and logged.",
   };
 }
 
 async function handleScheduleCallbackPrompt(
   _actionPayload: Record<string, unknown>,
-  _clientId: string
+  _clientId: string,
 ): Promise<PromptActionResult> {
-  throw new Error('schedule_callback requires callback scheduler integration');
+  throw new Error("schedule_callback requires callback scheduler integration");
 }
 
 const PROMPT_ACTION_HANDLERS: Record<string, PromptActionHandler> = {
@@ -576,7 +599,10 @@ async function executePromptAction(
   actionPayload: Record<string, unknown>,
   clientId: string,
 ): Promise<PromptActionResult> {
-  console.log(`[Agency] Executing action: ${promptType}`, { clientId, actionPayload });
+  console.log(`[Agency] Executing action: ${promptType}`, {
+    clientId,
+    actionPayload,
+  });
 
   const handler = PROMPT_ACTION_HANDLERS[promptType];
   if (!handler) {
@@ -590,11 +616,11 @@ async function notifyPromptFallback(
   clientId: string,
   businessName: string,
   clientReply: string,
-  reason: 'expired_or_missing_prompt' | 'execution_failure',
-  errorMessage?: string
+  reason: "expired_or_missing_prompt" | "execution_failure",
+  errorMessage?: string,
 ): Promise<void> {
   await sendEmail({
-    to: process.env.ADMIN_EMAIL || 'admin@conversionsurgery.com',
+    to: process.env.ADMIN_EMAIL || "rmashrur749@gmail.com",
     subject: `Prompt fallback required — ${businessName}`,
     html: `
       <p>A client reply requires manual follow-up.</p>
@@ -602,7 +628,7 @@ async function notifyPromptFallback(
       <p><strong>Client ID:</strong> ${clientId}</p>
       <p><strong>Reason:</strong> ${reason}</p>
       <p><strong>Reply:</strong> ${clientReply}</p>
-      ${errorMessage ? `<p><strong>Error:</strong> ${errorMessage}</p>` : ''}
+      ${errorMessage ? `<p><strong>Error:</strong> ${errorMessage}</p>` : ""}
     `,
   });
 }
@@ -629,9 +655,9 @@ export async function sendWeeklyDigest(clientId: string): Promise<void> {
   const twoWeeksAgo = new Date(now);
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
 
-  const weekStr = weekAgo.toISOString().split('T')[0];
-  const twoWeeksStr = twoWeeksAgo.toISOString().split('T')[0];
-  const nowStr = now.toISOString().split('T')[0];
+  const weekStr = weekAgo.toISOString().split("T")[0];
+  const twoWeeksStr = twoWeeksAgo.toISOString().split("T")[0];
+  const nowStr = now.toISOString().split("T")[0];
 
   // Current week stats
   const currentWeekStats = await db
@@ -677,15 +703,19 @@ export async function sendWeeklyDigest(clientId: string): Promise<void> {
   const prevLeads = Number(previous?.totalLeads ?? 0);
 
   // Trend calculation
-  let trendText = '';
+  let trendText = "";
   if (prevLeads > 0) {
     const change = Math.round(((totalLeads - prevLeads) / prevLeads) * 100);
-    trendText = change >= 0 ? ` (${change}% up from last week)` : ` (${Math.abs(change)}% down from last week)`;
+    trendText =
+      change >= 0
+        ? ` (${change}% up from last week)`
+        : ` (${Math.abs(change)}% down from last week)`;
   }
 
-  const conversionRate = totalMessages > 0
-    ? ((totalAppointments / totalMessages) * 100).toFixed(1)
-    : '0.0';
+  const conversionRate =
+    totalMessages > 0
+      ? ((totalAppointments / totalMessages) * 100).toFixed(1)
+      : "0.0";
 
   // Build SMS
   const smsBody = [
@@ -695,7 +725,7 @@ export async function sendWeeklyDigest(clientId: string): Promise<void> {
     `Messages sent: ${totalMessages}`,
     `Appointments: ${totalAppointments}`,
     `Conversion rate: ${conversionRate}%`,
-  ].join('\n');
+  ].join("\n");
 
   // Check if there are action items (leads without sequences)
   const hasActionItems = totalLeads > 0 && totalAppointments === 0;
@@ -708,9 +738,9 @@ export async function sendWeeklyDigest(clientId: string): Promise<void> {
     if (hasActionItems) {
       await sendActionPrompt({
         clientId: client.id,
-        promptType: 'start_sequences',
+        promptType: "start_sequences",
         message: fullSmsBody,
-        actionPayload: { source: 'weekly_digest' },
+        actionPayload: { source: "weekly_digest" },
         expiresInHours: 48,
       });
     } else {
@@ -718,15 +748,21 @@ export async function sendWeeklyDigest(clientId: string): Promise<void> {
         clientId: client.id,
         toPhone: client.phone,
         body: fullSmsBody,
-        category: 'weekly_digest',
+        category: "weekly_digest",
       });
     }
   }
 
   // Send email digest
   if (client.email) {
-    const weekStartFormatted = weekAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const weekEndFormatted = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const weekStartFormatted = weekAgo.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    const weekEndFormatted = now.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
 
     const emailData = agencyWeeklyDigestEmail({
       ownerName: client.ownerName,
@@ -745,7 +781,7 @@ export async function sendWeeklyDigest(clientId: string): Promise<void> {
       },
       trend: trendText,
       hasActionItems,
-      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.conversionsurgery.com'}/dashboard`,
+      dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://app.conversionsurgery.com"}/dashboard`,
     });
 
     const result = await sendEmail({
@@ -758,11 +794,11 @@ export async function sendWeeklyDigest(clientId: string): Promise<void> {
       .insert(agencyMessages)
       .values({
         clientId: client.id,
-        direction: 'outbound',
-        channel: 'email',
+        direction: "outbound",
+        channel: "email",
         content: emailData.html,
         subject: emailData.subject,
-        category: 'weekly_digest',
+        category: "weekly_digest",
         delivered: result.success,
       })
       .catch(() => {});
@@ -777,7 +813,7 @@ export async function processAgencyWeeklyDigests(): Promise<number> {
   const activeClients = await db
     .select({ id: clients.id })
     .from(clients)
-    .where(eq(clients.status, 'active'));
+    .where(eq(clients.status, "active"));
 
   let sent = 0;
   for (const client of activeClients) {
@@ -802,10 +838,10 @@ export async function expirePendingPrompts(): Promise<number> {
   const db = getDb();
   const result = await db
     .update(agencyMessages)
-    .set({ actionStatus: 'expired' })
+    .set({ actionStatus: "expired" })
     .where(
       and(
-        eq(agencyMessages.actionStatus, 'pending'),
+        eq(agencyMessages.actionStatus, "pending"),
         lt(agencyMessages.expiresAt, new Date()),
       ),
     )
