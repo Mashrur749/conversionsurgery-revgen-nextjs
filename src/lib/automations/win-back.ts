@@ -48,10 +48,10 @@ export async function processWinBacks(): Promise<{
   if (dayOfWeek === 5 && hour >= 13) return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] }; // No Friday after 1pm
 
   // Find leads that:
-  // 1. Status is 'contacted' (engaged but didn't progress)
+  // 1. Status is 'contacted' or 'estimate_sent' (engaged but didn't progress)
   // 2. Not opted out
   // 3. Not already won, lost, or dormant
-  // 4. Last message was 25-35 days ago
+  // 4. Last activity was 25-35 days ago (last message, or createdAt for imported leads with no messages)
   const staleCutoffMax = new Date(Date.now() - MIN_DAYS_STALE * 24 * 60 * 60 * 1000);
   const staleCutoffMin = new Date(Date.now() - MAX_DAYS_STALE * 24 * 60 * 60 * 1000);
 
@@ -59,20 +59,19 @@ export async function processWinBacks(): Promise<{
     .select({
       lead: leads,
       client: clients,
-      lastMessageAt: sql<Date>`max(${conversations.createdAt})`.as('last_msg'),
+      lastMessageAt: sql<Date>`coalesce(max(${conversations.createdAt}), ${leads.createdAt})`.as('last_activity'),
     })
     .from(leads)
     .innerJoin(clients, eq(leads.clientId, clients.id))
-    .innerJoin(conversations, eq(conversations.leadId, leads.id))
+    .leftJoin(conversations, eq(conversations.leadId, leads.id))
     .where(and(
-      eq(leads.status, 'contacted'),
+      inArray(leads.status, ['contacted', 'estimate_sent']),
       eq(leads.optedOut, false),
-      not(inArray(leads.status, ['won', 'lost', 'dormant', 'opted_out'])),
     ))
     .groupBy(leads.id, clients.id)
     .having(and(
-      lte(sql`max(${conversations.createdAt})`, staleCutoffMax),
-      gte(sql`max(${conversations.createdAt})`, staleCutoffMin),
+      lte(sql`coalesce(max(${conversations.createdAt}), ${leads.createdAt})`, staleCutoffMax),
+      gte(sql`coalesce(max(${conversations.createdAt}), ${leads.createdAt})`, staleCutoffMin),
     ));
 
   if (staleLeads.length === 0) {
