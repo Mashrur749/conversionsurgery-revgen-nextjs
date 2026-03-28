@@ -159,6 +159,15 @@ Permission templates and overrides resolve effective access at runtime.
 - API-wide error-path logging hardening introduced no new auth or scope surfaces.
 - Route changes were limited to centralized safe/sanitized failure handling behavior.
 
+## AI Evaluation Features Access Note (2026-03-28)
+
+- AI message flagging and quality monitoring add agency client-scoped routes:
+1. `POST /api/admin/clients/[id]/conversations/[messageId]/flag` requires `AGENCY_PERMISSIONS.CONVERSATIONS_VIEW` via `adminClientRoute`.
+2. `DELETE /api/admin/clients/[id]/conversations/[messageId]/flag` requires `AGENCY_PERMISSIONS.CONVERSATIONS_VIEW` via `adminClientRoute`.
+3. `GET /api/admin/ai-quality` requires `AGENCY_PERMISSIONS.CONVERSATIONS_VIEW` via `adminRoute`. Optional `?clientId=X` for per-client filtering.
+- AI attribution, model routing, and decision confidence logging introduce no new auth surfaces (data written by orchestrator during message processing, read via existing admin routes).
+- No new portal/client-facing permission scopes were introduced.
+
 ## References
 - `src/lib/permissions/require-portal-page-permission.ts`
 - `src/lib/get-client-id.ts`
