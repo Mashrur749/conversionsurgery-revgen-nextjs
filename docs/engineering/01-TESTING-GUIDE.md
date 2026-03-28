@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import, and AI safety. Step 29 covers AI attribution. Step 30 is the capstone end-to-end smoke.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 is the capstone end-to-end smoke.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -855,9 +855,9 @@ Expected:
 
 ### Step 25: Win-back automation (dormant lead reactivation)
 
-The win-back is an always-on continuous automation, separate from Quarterly Growth Blitz campaigns. It targets stale leads (25-35 days since last contact).
+The win-back is an always-on continuous automation, separate from Quarterly Growth Blitz campaigns. It targets stale leads with `status=contacted` or `status=estimate_sent` (25-35 days since last activity). For imported leads with no conversation history, staleness is measured from `createdAt`.
 
-1. Ensure at least one test lead has `status='contacted'` with no messages sent in the last 25+ days (adjust `lastContactedAt` in DB if needed for testing).
+1. Ensure at least one test lead has `status='contacted'` or `status='estimate_sent'` with no messages sent in the last 25+ days (adjust timestamps in DB if needed for testing).
 2. Run win-back cron:
 
 ```bash
@@ -870,7 +870,7 @@ curl -i http://localhost:3000/api/cron/win-back -H "Authorization: Bearer $CRON_
 
 Expected:
 
-- Only leads with 25-35 days of inactivity are targeted.
+- Both `contacted` and `estimate_sent` leads with 25-35 days of inactivity are targeted.
 - Message is AI-generated, personalized to the lead&apos;s project context.
 - Send timing is randomized (10am-2pm weekdays, avoiding Monday morning and Friday afternoon).
 - After second attempt with no response, lead status transitions to `dormant`.
@@ -905,9 +905,11 @@ If blocked:
 - `Stripe pricing not configured`: price IDs are placeholder values. Create real products in Stripe Dashboard.
 - Checkout doesn&apos;t redirect: check browser console for fetch errors. Ensure `NEXT_PUBLIC_APP_URL` matches the running dev server URL.
 
-### Step 27: CSV lead import
+### Step 27: CSV lead import + quote reactivation
 
-Verifies bulk lead import from CSV files.
+Verifies bulk lead import from CSV files, including status-aware import for quote reactivation.
+
+#### 27a: Basic CSV import
 
 1. Prepare a test CSV with at least 5 rows:
 
@@ -933,9 +935,57 @@ Expected:
 - Phone numbers are normalized to E.164 format.
 - Duplicates within the import are caught.
 - Existing leads (same phone + client) are skipped with clear messaging.
-- All imported leads appear in the leads table with `source: csv_import`.
+- All imported leads appear in the leads table with `source: csv_import` and `status: new`.
 - Max 1,000 rows enforced, max 5MB file size enforced.
 - Invalid rows reported with specific error messages per row.
+
+#### 27b: Quote reactivation import (status column)
+
+This tests the quote reactivation workflow &mdash; importing a contractor&apos;s old estimates so win-back automation picks them up.
+
+1. Prepare a CSV with status column:
+
+```csv
+name,phone,email,projectType,status,notes
+Old Quote 1,+15552001001,q1@test.com,Kitchen Reno,estimate_sent,Quoted $25k in January
+Old Quote 2,+15552001002,,Bathroom,estimate_sent,No response after estimate
+New Inquiry,+15552001003,new@test.com,Deck,new,Fresh lead
+Contacted Lead,+15552001004,,Roofing,contacted,Spoke on phone last month
+```
+
+2. Import the CSV via `/leads`.
+3. Verify preview shows `status` as a mapped column.
+4. After import, verify in the leads table:
+   - &quot;Old Quote 1&quot; and &quot;Old Quote 2&quot; have `status: estimate_sent`
+   - &quot;New Inquiry&quot; has `status: new`
+   - &quot;Contacted Lead&quot; has `status: contacted`
+   - All have `source: csv_import`
+5. Verify invalid status values are rejected (test with `status: won` &mdash; should fail validation since only `new`, `contacted`, `estimate_sent` are allowed).
+
+#### 27c: Win-back picks up imported estimates
+
+1. Using the leads imported in 27b, adjust their `createdAt` to 30 days ago in the database (to fall within the 25-35 day win-back window):
+
+```sql
+UPDATE leads SET created_at = NOW() - INTERVAL '30 days'
+WHERE source = 'csv_import' AND status = 'estimate_sent';
+```
+
+2. Run win-back cron (must be 10am-2pm weekday, not Monday morning or Friday afternoon):
+
+```bash
+curl -i http://localhost:3000/api/cron/win-back -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify response includes the `estimate_sent` leads as eligible.
+4. Verify AI-personalized reactivation messages are sent/scheduled for those leads.
+
+Expected:
+
+- Win-back targets both `contacted` and `estimate_sent` leads.
+- Imported leads with no conversation history are included (uses `createdAt` as fallback for staleness check).
+- Reactivation messages are AI-personalized with the lead&apos;s project context.
+- Standard win-back rules apply: 2 max attempts, randomized timing, quiet hours respected.
 
 ### Step 28: AI agent graceful handling without Twilio number
 
@@ -1029,7 +1079,59 @@ If blocked:
 - No numbers returned: Twilio API may be rate-limited. Dev fallback returns mock numbers.
 - Purchase fails with 403: client has hit phone number plan limit. Upgrade plan or use admin override.
 
-### Step 31: Final smoke (end-to-end lifecycle)
+### Step 31: AI message flagging (operator feedback)
+
+Verifies operators can flag problematic AI-generated messages for quality monitoring.
+
+**Prerequisites:** Step 5 completed (a test lead with AI conversation history).
+
+1. Open `/leads/<lead-id>` in the admin dashboard.
+2. In the conversation timeline, hover over an AI message (marked with &ldquo;AI&rdquo; badge).
+3. Click the flag icon that appears on hover.
+4. Select a reason (e.g., &ldquo;Inaccurate info&rdquo;) and optionally add a note.
+5. Click &ldquo;Flag&rdquo;.
+6. Verify the flag badge appears on the message with the reason label.
+7. Click the X next to the flag to unflag. Verify the flag disappears.
+
+8. Verify the API directly:
+
+```bash
+# Flag a message
+curl -i -X POST "http://localhost:3000/api/admin/clients/<clientId>/conversations/<messageId>/flag" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <admin-session-cookie>" \
+  -d '{"reason": "wrong_tone", "note": "Too formal for this client"}'
+
+# Get all flagged messages
+curl -i "http://localhost:3000/api/admin/ai-quality" \
+  -H "Cookie: <admin-session-cookie>"
+
+# Get flagged messages for a specific client with stats
+curl -i "http://localhost:3000/api/admin/ai-quality?clientId=<clientId>" \
+  -H "Cookie: <admin-session-cookie>"
+
+# Unflag
+curl -i -X DELETE "http://localhost:3000/api/admin/clients/<clientId>/conversations/<messageId>/flag" \
+  -H "Cookie: <admin-session-cookie>"
+```
+
+9. Run unit tests:
+
+```bash
+npx vitest run src/lib/services/ai-feedback.test.ts
+```
+
+Expected:
+
+- Only AI messages (`messageType = 'ai_response'`) can be flagged &mdash; non-AI messages return 400.
+- Flag persists across page refresh (stored in DB).
+- `daily_stats.ai_messages_flagged` increments on flag.
+- `/api/admin/ai-quality` returns flagged messages with reason, note, timestamp.
+- `/api/admin/ai-quality?clientId=X` returns per-client stats breakdown by reason.
+- Unflagging clears all flag fields.
+- All 4 unit tests pass.
+
+### Step 32: Final smoke (end-to-end lifecycle)
 
 1. Validate one end-to-end lead lifecycle using Dev Phones: Lead (#2, port 3001) texts Business Line &rarr; AI responds &rarr; Owner (#3, port 3002) approves draft &rarr; Lead receives message &rarr; trigger escalation &rarr; Team Member (#4, port 3003) receives alert and claims.
 2. Validate client portal permissions with at least two distinct roles.
@@ -1061,6 +1163,7 @@ npx vitest run src/lib/services/onboarding-quality.test.ts src/lib/services/remi
 npx vitest run src/lib/services/internal-error-log.test.ts
 npx vitest run src/lib/services/ops-kill-switches.test.ts
 npx vitest run src/lib/services/ai-attribution.test.ts
+npx vitest run src/lib/services/ai-feedback.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"

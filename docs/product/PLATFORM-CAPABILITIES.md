@@ -97,7 +97,7 @@ Triggered via `POST /api/sequences/review` when job is marked complete.
 
 Always-on continuous automation (separate from Quarterly Growth Blitz campaigns).
 
-- Targets leads with `status=contacted` and 25-35 days since last contact
+- Targets leads with `status=contacted` or `status=estimate_sent` and 25-35 days since last activity (last message, or creation date for imported leads with no conversations)
 - AI-personalized win-back message with project context
 - Randomized send timing (10am-2pm weekdays, avoids Monday morning/Friday afternoon)
 - Follow-up 20-30 days later
@@ -165,10 +165,12 @@ Every lead accumulates:
 - Conversation mode indicator (AI / human / paused)
 - Human takeover and handback controls
 - Media attachment support (MMS)
+- **AI message flagging** &mdash; operators can flag any AI-generated message as problematic with a category (wrong tone, inaccurate, too pushy, hallucinated, off topic, other) and optional note. Flags are visible inline and surfaced in admin AI quality view.
 
 ### Bulk Lead Import
 
 - CSV upload with automatic column mapping (supports common aliases: "Phone Number", "Mobile", "First Name", "Service Type", etc.)
+- Optional `status` column: import leads at their actual pipeline stage (`new`, `contacted`, `estimate_sent`) — enables quote reactivation workflows for imported old estimates
 - Validates phone format, normalizes numbers, deduplicates against existing leads
 - Up to 1,000 leads per import with per-row error reporting
 - Preview table before import with column mapping summary
@@ -426,6 +428,7 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 ### Observability
 
 - **Reliability dashboard:** failed crons, webhook failures (24h), escalation SLA breaches, report delivery queue, unresolved errors
+- **AI quality monitoring:** flagged AI messages by category, flag rate trends per client, admin-wide flagged message feed (`/api/admin/ai-quality`)
 - **Error telemetry:** internal error log with source, context, resolution status
 - **Audit log:** all admin actions searchable by person, client, action, timestamp
 - **Webhook logs:** inbound event viewer with filtering

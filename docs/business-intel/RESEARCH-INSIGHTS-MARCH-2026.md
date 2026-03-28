@@ -154,24 +154,28 @@ The research confirms these capabilities are correctly positioned and need no ch
 
 ---
 
-## 8. Platform Capability Gaps (Blocking Service Delivery)
+## 8. Platform Capability Gaps — RESOLVED
 
-Two specific gaps prevent executing the quote reactivation angle:
+Both gaps have been fixed as of 2026-03-28:
 
-### Gap 1: CSV import cannot set lead status
+### Gap 1: CSV import cannot set lead status — FIXED
 
-`POST /api/leads/import` hardcodes all imported leads to `status: 'new'`. When importing a contractor&apos;s old quoted leads, they need to enter as `estimate_sent` to represent their actual pipeline stage.
+`POST /api/leads/import` now accepts an optional `status` column (`new`, `contacted`, `estimate_sent`). Defaults to `new` when not provided. Operator can import old quotes at their actual pipeline stage.
 
-**Impact:** Operator cannot distinguish "new inquiry" from "sent estimate 90 days ago, never heard back."
+Commit: `feat(leads): support status field in CSV import for quote reactivation`
 
-### Gap 2: No automation targets old `estimate_sent` leads
+### Gap 2: No automation targets old `estimate_sent` leads — FIXED
 
-- Estimate follow-up sequence triggers on an explicit API call when an estimate is newly sent — it does not run as a cron against existing `estimate_sent` leads
-- Win-back automation only targets `status='contacted'` leads — `estimate_sent` is excluded entirely
+Win-back automation now targets both `contacted` and `estimate_sent` leads. Uses `leftJoin` on conversations with `coalesce` fallback to `lead.createdAt`, so imported leads with zero message history are still eligible based on their creation/import date.
 
-**Impact:** Even if imported leads are manually set to `estimate_sent`, no automation will pick them up. They sit in the CRM doing nothing.
+Commit: `feat(winback): target estimate_sent leads and imported quotes with no messages`
 
-**These are the only two capability gaps.** Everything else the research asks for is already built.
+**The quote reactivation workflow is now fully executable:**
+1. Operator imports contractor&apos;s old quotes via CSV with `status=estimate_sent`
+2. Win-back cron picks them up 25-35 days after their import date (or immediately if backdated)
+3. AI sends personalized reactivation message
+4. Responses flow into the CRM as normal conversations
+5. Revenue attribution tracks recovered pipeline
 
 ---
 
