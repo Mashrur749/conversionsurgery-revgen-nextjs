@@ -3,6 +3,7 @@ import { sendSMS } from '@/lib/services/twilio';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
 import { generateAIResponse, detectHotIntent } from '@/lib/services/ai-response';
+import { trackKnowledgeGap } from '@/lib/agent/context-builder';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { initiateRingGroup } from '@/lib/services/ring-group';
 import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
@@ -496,7 +497,16 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
 
   const dashboardUrl = `${process.env.NEXT_PUBLIC_APP_URL}/leads/${lead.id}`;
 
-  // 9. Handle escalation
+  // 9. Track knowledge gap when AI is uncertain
+  if (aiResult.shouldEscalate || (aiResult.confidence !== undefined && aiResult.confidence < 0.7)) {
+    trackKnowledgeGap(
+      client.id,
+      messageBody,
+      aiResult.confidence !== undefined && aiResult.confidence < 0.5 ? 'low' : 'medium'
+    ).catch(err => console.error('[IncomingSMS] Knowledge gap tracking failed:', err));
+  }
+
+  // 9b. Handle escalation
   if (aiResult.shouldEscalate) {
     await db
       .update(leads)

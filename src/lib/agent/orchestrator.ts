@@ -21,6 +21,7 @@ import { buildGuardrailPrompt } from './guardrails';
 import { classifyService, updateLeadServiceMatch } from '@/lib/services/service-classification';
 import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
 import { selectModelTier } from '@/lib/ai/model-routing';
+import { trackKnowledgeGap } from '@/lib/agent/context-builder';
 import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
 
 interface ProcessMessageResult {
@@ -301,6 +302,15 @@ export async function processIncomingMessage(
   };
   await db.insert(agentDecisions).values(decisionValues);
 
+  // Track knowledge gaps when AI confidence is low or it defers to owner
+  if (finalState.decisionConfidence !== undefined && finalState.decisionConfidence < 60) {
+    trackKnowledgeGap(
+      client.id,
+      messageText,
+      finalState.decisionConfidence < 40 ? 'low' : 'medium'
+    ).catch(err => console.error('[Agent] Knowledge gap tracking failed:', err));
+  }
+
   // Classify service from extracted projectType
   let matchedServiceId: string | undefined;
   const extractedProjectType = finalState.extractedInfo.projectType;
@@ -392,6 +402,13 @@ export async function processIncomingMessage(
     });
 
     escalated = true;
+
+    // Escalation due to uncertainty likely indicates a knowledge gap
+    if (finalState.escalationReason === 'complex_technical' || finalState.escalationReason === 'other') {
+      trackKnowledgeGap(client.id, messageText, 'low').catch(
+        err => console.error('[Agent] Knowledge gap tracking failed:', err)
+      );
+    }
   }
 
   // Handle flow trigger
