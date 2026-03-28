@@ -168,6 +168,13 @@ Permission templates and overrides resolve effective access at runtime.
 - AI attribution, model routing, and decision confidence logging introduce no new auth surfaces (data written by orchestrator during message processing, read via existing admin routes).
 - No new portal/client-facing permission scopes were introduced.
 
+## AI Effectiveness Dashboard Access Note (2026-03-28)
+
+- Production observability dashboard adds one agency analytics-scoped route:
+1. `GET /api/admin/ai-effectiveness` requires `AGENCY_PERMISSIONS.ANALYTICS_VIEW` via `adminRoute`. Optional `?days=N&clientId=X` for period/client filtering.
+- AI effectiveness summary is automatically embedded in biweekly reports via `roiSummary.aiEffectiveness` — no new auth surface (uses existing report generation pipeline).
+- No new portal/client-facing permission scopes were introduced.
+
 ## References
 - `src/lib/permissions/require-portal-page-permission.ts`
 - `src/lib/get-client-id.ts`

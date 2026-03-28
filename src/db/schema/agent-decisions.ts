@@ -79,6 +79,10 @@ export const agentDecisions = pgTable(
     index('agent_decisions_client_idx').on(table.clientId),
     index('agent_decisions_action_idx').on(table.action),
     index('agent_decisions_created_idx').on(table.createdAt),
+    // Composite indexes for AI effectiveness dashboard queries
+    index('agent_decisions_client_created_idx').on(table.clientId, table.createdAt),
+    index('agent_decisions_client_action_created_idx').on(table.clientId, table.action, table.createdAt),
+    index('agent_decisions_outcome_idx').on(table.outcome),
   ]
 );
 

@@ -13,6 +13,7 @@ import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm';
 import { getTeamMembers } from '@/lib/services/team-bridge';
 import { sendBiWeeklyReportEmail } from '@/lib/services/report-email';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
+import { getClientAiSummary } from '@/lib/services/ai-effectiveness-metrics';
 import {
   ensureReportDeliveryCycle,
   transitionReportDeliveryState,
@@ -267,6 +268,21 @@ export async function generateClientReport(
   const withoutUsAssumptions = await getWithoutUsAssumptions();
   const withoutUsModel = calculateWithoutUsModel(withoutUsInput, withoutUsAssumptions);
 
+  // AI effectiveness summary for the report period
+  let aiSummary: Record<string, unknown> | null = null;
+  try {
+    const aiMetrics = await getClientAiSummary({
+      clientId,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+    });
+    if (aiMetrics.totalDecisions > 0) {
+      aiSummary = aiMetrics as unknown as Record<string, unknown>;
+    }
+  } catch (err) {
+    console.error('[Report] AI summary generation failed:', stringifyError(err));
+  }
+
   const aggregatedMetrics = {
     messagesSent: periodStats.reduce((sum, s) => sum + (s.messagesSent || 0), 0),
     conversationsStarted: periodStats.reduce(
@@ -318,6 +334,7 @@ export async function generateClientReport(
         : '0.0',
     quarterlyCampaign: quarterlyCampaignSummary,
     withoutUsModel,
+    ...(aiSummary ? { aiEffectiveness: aiSummary } : {}),
   };
 
   const teamPerformance = {
