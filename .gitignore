@@ -69,6 +69,10 @@ external-backups/
 # test environment config (contains phone numbers)
 .test-config.json
 
+# data/outreach files (not source code)
+*.xlsx
+*.csv
+
 # testing artifacts
 .playwright-mcp/
 *.png
