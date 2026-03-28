@@ -43,6 +43,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:ai": "vitest run --config vitest.ai.config.ts",
+    "test:ai:visual": "npx tsx scripts/test/run-ai-scenarios.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
