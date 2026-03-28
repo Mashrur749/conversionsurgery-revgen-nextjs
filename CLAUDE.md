@@ -14,6 +14,7 @@
 **Default: just do the work.** Don't ask clarifying questions for things you can resolve by reading the codebase or following the checklists below.
 
 Resolve ambiguity yourself by:
+
 1. Reading the codebase (grep for existing patterns, check similar files)
 2. Following the checklists below (they answer most "which approach?" questions)
 3. Picking the simplest approach that fits existing patterns
@@ -36,6 +37,7 @@ Resolve ambiguity yourself by:
 ## Auto-Checklists (follow these — don't ask)
 
 ### New API Route
+
 1. Auth wrappers (preferred):
    - `/api/admin/*` → `export const GET = adminRoute({ permission: AGENCY_PERMISSIONS.X }, async ({ session, params }) => { ... })`
    - `/api/admin/clients/[id]/*` → `export const GET = adminClientRoute({ permission: ..., clientIdFrom: (p) => p.id }, async ({ session, params, clientId }) => { ... })`
@@ -49,6 +51,7 @@ Resolve ambiguity yourself by:
 5. Phone numbers: always `normalizePhoneNumber()` before DB lookup
 
 ### New Schema Table
+
 1. One file: `src/db/schema/<table-name>.ts`
 2. Standard columns: `id` (uuid, primaryKey, defaultRandom), `createdAt` (timestamp, defaultNow), `updatedAt` if mutable
 3. Foreign keys: `onDelete: 'cascade'` or `'set null'`
@@ -58,6 +61,7 @@ Resolve ambiguity yourself by:
 7. Run `npm run db:generate` → review SQL → ask user before `db:push`/`db:migrate`
 
 ### New UI Page
+
 1. Layout: client portal = `max-w-3xl`, admin = `max-w-7xl`
 2. Components: shadcn/ui from `src/components/ui/`, install missing with `npx shadcn@latest add <name>`
 3. Stat cards: max 4 per row, always include context line ("+12% vs last week")
@@ -67,11 +71,13 @@ Resolve ambiguity yourself by:
 7. Destructive actions: always AlertDialog confirmation
 
 ### External API Integration (Twilio, Stripe, Anthropic)
+
 Before writing integration code, query Context7 for current API patterns:
+
 - Twilio: resolve `/twilio/twilio-node`, then query for the specific API
 - Stripe: resolve the Stripe library, then query
 - Anthropic: resolve the Anthropic SDK, then query
-This avoids stale patterns from training data. Always do this — don't rely on memory.
+  This avoids stale patterns from training data. Always do this — don't rely on memory.
 
 ## Commands
 
@@ -82,7 +88,8 @@ This avoids stale patterns from training data. Always do this — don't rely on 
 - `npm run db:push` — push schema directly to database (use with caution)
 - `npm run db:migrate` — run generated migrations
 - `npm run typecheck` — fast TypeScript type-check only (~13s, no build output)
-- `npm test` — run Vitest test suite (46 tests: route-handler, permissions, phone utils)
+- `npm test` — run Vitest test suite (312 deterministic tests: agent scenarios, guardrails, graph routing, model routing, route-handler, permissions, etc.)
+- `npm run test:ai` — run AI criteria + scenario tests (29 tests, requires ANTHROPIC_API_KEY, real LLM calls — pre-launch quality gate)
 - `npm run test:watch` — run Vitest in watch mode
 - `npm run db:studio` — open Drizzle Studio for visual database browsing
 - `npm run quality:no-regressions` — required gate (`ms:gate` + build + tests + runtime smoke)
@@ -109,17 +116,17 @@ Two-tier verification protocol (mandatory):
 
 ### Where to write files
 
-| What you're doing | Write to | Why |
-|---|---|---|
-| Research notes, exploration output, agent summaries | `.scratch/` | Temporary — gets auto-cleaned |
-| Drafting a doc before it's ready for review | `.scratch/drafts/` | Move to `docs/` when finalized |
-| Comparing options, dumping API responses, debug output | `.scratch/` | Never belongs in repo |
-| Migration SQL review (before user confirms) | `.scratch/migrations/` | Only commit after `db:generate` |
-| Curl output, webhook test payloads, log captures | `.scratch/` | Ephemeral test data |
-| New application code (routes, services, components) | `src/` | **Always write directly** — never draft in scratch |
-| Schema changes | `src/db/schema/` | **Always write directly** — then run `db:generate` |
-| Finalized documentation | `docs/` | After content is complete and accurate |
-| Config files, project-level docs | Root (`./`) | Only: README.md, CLAUDE.md, BUSINESS-CASE.md, DEPLOYMENT.md |
+| What you're doing                                      | Write to               | Why                                                         |
+| ------------------------------------------------------ | ---------------------- | ----------------------------------------------------------- |
+| Research notes, exploration output, agent summaries    | `.scratch/`            | Temporary — gets auto-cleaned                               |
+| Drafting a doc before it's ready for review            | `.scratch/drafts/`     | Move to `docs/` when finalized                              |
+| Comparing options, dumping API responses, debug output | `.scratch/`            | Never belongs in repo                                       |
+| Migration SQL review (before user confirms)            | `.scratch/migrations/` | Only commit after `db:generate`                             |
+| Curl output, webhook test payloads, log captures       | `.scratch/`            | Ephemeral test data                                         |
+| New application code (routes, services, components)    | `src/`                 | **Always write directly** — never draft in scratch          |
+| Schema changes                                         | `src/db/schema/`       | **Always write directly** — then run `db:generate`          |
+| Finalized documentation                                | `docs/`                | After content is complete and accurate                      |
+| Config files, project-level docs                       | Root (`./`)            | Only: README.md, CLAUDE.md, BUSINESS-CASE.md, DEPLOYMENT.md |
 
 ### Rules
 
@@ -128,6 +135,56 @@ Two-tier verification protocol (mandatory):
 3. **Never create files at root** — no loose `.md`, `.png`, `.log`, or `.json` files in the project root. If it's not config or one of the 4 root docs, it doesn't belong there.
 4. **Cleanup is automatic** — the Stop hook runs `.claude/scripts/cleanup.sh` on session end. It purges `.scratch/`, stale artifacts, `.DS_Store` files, and warns about untracked root files.
 5. **Manual cleanup**: `bash .claude/scripts/cleanup.sh`
+
+## Documentation Sync
+
+When you change code, check whether the affected docs need updating. This is mandatory — stale docs are worse than no docs.
+
+### Change → Doc mapping
+
+| What you changed | Check / update these docs |
+|-----------------|--------------------------|
+| Any automation (estimate, payment, review, win-back, no-show, appointment) | `docs/product/PLATFORM-CAPABILITIES.md` (Section 2: Follow-Up Automation) |
+| Any automation schedule or touch count | `docs/engineering/01-TESTING-GUIDE.md` (matching test step) |
+| Voice AI flow, modes, or transfer logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 3: Voice AI) |
+| Voice AI webhooks or kill switch | `docs/engineering/01-TESTING-GUIDE.md` (Step 16) |
+| Lead pipeline stages, scoring, or context fields | `docs/product/PLATFORM-CAPABILITIES.md` (Section 4: Communication Hub) |
+| Client portal pages, permissions, or nav | `docs/product/PLATFORM-CAPABILITIES.md` (Section 5: Client Portal) |
+| Compliance rules, consent types, quiet hours, or gateway logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 6: Compliance) |
+| Compliance behavior | `docs/business-intel/OFFER-CLIENT-FACING.md` (Sections 6-7: Quiet Hours + Compliance) |
+| Reporting metrics, Without Us model, or delivery | `docs/product/PLATFORM-CAPABILITIES.md` (Section 7: Reporting) |
+| Billing, plans, add-ons, guarantee, or cancellation | `docs/product/PLATFORM-CAPABILITIES.md` (Section 8: Billing) |
+| Billing terms or pricing | `docs/business-intel/OFFER-CLIENT-FACING.md` (Sections 4-5: Pricing + Terms) |
+| Onboarding milestones, quality gates, or progressive activation | `docs/product/PLATFORM-CAPABILITIES.md` (Section 9: Onboarding) |
+| Quarterly campaign types or planner logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 10: Quarterly Growth Blitz) |
+| Admin tools, kill switches, cron jobs, or observability | `docs/product/PLATFORM-CAPABILITIES.md` (Section 11: Agency Operations) |
+| New cron job added or removed | `docs/engineering/01-TESTING-GUIDE.md` (Section 3: Useful Commands — cron list) |
+| Review monitoring, auto-response, or Google integration | `docs/product/PLATFORM-CAPABILITIES.md` (Section 12: Review Monitoring) |
+| New API route or webhook | `docs/engineering/01-TESTING-GUIDE.md` (add test step if user-facing) |
+| Schema migration (new table, dropped column, FK change) | `docs/engineering/01-TESTING-GUIDE.md` (preflight — `db:migrate` step) |
+| Permission changes (new permission, route guard change) | `docs/engineering/02-ACCESS-MANAGEMENT.md` |
+| Feature added, removed, or substantially changed | `docs/product/PLATFORM-CAPABILITIES.md` (relevant section) |
+| Feature removed that was in the offer | `docs/product/02-OFFER-PARITY-GAPS.md` |
+| Feature backlog item implemented | `docs/product/FEATURE-BACKLOG.md` (mark resolved or remove) |
+
+### Key docs (quick reference)
+
+| Doc | Purpose | When it gets stale |
+|-----|---------|-------------------|
+| `docs/product/PLATFORM-CAPABILITIES.md` | **What the platform does** — complete feature inventory | Any feature add/change/remove |
+| `docs/business-intel/OFFER-CLIENT-FACING.md` | **What we promise clients** — approved sales language | Pricing, compliance, or capability changes that affect claims |
+| `docs/engineering/01-TESTING-GUIDE.md` | **How to verify it works** — manual + automated test steps | New features, changed flows, new crons |
+| `docs/product/02-OFFER-PARITY-GAPS.md` | **What's promised vs built** — gap register | Features shipped or descoped |
+| `docs/product/FEATURE-BACKLOG.md` | **What's planned** — future work with context | Backlog items implemented or deprioritized |
+| `docs/engineering/02-ACCESS-MANAGEMENT.md` | **Who can do what** — permissions and routes | Permission or auth changes |
+| `docs/operations/01-OPERATIONS-GUIDE.md` | **How to run the platform** — operator playbook | Workflow or ops process changes |
+
+### Rules
+
+1. **Check before marking done.** After completing a coding task, scan the table above. If your change maps to a doc, update it in the same commit or immediately after.
+2. **Don't update offer docs without asking.** `OFFER-CLIENT-FACING.md` is approved sales copy — flag the discrepancy to the user rather than editing directly.
+3. **Capabilities doc is ground truth.** `PLATFORM-CAPABILITIES.md` reflects what's *built*, not what's *planned*. Only add features that are implemented and passing tests.
+4. **Testing guide stays runnable.** Every test step must be executable as written. If you change a flow, update the step so someone following the guide doesn't hit a wall.
 
 ## Do NOT
 
@@ -148,6 +205,46 @@ Two-tier verification protocol (mandatory):
 For large features (3+ files), use slash commands: `/plan`, `/scaffold`, `/implement`, `/resume`, `/review`, `/merge`, `/status`, `/cleanup`. Script: `.claude/scripts/worktree-manager.sh`. Each worktree tracks progress in `.claude/progress.md`.
 
 Skills to use during worktree work:
+
 - Schema changes: read `.claude/skills/create-migration/SKILL.md` first
 - Neon queries: read `.claude/skills/neon-postgres/` for patterns
 - Security review: run on any slice touching API routes, auth, or user input
+
+# Agent Instructions
+
+Read this entire file before starting any task.
+
+## Self-Correcting Rules Engine
+
+This file contains a growing ruleset that improves over time. **At session start, read the entire "Learned Rules" section before doing anything.**
+
+### How it works
+
+1. When the user corrects you or you make a mistake, **immediately append a new rule** to the "Learned Rules" section at the bottom of this file.
+2. Rules are numbered sequentially and written as clear, imperative instructions.
+3. Format: `N. [CATEGORY] Never/Always do X — because Y.`
+4. Categories: `[STYLE]`, `[CODE]`, `[ARCH]`, `[TOOL]`, `[PROCESS]`, `[DATA]`, `[UX]`, `[OTHER]`
+5. Before starting any task, scan all rules below for relevant constraints.
+6. If two rules conflict, the higher-numbered (newer) rule wins.
+7. Never delete rules. If a rule becomes obsolete, append a new rule that supersedes it.
+
+### When to add a rule
+
+- User explicitly corrects your output ("no, do it this way")
+- User rejects a file, approach, or pattern
+- You hit a bug caused by a wrong assumption about this codebase
+- User states a preference ("always use X", "never do Y")
+
+### Rule format example
+
+```
+14. [CODE] Always use `bun` instead of `npm` — user preference, bun is installed globally.
+15. [STYLE] Never add emojis to commit messages — project convention.
+16. [ARCH] API routes live in `src/server/routes/`, not `src/api/` — existing codebase pattern.
+```
+
+---
+
+## Learned Rules
+
+<!-- New rules are appended below this line. Do not edit above this section. -->
