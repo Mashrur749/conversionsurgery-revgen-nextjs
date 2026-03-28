@@ -90,6 +90,31 @@ export async function sendCompliantMessage(
   const normalizedPhone = ComplianceService.normalizePhoneNumber(to);
   const phoneHash = ComplianceService.hashPhoneNumber(normalizedPhone);
 
+  // Per-client pause: block outbound if client status is paused or cancelled
+  const clientDb = getDb();
+  const [clientRow] = await clientDb
+    .select({ status: clients.status })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+
+  if (clientRow && (clientRow.status === 'paused' || clientRow.status === 'cancelled')) {
+    return blocked(
+      `Client automations paused (status: ${clientRow.status})`,
+      normalizedPhone,
+      phoneHash,
+      clientId,
+      {
+        messageCategory,
+        messageClassification,
+        leadId,
+        clientStatus: clientRow.status,
+        ...metadata,
+      }
+    );
+  }
+
+  // Platform-wide kill switch
   const outboundKillSwitchEnabled = await isOpsKillSwitchEnabled(
     OPS_KILL_SWITCH_KEYS.OUTBOUND_AUTOMATIONS
   );

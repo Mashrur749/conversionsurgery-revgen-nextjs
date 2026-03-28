@@ -43,6 +43,8 @@ const adminNavItems = [
     { href: '/admin/template-performance', label: 'Variant Results' },
     { href: '/admin/ab-tests', label: 'A/B Tests' },
     { href: '/admin/reputation', label: 'Reputation' },
+    { href: '/admin/ai-effectiveness', label: 'AI Effectiveness' },
+    { href: '/admin/ai-quality', label: 'AI Quality' },
   ]},
   { group: 'Reporting', items: [
     { href: '/admin/billing', label: 'Billing' },
