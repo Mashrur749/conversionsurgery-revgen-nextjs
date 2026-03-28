@@ -1,8 +1,8 @@
 # Operations Guide
 
-Last updated: 2026-03-07
-Audience: Founder, operations monitor, on-call engineer
-Last verified commit: `perf(agent): use fast model tier (Haiku) for analyze-decide node (2026-03-07)`
+Last updated: 2026-03-28
+Audience: Founder (solo operator), operations monitor
+Last verified commit: `feat(ops): per-client automation pause + AI quality review page (2026-03-28)`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -34,6 +34,7 @@ Last verified commit: `perf(agent): use fast model tier (Haiku) for analyze-deci
 27. Review flagged AI messages from past 24h (`GET /api/admin/ai-quality`) &mdash; investigate recurring patterns (same flag reason across multiple clients), update KB entries or prompt guidance if a pattern emerges. Clear flags that were training errors.
 28. Spot-check model routing distribution: query recent `agent_decisions` rows and verify `actionDetails.modelTier` split is reasonable (expect ~15-25% quality, ~75-85% fast). If quality ratio is unexpectedly high, investigate whether confidence scores are systematically low (prompt issue) or lead scores are inflated.
 29. **Pre-launch gate (new client activation):** Before enabling autonomous mode for a new client, run `npm run test:ai` with the client&apos;s knowledge base context. All 10 Safety tests must pass. Quality test failures require prompt review. This is a hard gate &mdash; do not activate a client with failing Safety tests.
+30. **Weekly AI effectiveness review:** Open `/admin/ai-effectiveness` and review 14-day window. Key health indicators: positive rate should be &gt;20% (alarm if &lt;10%), avg confidence &gt;60 (alarm if &lt;45), avg response time &lt;5s. Check model tier split (fast vs quality). If quality usage exceeds 30%, investigate &mdash; may indicate systematically low confidence or inflated lead scores. Review top escalation reasons and feed patterns back into knowledge base entries or guardrail tuning.
 
 ## Knowledge Gap Resolution Process
 
