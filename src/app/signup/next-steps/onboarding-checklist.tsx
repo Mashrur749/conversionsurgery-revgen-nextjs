@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Step {
   key: string;
@@ -83,8 +84,8 @@ export function OnboardingChecklist() {
 
   const canLoad = useMemo(() => !!clientId && !!email, [clientId, email]);
 
-  async function loadStatus() {
-    if (!canLoad) return;
+  const loadStatus = useCallback(async () => {
+    if (!clientId || !email) return;
     setLoading(true);
     setError('');
 
@@ -118,7 +119,14 @@ export function OnboardingChecklist() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [clientId, email]);
+
+  // Auto-load when both params are present (normal signup redirect flow)
+  useEffect(() => {
+    if (canLoad) {
+      loadStatus();
+    }
+  }, [canLoad, loadStatus]);
 
   async function requestSetupHelp() {
     if (!canLoad) return;
@@ -151,26 +159,36 @@ export function OnboardingChecklist() {
       <CardHeader>
         <CardTitle>Self-Serve Onboarding Checklist</CardTitle>
         <CardDescription>
-          Use your `clientId` and `email` from signup confirmation to load setup status.
+          Track your workspace setup progress and get help when you need it.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="clientId">Client ID</Label>
-            <Input id="clientId" value={clientId} readOnly />
+        {error && (
+          <div className="space-y-3">
+            <p className="text-sm text-destructive">{error}</p>
+            <Button onClick={loadStatus} variant="outline" size="sm">
+              Retry
+            </Button>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" value={email} readOnly />
+        )}
+
+        {loading && !state && (
+          <div className="space-y-3">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-32" />
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full rounded" />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <Button onClick={loadStatus} disabled={!canLoad || loading}>
-          {loading ? 'Loading...' : 'Load Setup Status'}
-        </Button>
-
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {!canLoad && !loading && (
+          <p className="text-sm text-muted-foreground">
+            Missing setup link parameters. Use the link from your signup confirmation.
+          </p>
+        )}
 
         {state && (
           <div className="space-y-4 border rounded-md p-4">
@@ -206,17 +224,27 @@ export function OnboardingChecklist() {
                       className="flex items-center justify-between rounded border px-3 py-2"
                     >
                       <span>{milestone.title}</span>
-                      <span
-                        className={
-                          milestone.status === 'completed'
-                            ? 'text-forest'
-                            : milestone.status === 'overdue'
-                              ? 'text-destructive'
-                              : 'text-sienna'
-                        }
-                      >
-                        {milestone.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {milestone.key === 'number_live' && milestone.status !== 'completed' && (
+                          <a
+                            href="/client/settings/phone"
+                            className="text-xs text-olive underline hover:text-olive/80"
+                          >
+                            Set up now
+                          </a>
+                        )}
+                        <span
+                          className={
+                            milestone.status === 'completed'
+                              ? 'text-forest'
+                              : milestone.status === 'overdue'
+                                ? 'text-destructive'
+                                : 'text-sienna'
+                          }
+                        >
+                          {milestone.status}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
