@@ -35,6 +35,66 @@ Last verified commit: `perf(agent): use fast model tier (Haiku) for analyze-deci
 28. Spot-check model routing distribution: query recent `agent_decisions` rows and verify `actionDetails.modelTier` split is reasonable (expect ~15-25% quality, ~75-85% fast). If quality ratio is unexpectedly high, investigate whether confidence scores are systematically low (prompt issue) or lead scores are inflated.
 29. **Pre-launch gate (new client activation):** Before enabling autonomous mode for a new client, run `npm run test:ai` with the client&apos;s knowledge base context. All 10 Safety tests must pass. Quality test failures require prompt review. This is a hard gate &mdash; do not activate a client with failing Safety tests.
 
+## Knowledge Gap Resolution Process
+
+The AI automatically records questions it can&apos;t answer into a per-client knowledge gap queue. This is how the AI gets smarter over time without the contractor doing anything.
+
+### How gaps get created
+
+When a lead asks something and the AI&apos;s confidence is low (no matching knowledge base entries), two things happen:
+1. The AI defers: &quot;Let me have [owner] get back to you on that.&quot;
+2. The lead&apos;s question is recorded in the gap queue with a priority score.
+
+If multiple leads ask the same thing, occurrences increment and priority climbs. The system deduplicates by question similarity.
+
+### Daily routine (5 minutes)
+
+1. Open `/admin/clients/[id]/knowledge` &rarr; **Gaps** tab for each active client.
+2. Sort by priority (highest first). Focus on gaps with 2+ occurrences &mdash; those are real patterns, not one-off questions.
+3. For each actionable gap:
+   - **If you know the answer:** Add a KB entry directly. Link it to the gap. Mark resolved.
+   - **If you need the contractor&apos;s input:** Text/call them with the specific question. Keep it short: &quot;Hey, a couple of leads asked if you do flat roofs &mdash; do you? And roughly what price range?&quot; Add the KB entry from their response.
+   - **If it&apos;s not relevant** (spam, gibberish, off-topic): Mark as resolved with note &quot;not actionable.&quot;
+
+### How to write a good KB entry
+
+The AI matches lead questions against KB entries by content similarity. Write entries like you&apos;re answering the customer:
+
+| Bad entry | Good entry |
+|-----------|------------|
+| &quot;We do flat roofs&quot; | &quot;Yes, we handle flat roof repairs, replacements, and coatings. Typical project range is $3,000-$12,000 depending on size and material. We use TPO and EPDM membrane systems.&quot; |
+| &quot;Financing available&quot; | &quot;We offer financing through [partner]. Most homeowners qualify for 0% interest over 12 months. The application takes 5 minutes and doesn&apos;t affect your credit score.&quot; |
+
+More detail = higher AI confidence = fewer future deferrals on that topic.
+
+### Resolution lifecycle
+
+| Status | Meaning |
+|--------|---------|
+| **new** | Just detected. Needs triage. |
+| **in_progress** | You&apos;re working on it (waiting for contractor response). |
+| **blocked** | Can&apos;t resolve yet (e.g., contractor hasn&apos;t answered). |
+| **resolved** | KB entry added and linked. Requires KB entry link. |
+| **verified** | Confirmed working (high-priority gaps require verification). |
+
+### Auto-reopen
+
+If a gap was resolved but leads keep asking the same question and the AI still can&apos;t answer confidently, the gap auto-reopens. This means the KB entry wasn&apos;t detailed enough. Improve it and re-resolve.
+
+### Cron alerts
+
+The daily cron (`/api/cron/knowledge-gap-alerts`) emails you when high-priority gaps are past their due date. Due dates are auto-calculated: priority 9+ = 1 day, 7-8 = 2 days, lower = 3-5 days.
+
+### Week 2 KB sprint
+
+During the contractor&apos;s second week (Smart Assist mode), gaps accumulate fastest because the AI is handling real conversations for the first time. Plan 15-20 minutes on Day 8-10 to clear the queue in bulk. This is the single biggest quality improvement moment.
+
+### Bi-weekly check-in
+
+Every 2 weeks, review the gap queue with the contractor on a 10-minute call. Go through the top 3-5 unresolved gaps. This keeps the AI improving and gives the contractor visibility into what leads are asking about (market intelligence they&apos;d never get otherwise).
+
+---
+
 ## Cron Operations
 
 ### Required auth
