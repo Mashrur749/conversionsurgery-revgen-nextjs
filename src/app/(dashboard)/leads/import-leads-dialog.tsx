@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAdmin } from '@/lib/admin-context';
 import {
   Dialog,
   DialogContent,
@@ -125,6 +126,7 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
 }
 
 export function ImportLeadsDialog({ onImported }: ImportLeadsDialogProps) {
+  const { selectedClient } = useAdmin();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>('upload');
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
@@ -265,7 +267,9 @@ export function ImportLeadsDialog({ onImported }: ImportLeadsDialogProps) {
         <DialogHeader>
           <DialogTitle>Import Leads from CSV</DialogTitle>
           <DialogDescription>
-            Upload a CSV file with lead contact information. Required column: phone.
+            {selectedClient
+              ? <>Importing leads for <strong>{selectedClient.businessName}</strong>. Required column: phone.</>
+              : 'Upload a CSV file with lead contact information. Required column: phone.'}
           </DialogDescription>
         </DialogHeader>
 

@@ -14,6 +14,7 @@ export const LEAD_SOURCES = [
   { value: 'form', label: 'Form' },
   { value: 'sms', label: 'SMS' },
   { value: 'manual', label: 'Manual' },
+  { value: 'csv_import', label: 'CSV Import' },
 ] as const;
 
 export const LEAD_TEMPERATURES = [

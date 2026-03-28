@@ -1,12 +1,14 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { getDb, leads, dailyStats, appointments } from '@/db';
+import { clients, subscriptions } from '@/db/schema';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { getRevenueStats } from '@/lib/services/revenue';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, Phone, CreditCard, CheckCircle } from 'lucide-react';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
@@ -46,6 +48,21 @@ export default async function ClientDashboardPage() {
     getClientLatestReportDelivery(clientId),
   ]);
 
+  // Setup status checks
+  const [client] = await db
+    .select({ twilioNumber: clients.twilioNumber })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+  const [sub] = await db
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .where(eq(subscriptions.clientId, clientId))
+    .limit(1);
+  const hasPhone = !!client?.twilioNumber;
+  const hasSubscription = !!sub;
+  const needsSetup = !hasPhone || !hasSubscription;
+
   // Recent activity
   const recentLeads = await db
     .select()
@@ -76,6 +93,46 @@ export default async function ClientDashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
+
+      {needsSetup && (
+        <Card className="border-olive/30 bg-moss-light">
+          <CardContent className="py-4">
+            <p className="font-medium mb-3">Complete your setup to start capturing leads</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  {hasPhone
+                    ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
+                    : <Phone className="h-4 w-4 text-muted-foreground" />}
+                  <span className={hasPhone ? 'line-through text-muted-foreground' : ''}>
+                    Set up your business phone number
+                  </span>
+                </div>
+                {!hasPhone && (
+                  <Button asChild size="sm">
+                    <Link href="/client/settings/phone">Set Up Phone</Link>
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm">
+                  {hasSubscription
+                    ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
+                    : <CreditCard className="h-4 w-4 text-muted-foreground" />}
+                  <span className={hasSubscription ? 'line-through text-muted-foreground' : ''}>
+                    Choose a plan
+                  </span>
+                </div>
+                {!hasSubscription && (
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/client/billing/upgrade">Choose Plan</Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Revenue Hero */}
       <Card className="bg-[#E8F5E9] border-[#3D7A50]/30">
