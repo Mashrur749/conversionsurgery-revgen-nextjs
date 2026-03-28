@@ -59,12 +59,12 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
 
 ### User Types
 
-| Role                        | What They See                                  | How They Log In                           |
-| --------------------------- | ---------------------------------------------- | ----------------------------------------- |
-| **Admin** (you, the agency) | All clients, A/B tests, reports, analytics     | Magic link to admin@conversionsurgery.com |
-| **Team Member**             | Dashboard scoped to their client               | Magic link to their email                 |
+| Role                        | What They See                                  | How They Log In                             |
+| --------------------------- | ---------------------------------------------- | ------------------------------------------- |
+| **Admin** (you, the agency) | All clients, A/B tests, reports, analytics     | Magic link to rmashrur749@gmail.com         |
+| **Team Member**             | Dashboard scoped to their client               | Magic link to their email                   |
 | **Client** (contractor)     | Self-service portal for conversations, billing | OTP login (email code) or cookie-based link |
-| **Lead** (homeowner)        | SMS interactions, booking, opt-out              | No login — interacts via SMS              |
+| **Lead** (homeowner)        | SMS interactions, booking, opt-out             | No login — interacts via SMS                |
 
 ---
 
@@ -164,15 +164,15 @@ Customer calls contractor → Gets voicemail → Twilio detects missed call
 
 ### Integrations
 
-| Service                 | Purpose                              | Key Files                                  |
-| ----------------------- | ------------------------------------ | ------------------------------------------ |
-| **Twilio**              | SMS sending, voice calls, webhooks   | `twilio.ts`, `twilio-provisioning.ts`      |
-| **Anthropic**           | AI response generation, lead scoring | `ai-response.ts`, `knowledge-ai.ts`       |
-| **LangGraph**           | Multi-step AI agent                  | `src/lib/agent/`                           |
-| **Stripe**              | Subscription billing, payments       | `stripe.ts`, `subscription.ts`             |
-| **Resend**              | Transactional emails                 | `resend.ts`                                |
-| **Google APIs**         | Calendar sync, review monitoring     | `google-calendar.ts`, `google-business.ts` |
-| **AWS S3**              | Media storage (MMS photos)           | `storage.ts`                               |
+| Service         | Purpose                              | Key Files                                  |
+| --------------- | ------------------------------------ | ------------------------------------------ |
+| **Twilio**      | SMS sending, voice calls, webhooks   | `twilio.ts`, `twilio-provisioning.ts`      |
+| **Anthropic**   | AI response generation, lead scoring | `ai-response.ts`, `knowledge-ai.ts`        |
+| **LangGraph**   | Multi-step AI agent                  | `src/lib/agent/`                           |
+| **Stripe**      | Subscription billing, payments       | `stripe.ts`, `subscription.ts`             |
+| **Resend**      | Transactional emails                 | `resend.ts`                                |
+| **Google APIs** | Calendar sync, review monitoring     | `google-calendar.ts`, `google-business.ts` |
+| **AWS S3**      | Media storage (MMS photos)           | `storage.ts`                               |
 
 ### Deployment
 
@@ -225,7 +225,7 @@ npm run dev
 # → Open http://localhost:3000
 
 # 7. Log in as admin
-# Enter admin@conversionsurgery.com on the login page
+# Enter rmashrur749@gmail.com on the login page
 # Check your terminal for the magic link (logged in dev mode)
 ```
 
@@ -1203,7 +1203,7 @@ ORDER BY send_at ASC;
 | Seed database        | `npm run db:seed`                                 |
 | Browse database      | `npm run db:studio`                               |
 | Deploy to Cloudflare | `npm run cf:deploy`                               |
-| Admin login          | `admin@conversionsurgery.com` (magic link)        |
+| Admin login          | `rmashrur749@gmail.com` (magic link)              |
 | Database connection  | `getDb()` from `@/db`                             |
 | Auth check           | `(session as any).user?.isAdmin`                  |
 | Phone normalize      | `normalizePhoneNumber()` from `@/lib/utils/phone` |

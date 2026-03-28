@@ -143,7 +143,7 @@ The following lines are approved for live sales conversations, landing page head
 
 ## SECTION 4: PRICING
 
-> **$997/month.**
+> **$1,000/month.**
 >
 > Month-to-month. No contract. No setup fee. No message limits. No overage charges.
 >
@@ -166,7 +166,7 @@ The following lines are approved for live sales conversations, landing page head
 > **Service Terms**
 >
 > - Month-to-month service — no annual contract, no long-term commitment
-> - $997/month, billed monthly
+> - $1,000/month, billed monthly
 > - Cancel anytime with 30 calendar days' written notice
 > - No cancellation penalties or early termination fees
 > - No setup fees
@@ -249,7 +249,7 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 >
 > **Month-to-month, no contract, no setup fee, no message limits, no overage charges.** We earn your business every single month.
 >
-> **$997/month.**
+> **$1,000/month.**
 >
 > One recovered kitchen or basement project pays for the entire year. Most clients see measurable results in the first month.
 

@@ -66,6 +66,9 @@ external-backups/
 # claude code scratch (temporary working files)
 .scratch/
 
+# test environment config (contains phone numbers)
+.test-config.json
+
 # testing artifacts
 .playwright-mcp/
 *.png

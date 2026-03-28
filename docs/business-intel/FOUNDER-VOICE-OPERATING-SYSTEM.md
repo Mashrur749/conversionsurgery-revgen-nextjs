@@ -46,7 +46,7 @@ Primary fit:
 - Renovation contractors who want to grow.
 - Renovation contractors who care about client experience.
 
-Practical fit baseline for the $997 offer:
+Practical fit baseline for the $1,000 offer:
 
 - Strong fit: 15+ inbound inquiries per month.
 - Conditional fit: 10-14 inquiries per month if project values and execution discipline are strong.

@@ -88,7 +88,7 @@ Implementation priority: SMS reply trigger and fallback nudge should be availabl
 
 **Hormozi lever:** Dream Outcome — this IS the core result they're paying for.
 
-**What this kills:** "What do I actually get for $997?" — Everything a full-time office manager would do for lead management, follow-up, appointment coordination, payment collection, and reputation building — except the system runs around the clock, never quits, never calls in sick, and costs 75% less.
+**What this kills:** "What do I actually get for $1,000?" — Everything a full-time office manager would do for lead management, follow-up, appointment coordination, payment collection, and reputation building — except the system runs around the clock, never quits, never calls in sick, and costs 75% less.
 
 ---
 
@@ -120,7 +120,7 @@ Voice AI capabilities are available as a separate, clearly communicated add-on a
 
 **THIS IS THE SINGLE BIGGEST STRUCTURAL CHANGE TO THE OFFER.**
 
-**The problem it solves:** A contractor pays $997 and then waits 3 weeks for full automation. That's 21 days of paying for something that isn't fully working. That gap creates doubt, buyer's remorse, and a feeling of "is this actually going to do anything?"
+**The problem it solves:** A contractor pays $1,000 and then waits 3 weeks for full automation. That's 21 days of paying for something that isn't fully working. That gap creates doubt, buyer's remorse, and a feeling of "is this actually going to do anything?"
 
 **The solution: Value within 24 hours.**
 
@@ -259,7 +259,7 @@ This formula eliminates ad hoc judgment calls during guarantee disputes. Both pa
 
 **What this kills:**
 
-- "$997 is a lot — what if it doesn't work?" — Then you get your money back AND keep everything we built. What's the risk?
+- "$1,000 is a lot — what if it doesn't work?" — Then you get your money back AND keep everything we built. What's the risk?
 - "I need to think about it." — The guarantee means if it doesn't produce results, you pay nothing. The only risk is waiting another month and losing more leads.
 - "Can I try it free?" — This IS a trial — a paid one where you get full service from day one. If it doesn't work, you get refunded. A free trial would mean a watered-down setup. This gives you the real thing.
 
@@ -365,7 +365,7 @@ Reporting rules:
 
 **What this kills:**
 
-- "I'm not sure it's worth $997." — Here's exactly what $997 bought you this month.
+- "I'm not sure it's worth $1,000." — Here's exactly what $1,000 bought you this month.
 - "I could probably do this myself." — Could you respond to 23 leads near-instantly while you're on a job site?
 
 ---
@@ -430,14 +430,14 @@ This is structural risk reversal — not a "bonus," not a marketing line, but a 
 
 **Frame it this way:**
 
-> "We don't lock you in because we don't need to. If the system is recovering more than $997 in value every month — and for most clients, it recovers that in the first week — you'd be crazy to cancel. We earn your business every single month."
+> "We don't lock you in because we don't need to. If the system is recovering more than $1,000 in value every month — and for most clients, it recovers that in the first week — you'd be crazy to cancel. We earn your business every single month."
 
 **Hormozi lever:** Perceived Likelihood (removes the "what if I'm stuck" fear) + Effort & Sacrifice (leaving is painless, so staying is a choice, not a trap).
 
 **What this kills:**
 
 - "What if I'm stuck in a contract?" — You're not. Month-to-month. If it stops working, you leave.
-- "That's a big commitment." — It's $997/month that you can end any time. One kitchen estimate covers it.
+- "That's a big commitment." — It's $1,000/month that you can end any time. One kitchen estimate covers it.
 
 ---
 
@@ -461,7 +461,7 @@ Here's what you get when you start with ConversionSurgery:
 
 **Month-to-month, no contract, no setup fee, no message limits, no overage charges.** We earn your business every single month.
 
-**$997/month.**
+**$1,000/month.**
 
 One recovered kitchen project pays for the entire year. Most clients see that in the first month.
 
@@ -511,19 +511,19 @@ One recovered kitchen project pays for the entire year. Most clients see that in
 
 ## PART 5: PRICING PSYCHOLOGY
 
-### Why $997 Is Right
+### Why $1,000 Is Right
 
-1. **Below $1,000 psychological threshold** but communicates serious value. $497 signals "lightweight tool." $1,997 requires enterprise-level proof. $997 is the sweet spot.
+1. **Round number signals confidence and transparency.** Research (Troll et al. 2024 meta-analysis, Wadhwa & Zhang 2015) shows charm pricing ($997, $999) underperforms round pricing in B2B and professional services contexts. Round numbers communicate honest, calculated pricing — not a marketing trick. Contractors quote kitchens at $50,000, not $49,997. We price the same way.
 
 2. **Less than half a part-time employee** ($1,500-$2,500/month) and a fraction of a full-time hire ($4,000+/month). This is the primary price anchor.
 
-3. **One project pays for the entire year.** At $45K-$65K average project value, $997/month ($11,964/year) is paid back 4-5x by a single recovered job.
+3. **One project pays for the entire year.** At $45K-$65K average project value, $1,000/month ($12,000/year) is paid back 4-5x by a single recovered job.
 
 4. **Month-to-month neutralizes price resistance.** The real objection isn't "it costs too much" — it's "what if I'm stuck paying for something that doesn't work." Month-to-month + guarantee eliminates that.
 
 5. **Unlimited messaging justifies premium.** No caps, no overages, no surprises. Flat-rate simplicity that competitors don't offer.
 
-6. **Quarterly Growth Blitz justifies premium.** Agency-level service at SaaS-level pricing. No competitor at $997 offers proactive quarterly campaigns.
+6. **Quarterly Growth Blitz justifies premium.** Agency-level service at SaaS-level pricing. No competitor at $1,000 offers proactive quarterly campaigns.
 
 ### Price Anchors
 
@@ -544,7 +544,7 @@ Every component is tagged to the specific objection it preemptively kills:
 
 | Objection                               | Primary killer                                                       | Supporting                                                             |
 | --------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| "$997 is too expensive"                 | 90-Day Guarantee (what's the risk?), ROI math (one project = a year) | Bi-Weekly Scoreboard, unlimited messaging (no surprise costs)          |
+| "$1,000 is too expensive"                 | 90-Day Guarantee (what's the risk?), ROI math (one project = a year) | Bi-Weekly Scoreboard, unlimited messaging (no surprise costs)          |
 | "I need to think about it"              | Day-One Activation (value starts immediately, waiting costs leads)   | Month-to-month (not a commitment, it's a test drive with full service) |
 | "What if it doesn't work?"              | 90-Day Guarantee (refund + keep everything)                          | 30-Day Proof-of-Life (you'll see it working in weeks)                  |
 | "I've tried CRM/software before"        | Managed Service (we run it, not you)                                 | 15 min/week (nothing to learn or operate)                              |
@@ -595,7 +595,7 @@ These exist to protect service quality and margins. They are invisible to the cl
 | High-volume ICP (50-80 leads/month) | 50-80         | 4,000-7,000      | $55-85           |
 | Outlier (investigate)               | 80+           | 8,000+           | $85+             |
 
-At $997/month revenue, even outlier usage maintains 90%+ gross margin on API costs.
+At $1,000/month revenue, even outlier usage maintains 90%+ gross margin on API costs.
 
 **Enterprise trigger:** If a client consistently exceeds 100 leads/month for 2+ consecutive months, they are outgrowing the Professional plan. This is a revenue opportunity — introduce the Enterprise tier conversation naturally. Do NOT throttle them.
 
