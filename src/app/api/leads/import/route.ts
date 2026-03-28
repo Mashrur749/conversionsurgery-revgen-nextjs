@@ -10,6 +10,8 @@ import { safeErrorResponse } from '@/lib/utils/api-errors';
 
 const MAX_ROWS = 1000;
 
+const ALLOWED_IMPORT_STATUSES = ['new', 'contacted', 'estimate_sent'] as const;
+
 const rowSchema = z.object({
   name: z.string().max(255).optional(),
   phone: z.string().min(1, 'Phone is required'),
@@ -17,6 +19,7 @@ const rowSchema = z.object({
   address: z.string().max(500).optional(),
   projectType: z.string().max(255).optional(),
   notes: z.string().optional(),
+  status: z.enum(ALLOWED_IMPORT_STATUSES).optional(),
 });
 
 interface ImportError {
@@ -154,7 +157,7 @@ export async function POST(request: NextRequest) {
             projectType: row.projectType || null,
             notes: row.notes || null,
             source: 'csv_import' as const,
-            status: 'new',
+            status: row.status || 'new',
           }))
         );
         imported = toInsert.length;

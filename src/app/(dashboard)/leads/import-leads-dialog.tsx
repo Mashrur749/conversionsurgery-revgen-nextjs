@@ -32,6 +32,7 @@ interface ParsedRow {
   address?: string;
   projectType?: string;
   notes?: string;
+  status?: string;
 }
 
 interface ImportResult {
@@ -43,7 +44,7 @@ interface ImportResult {
 
 type Step = 'upload' | 'preview' | 'importing' | 'done';
 
-const EXPECTED_HEADERS = ['name', 'phone', 'email', 'address', 'projectType', 'notes'];
+const EXPECTED_HEADERS = ['name', 'phone', 'email', 'address', 'projectType', 'notes', 'status'];
 const HEADER_ALIASES: Record<string, string> = {
   'first name': 'name',
   'first_name': 'name',
@@ -76,6 +77,11 @@ const HEADER_ALIASES: Record<string, string> = {
   'comment': 'notes',
   'comments': 'notes',
   'description': 'notes',
+  'lead status': 'status',
+  'lead_status': 'status',
+  'stage': 'status',
+  'pipeline stage': 'status',
+  'pipeline_stage': 'status',
 };
 
 function normalizeHeader(header: string): string | null {
@@ -292,9 +298,12 @@ export function ImportLeadsDialog({ onImported }: ImportLeadsDialogProps) {
             />
             <div className="text-sm text-muted-foreground">
               <p className="font-medium mb-1">Expected columns:</p>
-              <p>phone (required), name, email, address, projectType, notes</p>
+              <p>phone (required), name, email, address, projectType, notes, status</p>
               <p className="mt-1">
                 Common aliases are supported (e.g., &quot;Phone Number&quot;, &quot;Mobile&quot;, &quot;First Name&quot;, &quot;Service Type&quot;).
+              </p>
+              <p className="mt-1">
+                Status values: <code className="text-xs bg-muted px-1 rounded">new</code>, <code className="text-xs bg-muted px-1 rounded">contacted</code>, <code className="text-xs bg-muted px-1 rounded">estimate_sent</code>. Defaults to <code className="text-xs bg-muted px-1 rounded">new</code> if not provided.
               </p>
             </div>
           </div>
