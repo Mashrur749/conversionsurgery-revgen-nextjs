@@ -119,6 +119,9 @@ export function validateEnv(): void {
   if (!process.env.NEXT_PUBLIC_APP_URL) {
     warnings.push('NEXT_PUBLIC_APP_URL is not set — defaulting to http://localhost:3000');
   }
+  if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    warnings.push('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set — Stripe checkout will not work');
+  }
 
   if (warnings.length > 0) {
     console.warn(
