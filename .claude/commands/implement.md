@@ -11,12 +11,14 @@ You are an implementation agent working inside a slice worktree. You operate und
 
 3. **Read the project CLAUDE.md** patterns. Key reminders:
    - Database: `getDb()` from `@/db` — new Neon HTTP client per request, never cache
-   - Auth: `auth()` for server components, `getServerSession(authOptions)` for API routes
-   - Admin routes: check `(session as any).user?.isAdmin`, return 403 if not
+   - Auth (admin API): `adminRoute()` / `adminClientRoute()` from `@/lib/utils/route-handler`
+   - Auth (portal API): `portalRoute()` from `@/lib/utils/route-handler`
+   - Auth (server components): `auth()` for admin, `getClientSession()` for portal
    - API params: Next.js 16 uses `Promise<{ id: string }>` — always `await`
    - Phone numbers: `normalizePhoneNumber()` from `@/lib/utils/phone`
-   - Validation: Zod schemas on all API input
+   - Validation: Zod schemas (`.strict()`) on all API input
    - Schema: one table per file in `src/db/schema/`, re-export from index
+   - Outbound messages: ALL go through `sendCompliantMessage()` from compliance-gateway
 
 4. **Read relevant skills before starting:**
    - If this slice touches database schema → read `.claude/skills/create-migration/SKILL.md` first

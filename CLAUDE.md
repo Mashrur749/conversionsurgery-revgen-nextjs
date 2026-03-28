@@ -90,6 +90,7 @@ Before writing integration code, query Context7 for current API patterns:
 - `npm run typecheck` — fast TypeScript type-check only (~13s, no build output)
 - `npm test` — run Vitest test suite (312 deterministic tests: agent scenarios, guardrails, graph routing, model routing, route-handler, permissions, etc.)
 - `npm run test:ai` — run AI criteria + scenario tests (29 tests, requires ANTHROPIC_API_KEY, real LLM calls — pre-launch quality gate)
+- `npm run test:ai:visual` — run AI scenario tests with color-coded terminal output + HTML report (standalone runner, not vitest)
 - `npm run test:watch` — run Vitest in watch mode
 - `npm run db:studio` — open Drizzle Studio for visual database browsing
 - `npm run quality:no-regressions` — required gate (`ms:gate` + build + tests + runtime smoke)
@@ -157,6 +158,9 @@ When you change code, check whether the affected docs need updating. This is man
 | Billing terms or pricing | `docs/business-intel/OFFER-CLIENT-FACING.md` (Sections 4-5: Pricing + Terms) |
 | Onboarding milestones, quality gates, or progressive activation | `docs/product/PLATFORM-CAPABILITIES.md` (Section 9: Onboarding) |
 | Quarterly campaign types or planner logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 10: Quarterly Growth Blitz) |
+| AI agent behavior, guardrails, model routing, or decision pipeline | `docs/product/PLATFORM-CAPABILITIES.md` (Section 1: AI Conversation Agent + Section 11: Observability) |
+| AI agent tests or evaluation criteria | `docs/engineering/01-TESTING-GUIDE.md` (Steps 32-35: model routing, scenarios, AI criteria, effectiveness) |
+| AI effectiveness metrics, attribution, or dashboard | `docs/product/PLATFORM-CAPABILITIES.md` (Section 11: Observability), `docs/operations/01-OPERATIONS-GUIDE.md` (items 28-30) |
 | Admin tools, kill switches, cron jobs, or observability | `docs/product/PLATFORM-CAPABILITIES.md` (Section 11: Agency Operations) |
 | New cron job added or removed | `docs/engineering/01-TESTING-GUIDE.md` (Section 3: Useful Commands — cron list) |
 | Review monitoring, auto-response, or Google integration | `docs/product/PLATFORM-CAPABILITIES.md` (Section 12: Review Monitoring) |
@@ -210,41 +214,17 @@ Skills to use during worktree work:
 - Neon queries: read `.claude/skills/neon-postgres/` for patterns
 - Security review: run on any slice touching API routes, auth, or user input
 
-# Agent Instructions
-
-Read this entire file before starting any task.
-
-## Self-Correcting Rules Engine
-
-This file contains a growing ruleset that improves over time. **At session start, read the entire "Learned Rules" section before doing anything.**
-
-### How it works
-
-1. When the user corrects you or you make a mistake, **immediately append a new rule** to the "Learned Rules" section at the bottom of this file.
-2. Rules are numbered sequentially and written as clear, imperative instructions.
-3. Format: `N. [CATEGORY] Never/Always do X — because Y.`
-4. Categories: `[STYLE]`, `[CODE]`, `[ARCH]`, `[TOOL]`, `[PROCESS]`, `[DATA]`, `[UX]`, `[OTHER]`
-5. Before starting any task, scan all rules below for relevant constraints.
-6. If two rules conflict, the higher-numbered (newer) rule wins.
-7. Never delete rules. If a rule becomes obsolete, append a new rule that supersedes it.
-
-### When to add a rule
-
-- User explicitly corrects your output ("no, do it this way")
-- User rejects a file, approach, or pattern
-- You hit a bug caused by a wrong assumption about this codebase
-- User states a preference ("always use X", "never do Y")
-
-### Rule format example
-
-```
-14. [CODE] Always use `bun` instead of `npm` — user preference, bun is installed globally.
-15. [STYLE] Never add emojis to commit messages — project convention.
-16. [ARCH] API routes live in `src/server/routes/`, not `src/api/` — existing codebase pattern.
-```
-
----
-
 ## Learned Rules
 
-<!-- New rules are appended below this line. Do not edit above this section. -->
+Rules are appended when corrections happen. Format: `N. [CATEGORY] Instruction — reason.` Higher numbers win on conflict. Never delete, only supersede.
+
+1. [CODE] All outbound messages MUST go through `sendCompliantMessage()` from compliance-gateway — never call Twilio directly.
+2. [ARCH] Agent nodes use `getAIProvider()` raw; all other AI callers use `getTrackedAI()` — orchestrator tracks aggregate usage.
+3. [CODE] Radix `Select` does NOT work with FormData forms — use native `<select>` with standard styling instead.
+4. [CODE] Custom `DialogTrigger` does NOT support `asChild` — pass `className` directly.
+5. [CODE] Use `as unknown as T` for jsonb→domain type narrowing — `as any` is banned project-wide.
+6. [ARCH] AI test files use `*.ai-test.ts` naming convention — excluded from `npm test`, run only via `npm run test:ai`.
+7. [PROCESS] Doc sync is mandatory — check the Change→Doc mapping table before marking any task done.
+8. [CODE] `compliance-gateway.ts` has a pre-existing block-scoped variable redeclaration typecheck warning — ignore it, don't try to fix.
+9. [ARCH] Attribution is event-driven (NOT cron) — `trackFunnelEvent()` triggers `attributeFunnelEvent()` synchronously.
+10. [UX] Brand palette only — never use raw Tailwind colors (blue-500, red-600, etc.). Use CSS custom properties or the established brand tokens.
