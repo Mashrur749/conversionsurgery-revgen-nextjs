@@ -116,6 +116,7 @@ export default async function LeadDetailPage({ params }: Props) {
         <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
           <LeadTabs
             leadId={lead.id}
+            clientId={lead.clientId}
             messages={messages}
             mediaByMessage={mediaByMessage}
             mediaCount={media.length}

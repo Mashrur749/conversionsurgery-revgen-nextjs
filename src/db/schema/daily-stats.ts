@@ -30,6 +30,7 @@ export const dailyStats = pgTable(
     smartAssistAutoSent: integer('smart_assist_auto_sent').default(0),
     smartAssistApprovedSent: integer('smart_assist_approved_sent').default(0),
     smartAssistCancelled: integer('smart_assist_cancelled').default(0),
+    aiMessagesFlagged: integer('ai_messages_flagged').default(0),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [

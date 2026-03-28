@@ -4,6 +4,7 @@ import {
   varchar,
   text,
   numeric,
+  boolean,
   jsonb,
   timestamp,
   index,
@@ -12,6 +13,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
+import { people } from './people';
 
 export const conversations = pgTable(
   'conversations',
@@ -30,6 +32,16 @@ export const conversations = pgTable(
     aiConfidence: numeric('ai_confidence', { precision: 3, scale: 2 }),
     deliveryStatus: varchar('delivery_status', { length: 20 }), // queued, sent, delivered, failed, undelivered
     mediaUrl: jsonb('media_url').$type<string[]>(),
+
+    // AI quality feedback — operator flags on AI-generated messages
+    flagged: boolean('flagged').default(false).notNull(),
+    flagReason: varchar('flag_reason', { length: 30 }), // wrong_tone, inaccurate, too_pushy, hallucinated, off_topic, other
+    flagNote: text('flag_note'), // Optional free-text explanation
+    flaggedBy: uuid('flagged_by').references(() => people.id, {
+      onDelete: 'set null',
+    }),
+    flaggedAt: timestamp('flagged_at'),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow(),
   },
@@ -39,6 +51,9 @@ export const conversations = pgTable(
     uniqueIndex('uq_conversations_twilio_sid')
       .on(table.twilioSid)
       .where(sql`twilio_sid IS NOT NULL`),
+    index('idx_conversations_flagged').on(table.flagged).where(
+      sql`flagged = true`
+    ),
   ]
 );
 
