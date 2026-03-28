@@ -8,7 +8,6 @@ import {
   pauseSubscription as pauseSub,
   resumeSubscription as resumeSub,
   changePlan as changeSubPlan,
-  createSubscription,
 } from '@/lib/services/subscription';
 import {
   addPaymentMethod as addPM,
@@ -104,15 +103,8 @@ export async function changePlan(
     .limit(1);
 
   if (!subscription) {
-    // No existing subscription — create a new one
-    await createSubscription(
-      clientId,
-      planId,
-      billingCycle === 'yearly' ? 'year' : 'month'
-    );
-    revalidatePath('/client/billing');
-    revalidatePath('/client/billing/upgrade');
-    return;
+    // No existing subscription — new subscriptions go through Stripe Checkout
+    throw new Error('No active subscription. Use Stripe Checkout to subscribe.');
   }
 
   await changeSubPlan(

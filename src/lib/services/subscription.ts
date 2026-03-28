@@ -207,6 +207,128 @@ export async function createSubscription(
 }
 
 /**
+ * Provision a subscription from a completed Stripe Checkout Session.
+ * Called by the webhook handler — the Stripe subscription already exists.
+ */
+export async function provisionSubscriptionFromCheckout(
+  stripeSubscriptionId: string,
+  clientId: string,
+  planId: string,
+  stripeEventId: string
+): Promise<Subscription> {
+  const db = getDb();
+  const stripe = getStripeClient();
+
+  // Retrieve the full subscription from Stripe
+  const stripeSub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+
+  // Load plan
+  const [plan] = await db.select().from(plans).where(eq(plans.id, planId)).limit(1);
+  if (!plan) throw new Error(`Plan not found: ${planId}`);
+
+  // Check if already provisioned (idempotency)
+  const [existing] = await db
+    .select({ id: subscriptions.id })
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId))
+    .limit(1);
+  if (existing) {
+    const [sub] = await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.id, existing.id))
+      .limit(1);
+    return sub;
+  }
+
+  // Resolve price and interval
+  const firstItem = stripeSub.items.data[0];
+  const priceId = firstItem?.price.id;
+  const interval: PlanInterval = firstItem?.price.recurring?.interval === 'year' ? 'year' : 'month';
+  const stripeCustomerId = typeof stripeSub.customer === 'string'
+    ? stripeSub.customer
+    : stripeSub.customer.id;
+
+  const currentPeriodStart = firstItem
+    ? new Date(firstItem.current_period_start * 1000)
+    : new Date();
+  const currentPeriodEnd = firstItem
+    ? new Date(firstItem.current_period_end * 1000)
+    : new Date();
+
+  const trialStart = stripeSub.trial_start
+    ? new Date(stripeSub.trial_start * 1000)
+    : null;
+  const trialEnd = stripeSub.trial_end
+    ? new Date(stripeSub.trial_end * 1000)
+    : null;
+
+  // Build guarantee window
+  const guaranteeStartAt = new Date();
+  const guaranteeWindow = buildInitialGuaranteeWindowState(guaranteeStartAt);
+
+  // Coupon from subscription metadata
+  const couponCode = stripeSub.metadata?.couponCode || undefined;
+
+  // Provision in DB
+  const subscription = await withTransaction(async (tx) => {
+    const [sub] = await tx.insert(subscriptions).values({
+      clientId,
+      planId,
+      status: stripeSub.status as 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused',
+      interval,
+      stripeCustomerId,
+      stripeSubscriptionId,
+      stripePriceId: priceId,
+      currentPeriodStart,
+      currentPeriodEnd,
+      trialStart,
+      trialEnd,
+      couponCode: couponCode?.toUpperCase(),
+      guaranteeStartAt,
+      guaranteeEndsAt: guaranteeWindow.proofEndsAt,
+      guaranteeStatus: 'proof_pending',
+      guaranteeProofStartAt: guaranteeWindow.proofStartAt,
+      guaranteeProofEndsAt: guaranteeWindow.proofEndsAt,
+      guaranteeRecoveryStartAt: guaranteeWindow.recoveryStartAt,
+      guaranteeRecoveryEndsAt: guaranteeWindow.recoveryEndsAt,
+      guaranteeAdjustedProofEndsAt: guaranteeWindow.adjustedProofEndsAt,
+      guaranteeAdjustedRecoveryEndsAt: guaranteeWindow.adjustedRecoveryEndsAt,
+      guaranteeExtensionFactorBasisPoints: guaranteeWindow.extensionFactorBasisPoints,
+      guaranteeProofQualifiedLeadEngagements: 0,
+      guaranteeRecoveryAttributedOpportunities: 0,
+    }).returning();
+
+    await tx.update(clients).set({
+      monthlyMessageLimit: resolveMonthlyMessageLimit(plan),
+      updatedAt: new Date(),
+    }).where(eq(clients.id, clientId));
+
+    await tx.insert(billingEvents).values({
+      clientId,
+      eventType: 'subscription_created',
+      description: `Subscription created via checkout for ${plan.name} plan`,
+      subscriptionId: sub.id,
+      stripeEventId,
+    });
+
+    return sub;
+  });
+
+  // Redeem coupon if provided (after successful provisioning)
+  if (couponCode) {
+    try {
+      await validateAndRedeemCoupon(couponCode, planId, clientId);
+    } catch {
+      // Non-fatal — subscription is already created, coupon redemption is a nice-to-have
+      console.warn(`[Subscription] Coupon redemption failed for ${couponCode} after checkout`);
+    }
+  }
+
+  return subscription;
+}
+
+/**
  * Cancel a subscription
  */
 export async function cancelSubscription(

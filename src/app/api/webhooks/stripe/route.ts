@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { handlePaymentSuccess, formatAmount } from '@/lib/services/stripe';
 import { getDb, withTransaction } from '@/db';
-import { payments, leads, clients, subscriptions, billingEvents } from '@/db/schema';
+import { payments, leads, clients, subscriptions, plans, billingEvents } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
@@ -12,6 +12,7 @@ import { addPaymentMethod } from '@/lib/services/payment-methods';
 import { sendEmail } from '@/lib/services/resend';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { provisionSubscriptionFromCheckout } from '@/lib/services/subscription';
 
 /** POST /api/webhooks/stripe */
 export async function POST(request: NextRequest) {
@@ -62,6 +63,29 @@ export async function POST(request: NextRequest) {
       if (existingCheckoutEvent) break;
 
       const session = event.data.object as Stripe.Checkout.Session;
+
+      // Handle subscription checkout (from /api/client/billing/checkout)
+      if (session.mode === 'subscription' && session.subscription) {
+        const stripeSubId = typeof session.subscription === 'string'
+          ? session.subscription
+          : session.subscription.id;
+        const clientId = session.metadata?.clientId;
+        const planId = session.metadata?.planId;
+
+        if (clientId && planId) {
+          try {
+            await provisionSubscriptionFromCheckout(stripeSubId, clientId, planId, event.id);
+          } catch (err) {
+            logSanitizedConsoleError('[Billing][checkout.subscription-provision]', err, {
+              stripeSubId,
+              clientId,
+              planId,
+              stripeEventId: event.id,
+            });
+          }
+        }
+        break;
+      }
 
       if (session.payment_link && session.payment_intent) {
         await handlePaymentSuccess(
