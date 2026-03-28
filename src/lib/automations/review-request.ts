@@ -32,6 +32,16 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
     .set({ status: 'won', updatedAt: new Date() })
     .where(eq(leads.id, leadId));
 
+  // Track review request funnel event with AI attribution
+  try {
+    const { trackFunnelEvent } = await import('@/lib/services/funnel-tracking');
+    await trackFunnelEvent({
+      clientId,
+      leadId,
+      eventType: 'review_requested',
+    });
+  } catch {} // Never block review flow on tracking failure
+
   // 3. Cancel existing review/referral sequences
   await db
     .update(scheduledMessages)

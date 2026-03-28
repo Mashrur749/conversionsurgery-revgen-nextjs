@@ -9,6 +9,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 import { leads } from './leads';
+import { agentDecisions } from './agent-decisions';
 
 // Funnel analytics (for detailed conversion tracking)
 export const funnelEvents = pgTable(
@@ -34,6 +35,12 @@ export const funnelEvents = pgTable(
     source: varchar('source', { length: 50 }), // 'missed_call', 'web_form', 'referral'
     campaign: varchar('campaign', { length: 100 }),
 
+    // AI attribution — links this funnel event to the agent decision that contributed to it
+    agentDecisionId: uuid('agent_decision_id').references(
+      () => agentDecisions.id,
+      { onDelete: 'set null' }
+    ),
+
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [
@@ -41,6 +48,7 @@ export const funnelEvents = pgTable(
     index('funnel_events_lead_idx').on(table.leadId),
     index('funnel_events_type_idx').on(table.eventType),
     index('funnel_events_created_idx').on(table.createdAt),
+    index('funnel_events_decision_idx').on(table.agentDecisionId),
   ]
 );
 

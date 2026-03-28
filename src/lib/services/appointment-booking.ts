@@ -356,6 +356,14 @@ export async function bookAppointment(
     });
   } catch {}
 
+  // Track funnel event with AI attribution
+  try {
+    const { trackAppointmentBooked } = await import(
+      '@/lib/services/funnel-tracking'
+    );
+    await trackAppointmentBooked(clientId, leadId, date);
+  } catch {} // Never block booking on tracking failure
+
   return {
     success: true,
     appointmentId: result.appointmentId,

@@ -85,6 +85,35 @@ export async function updateJobStatus(
     eventType: `status_${status}`,
     amount: status === 'won' ? (data?.finalAmount || job.quoteAmount) : undefined,
   });
+
+  // Track funnel event with AI attribution for outcome-bearing status changes
+  if (job.leadId && job.clientId) {
+    try {
+      const { trackFunnelEvent } = await import('@/lib/services/funnel-tracking');
+      if (status === 'won') {
+        await trackFunnelEvent({
+          clientId: job.clientId,
+          leadId: job.leadId,
+          eventType: 'job_won',
+          valueCents: data?.finalAmount || job.quoteAmount || undefined,
+        });
+      } else if (status === 'lost') {
+        await trackFunnelEvent({
+          clientId: job.clientId,
+          leadId: job.leadId,
+          eventType: 'job_lost',
+          eventData: { lostReason: data?.lostReason },
+        });
+      } else if (status === 'quoted') {
+        await trackFunnelEvent({
+          clientId: job.clientId,
+          leadId: job.leadId,
+          eventType: 'quote_sent',
+          valueCents: data?.quoteAmount,
+        });
+      }
+    } catch {} // Never block revenue operations on tracking failure
+  }
 }
 
 /**
@@ -122,6 +151,16 @@ export async function recordPayment(
     amount,
     notes,
   });
+
+  // Track funnel event with AI attribution
+  if (job.leadId && job.clientId) {
+    try {
+      const { trackPaymentReceived } = await import(
+        '@/lib/services/funnel-tracking'
+      );
+      await trackPaymentReceived(job.clientId, job.leadId, amount);
+    } catch {} // Never block payment recording on tracking failure
+  }
 }
 
 export interface RevenueStats {

@@ -580,6 +580,10 @@ export const leadContextRelations = relations(leadContext, ({ one }) => ({
 }));
 
 export const agentDecisionsRelations = relations(agentDecisions, ({ one }) => ({
+  client: one(clients, {
+    fields: [agentDecisions.clientId],
+    references: [clients.id],
+  }),
   lead: one(leads, {
     fields: [agentDecisions.leadId],
     references: [leads.id],

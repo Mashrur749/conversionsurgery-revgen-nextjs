@@ -1,5 +1,6 @@
 import { getDb } from '@/db';
 import { funnelEvents } from '@/db/schema';
+import { attributeFunnelEvent } from './ai-attribution';
 
 export type FunnelEventType =
   | 'lead_created'
@@ -25,24 +26,51 @@ interface TrackFunnelEventParams {
   eventData?: Record<string, unknown>;
 }
 
+interface TrackFunnelEventResult {
+  funnelEventId: string;
+  agentDecisionId: string | null;
+}
+
 /**
- * Track a funnel event
- * Records lead progression through the conversion funnel
+ * Track a funnel event with automatic AI attribution.
+ *
+ * After inserting the event, looks for the most recent agent decision
+ * for this lead and links them. Also updates the decision&apos;s outcome
+ * based on the event type (positive for bookings/wins, negative for losses).
+ *
  * @param params - Event parameters including clientId, leadId, eventType
+ * @returns The created funnel event ID and attributed agent decision ID (if any)
  */
 export async function trackFunnelEvent(
   params: TrackFunnelEventParams
-): Promise<void> {
+): Promise<TrackFunnelEventResult> {
   const db = getDb();
-  await db.insert(funnelEvents).values({
-    clientId: params.clientId,
-    leadId: params.leadId,
-    eventType: params.eventType,
-    valueCents: params.valueCents,
-    source: params.source,
-    campaign: params.campaign,
-    eventData: params.eventData,
-  });
+  const [inserted] = await db
+    .insert(funnelEvents)
+    .values({
+      clientId: params.clientId,
+      leadId: params.leadId,
+      eventType: params.eventType,
+      valueCents: params.valueCents,
+      source: params.source,
+      campaign: params.campaign,
+      eventData: params.eventData,
+    })
+    .returning({ id: funnelEvents.id });
+
+  // Auto-attribute to the most recent agent decision for this lead
+  let agentDecisionId: string | null = null;
+  try {
+    agentDecisionId = await attributeFunnelEvent(
+      inserted.id,
+      params.leadId,
+      params.eventType
+    );
+  } catch {
+    // Attribution is best-effort — never block funnel event creation
+  }
+
+  return { funnelEventId: inserted.id, agentDecisionId };
 }
 
 /**
