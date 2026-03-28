@@ -73,10 +73,10 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
   const [searching, setSearching] = useState(false);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [purchasedNumber, setPurchasedNumber] = useState<string | null>(null);
 
   // Already has a number — show it
-  if (currentNumber && !success) {
+  if (currentNumber && !purchasedNumber) {
     return (
       <Card>
         <CardHeader>
@@ -100,8 +100,8 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
     );
   }
 
-  // Just purchased — show success
-  if (success) {
+  // Just purchased — show success with the number
+  if (purchasedNumber) {
     return (
       <Card>
         <CardContent className="py-8 text-center space-y-4">
@@ -110,8 +110,10 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
           </div>
           <div>
             <h2 className="text-xl font-bold">Phone Number Activated!</h2>
-            <p className="text-muted-foreground mt-1">
-              Your business line is live and ready to receive calls and texts.
+            <p className="text-2xl font-mono font-bold mt-2">{formatPhoneNumber(purchasedNumber)}</p>
+            <p className="text-muted-foreground mt-2">
+              Your business line is live. All automated texts, AI responses,
+              and voice calls for {businessName} will use this number.
             </p>
           </div>
           <Button onClick={() => router.push('/client')}>Go to Dashboard</Button>
@@ -178,7 +180,7 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
         return;
       }
 
-      setSuccess(true);
+      setPurchasedNumber(phoneNumber);
       router.refresh();
     } catch (err) {
       console.error('[PhoneProvisioner] Purchase failed:', err);
@@ -283,7 +285,7 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
                   onClick={() => handlePurchase(num.phoneNumber)}
                   disabled={purchasing !== null}
                 >
-                  {purchasing === num.phoneNumber ? 'Setting up...' : 'Select'}
+                  {purchasing === num.phoneNumber ? 'Setting up...' : 'Purchase'}
                 </Button>
               </div>
             ))}

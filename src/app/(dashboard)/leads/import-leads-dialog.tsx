@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -258,10 +257,10 @@ export function ImportLeadsDialog({ onImported }: ImportLeadsDialogProps) {
         if (!isOpen) reset();
       }}
     >
-      <DialogTrigger className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium h-8 px-3 border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground">
-        <Upload className="h-4 w-4" />
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Upload className="h-4 w-4 mr-1" />
         Import CSV
-      </DialogTrigger>
+      </Button>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Import Leads from CSV</DialogTitle>
@@ -303,7 +302,10 @@ export function ImportLeadsDialog({ onImported }: ImportLeadsDialogProps) {
                 Common aliases are supported (e.g., &quot;Phone Number&quot;, &quot;Mobile&quot;, &quot;First Name&quot;, &quot;Service Type&quot;).
               </p>
               <p className="mt-1">
-                Status values: <code className="text-xs bg-muted px-1 rounded">new</code>, <code className="text-xs bg-muted px-1 rounded">contacted</code>, <code className="text-xs bg-muted px-1 rounded">estimate_sent</code>. Defaults to <code className="text-xs bg-muted px-1 rounded">new</code> if not provided.
+                Optional status column: <code className="text-xs bg-muted px-1 rounded">new</code> (fresh inquiry),{' '}
+                <code className="text-xs bg-muted px-1 rounded">contacted</code> (reached out),{' '}
+                <code className="text-xs bg-muted px-1 rounded">estimate_sent</code> (quote provided, awaiting response).
+                Defaults to <code className="text-xs bg-muted px-1 rounded">new</code> if not provided.
               </p>
             </div>
           </div>

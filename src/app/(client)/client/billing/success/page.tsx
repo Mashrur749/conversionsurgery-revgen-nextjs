@@ -58,10 +58,17 @@ export default async function BillingSuccessPage({ searchParams }: SuccessPagePr
               Your account has been activated and all features are ready to use.
             </p>
           ) : (
-            <p className="text-muted-foreground">
-              Your payment is being processed. This usually takes just a moment.
-              Your subscription will be activated automatically once confirmed.
-            </p>
+            <div className="space-y-2">
+              <p className="text-muted-foreground">
+                Your payment is being processed. This usually takes just a moment.
+                Your subscription will be activated automatically once confirmed.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                If this page doesn&apos;t update within a few minutes, check your
+                {' '}<Link href="/client/billing" className="text-olive underline">billing page</Link>{' '}
+                or contact support.
+              </p>
+            </div>
           )}
 
           <div className="flex flex-col gap-2 pt-4">
