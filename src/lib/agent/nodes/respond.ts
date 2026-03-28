@@ -1,6 +1,7 @@
 import { AIMessage } from '@langchain/core/messages';
 import type { ConversationStateType } from '../state';
 import { getAIProvider } from '@/lib/ai';
+import { selectModelTier } from '@/lib/ai/model-routing';
 
 const RESPONSE_PROMPT = `You are {agentName}, a {agentTone} assistant for {businessName}. {ownerName} manages the business.
 
@@ -91,6 +92,16 @@ export async function generateResponse(
     .replace('{guardrails}', state.guardrailText || '')
     .replace('{strategy}', strategy);
 
+  // Dynamic model routing: use quality tier for high-value/uncertain conversations
+  const effectiveLeadScore = Math.round(
+    (state.signals.urgency + state.signals.budget + state.signals.intent) / 3
+  );
+  const routing = selectModelTier({
+    leadScore: effectiveLeadScore,
+    signals: state.signals,
+    decisionConfidence: state.decisionConfidence,
+  });
+
   const ai = getAIProvider();
   const result = await ai.chat(
     [
@@ -99,6 +110,7 @@ export async function generateResponse(
     {
       systemPrompt: prompt,
       temperature: 0.7,
+      model: routing.tier,
     },
   );
 

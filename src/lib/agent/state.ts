@@ -123,6 +123,12 @@ export const ConversationState = Annotation.Root({
     reducer: (current, update) => update,
     default: () => null,
   }),
+
+  // Decision confidence (0-100) from analyze-and-decide — used for model routing
+  decisionConfidence: Annotation<number>({
+    reducer: (current, update) => update,
+    default: () => 80,
+  }),
 });
 
 export type ConversationStateType = typeof ConversationState.State;

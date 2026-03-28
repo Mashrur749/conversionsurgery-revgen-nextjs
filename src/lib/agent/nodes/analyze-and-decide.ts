@@ -190,6 +190,7 @@ export async function analyzeAndDecide(
       : null,
     lastAction: action,
     decisionReasoning: response.reasoning,
+    decisionConfidence: response.confidence,
   };
 
   // Handle wait action

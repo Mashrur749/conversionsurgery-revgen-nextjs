@@ -20,6 +20,7 @@ import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
 import { buildGuardrailPrompt } from './guardrails';
 import { classifyService, updateLeadServiceMatch } from '@/lib/services/service-classification';
 import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
+import { selectModelTier } from '@/lib/ai/model-routing';
 import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
 
 interface ProcessMessageResult {
@@ -262,6 +263,16 @@ export async function processIncomingMessage(
 
   const processingTime = Date.now() - startTime;
 
+  // Compute model routing decision for logging
+  const effectiveLeadScore = Math.round(
+    (finalState.signals.urgency + finalState.signals.budget + finalState.signals.intent) / 3
+  );
+  const routingDecision = selectModelTier({
+    leadScore: effectiveLeadScore,
+    signals: finalState.signals,
+    decisionConfidence: finalState.decisionConfidence,
+  });
+
   // Log the decision
   const decisionValues: typeof agentDecisions.$inferInsert = {
     leadId,
@@ -281,9 +292,11 @@ export async function processIncomingMessage(
       responseText: finalState.responseToSend ?? undefined,
       flowId: finalState.flowToTrigger ?? undefined,
       escalationReason: finalState.escalationReason ?? undefined,
+      modelTier: routingDecision.tier,
+      modelRoutingReason: routingDecision.reason,
     },
     reasoning: finalState.decisionReasoning ?? undefined,
-    confidence: 80,
+    confidence: finalState.decisionConfidence,
     processingTimeMs: processingTime,
   };
   await db.insert(agentDecisions).values(decisionValues);
