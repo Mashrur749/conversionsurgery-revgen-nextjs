@@ -22,6 +22,10 @@ const requiredEnvSchema = z.object({
 
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1, 'Stripe secret key required'),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1, 'Stripe webhook secret required — subscriptions, invoices, and disputes fail without it'),
+
+  // Email
+  RESEND_API_KEY: z.string().min(1, 'Resend API key required — magic links, billing emails, and onboarding notifications fail without it'),
 
   // AI
   ANTHROPIC_API_KEY: z.string().min(1, 'Anthropic API key required'),
@@ -35,12 +39,6 @@ const requiredEnvSchema = z.object({
 });
 
 const optionalEnvSchema = z.object({
-  // Email (graceful degradation if missing)
-  RESEND_API_KEY: z.string().optional(),
-
-  // Stripe webhooks (empty string fallback is a security risk — S3)
-  STRIPE_WEBHOOK_SECRET: z.string().optional(),
-
   // R2 Storage (only needed for media features)
   R2_ACCOUNT_ID: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
@@ -110,12 +108,6 @@ export function validateEnv(): void {
   // Warn about optional but recommended variables
   const warnings: string[] = [];
 
-  if (!process.env.STRIPE_WEBHOOK_SECRET) {
-    warnings.push('STRIPE_WEBHOOK_SECRET is not set — Stripe webhook signature verification will be skipped');
-  }
-  if (!process.env.RESEND_API_KEY) {
-    warnings.push('RESEND_API_KEY is not set — email sending will fail');
-  }
   if (!process.env.NEXT_PUBLIC_APP_URL) {
     warnings.push('NEXT_PUBLIC_APP_URL is not set — defaulting to http://localhost:3000');
   }
