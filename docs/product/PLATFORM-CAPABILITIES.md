@@ -27,6 +27,20 @@ The core promise: every inquiry gets a response in seconds, not hours.
 | **Smart Assist (delayed)** | AI generates, owner has 1-60 min window to review/edit/cancel before auto-send | Week 2 onboarding (default 5 min) |
 | **Smart Assist (manual)** | AI generates draft, waits for owner approval via SMS command (SEND/EDIT/CANCEL + reference code) | Conservative clients |
 
+### Dynamic Model Routing
+
+The respond node (which generates the actual customer-facing message) dynamically selects between fast (Haiku) and quality (Sonnet) model tiers based on conversation context:
+
+| Trigger | Condition | Model tier |
+|---------|-----------|------------|
+| **Low confidence** | AI decision confidence &lt; 60 | Quality |
+| **High-value lead** | Composite lead score &ge; 70 | Quality |
+| **Strong buying intent** | Intent score &ge; 80 | Quality |
+| **Frustrated + urgent** | Sentiment = frustrated AND urgency &ge; 60 | Quality |
+| **Standard** | None of the above | Fast |
+
+The analyze-and-decide node always runs on fast tier (structured classification task). The routing decision and reason are logged in `agent_decisions.actionDetails` for observability.
+
 ### Speed-to-Lead Tracking
 
 - Response time measured per lead: `first outbound message - lead creation`
@@ -204,14 +218,14 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 
 | Page | What it shows |
 |------|--------------|
-| **Dashboard** | Lead summary, recent activity, help articles, onboarding checklist |
+| **Dashboard** | Lead summary, recent activity, help articles. New-client setup banner (phone + plan checklist, auto-hides when complete) |
 | **Conversations** | All leads with message history, mode badges, action-required highlights |
 | **Revenue** | 30-day stats, pipeline value, speed-to-lead metrics, service breakdown |
 | **Knowledge Base** | Business info the AI uses — editable by owner |
 | **Flows** | Automation flows (estimate, payment, review, win-back) — view and manage |
 | **Billing** | Current plan, usage, add-on charges, invoice history, CSV export, payment methods |
 | **Team** | Add/remove team members, toggle escalation/hot transfer, manage permissions |
-| **Settings** | AI settings, notification preferences, feature toggles, business hours |
+| **Settings** | Phone number management, AI settings, notification preferences, feature toggles, business hours |
 | **Cancel** | Cancellation request with 30-day notice + data export |
 
 ### Permissions
@@ -369,6 +383,8 @@ Every funnel event is automatically linked to the agent decision that contribute
 - Activity trail logs all events (draft, delivery, completion)
 - Revenue Leak Audit: structured findings with priority, impact ranges, and artifact URLs
 - **Self-serve phone provisioning:** clients can search and purchase a local number from `/client/settings/phone` — no admin intervention required. Milestones auto-complete on purchase.
+- **Auto-login after signup:** public signup flow establishes a portal session automatically — contractor lands on the client dashboard with setup guidance, no separate login step required.
+- **Subscription-gated phone purchase:** phone provisioning requires an active subscription. Clear prompt to choose a plan if attempted without one.
 
 ### Onboarding Quality Gates
 
@@ -410,6 +426,7 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 ### Client Management
 
 - Client creation wizard (6 steps: business info, phone, hours, team, compliance, review)
+- **Client onboarding card:** new clients show a setup checklist at top of detail page (assign phone, import quotes, configure knowledge base) — auto-hides when all three are complete
 - 18 per-client feature toggles
 - AI settings: mode, tone, guardrails, smart assist delay, send policy
 - Team management with role-based access
@@ -429,6 +446,7 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 
 - **Reliability dashboard:** failed crons, webhook failures (24h), escalation SLA breaches, report delivery queue, unresolved errors
 - **AI quality monitoring:** flagged AI messages by category, flag rate trends per client, admin-wide flagged message feed (`/api/admin/ai-quality`)
+- **Pre-launch scenario tests:** 102 deterministic tests covering 12 conversation scenarios (happy path, objection handling, escalation safety nets, harassment prevention, model routing boundaries, adversarial guardrails). Run via `npx vitest run src/lib/agent/`.
 - **Error telemetry:** internal error log with source, context, resolution status
 - **Audit log:** all admin actions searchable by person, client, action, timestamp
 - **Webhook logs:** inbound event viewer with filtering

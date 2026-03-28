@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 is the capstone end-to-end smoke.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 is the capstone end-to-end smoke.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -178,7 +178,7 @@ This section follows the **operator&apos;s managed-service delivery journey** &m
 
 ### Step 1: Create a test client (admin path)
 
-The operator creates clients — clients do not self-serve. Use the admin wizard.
+For managed-service testing, use the admin wizard. For self-serve signup testing, see [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
 1. Open `/admin/clients/new/wizard` (or `/admin/clients/new` for the quick form).
 2. Complete the wizard: business name, owner email, plan selection.
@@ -1131,7 +1131,46 @@ Expected:
 - Unflagging clears all flag fields.
 - All 4 unit tests pass.
 
-### Step 32: Final smoke (end-to-end lifecycle)
+### Step 32: Decision confidence &rarr; model routing
+
+1. Send an inbound SMS to a lead with low-confidence context (ambiguous message like &ldquo;maybe&rdquo;).
+2. Verify `agent_decisions` record has `confidence` populated from AI output (not hardcoded 80).
+3. Verify `actionDetails` includes `modelTier` and `modelRoutingReason` fields.
+4. For a high-intent lead (intent &ge; 80), verify `modelTier` = `quality` and reason contains `high_intent`.
+5. For a standard lead with normal confidence, verify `modelTier` = `fast` and reason = `standard`.
+6. Run `npm test` &mdash; all 11 model routing tests pass.
+
+### Step 33: Pre-launch conversation scenario tests
+
+These tests validate the AI conversation system&apos;s deterministic behavior across all major lead scenarios. No LLM calls required &mdash; they test the state machine, routing, guardrails, and model selection logic.
+
+1. Run the full agent test suite:
+   ```bash
+   npx vitest run src/lib/agent/
+   ```
+2. Verify all 3 test files pass:
+   - `guardrails.test.ts` (33 tests) &mdash; prompt generation, harassment prevention, pricing rules, tone injection, confidence assessment
+   - `graph.test.ts` (14 tests) &mdash; action-to-node routing for all 10 action types, escalation handler, close handler
+   - `scenarios.test.ts` (55 tests) &mdash; 12 end-to-end conversation scenarios covering:
+
+| Scenario | What it validates |
+|----------|-------------------|
+| Happy path (inquiry &rarr; booking) | Respond routing, booking counter increment, close handling |
+| Price-sensitive lead | Pricing guardrail activation (canDiscussPricing toggle), objection handling |
+| Frustrated customer escalation | Escalation safety net override, frustrated+urgent model routing |
+| Long conversation | Harassment warning activation at 2+ unanswered messages |
+| Lead re-engagement | Wait/trigger_flow routing for nurture sequences |
+| High-value lead | Quality model tier triggers (score, intent, confidence thresholds) |
+| Multi-signal priority | Priority ordering when multiple routing triggers fire |
+| Lost lead terminal state | close_won/close_lost routing |
+| Photo request &rarr; quote flow | request_photos/send_quote/send_payment routing |
+| Adversarial input | Guardrail coverage (honesty, knowledge bounds, no-promises, stay-in-lane) |
+| Exhaustive action routing | All 10 agent actions map to correct graph nodes |
+| Boundary conditions | Exact threshold values for model routing (confidence, score, intent, frustration) |
+
+3. Expected: 102 tests pass across the 3 files.
+
+### Step 34: Final smoke (end-to-end lifecycle)
 
 1. Validate one end-to-end lead lifecycle using Dev Phones: Lead (#2, port 3001) texts Business Line &rarr; AI responds &rarr; Owner (#3, port 3002) approves draft &rarr; Lead receives message &rarr; trigger escalation &rarr; Team Member (#4, port 3003) receives alert and claims.
 2. Validate client portal permissions with at least two distinct roles.
@@ -1164,6 +1203,8 @@ npx vitest run src/lib/services/internal-error-log.test.ts
 npx vitest run src/lib/services/ops-kill-switches.test.ts
 npx vitest run src/lib/services/ai-attribution.test.ts
 npx vitest run src/lib/services/ai-feedback.test.ts
+npx vitest run src/lib/ai/model-routing.test.ts
+npx vitest run src/lib/agent/guardrails.test.ts src/lib/agent/graph.test.ts src/lib/agent/scenarios.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
