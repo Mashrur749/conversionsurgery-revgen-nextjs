@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-03-27
+Last updated: 2026-03-28
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -282,6 +282,16 @@ Full conversion funnel: lead_created &rarr; first_response &rarr; qualified &rar
 
 Each event: source attribution, campaign attribution, value in cents.
 
+### AI Attribution
+
+Every funnel event is automatically linked to the agent decision that contributed to it:
+
+- When a conversion event fires (booking, job won, payment), the system traces back to the most recent AI decision for that lead (within a 7-day window)
+- The link is stored as a direct FK on the funnel event
+- The agent decision&apos;s outcome is updated: positive (bookings, wins, payments), negative (losses), or neutral (progression events)
+- Outcome upgrades only &mdash; a positive outcome is never downgraded to neutral
+- Attribution is best-effort and never blocks the conversion flow
+
 ### Daily/Weekly/Monthly Aggregation
 
 - Response time averages, message volumes, AI response counts
@@ -356,6 +366,7 @@ Each event: source attribution, campaign attribution, value in cents.
 - SLA cron monitors and creates alerts for overdue milestones
 - Activity trail logs all events (draft, delivery, completion)
 - Revenue Leak Audit: structured findings with priority, impact ranges, and artifact URLs
+- **Self-serve phone provisioning:** clients can search and purchase a local number from `/client/settings/phone` — no admin intervention required. Milestones auto-complete on purchase.
 
 ### Onboarding Quality Gates
 
@@ -400,7 +411,7 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 - 18 per-client feature toggles
 - AI settings: mode, tone, guardrails, smart assist delay, send policy
 - Team management with role-based access
-- Phone number provisioning and webhook configuration
+- Phone number provisioning and webhook configuration (admin and self-serve client portal)
 
 ### Kill Switches
 

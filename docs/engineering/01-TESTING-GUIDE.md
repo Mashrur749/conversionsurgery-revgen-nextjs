@@ -3,7 +3,7 @@
 Last updated: 2026-03-28
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `docs: restructure testing guide to operator-first managed-service flow (2026-03-08)`
+Last verified commit: `feat: AI attribution — link funnel events to agent decisions (2026-03-28)`
 
 ## 0. Preflight (Run First)
 
@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator's managed-service delivery journey** — from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import, and AI safety. Step 29 is the capstone end-to-end smoke.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import, and AI safety. Step 29 covers AI attribution. Step 30 is the capstone end-to-end smoke.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -953,9 +953,85 @@ Expected:
 - Lead data is preserved (no partial state corruption).
 - Other clients with Twilio numbers continue to work normally.
 
-### Step 29: Final smoke (end-to-end lifecycle)
+### Step 29: AI attribution (decision &rarr; outcome link)
 
-1. Validate one end-to-end lead lifecycle using Dev Phones: Lead (#2, port 3001) texts Business Line → AI responds → Owner (#3, port 3002) approves draft → Lead receives message → trigger escalation → Team Member (#4, port 3003) receives alert and claims.
+Verifies that funnel events are automatically attributed to the agent decision that contributed to them.
+
+**Prerequisites:** Steps 5 and 8 completed (a test lead with AI conversation history and an appointment).
+
+1. Ensure at least one test lead has:
+   - An AI conversation (agent decision exists in `agent_decisions` table)
+   - A booked appointment (from Step 8)
+
+2. Verify attribution was created during booking:
+
+```sql
+SELECT fe.id, fe.event_type, fe.agent_decision_id,
+       ad.action, ad.confidence, ad.outcome, ad.outcome_details
+FROM funnel_events fe
+LEFT JOIN agent_decisions ad ON fe.agent_decision_id = ad.id
+WHERE fe.lead_id = '<lead-id>'
+ORDER BY fe.created_at DESC
+LIMIT 5;
+```
+
+3. Verify the linked agent decision&apos;s outcome was updated:
+
+```sql
+SELECT id, action, confidence, outcome, outcome_details, created_at
+FROM agent_decisions
+WHERE lead_id = '<lead-id>'
+  AND outcome IS NOT NULL
+ORDER BY created_at DESC
+LIMIT 5;
+```
+
+4. Run the attribution unit tests:
+
+```bash
+npx vitest run src/lib/services/ai-attribution.test.ts
+```
+
+Expected:
+
+- Funnel event row exists with `agent_decision_id` pointing to the most recent agent decision for that lead.
+- Agent decision `outcome` is `positive` for `appointment_booked` events.
+- Agent decision `outcome_details` contains `Funnel event: appointment_booked`.
+- Attribution only links decisions within a 7-day window &mdash; older decisions are not attributed.
+- If no agent decision exists for the lead (manual booking), `agent_decision_id` is NULL &mdash; the funnel event is still created.
+- All 13 unit tests pass (classifyOutcome covers all event types).
+
+### Step 30: Self-serve phone provisioning (client portal)
+
+Verifies new clients can set up their business phone number without admin help.
+
+1. Log in as a test client without a Twilio number (use `/client-login`).
+2. Navigate to `/client/settings/phone`.
+3. Verify the provisioning UI shows (not the "Active Business Line" card).
+4. Select Canada &rarr; Alberta, optionally enter a city.
+5. Click **Search Available Numbers**.
+6. Verify a list of available numbers appears (in dev, mock numbers are returned).
+7. Click **Select** on a number.
+8. Verify success message appears and number is assigned.
+9. Navigate to `/client` (dashboard) and verify the client is now active.
+10. Check onboarding checklist (`/signup/next-steps`) &mdash; `number_live` milestone should be complete.
+
+Expected:
+
+- Search returns up to 10 available numbers with locality info.
+- Purchase assigns number, configures webhooks, marks day-one milestone.
+- Client `status` changes from `pending` to `active`.
+- Subsequent visits to `/client/settings/phone` show the active number.
+- Usage limit check prevents exceeding plan phone number allocation.
+
+If blocked:
+
+- No numbers returned: Twilio API may be rate-limited. Dev fallback returns mock numbers.
+- Purchase fails with 403: client has hit phone number plan limit. Upgrade plan or use admin override.
+
+### Step 31: Final smoke (end-to-end lifecycle)
+
+1. Validate one end-to-end lead lifecycle using Dev Phones: Lead (#2, port 3001) texts Business Line &rarr; AI responds &rarr; Owner (#3, port 3002) approves draft &rarr; Lead receives message &rarr; trigger escalation &rarr; Team Member (#4, port 3003) receives alert and claims.
 2. Validate client portal permissions with at least two distinct roles.
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
 4. Validate Day-One card and checklist remain in sync after audit delivery and manual milestone completion.
@@ -984,6 +1060,7 @@ npx vitest run src/lib/services/knowledge-gap-validation.test.ts src/lib/service
 npx vitest run src/lib/services/onboarding-quality.test.ts src/lib/services/reminder-routing.test.ts
 npx vitest run src/lib/services/internal-error-log.test.ts
 npx vitest run src/lib/services/ops-kill-switches.test.ts
+npx vitest run src/lib/services/ai-attribution.test.ts
 
 # Cron endpoints
 curl -i -X POST http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
