@@ -104,15 +104,14 @@ export function SetupWizard() {
   if (isComplete) {
     return (
       <Card>
-        <CardContent className="py-16 text-center">
-          <div className="text-6xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold mb-2">Setup Complete!</h2>
+        <CardContent className="py-12 text-center">
+          <h2 className="text-2xl font-bold mb-2">Client Created</h2>
           <p className="text-muted-foreground mb-6">
-            {data.businessName} is now live and ready to receive leads.
+            {data.businessName} is set up. Complete onboarding from the client page.
           </p>
           <div className="flex justify-center gap-4">
             <Button onClick={() => router.push(`/admin/clients/${data.clientId}`)}>
-              View Client
+              Continue to Client
             </Button>
             <Button variant="outline" onClick={() => router.push('/admin/clients')}>
               Back to All Clients
