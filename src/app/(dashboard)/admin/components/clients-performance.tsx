@@ -118,7 +118,7 @@ export function ClientsPerformance({ clients }: Props) {
                       <div className="flex items-center gap-1">
                         <Phone className="w-4 h-4 text-[#3D7A50]" />
                         <span className="font-mono font-medium text-xs">
-                          {formatPhoneNumber(client.twilioNumber!)}
+                          {formatPhoneNumber(client.twilioNumber as string)}
                         </span>
                       </div>
                     ) : (

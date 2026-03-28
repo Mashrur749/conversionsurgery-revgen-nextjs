@@ -49,6 +49,16 @@ export async function processIncomingMessage(
   const [client] = await db.select().from(clients).where(eq(clients.id, lead.clientId)).limit(1);
   if (!client) throw new Error(`Client not found: ${lead.clientId}`);
 
+  if (!client.twilioNumber) {
+    console.warn(`[Agent] Client ${client.id} has no Twilio number — cannot respond to lead ${leadId}`);
+    return {
+      action: 'no_action' as AgentAction,
+      responseSent: false,
+      escalated: false,
+      newStage: 'new',
+    };
+  }
+
   // Load agent settings
   const [settings] = await db
     .select()
@@ -121,7 +131,7 @@ export async function processIncomingMessage(
       const sendResult = await sendCompliantMessage({
         clientId: client.id,
         to: lead.phone,
-        from: client.twilioNumber!,
+        from: client.twilioNumber,
         body: bookingResult.responseMessage,
         messageClassification: 'inbound_reply',
         messageCategory: 'transactional',
@@ -331,7 +341,7 @@ export async function processIncomingMessage(
     const sendResult = await sendCompliantMessage({
       clientId: client.id,
       to: lead.phone,
-      from: client.twilioNumber!,
+      from: client.twilioNumber,
       body: finalState.responseToSend,
       messageClassification: 'inbound_reply',
       messageCategory: 'marketing',

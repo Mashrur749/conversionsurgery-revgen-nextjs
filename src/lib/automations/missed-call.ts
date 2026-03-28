@@ -49,7 +49,8 @@ export async function handleMissedCall(payload: MissedCallPayload) {
     return { processed: false, reason: 'No active client for this number' };
   }
 
-  const clientData = client[0];
+  // Client was looked up by twilioNumber, so it's guaranteed non-null
+  const clientData = { ...client[0], twilioNumber: client[0].twilioNumber as string };
 
   // 1.5 DEDUPLICATION: Check if we've already sent SMS for this call (prevent double-sending)
   const recentSMS = await db
@@ -127,7 +128,7 @@ export async function handleMissedCall(payload: MissedCallPayload) {
     const sendResult = await sendCompliantMessage({
       clientId: clientData.id,
       to: callerPhone,
-      from: clientData.twilioNumber!,
+      from: clientData.twilioNumber,
       body: messageContent,
       messageClassification: 'inbound_reply',
       messageCategory: 'transactional',

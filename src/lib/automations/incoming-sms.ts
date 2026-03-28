@@ -55,12 +55,13 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     return { processed: false, reason: 'No client for this number' };
   }
 
-  const client = clientResult[0];
+  // Client was looked up by twilioNumber, so it's guaranteed non-null
+  const client = { ...clientResult[0], twilioNumber: clientResult[0].twilioNumber as string };
 
   // Handle DASHBOARD request
   if (messageBody.toUpperCase() === 'DASHBOARD') {
     const { sendDashboardLink } = await import('@/lib/services/magic-link');
-    await sendDashboardLink(client.id, senderPhone, client.twilioNumber!);
+    await sendDashboardLink(client.id, senderPhone, client.twilioNumber);
     return { processed: true, action: 'dashboard_link_sent' };
   }
 
@@ -76,7 +77,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       messageBody,
     });
     if (estimateCommandResult.handled) {
-      await sendSMS(senderPhone, estimateCommandResult.message, client.twilioNumber!);
+      await sendSMS(senderPhone, estimateCommandResult.message, client.twilioNumber);
       return {
         processed: true,
         action: estimateCommandResult.success
@@ -89,7 +90,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     const smartAssistCommandResult = await handleSmartAssistOwnerCommand({
       clientId: client.id,
       fromPhone: senderPhone,
-      fromTwilioNumber: client.twilioNumber!,
+      fromTwilioNumber: client.twilioNumber,
       messageBody,
     });
     if (smartAssistCommandResult.handled) {
@@ -111,7 +112,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       businessName: client.businessName,
       ownerPhone: formatPhoneNumber(client.phone),
     });
-    await sendSMS(senderPhone, helpMessage, client.twilioNumber!);
+    await sendSMS(senderPhone, helpMessage, client.twilioNumber);
     await ComplianceService.logComplianceEvent(client.id, 'compliance_exempt_send', {
       phoneNumber: senderPhone,
       phoneHash: ComplianceService.hashPhoneNumber(senderPhone),
@@ -173,7 +174,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       await sendSMS(
         senderPhone,
         `You've been re-subscribed to messages from ${client.businessName}. Reply STOP at any time to opt out.`,
-        client.twilioNumber!
+        client.twilioNumber
       );
       await ComplianceService.logComplianceEvent(client.id, 'compliance_exempt_send', {
         phoneNumber: senderPhone,
@@ -269,14 +270,14 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         leadId: lead.id,
         clientId: client.id,
         leadPhone: senderPhone,
-        twilioNumber: client.twilioNumber!,
+        twilioNumber: client.twilioNumber,
       });
 
       if (ringResult.initiated) {
         await sendCompliantMessage({
           clientId: client.id,
           to: senderPhone,
-          from: client.twilioNumber!,
+          from: client.twilioNumber,
           body: `Great! We're calling you right now. Please pick up!`,
           messageClassification: 'inbound_reply',
           messageCategory: 'transactional',
@@ -305,7 +306,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       await sendCompliantMessage({
         clientId: client.id,
         to: senderPhone,
-        from: client.twilioNumber!,
+        from: client.twilioNumber,
         body: `Thanks for your interest! We're currently outside business hours, but someone will call you first thing tomorrow morning.`,
         messageClassification: 'inbound_reply',
         messageCategory: 'transactional',
@@ -318,7 +319,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       await notifyTeamForEscalation({
         leadId: lead.id,
         clientId: client.id,
-        twilioNumber: client.twilioNumber!,
+        twilioNumber: client.twilioNumber,
         reason: 'Hot intent - outside business hours',
         lastMessage: messageBody,
       });
@@ -364,7 +365,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         const sendResult = await sendCompliantMessage({
           clientId: client.id,
           to: senderPhone,
-          from: client.twilioNumber!,
+          from: client.twilioNumber,
           body: bookingResult.responseMessage,
           messageClassification: 'inbound_reply',
           messageCategory: 'transactional',
@@ -442,7 +443,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       const sendResult = await sendCompliantMessage({
         clientId: client.id,
         to: senderPhone,
-        from: client.twilioNumber!,
+        from: client.twilioNumber,
         body: ackMessage,
         messageClassification: 'inbound_reply',
         messageCategory: 'transactional',
@@ -514,7 +515,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     const escalationSendResult = await sendCompliantMessage({
       clientId: client.id,
       to: senderPhone,
-      from: client.twilioNumber!,
+      from: client.twilioNumber,
       body: ackMessage,
       messageClassification: 'inbound_reply',
       messageCategory: 'transactional',
@@ -537,7 +538,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     const escalationResult = await notifyTeamForEscalation({
       leadId: lead.id,
       clientId: client.id,
-      twilioNumber: client.twilioNumber!,
+      twilioNumber: client.twilioNumber,
       reason: aiResult.escalationReason || 'Needs human response',
       lastMessage: messageBody,
     });
@@ -548,7 +549,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         await sendSMS(
           client.phone,
           `⚠️ ${lead.name || formatPhoneNumber(senderPhone)} needs you: "${messageBody.substring(0, 80)}..." ${dashboardUrl}`,
-          client.twilioNumber!
+          client.twilioNumber
         );
       }
       if (client.notificationEmail) {
@@ -604,7 +605,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       leadPhone: senderPhone,
       leadName: lead.name,
       ownerPhone: client.phone,
-      fromTwilioNumber: client.twilioNumber!,
+      fromTwilioNumber: client.twilioNumber,
       content: aiResult.response,
       category: assistCategory,
       delayMinutes: sendPolicy.delayMinutes,
@@ -628,7 +629,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     const sendResult = await sendCompliantMessage({
       clientId: client.id,
       to: senderPhone,
-      from: client.twilioNumber!,
+      from: client.twilioNumber,
       body: aiResult.response,
       messageClassification: 'inbound_reply',
       messageCategory: 'marketing',
@@ -681,7 +682,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     await sendSMS(
       client.phone,
       `💬 ${lead.name || formatPhoneNumber(senderPhone)}: "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}" — AI replied. ${dashboardUrl}`,
-      client.twilioNumber!
+      client.twilioNumber
     );
   }
 
@@ -741,7 +742,7 @@ async function handleOptOut(db: ReturnType<typeof getDb>, client: typeof clients
     businessName: client.businessName,
   });
 
-  await sendSMS(phone, confirmMessage, client.twilioNumber!);
+  await sendSMS(phone, confirmMessage, client.twilioNumber as string);
   await ComplianceService.logComplianceEvent(client.id, 'compliance_exempt_send', {
     phoneNumber: phone,
     phoneHash: ComplianceService.hashPhoneNumber(phone),

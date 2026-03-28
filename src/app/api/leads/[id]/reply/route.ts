@@ -67,11 +67,12 @@ export async function POST(
     }
 
     const client = clientResult[0];
+    const twilioNumber = client.twilioNumber as string; // Guarded above
 
     const sendResult = await sendCompliantMessage({
       clientId,
       to: lead.phone,
-      from: client.twilioNumber!,
+      from: twilioNumber,
       body: message,
       messageClassification: 'proactive_outreach',
       messageCategory: 'transactional',

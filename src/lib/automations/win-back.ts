@@ -126,7 +126,7 @@ export async function processWinBacks(): Promise<{
         const result = await sendCompliantMessage({
           clientId: client.id,
           to: lead.phone,
-          from: client.twilioNumber!,
+          from: client.twilioNumber as string,
           body: message,
           messageClassification: 'proactive_outreach',
           messageCategory: 'marketing',

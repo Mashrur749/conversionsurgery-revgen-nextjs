@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
         .where(eq(leads.id, attempt.leadId))
         .limit(1);
 
-      if (client && lead) {
+      if (client && lead && client.twilioNumber) {
         await handleNoAnswer({
           leadId: lead.id,
           clientId: client.id,
           leadPhone: lead.phone,
-          twilioNumber: client.twilioNumber!,
+          twilioNumber: client.twilioNumber,
         });
       }
     }

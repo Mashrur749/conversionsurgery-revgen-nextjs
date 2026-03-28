@@ -103,7 +103,7 @@ export function PhoneNumbersTable({ clients, unassignedClients }: Props) {
                       <div className="flex items-center gap-2 mb-2">
                         <Phone className="w-5 h-5 text-forest" />
                         <p className="font-mono font-semibold text-lg">
-                          {formatPhoneNumber(client.twilioNumber!)}
+                          {formatPhoneNumber(client.twilioNumber as string)}
                         </p>
                       </div>
                       <p className="text-sm font-medium mb-1">
@@ -136,7 +136,7 @@ export function PhoneNumbersTable({ clients, unassignedClients }: Props) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setSelectedNumber(client.twilioNumber!)}
+                        onClick={() => setSelectedNumber(client.twilioNumber as string)}
                       >
                         <ArrowRight className="w-4 h-4 mr-1" />
                         Reassign
