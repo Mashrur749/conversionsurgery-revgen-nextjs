@@ -12,7 +12,7 @@ export default async function BillingSuccessPage({ searchParams }: SuccessPagePr
   const { session_id } = await searchParams;
 
   let planName = 'your selected plan';
-  let status: 'complete' | 'pending' | 'unknown' = 'unknown';
+  let status: 'complete' | 'pending' = 'pending';
 
   if (session_id) {
     try {
@@ -33,9 +33,8 @@ export default async function BillingSuccessPage({ searchParams }: SuccessPagePr
           planName = lineItems.data[0].description;
         }
       }
-    } catch {
-      // If we can't retrieve the session, show generic success
-      status = 'pending';
+    } catch (err) {
+      console.error('[BillingSuccess] Failed to retrieve checkout session:', err);
     }
   }
 

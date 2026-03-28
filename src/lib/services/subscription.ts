@@ -243,18 +243,17 @@ export async function provisionSubscriptionFromCheckout(
 
   // Resolve price and interval
   const firstItem = stripeSub.items.data[0];
-  const priceId = firstItem?.price.id;
-  const interval: PlanInterval = firstItem?.price.recurring?.interval === 'year' ? 'year' : 'month';
+  if (!firstItem) {
+    throw new Error(`Stripe subscription ${stripeSubscriptionId} has no items`);
+  }
+  const priceId = firstItem.price.id;
+  const interval: PlanInterval = firstItem.price.recurring?.interval === 'year' ? 'year' : 'month';
   const stripeCustomerId = typeof stripeSub.customer === 'string'
     ? stripeSub.customer
     : stripeSub.customer.id;
 
-  const currentPeriodStart = firstItem
-    ? new Date(firstItem.current_period_start * 1000)
-    : new Date();
-  const currentPeriodEnd = firstItem
-    ? new Date(firstItem.current_period_end * 1000)
-    : new Date();
+  const currentPeriodStart = new Date(firstItem.current_period_start * 1000);
+  const currentPeriodEnd = new Date(firstItem.current_period_end * 1000);
 
   const trialStart = stripeSub.trial_start
     ? new Date(stripeSub.trial_start * 1000)

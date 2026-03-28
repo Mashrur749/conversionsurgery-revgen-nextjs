@@ -237,7 +237,8 @@ export function ImportLeadsDialog({ onImported }: ImportLeadsDialogProps) {
       setResult(data);
       setStep('done');
       onImported();
-    } catch {
+    } catch (err) {
+      console.error('[ImportLeads] Import request failed:', err);
       setError('Network error. Please try again.');
       setStep('preview');
     }
