@@ -15,6 +15,7 @@ import { LeadFilters } from './lead-filters';
 import { ChevronLeft, ChevronRight, ArrowUpDown, Download } from 'lucide-react';
 import { STATUS_COLORS, BULK_UPDATE_STATUSES } from '@/lib/constants/leads';
 import { CreateLeadDialog } from './create-lead-dialog';
+import { ImportLeadsDialog } from './import-leads-dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -148,6 +149,7 @@ export function LeadsTable() {
             <Download className="h-4 w-4 mr-1" />
             Export
           </Button>
+          <ImportLeadsDialog onImported={fetchLeads} />
           <CreateLeadDialog onCreated={fetchLeads} />
         </div>
       </div>
