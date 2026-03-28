@@ -6,7 +6,7 @@ import { generateResponse } from './nodes/respond';
 /**
  * Route after analyze-and-decide — what to do next
  */
-function routeAfterDecision(state: ConversationStateType): string {
+export function routeAfterDecision(state: ConversationStateType): string {
   switch (state.lastAction) {
     case 'respond':
     case 'book_appointment':
@@ -38,7 +38,7 @@ function routeAfterDecision(state: ConversationStateType): string {
 /**
  * Escalation handler node
  */
-async function handleEscalation(
+export async function handleEscalation(
   state: ConversationStateType
 ): Promise<Partial<ConversationStateType>> {
   // Just mark for escalation - actual queue insertion happens in orchestrator
@@ -61,7 +61,7 @@ async function handleTriggerFlow(
 /**
  * Close handler node
  */
-async function handleClose(
+export async function handleClose(
   state: ConversationStateType
 ): Promise<Partial<ConversationStateType>> {
   const newStage = state.lastAction === 'close_won' ? 'booked' : 'lost';

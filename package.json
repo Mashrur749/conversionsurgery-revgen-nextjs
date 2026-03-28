@@ -42,6 +42,7 @@
     "docmost:sync:dry": "DOCMOST_DRY_RUN=1 node scripts/docmost-sync/sync-docmost.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:ai": "vitest run --config vitest.ai.config.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
