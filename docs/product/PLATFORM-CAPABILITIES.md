@@ -249,6 +249,7 @@ CASL and CRTC compliant by default — the contractor never has to think about i
 - **Quiet hours:** 9pm-10am recipient local time. Two modes: strict (all outbound queued) and inbound-reply-allowed (direct replies sent, proactive outreach queued)
 - **DNC list:** global + per-client do-not-contact registry with expiry and source tracking
 - **Blocked numbers:** per-client number blocking
+- **Per-client automation pause:** setting a client&apos;s status to &quot;paused&quot; blocks all outbound messages for that client only (other clients unaffected). Used for contractor vacations or temporary holds without touching the platform-wide kill switch.
 
 ### Audit Trail
 
@@ -445,9 +446,10 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 ### Observability
 
 - **Reliability dashboard:** failed crons, webhook failures (24h), escalation SLA breaches, report delivery queue, unresolved errors
-- **AI quality monitoring:** flagged AI messages by category, flag rate trends per client, admin-wide flagged message feed (`/api/admin/ai-quality`)
+- **AI quality monitoring:** flagged AI messages by category, flag rate trends per client, admin-wide review page at `/admin/ai-quality` (shows all flagged messages across clients with reason badges, notes, and lead links)
 - **Pre-launch scenario tests:** 102 deterministic tests covering 12 conversation scenarios (happy path, objection handling, escalation safety nets, harassment prevention, model routing boundaries, adversarial guardrails). Run via `npx vitest run src/lib/agent/`.
 - **AI criteria tests:** 29 real-LLM tests via `npm run test:ai` &mdash; 23 single-turn criteria (safety, quality, adversarial) + 6 multi-turn conversation scenarios (smooth booking, price objection recovery, frustrated escalation, slow nurture, knowledge boundaries, mid-conversation opt-out). Safety and scenario failures are launch blockers.
+- **AI effectiveness dashboard** (`/admin/ai-effectiveness`): outcome distribution (positive/negative/neutral/pending), action effectiveness breakdown, confidence band analysis, model tier ROI (fast vs quality), daily trend lines, top escalation reasons. Filterable by 7/14/30/60/90-day windows. Client-level AI summary automatically embedded in biweekly reports via `roiSummary.aiEffectiveness`.
 - **Error telemetry:** internal error log with source, context, resolution status
 - **Audit log:** all admin actions searchable by person, client, action, timestamp
 - **Webhook logs:** inbound event viewer with filtering
@@ -465,11 +467,14 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 
 ### Knowledge Gap Queue
 
-- Tracks gaps between what leads ask and what the AI knows
-- Priority scoring, owner assignment, resolution lifecycle
-- Stale gap alerts via cron
-- Resolution requires KB link + note (&ge;10 chars)
-- High-priority items require reviewer verification
+- **Auto-detection:** when the AI defers to the owner (confidence &lt;60) or escalates due to uncertainty, the customer&apos;s question is automatically recorded as a knowledge gap. Both the LangGraph agent and legacy SMS response paths are wired in.
+- **Deduplication:** repeat questions increment occurrences on the same gap instead of creating duplicates
+- Priority scoring based on occurrences + confidence level, with auto-calculated due dates
+- Owner assignment, resolution lifecycle (new &rarr; in_progress &rarr; resolved &rarr; verified)
+- Resolution requires linking to a KB entry + note (&ge;10 chars)
+- High-priority items (score &ge;8) require reviewer verification
+- **Auto-reopen:** if a resolved gap recurs (AI still can&apos;t answer), it reopens automatically
+- Stale gap alerts via daily cron email to agency owners
 
 ---
 

@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Step 35 is the capstone end-to-end smoke.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -1203,7 +1203,51 @@ These tests run real prompts through the real AI model and verify the output mee
 4. Any multi-turn scenario failure is a **launch blocker** &mdash; these represent real conversations that happen daily.
 5. Quality test failures warrant investigation but may occasionally fail due to LLM non-determinism. Re-run once; if it fails consistently, fix the prompt.
 
-### Step 35: Final smoke (end-to-end lifecycle)
+### Step 35: AI effectiveness dashboard
+
+1. Navigate to `/admin/ai-effectiveness` &mdash; verify page loads with period selector (7d/14d/30d/60d/90d).
+2. If agent decisions exist, verify: summary cards (total decisions, positive rate, avg confidence, avg response time), outcome distribution pie chart, daily trend line chart, action effectiveness stacked bar chart, model tier bar chart, confidence band bars, escalation reasons list.
+3. Switch period &mdash; verify data refreshes.
+4. Hit `GET /api/admin/ai-effectiveness?days=14` directly &mdash; confirm JSON response shape includes `totalDecisions`, `outcomeDistribution`, `actionEffectiveness`, `confidenceBands`, `modelTierMetrics`, `dailyTrend`.
+5. Confirm AI effectiveness summary appears in newly generated biweekly reports under `roiSummary.aiEffectiveness` (only when agent decisions exist for the client).
+
+### Step 36: Per-client automation pause
+
+Verifies that setting a client to &quot;paused&quot; blocks outbound messages for that client only.
+
+1. Set a test client&apos;s status to **Paused** from `/admin/clients/[id]` &rarr; Edit.
+2. Trigger an outbound action for the paused client (e.g., run win-back cron, send a manual reply, or simulate an inbound lead).
+3. Verify the message is **blocked** by the compliance gateway (check console logs for &quot;Client automations paused&quot;).
+4. Verify a **different** active client still sends messages normally.
+5. Set the paused client back to **Active**.
+6. Re-trigger the outbound action &mdash; verify it now sends.
+
+Expected:
+
+- Only the paused client&apos;s outbound is blocked.
+- Other clients are unaffected.
+- Inbound messages from leads are still recorded (conversations table) even while paused.
+- Status change takes effect immediately (no cache delay beyond 30s).
+
+### Step 37: AI quality review page
+
+1. Flag at least 2 AI messages from different clients via the lead detail page (`/leads/[id]` &rarr; conversation tab &rarr; flag icon on AI messages).
+2. Navigate to `/admin/ai-quality`.
+3. Verify both flagged messages appear with:
+   - Reason badge (wrong tone, inaccurate, etc.)
+   - Client name
+   - Message preview
+   - Flag note (if provided)
+   - &quot;View lead&quot; link
+4. Click &quot;View lead&quot; &mdash; verify it navigates to the correct lead detail page.
+
+Expected:
+
+- Page shows all flagged messages across all clients in one view.
+- Sorted by most recently flagged.
+- Empty state shows &quot;No flagged messages&quot; when none exist.
+
+### Step 38: Final smoke (end-to-end lifecycle)
 
 1. Validate one end-to-end lead lifecycle using Dev Phones: Lead (#2, port 3001) texts Business Line &rarr; AI responds &rarr; Owner (#3, port 3002) approves draft &rarr; Lead receives message &rarr; trigger escalation &rarr; Team Member (#4, port 3003) receives alert and claims.
 2. Validate client portal permissions with at least two distinct roles.

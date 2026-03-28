@@ -120,14 +120,12 @@ At day 90:
 
 **Process:**
 
-1. Go to `/admin/clients/[id]` and pause the subscription (or the contractor pauses from `/client/billing`).
-2. The subscription pauses in Stripe (no billing during pause).
-3. **Automations continue running** unless you explicitly disable them:
-   - To fully pause outbound messages: enable the &quot;Outbound automations&quot; kill switch in `/admin/settings`.
-   - To pause AI but keep missed-call text-back: set AI mode to &quot;paused&quot; for this client.
+1. Go to `/admin/clients/[id]` &rarr; Edit &rarr; set status to **Paused**.
+2. This automatically blocks all outbound messages for this client only (other clients unaffected). The compliance gateway checks client status before every send.
+3. Pause the subscription in Stripe if billing should also stop (or the contractor pauses from `/client/billing`).
 4. Text the contractor: &quot;Your account is paused. No charges until you resume. Your leads are still being captured &mdash; we&apos;ll follow up with them when you&apos;re back.&quot;
 5. Set a calendar reminder for their expected return date.
-6. On return: resume subscription, disable kill switch, text them: &quot;Welcome back. [X] leads came in while you were away. Here&apos;s the summary.&quot;
+6. On return: set status back to **Active**, resume subscription if paused, text them: &quot;Welcome back. [X] leads came in while you were away. Here&apos;s the summary.&quot;
 
 ---
 
