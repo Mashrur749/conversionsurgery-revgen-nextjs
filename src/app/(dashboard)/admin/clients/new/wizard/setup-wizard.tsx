@@ -59,11 +59,11 @@ const INITIAL_DATA: WizardData = {
 };
 
 const STEPS = [
-  { id: 'business', title: 'Business Info', description: 'Basic business details' },
-  { id: 'phone', title: 'Phone Number', description: 'Assign a Twilio number' },
-  { id: 'team', title: 'Team Members', description: 'Who receives notifications' },
-  { id: 'hours', title: 'Business Hours', description: 'When to connect calls' },
-  { id: 'review', title: 'Review & Launch', description: 'Confirm and activate' },
+  { id: 'business', title: 'Business Info', shortTitle: 'Info', description: 'Basic business details' },
+  { id: 'phone', title: 'Phone Number', shortTitle: 'Phone', description: 'Assign a Twilio number' },
+  { id: 'team', title: 'Team Members', shortTitle: 'Team', description: 'Who receives notifications' },
+  { id: 'hours', title: 'Business Hours', shortTitle: 'Hours', description: 'When to connect calls' },
+  { id: 'review', title: 'Review & Launch', shortTitle: 'Review', description: 'Confirm and activate' },
 ];
 
 export function SetupWizard() {
@@ -168,6 +168,7 @@ export function SetupWizard() {
               >
                 {isCompleted ? '✓' : i + 1}
               </div>
+              <span className="text-xs mt-1 md:hidden">{s.shortTitle}</span>
               <span className="text-xs mt-1 hidden md:block">{s.title}</span>
             </button>
           );

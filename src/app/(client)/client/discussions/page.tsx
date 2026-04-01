@@ -4,6 +4,7 @@ import { getDb, supportMessages, supportReplies } from '@/db';
 import { eq, desc, sql, count } from 'drizzle-orm';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { MessageSquare } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 
@@ -38,7 +39,10 @@ export default async function ClientDiscussionsPage() {
         <div className="text-center py-12 text-muted-foreground">
           <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
           <p className="text-lg font-medium">No discussions yet</p>
-          <p className="text-sm mt-1">Use the help button to start a conversation.</p>
+          <p className="text-sm mt-2 mb-6">Start a conversation with our support team.</p>
+          <Button asChild>
+            <Link href="/client/support">Start a Conversation</Link>
+          </Button>
         </div>
       ) : (
         <div className="space-y-3">

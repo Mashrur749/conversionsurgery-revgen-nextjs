@@ -80,6 +80,8 @@ export function EscalationQueue({ clientId: initialClientId, isAgency }: Escalat
   const [loading, setLoading] = useState(true);
   const [selectedClientId, setSelectedClientId] = useState(initialClientId || '');
   const [clients, setClients] = useState<ClientOption[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [fetchError, setFetchError] = useState(false);
 
   // For admin users, fetch client list
   useEffect(() => {
@@ -112,14 +114,19 @@ export function EscalationQueue({ clientId: initialClientId, isAgency }: Escalat
       const data = await res.json() as { queue?: Escalation[]; summary?: Summary };
       setEscalations(data.queue || []);
       setSummary(data.summary || null);
+      setLastUpdated(new Date());
+      setFetchError(false);
     } catch (error) {
       console.error('Failed to fetch escalations:', error);
+      setFetchError(true);
     }
     setLoading(false);
   }, [selectedClientId, filter]);
 
   useEffect(() => {
     fetchEscalations();
+    const interval = setInterval(fetchEscalations, 30000);
+    return () => clearInterval(interval);
   }, [fetchEscalations]);
 
   const getPriorityBadge = (priority: number) => {
@@ -152,6 +159,11 @@ export function EscalationQueue({ clientId: initialClientId, isAgency }: Escalat
   };
 
   const activeCount = (summary?.pending || 0) + (summary?.assigned || 0) + (summary?.in_progress || 0);
+
+  const getLastUpdatedText = () => {
+    if (!lastUpdated) return '';
+    return `Updated ${formatDistanceToNow(lastUpdated, { addSuffix: true })}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -218,7 +230,12 @@ export function EscalationQueue({ clientId: initialClientId, isAgency }: Escalat
         </div>
       )}
 
-      {/* Tabs */}
+      {/* Last Updated & Tabs */}
+      <div className="flex items-center justify-between">
+        {lastUpdated && (
+          <p className="text-xs text-muted-foreground">{getLastUpdatedText()}</p>
+        )}
+      </div>
       <Tabs defaultValue="active" onValueChange={setFilter}>
         <TabsList>
           <TabsTrigger value="active">
