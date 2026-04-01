@@ -136,10 +136,10 @@ export function actionRequiredEmail(data: {
   dashboardUrl: string;
 }) {
   return {
-    subject: `⚠️ Action Required — ${data.leadName || data.leadPhone}`,
+    subject: `Action Required — ${data.leadName || data.leadPhone}`,
     html: `
       <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #C15B2E;">⚠️ Action Required</h2>
+        <h2 style="color: #C15B2E;">Action Required</h2>
         <p><strong>${data.leadName || data.leadPhone}</strong> needs your response.</p>
         <p><strong>Reason:</strong> ${data.reason}</p>
         <div style="background: #F8F9FA; padding: 16px; border-radius: 8px; margin: 16px 0;">
@@ -267,10 +267,10 @@ export function weeklySummaryEmail(data: {
 
         <div style="background: #F8F9FA; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #1B2F26;">Follow-ups Sent</h3>
-          <p style="margin: 8px 0;">📅 Appointment Reminders: <strong>${data.stats.appointmentsReminded}</strong></p>
-          <p style="margin: 8px 0;">💰 Estimate Follow-ups: <strong>${data.stats.estimatesFollowedUp}</strong></p>
-          <p style="margin: 8px 0;">⭐ Review Requests: <strong>${data.stats.reviewsRequested}</strong></p>
-          <p style="margin: 8px 0;">💵 Payment Reminders: <strong>${data.stats.paymentsReminded}</strong></p>
+          <p style="margin: 8px 0;">Appointment Reminders: <strong>${data.stats.appointmentsReminded}</strong></p>
+          <p style="margin: 8px 0;">Estimate Follow-ups: <strong>${data.stats.estimatesFollowedUp}</strong></p>
+          <p style="margin: 8px 0;">Review Requests: <strong>${data.stats.reviewsRequested}</strong></p>
+          <p style="margin: 8px 0;">Payment Reminders: <strong>${data.stats.paymentsReminded}</strong></p>
         </div>
 
         <p style="font-size: 18px;"><strong>Total Messages Sent:</strong> ${data.stats.totalMessages}</p>

@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
+import { clients } from '@/db/schema/clients';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { sendAlert } from '@/lib/services/agency-communication';
 
 const leadUpdateSchema = z.object({
   status: z.string().max(50).optional(),
@@ -62,7 +64,47 @@ export async function PATCH(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    return NextResponse.json(updated[0]);
+    const updatedLead = updated[0];
+
+    // Win notification: send SMS to client owner when a lead is marked as won
+    if (parsed.data.status === 'won') {
+      try {
+        const [clientRow] = await db
+          .select({ businessName: clients.businessName, phone: clients.phone })
+          .from(clients)
+          .where(eq(clients.id, clientId))
+          .limit(1);
+
+        if (clientRow?.phone) {
+          const leadName = updatedLead.name || updatedLead.phone;
+          // quoteValue is in the PATCH body (dollars); falls back to N/A if not provided
+          const quoteDisplay =
+            typeof parsed.data.quoteValue === 'number'
+              ? `$${parsed.data.quoteValue.toLocaleString()}`
+              : 'N/A';
+          const firstEngaged = new Date(updatedLead.createdAt).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          });
+
+          const smsBody =
+            `${clientRow.businessName} recovered ${leadName} — estimated project value ${quoteDisplay}. ` +
+            `This lead was first engaged by the system on ${firstEngaged}.`;
+
+          await sendAlert({
+            clientId,
+            message: smsBody,
+            isUrgent: false,
+          });
+        }
+      } catch (notifyError) {
+        // Non-fatal: log and continue — the status update already succeeded
+        console.error('[LeadManagement] Win notification failed:', notifyError);
+      }
+    }
+
+    return NextResponse.json(updatedLead);
   } catch (error) {
     return safeErrorResponse('[LeadManagement][leads.patch]', error, 'Failed');
   }

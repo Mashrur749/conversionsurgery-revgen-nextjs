@@ -10,7 +10,8 @@ export type EstimateTriggerSource =
   | 'sms_keyword'
   | 'prompt_quick_reply'
   | 'fallback_nudge'
-  | 'manual';
+  | 'manual'
+  | 'csv_import';
 
 interface TriggerEstimateFollowupInput {
   clientId: string;

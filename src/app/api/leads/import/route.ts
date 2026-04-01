@@ -7,6 +7,7 @@ import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { getClientId } from '@/lib/get-client-id';
 import { eq, and, inArray } from 'drizzle-orm';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { triggerEstimateFollowup } from '@/lib/services/estimate-triggers';
 
 const MAX_ROWS = 1000;
 
@@ -144,10 +145,11 @@ export async function POST(request: NextRequest) {
 
     // Insert in transaction
     let imported = 0;
+    const insertedLeads: { id: string; status: string | null }[] = [];
     if (toInsert.length > 0) {
       await withTransaction(async (tx) => {
-        // Batch insert (Drizzle supports array values)
-        await tx.insert(leads).values(
+        // Batch insert with returning to capture IDs for post-import automation
+        const inserted = await tx.insert(leads).values(
           toInsert.map((row) => ({
             clientId,
             name: row.name || null,
@@ -159,9 +161,33 @@ export async function POST(request: NextRequest) {
             source: 'csv_import' as const,
             status: row.status || 'new',
           }))
-        );
-        imported = toInsert.length;
+        ).returning({ id: leads.id, status: leads.status });
+        imported = inserted.length;
+        insertedLeads.push(...inserted);
       });
+    }
+
+    // Auto-trigger estimate follow-up for imported leads with status=estimate_sent.
+    // These are "dead quotes" — the sales pitch guarantees we text them this week,
+    // so we schedule the Day 2/5/10/14 sequence immediately rather than waiting
+    // for the win-back cron (which fires 25-35 days after import).
+    const estimateLeads = insertedLeads.filter((l): l is { id: string; status: string } => l.status === 'estimate_sent');
+    if (estimateLeads.length > 0) {
+      let triggered = 0;
+      let skippedActive = 0;
+      for (const lead of estimateLeads) {
+        const result = await triggerEstimateFollowup({
+          clientId,
+          leadId: lead.id,
+          source: 'csv_import',
+        });
+        if (result.started) triggered++;
+        else if (result.alreadyActive) skippedActive++;
+      }
+      console.log(
+        `[CSV Import] Auto-triggered estimate follow-up for ${triggered} imported leads` +
+          (skippedActive > 0 ? ` (${skippedActive} already had active sequence)` : '')
+      );
     }
 
     return NextResponse.json({

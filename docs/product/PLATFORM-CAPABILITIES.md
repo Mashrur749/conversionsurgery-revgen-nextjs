@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-01
+Last updated: 2026-04-01 (Wave 1-2)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -73,6 +73,7 @@ Cancellation: new sequence auto-cancels prior unsent messages for the same lead.
 - **2-hour reminder** to homeowner
 - **Contractor reminder** to business owner (via reminder routing policy — configurable primary/fallback chain)
 - Sent through compliance gateway with quiet-hours queueing
+- **Email fallback:** if compliance blocks all SMS recipients for a booking notification (e.g., quiet hours, opt-out), the system falls back to email notification so the contractor is never left uninformed
 
 ### No-Show Recovery
 
@@ -179,6 +180,7 @@ Every lead accumulates:
 - Conversation mode indicator (AI / human / paused)
 - Human takeover and handback controls
 - Media attachment support (MMS)
+- **Message pagination** &mdash; initial load fetches the 50 most recent messages per conversation. &quot;Load earlier messages&quot; button loads older history on demand. Delta polling for new messages is unchanged.
 - **AI message flagging** &mdash; operators can flag any AI-generated message as problematic with a category (wrong tone, inaccurate, too pushy, hallucinated, off topic, other) and optional note. Flags are visible inline and surfaced in admin AI quality view.
 
 ### Bulk Lead Import
@@ -193,7 +195,7 @@ Every lead accumulates:
 ### Team Coordination
 
 - **Ring group:** simultaneous dial to all available team members during business hours
-- **Escalation queue:** priority-ranked (1-5) with SLA deadlines, live countdown timers (color-coded: green/sienna/red by urgency), assignment, and claim tokens
+- **Escalation queue:** priority-ranked (1-5) with SLA deadlines, live countdown timers (color-coded: green/sienna/red by urgency), assignment, claim tokens, and 30-second auto-refresh with &quot;Updated X ago&quot; timestamp
 - **Hot transfer:** Voice AI detects urgency &rarr; dials team immediately &rarr; SMS heads-up ("Hot lead calling!")
 - **Missed transfer fallback:** SMS to team ("Missed hot transfer — call back ASAP") + SMS to lead ("Sorry we missed you")
 - **Owner notification:** Smart Assist drafts with reference codes for SEND/EDIT/CANCEL approval
@@ -218,7 +220,7 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 
 | Page | What it shows |
 |------|--------------|
-| **Dashboard** | Lead summary, recent activity, help articles. New-client setup banner (phone + plan checklist, auto-hides when complete) |
+| **Dashboard** | Lead summary, recent activity, help articles. New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. |
 | **Conversations** | All leads with message history, mode badges, action-required highlights |
 | **Revenue** | 30-day stats, pipeline value, speed-to-lead metrics, service breakdown |
 | **Knowledge Base** | Business info the AI uses — editable by owner |
@@ -233,6 +235,8 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 - **Breadcrumbs** on deep portal pages (billing, revenue, knowledge base, team, help, discussions) showing &quot;Dashboard &gt; Page Name&quot; with clickable links
 - **Inline help tooltips** on settings fields (Quiet Hours, Smart Assist Auto-Send, AI Tone, Auto-send delay) via info icons
 - **Unsaved changes warning** on settings forms (notification, AI, feature toggles) &mdash; browser prompts before navigating away with unsaved edits
+- **Command palette** &mdash; Cmd+K (Mac) / Ctrl+K (Windows/Linux) opens a command palette for quick navigation. Client portal includes 10 page items. Uses search-as-you-type filtering.
+- **Discussions CTA** &mdash; empty state on the discussions page includes a &quot;Start a Conversation&quot; button
 
 ### Permissions
 
@@ -397,6 +401,13 @@ Every funnel event is automatically linked to the agent decision that contribute
 - **Auto-login after signup:** public signup flow establishes a portal session automatically — contractor lands on the client dashboard with setup guidance, no separate login step required.
 - **Subscription-gated phone purchase:** phone provisioning requires an active subscription. Clear prompt to choose a plan if attempted without one.
 
+### Onboarding Checklist
+
+- **Actionable steps:** each incomplete checklist item links directly to the relevant settings page (phone setup, business hours, team configuration, etc.)
+- **Tutorials as links:** tutorial items are clickable links, not plain text
+- **Start Here banner:** shows the single most important next action for the contractor
+- **Quality gates simplified:** hidden when passing; shown in plain language when failing (no technical jargon)
+
 ### Onboarding Quality Gates
 
 - Multi-criteria evaluation: knowledge base populated, business hours set, team configured, etc.
@@ -434,6 +445,28 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 
 ## 11. Agency Operations (Admin Tools)
 
+### Operator Alerting
+
+- **Cron failure SMS:** when any cron job fails, the operator receives an SMS alert to the phone number configured in `operator_phone` (system_settings). Alerts are sent from the agency number.
+- **Deduplication:** at most 1 alert per subject per hour to prevent alert storms.
+- **Setup:** set `operator_phone` in system_settings via `/admin/settings`.
+
+### Agency Voice Webhook
+
+- Inbound voice calls to the agency number (#5) are answered with a TwiML message: &quot;This number is for text messages only.&quot;
+- Endpoint: `/api/webhooks/twilio/agency-voice`
+- Requires webhook configuration in Twilio Console for the agency number&apos;s voice URL.
+
+### Command Palette (Admin)
+
+- Cmd+K (Mac) / Ctrl+K (Windows/Linux) opens a command palette for quick navigation across admin pages and client records.
+- Search-as-you-type filtering for clients and admin navigation items.
+
+### Escalation Queue Auto-Refresh
+
+- The escalation queue polls for updates every 30 seconds without manual page refresh.
+- &quot;Updated X ago&quot; timestamp shows data freshness.
+
 ### Client Management
 
 - Client creation wizard (6 steps: business info, phone, hours, team, compliance, review)
@@ -466,7 +499,7 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 
 ### Cron Orchestrator
 
-28 scheduled jobs covering: message processing (5 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more.
+28 scheduled jobs covering: message processing (5 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
 
 ### Agency Communication
 

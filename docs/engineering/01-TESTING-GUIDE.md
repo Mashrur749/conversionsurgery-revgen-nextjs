@@ -3,7 +3,7 @@
 Last updated: 2026-04-01
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `feat: AI attribution — link funnel events to agent decisions (2026-03-28)`
+Last verified commit: `feat: Wave 1-2 operational and polish fixes (2026-04-01)`
 
 ## 0. Preflight (Run First)
 
@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout).
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback).
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -1284,6 +1284,34 @@ Combined verification for all Tier 3 UX improvements (breadcrumbs, tooltips, pro
 9. **Cancellation page layout (3.10):** Navigate to `/client/cancel`. Verify the cancellation form is the primary visible content (not scrolled below a large ROI card). Verify the ROI / results summary is inside a collapsed accordion that can be expanded optionally. Verify the page heading is neutral (not retention-focused).
 
 Expected: all 9 items pass. Item 3.3 (self-serve onboarding checklist) is deferred and not tested here.
+
+### Step 54: Wave 1-2 operational and polish fixes
+
+Combined verification for Wave 1 (OPS-01, OPS-02, resilience fixes) and Wave 2 (UX polish, edge case fixes).
+
+1. **Agency voice webhook (OPS-01):** Call the agency number (#5) via a real phone or Dev Phone. Verify the call is answered with a TwiML message: &quot;This number is for text messages only.&quot; The call should end after the message plays. Requires voice webhook configured in Twilio Console for #5 pointing to `https://<domain>/api/webhooks/twilio/agency-voice`.
+
+2. **Operator alerting (OPS-02):** Set `operator_phone` in `system_settings` (via `/admin/settings` or direct DB insert). Trigger a cron failure (e.g., POST to a nonexistent cron endpoint via the orchestrator). Verify the operator phone receives an SMS alert from the agency number. Verify deduplication: trigger the same failure again within 1 hour &mdash; no duplicate SMS should arrive.
+
+3. **Command palette (UX-4.1):** In the admin dashboard, press Cmd+K (Mac) or Ctrl+K (Windows/Linux). Verify the command palette opens. Type a client name &mdash; verify search results appear. Press Enter on a result &mdash; verify navigation to that page. Close and repeat in the client portal &mdash; verify portal-specific items appear (10 page items). Verify Escape closes the palette.
+
+4. **Onboarding checklist improvements (UX-3.3):** Navigate to the onboarding checklist (self-serve signup flow or `/signup/next-steps`). Verify tutorials are clickable links (not plain text). Verify each incomplete step has an action link to the relevant settings page. Verify quality gates are simplified: hidden when passing, shown in plain language when failing. Verify the &quot;Start Here&quot; banner appears and points to the most important next action.
+
+5. **Dashboard sticky header (UX-4.3):** Open the client portal dashboard (`/client`). Scroll down past the stat cards. Verify the page title remains visible (sticky) at the top of the viewport.
+
+6. **Escalation queue auto-refresh (UX-4.7):** Open the escalation queue (`/escalations`). Wait 30 seconds without interacting. Verify the data refreshes automatically and the &quot;Updated X ago&quot; timestamp updates (e.g., &quot;Updated just now&quot; or &quot;Updated 30s ago&quot;).
+
+7. **Billing skeleton match (UX-4.2):** Navigate to `/client/billing` on a slow connection (or throttle via DevTools). Verify the loading skeleton shows 4 card placeholders matching the actual content layout.
+
+8. **Wizard mobile labels (UX-4.4):** Open `/admin/clients/new/wizard` on a mobile viewport (375px). Verify step circles show abbreviated titles: Info, Phone, Team, Hours, Review.
+
+9. **Discussions CTA (UX-4.6):** Navigate to `/client/discussions` with no existing discussions. Verify the empty state includes a &quot;Start a Conversation&quot; button.
+
+10. **Message pagination (EC-13):** Open a conversation with 50+ messages. Verify the initial load shows the most recent 50 messages. Verify a &quot;Load earlier messages&quot; button appears at the top. Click it &mdash; verify older messages load above the current ones.
+
+11. **Booking email fallback (EC-16):** Trigger a booking where compliance blocks all SMS recipients (e.g., all team members opted out or in quiet hours). Verify the system falls back to sending an email notification about the booking instead of silently failing.
+
+Expected: all 11 items pass.
 
 ## 3. Useful Commands
 

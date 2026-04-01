@@ -12,6 +12,8 @@ import { DashboardNavLinks } from '@/components/dashboard-nav-links';
 import SignOutButton from './signout-button';
 import { HelpButton } from '@/components/ui/help-button';
 import { getAgencySession } from '@/lib/permissions';
+import { CommandPalette } from '@/components/command-palette';
+import { NotificationBell } from '@/components/notification-bell';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview' },
@@ -139,6 +141,7 @@ export default async function DashboardLayout({
                     {session.client?.businessName || session.user?.email}
                   </span>
                 )}
+                <NotificationBell portalType={isAgency ? 'admin' : 'client'} />
                 <SignOutButton />
               </div>
             </div>
@@ -152,6 +155,7 @@ export default async function DashboardLayout({
           )}
         </main>
         {!isAgency && <HelpButton />}
+        <CommandPalette isAdmin={isAgency} />
       </div>
     </AdminProvider>
   );

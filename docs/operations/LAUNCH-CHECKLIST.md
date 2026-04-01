@@ -1,6 +1,6 @@
 # Managed Service Launch Checklist
 
-Date: 2026-03-28
+Date: 2026-04-01
 Status: Pre-launch
 Service: $1,000/mo managed revenue recovery for Alberta renovation contractors
 Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERATIONS-GUIDE.md` (daily ops + knowledge gap resolution)
@@ -9,7 +9,7 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 
 ## Phase 1: Learn the Platform
 
-- [ ] Walk through `docs/engineering/01-TESTING-GUIDE.md` end to end (Steps 1-38)
+- [ ] Walk through `docs/engineering/01-TESTING-GUIDE.md` end to end (Steps 1-38, 53-54)
   - Create a test client via admin wizard
   - Assign a phone number
   - Import test leads via CSV (with status=estimate_sent)
@@ -71,11 +71,21 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 - [ ] `ANTHROPIC_API_KEY` &mdash; from console.anthropic.com
 - [ ] `NEXT_PUBLIC_APP_URL` &mdash; your production domain (e.g., `https://app.conversionsurgery.com`)
 
+**Post-login setup (not env vars):**
+- [ ] After first admin login, set `operator_phone` in system_settings via `/admin/settings`. This is the phone number that receives SMS alerts when cron jobs fail.
+
 ### Database
 
+- [ ] Create a staging Neon branch for safe testing:
+  - Via Neon Dashboard: Project &rarr; Branches &rarr; Create Branch (name: `staging`)
+  - Or via CLI: `neonctl branches create --name staging --project-id <project-id>`
+  - Use the staging branch connection string for local dev (`DATABASE_URL` in `.env.local`)
+  - Production branch stays untouched until `db:migrate` is explicitly run against it
+  - Reset staging to match production anytime: `neonctl branches reset staging --parent`
 - [ ] Run `npm run db:migrate` on production
 - [ ] Run `npm run db:seed -- --lean` (seeds plans, role templates, flow templates, system settings)
 - [ ] Verify seed created the Pro plan with your Stripe price ID
+- [ ] Run `npm run db:seed -- --demo` to create a demo client for sales calls (removable via `--demo-cleanup`)
 
 ### Deploy
 
@@ -104,6 +114,9 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 
 All cron calls need header: `Authorization: Bearer $CRON_SECRET`
 
+**Twilio webhook configuration (non-cron):**
+- [ ] Configure agency number (#5) voice webhook in Twilio Console: `https://<domain>/api/webhooks/twilio/agency-voice` (POST). Callers hear &quot;This number is for text messages only.&quot;
+
 ---
 
 ## Phase 3: First Client Delivery
@@ -119,6 +132,8 @@ Reference: `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` for detailed process
 ### After the contractor says yes
 
 Day 0 (signing):
+- [ ] Verify agency number (#5) voice webhook is configured (see Phase 2 Deploy section above)
+- [ ] Verify `operator_phone` is set in system_settings (see Phase 2 Other Required Env Vars above)
 - [ ] Create client via admin wizard (`/admin/clients/new/wizard`)
 - [ ] Assign a local phone number in the wizard (or from client detail page)
 - [ ] Onboarding card on client detail page shows 3 next steps (phone, quotes, knowledge base)

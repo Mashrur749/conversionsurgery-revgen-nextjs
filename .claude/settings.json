@@ -67,7 +67,7 @@
       "Bash(npm run test *)",
       "Bash(npm run test:ai *)",
       "Bash(npm run ms:gate *)",
-      "Bash(npm run quality:* *)",
+      "Bash(npm run quality:*)",
       "Bash(npm run db:generate *)",
       "Bash(npm run db:studio *)",
       "Bash(npx tsc *)",

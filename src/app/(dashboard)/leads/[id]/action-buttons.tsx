@@ -96,7 +96,7 @@ export function ActionButtons({ lead }: Props) {
             onClick={clearActionRequired}
             disabled={loading === 'clear'}
           >
-            {loading === 'clear' ? 'Clearing...' : '✓ Mark Resolved'}
+            {loading === 'clear' ? 'Clearing...' : 'Mark Resolved'}
           </Button>
         )}
 
@@ -106,7 +106,7 @@ export function ActionButtons({ lead }: Props) {
             className="w-full"
             onClick={() => setShowAppointment(true)}
           >
-            📅 Schedule Appointment
+            Schedule Appointment
           </Button>
         ) : (
           <div className="space-y-2 p-3 border rounded-lg">
@@ -153,7 +153,7 @@ export function ActionButtons({ lead }: Props) {
           onClick={() => startSequence('estimate')}
           disabled={loading === 'estimate'}
         >
-          {loading === 'estimate' ? 'Starting...' : '💰 Start Estimate Follow-up'}
+          {loading === 'estimate' ? 'Starting...' : 'Start Estimate Follow-up'}
         </Button>
 
         <Button
@@ -162,7 +162,7 @@ export function ActionButtons({ lead }: Props) {
           onClick={() => startSequence('review')}
           disabled={loading === 'review'}
         >
-          {loading === 'review' ? 'Starting...' : '⭐ Request Review'}
+          {loading === 'review' ? 'Starting...' : 'Request Review'}
         </Button>
 
         <Button

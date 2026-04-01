@@ -10,6 +10,7 @@ import { appointments, auditLog, businessHours, clients, leads, scheduledMessage
 import { eq, and, gte, lte, not, inArray } from 'drizzle-orm';
 import { scheduleAppointmentReminders } from '@/lib/automations/appointment-reminder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
+import { sendEmail } from '@/lib/services/resend';
 import { createEvent } from '@/lib/services/calendar';
 import { format, addDays, addHours, parse, isBefore, isAfter } from 'date-fns';
 import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
@@ -335,6 +336,38 @@ export async function bookAppointment(
         createdAt: new Date(),
       });
     } else {
+      // EC-16: All SMS recipients were blocked (quiet hours, opt-out, etc.).
+      // Fall back to email — email is not subject to quiet-hours compliance.
+      const recipientEmail = client.email;
+      let emailFallbackStatus: 'sent' | 'no_email' | 'failed' = 'no_email';
+
+      if (recipientEmail) {
+        const subject = `New Booking — ${lead.name || 'Customer'} on ${formattedDate} at ${formattedTime}`;
+        const html = `
+          <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1B2F26;">New Appointment Booked</h2>
+            <p><strong>Customer:</strong> ${lead.name || 'Customer'}</p>
+            <p><strong>Phone:</strong> ${lead.phone}</p>
+            <p><strong>Date:</strong> ${formattedDate} at ${formattedTime}</p>
+            ${lead.projectType ? `<p><strong>Service:</strong> ${lead.projectType}</p>` : ''}
+            ${lead.address ? `<p><strong>Address:</strong> ${lead.address}</p>` : ''}
+            <p style="color: #6b6762; font-size: 14px; margin-top: 16px;">SMS notification was blocked (quiet hours or opt-out). This email is your notification.</p>
+          </div>
+        `;
+        try {
+          const emailResult = await sendEmail({ to: recipientEmail, subject, html });
+          emailFallbackStatus = emailResult.success ? 'sent' : 'failed';
+        } catch {
+          emailFallbackStatus = 'failed';
+        }
+      }
+
+      if (emailFallbackStatus !== 'sent') {
+        console.warn(
+          `[appointment-booking] EC-16: All SMS recipients blocked for booking ${result.appointmentId} (client ${clientId}) and email fallback ${emailFallbackStatus === 'no_email' ? 'unavailable (no email on file)' : 'failed'}. Contractor was NOT notified.`
+        );
+      }
+
       await db.insert(auditLog).values({
         personId: null,
         clientId,
@@ -345,6 +378,7 @@ export async function bookAppointment(
           reminderType: 'booking_notification',
           reason: routing.primaryChain.length === 0 ? 'no_valid_recipient' : 'all_recipients_unreachable',
           attempts,
+          emailFallback: emailFallbackStatus,
         },
         createdAt: new Date(),
       });

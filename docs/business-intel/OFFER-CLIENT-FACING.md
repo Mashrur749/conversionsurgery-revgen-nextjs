@@ -49,12 +49,12 @@ The following lines are approved for live sales conversations, landing page head
 > **The Revenue Recovery Engine**
 >
 > - **Near-Instant Lead Response** — Every inquiry (call, text, or web form) gets a near-instant response during permitted hours. The system monitors around the clock and responds within seconds during compliant windows.
-> - **AI Conversation Agent** — Not canned auto-replies. An AI trained on your business that has real conversations, answers questions about your services, qualifies the project, and books estimate appointments into your calendar.
+> - **AI Conversation Agent** — Not canned auto-replies. An AI configured with your business information that has real conversations, answers questions about your services, qualifies the project, and books estimate appointments.
 > - **Estimate Follow-Up** — When you flag an estimate as sent, we trigger a multi-touch follow-up sequence over several weeks. Personalized, not pushy. Designed for the long decision cycles renovation projects actually take.
 > - **Appointment Confirmation & No-Show Recovery** — Reminders before every appointment. If they miss it, the AI follows up same day and attempts to rebook.
 > - **Payment Collection** — Automated deposit and invoice reminders with one-click payment links.
 > - **Review Generation** — After every completed job, an automated review request with a direct link to Google.
-> - **Dormant Client Reactivation** — Past customers who haven't booked in 6+ months get re-engaged automatically.
+> - **Dormant Lead Reactivation** — Past inquiries and old estimates that went cold get re-engaged automatically with AI-personalized follow-up.
 >
 > **Unlimited Conversations and Messaging**
 > No message caps. No overage charges. No surprise bills. The system handles as many leads and conversations as your business generates.
@@ -80,7 +80,7 @@ The following lines are approved for live sales conversations, landing page head
 
 > Every 90 days, we run a proactive campaign on your behalf — beyond the normal automation:
 >
-> - **Q1:** Dormant client reactivation — re-engage past customers who haven't booked in 6+ months
+> - **Q1:** Dormant lead reactivation — re-engage past inquiries and old estimates that went cold
 > - **Q2:** Review acceleration — targeted push to increase your Google reviews
 > - **Q3:** Pipeline builder — reach out to past inquiries who never converted, filling your fall pipeline
 > - **Q4:** Year-end performance review + 30-minute strategy call to plan the year ahead
@@ -96,7 +96,7 @@ The following lines are approved for live sales conversations, landing page head
 ### Managed Service — What We Handle vs. What You Do
 
 > **We handle:**
-> AI setup and training, follow-up sequence configuration, performance monitoring, A/B testing and optimization, compliance (CASL/CRTC), technical maintenance, bi-weekly reporting, and quarterly strategic campaigns.
+> AI setup and configuration, follow-up sequence configuration, performance monitoring, message optimization, compliance (CASL/CRTC), technical maintenance, bi-weekly reporting, and quarterly strategic campaigns.
 >
 > **Your only responsibilities:**
 >
@@ -109,7 +109,7 @@ The following lines are approved for live sales conversations, landing page head
 > | Respond when the AI escalates to you (complex questions or high-value opportunities)                 | As needed                 |
 > | Read your bi-weekly report                                                                           | 5 minutes                 |
 >
-> **Total ongoing time: under 15 minutes per week.**
+> **Total ongoing time: under 15 minutes per week once the system is calibrated (typically by Week 3).** During the first two weeks, expect 30-45 minutes per week as we fine-tune the AI to your business.
 
 ---
 
@@ -119,7 +119,7 @@ The following lines are approved for live sales conversations, landing page head
 >
 > **Layer 1 — 30-Day Proof of Life**
 >
-> If you don't see at least 5 Qualified Lead Engagements in your first 30 days, we refund your first month — no questions asked.
+> If you don't see at least 5 Qualified Lead Engagements in your first 30 days, we refund your first month.
 >
 > A Qualified Lead Engagement means: an inbound inquiry (call, form, or text) that received an automated response from our system, where the lead replied at least once. All engagements are visible in your dashboard with timestamps and full conversation logs.
 >
@@ -127,7 +127,7 @@ The following lines are approved for live sales conversations, landing page head
 >
 > If after 90 days, you can't point to at least one project that ConversionSurgery helped you win — a lead that the system engaged, followed up with, or booked — we refund your most recent month's payment. Plus, you keep a full export of every lead and conversation we captured. You leave with everything.
 >
-> An Attributed Project Opportunity means: a lead that received automated response or follow-up from the system, showed engagement after that system action (replied, booked, or resumed conversation), and where you confirm the system meaningfully contributed to progressing the opportunity.
+> An Attributed Project Opportunity means: a lead that received automated response or follow-up from the system and showed engagement after that system action (replied, booked, or resumed conversation), where our platform logs show the system engaged the lead through automated response or follow-up before the opportunity progressed.
 >
 > **Volume Condition**
 >
@@ -233,7 +233,7 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 
 > **Here's what you get when you start with ConversionSurgery:**
 >
-> **The Revenue Recovery Engine** — Every lead gets a near-instant response during permitted hours. AI that has real conversations, books appointments, and follows up on every estimate for weeks. Payment collection, review generation, dormant client reactivation. Unlimited conversations and messaging. All managed by us.
+> **The Revenue Recovery Engine** — Every lead gets a near-instant response during permitted hours. AI configured with your business information that has real conversations, books appointments, and follows up on every estimate for weeks. Payment collection, review generation, dormant lead reactivation. Unlimited conversations and messaging. All managed by us.
 >
 > **Your Own Dedicated Business Number + Lead CRM** — Everything in one place. Every conversation, every lead, every status. Separate from your personal phone.
 >
@@ -243,7 +243,7 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 >
 > **Bi-Weekly Performance Scoreboard** — Every two weeks, a report showing what the system did, how much revenue it impacted, and what would have happened without it. Full transparency.
 >
-> **Complete Done-For-You Service** — We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week.
+> **Complete Done-For-You Service** — We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week once calibrated.
 >
 > **90-Day Revenue Recovery Guarantee** — If after 90 days you can't point to at least one project this system helped you win, we refund your last month and you keep every lead and conversation we captured. Plus a 30-day proof-of-life guarantee: 5 leads engaged in 30 days or your first month is free. If your lead volume runs below 15/month, guarantee windows extend proportionally — you're never penalized for a slow period.
 >
@@ -260,6 +260,8 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 | Version | Date              | Changes                                                                                                                                                         |
 | ------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1.0     | February 23, 2026 | Initial extraction from Grand Slam Offer Architecture v2.1 + Quality Review findings. All Critical and High items from quality review resolved in this version. |
+| 1.1     | April 1, 2026     | 10-agent consensus review. Fixed 7 language issues: time commitment qualifier added (Week 1-2 is 30-45 min/week), "trained" changed to "configured," calendar booking claim scoped, dormant reactivation language aligned to platform reality, A/B testing removed, "no questions asked" removed from guarantee headline, Section 9 summary aligned. |
+| 1.2     | April 1, 2026     | Layer 2 guarantee attribution made objective: removed subjective "confirm the system meaningfully contributed" language. Attribution now purely verified through platform logs of automated system engagement before opportunity progression. |
 
 ---
 

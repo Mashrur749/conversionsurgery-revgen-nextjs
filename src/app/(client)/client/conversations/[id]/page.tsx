@@ -1,56 +1,14 @@
-import { getClientSession } from '@/lib/client-auth';
-import { redirect, notFound } from 'next/navigation';
-import { getDb, leads, conversations } from '@/db';
-import { eq, and, asc } from 'drizzle-orm';
-import { ConversationView } from './conversation-view';
-import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
-import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * Backward-compatible redirect: old /client/conversations/[id] URLs
+ * now resolve to the split-pane shell with ?lead= param.
+ */
 export default async function ConversationDetailPage({ params }: Props) {
-  await requirePortalPagePermission(PORTAL_PERMISSIONS.CONVERSATIONS_VIEW);
-  const session = await getClientSession();
-  if (!session) redirect('/link-expired');
-
   const { id } = await params;
-  const db = getDb();
-
-  const [lead] = await db
-    .select()
-    .from(leads)
-    .where(and(
-      eq(leads.id, id),
-      eq(leads.clientId, session.clientId)
-    ))
-    .limit(1);
-
-  if (!lead) notFound();
-
-  const messages = await db
-    .select()
-    .from(conversations)
-    .where(eq(conversations.leadId, lead.id))
-    .orderBy(asc(conversations.createdAt));
-
-  return (
-    <ConversationView
-      lead={{
-        id: lead.id,
-        name: lead.name,
-        phone: lead.phone,
-        conversationMode: lead.conversationMode,
-        actionRequired: lead.actionRequired,
-      }}
-      messages={messages.map((m) => ({
-        id: m.id,
-        direction: m.direction,
-        content: m.content,
-        messageType: m.messageType,
-        createdAt: m.createdAt,
-      }))}
-    />
-  );
+  redirect(`/client/conversations?lead=${encodeURIComponent(id)}`);
 }

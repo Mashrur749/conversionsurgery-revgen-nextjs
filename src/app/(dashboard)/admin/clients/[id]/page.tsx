@@ -26,6 +26,8 @@ import { DayOneActivationCard } from './day-one-activation-card';
 import { AddonProvenanceCard } from './addon-provenance-card';
 import { OnboardingQualityPanel } from './onboarding-quality-panel';
 import { ReminderRoutingPanel } from './reminder-routing-panel';
+import { ClientDetailTabs } from './client-detail-tabs';
+import { EmbedWidgetCard } from './embed-widget-card';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -172,6 +174,61 @@ export default async function ClientDetailPage({ params }: Props) {
     cancelled: 'bg-[#FDEAE4] text-sienna',
   };
 
+  const onboardingChecklist = !setupComplete ? (
+    <Card className="border-olive/30 bg-moss-light">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Client Onboarding</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            {hasPhone
+              ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
+              : <Phone className="h-4 w-4 text-muted-foreground" />}
+            <span className={hasPhone ? 'line-through text-muted-foreground' : ''}>
+              Assign phone number
+            </span>
+          </div>
+          {!hasPhone && (
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/admin/clients/${client.id}/phone`}>Assign</Link>
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            {hasLeads
+              ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
+              : <FileText className="h-4 w-4 text-muted-foreground" />}
+            <span className={hasLeads ? 'line-through text-muted-foreground' : ''}>
+              Import historical quotes
+            </span>
+          </div>
+          {!hasLeads && (
+            <Button asChild size="sm" variant="outline">
+              <Link href="/leads">Import CSV</Link>
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            {hasKnowledge
+              ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
+              : <BookOpen className="h-4 w-4 text-muted-foreground" />}
+            <span className={hasKnowledge ? 'line-through text-muted-foreground' : ''}>
+              Set up knowledge base
+            </span>
+          </div>
+          {!hasKnowledge && (
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/admin/clients/${client.id}/knowledge`}>Configure</Link>
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  ) : null;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
@@ -188,7 +245,7 @@ export default async function ClientDetailPage({ params }: Props) {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href="/admin">← Back to Clients</Link>
+            <Link href="/admin">&#8592; Back to Clients</Link>
           </Button>
           <Button asChild variant={client.twilioNumber ? 'outline' : 'default'}>
             <Link href={`/admin/clients/${client.id}/phone`}>
@@ -198,75 +255,89 @@ export default async function ClientDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {!setupComplete && (
-        <Card className="border-olive/30 bg-moss-light">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Client Onboarding</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
-                {hasPhone
-                  ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
-                  : <Phone className="h-4 w-4 text-muted-foreground" />}
-                <span className={hasPhone ? 'line-through text-muted-foreground' : ''}>
-                  Assign phone number
+      <ClientDetailTabs
+        teamMemberCount={members.length}
+        onboardingChecklist={onboardingChecklist}
+        roiDashboard={<ROIDashboard metrics={roiMetrics} />}
+        usageCard={
+          <Card>
+            <CardHeader>
+              <CardTitle>Usage</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Messages this month</span>
+                <span className="font-medium">
+                  {client.messagesSentThisMonth} / {client.monthlyMessageLimit}
                 </span>
               </div>
-              {!hasPhone && (
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/admin/clients/${client.id}/phone`}>Assign</Link>
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
-                {hasLeads
-                  ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
-                  : <FileText className="h-4 w-4 text-muted-foreground" />}
-                <span className={hasLeads ? 'line-through text-muted-foreground' : ''}>
-                  Import historical quotes
-                </span>
-              </div>
-              {!hasLeads && (
-                <Button asChild size="sm" variant="outline">
-                  <Link href="/leads">Import CSV</Link>
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
-                {hasKnowledge
-                  ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
-                  : <BookOpen className="h-4 w-4 text-muted-foreground" />}
-                <span className={hasKnowledge ? 'line-through text-muted-foreground' : ''}>
-                  Set up knowledge base
-                </span>
-              </div>
-              {!hasKnowledge && (
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/admin/clients/${client.id}/knowledge`}>Configure</Link>
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <ROIDashboard metrics={roiMetrics} />
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Client Information</CardTitle>
-            <CardDescription>Edit business details</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EditClientForm client={client} />
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
+            </CardContent>
+          </Card>
+        }
+        dayOneActivationCard={
+          dayOneSummary ? (
+            <DayOneActivationCard
+              clientId={client.id}
+              initialSummary={dayOneSummary}
+            />
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Day-One Activation</CardTitle>
+                <CardDescription>
+                  Day-One tracker is temporarily unavailable. Retry after refreshing this page.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )
+        }
+        featureToggles={
+          <FeatureTogglesCard
+            clientId={client.id}
+            flags={{
+              missedCallSmsEnabled: client.missedCallSmsEnabled,
+              aiResponseEnabled: client.aiResponseEnabled,
+              aiAgentEnabled: client.aiAgentEnabled,
+              aiAgentMode: client.aiAgentMode,
+              autoEscalationEnabled: client.autoEscalationEnabled,
+              smartAssistEnabled: client.smartAssistEnabled,
+              smartAssistDelayMinutes: client.smartAssistDelayMinutes,
+              smartAssistManualCategories: client.smartAssistManualCategories as string[] | null,
+              voiceEnabled: client.voiceEnabled,
+              flowsEnabled: client.flowsEnabled,
+              leadScoringEnabled: client.leadScoringEnabled,
+              reputationMonitoringEnabled: client.reputationMonitoringEnabled,
+              autoReviewResponseEnabled: client.autoReviewResponseEnabled,
+              calendarSyncEnabled: client.calendarSyncEnabled,
+              hotTransferEnabled: client.hotTransferEnabled,
+              paymentLinksEnabled: client.paymentLinksEnabled,
+              photoRequestsEnabled: client.photoRequestsEnabled,
+              multiLanguageEnabled: client.multiLanguageEnabled,
+              preferredLanguage: client.preferredLanguage,
+            }}
+          />
+        }
+        featureStatusList={<FeatureStatusList client={client} />}
+        onboardingQualityPanel={
+          <OnboardingQualityPanel
+            clientId={client.id}
+            currentAiMode={(client.aiAgentMode as 'off' | 'assist' | 'autonomous') ?? 'assist'}
+          />
+        }
+        reminderRoutingPanel={<ReminderRoutingPanel clientId={client.id} />}
+        embedWidgetCard={<EmbedWidgetCard clientId={client.id} />}
+        clientInfoCard={
+          <Card>
+            <CardHeader>
+              <CardTitle>Client Information</CardTitle>
+              <CardDescription>Edit business details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EditClientForm client={client} />
+            </CardContent>
+          </Card>
+        }
+        phoneNumberCard={
           <Card>
             <CardHeader>
               <CardTitle>Phone Number</CardTitle>
@@ -301,71 +372,38 @@ export default async function ClientDetailPage({ params }: Props) {
               )}
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-              <CardDescription>{members.length} members</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {members.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No team members configured
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {members.map((member) => (
-                    <div key={member.id} className="flex justify-between items-center text-sm">
-                      <span>{member.name}</span>
-                      <Badge variant={member.isActive ? 'default' : 'secondary'}>
-                        {member.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Usage</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Messages this month</span>
-                <span className="font-medium">
-                  {client.messagesSentThisMonth} / {client.monthlyMessageLimit}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {dayOneSummary ? (
-            <DayOneActivationCard
-              clientId={client.id}
-              initialSummary={dayOneSummary}
-            />
-          ) : (
+        }
+        teamMembersCard={
+          <>
             <Card>
               <CardHeader>
-                <CardTitle>Day-One Activation</CardTitle>
-                <CardDescription>
-                  Day-One tracker is temporarily unavailable. Retry after refreshing this page.
-                </CardDescription>
+                <CardTitle>Team Members</CardTitle>
+                <CardDescription>{members.length} members</CardDescription>
               </CardHeader>
+              <CardContent>
+                {members.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No team members configured
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {members.map((member) => (
+                      <div key={member.id} className="flex justify-between items-center text-sm">
+                        <span>{member.name}</span>
+                        <Badge variant={member.isActive ? 'default' : 'secondary'}>
+                          {member.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
             </Card>
-          )}
-
-          <OnboardingQualityPanel
-            clientId={client.id}
-            currentAiMode={(client.aiAgentMode as 'off' | 'assist' | 'autonomous') ?? 'assist'}
-          />
-
-          <ReminderRoutingPanel clientId={client.id} />
-
-          <AddonProvenanceCard clientId={client.id} />
-
+            <TeamManager clientId={client.id} />
+          </>
+        }
+        addonProvenanceCard={<AddonProvenanceCard clientId={client.id} />}
+        actionsCard={
           <Card>
             <CardHeader>
               <CardTitle>Actions</CardTitle>
@@ -388,7 +426,14 @@ export default async function ClientDetailPage({ params }: Props) {
               </Button>
             </CardContent>
           </Card>
-
+        }
+        quarterlyCampaignsCard={
+          <QuarterlyCampaignsCard
+            clientId={client.id}
+            initialCampaigns={quarterlyCampaigns.map(toQuarterlyCampaignSummaryDto)}
+          />
+        }
+        dangerZone={
           <Card className="border-destructive/30">
             <CardHeader>
               <CardTitle className="text-destructive">Danger Zone</CardTitle>
@@ -397,42 +442,8 @@ export default async function ClientDetailPage({ params }: Props) {
               <DeleteButton clientId={client.id} clientName={client.businessName} status={client.status} />
             </CardContent>
           </Card>
-        </div>
-      </div>
-
-      <FeatureStatusList client={client} />
-
-      <FeatureTogglesCard
-        clientId={client.id}
-        flags={{
-          missedCallSmsEnabled: client.missedCallSmsEnabled,
-          aiResponseEnabled: client.aiResponseEnabled,
-          aiAgentEnabled: client.aiAgentEnabled,
-          aiAgentMode: client.aiAgentMode,
-          autoEscalationEnabled: client.autoEscalationEnabled,
-          smartAssistEnabled: client.smartAssistEnabled,
-          smartAssistDelayMinutes: client.smartAssistDelayMinutes,
-          smartAssistManualCategories: client.smartAssistManualCategories as string[] | null,
-          voiceEnabled: client.voiceEnabled,
-          flowsEnabled: client.flowsEnabled,
-          leadScoringEnabled: client.leadScoringEnabled,
-          reputationMonitoringEnabled: client.reputationMonitoringEnabled,
-          autoReviewResponseEnabled: client.autoReviewResponseEnabled,
-          calendarSyncEnabled: client.calendarSyncEnabled,
-          hotTransferEnabled: client.hotTransferEnabled,
-          paymentLinksEnabled: client.paymentLinksEnabled,
-          photoRequestsEnabled: client.photoRequestsEnabled,
-          multiLanguageEnabled: client.multiLanguageEnabled,
-          preferredLanguage: client.preferredLanguage,
-        }}
+        }
       />
-
-      <QuarterlyCampaignsCard
-        clientId={client.id}
-        initialCampaigns={quarterlyCampaigns.map(toQuarterlyCampaignSummaryDto)}
-      />
-
-      <TeamManager clientId={client.id} />
     </div>
   );
 }

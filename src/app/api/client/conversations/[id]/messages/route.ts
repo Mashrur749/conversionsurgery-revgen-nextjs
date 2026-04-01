@@ -1,12 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getDb, leads, conversations } from '@/db';
-import { eq, and, asc, gt } from 'drizzle-orm';
+import { eq, and, asc, gt, lt } from 'drizzle-orm';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 
 /**
- * GET /api/client/conversations/[id]/messages?after=ISO_TIMESTAMP
- * Fetch messages for a conversation. If `after` is provided, only returns
- * messages created after that timestamp (used for polling).
+ * GET /api/client/conversations/[id]/messages
+ *   ?after=ISO_TIMESTAMP  — delta fetch: only messages after this timestamp (polling)
+ *   ?before=ISO_TIMESTAMP — pagination: only messages before this timestamp (load earlier)
+ *   ?limit=N              — max number of messages to return (default: unlimited)
+ *
+ * Returns `{ messages, hasMore }`.
+ * `hasMore` is true when a limit was applied and more older messages exist.
  */
 export const GET = portalRoute<{ id: string }>(
   { permission: PORTAL_PERMISSIONS.CONVERSATIONS_VIEW },
@@ -15,6 +19,9 @@ export const GET = portalRoute<{ id: string }>(
     const { id } = params;
     const url = new URL(request.url);
     const after = url.searchParams.get('after');
+    const before = url.searchParams.get('before');
+    const limitParam = url.searchParams.get('limit');
+    const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10), 1), 200) : null;
 
     const db = getDb();
 
@@ -33,8 +40,11 @@ export const GET = portalRoute<{ id: string }>(
     if (after) {
       conditions.push(gt(conversations.createdAt, new Date(after)));
     }
+    if (before) {
+      conditions.push(lt(conversations.createdAt, new Date(before)));
+    }
 
-    const messages = await db
+    const query = db
       .select({
         id: conversations.id,
         direction: conversations.direction,
@@ -46,6 +56,17 @@ export const GET = portalRoute<{ id: string }>(
       .where(and(...conditions))
       .orderBy(asc(conversations.createdAt));
 
-    return NextResponse.json({ messages });
+    // When a limit is requested, fetch one extra to detect hasMore
+    const messages = limit
+      ? await query.limit(limit + 1)
+      : await query;
+
+    let hasMore = false;
+    if (limit && messages.length > limit) {
+      hasMore = true;
+      messages.pop(); // remove the extra sentinel row
+    }
+
+    return NextResponse.json({ messages, hasMore });
   }
 );

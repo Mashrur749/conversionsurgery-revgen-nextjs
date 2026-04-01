@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +21,9 @@ export function NotificationBell({ portalType }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+
+  // EC-14: Track in-flight fetch so we can abort it on unmount
+  const fetchAbortRef = useRef<AbortController | null>(null);
 
   const storageKey = `${LAST_SEEN_KEY_PREFIX}${portalType}`;
 
@@ -43,14 +46,22 @@ export function NotificationBell({ portalType }: NotificationBellProps) {
   }, [storageKey]);
 
   const fetchNotifications = useCallback(async () => {
+    // EC-14: Cancel any previous in-flight fetch before starting a new one
+    fetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
+
     try {
       const endpoint =
         portalType === 'client'
           ? '/api/client/notifications/feed'
           : '/api/admin/notifications/feed';
-      const res = await fetch(endpoint);
+      const res = await fetch(endpoint, { signal: controller.signal });
+      // EC-14: Guard against state updates after unmount
+      if (controller.signal.aborted) return;
       if (!res.ok) return;
       const data = (await res.json()) as { notifications: NotificationItem[] };
+      if (controller.signal.aborted) return;
       setNotifications(data.notifications);
 
       const lastSeen = getLastSeen();
@@ -59,15 +70,20 @@ export function NotificationBell({ portalType }: NotificationBellProps) {
         (n) => new Date(n.timestamp) > lastSeenDate
       ).length;
       setUnreadCount(count);
-    } catch {
-      // Silently fail — notifications are non-critical
+    } catch (err) {
+      // Ignore AbortError from unmount or rapid re-mount; silently skip all others
+      if (err instanceof DOMException && err.name === 'AbortError') return;
     }
   }, [portalType, getLastSeen]);
 
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // EC-14: Abort any pending fetch when the component unmounts
+      fetchAbortRef.current?.abort();
+    };
   }, [fetchNotifications]);
 
   const handleOpenChange = (isOpen: boolean) => {

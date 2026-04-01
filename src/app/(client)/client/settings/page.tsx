@@ -1,16 +1,19 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Phone } from 'lucide-react';
 import { getDb } from '@/db';
-import { clients } from '@/db/schema';
+import { clients, clientAgentSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { formatPhoneNumber } from '@/lib/utils/phone';
-import { SummarySettings } from './summary-settings';
+import { getNotificationPrefs } from '@/lib/services/notification-preferences';
+import { AI_ASSIST_CATEGORY } from '@/lib/services/ai-send-policy';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
+
+import { SettingsTabs } from './settings-tabs';
+import { SummarySettings } from './summary-settings';
+import { NotificationSettingsForm } from './notifications/notification-settings-form';
+import { AiSettingsForm } from './ai/ai-settings-form';
+import { PhoneProvisioner } from './phone/phone-provisioner';
+import { FeatureTogglesForm } from './features/feature-toggles-form';
 
 export default async function ClientSettingsPage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.SETTINGS_VIEW);
@@ -18,111 +21,110 @@ export default async function ClientSettingsPage() {
   if (!session) redirect('/link-expired');
 
   const db = getDb();
-  const [client] = await db
-    .select({ twilioNumber: clients.twilioNumber })
-    .from(clients)
-    .where(eq(clients.id, session.clientId))
-    .limit(1);
+
+  // Fetch all data in parallel
+  const [clientRows, agentSettingsRows, notificationPrefs] = await Promise.all([
+    db
+      .select({
+        twilioNumber: clients.twilioNumber,
+        businessName: clients.businessName,
+      })
+      .from(clients)
+      .where(eq(clients.id, session.clientId))
+      .limit(1),
+    db
+      .select()
+      .from(clientAgentSettings)
+      .where(eq(clientAgentSettings.clientId, session.clientId))
+      .limit(1),
+    getNotificationPrefs(session.clientId),
+  ]);
+
+  const clientData = clientRows[0];
+  const agentSettings = agentSettingsRows[0];
+  const { client } = session;
+
+  // AI settings defaults
+  const aiDefaults = {
+    agentTone: agentSettings?.agentTone ?? 'professional',
+    useEmojis: agentSettings?.useEmojis ?? false,
+    signMessages: agentSettings?.signMessages ?? false,
+    primaryGoal: agentSettings?.primaryGoal ?? 'book_appointment',
+    canScheduleAppointments: agentSettings?.canScheduleAppointments ?? true,
+    quietHoursEnabled: agentSettings?.quietHoursEnabled ?? true,
+    quietHoursStart: agentSettings?.quietHoursStart ?? '21:00',
+    quietHoursEnd: agentSettings?.quietHoursEnd ?? '08:00',
+  };
+
+  // Feature toggles defaults
+  const featureDefaults = {
+    missedCallSmsEnabled: client.missedCallSmsEnabled ?? true,
+    aiResponseEnabled: client.aiResponseEnabled ?? true,
+    smartAssistEnabled: client.smartAssistEnabled ?? true,
+    smartAssistDelayMinutes: client.smartAssistDelayMinutes ?? 5,
+    smartAssistManualCategories: (client.smartAssistManualCategories as string[] | null) ?? [
+      AI_ASSIST_CATEGORY.ESTIMATE_FOLLOWUP,
+      AI_ASSIST_CATEGORY.PAYMENT,
+    ],
+    photoRequestsEnabled: client.photoRequestsEnabled ?? true,
+    notificationEmail: client.notificationEmail ?? true,
+    notificationSms: client.notificationSms ?? true,
+  };
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Phone className="h-5 w-5" />
-            Business Phone Number
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {client?.twilioNumber ? (
-            <div className="flex items-center justify-between">
+      <SettingsTabs>
+        {{
+          general: (
+            <div className="space-y-6">
               <div>
-                <p className="font-mono font-semibold">{formatPhoneNumber(client.twilioNumber)}</p>
-                <p className="text-sm text-muted-foreground">Active business line</p>
+                <h2 className="text-lg font-semibold">Weekly Summary</h2>
+                <p className="text-sm text-muted-foreground">
+                  Configure when you receive your weekly summary
+                </p>
               </div>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/client/settings/phone">Manage</Link>
-              </Button>
+              <SummarySettings
+                enabled={client.weeklySummaryEnabled ?? true}
+                day={client.weeklySummaryDay ?? 1}
+                time={client.weeklySummaryTime ?? '08:00'}
+              />
             </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                No phone number set up yet. A dedicated business line is required for automated responses.
-              </p>
-              <Button asChild>
-                <Link href="/client/settings/phone">Set Up Phone</Link>
-              </Button>
+          ),
+          notifications: (
+            <NotificationSettingsForm initialPrefs={notificationPrefs} />
+          ),
+          ai: (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold">AI Assistant</h2>
+                <p className="text-sm text-muted-foreground">
+                  Customize how your AI assistant communicates with leads
+                </p>
+              </div>
+              <AiSettingsForm defaults={aiDefaults} />
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Weekly Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SummarySettings
-            enabled={session.client.weeklySummaryEnabled ?? true}
-            day={session.client.weeklySummaryDay ?? 1}
-            time={session.client.weeklySummaryTime ?? '08:00'}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Notifications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button asChild variant="outline">
-            <Link href="/client/settings/notifications">
-              Manage Notifications
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>AI Assistant</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button asChild variant="outline">
-            <Link href="/client/settings/ai">
-              Configure AI Settings
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Features</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button asChild variant="outline">
-            <Link href="/client/settings/features">
-              Manage Features
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="border-destructive/30">
-        <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button asChild variant="destructive">
-            <Link href="/client/cancel">
-              Cancel Subscription
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+          ),
+          phone: (
+            <PhoneProvisioner
+              currentNumber={clientData?.twilioNumber ?? null}
+              businessName={clientData?.businessName ?? ''}
+            />
+          ),
+          features: (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold">Features</h2>
+                <p className="text-sm text-muted-foreground">
+                  Control which features are active for your account
+                </p>
+              </div>
+              <FeatureTogglesForm defaults={featureDefaults} />
+            </div>
+          ),
+        }}
+      </SettingsTabs>
     </div>
   );
 }

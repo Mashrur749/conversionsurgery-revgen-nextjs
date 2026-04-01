@@ -140,6 +140,8 @@ export function ConversationsShell({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [conversationError, setConversationError] = useState(false);
   const [pollingFailures, setPollingFailures] = useState(0);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -217,6 +219,8 @@ export function ConversationsShell({
       setSendError(false);
       setNewMessage('');
       setPollingFailures(0);
+      setHasMoreMessages(false);
+      setHasMoreMessages(false);
 
       // Update URL without navigation
       const url = new URL(window.location.href);
@@ -242,8 +246,10 @@ export function ConversationsShell({
       }, 5000);
 
       try {
+        // EC-13: Fetch only the last 50 messages on initial load to cap
+        // bandwidth for conversations with 1000+ messages.
         const res = await fetch(
-          `/api/client/conversations/${leadId}/messages`,
+          `/api/client/conversations/${leadId}/messages?limit=50`,
           { signal: controller.signal }
         );
         clearTimeout(timeoutId);
@@ -251,8 +257,9 @@ export function ConversationsShell({
         if (controller.signal.aborted) return;
 
         if (res.ok) {
-          const data = (await res.json()) as { messages: Message[] };
+          const data = (await res.json()) as { messages: Message[]; hasMore?: boolean };
           setMessages(data.messages);
+          setHasMoreMessages(data.hasMore ?? false);
           setLoadingMessages(false);
           // Mark as read
           if (data.messages.length > 0) {
@@ -437,6 +444,47 @@ export function ConversationsShell({
     const url = new URL(window.location.href);
     url.searchParams.delete('lead');
     router.replace(url.pathname + url.search, { scroll: false });
+  }
+
+  // ----- EC-13: Load earlier messages (pagination) -----
+  async function handleLoadEarlier() {
+    if (!selectedLeadId || loadingEarlier || messages.length === 0) return;
+    const oldest = messages[0];
+    if (!oldest.createdAt) return;
+
+    setLoadingEarlier(true);
+    try {
+      const res = await fetch(
+        `/api/client/conversations/${selectedLeadId}/messages?before=${encodeURIComponent(oldest.createdAt)}&limit=50`
+      );
+      if (res.ok) {
+        const data = (await res.json()) as { messages: Message[]; hasMore?: boolean };
+        if (data.messages.length > 0) {
+          // Preserve scroll position: remember current scroll height before prepend
+          const container = messagesContainerRef.current;
+          const prevScrollHeight = container?.scrollHeight ?? 0;
+
+          setMessages((prev) => {
+            const existingIds = new Set(prev.map((m) => m.id));
+            const newer = data.messages.filter((m) => !existingIds.has(m.id));
+            return [...newer, ...prev];
+          });
+          setHasMoreMessages(data.hasMore ?? false);
+
+          // Restore scroll position after React flushes the DOM update
+          requestAnimationFrame(() => {
+            if (container) {
+              container.scrollTop += container.scrollHeight - prevScrollHeight;
+            }
+          });
+        } else {
+          setHasMoreMessages(false);
+        }
+      }
+    } catch {
+      // Silently ignore — user can retry by scrolling to top again
+    }
+    setLoadingEarlier(false);
   }
 
   // ----- Debounced search -----
@@ -682,7 +730,21 @@ export function ConversationsShell({
                     <p className="text-sm text-muted-foreground">No messages yet</p>
                   </div>
                 ) : (
-                  messages.map((msg) => {
+                  <>
+                    {/* EC-13: Load earlier messages button */}
+                    {hasMoreMessages && (
+                      <div className="flex justify-center pb-2">
+                        <button
+                          type="button"
+                          onClick={handleLoadEarlier}
+                          disabled={loadingEarlier}
+                          className="text-xs text-forest border border-forest/30 bg-moss-light px-3 py-1 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
+                        >
+                          {loadingEarlier ? 'Loading&hellip;' : 'Load earlier messages'}
+                        </button>
+                      </div>
+                    )}
+                    {messages.map((msg) => {
                     const isAI = msg.messageType === 'ai_response';
                     const isOutbound = msg.direction === 'outbound';
                     return (
@@ -724,7 +786,8 @@ export function ConversationsShell({
                         </div>
                       </div>
                     );
-                  })
+                  })}
+                  </>
                 )}
                 <div ref={messagesEndRef} />
               </div>

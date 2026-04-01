@@ -63,7 +63,7 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
       const leadDisplay = lead.name || formatPhoneNumber(lead.phone);
       const truncatedMessage =
         lastMessage.length > 80 ? `${lastMessage.substring(0, 80)}...` : lastMessage;
-      const smsBody = `🔥 ${leadDisplay} needs help!\n\n"${truncatedMessage}"\n\nReason: ${reason}\n\nOpen dashboard to respond.`;
+      const smsBody = `URGENT: ${leadDisplay} needs a response.\n\n"${truncatedMessage}"\n\nReason: ${reason}\n\nOpen dashboard to respond.`;
 
       let notified = 0;
 
@@ -126,7 +126,7 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
     const leadDisplay = lead.name || formatPhoneNumber(lead.phone);
     const truncatedMessage =
       lastMessage.length > 80 ? lastMessage.substring(0, 80) + '...' : lastMessage;
-    const smsBody = `🔥 ${leadDisplay} needs help!\n\n"${truncatedMessage}"\n\nReason: ${reason}\n\nClaim to respond: ${claimUrl}`;
+    const smsBody = `URGENT: ${leadDisplay} needs a response.\n\n"${truncatedMessage}"\n\nReason: ${reason}\n\nClaim to respond: ${claimUrl}`;
 
     let notifiedCount = 0;
 
@@ -295,7 +295,7 @@ export async function claimEscalation(token: string, teamMemberId: string) {
         try {
           await sendSMS(
             otherMember.phone,
-            `✓ ${member.name} is handling ${leadDisplay}`,
+            `Claimed: ${member.name} is handling ${leadDisplay}.`,
             client.twilioNumber
           );
         } catch (error) {

@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
         await sendSMS(
           otherMember.phone,
-          `✓ ${member?.name || 'Team member'} answered the call with ${leadDisplay}`,
+          `Answered: ${member?.name || 'Team member'} is on the call with ${leadDisplay}.`,
           client.twilioNumber
         );
       }

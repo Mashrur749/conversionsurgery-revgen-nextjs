@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,20 @@ import { formatPhoneNumber } from '@/lib/utils/phone';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { LEAD_STATUSES, LEAD_TEMPERATURES, TEMPERATURE_COLORS } from '@/lib/constants/leads';
+import { LeadNavigation } from './lead-navigation';
 import type { Lead } from '@/db/schema/leads';
+
+const CONVERSATION_MODE_STYLES: Record<string, string> = {
+  ai: 'bg-[#6B7E54]/15 text-[#6B7E54]',
+  human: 'bg-[#1B2F26]/15 text-[#1B2F26]',
+  paused: 'bg-muted text-muted-foreground',
+};
+
+const CONVERSATION_MODE_LABELS: Record<string, string> = {
+  ai: 'AI',
+  human: 'Human',
+  paused: 'Paused',
+};
 
 interface LeadHeaderProps {
   lead: Lead;
@@ -18,6 +32,23 @@ interface LeadHeaderProps {
 export function LeadHeader({ lead }: LeadHeaderProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [modeLoading, setModeLoading] = useState(false);
+  const currentMode = (lead.conversationMode as string) || 'ai';
+
+  async function toggleConversationMode() {
+    const newMode = currentMode === 'human' ? 'ai' : 'human';
+    setModeLoading(true);
+    try {
+      await fetch(`/api/admin/leads/${lead.id}/conversation-mode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: newMode }),
+      });
+      router.refresh();
+    } finally {
+      setModeLoading(false);
+    }
+  }
 
   async function updateField(field: string, value: string | number | null) {
     setSaving(true);
@@ -37,9 +68,12 @@ export function LeadHeader({ lead }: LeadHeaderProps) {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">
-            {lead.name || formatPhoneNumber(lead.phone)}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">
+              {lead.name || formatPhoneNumber(lead.phone)}
+            </h1>
+            <LeadNavigation currentLeadId={lead.id} />
+          </div>
           <p className="text-muted-foreground">{formatPhoneNumber(lead.phone)}</p>
           {lead.email && <p className="text-muted-foreground">{lead.email}</p>}
           {lead.source && (
@@ -77,6 +111,19 @@ export function LeadHeader({ lead }: LeadHeaderProps) {
               ))}
             </SelectContent>
           </Select>
+
+          <Badge className={CONVERSATION_MODE_STYLES[currentMode] || CONVERSATION_MODE_STYLES.ai}>
+            {CONVERSATION_MODE_LABELS[currentMode] || 'AI'}
+          </Badge>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={modeLoading}
+            onClick={toggleConversationMode}
+          >
+            {modeLoading ? 'Switching...' : currentMode === 'human' ? 'Hand Back to AI' : 'Take Over'}
+          </Button>
 
           {lead.actionRequired && (
             <Badge variant="destructive">Action Required</Badge>

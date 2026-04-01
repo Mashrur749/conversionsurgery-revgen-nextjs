@@ -198,73 +198,123 @@ export function LeadsTable() {
             </div>
           ) : (
             <>
-              <div className="hidden md:grid grid-cols-[auto_1fr_120px_100px_100px_120px] gap-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground uppercase">
-                <div className="flex items-center">
-                  <Checkbox
-                    checked={selected.size === leads.length && leads.length > 0}
-                    onCheckedChange={toggleAll}
-                  />
-                </div>
-                <div>Lead</div>
-                <div>Status</div>
-                <div>Score</div>
-                <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort('createdAt')}>
-                  Created <ArrowUpDown className="h-3 w-3" />
-                </button>
-                <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort('updatedAt')}>
-                  Updated <ArrowUpDown className="h-3 w-3" />
-                </button>
-              </div>
-
-              <div className="divide-y">
+              {/* Mobile card layout */}
+              <div className="sm:hidden divide-y">
                 {leads.map((lead) => (
                   <div
                     key={lead.id}
-                    className="grid grid-cols-1 md:grid-cols-[auto_1fr_120px_100px_100px_120px] gap-2 md:gap-3 px-4 py-3 hover:bg-[#F8F9FA] transition-colors cursor-pointer items-center"
+                    className="flex items-start gap-3 px-4 py-3 hover:bg-[#F8F9FA] transition-colors cursor-pointer"
                     onClick={() => router.push(`/leads/${lead.id}`)}
                   >
-                    <div className="hidden md:flex items-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="pt-1" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={selected.has(lead.id)}
                         onCheckedChange={() => toggleSelect(lead.id)}
                       />
                     </div>
-                    <div className="flex items-center gap-3 min-w-0">
-                      {lead.actionRequired && (
-                        <span className="w-2 h-2 bg-destructive rounded-full shrink-0" />
-                      )}
-                      <div className="min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        {lead.actionRequired && (
+                          <span className="w-2 h-2 bg-destructive rounded-full shrink-0" />
+                        )}
                         <p className="font-medium truncate">
                           {lead.name || formatPhoneNumber(lead.phone)}
                         </p>
-                        {lead.name && (
-                          <p className="text-sm text-muted-foreground">{formatPhoneNumber(lead.phone)}</p>
-                        )}
-                        {lead.projectType && (
-                          <p className="text-xs text-muted-foreground truncate">{lead.projectType}</p>
+                      </div>
+                      {lead.name && (
+                        <p className="text-sm text-muted-foreground">{formatPhoneNumber(lead.phone)}</p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <Badge className={STATUS_COLORS[lead.status || 'new'] || STATUS_COLORS.new}>
+                          {lead.status?.replace(/_/g, ' ') || 'new'}
+                        </Badge>
+                        <LeadScoreBadge
+                          score={lead.score || 50}
+                          temperature={(lead.temperature as 'hot' | 'warm' | 'cold') || 'warm'}
+                          compact
+                        />
+                        {lead.source && (
+                          <span className="text-xs text-muted-foreground">{lead.source}</span>
                         )}
                       </div>
-                    </div>
-                    <div>
-                      <Badge className={STATUS_COLORS[lead.status || 'new'] || STATUS_COLORS.new}>
-                        {lead.status?.replace(/_/g, ' ') || 'new'}
-                      </Badge>
-                    </div>
-                    <div>
-                      <LeadScoreBadge
-                        score={lead.score || 50}
-                        temperature={(lead.temperature as 'hot' | 'warm' | 'cold') || 'warm'}
-                        compact
-                      />
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(lead.createdAt!), { addSuffix: true })}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(lead.updatedAt!), { addSuffix: true })}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Updated {formatDistanceToNow(new Date(lead.updatedAt!), { addSuffix: true })}
+                      </p>
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Desktop table layout */}
+              <div className="hidden sm:block">
+                <div className="grid grid-cols-[auto_1fr_120px_100px_100px_120px] gap-3 px-4 py-2 border-b text-xs font-medium text-muted-foreground uppercase">
+                  <div className="flex items-center">
+                    <Checkbox
+                      checked={selected.size === leads.length && leads.length > 0}
+                      onCheckedChange={toggleAll}
+                    />
+                  </div>
+                  <div>Lead</div>
+                  <div>Status</div>
+                  <div>Score</div>
+                  <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort('createdAt')}>
+                    Created <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                  <button className="flex items-center gap-1 hover:text-foreground" onClick={() => toggleSort('updatedAt')}>
+                    Updated <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </div>
+
+                <div className="divide-y">
+                  {leads.map((lead) => (
+                    <div
+                      key={lead.id}
+                      className="grid grid-cols-[auto_1fr_120px_100px_100px_120px] gap-3 px-4 py-3 hover:bg-[#F8F9FA] transition-colors cursor-pointer items-center"
+                      onClick={() => router.push(`/leads/${lead.id}`)}
+                    >
+                      <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selected.has(lead.id)}
+                          onCheckedChange={() => toggleSelect(lead.id)}
+                        />
+                      </div>
+                      <div className="flex items-center gap-3 min-w-0">
+                        {lead.actionRequired && (
+                          <span className="w-2 h-2 bg-destructive rounded-full shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">
+                            {lead.name || formatPhoneNumber(lead.phone)}
+                          </p>
+                          {lead.name && (
+                            <p className="text-sm text-muted-foreground">{formatPhoneNumber(lead.phone)}</p>
+                          )}
+                          {lead.projectType && (
+                            <p className="text-xs text-muted-foreground truncate">{lead.projectType}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <Badge className={STATUS_COLORS[lead.status || 'new'] || STATUS_COLORS.new}>
+                          {lead.status?.replace(/_/g, ' ') || 'new'}
+                        </Badge>
+                      </div>
+                      <div>
+                        <LeadScoreBadge
+                          score={lead.score || 50}
+                          temperature={(lead.temperature as 'hot' | 'warm' | 'cold') || 'warm'}
+                          compact
+                        />
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(lead.createdAt!), { addSuffix: true })}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(lead.updatedAt!), { addSuffix: true })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}

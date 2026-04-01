@@ -1,6 +1,6 @@
 # Managed Service Delivery Playbook
 
-Last updated: 2026-03-28
+Last updated: 2026-04-01
 Audience: Solo operator delivering ConversionSurgery at $1,000/mo
 Purpose: Every business scenario a contractor generates, and exactly how you handle it.
 
@@ -198,6 +198,7 @@ At day 90:
 - Set AI tone based on their communication style.
 - Configure business hours from the call.
 - Send a recap text: &quot;Great call. Your number is live. Send me those old quotes when you get a chance and I&apos;ll get them working this week.&quot;
+- Note: the onboarding checklist now has actionable links to each setup step &mdash; the contractor can self-serve some configuration (phone setup, business hours, team members) directly from their dashboard without waiting for you.
 
 ---
 
@@ -239,3 +240,4 @@ At day 90:
 | 90-day guarantee check | System flags, you review | Check 1 attributed opportunity (Section 5) |
 | Old quotes imported | You handle | CSV import with estimate_sent status (Section 2) |
 | New month starts | You review | Monthly health check (Section 11) |
+| Cron job fails | System alerts operator via SMS | Check reliability dashboard, investigate failed job |

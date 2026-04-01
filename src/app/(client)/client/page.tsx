@@ -1,8 +1,8 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { getDb, leads, dailyStats, appointments } from '@/db';
-import { clients, subscriptions } from '@/db/schema';
-import { eq, and, gte, sql, desc } from 'drizzle-orm';
+import { clients, subscriptions, systemSettings } from '@/db/schema';
+import { eq, and, gte, sql, desc, inArray } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -53,6 +53,14 @@ export default async function ClientDashboardPage() {
   const latestReportDelivery = latestReportDeliveryResult.status === 'fulfilled'
     ? latestReportDeliveryResult.value
     : (() => { console.error('[ClientDashboard] Failed to load report delivery:', latestReportDeliveryResult.reason); return null; })();
+
+  // Operator contact info for Account Manager card
+  const operatorRows = await db
+    .select({ key: systemSettings.key, value: systemSettings.value })
+    .from(systemSettings)
+    .where(inArray(systemSettings.key, ['operator_phone', 'operator_name']));
+  const operatorPhone = operatorRows.find((r) => r.key === 'operator_phone')?.value ?? null;
+  const operatorName = operatorRows.find((r) => r.key === 'operator_name')?.value ?? 'ConversionSurgery Team';
 
   // Setup status checks
   const [client] = await db
@@ -138,6 +146,20 @@ export default async function ClientDashboardPage() {
                 )}
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Account Manager card — only shown when operator_phone is configured */}
+      {operatorPhone && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Your Account Manager</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="font-medium">{operatorName}</p>
+            <p className="text-sm text-muted-foreground">{operatorPhone}</p>
+            <p className="text-xs text-muted-foreground mt-1">Text or call anytime during business hours</p>
           </CardContent>
         </Card>
       )}

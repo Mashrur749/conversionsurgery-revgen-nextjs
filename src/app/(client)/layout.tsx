@@ -8,6 +8,7 @@ import type { PermissionOverrides } from '@/lib/permissions/resolve';
 import { HelpButton } from '@/components/ui/help-button';
 import { ClientNav } from '@/components/client-nav';
 import { PermissionProvider } from '@/components/permission-provider';
+import { CommandPalette } from '@/components/command-palette';
 
 export default async function ClientLayout({
   children,
@@ -123,6 +124,7 @@ export default async function ClientLayout({
           {children}
         </main>
         <HelpButton />
+        <CommandPalette isAdmin={false} />
       </div>
     </PermissionProvider>
   );

@@ -5,7 +5,7 @@ import { and, eq, gte, inArray, lte } from 'drizzle-orm';
 const MS_IN_DAY = 24 * 60 * 60 * 1000;
 const MS_IN_HOUR = 60 * 60 * 1000;
 
-export const ESTIMATE_NUDGE_STALE_DAYS = 5;
+export const ESTIMATE_NUDGE_STALE_DAYS = 2;
 export const ESTIMATE_NUDGE_COOLDOWN_HOURS = 72;
 
 export interface EstimateNudgeLead {

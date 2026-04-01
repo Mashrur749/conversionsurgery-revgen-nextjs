@@ -1,8 +1,8 @@
 # Operations Guide
 
-Last updated: 2026-03-28
+Last updated: 2026-04-01
 Audience: Founder (solo operator), operations monitor
-Last verified commit: `feat(ops): per-client automation pause + AI quality review page (2026-03-28)`
+Last verified commit: `feat: Wave 1-2 operational and polish fixes (2026-04-01)`
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -35,6 +35,8 @@ Last verified commit: `feat(ops): per-client automation pause + AI quality revie
 28. Spot-check model routing distribution: query recent `agent_decisions` rows and verify `actionDetails.modelTier` split is reasonable (expect ~15-25% quality, ~75-85% fast). If quality ratio is unexpectedly high, investigate whether confidence scores are systematically low (prompt issue) or lead scores are inflated.
 29. **Pre-launch gate (new client activation):** Before enabling autonomous mode for a new client, run `npm run test:ai` with the client&apos;s knowledge base context. All 10 Safety tests must pass. Quality test failures require prompt review. This is a hard gate &mdash; do not activate a client with failing Safety tests.
 30. **Weekly AI effectiveness review:** Open `/admin/ai-effectiveness` and review 14-day window. Key health indicators: positive rate should be &gt;20% (alarm if &lt;10%), avg confidence &gt;60 (alarm if &lt;45), avg response time &lt;5s. Check model tier split (fast vs quality). If quality usage exceeds 30%, investigate &mdash; may indicate systematically low confidence or inflated lead scores. Review top escalation reasons and feed patterns back into knowledge base entries or guardrail tuning.
+31. **Operator alerting:** Verify `operator_phone` is set in `system_settings` (via `/admin/settings`). When any cron job fails, the system sends an SMS alert to this number from the agency line. Alerts are deduplicated (1 per subject per hour). If you are not receiving alerts, check: (a) `operator_phone` is set, (b) agency Twilio number is configured, (c) the phone number is valid and can receive SMS.
+32. **Agency voice webhook:** The agency number (#5) has a voice webhook at `/api/webhooks/twilio/agency-voice`. Callers hear &quot;This number is for text messages only.&quot; Verify this is configured in Twilio Console under the agency number&apos;s voice URL. If callers report the number just rings or goes to Twilio default voicemail, the webhook is not configured.
 
 ## Knowledge Gap Resolution Process
 

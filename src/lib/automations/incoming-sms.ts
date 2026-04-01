@@ -558,7 +558,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       if (client.notificationSms) {
         await sendSMS(
           client.phone,
-          `⚠️ ${lead.name || formatPhoneNumber(senderPhone)} needs you: "${messageBody.substring(0, 80)}..." ${dashboardUrl}`,
+          `URGENT: ${lead.name || formatPhoneNumber(senderPhone)} needs you: "${messageBody.substring(0, 80)}..." ${dashboardUrl}`,
           client.twilioNumber
         );
       }
@@ -691,7 +691,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   if (client.notificationSms) {
     await sendSMS(
       client.phone,
-      `💬 ${lead.name || formatPhoneNumber(senderPhone)}: "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}" — AI replied. ${dashboardUrl}`,
+      `${lead.name || formatPhoneNumber(senderPhone)}: "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}" — AI replied. ${dashboardUrl}`,
       client.twilioNumber
     );
   }

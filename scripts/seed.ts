@@ -20,6 +20,8 @@ import {
   roleTemplates,
   clientMemberships,
   agencyMemberships,
+  invoices,
+  knowledgeBase,
 } from "@/db/schema";
 import {
   ALL_PORTAL_PERMISSIONS,
@@ -2046,6 +2048,780 @@ async function seedScheduledMessages(clientIds: string[], leadIds: string[]) {
 }
 
 // ============================================
+// SALES DEMO SEED (--demo flag)
+// ============================================
+
+// Sentinel email — used to find and clean up the demo client
+const DEMO_SALES_EMAIL = "demo@summit-renovations.example";
+
+async function seedSalesDemo(): Promise<void> {
+  console.log("");
+  console.log("--------------------------------------------");
+  console.log("  Summit Renovations Demo Seed");
+  console.log("--------------------------------------------");
+
+  const now = new Date();
+  const daysAgo = (d: number) => new Date(now.getTime() - d * 86400000);
+  const daysFromNow = (d: number) => new Date(now.getTime() + d * 86400000);
+  const minutesAgo = (m: number) => new Date(now.getTime() - m * 60000);
+
+  // ---- 1. Client ----
+  const existingClient = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.email, DEMO_SALES_EMAIL))
+    .limit(1);
+
+  let clientId: string;
+  if (existingClient.length > 0) {
+    clientId = existingClient[0].id;
+    console.log("  Demo client already exists, reusing:", clientId);
+  } else {
+    const [inserted] = await db
+      .insert(clients)
+      .values({
+        businessName: "Summit Renovations",
+        ownerName: "Demo Owner",
+        email: DEMO_SALES_EMAIL,
+        phone: "+15550000001",
+        twilioNumber: "+15550000099",
+        timezone: "America/Edmonton",
+        status: "active",
+        missedCallSmsEnabled: true,
+        aiResponseEnabled: true,
+        aiAgentEnabled: true,
+        aiAgentMode: "autonomous",
+        flowsEnabled: true,
+        leadScoringEnabled: true,
+        notificationEmail: true,
+        notificationSms: true,
+        monthlyMessageLimit: 5000,
+        messagesSentThisMonth: 312,
+        previousResponseTimeMinutes: 180,
+        isTest: true,
+      })
+      .returning({ id: clients.id });
+    clientId = inserted.id;
+    console.log("  Created demo client:", clientId);
+  }
+
+  // ---- 2. Business hours ----
+  const STANDARD_HOURS = [
+    { dayOfWeek: 0, isOpen: false, openTime: null, closeTime: null },
+    { dayOfWeek: 1, isOpen: true, openTime: "07:00", closeTime: "18:00" },
+    { dayOfWeek: 2, isOpen: true, openTime: "07:00", closeTime: "18:00" },
+    { dayOfWeek: 3, isOpen: true, openTime: "07:00", closeTime: "18:00" },
+    { dayOfWeek: 4, isOpen: true, openTime: "07:00", closeTime: "18:00" },
+    { dayOfWeek: 5, isOpen: true, openTime: "07:00", closeTime: "18:00" },
+    { dayOfWeek: 6, isOpen: true, openTime: "08:00", closeTime: "14:00" },
+  ];
+  for (const h of STANDARD_HOURS) {
+    try {
+      await db.insert(businessHours).values({ clientId, ...h });
+    } catch {
+      // already exists
+    }
+  }
+
+  // ---- 3. Leads (15-20) ----
+  const DEMO_LEADS = [
+    {
+      name: "Alex Drummond",
+      phone: "+15551000101",
+      source: "missed_call",
+      status: "won",
+      score: 94,
+      temperature: "warm",
+      projectType: "Kitchen renovation",
+      notes: "Full kitchen gut — cabinets, counters, tile",
+      createdAt: daysAgo(28),
+    },
+    {
+      name: "Brenda Kowalski",
+      phone: "+15551000102",
+      source: "missed_call",
+      status: "won",
+      score: 91,
+      temperature: "warm",
+      projectType: "Deck construction",
+      notes: "New 400 sq ft composite deck with railing",
+      createdAt: daysAgo(21),
+    },
+    {
+      name: "Carlos Mendes",
+      phone: "+15551000103",
+      source: "form",
+      status: "won",
+      score: 88,
+      temperature: "warm",
+      projectType: "Bathroom remodel",
+      notes: "Master bath full remodel",
+      createdAt: daysAgo(18),
+    },
+    {
+      name: "Diana Fowler",
+      phone: "+15551000104",
+      source: "missed_call",
+      status: "won",
+      score: 86,
+      temperature: "warm",
+      projectType: "Basement finishing",
+      notes: "900 sq ft unfinished basement",
+      createdAt: daysAgo(14),
+    },
+    {
+      name: "Ethan Morrison",
+      phone: "+15551000105",
+      source: "form",
+      status: "estimate_sent",
+      score: 82,
+      temperature: "warm",
+      projectType: "Siding replacement",
+      notes: "Full exterior vinyl siding, approx 2,200 sq ft",
+      createdAt: daysAgo(10),
+    },
+    {
+      name: "Fiona Campbell",
+      phone: "+15551000106",
+      source: "missed_call",
+      status: "estimate_sent",
+      score: 79,
+      temperature: "warm",
+      projectType: "Gutter replacement",
+      notes: "Seamless aluminum gutters, two-storey home",
+      createdAt: daysAgo(8),
+    },
+    {
+      name: "Greg Winters",
+      phone: "+15551000107",
+      source: "missed_call",
+      status: "estimate_sent",
+      score: 75,
+      temperature: "warm",
+      projectType: "Roofing repair",
+      notes: "Storm damage repair, approx 800 sq ft",
+      createdAt: daysAgo(7),
+    },
+    {
+      name: "Hannah Reed",
+      phone: "+15551000108",
+      source: "form",
+      status: "contacted",
+      score: 71,
+      temperature: "warm",
+      projectType: "Deck refinishing",
+      notes: "Pressure wash + stain existing 300 sq ft deck",
+      createdAt: daysAgo(5),
+    },
+    {
+      name: "Ian Blackwood",
+      phone: "+15551000109",
+      source: "missed_call",
+      status: "contacted",
+      score: 68,
+      temperature: "warm",
+      projectType: "Window replacement",
+      notes: "14 windows, looking for triple-pane",
+      createdAt: daysAgo(4),
+    },
+    {
+      name: "Julia Santos",
+      phone: "+15551000110",
+      source: "form",
+      status: "contacted",
+      score: 65,
+      temperature: "warm",
+      projectType: "Interior painting",
+      notes: "Full interior, 3-bed 2-bath house",
+      createdAt: daysAgo(3),
+    },
+    {
+      name: "Kevin Tran",
+      phone: "+15551000111",
+      source: "missed_call",
+      status: "new",
+      score: 58,
+      temperature: "warm",
+      projectType: "Fence installation",
+      notes: "160 linear ft privacy fence",
+      actionRequired: true,
+      actionRequiredReason: "New missed call — AI responded, awaiting reply",
+      createdAt: daysAgo(2),
+    },
+    {
+      name: "Laura Nicholson",
+      phone: "+15551000112",
+      source: "missed_call",
+      status: "new",
+      score: 55,
+      temperature: "warm",
+      projectType: "Kitchen renovation",
+      notes: "Cabinet refacing + new countertops",
+      actionRequired: true,
+      actionRequiredReason: "New lead — no response yet",
+      createdAt: daysAgo(1),
+    },
+    {
+      name: "Marcus Green",
+      phone: "+15551000113",
+      source: "form",
+      status: "new",
+      score: 52,
+      temperature: "warm",
+      projectType: "Flooring",
+      notes: "Hardwood throughout main floor",
+      createdAt: daysAgo(0),
+    },
+    {
+      name: "Nina Okoye",
+      phone: "+15551000114",
+      source: "missed_call",
+      status: "lost",
+      score: 22,
+      temperature: "cool",
+      projectType: "Bathroom remodel",
+      notes: "Went with another contractor",
+      createdAt: daysAgo(25),
+    },
+    {
+      name: "Omar Hassan",
+      phone: "+15551000115",
+      source: "form",
+      status: "lost",
+      score: 18,
+      temperature: "cool",
+      projectType: "Deck construction",
+      notes: "Budget too low, did not proceed",
+      createdAt: daysAgo(30),
+    },
+  ] as const;
+
+  const demoLeadIds: string[] = [];
+  for (const lead of DEMO_LEADS) {
+    const existing = await db
+      .select()
+      .from(leads)
+      .where(eq(leads.phone, lead.phone))
+      .limit(1);
+
+    if (existing.length > 0) {
+      demoLeadIds.push(existing[0].id);
+      continue;
+    }
+    const [ins] = await db
+      .insert(leads)
+      .values({ clientId, ...lead })
+      .returning({ id: leads.id });
+    demoLeadIds.push(ins.id);
+  }
+  console.log(`  Created ${demoLeadIds.length} leads`);
+
+  // ---- 4. Conversations (30-40 messages across 5-6 leads) ----
+  // Lead indices: 0=Alex(won), 4=Ethan(est_sent), 7=Hannah(contacted),
+  //               8=Ian(contacted), 10=Kevin(new), 11=Laura(new)
+  const DEMO_CONVOS = [
+    // Alex Drummond — won (full thread, 7 messages)
+    {
+      leadId: demoLeadIds[0],
+      direction: "outbound",
+      messageType: "sms",
+      content:
+        "Hi Alex, this is Summit Renovations. Sorry we missed your call! How can we help you today?",
+      aiConfidence: "0.95",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(40320), // 28 days ago
+    },
+    {
+      leadId: demoLeadIds[0],
+      direction: "inbound",
+      messageType: "sms",
+      content:
+        "Hi! We want to do a full kitchen reno — new cabinets, countertops, backsplash. When can someone come out?",
+      createdAt: minutesAgo(40260),
+    },
+    {
+      leadId: demoLeadIds[0],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "Sounds like a great project, Alex! Kitchen renovations are one of our specialties. We could have someone out for a free design consult this week. Does Thursday or Friday afternoon work for you?",
+      aiConfidence: "0.91",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(40258),
+    },
+    {
+      leadId: demoLeadIds[0],
+      direction: "inbound",
+      messageType: "sms",
+      content: "Friday at 2pm works perfectly",
+      createdAt: minutesAgo(40200),
+    },
+    {
+      leadId: demoLeadIds[0],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "Booked! Dan will be there Friday at 2 PM. He will bring material samples and walk through design options. What is your address?",
+      aiConfidence: "0.93",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(40198),
+    },
+    {
+      leadId: demoLeadIds[0],
+      direction: "inbound",
+      messageType: "sms",
+      content: "4521 Maple Ridge Cres SW",
+      createdAt: minutesAgo(40150),
+    },
+    {
+      leadId: demoLeadIds[0],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "Perfect, see you Friday at 4521 Maple Ridge Cres SW at 2 PM! We are looking forward to it.",
+      aiConfidence: "0.96",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(40148),
+    },
+
+    // Ethan Morrison — estimate sent (6 messages)
+    {
+      leadId: demoLeadIds[4],
+      direction: "outbound",
+      messageType: "sms",
+      content:
+        "Hi Ethan, thanks for reaching out to Summit Renovations! We received your inquiry about siding replacement. When would be a good time to discuss?",
+      aiConfidence: "0.90",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(14400), // 10 days ago
+    },
+    {
+      leadId: demoLeadIds[4],
+      direction: "inbound",
+      messageType: "sms",
+      content:
+        "Hi, I need the whole exterior done. About 2200 square feet of vinyl. Whats the ballpark cost?",
+      createdAt: minutesAgo(14340),
+    },
+    {
+      leadId: demoLeadIds[4],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "Great question, Ethan! For 2,200 sq ft of premium vinyl siding, you are looking at roughly $18,000–$26,000 fully installed including labour, trim, and cleanup. We stand behind every job with a 5-year workmanship warranty. Can we book a free measure next week?",
+      aiConfidence: "0.87",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(14338),
+    },
+    {
+      leadId: demoLeadIds[4],
+      direction: "inbound",
+      messageType: "sms",
+      content: "Yeah let's do it. Tuesday or Wednesday?",
+      createdAt: minutesAgo(14280),
+    },
+    {
+      leadId: demoLeadIds[4],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "Tuesday at 10 AM works great. Dan will come out, take measurements, and send you a full written estimate within 24 hours. What is your address?",
+      aiConfidence: "0.92",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(14278),
+    },
+    {
+      leadId: demoLeadIds[4],
+      direction: "inbound",
+      messageType: "sms",
+      content: "782 Elbow Park Blvd SW. See you Tuesday",
+      createdAt: minutesAgo(14220),
+    },
+
+    // Hannah Reed — contacted (5 messages)
+    {
+      leadId: demoLeadIds[7],
+      direction: "outbound",
+      messageType: "sms",
+      content:
+        "Hi Hannah, this is Summit Renovations. We got your online request about deck refinishing. Happy to help! What does your deck look like right now — wood, composite?",
+      aiConfidence: "0.89",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(7200), // 5 days ago
+    },
+    {
+      leadId: demoLeadIds[7],
+      direction: "inbound",
+      messageType: "sms",
+      content:
+        "It is cedar, about 300 sq ft. Needs a good clean and a fresh stain. Some boards are starting to go grey",
+      createdAt: minutesAgo(7140),
+    },
+    {
+      leadId: demoLeadIds[7],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "Cedar decks look amazing after a proper refinish! For a 300 sq ft deck, pressure washing, brightening, and two coats of stain typically runs $900–$1,400. We use premium Cabot products that last 3-5 years. Want a free quote this week?",
+      aiConfidence: "0.88",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(7138),
+    },
+    {
+      leadId: demoLeadIds[7],
+      direction: "inbound",
+      messageType: "sms",
+      content: "That sounds reasonable. How soon could you get it done?",
+      createdAt: minutesAgo(7080),
+    },
+    {
+      leadId: demoLeadIds[7],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "We could have you on the schedule within 2 weeks once the quote is approved. Shall I send someone out Thursday morning for a quick look?",
+      aiConfidence: "0.91",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(7078),
+    },
+
+    // Ian Blackwood — contacted (5 messages)
+    {
+      leadId: demoLeadIds[8],
+      direction: "outbound",
+      messageType: "sms",
+      content:
+        "Hi Ian, this is Summit Renovations. Sorry we missed your call! Are you looking at window replacement?",
+      aiConfidence: "0.94",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(5760), // 4 days ago
+    },
+    {
+      leadId: demoLeadIds[8],
+      direction: "inbound",
+      messageType: "sms",
+      content:
+        "Yes, 14 windows total. Current ones are original from 1992, single pane. Terrible drafts in winter",
+      createdAt: minutesAgo(5700),
+    },
+    {
+      leadId: demoLeadIds[8],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "That makes a huge difference, Ian. Upgrading 14 single-pane windows to triple-pane can cut your heating bill by 20-30%. Rough budget range: $18,000–$28,000 installed depending on sizes and casement style. Want a free in-home estimate?",
+      aiConfidence: "0.86",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(5698),
+    },
+    {
+      leadId: demoLeadIds[8],
+      direction: "inbound",
+      messageType: "sms",
+      content: "Definitely interested. Can you come out next week?",
+      createdAt: minutesAgo(5640),
+    },
+    {
+      leadId: demoLeadIds[8],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "Absolutely! I have Monday at 1 PM or Wednesday at 11 AM available. Which works better for you?",
+      aiConfidence: "0.93",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(5638),
+    },
+
+    // Kevin Tran — new (4 messages)
+    {
+      leadId: demoLeadIds[10],
+      direction: "outbound",
+      messageType: "sms",
+      content:
+        "Hi Kevin, this is Summit Renovations. Sorry we missed your call! How can we help you today?",
+      aiConfidence: "0.95",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(2880), // 2 days ago
+    },
+    {
+      leadId: demoLeadIds[10],
+      direction: "inbound",
+      messageType: "sms",
+      content:
+        "Hey! I want to put in a privacy fence around my backyard, about 160 feet",
+      createdAt: minutesAgo(2820),
+    },
+    {
+      leadId: demoLeadIds[10],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "Great choice for privacy, Kevin! A 160 linear ft cedar or vinyl privacy fence typically runs $6,400–$10,000 installed. We handle permits too. Want a free site visit this week to nail down the quote?",
+      aiConfidence: "0.89",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(2818),
+    },
+    {
+      leadId: demoLeadIds[10],
+      direction: "inbound",
+      messageType: "sms",
+      content: "Yes, Thursday works. Whats your earliest time?",
+      createdAt: minutesAgo(2760),
+    },
+
+    // Laura Nicholson — new (3 messages)
+    {
+      leadId: demoLeadIds[11],
+      direction: "outbound",
+      messageType: "sms",
+      content:
+        "Hi Laura, this is Summit Renovations. Sorry we missed your call! What project can we help with?",
+      aiConfidence: "0.95",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(1440), // 1 day ago
+    },
+    {
+      leadId: demoLeadIds[11],
+      direction: "inbound",
+      messageType: "sms",
+      content:
+        "Hi, I want to reface my kitchen cabinets and get new quartz countertops. Looking to stay under $12k",
+      createdAt: minutesAgo(1380),
+    },
+    {
+      leadId: demoLeadIds[11],
+      direction: "outbound",
+      messageType: "ai_response",
+      content:
+        "That budget is very doable, Laura! Cabinet refacing + quartz counters on a typical kitchen runs $7,000–$11,500. We do both in-house so you only deal with one contractor. Can we send someone out for a free measure this week?",
+      aiConfidence: "0.90",
+      deliveryStatus: "delivered",
+      createdAt: minutesAgo(1378),
+    },
+  ];
+
+  let convosCreated = 0;
+  for (const c of DEMO_CONVOS) {
+    try {
+      await db.insert(conversations).values({ clientId, ...c });
+      convosCreated++;
+    } catch {
+      // skip duplicates
+    }
+  }
+  console.log(`  Created ${convosCreated} conversation messages`);
+
+  // ---- 5. Appointments (1 upcoming, 1 completed, 1 cancelled) ----
+  const DEMO_APPOINTMENTS = [
+    {
+      leadId: demoLeadIds[7], // Hannah Reed — upcoming
+      appointmentDate: daysFromNow(3).toISOString().split("T")[0],
+      appointmentTime: "10:00",
+      address: "224 Willow Park Dr SE",
+      status: "scheduled" as const,
+    },
+    {
+      leadId: demoLeadIds[0], // Alex Drummond — completed
+      appointmentDate: daysAgo(26).toISOString().split("T")[0],
+      appointmentTime: "14:00",
+      address: "4521 Maple Ridge Cres SW",
+      status: "completed" as const,
+    },
+    {
+      leadId: demoLeadIds[13], // Nina Okoye — cancelled
+      appointmentDate: daysAgo(20).toISOString().split("T")[0],
+      appointmentTime: "11:00",
+      address: "88 Tuscany Ravine Rd NW",
+      status: "cancelled" as const,
+    },
+  ];
+
+  let apptCreated = 0;
+  for (const appt of DEMO_APPOINTMENTS) {
+    try {
+      await db.insert(appointments).values({ clientId, ...appt });
+      apptCreated++;
+    } catch {
+      // skip duplicates
+    }
+  }
+  console.log(`  Created ${apptCreated} appointments`);
+
+  // ---- 6. Invoices (1 paid, 1 pending) ----
+  const DEMO_INVOICES = [
+    {
+      leadId: demoLeadIds[0], // Alex Drummond — paid
+      invoiceNumber: "SR-2024-041",
+      description: "Full kitchen renovation — cabinets, countertops, backsplash",
+      amount: "28450.00",
+      totalAmount: 2845000,
+      paidAmount: 2845000,
+      remainingAmount: 0,
+      dueDate: daysAgo(10).toISOString().split("T")[0],
+      status: "paid" as const,
+      notes: "Paid in full via e-transfer",
+    },
+    {
+      leadId: demoLeadIds[1], // Brenda Kowalski — pending
+      invoiceNumber: "SR-2024-047",
+      description: "Composite deck construction — 400 sq ft with railing",
+      amount: "19800.00",
+      totalAmount: 1980000,
+      paidAmount: 0,
+      remainingAmount: 1980000,
+      dueDate: daysFromNow(7).toISOString().split("T")[0],
+      status: "pending" as const,
+      notes: "Deposit paid, balance due on completion",
+    },
+  ];
+
+  let invoicesCreated = 0;
+  for (const inv of DEMO_INVOICES) {
+    try {
+      await db.insert(invoices).values({ clientId, ...inv });
+      invoicesCreated++;
+    } catch {
+      // skip duplicates
+    }
+  }
+  console.log(`  Created ${invoicesCreated} invoices`);
+
+  // ---- 7. Knowledge base (5 entries) ----
+  const existing_kb = await db
+    .select()
+    .from(knowledgeBase)
+    .where(eq(knowledgeBase.clientId, clientId))
+    .limit(1);
+
+  if (existing_kb.length === 0) {
+    await db.insert(knowledgeBase).values([
+      {
+        clientId,
+        category: "services",
+        title: "Roofing — Shingle Replacement",
+        content:
+          "We replace asphalt, cedar shake, and metal roofing. Free inspections available. Most residential roofs take 1-2 days. We pull all required permits and handle the cleanup. Standard warranty: 10 years labour, 30 years on architectural shingles.",
+        keywords: "roof, shingles, leak, storm damage, hail, replacement",
+        priority: 10,
+        isActive: true,
+      },
+      {
+        clientId,
+        category: "services",
+        title: "Siding — Vinyl and Fibre Cement",
+        content:
+          "We install vinyl, James Hardie fibre cement, and engineered wood siding. Full tear-off and replacement or install over existing. All work includes house wrap, caulking, and trim. Typical 2,000 sq ft home: 5-7 business days. We carry $5M liability insurance.",
+        keywords: "siding, vinyl, hardie, exterior, cladding",
+        priority: 9,
+        isActive: true,
+      },
+      {
+        clientId,
+        category: "services",
+        title: "Gutters — Seamless Aluminum",
+        content:
+          "Seamless aluminum gutters fabricated on-site. Available in 5 or 6 inch, 20+ colours. Includes downspouts and gutter guards on request. We service and clean existing gutters as well. Most homes completed in one day.",
+        keywords: "gutters, eaves, downspouts, gutter guards, drainage",
+        priority: 7,
+        isActive: true,
+      },
+      {
+        clientId,
+        category: "services",
+        title: "Deck Construction and Refinishing",
+        content:
+          "New deck builds in pressure-treated lumber, cedar, or composite (Trex/TimberTech). Structural drawings available for permit. Deck refinishing includes power wash, brightener treatment, and 2 coats penetrating stain. We do railings, gates, and pergolas. Most decks 300-500 sq ft take 3-5 days.",
+        keywords: "deck, patio, composite, cedar, refinish, stain, railing",
+        priority: 8,
+        isActive: true,
+      },
+      {
+        clientId,
+        category: "services",
+        title: "Kitchen Renovations",
+        content:
+          "Full kitchen remodels: cabinet supply and install, countertop fabrication (quartz, granite, laminate), tile backsplash, flooring, and minor electrical/plumbing coordination. We work with our in-house design team. Typical timeline 2-4 weeks depending on scope. Cabinet refacing also available at 40-60% of full replacement cost.",
+        keywords: "kitchen, cabinets, countertops, quartz, remodel, renovation, backsplash",
+        priority: 10,
+        isActive: true,
+      },
+    ]);
+    console.log("  Created 5 knowledge base entries");
+  } else {
+    console.log("  Knowledge base entries already exist, skipping");
+  }
+
+  // ---- 8. Daily stats (30 days) ----
+  const rand = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+  let statsCreated = 0;
+  for (let d = 0; d < 30; d++) {
+    const date = new Date(now.getTime() - d * 86400000);
+    const dateStr = date.toISOString().split("T")[0];
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    const scale = isWeekend ? 0.3 : 1;
+    try {
+      await db.insert(dailyStats).values({
+        clientId,
+        date: dateStr,
+        missedCallsCaptured: Math.round(rand(3, 8) * scale),
+        formsResponded: Math.round(rand(1, 3) * scale),
+        conversationsStarted: Math.round(rand(2, 6) * scale),
+        messagesSent: Math.round(rand(8, 24) * scale),
+        appointmentsReminded: Math.round(rand(0, 2) * scale),
+        estimatesFollowedUp: Math.round(rand(1, 3) * scale),
+        reviewsRequested: d % 3 === 0 ? rand(0, 2) : 0,
+        paymentsReminded: d % 5 === 0 ? rand(0, 1) : 0,
+      });
+      statsCreated++;
+    } catch {
+      // skip if already exists
+    }
+  }
+  console.log(`  Created ${statsCreated} daily stat rows`);
+
+  console.log("");
+  console.log("  ========================================");
+  console.log("  Demo client ready for sales calls:");
+  console.log(`    Client ID  : ${clientId}`);
+  console.log("    Business   : Summit Renovations");
+  console.log("    Admin view : /admin/clients/" + clientId);
+  console.log("  ========================================");
+  console.log("");
+}
+
+// ============================================
+// SALES DEMO CLEANUP (--demo-cleanup flag)
+// ============================================
+
+async function cleanupSalesDemo(): Promise<void> {
+  console.log("");
+  console.log("--------------------------------------------");
+  console.log("  Summit Renovations Demo Cleanup");
+  console.log("--------------------------------------------");
+
+  const existing = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.email, DEMO_SALES_EMAIL))
+    .limit(1);
+
+  if (existing.length === 0) {
+    console.log("  No demo client found — nothing to clean up.");
+    return;
+  }
+
+  const clientId = existing[0].id;
+  console.log(`  Deleting demo client ${clientId} and all cascade data...`);
+
+  // All child data cascades on delete, so deleting the client is sufficient.
+  await db.delete(clients).where(eq(clients.id, clientId));
+
+  console.log("  Done. Demo data removed.");
+  console.log("");
+}
+
+// ============================================
 // MAIN SEED FUNCTION
 // ============================================
 
@@ -2111,6 +2887,20 @@ export async function seed(options: { lean?: boolean } = {}) {
 
 // Run directly
 const isLean = process.argv.includes("--lean");
-seed({ lean: isLean })
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+const isDemo = process.argv.includes("--demo");
+const isDemoCleanup = process.argv.includes("--demo-cleanup");
+
+if (isDemoCleanup) {
+  cleanupSalesDemo()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+} else if (isDemo) {
+  seed({ lean: isLean })
+    .then(() => seedSalesDemo())
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+} else {
+  seed({ lean: isLean })
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
+}
