@@ -69,6 +69,23 @@ Resolve ambiguity yourself by:
 5. Loading: Skeleton fallbacks matching content shape (use Suspense)
 6. Colors: green=active, yellow=pending, gray=inactive, red=error, blue=info
 7. Destructive actions: always AlertDialog confirmation
+8. Breadcrumbs: add `<Breadcrumbs>` from `src/components/breadcrumbs.tsx` on all deep pages
+9. Mobile: always test at 375px — cards not tables, stack layouts, min 44px tap targets
+
+### UI/UX Change (modify existing page or component)
+
+1. Read `.claude/skills/ux-standards/SKILL.md` first — it defines patterns, anti-patterns, and brand conventions
+2. Check `docs/specs/UX-AUDIT-FULL.md` — is this change tracking an open audit item? If yes, mark it Done in the "Already Fixed" table after implementation
+3. Mobile-first: test every change at 375px width. Use `sm:hidden` / `hidden sm:block` for responsive variants
+4. Polling: use 5s for active views (conversations), 15s for lists, 30s for dashboards
+5. Unread/badge state: track in localStorage (prefix `cs-`), clear on view
+6. Unsaved changes: use `useUnsavedChangesWarning` hook from `src/lib/hooks/use-unsaved-changes-warning.ts` on any form
+7. Tooltips: add `<Tooltip>` with info text next to any non-obvious setting label
+8. After implementation, verify these personas are unbroken:
+   - **Homeowner (SMS only):** Are outbound messages clear, professional, no jargon?
+   - **Contractor (client portal):** Can they do their top 3 tasks in < 3 taps on mobile?
+   - **Operator (admin dashboard):** Can they triage across clients without excessive scrolling?
+9. Update docs per the Change→Doc mapping table below (mandatory)
 
 ### External API Integration (Twilio, Stripe, Anthropic)
 
@@ -170,6 +187,13 @@ When you change code, check whether the affected docs need updating. This is man
 | Feature added, removed, or substantially changed | `docs/product/PLATFORM-CAPABILITIES.md` (relevant section) |
 | Feature removed that was in the offer | `docs/product/02-OFFER-PARITY-GAPS.md` |
 | Feature backlog item implemented | `docs/product/FEATURE-BACKLOG.md` (mark resolved or remove) |
+| Client portal page layout, nav, or UX change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 5: Client Portal), `docs/specs/UX-AUDIT-FULL.md` (mark item Done if tracked) |
+| Admin dashboard layout, nav, or UX change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 11: Agency Operations), `docs/specs/UX-AUDIT-FULL.md` (mark item Done if tracked) |
+| New UI component used across pages (breadcrumbs, notification bell, etc.) | `docs/product/PLATFORM-CAPABILITIES.md` (relevant section) |
+| SMS/notification copy or tone change | `docs/product/PLATFORM-CAPABILITIES.md` (relevant automation section), review `docs/business-intel/OFFER-CLIENT-FACING.md` for consistency |
+| Onboarding wizard, self-serve signup, or day-one flow change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 9: Onboarding), `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (Section 10: Onboarding Call) |
+| Change that affects how operator delivers managed service | `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (relevant section), `docs/operations/01-OPERATIONS-GUIDE.md` |
+| Change that affects how contractor uses the portal day-to-day | `docs/operations/LAUNCH-CHECKLIST.md` (Phase 3: First Client Delivery — if onboarding steps change) |
 
 ### Key docs (quick reference)
 
@@ -182,6 +206,9 @@ When you change code, check whether the affected docs need updating. This is man
 | `docs/product/FEATURE-BACKLOG.md` | **What's planned** — future work with context | Backlog items implemented or deprioritized |
 | `docs/engineering/02-ACCESS-MANAGEMENT.md` | **Who can do what** — permissions and routes | Permission or auth changes |
 | `docs/operations/01-OPERATIONS-GUIDE.md` | **How to run the platform** — operator playbook | Workflow or ops process changes |
+| `docs/specs/UX-AUDIT-FULL.md` | **UX issue tracker** — all identified UX issues with status | Any UI/UX change (mark items Done) |
+| `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` | **How to deliver the service** — every client scenario | Changes affecting operator or contractor workflows |
+| `docs/operations/LAUNCH-CHECKLIST.md` | **Go-to-market checklist** — Phase 0 through Phase 4 | New prerequisites, onboarding steps, or delivery process changes |
 
 ### Rules
 
@@ -203,6 +230,39 @@ When you change code, check whether the affected docs need updating. This is man
   - `"` → `&quot;` (or `&ldquo;`/`&rdquo;` for curly)
   - `&` → `&amp;`
   - `<` → `&lt;`, `>` → `&gt;`
+
+## Parallel Agent Execution
+
+For multi-item execution (UX fixes, edge cases, feature batches), use the work tracker at `.claude/work-tracker.md`.
+
+**Orchestration rules:**
+1. Read `.claude/work-tracker.md` to see what's todo/in_progress/done
+2. Before dispatching agents, update item status to `in_progress` and fill the Assigned Agent column
+3. Check the Files Touched column — never assign two agents to the same file
+4. Check the Depends On column — don't start dependent items until prerequisites are done
+5. Group items that share files into the same agent (e.g., all team-escalation.ts fixes together)
+6. Max 4 agents in parallel
+7. After all agents in a wave complete: run `npm run quality:no-regressions`, update tracker (in_progress → done), update docs per Change-to-Doc table
+8. Each agent prompt must include: the specific items to fix, the files they can touch, and a reminder to run `npm run typecheck` before finishing
+
+**Model selection per agent:**
+- `model: "haiku"` — single-file fixes, try-catch, class changes (< 20 lines)
+- `model: "sonnet"` — multi-file features, new components, API endpoints (20-200 lines)
+- Default (Opus) — architectural changes, rewrites, complex state (200+ lines)
+
+**Agent prompt template (keep lean — don't repeat CLAUDE.md rules):**
+```
+Fix [ITEM-IDs]: [brief description]
+
+Read `.claude/skills/ux-standards/SKILL.md` for patterns and rules.
+
+Files you may modify: [list]
+Files you must NOT modify: [list]
+
+[Requirements — what to do, not how to code]
+
+After implementation, run: npm run typecheck
+```
 
 ## Worktree Workflow
 
@@ -228,3 +288,7 @@ Rules are appended when corrections happen. Format: `N. [CATEGORY] Instruction �
 8. [CODE] `compliance-gateway.ts` has a pre-existing block-scoped variable redeclaration typecheck warning — ignore it, don't try to fix.
 9. [ARCH] Attribution is event-driven (NOT cron) — `trackFunnelEvent()` triggers `attributeFunnelEvent()` synchronously.
 10. [UX] Brand palette only — never use raw Tailwind colors (blue-500, red-600, etc.). Use CSS custom properties or the established brand tokens.
+11. [PROCESS] Every UI/UX change must follow the process in `.claude/skills/ux-standards/SKILL.md` — read skill first, reuse established patterns, update UX audit doc + all matching docs from Change-to-Doc table.
+12. [UX] No emojis in SMS notifications, email subjects, or any user-facing text — use professional text labels (URGENT:, REMINDER:, Claimed:).
+13. [UX] Mobile layouts must use flex + min-h-0 + dvh — never `h-[calc(100vh-Xrem)]` which breaks on iOS with dynamic browser chrome.
+14. [UX] Tables on mobile (< 640px) must use card layout fallback — `hidden sm:block` for table, `sm:hidden` for cards.

@@ -7,6 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 type DateLike = string | Date | null;
 
@@ -126,6 +131,7 @@ export function DayOneActivationCard({ clientId, initialSummary }: Props) {
   const [summary, setSummary] = useState<DayOneSummary>(initialSummary);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [auditOpen, setAuditOpen] = useState(false);
   const [auditSummary, setAuditSummary] = useState(initialSummary.audit?.summary ?? '');
   const [findingDrafts, setFindingDrafts] = useState<FindingDraft[]>(
     toFindingDrafts(initialSummary.audit?.findings ?? null)
@@ -145,6 +151,15 @@ export function DayOneActivationCard({ clientId, initialSummary }: Props) {
     () => summary.milestones.filter((milestone) => milestone.status === 'completed').length,
     [summary.milestones]
   );
+
+  const auditSummaryLine = useMemo(() => {
+    const findings = summary.audit?.findings;
+    const status = summary.audit?.status;
+    if (!findings || findings.length === 0) {
+      return 'No audit yet';
+    }
+    return `${findings.length} finding${findings.length === 1 ? '' : 's'}, ${status === 'delivered' ? 'delivered' : 'draft'}`;
+  }, [summary.audit]);
 
   function normalizeAuditFields(next: DayOneSummary) {
     setAuditSummary(next.audit?.summary ?? '');
@@ -294,193 +309,209 @@ export function DayOneActivationCard({ clientId, initialSummary }: Props) {
           ))}
         </div>
 
-        <div className="space-y-2 rounded-md border p-3">
-          <p className="font-medium">Revenue Leak Audit</p>
-          <div className="space-y-2">
-            <Label htmlFor={`audit-summary-${clientId}`}>Summary</Label>
-            <Textarea
-              id={`audit-summary-${clientId}`}
-              rows={3}
-              value={auditSummary}
-              onChange={(event) => setAuditSummary(event.target.value)}
-              placeholder="3-5 findings summary and delivery notes..."
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Findings</Label>
-            <div className="space-y-2">
-              {findingDrafts.map((finding, index) => (
-                <div key={`${clientId}-finding-${index}`} className="rounded border p-2 space-y-2">
-                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                    <Input
-                      value={finding.title}
-                      onChange={(event) =>
-                        setFindingDrafts((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index
-                              ? { ...row, title: event.target.value }
-                              : row
-                          )
-                        )
-                      }
-                      placeholder="Finding title"
-                    />
-                    <select
-                      className="h-10 rounded-md border bg-background px-3 text-sm"
-                      value={finding.priority}
-                      onChange={(event) =>
-                        setFindingDrafts((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index
-                              ? {
-                                  ...row,
-                                  priority: event.target.value as
-                                    | 'high'
-                                    | 'medium'
-                                    | 'low',
-                                }
-                              : row
-                          )
-                        )
-                      }
-                    >
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
-                      <option value="low">Low</option>
-                    </select>
-                  </div>
+        <Collapsible open={auditOpen} onOpenChange={setAuditOpen}>
+          <div className="rounded-md border p-3">
+            <CollapsibleTrigger className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2">
+                <p className="font-medium">Revenue Leak Audit</p>
+                <span className="text-xs text-muted-foreground">
+                  {auditSummaryLine}
+                </span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {auditOpen ? 'Collapse' : 'Expand'}
+              </span>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="space-y-2 pt-3">
+                <div className="space-y-2">
+                  <Label htmlFor={`audit-summary-${clientId}`}>Summary</Label>
                   <Textarea
-                    rows={2}
-                    value={finding.detail}
-                    onChange={(event) =>
-                      setFindingDrafts((current) =>
-                        current.map((row, rowIndex) =>
-                          rowIndex === index
-                            ? { ...row, detail: event.target.value }
-                            : row
-                        )
-                      )
-                    }
-                    placeholder="Finding detail"
+                    id={`audit-summary-${clientId}`}
+                    rows={3}
+                    value={auditSummary}
+                    onChange={(event) => setAuditSummary(event.target.value)}
+                    placeholder="3-5 findings summary and delivery notes..."
                   />
-                  <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                    <Input
-                      value={finding.impactLow}
-                      onChange={(event) =>
-                        setFindingDrafts((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index
-                              ? { ...row, impactLow: event.target.value }
-                              : row
-                          )
-                        )
-                      }
-                      placeholder="Finding impact low (cents)"
-                      inputMode="numeric"
-                    />
-                    <Input
-                      value={finding.impactHigh}
-                      onChange={(event) =>
-                        setFindingDrafts((current) =>
-                          current.map((row, rowIndex) =>
-                            rowIndex === index
-                              ? { ...row, impactHigh: event.target.value }
-                              : row
-                          )
-                        )
-                      }
-                      placeholder="Finding impact high (cents)"
-                      inputMode="numeric"
-                    />
+                </div>
+                <div className="space-y-2">
+                  <Label>Findings</Label>
+                  <div className="space-y-2">
+                    {findingDrafts.map((finding, index) => (
+                      <div key={`${clientId}-finding-${index}`} className="rounded border p-2 space-y-2">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                          <Input
+                            value={finding.title}
+                            onChange={(event) =>
+                              setFindingDrafts((current) =>
+                                current.map((row, rowIndex) =>
+                                  rowIndex === index
+                                    ? { ...row, title: event.target.value }
+                                    : row
+                                )
+                              )
+                            }
+                            placeholder="Finding title"
+                          />
+                          <select
+                            className="h-10 rounded-md border bg-background px-3 text-sm"
+                            value={finding.priority}
+                            onChange={(event) =>
+                              setFindingDrafts((current) =>
+                                current.map((row, rowIndex) =>
+                                  rowIndex === index
+                                    ? {
+                                        ...row,
+                                        priority: event.target.value as
+                                          | 'high'
+                                          | 'medium'
+                                          | 'low',
+                                      }
+                                    : row
+                                )
+                              )
+                            }
+                          >
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                          </select>
+                        </div>
+                        <Textarea
+                          rows={2}
+                          value={finding.detail}
+                          onChange={(event) =>
+                            setFindingDrafts((current) =>
+                              current.map((row, rowIndex) =>
+                                rowIndex === index
+                                  ? { ...row, detail: event.target.value }
+                                  : row
+                              )
+                            )
+                          }
+                          placeholder="Finding detail"
+                        />
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                          <Input
+                            value={finding.impactLow}
+                            onChange={(event) =>
+                              setFindingDrafts((current) =>
+                                current.map((row, rowIndex) =>
+                                  rowIndex === index
+                                    ? { ...row, impactLow: event.target.value }
+                                    : row
+                                )
+                              )
+                            }
+                            placeholder="Finding impact low (cents)"
+                            inputMode="numeric"
+                          />
+                          <Input
+                            value={finding.impactHigh}
+                            onChange={(event) =>
+                              setFindingDrafts((current) =>
+                                current.map((row, rowIndex) =>
+                                  rowIndex === index
+                                    ? { ...row, impactHigh: event.target.value }
+                                    : row
+                                )
+                              )
+                            }
+                            placeholder="Finding impact high (cents)"
+                            inputMode="numeric"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                              setFindingDrafts((current) =>
+                                current.length === 1
+                                  ? [emptyFindingDraft()]
+                                  : current.filter((_, rowIndex) => rowIndex !== index)
+                              )
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() =>
-                        setFindingDrafts((current) =>
-                          current.length === 1
-                            ? [emptyFindingDraft()]
-                            : current.filter((_, rowIndex) => rowIndex !== index)
-                        )
+                        setFindingDrafts((current) => [...current, emptyFindingDraft()])
                       }
                     >
-                      Remove
+                      Add Finding
                     </Button>
                   </div>
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() =>
-                  setFindingDrafts((current) => [...current, emptyFindingDraft()])
-                }
-              >
-                Add Finding
-              </Button>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`audit-artifact-${clientId}`}>Artifact URL</Label>
+                  <Input
+                    id={`audit-artifact-${clientId}`}
+                    value={artifactUrl}
+                    onChange={(event) => setArtifactUrl(event.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor={`impact-low-${clientId}`}>Impact Low (cents)</Label>
+                    <Input
+                      id={`impact-low-${clientId}`}
+                      value={impactLow}
+                      onChange={(event) => setImpactLow(event.target.value)}
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`impact-base-${clientId}`}>Impact Base (cents)</Label>
+                    <Input
+                      id={`impact-base-${clientId}`}
+                      value={impactBase}
+                      onChange={(event) => setImpactBase(event.target.value)}
+                      inputMode="numeric"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`impact-high-${clientId}`}>Impact High (cents)</Label>
+                    <Input
+                      id={`impact-high-${clientId}`}
+                      value={impactHigh}
+                      onChange={(event) => setImpactHigh(event.target.value)}
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => saveAudit(false)}
+                    disabled={loadingAction === 'save-audit'}
+                  >
+                    {loadingAction === 'save-audit' ? 'Saving...' : 'Save Draft'}
+                  </Button>
+                  <Button
+                    onClick={() => saveAudit(true)}
+                    disabled={loadingAction === 'deliver-audit'}
+                  >
+                    {loadingAction === 'deliver-audit'
+                      ? 'Delivering...'
+                      : 'Save + Mark Delivered'}
+                  </Button>
+                </div>
+                {summary.audit?.deliveredAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Delivered: {formatDate(summary.audit.deliveredAt)} by{' '}
+                    {summary.audit.deliveredBy || 'system'}
+                  </p>
+                )}
+              </div>
+            </CollapsibleContent>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor={`audit-artifact-${clientId}`}>Artifact URL</Label>
-            <Input
-              id={`audit-artifact-${clientId}`}
-              value={artifactUrl}
-              onChange={(event) => setArtifactUrl(event.target.value)}
-              placeholder="https://..."
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor={`impact-low-${clientId}`}>Impact Low (cents)</Label>
-              <Input
-                id={`impact-low-${clientId}`}
-                value={impactLow}
-                onChange={(event) => setImpactLow(event.target.value)}
-                inputMode="numeric"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`impact-base-${clientId}`}>Impact Base (cents)</Label>
-              <Input
-                id={`impact-base-${clientId}`}
-                value={impactBase}
-                onChange={(event) => setImpactBase(event.target.value)}
-                inputMode="numeric"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`impact-high-${clientId}`}>Impact High (cents)</Label>
-              <Input
-                id={`impact-high-${clientId}`}
-                value={impactHigh}
-                onChange={(event) => setImpactHigh(event.target.value)}
-                inputMode="numeric"
-              />
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => saveAudit(false)}
-              disabled={loadingAction === 'save-audit'}
-            >
-              {loadingAction === 'save-audit' ? 'Saving...' : 'Save Draft'}
-            </Button>
-            <Button
-              onClick={() => saveAudit(true)}
-              disabled={loadingAction === 'deliver-audit'}
-            >
-              {loadingAction === 'deliver-audit'
-                ? 'Delivering...'
-                : 'Save + Mark Delivered'}
-            </Button>
-          </div>
-          {summary.audit?.deliveredAt && (
-            <p className="text-xs text-muted-foreground">
-              Delivered: {formatDate(summary.audit.deliveredAt)} by{' '}
-              {summary.audit.deliveredBy || 'system'}
-            </p>
-          )}
-        </div>
+        </Collapsible>
 
         <div className="space-y-2 rounded-md border p-3">
           <p className="font-medium">Open SLA Alerts ({summary.openAlerts.length})</p>

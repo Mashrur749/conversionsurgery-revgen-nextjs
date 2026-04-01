@@ -5,6 +5,7 @@ import { eq, desc, sql, count } from 'drizzle-orm';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare } from 'lucide-react';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 export default async function ClientDiscussionsPage() {
   const session = await getClientSession();
@@ -30,6 +31,7 @@ export default async function ClientDiscussionsPage() {
 
   return (
     <div>
+      <Breadcrumbs items={[{ label: 'Dashboard', href: '/client' }, { label: 'Support' }]} />
       <h1 className="text-2xl font-bold mb-6">Discussions</h1>
 
       {threads.length === 0 ? (

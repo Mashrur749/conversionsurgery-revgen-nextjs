@@ -180,13 +180,31 @@ export async function bookAppointment(
   }
 
   // Create appointment via existing automation
-  const result = await scheduleAppointmentReminders({
-    leadId,
-    clientId,
-    date,
-    time,
-    address: address || lead.address || undefined,
-  });
+  // Wrapped in try-catch to handle race condition: the unique index
+  // uq_appointments_client_date_time prevents double-booking at the DB level
+  let result: { success: boolean; reason?: string; appointmentId?: string };
+  try {
+    result = await scheduleAppointmentReminders({
+      leadId,
+      clientId,
+      date,
+      time,
+      address: address || lead.address || undefined,
+    });
+  } catch (err: unknown) {
+    // Postgres unique violation = code 23505
+    if (
+      err instanceof Error &&
+      'code' in err &&
+      (err as Error & { code: string }).code === '23505'
+    ) {
+      return {
+        success: false,
+        error: 'This time slot was just booked by someone else. Let me suggest another time.',
+      };
+    }
+    throw err;
+  }
 
   if (!result.success) {
     return { success: false, error: result.reason };

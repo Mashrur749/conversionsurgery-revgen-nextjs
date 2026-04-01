@@ -77,6 +77,7 @@ export async function startPaymentReminder(payload: PaymentPayload) {
 
   // 3. Auto-create Stripe payment link if not provided and amount is set
   let resolvedPaymentLink = paymentLink;
+  let paymentLinkFailed = false;
   if (!resolvedPaymentLink && amountCents && amountCents > 0) {
     try {
       const result = await createPaymentLink({
@@ -96,6 +97,7 @@ export async function startPaymentReminder(payload: PaymentPayload) {
         .where(eq(invoices.id, invoice.id));
     } catch (err) {
       console.error('[Payments] Failed to create Stripe payment link:', err);
+      paymentLinkFailed = true;
       // Continue without a payment link
     }
   }
@@ -127,12 +129,16 @@ export async function startPaymentReminder(payload: PaymentPayload) {
     const shouldSchedule = isFuture(sendAt) || (item.daysFromDue === 0 && isToday(dueDateObj));
     if (!shouldSchedule) continue;
 
+    const paymentLinkText = paymentLinkFailed
+      ? 'Contact us to arrange payment'
+      : (resolvedPaymentLink || '[payment link]');
+
     const content = renderTemplate(item.template, {
       name: lead.name || 'there',
       invoiceNumber: invoice.invoiceNumber || '',
       amount: amount?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00',
       currencySymbol: '$',
-      paymentLink: resolvedPaymentLink || '[payment link]',
+      paymentLink: paymentLinkText,
       ownerName: client.ownerName,
       businessName: client.businessName,
     });
@@ -175,14 +181,23 @@ export async function startPaymentReminder(payload: PaymentPayload) {
  * @param invoiceId - The invoice ID to mark as paid
  * @returns Success status
  */
-export async function markInvoicePaid(invoiceId: string) {
-  console.log('[Payments] Marking invoice as paid', { invoiceId });
+export async function markInvoicePaid(invoiceId: string, options?: {
+  paymentMethod?: string;
+  notes?: string;
+  paidAt?: Date;
+  recordedBy?: string;
+}) {
+  console.log('[Payments] Marking invoice as paid', { invoiceId, paymentMethod: options?.paymentMethod });
   const db = getDb();
 
   // Mark invoice as paid
   await db
     .update(invoices)
-    .set({ status: 'paid', updatedAt: new Date() })
+    .set({
+      status: 'paid',
+      updatedAt: new Date(),
+      ...(options?.paidAt && { paidAt: options.paidAt }),
+    })
     .where(eq(invoices.id, invoiceId));
 
   // Get invoice to find lead

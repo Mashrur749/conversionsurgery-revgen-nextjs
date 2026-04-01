@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
+import { useUnsavedChangesWarning } from '@/lib/hooks/use-unsaved-changes-warning';
 
 interface NotificationPrefs {
   smsNewLead: boolean;
@@ -31,6 +34,13 @@ export function NotificationSettingsForm({ initialPrefs }: Props) {
   const [prefs, setPrefs] = useState(initialPrefs);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savedPrefs, setSavedPrefs] = useState(initialPrefs);
+
+  const isDirty = useMemo(
+    () => JSON.stringify(prefs) !== JSON.stringify(savedPrefs),
+    [prefs, savedPrefs]
+  );
+  useUnsavedChangesWarning(isDirty);
 
   async function handleSave() {
     setSaving(true);
@@ -44,6 +54,7 @@ export function NotificationSettingsForm({ initialPrefs }: Props) {
 
     setSaving(false);
     setSaved(true);
+    setSavedPrefs(prefs);
     setTimeout(() => setSaved(false), 3000);
   }
 
@@ -109,7 +120,19 @@ export function NotificationSettingsForm({ initialPrefs }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Quiet Hours</CardTitle>
+          <div className="flex items-center gap-1.5">
+            <CardTitle>Quiet Hours</CardTitle>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Messages won&apos;t be sent outside these hours. Urgent escalations can override this.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <CardDescription>Pause non-urgent notifications</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

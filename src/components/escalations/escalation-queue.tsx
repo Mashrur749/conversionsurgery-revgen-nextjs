@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
+import { SlaCountdown } from './sla-countdown';
 
 /**
  * Props for EscalationQueue component
@@ -84,9 +85,9 @@ export function EscalationQueue({ clientId: initialClientId, isAgency }: Escalat
   useEffect(() => {
     if (isAgency) {
       fetch('/api/admin/clients')
-        .then((res) => res.json())
-        .then((data: any) => {
-          const clientList = (data.clients || data || []).map((c: any) => ({
+        .then((res) => res.json() as Promise<{ clients?: ClientOption[] }>)
+        .then((data) => {
+          const clientList = (data.clients || []).map((c) => ({
             id: c.id,
             businessName: c.businessName,
           }));
@@ -266,6 +267,9 @@ export function EscalationQueue({ clientId: initialClientId, isAgency }: Escalat
                           <div className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(escalation.createdAt), { addSuffix: true })}
                           </div>
+                          {escalation.slaDeadline && (
+                            <SlaCountdown deadline={escalation.slaDeadline} />
+                          )}
                         </div>
 
                         {assignee && (

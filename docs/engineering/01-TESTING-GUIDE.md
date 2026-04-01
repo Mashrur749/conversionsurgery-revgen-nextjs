@@ -1,6 +1,6 @@
 # Testing Guide
 
-Last updated: 2026-03-28
+Last updated: 2026-04-01
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
 Last verified commit: `feat: AI attribution — link funnel events to agent decisions (2026-03-28)`
@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout).
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -1254,6 +1254,36 @@ Expected:
 3. Validate onboarding checklist loads for the test client and setup-request action succeeds.
 4. Validate Day-One card and checklist remain in sync after audit delivery and manual milestone completion.
 5. Validate onboarding quality and reminder routing panels load without API/auth errors for assigned-scope agency users with client access.
+
+### Step 53: Tier 3 UX polish
+
+Combined verification for all Tier 3 UX improvements (breadcrumbs, tooltips, progress indicators, SLA countdown, filtering, empty states, unsaved changes warnings, collapsible sections, cancellation page layout).
+
+1. **Breadcrumbs (3.1):** Navigate to each of these client portal pages and verify a breadcrumb bar showing &quot;Dashboard &gt; Page Name&quot; appears at the top with a clickable link back to Dashboard:
+   - `/client/billing`
+   - `/client/revenue`
+   - `/client/knowledge`
+   - `/client/team`
+   - `/client/help`
+   - `/client/discussions`
+
+2. **Settings tooltips (3.2):** Open `/client/settings` (AI tab and Notifications tab). Verify info icon tooltips appear next to: Quiet Hours, Smart Assist Auto-Send, AI Tone, and Auto-send delay. Hover (desktop) or tap (mobile) to confirm tooltip text displays.
+
+3. **Phone provisioning progress indicator (3.4):** Navigate to `/client/settings` (Phone tab) and start the provisioning flow. Verify a 3-step indicator appears: &quot;Choose location&quot; &rarr; &quot;Search numbers&quot; &rarr; &quot;Select your number&quot;. Each step shows a numbered circle. Current step is highlighted in brand color; completed steps are filled; future steps are muted.
+
+4. **Escalation SLA countdown (3.5):** Create or view an active escalation with an SLA deadline. Verify each escalation card in the queue shows a live countdown (e.g., &quot;1h 23m remaining&quot;). Confirm color coding: green when &gt;1h remaining, sienna when 30-60m, red when &lt;30m, and &quot;SLA breached&quot; text when past deadline.
+
+5. **Reports filtering (3.6):** Navigate to `/admin/reports`. Verify a client dropdown and date range presets (7d, 30d, 90d, All) appear above the reports table. Select a client &mdash; confirm the table filters to that client only. Select a date range &mdash; confirm the table filters accordingly. Verify the count indicator updates (e.g., &quot;Showing 5 of 23 reports&quot;).
+
+6. **Knowledge base empty state CTA (3.7):** For a client with no knowledge base entries, navigate to `/client/knowledge`. Verify an empty state appears with a heading, description text, and an &quot;Add Knowledge Entry&quot; button. Click the button &mdash; verify the entry form opens.
+
+7. **Unsaved changes warning (3.8):** Open `/client/settings` and modify a field (e.g., change AI tone). Without saving, attempt to close the tab or navigate away. Verify the browser shows a &quot;Leave site?&quot; / &quot;Changes you made may not be saved&quot; confirmation dialog. Repeat on the Notifications tab and Features tab.
+
+8. **Day-one audit collapsible (3.9):** Open a client detail page (`/admin/clients/[id]`) that has a Revenue Leak Audit section. Verify the audit section is collapsed by default with a summary line. Click to expand &mdash; verify the full audit form appears.
+
+9. **Cancellation page layout (3.10):** Navigate to `/client/cancel`. Verify the cancellation form is the primary visible content (not scrolled below a large ROI card). Verify the ROI / results summary is inside a collapsed accordion that can be expanded optionally. Verify the page heading is neutral (not retention-focused).
+
+Expected: all 9 items pass. Item 3.3 (self-serve onboarding checklist) is deferred and not tested here.
 
 ## 3. Useful Commands
 

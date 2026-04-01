@@ -11,22 +11,35 @@ import { eq, and, or, isNull, lt } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { alertOperator } from '@/lib/services/operator-alerts';
 
-// Helper to dispatch a cron sub-endpoint via fetch
+// Helper to dispatch a cron sub-endpoint via fetch.
+// Appends to failedJobs on non-2xx status or fetch exception so the caller
+// can alert the operator after all jobs have run.
 async function dispatch(
   baseUrl: string,
   path: string,
   secret: string,
-  method: 'GET' | 'POST' = 'GET'
+  method: 'GET' | 'POST' = 'GET',
+  failedJobs?: string[]
 ): Promise<unknown> {
   try {
     const res = await fetch(`${baseUrl}${path}`, {
       method,
       headers: { Authorization: `Bearer ${secret}` },
     });
+    if (!res.ok) {
+      logSanitizedConsoleError('[Cron] Sub-job returned non-2xx:', undefined, {
+        path,
+        method,
+        status: res.status,
+      });
+      failedJobs?.push(path);
+    }
     return await res.json();
   } catch (error) {
     logSanitizedConsoleError('[Cron] Failed to dispatch sub-job:', error, { path, method });
+    failedJobs?.push(path);
     return { error: 'dispatch failed' };
   }
 }
@@ -48,20 +61,23 @@ export async function POST(request: NextRequest) {
   const hour = now.getUTCHours();
   const day = now.getUTCDay(); // 0=Sun, 1=Mon
   const results: Record<string, unknown> = {};
+  const failedJobs: string[] = [];
 
   try {
     // ── Every 5 minutes ──────────────────────────────────────
-    results.scheduled = await dispatch(baseUrl, '/api/cron/process-scheduled', cronSecret!);
-    results.missedCalls = await dispatch(baseUrl, '/api/cron/check-missed-calls', cronSecret!);
+    results.scheduled = await dispatch(baseUrl, '/api/cron/process-scheduled', cronSecret!, 'GET', failedJobs);
+    results.missedCalls = await dispatch(baseUrl, '/api/cron/check-missed-calls', cronSecret!, 'GET', failedJobs);
 
     // ── Every 30 minutes (minute 0-4 or 30-34) ──────────────
     if (minute < 5 || (minute >= 30 && minute < 35)) {
-      results.autoReviewResponse = await dispatch(baseUrl, '/api/cron/auto-review-response', cronSecret!, 'POST');
-      results.calendarSync = await dispatch(baseUrl, '/api/cron/calendar-sync', cronSecret!);
+      results.autoReviewResponse = await dispatch(baseUrl, '/api/cron/auto-review-response', cronSecret!, 'POST', failedJobs);
+      results.calendarSync = await dispatch(baseUrl, '/api/cron/calendar-sync', cronSecret!, 'GET', failedJobs);
       results.reportDeliveryRetries = await dispatch(
         baseUrl,
         '/api/cron/report-delivery-retries',
-        cronSecret!
+        cronSecret!,
+        'GET',
+        failedJobs
       );
     }
 
@@ -122,19 +138,23 @@ export async function POST(request: NextRequest) {
         results.reviewSync = { error: 'Failed' };
       }
 
-      results.expirePrompts = await dispatch(baseUrl, '/api/cron/expire-prompts', cronSecret!);
-      results.sendNps = await dispatch(baseUrl, '/api/cron/send-nps', cronSecret!, 'POST');
-      results.agentCheck = await dispatch(baseUrl, '/api/cron/agent-check', cronSecret!);
-      results.queuedCompliance = await dispatch(baseUrl, '/api/cron/process-queued-compliance', cronSecret!);
+      results.expirePrompts = await dispatch(baseUrl, '/api/cron/expire-prompts', cronSecret!, 'GET', failedJobs);
+      results.sendNps = await dispatch(baseUrl, '/api/cron/send-nps', cronSecret!, 'POST', failedJobs);
+      results.agentCheck = await dispatch(baseUrl, '/api/cron/agent-check', cronSecret!, 'GET', failedJobs);
+      results.queuedCompliance = await dispatch(baseUrl, '/api/cron/process-queued-compliance', cronSecret!, 'GET', failedJobs);
       results.knowledgeGapAlerts = await dispatch(
         baseUrl,
         '/api/cron/knowledge-gap-alerts',
-        cronSecret!
+        cronSecret!,
+        'GET',
+        failedJobs
       );
       results.onboardingSlaCheck = await dispatch(
         baseUrl,
         '/api/cron/onboarding-sla-check',
-        cronSecret!
+        cronSecret!,
+        'GET',
+        failedJobs
       );
     }
 
@@ -166,16 +186,18 @@ export async function POST(request: NextRequest) {
         results.analytics = { error: 'Failed' };
       }
 
-      results.trialReminders = await dispatch(baseUrl, '/api/cron/trial-reminders', cronSecret!, 'POST');
-      results.noShowRecovery = await dispatch(baseUrl, '/api/cron/no-show-recovery', cronSecret!);
-      results.stripeReconciliation = await dispatch(baseUrl, '/api/cron/stripe-reconciliation', cronSecret!);
+      results.trialReminders = await dispatch(baseUrl, '/api/cron/trial-reminders', cronSecret!, 'POST', failedJobs);
+      results.noShowRecovery = await dispatch(baseUrl, '/api/cron/no-show-recovery', cronSecret!, 'GET', failedJobs);
+      results.stripeReconciliation = await dispatch(baseUrl, '/api/cron/stripe-reconciliation', cronSecret!, 'GET', failedJobs);
       results.voiceUsageRollup = await dispatch(
         baseUrl,
         '/api/cron/voice-usage-rollup',
-        cronSecret!
+        cronSecret!,
+        'GET',
+        failedJobs
       );
-      results.guaranteeCheck = await dispatch(baseUrl, '/api/cron/guarantee-check', cronSecret!);
-      results.monthlyReset = await dispatch(baseUrl, '/api/cron/monthly-reset', cronSecret!);
+      results.guaranteeCheck = await dispatch(baseUrl, '/api/cron/guarantee-check', cronSecret!, 'GET', failedJobs);
+      results.monthlyReset = await dispatch(baseUrl, '/api/cron/monthly-reset', cronSecret!, 'GET', failedJobs);
 
       // Monthly: update cohort retention (1st of month)
       if (now.getUTCDate() === 1) {
@@ -187,44 +209,60 @@ export async function POST(request: NextRequest) {
           results.cohortUpdate = { error: 'Failed' };
         }
 
-        results.accessReview = await dispatch(baseUrl, '/api/cron/access-review', cronSecret!);
+        results.accessReview = await dispatch(baseUrl, '/api/cron/access-review', cronSecret!, 'GET', failedJobs);
       }
     }
 
     // ── Daily 7am UTC ────────────────────────────────────────
     if (hour === 7 && minute < 10) {
-      results.dailySummary = await dispatch(baseUrl, '/api/cron/daily-summary', cronSecret!);
-      results.biweeklyReports = await dispatch(baseUrl, '/api/cron/biweekly-reports', cronSecret!);
+      results.dailySummary = await dispatch(baseUrl, '/api/cron/daily-summary', cronSecret!, 'GET', failedJobs);
+      results.biweeklyReports = await dispatch(baseUrl, '/api/cron/biweekly-reports', cronSecret!, 'GET', failedJobs);
     }
 
     // ── Daily 10am UTC ───────────────────────────────────────
     if (hour === 10 && minute < 10) {
-      results.winBack = await dispatch(baseUrl, '/api/cron/win-back', cronSecret!);
+      results.winBack = await dispatch(baseUrl, '/api/cron/win-back', cronSecret!, 'GET', failedJobs);
       results.estimateFallbackNudges = await dispatch(
         baseUrl,
         '/api/cron/estimate-fallback-nudges',
-        cronSecret!
+        cronSecret!,
+        'GET',
+        failedJobs
       );
       results.quarterlyCampaignPlanner = await dispatch(
         baseUrl,
         '/api/cron/quarterly-campaign-planner',
-        cronSecret!
+        cronSecret!,
+        'GET',
+        failedJobs
       );
       results.quarterlyCampaignAlerts = await dispatch(
         baseUrl,
         '/api/cron/quarterly-campaign-alerts',
-        cronSecret!
+        cronSecret!,
+        'GET',
+        failedJobs
       );
     }
 
     // ── Weekly Monday 7am UTC ────────────────────────────────
     if (day === 1 && hour === 7 && minute < 10) {
-      results.weeklySummary = await dispatch(baseUrl, '/api/cron/weekly-summary', cronSecret!);
-      results.agencyDigest = await dispatch(baseUrl, '/api/cron/agency-digest', cronSecret!);
+      results.weeklySummary = await dispatch(baseUrl, '/api/cron/weekly-summary', cronSecret!, 'GET', failedJobs);
+      results.agencyDigest = await dispatch(baseUrl, '/api/cron/agency-digest', cronSecret!, 'GET', failedJobs);
       results.quarterlyCampaignDigest = await dispatch(
         baseUrl,
         '/api/cron/quarterly-campaign-alerts?mode=weekly',
-        cronSecret!
+        cronSecret!,
+        'GET',
+        failedJobs
+      );
+    }
+
+    // ── Operator alert on any dispatch failure ────────────────
+    if (failedJobs.length > 0) {
+      await alertOperator(
+        'Cron failure',
+        `Failed jobs: ${failedJobs.join(', ')}`
       );
     }
 

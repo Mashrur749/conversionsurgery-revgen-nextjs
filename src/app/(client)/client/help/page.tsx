@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface Article {
   id: string;
@@ -37,6 +38,7 @@ export default function ClientHelpPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[{ label: 'Dashboard', href: '/client' }, { label: 'Help' }]} />
       <div>
         <h1 className="text-2xl font-bold">Help Center</h1>
         <p className="text-muted-foreground">Find answers to common questions.</p>

@@ -2,7 +2,7 @@ import { getDb } from '@/db';
 import { escalationClaims, leads, clients } from '@/db/schema';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, lt, isNull } from 'drizzle-orm';
 import { generateClaimToken } from '@/lib/utils/tokens';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { getEscalationMembers, getTeamMemberById } from '@/lib/services/team-bridge';
@@ -131,13 +131,25 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
     let notifiedCount = 0;
 
     for (const member of members) {
-      // Send SMS notification
+      // Send SMS notification with retry (EC-17: single retry with 1-second delay)
+      let smsSent = false;
       try {
         await sendSMS(member.phone, smsBody, twilioNumber);
+        smsSent = true;
         notifiedCount++;
         console.log(`[Team Escalation] SMS sent to ${member.name}`);
       } catch (error) {
-        console.error(`[Team Escalation] Failed to SMS ${member.name}:`, error);
+        console.error(`[Team Escalation] Failed to SMS ${member.name} (first attempt):`, error);
+        // Single retry after 1 second
+        try {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          await sendSMS(member.phone, smsBody, twilioNumber);
+          smsSent = true;
+          notifiedCount++;
+          console.log(`[Team Escalation] SMS sent to ${member.name} (retry)`);
+        } catch (retryError) {
+          console.error(`[Team Escalation] Failed to SMS ${member.name} (retry):`, retryError);
+        }
       }
 
       // Send email notification if member has email
@@ -341,4 +353,90 @@ export async function getPendingEscalations(clientId: string) {
     console.error('[Team Escalation] Error fetching pending escalations:', error);
     return [];
   }
+}
+
+/**
+ * Re-notify team for escalation claims pending > 15 minutes.
+ * Called by cron every 5 minutes. Each claim is re-notified at most once.
+ */
+export async function reNotifyPendingEscalations(): Promise<{ reNotified: number }> {
+  const db = getDb();
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+  const staleClaims = await db
+    .select()
+    .from(escalationClaims)
+    .where(and(
+      eq(escalationClaims.status, 'pending'),
+      lt(escalationClaims.notifiedAt, fifteenMinutesAgo),
+      isNull(escalationClaims.reNotifiedAt)
+    ));
+
+  let reNotified = 0;
+
+  for (const claim of staleClaims) {
+    const [client] = await db
+      .select({
+        id: clients.id,
+        businessName: clients.businessName,
+        twilioNumber: clients.twilioNumber,
+      })
+      .from(clients)
+      .where(eq(clients.id, claim.clientId))
+      .limit(1);
+
+    if (!client?.twilioNumber) continue;
+
+    const [lead] = await db
+      .select({ name: leads.name, phone: leads.phone })
+      .from(leads)
+      .where(eq(leads.id, claim.leadId))
+      .limit(1);
+
+    // EC-08: Skip if lead was deleted
+    if (!lead) {
+      console.warn(`[Team Escalation] Lead not found for claim ${claim.id}, skipping re-notification`);
+      continue;
+    }
+
+    const leadDisplay = lead.name || formatPhoneNumber(lead.phone);
+
+    const members = await getEscalationMembers(claim.clientId);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const claimUrl = `${appUrl}/claims?token=${claim.claimToken}`;
+    const truncatedMessage = claim.lastLeadMessage
+      ? claim.lastLeadMessage.length > 60
+        ? `"${claim.lastLeadMessage.substring(0, 60)}..."`
+        : `"${claim.lastLeadMessage}"`
+      : '';
+
+    const smsBody = `REMINDER: ${leadDisplay} still needs a response (15+ min unclaimed).\n\n${truncatedMessage}\n\nClaim: ${claimUrl}`;
+
+    // EC-09: Track if at least one SMS was sent successfully
+    let sentCount = 0;
+
+    for (const member of members) {
+      try {
+        await sendSMS(member.phone, smsBody, client.twilioNumber);
+        sentCount++;
+      } catch (error) {
+        console.error(`[Team Escalation] Re-notify SMS failed for ${member.name}:`, error);
+      }
+    }
+
+    // EC-09: Only mark re-notified if at least one SMS succeeded
+    if (sentCount > 0) {
+      await db
+        .update(escalationClaims)
+        .set({ reNotifiedAt: new Date() })
+        .where(eq(escalationClaims.id, claim.id));
+
+      reNotified++;
+    } else {
+      console.warn(`[Team Escalation] No SMS sent for claim ${claim.id}, will retry next cycle`);
+    }
+  }
+
+  console.log(`[Team Escalation] Re-notification check: ${reNotified} claims re-notified`);
+  return { reNotified };
 }

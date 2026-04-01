@@ -106,9 +106,18 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
 
       {categories.length === 0 && !showForm && (
         <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <p>No knowledge base entries yet.</p>
-            <p className="text-sm mt-1">Add information about your services, pricing, and FAQs so the AI can answer customer questions accurately.</p>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <h3 className="text-lg font-semibold text-foreground">No knowledge base entries yet</h3>
+            <p className="text-sm text-muted-foreground mt-2 text-center max-w-md">
+              Add information about your business so the AI can answer questions accurately.
+            </p>
+            <Button
+              className="mt-4"
+              onClick={() => { setEditingEntry(null); setShowForm(true); }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Knowledge Entry
+            </Button>
           </CardContent>
         </Card>
       )}

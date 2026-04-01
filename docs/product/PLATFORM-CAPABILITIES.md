@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-03-28
+Last updated: 2026-04-01
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -193,7 +193,7 @@ Every lead accumulates:
 ### Team Coordination
 
 - **Ring group:** simultaneous dial to all available team members during business hours
-- **Escalation queue:** priority-ranked (1-5) with SLA deadlines, assignment, and claim tokens
+- **Escalation queue:** priority-ranked (1-5) with SLA deadlines, live countdown timers (color-coded: green/sienna/red by urgency), assignment, and claim tokens
 - **Hot transfer:** Voice AI detects urgency &rarr; dials team immediately &rarr; SMS heads-up ("Hot lead calling!")
 - **Missed transfer fallback:** SMS to team ("Missed hot transfer — call back ASAP") + SMS to lead ("Sorry we missed you")
 - **Owner notification:** Smart Assist drafts with reference codes for SEND/EDIT/CANCEL approval
@@ -227,6 +227,12 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 | **Team** | Add/remove team members, toggle escalation/hot transfer, manage permissions |
 | **Settings** | Phone number management, AI settings, notification preferences, feature toggles, business hours |
 | **Cancel** | Cancellation request with 30-day notice + data export |
+
+### Navigation and Orientation
+
+- **Breadcrumbs** on deep portal pages (billing, revenue, knowledge base, team, help, discussions) showing &quot;Dashboard &gt; Page Name&quot; with clickable links
+- **Inline help tooltips** on settings fields (Quiet Hours, Smart Assist Auto-Send, AI Tone, Auto-send delay) via info icons
+- **Unsaved changes warning** on settings forms (notification, AI, feature toggles) &mdash; browser prompts before navigating away with unsaved edits
 
 ### Permissions
 
@@ -308,6 +314,10 @@ Every funnel event is automatically linked to the agent decision that contribute
 - The agent decision&apos;s outcome is updated: positive (bookings, wins, payments), negative (losses), or neutral (progression events)
 - Outcome upgrades only &mdash; a positive outcome is never downgraded to neutral
 - Attribution is best-effort and never blocks the conversion flow
+
+### Report Browsing
+
+- Admin reports table filterable by client (dropdown) and date range (7d/30d/90d/All presets) with result count indicator
 
 ### Daily/Weekly/Monthly Aggregation
 

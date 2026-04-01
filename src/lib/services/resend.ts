@@ -25,9 +25,10 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
 
   const resend = new Resend(process.env.RESEND_API_KEY);
   const from = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-  const MAX_ATTEMPTS = 2;
+  const MAX_RETRIES = 2;
+  const RETRY_DELAYS = [1000, 2000]; // 1s, then 2s
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const result = await resend.emails.send({ from, to, subject, html });
 
@@ -39,19 +40,63 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions): Promis
 
       return { success: true, id: result.data?.id };
     } catch (error) {
-      console.error(`[Resend] Send failed (attempt ${attempt}/${MAX_ATTEMPTS}):`, error instanceof Error ? error.message : error);
+      // Determine if error is transient (5xx) or permanent (4xx)
+      const statusCode = extractStatusCode(error);
+      const isTransient = statusCode && statusCode >= 500 && statusCode < 600;
+      const shouldRetry = attempt < MAX_RETRIES && isTransient;
 
-      if (attempt < MAX_ATTEMPTS) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (shouldRetry) {
+        const delayMs = RETRY_DELAYS[attempt];
+        console.warn(
+          `[Resend] Send failed with transient error ${statusCode} (attempt ${attempt + 1}/${MAX_RETRIES + 1}), retrying in ${delayMs}ms:`,
+          error instanceof Error ? error.message : error
+        );
+        await new Promise(resolve => setTimeout(resolve, delayMs));
         continue;
       }
 
+      // Either permanent error (4xx) or max retries exceeded
+      console.error(
+        `[Resend] Send failed${isTransient ? ' (transient, max retries exceeded)' : ' (permanent error)'}:`,
+        error instanceof Error ? error.message : error
+      );
       return { success: false, error };
     }
   }
 
   // Unreachable, but TypeScript needs it
   return { success: false, error: 'Max attempts exceeded' };
+}
+
+/**
+ * Extract HTTP status code from Resend error or other error objects
+ * Resend SDK errors may have status property or be wrapped in response objects
+ */
+function extractStatusCode(error: unknown): number | null {
+  if (!error) return null;
+
+  // Check if error has a status property
+  if (typeof error === 'object' && 'status' in error) {
+    const status = (error as Record<string, unknown>).status;
+    if (typeof status === 'number') return status;
+  }
+
+  // Check if error has a statusCode property
+  if (typeof error === 'object' && 'statusCode' in error) {
+    const statusCode = (error as Record<string, unknown>).statusCode;
+    if (typeof statusCode === 'number') return statusCode;
+  }
+
+  // Check if error has a response property with status
+  if (typeof error === 'object' && 'response' in error) {
+    const response = (error as Record<string, unknown>).response;
+    if (typeof response === 'object' && response !== null && 'status' in response) {
+      const status = (response as Record<string, unknown>).status;
+      if (typeof status === 'number') return status;
+    }
+  }
+
+  return null;
 }
 
 // ============================================

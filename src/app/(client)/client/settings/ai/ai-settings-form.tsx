@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
+import { useUnsavedChangesWarning } from '@/lib/hooks/use-unsaved-changes-warning';
 
 interface Props {
   defaults: {
@@ -25,6 +28,13 @@ export function AiSettingsForm({ defaults }: Props) {
   const [form, setForm] = useState(defaults);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savedForm, setSavedForm] = useState(defaults);
+
+  const isDirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(savedForm),
+    [form, savedForm]
+  );
+  useUnsavedChangesWarning(isDirty);
 
   const update = (key: string, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -39,7 +49,10 @@ export function AiSettingsForm({ defaults }: Props) {
       body: JSON.stringify(form),
     });
     setSaving(false);
-    if (res.ok) setSaved(true);
+    if (res.ok) {
+      setSaved(true);
+      setSavedForm(form);
+    }
   };
 
   return (
@@ -50,7 +63,19 @@ export function AiSettingsForm({ defaults }: Props) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Tone</Label>
+            <div className="flex items-center gap-1.5">
+              <Label>Tone</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sets the conversational style. Professional for corporate clients, friendly for residential.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Select value={form.agentTone} onValueChange={(v) => update('agentTone', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -111,7 +136,19 @@ export function AiSettingsForm({ defaults }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Quiet Hours</CardTitle>
+          <div className="flex items-center gap-1.5">
+            <CardTitle className="text-base">Quiet Hours</CardTitle>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Messages won&apos;t be sent outside these hours. Urgent escalations can override this.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">

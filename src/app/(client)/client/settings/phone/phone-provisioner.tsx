@@ -127,6 +127,15 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
   // No number — show provisioning flow
   const regionOptions = PROVINCES[country] || [];
 
+  // Step indicator logic
+  const hasSearchResults = searchResults.length > 0;
+  const currentStep = hasSearchResults ? 3 : region ? 2 : 1;
+  const stepLabels = [
+    'Choose location',
+    'Search numbers',
+    'Select your number',
+  ];
+
   async function handleSearch() {
     if (!region) {
       setError('Please select a province or state');
@@ -207,6 +216,42 @@ export function PhoneProvisioner({ currentNumber, businessName }: PhoneProvision
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Step indicator */}
+        <div className="flex items-center gap-2 text-sm">
+          {stepLabels.map((label, idx) => {
+            const stepNum = idx + 1;
+            const isActive = stepNum === currentStep;
+            const isCompleted = stepNum < currentStep;
+            return (
+              <div key={stepNum} className="flex items-center gap-2">
+                {idx > 0 && (
+                  <div
+                    className="h-px w-6"
+                    style={{ backgroundColor: isCompleted ? '#3D7A50' : '#C8D4CC' }}
+                  />
+                )}
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium"
+                    style={{
+                      backgroundColor: isActive ? '#1B2F26' : isCompleted ? '#3D7A50' : '#C8D4CC',
+                      color: isActive || isCompleted ? '#fff' : '#1B2F26',
+                    }}
+                  >
+                    {stepNum}
+                  </span>
+                  <span
+                    className="hidden sm:inline"
+                    style={{ color: isActive ? '#1B2F26' : '#6B7E54', fontWeight: isActive ? 500 : 400 }}
+                  >
+                    {label}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         {subscriptionRequired && (
           <div className="p-4 rounded-md bg-moss-light border border-olive/30 space-y-2">
             <p className="text-sm font-medium">Choose a plan first</p>

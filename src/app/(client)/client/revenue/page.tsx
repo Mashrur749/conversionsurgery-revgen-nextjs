@@ -7,6 +7,7 @@ import { getSpeedToLeadMetrics } from '@/lib/services/speed-to-lead';
 import { ROIDashboard } from '@/app/(dashboard)/admin/clients/[id]/roi-dashboard';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 export default async function ClientRevenuePage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.REVENUE_VIEW);
@@ -63,8 +64,9 @@ export default async function ClientRevenuePage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[{ label: 'Dashboard', href: '/client' }, { label: 'Revenue' }]} />
       <div>
-        <h1 className="text-2xl font-bold">Revenue & Performance</h1>
+        <h1 className="text-2xl font-bold">Revenue &amp; Performance</h1>
         <p className="text-sm text-muted-foreground">Last 30 days</p>
       </div>
       <ROIDashboard metrics={metrics} />

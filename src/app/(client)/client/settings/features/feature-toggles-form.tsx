@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { AI_ASSIST_CATEGORIES } from '@/lib/services/ai-send-policy';
+import { useUnsavedChangesWarning } from '@/lib/hooks/use-unsaved-changes-warning';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface Props {
   defaults: {
@@ -37,7 +40,7 @@ const SMART_ASSIST_CATEGORY_LABELS: Record<string, string> = {
   general: 'General outbound AI',
 };
 
-const TOGGLE_LABELS: Record<string, { label: string; description: string }> = {
+const TOGGLE_LABELS: Record<string, { label: string; description: string; tooltip?: string }> = {
   missedCallSmsEnabled: {
     label: 'Missed Call SMS',
     description: 'Automatically text back when you miss a call',
@@ -49,6 +52,7 @@ const TOGGLE_LABELS: Record<string, { label: string; description: string }> = {
   smartAssistEnabled: {
     label: 'Smart Assist Auto-Send',
     description: 'AI drafts auto-send after your review window',
+    tooltip: 'AI drafts responses for your review before sending. Auto-sends after the delay if you don\u0027t act.',
   },
   photoRequestsEnabled: {
     label: 'Photo Requests',
@@ -68,6 +72,13 @@ export function FeatureTogglesForm({ defaults }: Props) {
   const [form, setForm] = useState(defaults);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savedForm, setSavedForm] = useState(defaults);
+
+  const isDirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(savedForm),
+    [form, savedForm]
+  );
+  useUnsavedChangesWarning(isDirty);
 
   const toggle = (
     key: 'missedCallSmsEnabled' | 'aiResponseEnabled' | 'smartAssistEnabled' | 'photoRequestsEnabled' | 'notificationEmail' | 'notificationSms'
@@ -97,7 +108,10 @@ export function FeatureTogglesForm({ defaults }: Props) {
       body: JSON.stringify(form),
     });
     setSaving(false);
-    if (res.ok) setSaved(true);
+    if (res.ok) {
+      setSaved(true);
+      setSavedForm(form);
+    }
   };
 
   return (
@@ -106,7 +120,21 @@ export function FeatureTogglesForm({ defaults }: Props) {
         <Card key={key}>
           <CardContent className="flex items-center justify-between py-4">
             <div>
-              <p className="font-medium">{meta.label}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium">{meta.label}</p>
+                {meta.tooltip && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{meta.tooltip}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">{meta.description}</p>
             </div>
             <Switch
@@ -124,7 +152,19 @@ export function FeatureTogglesForm({ defaults }: Props) {
           <CardContent className="space-y-4 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label>Auto-send delay</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Auto-send delay</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>How long to wait for your review before the AI sends automatically.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Time before untouched AI drafts send automatically
                 </p>

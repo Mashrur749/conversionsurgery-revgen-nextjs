@@ -50,6 +50,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserPlus, Trash2, Users } from 'lucide-react';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface TeamMember {
   id: string;
@@ -218,6 +219,7 @@ export default function ClientTeamPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[{ label: 'Dashboard', href: '/client' }, { label: 'Team' }]} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Team</h1>

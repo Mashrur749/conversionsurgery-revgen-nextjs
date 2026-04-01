@@ -43,10 +43,16 @@ export default async function ClientDashboardPage() {
 
   // Revenue stats (last 30 days)
   const revenueStats = await getRevenueStats(clientId);
-  const [quarterlyCampaign, latestReportDelivery] = await Promise.all([
+  const [quarterlyCampaignResult, latestReportDeliveryResult] = await Promise.allSettled([
     getCurrentQuarterlyCampaignSummary(clientId),
     getClientLatestReportDelivery(clientId),
   ]);
+  const quarterlyCampaign = quarterlyCampaignResult.status === 'fulfilled'
+    ? quarterlyCampaignResult.value
+    : (() => { console.error('[ClientDashboard] Failed to load quarterly campaign:', quarterlyCampaignResult.reason); return null; })();
+  const latestReportDelivery = latestReportDeliveryResult.status === 'fulfilled'
+    ? latestReportDeliveryResult.value
+    : (() => { console.error('[ClientDashboard] Failed to load report delivery:', latestReportDeliveryResult.reason); return null; })();
 
   // Setup status checks
   const [client] = await db

@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { KnowledgeList } from './knowledge-list';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,7 @@ export default async function KnowledgeBasePage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[{ label: 'Dashboard', href: '/client' }, { label: 'Knowledge Base' }]} />
       <div>
         <h1 className="text-2xl font-bold">Knowledge Base</h1>
         <p className="text-muted-foreground text-sm">

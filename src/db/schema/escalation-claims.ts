@@ -32,6 +32,7 @@ export const escalationClaims = pgTable(
     notifiedAt: timestamp('notified_at').defaultNow().notNull(),
     claimedAt: timestamp('claimed_at'),
     resolvedAt: timestamp('resolved_at'),
+    reNotifiedAt: timestamp('re_notified_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
   },
   (table) => [

@@ -84,7 +84,14 @@
       "Bash(ls *)",
       "Bash(mkdir *)",
       "Bash(find *)",
-      "Bash(kill *)"
+      "Bash(kill *)",
+      "Bash(chmod *)",
+      "Bash(rm src/*)",
+      "Bash(rm .scratch/*)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(tail *)",
+      "Bash(head *)"
     ]
   }
 }

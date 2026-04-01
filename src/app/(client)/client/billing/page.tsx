@@ -4,6 +4,7 @@ import { getClientSession } from '@/lib/client-auth';
 import { getBillingData } from '@/lib/billing/queries';
 import { BillingPageClient } from './billing-client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 export const metadata = {
   title: 'Billing | ConversionSurgery',
@@ -22,9 +23,12 @@ async function BillingContent() {
 
 export default function BillingPage() {
   return (
-    <Suspense fallback={<BillingSkeleton />}>
-      <BillingContent />
-    </Suspense>
+    <>
+      <Breadcrumbs items={[{ label: 'Dashboard', href: '/client' }, { label: 'Billing' }]} />
+      <Suspense fallback={<BillingSkeleton />}>
+        <BillingContent />
+      </Suspense>
+    </>
   );
 }
 

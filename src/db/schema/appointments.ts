@@ -7,7 +7,9 @@ import {
   boolean,
   timestamp,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
@@ -33,6 +35,9 @@ export const appointments = pgTable(
   (table) => [
     index('idx_appointments_date').on(table.appointmentDate),
     index('idx_appointments_client_id').on(table.clientId),
+    uniqueIndex('uq_appointments_client_date_time')
+      .on(table.clientId, table.appointmentDate, table.appointmentTime)
+      .where(sql`status != 'cancelled'`),
   ]
 );
 

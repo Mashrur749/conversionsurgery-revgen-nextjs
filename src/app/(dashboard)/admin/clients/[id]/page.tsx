@@ -52,23 +52,30 @@ export default async function ClientDetailPage({ params }: Props) {
   }
 
   const { getTeamMembers } = await import('@/lib/services/team-bridge');
-  const [members, quarterlyCampaigns, dayOneSummary] = await Promise.all([
+  const [membersResult, quarterlyCampaignsResult, dayOneSummaryResult] = await Promise.allSettled([
     getTeamMembers(client.id),
     listClientQuarterlyCampaigns(client.id),
-    getDayOneActivationSummary(client.id).catch((error) => {
-      console.error(
-        `[AdminClientPage] Failed to load day-one summary for client ${client.id}:`,
-        error
-      );
-      return null;
-    }),
+    getDayOneActivationSummary(client.id),
   ]);
+  const members = membersResult.status === 'fulfilled'
+    ? membersResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load team members for client ${client.id}:`, membersResult.reason); return []; })();
+  const quarterlyCampaigns = quarterlyCampaignsResult.status === 'fulfilled'
+    ? quarterlyCampaignsResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load quarterly campaigns for client ${client.id}:`, quarterlyCampaignsResult.reason); return []; })();
+  const dayOneSummary = dayOneSummaryResult.status === 'fulfilled'
+    ? dayOneSummaryResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load day-one summary for client ${client.id}:`, dayOneSummaryResult.reason); return null; })();
 
   // Fetch ROI metrics in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
-  const [revenueStats, prevRevenueStats, serviceBreakdown, speedMetrics, activityCounts] = await Promise.all([
+  const defaultRevenueStats: Awaited<ReturnType<typeof getRevenueStats>> = { period: '', totalLeads: 0, totalQuotes: 0, totalWon: 0, totalLost: 0, totalCompleted: 0, conversionRate: 0, totalQuoteValue: 0, totalWonValue: 0, totalPaid: 0, avgJobValue: 0 };
+  const defaultSpeedMetrics: Awaited<ReturnType<typeof getSpeedToLeadMetrics>> = { avgResponseTimeSeconds: 0, medianResponseTimeSeconds: 0, totalLeadsWithResponse: 0, fastestResponseSeconds: 0, slowestResponseSeconds: 0, percentUnder1Min: 0, percentUnder5Min: 0, industryAvgMinutes: 0, previousResponseTimeMinutes: null, speedMultiplier: null, improvementVsPrevious: null };
+  const defaultActivityCounts = { missedCalls: 0, appointments: 0, reengaged: 0 };
+
+  const [revenueStatsResult, prevRevenueStatsResult, serviceBreakdownResult, speedMetricsResult, activityCountsResult] = await Promise.allSettled([
     getRevenueStats(id, thirtyDaysAgo),
     getRevenueStats(id, sixtyDaysAgo),
     getRevenueByService(id, thirtyDaysAgo),
@@ -99,6 +106,22 @@ export default async function ClientDetailPage({ params }: Props) {
       };
     })(),
   ]);
+
+  const revenueStats = revenueStatsResult.status === 'fulfilled'
+    ? revenueStatsResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load revenue stats for client ${id}:`, revenueStatsResult.reason); return defaultRevenueStats; })();
+  const prevRevenueStats = prevRevenueStatsResult.status === 'fulfilled'
+    ? prevRevenueStatsResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load prev revenue stats for client ${id}:`, prevRevenueStatsResult.reason); return defaultRevenueStats; })();
+  const serviceBreakdown = serviceBreakdownResult.status === 'fulfilled'
+    ? serviceBreakdownResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load service breakdown for client ${id}:`, serviceBreakdownResult.reason); return []; })();
+  const speedMetrics = speedMetricsResult.status === 'fulfilled'
+    ? speedMetricsResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load speed metrics for client ${id}:`, speedMetricsResult.reason); return defaultSpeedMetrics; })();
+  const activityCounts = activityCountsResult.status === 'fulfilled'
+    ? activityCountsResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load activity counts for client ${id}:`, activityCountsResult.reason); return defaultActivityCounts; })();
 
   // Calculate month-over-month pipeline change
   const prevPipeline = prevRevenueStats.totalWonValue - revenueStats.totalWonValue;

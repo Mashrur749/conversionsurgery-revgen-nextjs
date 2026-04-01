@@ -18,4 +18,11 @@ cat <<'REMINDER'
 - Session end: commit all working code, ensure build passes, update progress.md if in worktree
 - AI agent: orchestrator at `src/lib/agent/orchestrator.ts`, graph at `graph.ts`, model routing at `src/lib/ai/model-routing.ts`
 - Compliance: ALL outbound messages go through `sendCompliantMessage()` from compliance-gateway
+
+## UX Patterns (read .claude/skills/ux-standards/SKILL.md for full list)
+- Brand colors ONLY — forest #1B2F26, sienna #C15B2E, olive #6B7E54, sage-light #C8D4CC. No raw Tailwind colors.
+- No emojis in SMS, email, or UI text
+- Mobile: flex + dvh, NEVER h-[calc(100vh-Xrem)]. Tables use card fallback below 640px.
+- Reuse: Breadcrumbs, NotificationBell, SlaCountdown, useUnsavedChangesWarning, split-pane, mobile cards, URL-persisted tabs
+- After UI changes: update docs/specs/UX-AUDIT-FULL.md + check CLAUDE.md Change-to-Doc table
 REMINDER

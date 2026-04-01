@@ -4,11 +4,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getDb } from '@/db';
 import { reports, clients } from '@/db/schema';
-import {
-  parseReportMetrics,
-  parseReportRoiSummary,
-} from '@/lib/services/report-dto';
 import ReportDeliveryOpsPanel from './components/report-delivery-ops-panel';
+import { ReportsTableWithFilters } from './components/reports-table-with-filters';
 
 export default async function ReportsPage() {
   const session = await auth();
@@ -24,7 +21,6 @@ export default async function ReportsPage() {
     .orderBy(reports.createdAt);
 
   const allClients = await db.select().from(clients);
-  const clientMap = new Map(allClients.map((c) => [c.id, c]));
 
   const totalReports = allReports.length;
   const biWeeklyCount = allReports.filter(
@@ -70,92 +66,25 @@ export default async function ReportsPage() {
       {/* Report Delivery Operations */}
       <ReportDeliveryOpsPanel />
 
-      {/* Reports Table */}
-      <div className="bg-white rounded-lg border overflow-hidden">
-        {allReports.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-muted-foreground">No reports generated yet.</p>
-            <Link href="/admin/reports/new" className="mt-4 inline-block">
-              <Button>Generate Your First Report</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[#F8F9FA] border-b">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
-                    Title
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
-                    Client
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
-                    Period
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
-                    Metrics
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-foreground uppercase tracking-wider">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {allReports.map((report) => {
-                  const client = clientMap.get(report.clientId);
-                  const metrics = parseReportMetrics(report.metrics);
-                  const roiSummary = parseReportRoiSummary(report.roiSummary);
-
-                  return (
-                    <tr key={report.id} className="hover:bg-[#F8F9FA]">
-                      <td className="px-6 py-4 text-sm font-medium text-foreground">
-                        {report.title}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {client?.businessName || 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className="px-2 py-1 rounded-md bg-sage-light text-forest text-xs font-medium">
-                          {report.reportType === 'bi-weekly'
-                            ? 'Bi-Weekly'
-                            : report.reportType === 'monthly'
-                              ? 'Monthly'
-                              : 'Custom'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        {report.startDate} to {report.endDate}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground">
-                        <div className="text-xs">
-                          <div>
-                            {metrics.messagesSent || 0} messages
-                          </div>
-                          <div>
-                            {(roiSummary.conversionRate || 0).toFixed(1)}%
-                            conversion
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <Link href={`/admin/reports/${report.id}`}>
-                          <Button variant="ghost" size="sm">
-                            View
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+      {/* Reports Table with Filters */}
+      <ReportsTableWithFilters
+        reports={allReports.map((r) => ({
+          id: r.id,
+          title: r.title,
+          clientId: r.clientId,
+          reportType: r.reportType,
+          startDate: r.startDate,
+          endDate: r.endDate,
+          metrics: r.metrics,
+          roiSummary: r.roiSummary,
+        }))}
+        clients={allClients
+          .map((c) => ({ id: c.id, businessName: c.businessName }))
+          .sort((a, b) => a.businessName.localeCompare(b.businessName))}
+        clientMap={Object.fromEntries(
+          allClients.map((c) => [c.id, { id: c.id, businessName: c.businessName }])
         )}
-      </div>
+      />
     </div>
   );
 }
