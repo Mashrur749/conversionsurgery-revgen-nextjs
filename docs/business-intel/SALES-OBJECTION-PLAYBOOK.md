@@ -357,14 +357,25 @@ Use these angles for cold outreach (SMS, email, LinkedIn DM). Pick the angle tha
 > **Opener:**
 > "Hey [Name] — spring is here and renovation inquiries are about to spike. Last year, most contractors in [City] missed 30-40% of inbound calls during peak season because they were on job sites. We make sure every call, text, and form fill gets an instant response — even when you're elbow-deep in a demo. 15 minutes to see if it fits?"
 
+### Pre-Call: Lead Leak Snapshot
+
+Before or during outreach, send the prospect a link to the Lead Leak Snapshot calculator on the marketing site. It asks 5 questions and outputs their personalized annual revenue at risk. This converts the conversation from &ldquo;is $1,000 expensive?&rdquo; to &ldquo;I&apos;m losing $X/year and this costs $12K.&rdquo;
+
+If they complete it before the call, open with: &ldquo;I saw your numbers &mdash; you have about $[X] in dead quotes and another $[Y] in estimates with no follow-up. That&apos;s $[total] sitting on the table. Want to talk about getting some of it back?&rdquo;
+
+If they haven&apos;t completed it, run through the 5 questions verbally during the call and do the math live with the ROI worksheet.
+
+Spec for the calculator is at `active/consensus/roi-stress-test.md` (Lead Leak Snapshot section).
+
 ### Pre-Call Qualification (run before every sales call)
 
 Before the call, gather:
-1. **Lead volume**: "How many inbound inquiries do you get per month?" (target: 10+)
-2. **Outstanding quotes**: "How many estimates are sitting with no response?" (target: 5+)
+1. **Lead volume**: &ldquo;How many inbound inquiries do you get per month?&rdquo; (target: 10+)
+2. **Outstanding quotes**: &ldquo;How many estimates are sitting with no response?&rdquo; (target: 5+)
 3. **Google reviews**: Check their Google Business Profile review count vs. top 3 competitors
-4. **Current tools**: "Do you use Jobber, ServiceTitan, or anything for lead management?"
-5. **Guarantee window**: If below 15 leads/month, calculate the adjusted guarantee window and state it explicitly during the call: "Your guarantee window would be X days, not 30, based on your lead volume."
+4. **Current tools**: &ldquo;Do you use Jobber, ServiceTitan, or anything for lead management?&rdquo;
+5. **Guarantee window**: If below 15 leads/month, calculate the adjusted guarantee window and state it explicitly during the call: &ldquo;Your guarantee window would be X days, not 30, based on your lead volume.&rdquo;
+6. **Loss ceiling**: State it plainly: &ldquo;Your maximum risk is $1,000. One month. If 5 leads don&apos;t engage in 30 days, you get it back. One project covers 3-5 years of the service.&rdquo;
 
 ---
 
