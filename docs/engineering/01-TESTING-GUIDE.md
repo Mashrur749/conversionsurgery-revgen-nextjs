@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -1505,6 +1505,132 @@ Expected:
 - Empty state is graceful (e.g., &quot;No confirmed wins yet&quot;).
 - API endpoint `GET /api/client/attributed-wins` returns `200` with correct data shape.
 
+### Step 58: Post-launch additions
+
+Combined verification for six features shipped after Wave 7: Probable Wins Nudge, Since Your Last Visit card, webhook export, Voice AI missed transfer recovery, AI Preview/Sandbox, and Calendar sync status improvements.
+
+#### 58a: Probable Wins Nudge
+
+1. Create a test lead with `status=appointment_scheduled` (or `contacted`) and create an appointment for that lead with `status=completed` and `appointmentDate` set to 15+ days ago.
+2. Run the cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify `Owner Dev Phone (#3)` receives an SMS via the agency line: "Did you win [Lead Name]'s [project type]? Reply YES or NO..."
+4. Verify response payload includes `nudged >= 1`.
+5. Run the cron again immediately — verify the 14-day cooldown prevents a second nudge (no SMS sent, `nudged = 0`).
+
+Expected:
+
+- Nudge is sent only for unresolved leads with 14+ day old completed/confirmed appointments.
+- 14-day per-client cooldown is enforced (checked via `agencyMessages` with `promptType = 'won_lost_nudge'`).
+- Each lead is nudged at most once per run.
+- Clients with no phone number or `status=paused` are skipped.
+
+#### 58b: Since Your Last Visit Card
+
+1. Log into the client portal as a test contractor.
+2. On the dashboard (`/client`), note the &ldquo;Since Your Last Visit&rdquo; card.
+3. Open browser DevTools and clear `localStorage` key `cs-last-dashboard-visit-<clientId>` (or set it to a timestamp 24+ hours ago).
+4. Reload the page — the card should show activity counts since the stored timestamp.
+5. Verify the card shows &ldquo;All caught up&rdquo; when no items need attention.
+6. Verify the card shows lead counts, estimate follow-ups, and appointments when activity exists.
+7. Verify `GET /api/client/activity-summary` returns `200` with correct shape.
+
+Expected:
+
+- Card content reflects real activity since the last visit timestamp.
+- LocalStorage key is updated on each visit.
+- &ldquo;All caught up&rdquo; state renders when actions needed = 0.
+
+#### 58c: Webhook export on lead status change
+
+1. Ensure a test client has `webhookUrl` and `webhookEvents` configured (include `"lead.status_changed"`). Set these directly in the `clients` table or via admin UI if the field is exposed.
+2. Mark a test lead as `won` via the admin UI or API:
+
+```bash
+curl -i -X PATCH "http://localhost:3000/api/leads/<leadId>" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <admin-session-cookie>" \
+  -d '{"status": "won", "confirmedRevenue": 5000}'
+```
+
+3. Verify your webhook receiver (e.g., a RequestBin or ngrok inspect URL) received a POST with:
+   - `X-Webhook-Signature` header present
+   - Body: `{ leadId, name, phone, email, status: "won", confirmedRevenue: 5000, projectType, address }`
+4. Repeat with `status: "lost"` — verify webhook fires again.
+5. Verify that setting `status=contacted` does NOT trigger a webhook (only `won`/`lost`).
+
+Expected:
+
+- Webhook fires on `won` and `lost` status changes only.
+- Payload matches documented shape.
+- HMAC-SHA256 `X-Webhook-Signature` header is present.
+- Webhook failure is non-fatal — the lead status update still succeeds.
+
+#### 58d: Voice AI missed transfer recovery
+
+**Prerequisites:** Voice AI enabled, a team member configured with hot transfer.
+
+1. Place a test call through Voice AI and trigger a transfer (say something like &ldquo;I need to speak to someone&rdquo;).
+2. Ensure the team member phone does NOT answer the transfer (let it ring out or busy).
+3. After Twilio reports the dial status:
+
+   - **Lead phone** should receive SMS: "[Business] tried to connect you with a team member but they're currently unavailable. Someone will call you back shortly."
+   - A **P1 escalation** should appear in the triage dashboard (`/admin/triage`) immediately.
+   - **Team Member Dev Phone (#4)** should receive an alert SMS about the missed transfer.
+
+4. Verify the voice call record in `voice_calls` has `outcome = 'dropped'`.
+5. Confirm the TwiML response is never delayed — the webhook endpoint responds immediately regardless of side-effect completion.
+
+Expected:
+
+- All three side effects (homeowner SMS, escalation, team alert) fire without blocking TwiML.
+- `voice_calls.outcome` = `dropped` for missed transfer.
+- Escalation appears in triage dashboard at P1 priority.
+
+#### 58e: AI Preview / Sandbox
+
+1. Open `/admin/clients/<clientId>` — navigate to the client detail page.
+2. Locate the &ldquo;Test the AI&rdquo; panel.
+3. Type a homeowner question (e.g., &ldquo;Do you handle flat roofs?&rdquo;) and submit.
+4. Verify a draft AI response appears in the panel without any message being sent to a real lead.
+5. Verify via `conversations` table (or lead activity feed) that no new message record was created.
+6. Test via API directly:
+
+```bash
+curl -i -X POST "http://localhost:3000/api/admin/clients/<clientId>/ai-preview" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <admin-session-cookie>" \
+  -d '{"message": "Do you handle flat roofs?"}'
+```
+
+Expected:
+
+- API returns `200` with the AI&apos;s draft response text.
+- No message created in `conversations`, `scheduled_messages`, or any other table.
+- Response uses the client&apos;s real knowledge base and AI settings.
+- Works correctly even if no leads exist for the client.
+
+#### 58f: Calendar sync status improvements (portal)
+
+1. Log into the client portal and navigate to Settings &gt; Features.
+2. Connect Google Calendar if not already connected (Step 56b).
+3. **Test consecutive error banner:** manually set `consecutive_errors = 4` on the `calendar_integrations` row for this client in the DB. Reload the settings page. Verify a red banner appears: &ldquo;Sync failed multiple times. Please reconnect your Google Calendar.&rdquo;
+4. **Test stale + has errors banner:** set `consecutive_errors = 2`, `last_sync_at = NOW() - INTERVAL '35 minutes'`, `last_error = 'token expired'`. Reload. Verify a yellow banner appears: &ldquo;Calendar sync may be disconnected. Try reconnecting below.&rdquo;
+5. **Test OAuth redirect:** disconnect and reconnect via the portal. Verify the OAuth callback redirects to `/client/settings` (not an admin URL).
+
+Expected:
+
+- `consecutive_errors > 3`: red error banner shown.
+- `consecutive_errors <= 3` AND sync stale (&gt;30 min) AND `last_error` set: yellow warning shown.
+- No banner when `consecutive_errors = 0` and sync is recent.
+- Portal OAuth flow redirects back to `/client/settings` on success.
+
+---
+
 ## 3. Useful Commands
 
 ```bash
@@ -1550,6 +1676,7 @@ curl -i http://localhost:3000/api/cron/win-back -H "Authorization: Bearer $CRON_
 curl -i http://localhost:3000/api/cron/calendar-sync -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/engagement-health-check -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/dormant-reengagement -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core

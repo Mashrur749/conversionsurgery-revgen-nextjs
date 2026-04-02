@@ -72,6 +72,9 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 37. **Engagement health (weekly, Mondays):** The `engagement-health-check` cron runs every Monday and flags clients with 3+ consecutive weeks of declining engagement. Flagged clients appear in the Triage dashboard. When a client is flagged, review their recent AI quality metrics and knowledge gap queue — declining engagement often signals KB staleness or a recurring AI deferral pattern.
 38. **KB Intake Questionnaire — new client onboarding:** When creating a new client, complete the KB intake questionnaire on the admin client detail Knowledge tab before activating any automations. This pre-populates the knowledge base and significantly reduces AI deferrals in Weeks 1-2. Aim to fill this out on the same day as the onboarding call.
 39. **Dormant re-engagement (Wednesdays):** The `dormant-reengagement` cron runs every Wednesday and sends a single re-contact message to leads that have been dormant for 6+ months. No action needed — monitor for any response that comes back as an escalation.
+40. **Probable wins nudge (weekly):** The `probable-wins-nudge` cron runs weekly and SMS-prompts contractors to mark leads won or lost when an appointment completed 14+ days ago with no resolution. Monitor the `agencyMessages` table for `promptType = 'won_lost_nudge'` rows. If a client reports getting no nudge despite having old unresolved appointments, verify: (a) the client has a phone number configured, (b) status is not `paused`, (c) the 14-day cooldown has not been tripped by a recent nudge in `agencyMessages`.
+41. **Webhook configuration (Jobber / Zapier clients):** For clients using Jobber or Zapier integrations, confirm `webhookUrl` and `webhookEvents` are set on their client record (admin client detail). The `lead.status_changed` event fires when a lead is marked `won` or `lost`. If a client reports their integration stopped receiving events, check: (a) `webhookUrl` is a valid HTTPS endpoint, (b) `webhookEvents` includes `"lead.status_changed"`, (c) look for error logs in `error_log` with source `[LeadManagement]`.
+42. **AI Preview for KB verification:** When completing the KB intake questionnaire or adding new knowledge base entries for a client, use the &ldquo;Test the AI&rdquo; panel on the admin client detail page to verify the AI answers correctly before activating the client. Ask 3-5 questions the homeowner is likely to ask. If answers are weak or incorrect, refine the KB entries and test again. This takes 5 minutes and prevents AI deferrals on day one.
 
 ## Knowledge Gap Resolution Process
 
@@ -187,6 +190,9 @@ curl -s "$BASE_URL/api/cron/engagement-health-check" \
   -H "Authorization: Bearer $CRON_SECRET"
 
 curl -s "$BASE_URL/api/cron/dormant-reengagement" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/probable-wins-nudge" \
   -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helper (preferred)

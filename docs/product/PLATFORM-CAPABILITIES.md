@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-01 (Wave 7)
+Last updated: 2026-04-01 (Wave 7 + post-launch additions)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -87,9 +87,10 @@ Contractors can connect their Google Calendar so platform appointments and exter
 | **Auto-sync cadence** | Cron job (`/api/cron/calendar-sync`) runs every 15 minutes, syncing all active integrations. |
 | **Event lifecycle** | Create, update, and delete operations propagate both directions. |
 | **Admin connection** | Operator can connect/disconnect a client&apos;s calendar from the client detail page (Configuration tab). |
-| **Portal connection** | Contractor can connect/disconnect from Settings &gt; Features in the client portal. |
+| **Portal connection** | Contractor can connect/disconnect from Settings &gt; Features in the client portal. OAuth callback redirects back to `/client/settings` (not admin). |
+| **Portal sync status** | Portal card shows `consecutiveErrors` count. If errors &gt; 3: red &ldquo;Sync failed multiple times — reconnect&rdquo; banner. If sync is stale (&gt;30 min) and has errors: yellow &ldquo;May be disconnected&rdquo; warning. |
 | **Feature toggle** | Controlled by the `calendarSyncEnabled` per-client feature flag. |
-| **Schema** | `calendar_integrations` (OAuth tokens, sync state) and `calendar_events` (events with external IDs for sync). |
+| **Schema** | `calendar_integrations` (OAuth tokens, sync state, `consecutiveErrors`) and `calendar_events` (events with external IDs for sync). |
 
 ### No-Show Recovery
 
@@ -134,6 +135,16 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 - Follow-up 20-30 days later
 - After 2 attempts with no response, lead transitions to `dormant`
 
+### Probable Wins Nudge
+
+Weekly cron (`/api/cron/probable-wins-nudge`) identifies leads that have had a completed or confirmed appointment 14+ days ago but have not been marked won or lost.
+
+- Sends a contractor SMS via the agency channel (operator-to-contractor, not compliance gateway): "Did you win [Lead Name]'s [project type]? Reply YES or NO to this number, then we'll ask for the value."
+- If the contractor replies YES, a follow-up asks for the job value so confirmed revenue can be recorded
+- 14-day cooldown per client — at most one nudge cycle per 14 days regardless of how many qualifying leads exist
+- Deduped per lead: one nudge per lead per run, no duplicate sends
+- Skips clients with no active phone number, paused clients, and leads already marked won/lost/closed
+
 ### Dormant Re-Engagement (6-Month Stage)
 
 Follow-on stage after standard win-back for leads that have been dormant 6+ months.
@@ -167,6 +178,18 @@ Optional add-on ($0.15/minute). Answers inbound calls with a conversational AI.
 - **Three activation modes:** always on, after-hours only, overflow (when owner doesn&apos;t answer)
 - **Voice selection:** ElevenLabs voice personas with admin preview
 - **Kill switch:** global disable that falls back to direct owner forwarding
+
+### Missed Transfer Recovery
+
+When a hot transfer fails (busy, no-answer, failed, or canceled status from Twilio):
+
+1. **Homeowner SMS:** the platform sends the homeowner an SMS via the compliance gateway: "[Business] tried to connect you with a team member but they&apos;re currently unavailable. Someone will call you back shortly."
+2. **P1 escalation:** a critical-priority escalation entry is created and surfaces immediately in the triage dashboard.
+3. **Team notification:** a `sendAlert` SMS is sent to the team member who was dialled: "Missed transfer: [Lead Name] called and was transferred to you but the call was not answered. Please call them back at [phone]."
+
+All three side effects run in the background (fire-and-forget) — the TwiML response is never delayed.
+
+File: `src/app/api/webhooks/twilio/voice/ai/dial-complete/route.ts`
 
 ### Post-Call
 
@@ -246,7 +269,7 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 
 | Page | What it shows |
 |------|--------------|
-| **Dashboard** | Lead summary, recent activity, help articles, and **Revenue Recovered card** (shows confirmed revenue attributed to the platform over rolling 30/60/90-day windows). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. |
+| **Dashboard** | Lead summary, recent activity, help articles, and **Revenue Recovered card** (shows confirmed revenue attributed to the platform over rolling 30/60/90-day windows). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **Since Your Last Visit card** (see below). |
 | **Conversations** | All leads with message history, mode badges, action-required highlights |
 | **Revenue** | 30-day stats, pipeline value, speed-to-lead metrics, service breakdown |
 | **Knowledge Base** | Business info the AI uses — editable by owner |
@@ -255,6 +278,31 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 | **Team** | Add/remove team members, toggle escalation/hot transfer, manage permissions |
 | **Settings** | Phone number management, AI settings, notification preferences, feature toggles, business hours |
 | **Cancel** | Cancellation request with 30-day notice + data export |
+
+### Since Your Last Visit Card
+
+Shown on the contractor portal dashboard (`/client`). Surfaces activity since the contractor last visited, so they know exactly what happened without scrolling through conversations.
+
+- Tracks last visit timestamp via localStorage key `cs-last-dashboard-visit-{clientId}` — private to the browser, no server storage
+- Displays: leads responded to, estimates followed up, appointments booked, and any actions needing attention
+- When no attention items exist, shows a green &ldquo;All caught up&rdquo; state
+- Data source: `GET /api/client/activity-summary`
+
+Component: `src/app/(client)/client/since-last-visit-card.tsx`
+
+### Webhook Integration (Zapier / Jobber)
+
+Clients can configure a webhook URL to receive real-time notifications when a lead status changes to `won` or `lost`. This enables no-code integration with Jobber, Zapier, and other tools without a native integration.
+
+| Detail | Value |
+|--------|-------|
+| **Trigger** | Lead status changes to `won` or `lost` (via `PATCH /api/leads/[id]`) |
+| **Event name** | `lead.status_changed` |
+| **Payload fields** | `leadId`, `name`, `phone`, `email`, `status`, `confirmedRevenue` (dollars), `projectType`, `address` |
+| **Security** | HMAC-SHA256 signature in `X-Webhook-Signature` header |
+| **Config** | Client sets `webhookUrl` and `webhookEvents` (must include `"lead.status_changed"`) in admin settings |
+
+Dispatch is non-blocking: webhook failures do not affect the lead status update.
 
 ### Navigation and Orientation
 
@@ -505,6 +553,15 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 - Team management with role-based access
 - Phone number provisioning and webhook configuration (admin and self-serve client portal)
 
+### AI Preview / Sandbox
+
+Available on the admin client detail page — lets the operator test how the AI would respond to a homeowner question without sending any real message.
+
+- **Panel:** &ldquo;Test the AI&rdquo; panel on the client detail page (`src/app/(dashboard)/admin/clients/[id]/ai-preview-panel.tsx`)
+- **API:** `POST /api/admin/clients/[id]/ai-preview` — runs the full agent pipeline in dry-run mode; response is returned to the UI, not sent to any lead
+- **Use cases:** verify KB quality during onboarding, run a live sales demo for the contractor, smoke-test after a KB update
+- No side effects: no messages created, no lead state changed, no compliance gateway call
+
 ### Kill Switches
 
 Three platform-wide circuit breakers (toggle in admin settings, no deploy required):
@@ -528,7 +585,7 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 
 ### Cron Orchestrator
 
-31 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
+32 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
 
 ### Agency Communication
 
