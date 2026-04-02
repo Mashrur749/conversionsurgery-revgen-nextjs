@@ -141,48 +141,40 @@ Agent 4 (Contrarian) uniquely flagged that the $1,000/month pricing has no Canad
 
 ---
 
-## Priority Matrix
+## Priority Matrix — ALL ITEMS RESOLVED (2026-04-01)
 
-### Before First Paid Signature (Critical Path)
-
-| # | Item | Type | Effort |
-|---|------|------|--------|
-| 1 | **Legal counsel session** (quiet hours + 3 other items) | Process | $500-1,500, 1-2 weeks |
-| 2 | **FIX-04: Escalation re-notification** + DB migration | Code | 45 min |
-| 3 | **FIX-02: Embeddable widget** — verify/complete | Code | 1-2 hours |
-| 4 | **FIX-05: Google Place ID auto-discovery** | Code | 30 min |
-| 5 | **FIX-03: Manual payment entry** — verify/complete UI | Code | 1-2 hours |
-| 6 | **Add legal signoff gate** to Launch Checklist Phase 2 | Doc | 5 min |
-
-### Before First Client Onboarding
-
-| # | Item | Type | Effort |
-|---|------|------|--------|
-| 7 | **Revenue Leak Audit template** | Doc | 30 min |
-| 8 | **Won-leads SMS nudge** ("Reply WIN $X") | Code | 2-3 hours |
-| 9 | **Demo readiness verification** in Launch Checklist | Doc | 15 min |
-| 10 | **Week 1 check-in SMS template** in Playbook | Doc | 15 min |
-
-### Before Client #5
-
-| # | Item | Type | Effort |
-|---|------|------|--------|
-| 11 | Guarantee progress bar in portal | Code | 2-3 hours |
-| 12 | "Since Your Last Visit" dashboard summary | Code | 2-3 hours |
-| 13 | Jobber webhook export on won leads | Code | 1 day |
-| 14 | Calendar sync status indicator in portal | Code | 1 hour |
-| 15 | GST/HST Stripe Tax configuration | Process | 1 hour |
+| # | Item | Status |
+|---|------|--------|
+| 1 | Legal counsel session | **Risk acceptance documented** — deferred to client #5, conservative mitigations active |
+| 2 | FIX-04: Escalation re-notification | **Done** — cron registered, function built |
+| 3 | FIX-02: Embeddable widget | **Done** — already built from prior session |
+| 4 | FIX-05: Google Place ID auto-discovery | **Done** — fire-and-forget on client creation |
+| 5 | FIX-03: Manual payment entry | **Done** — already built from prior session |
+| 6 | Legal signoff gate updated | **Done** — risk acceptance doc, Launch Checklist updated |
+| 7 | Revenue Leak Audit template | **Done** — 6-section template in `docs/operations/templates/` |
+| 8 | Won-leads SMS nudge | **Done** — probable-wins-nudge.ts, 2-step YES/NO then amount, weekly cron |
+| 9 | Demo readiness checklist | **Done** — added to Launch Checklist Phase 3 |
+| 10 | Week 1 check-in SMS template | **Done** — added to Playbook Section 10 |
+| 11 | Guarantee progress bar | Deferred — nice-to-have after client #5 |
+| 12 | "Since Your Last Visit" card | **Done** — localStorage-tracked card on portal dashboard |
+| 13 | Jobber webhook export | **Done** — `lead.status_changed` webhook on won/lost |
+| 14 | Calendar sync status indicator | **Done** — consecutiveErrors + stale/disconnected warnings |
+| 15 | GST/HST Stripe Tax | **Added to Launch Checklist** — operator action before first invoice |
+| 16 | Social proof | **Not code** — capture from first client Week 2 |
+| 17 | RESEARCH-INSIGHTS broken ref | **Done** — redirected to Sales Objection Playbook |
+| 18 | FB-01: Voice AI call rejection | **Done** — homeowner SMS + P1 escalation + team notification |
+| 19 | Operator phone warning | **Done** — admin dashboard banner when not configured |
+| 20 | AI preview/sandbox | **Done** — AiPreviewPanel + admin API for dry-run testing |
+| 21 | Guarantee volume disclosure | **Done** — script added to Playbook Section 12 |
 
 ---
 
 ## Key Insight
 
-The platform's technical infrastructure is production-ready. **The remaining risk is concentrated in 3 areas:**
+**All actionable items from this analysis are now resolved.** The platform is production-ready for the first 3-5 clients.
 
-1. **Legal gate** (quiet hours + guarantee enforceability) — blocks paid signatures and weakens the strongest sales pitch angle. One counsel session resolves this.
-
-2. **4 unshipped FIX specs** (FIX-02, FIX-03, FIX-04, FIX-05) — all have written specs, most have partial implementations. Combined effort: ~4-5 hours of code. These prevent the most embarrassing first-client experiences: blank review links, overdue reminders on paid invoices, cold escalated leads, and no web form capture.
-
-3. **Contractor engagement loop** — the ROI story breaks if contractors don't mark jobs won. The system has no proactive mechanism to nudge this behavior. A simple SMS-based "did you win?" prompt closes this gap.
-
-None of these are architectural. The platform is 4-5 hours of code, one legal session, and 2-3 documentation templates away from being ready for the first 3-5 clients.
+Remaining non-code items:
+- Legal counsel at client #5 (risk acceptance documented)
+- GST/HST Stripe Tax config (in Launch Checklist)
+- Social proof capture from first client
+- Guarantee progress bar (deferred to post-client #5)

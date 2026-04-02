@@ -92,6 +92,14 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 **Post-login setup (not env vars):**
 - [ ] After first admin login, set `operator_phone` and `operator_name` in system_settings via `/admin/settings`. The phone receives SMS alerts on cron failures and SLA breaches. The name appears on the &quot;Your Account Manager&quot; card in the client portal.
 
+### Billing &amp; Tax (before first invoice)
+
+- [ ] Determine your GST registration status (if under $30K annual revenue, you may be exempt as a small supplier)
+- [ ] If GST-registered: configure Stripe Tax with your GST number (5% GST for Alberta clients)
+- [ ] If GST-registered: update pricing language to &quot;$1,000/month plus applicable taxes&quot; in proposals
+- [ ] If NOT GST-registered: document the small supplier exemption decision and revisit at $30K revenue
+- [ ] Verify Stripe invoices show correct business name, address, and tax line before first client bill
+
 ### Database
 
 - [ ] Create a staging Neon branch for safe testing:
