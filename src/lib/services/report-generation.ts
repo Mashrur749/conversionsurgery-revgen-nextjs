@@ -1,15 +1,17 @@
 import { getDb } from '@/db';
 import {
   abTests,
+  appointments,
   clients,
   conversations,
   dailyStats,
+  flowExecutions,
   leads,
   reports,
   scheduledMessages,
   systemSettings,
 } from '@/db/schema';
-import { and, asc, eq, gte, inArray, isNotNull, lte, sum } from 'drizzle-orm';
+import { and, asc, count, eq, gte, inArray, isNotNull, lte, ne, sum } from 'drizzle-orm';
 import { getTeamMembers } from '@/lib/services/team-bridge';
 import { sendBiWeeklyReportEmail } from '@/lib/services/report-email';
 import { sendAlert } from '@/lib/services/agency-communication';
@@ -283,12 +285,116 @@ export async function generateClientReport(
       ? Math.round(Number(confirmedRevenueRow.total) / 100)
       : 0;
 
+  // Total won jobs for avgProjectValue calculation
+  const [totalWonJobsRow] = await db
+    .select({ total: count(leads.id) })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.clientId, clientId),
+        eq(leads.status, 'won'),
+        isNotNull(leads.confirmedRevenue)
+      )
+    );
+  const totalWonJobs = totalWonJobsRow?.total ?? 0;
+
+  // avgProjectValue: use actual average if confirmed revenue exists, else $40,000 default
+  const avgProjectValue =
+    confirmedRevenueDollars > 0 && totalWonJobs > 0
+      ? Math.round(confirmedRevenueDollars / totalWonJobs)
+      : 40000;
+
+  // --- Pipeline Proof (auto-tracked, zero contractor effort) ---
+
+  // COUNT leads that have moved past 'new' status during the period
+  const [leadsEngagedRow] = await db
+    .select({ total: count(leads.id) })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.clientId, clientId),
+        ne(leads.status, 'new'),
+        gte(leads.updatedAt, periodStart),
+        lte(leads.updatedAt, periodEnd)
+      )
+    );
+  const leadsEngaged = leadsEngagedRow?.total ?? 0;
+
+  // COUNT appointments created in the reporting period
+  const [appointmentsBookedRow] = await db
+    .select({ total: count(appointments.id) })
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.clientId, clientId),
+        gte(appointments.createdAt, periodStart),
+        lte(appointments.createdAt, periodEnd)
+      )
+    );
+  const appointmentsBooked = appointmentsBookedRow?.total ?? 0;
+
+  // COUNT active flow executions started in the period (estimate follow-up in progress)
+  const [estimatesInFollowUpRow] = await db
+    .select({ total: count(flowExecutions.id) })
+    .from(flowExecutions)
+    .where(
+      and(
+        eq(flowExecutions.clientId, clientId),
+        eq(flowExecutions.status, 'active'),
+        gte(flowExecutions.startedAt, periodStart),
+        lte(flowExecutions.startedAt, periodEnd)
+      )
+    );
+  const estimatesInFollowUp = estimatesInFollowUpRow?.total ?? 0;
+
+  // COUNT csv_import leads that moved past 'new' status during the period (reactivated)
+  const [reactivatedResponsesRow] = await db
+    .select({ total: count(leads.id) })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.clientId, clientId),
+        eq(leads.source, 'csv_import'),
+        ne(leads.status, 'new'),
+        gte(leads.updatedAt, periodStart),
+        lte(leads.updatedAt, periodEnd)
+      )
+    );
+  const reactivatedResponses = reactivatedResponsesRow?.total ?? 0;
+
+  // SUM missedCallsCaptured from daily_stats for the period (already aggregated above)
+  const missedCallsCaught = periodStats.reduce(
+    (acc, s) => acc + (s.missedCallsCaptured ?? 0),
+    0
+  );
+
+  // AVG response time in seconds from daily_stats conversations data
+  // Use the existing withoutUsInput calculation: averageObservedResponseMinutes
+  const withoutUsInput = await collectWithoutUsModelInput(clientId, startDate, endDate);
+  const avgResponseTimeSeconds =
+    withoutUsInput.averageObservedResponseMinutes !== null
+      ? Math.round(withoutUsInput.averageObservedResponseMinutes * 60)
+      : null;
+
+  // Probable pipeline value: booked + reactivated * avgProjectValue
+  const probablePipelineValue = (appointmentsBooked + reactivatedResponses) * avgProjectValue;
+
+  const pipelineProof = {
+    leadsEngaged,
+    appointmentsBooked,
+    estimatesInFollowUp,
+    reactivatedResponses,
+    missedCallsCaught,
+    avgResponseTimeSeconds,
+    probablePipelineValue,
+    avgProjectValue,
+  };
+
   const teamMemsList = await getTeamMembers(clientId);
   const quarterlyCampaignSummary = await getCurrentQuarterlyCampaignSummary(
     clientId,
     new Date(endDate)
   );
-  const withoutUsInput = await collectWithoutUsModelInput(clientId, startDate, endDate);
   const withoutUsAssumptions = await getWithoutUsAssumptions();
   const withoutUsModel = calculateWithoutUsModel(withoutUsInput, withoutUsAssumptions);
 
@@ -360,6 +466,8 @@ export async function generateClientReport(
     confirmedRevenue: confirmedRevenueDollars,
     quarterlyCampaign: quarterlyCampaignSummary,
     withoutUsModel,
+    /** Auto-tracked pipeline proof — requires zero contractor action. */
+    pipelineProof,
     ...(aiSummary ? { aiEffectiveness: aiSummary } : {}),
   };
 

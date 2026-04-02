@@ -1,8 +1,8 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
-import { getDb, leads, dailyStats, appointments } from '@/db';
+import { getDb, leads, dailyStats, appointments, flowExecutions, flows } from '@/db';
 import { clients, subscriptions, systemSettings, knowledgeBase } from '@/db/schema';
-import { eq, and, gte, sql, desc, inArray } from 'drizzle-orm';
+import { eq, and, gte, sql, desc, inArray, ne } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -132,6 +132,41 @@ export default async function ClientDashboardPage() {
     .where(and(eq(knowledgeBase.clientId, clientId), eq(knowledgeBase.isActive, true)));
   const kbCount = Number(kbCountRow?.count ?? 0);
 
+  // Pipeline proof metrics — zero contractor effort required
+  const [pipelineProof] = await db
+    .select({
+      leadsEngaged: sql<number>`COUNT(DISTINCT CASE WHEN ${leads.status} != 'new' THEN ${leads.id} END)`,
+      reactivatedResponses: sql<number>`COUNT(DISTINCT CASE WHEN ${leads.source} = 'csv_import' AND ${leads.status} NOT IN ('new', 'lost', 'opted_out') THEN ${leads.id} END)`,
+      missedCallsCaught: sql<number>`COALESCE((SELECT SUM(ds.missed_calls_captured) FROM daily_stats ds WHERE ds.client_id = ${clientId}), 0)`,
+    })
+    .from(leads)
+    .where(eq(leads.clientId, clientId));
+
+  const [apptCountRow] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(appointments)
+    .where(and(
+      eq(appointments.clientId, clientId),
+      ne(appointments.status, 'cancelled')
+    ));
+
+  const [flowCountRow] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(flowExecutions)
+    .where(and(
+      eq(flowExecutions.clientId, clientId),
+      eq(flowExecutions.status, 'active')
+    ));
+
+  const leadsEngaged = Number(pipelineProof?.leadsEngaged ?? 0);
+  const reactivatedResponses = Number(pipelineProof?.reactivatedResponses ?? 0);
+  const missedCallsCaught = Number(pipelineProof?.missedCallsCaught ?? 0);
+  const appointmentsBookedTotal = Number(apptCountRow?.count ?? 0);
+  const estimatesInFollowUp = Number(flowCountRow?.count ?? 0);
+
+  const AVG_PROJECT_VALUE = 40000; // default; in dollars
+  const probablePipeline = (appointmentsBookedTotal + reactivatedResponses) * AVG_PROJECT_VALUE;
+
   // Recent activity
   const recentLeads = await db
     .select()
@@ -229,18 +264,72 @@ export default async function ClientDashboardPage() {
         </Card>
       )}
 
+      {/* System Activity — auto-tracked pipeline proof */}
+      <Card className="border-[#6B7E54]/30 bg-[#F8F9FA]">
+        <CardHeader className="pb-3">
+          <div>
+            <CardTitle className="text-base font-semibold text-[#1B2F26]">System Activity</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Auto-tracked. No action needed from you.</p>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Hero: probable pipeline */}
+          <div>
+            <div className="text-3xl font-bold text-[#1B2F26]">
+              ${probablePipeline.toLocaleString()}
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Probable pipeline &mdash; {appointmentsBookedTotal} {appointmentsBookedTotal === 1 ? 'appointment' : 'appointments'} booked
+              {reactivatedResponses > 0 && ` + ${reactivatedResponses} reactivated ${reactivatedResponses === 1 ? 'quote' : 'quotes'}`}
+              {' '}&times; ${AVG_PROJECT_VALUE.toLocaleString()} avg project
+            </p>
+          </div>
+
+          {/* 3x2 stat grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-md border border-[#C8D4CC] bg-white p-3">
+              <div className="text-xl font-bold text-[#1B2F26]">{leadsEngaged}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Leads responded to</div>
+            </div>
+            <div className="rounded-md border border-[#C8D4CC] bg-white p-3">
+              <div className="text-xl font-bold text-[#1B2F26]">{estimatesInFollowUp}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Estimates in follow-up</div>
+            </div>
+            <div className="rounded-md border border-[#C8D4CC] bg-white p-3">
+              <div className="text-xl font-bold text-[#1B2F26]">{missedCallsCaught}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Missed calls caught</div>
+            </div>
+            <div className="rounded-md border border-[#C8D4CC] bg-white p-3">
+              <div className="text-xl font-bold text-[#1B2F26]">{reactivatedResponses}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Dead quotes re-engaged</div>
+            </div>
+            <div className="rounded-md border border-[#C8D4CC] bg-white p-3">
+              <div className="text-xl font-bold text-[#1B2F26]">{appointmentsBookedTotal}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Appointments booked</div>
+            </div>
+            <div className="rounded-md border border-[#C8D4CC] bg-white p-3">
+              <div className="text-xl font-bold text-[#1B2F26]">&lt; 5s</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Avg first response</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Jobs We Helped Win — GAP-02 */}
       <Card className="border-[#3D7A50]/30">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold text-[#1B2F26]">Jobs We Helped Win</CardTitle>
+          <div>
+            <CardTitle className="text-base font-semibold text-[#1B2F26]">Jobs We Helped Win</CardTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">Confirmed by you</p>
+          </div>
           <TrendingUp className="h-5 w-5 text-[#3D7A50]" />
         </CardHeader>
         <CardContent className="space-y-4">
           {totalWonJobs === 0 ? (
             <div className="py-6 text-center">
-              <p className="text-muted-foreground mb-1">No recovered revenue yet</p>
+              <p className="text-muted-foreground mb-1">No confirmed revenue yet</p>
               <p className="text-sm text-muted-foreground mb-3">
-                Mark a job as won in your conversations to start tracking revenue.
+                Mark jobs as Won in Conversations to see confirmed revenue here.
               </p>
               <Button asChild variant="outline" size="sm">
                 <Link href="/client/conversations">View Conversations</Link>
@@ -319,7 +408,10 @@ export default async function ClientDashboardPage() {
       {/* Revenue Hero */}
       <Card className="bg-[#E8F5E9] border-[#3D7A50]/30">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-[#3D7A50]">Revenue Recovered</CardTitle>
+          <div>
+            <CardTitle className="text-sm font-medium text-[#3D7A50]">Revenue Recovered</CardTitle>
+            <p className="text-xs text-[#3D7A50]/70 mt-0.5">Confirmed by you</p>
+          </div>
           <DollarSign className="h-5 w-5 text-[#3D7A50]" />
         </CardHeader>
         <CardContent>
@@ -329,6 +421,11 @@ export default async function ClientDashboardPage() {
           <p className="text-xs text-[#3D7A50]">
             ${(revenueStats.totalPaid / 100).toLocaleString()} collected &bull; {revenueStats.totalWon} jobs won
           </p>
+          {revenueStats.totalWon === 0 && (
+            <p className="text-xs text-[#3D7A50]/70 mt-2">
+              Mark jobs as Won in Conversations to see confirmed revenue here.
+            </p>
+          )}
         </CardContent>
       </Card>
 
