@@ -200,6 +200,19 @@ At day 90:
 - Send a recap text: &quot;Great call. Your number is live. Send me those old quotes when you get a chance and I&apos;ll get them working this week.&quot;
 - Note: the onboarding checklist now has actionable links to each setup step &mdash; the contractor can self-serve some configuration (phone setup, business hours, team members) directly from their dashboard without waiting for you.
 
+**Revenue Leak Audit (48-hour deliverable):**
+Within 48 business hours of the onboarding call, complete and send the Revenue Leak Audit. This is the first tangible proof the managed service is real &mdash; do not skip it.
+
+Use the template at `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md`. It covers six sections: speed-to-lead, missed call rate, outstanding quotes, review gap vs. competitors, current follow-up system, and a conservative revenue impact estimate. The template includes operator research notes (internal only) and the client-facing finding for each section. Budget 30&ndash;45 minutes per client.
+
+Send the completed audit via plain-text email or PDF with the subject line: &quot;[Business Name] &mdash; Your Revenue Leak Audit.&quot;
+
+**Day 3-4 Check-in SMS (send from agency number):**
+
+&gt; &quot;System update for [Business Name]: [X] leads captured, missed-call text-back fired [Y] times since Monday. We&apos;re building your AI knowledge base this week &mdash; full Smart Assist goes live [day]. Any questions before then?&quot;
+
+Purpose: Manages contractor expectations during the 3-week ramp, creates a natural touchpoint before the first bi-weekly report, and prevents &quot;is anything happening?&quot; anxiety.
+
 ---
 
 ## 11. Monthly Health Check (Internal)
@@ -235,6 +248,14 @@ Before the call, answer these two questions. If either is a hard no, adjust your
 > "Do you get at least 8-10 new inquiries per month — calls, form fills, referrals looking for a quote?"
 
 Below 8/month: the guarantee windows will extend substantially, and Week 1 reactivation results may be thin. Not a disqualifier, but manage expectations upfront. The dormant reactivation pitch is more important than the speed-to-lead pitch for low-volume contractors.
+
+**Required disclosure for sub-15 lead volume prospects:**
+If the contractor reports fewer than 15 inbound leads per month, explicitly state the adjusted guarantee window during the close:
+- 10 leads/month → 30-day proof becomes 45 days, 90-day guarantee becomes 135 days
+- 8 leads/month → 30-day proof becomes 56 days, 90-day guarantee becomes 168 days
+- Below 8: "We'll review your situation individually"
+
+Say it plainly: "At your lead volume, the guarantee window extends to [X] days instead of 30. That's built into the terms so you're never penalized for a slow period."
 
 **2. Referral vs. inbound ratio**
 

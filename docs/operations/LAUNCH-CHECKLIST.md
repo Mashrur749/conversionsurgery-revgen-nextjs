@@ -157,9 +157,13 @@ Reference: `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` for detailed process
 
 ### Before the sales call
 
-- [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; scripts for the 10 most common objections
-- [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` Section 12 &mdash; pitch angles, outreach scripts, and pre-call qualification
+- [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; scripts for the 10 most common objections + Section 12 for pitch angles and outreach scripts
 - [ ] Prepare the demo client (`npm run db:seed -- --demo`) so you can show the system live
+  - [ ] Assign a real phone number to the demo client (verify Alberta 403/780 area code)
+  - [ ] Confirm Twilio webhooks are pointed at production for the demo number
+  - [ ] Do a live test: call the demo number, verify missed-call text-back fires within 5 seconds
+  - [ ] Verify the demo client has a populated knowledge base (use the seed data)
+  - [ ] Run `--demo-cleanup` after each sales demo session to prevent stale cron activity
 - [ ] Prepare to do the &quot;call your own number&quot; demo during the sales conversation (not onboarding)
 - [ ] Pre-qualify: &quot;How many inbound leads do you get per month?&quot; (target: 10+)
 - [ ] Pre-qualify: &quot;How many quotes in your phone have had no response for 2+ weeks?&quot;
