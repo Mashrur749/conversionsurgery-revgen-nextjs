@@ -55,9 +55,8 @@ Attach:
 - `docs/GRAND-SLAM-OFFER.md`
 2. Proposed legal redlines draft:
 - `docs/legal/02-LEGAL-CLAUSE-REDLINES.md`
-3. Current launch/parity status:
-- `docs/product/01-LAUNCH-READINESS.md`
-- `docs/product/02-OFFER-PARITY-GAPS.md`
+3. Current platform status:
+- `docs/product/PLATFORM-CAPABILITIES.md`
 
 ## Internal Go/No-Go Rule
 

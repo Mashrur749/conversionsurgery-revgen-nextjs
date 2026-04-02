@@ -24,12 +24,6 @@ Purpose: execution specs for launch-critical delivery and offer parity.
 - `MS-14-ONBOARDING-QUALITY-GATES.md` -> `GAP-202`
 - `MS-15-REMINDER-ROUTING-FLEXIBILITY.md` -> `GAP-203`
 
-## Legacy Access-Management Specs (Separate Track)
-- `SPEC-01-SCHEMA-MIGRATION.md`
-- `SPEC-02-PERMISSION-SYSTEM.md`
-- `SPEC-03-AUTH-FLOW-REWRITE.md`
-- `SPEC-04-AGENCY-ADMIN-UI.md`
-- `SPEC-05-CLIENT-PORTAL-UPDATES.md`
-- `SPEC-06-DATA-MIGRATION-CLEANUP.md`
+## Legacy Specs (Archived)
 
-These six specs are not part of the current offer-parity launch track. Do not treat them as blockers unless the access-management program is explicitly resumed.
+SPEC-01 through SPEC-06 (access-management) and FIX-01 through FIX-05 (pre-launch quick fixes) have been deleted. All were fully implemented. Historical context is in git history if needed.

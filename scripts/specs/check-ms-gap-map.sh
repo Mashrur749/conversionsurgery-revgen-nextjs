@@ -6,8 +6,13 @@ cd "$ROOT_DIR"
 
 GAP_FILE="docs/product/02-OFFER-PARITY-GAPS.md"
 
+# Gap register was archived (all gaps resolved). Check archive location as fallback.
 if [ ! -f "$GAP_FILE" ]; then
-  echo "FAIL: $GAP_FILE not found"
+  GAP_FILE="docs/archive/02-OFFER-PARITY-GAPS.md"
+fi
+
+if [ ! -f "$GAP_FILE" ]; then
+  echo "FAIL: gap register not found at docs/product/ or docs/archive/"
   exit 1
 fi
 
