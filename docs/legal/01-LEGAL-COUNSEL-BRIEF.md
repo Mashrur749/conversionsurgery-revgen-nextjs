@@ -60,10 +60,16 @@ Attach:
 - `docs/product/02-OFFER-PARITY-GAPS.md`
 
 ## Internal Go/No-Go Rule
-- No paid client signatures until written counsel signoff on items 1-4 above.
-- Until signoff, all written materials must use interim-safe language:
+
+**Updated 2026-04-01:** Legal counsel deferred until after client #5. See `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` for the full risk mitigation plan and hard rules.
+
+- ~~No paid client signatures until written counsel signoff on items 1-4 above.~~ **Superseded** — proceeding with conservative interim posture for clients 1-5.
+- Until counsel signoff, all written materials must use interim-safe language:
   - "near-instant response during compliant hours"
-  - no absolute guarantee language beyond defined contract terms.
+  - no absolute guarantee language beyond defined contract terms
+  - STRICT quiet hours mode only (no `INBOUND_REPLY_ALLOWED`)
+  - guarantee disputes default to refund (no argument)
+- **Trigger for counsel engagement:** 5 paying clients or first guarantee dispute, whichever comes first.
 
 ## Session Prep Template (Send to Lawyer)
 Use this exact intro:
