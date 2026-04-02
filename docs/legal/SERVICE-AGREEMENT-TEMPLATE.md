@@ -61,9 +61,9 @@ Unlimited lead conversations and automated messaging are included for normal, in
 
 ## 4. Service Fee
 
-**$1,000 per month**, plus applicable taxes.
+**First month free. Then $1,000 per month**, plus applicable taxes.
 
-Billed monthly. No setup fee. No message caps. No overage charges.
+Month 1 is provided at no charge. Billing begins on Day 31 of the service start date. Billed monthly thereafter. No setup fee. No message caps. No overage charges.
 
 Add-ons (if applicable):
 - Voice AI: $0.15/minute (opt-in only — will not appear unless explicitly enabled)
@@ -84,7 +84,7 @@ Cancellation becomes effective thirty (30) calendar days after written notice to
 
 **Layer 1 — 30-Day Proof-of-Life Guarantee**
 
-If Client does not receive at least five (5) Qualified Lead Engagements within the applicable proof window, Client is eligible for a refund of the first month service fee.
+Month 1 is provided at no charge. If Client does not receive at least five (5) Qualified Lead Engagements within the first 30 days, Client may terminate this Agreement with no further obligation.
 
 A Qualified Lead Engagement means: (a) an inbound lead received by the system, (b) a first automated system response timestamped in platform logs, and (c) at least one recipient reply after the system response.
 

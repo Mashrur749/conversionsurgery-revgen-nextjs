@@ -95,14 +95,14 @@ This is the moment they realize the service works. Protect it.
 
 ### Layer 1: 30-Day Proof-of-Life (5 Qualified Lead Engagements)
 
-The guarantee cron checks daily. At day 30:
+Month 1 is free. The guarantee cron checks daily. At day 30:
 
 1. Open the client&apos;s guarantee status at `/admin/clients/[id]` &rarr; Guarantee section.
 2. Check: did 5+ leads have a two-way interaction (lead replied at least once after system response)?
-3. **If yes:** Guarantee passed. No action needed. The system records it.
-4. **If no:** Guarantee failed. You owe a first-month refund.
-   - Before refunding, investigate: Did the contractor have any lead volume? If they had zero inbound leads in 30 days, the issue is their marketing, not your system. Have an honest conversation.
-   - If they had leads but the system didn&apos;t engage them, that&apos;s a real failure. Refund, apologize, and fix the root cause.
+3. **If yes:** Proof of life passed. Billing starts Day 31 at $1,000/month. No action needed.
+4. **If no:** Proof of life failed. The contractor owes nothing. They walk away with every lead captured.
+   - Before letting them go, investigate: Did they have any lead volume? If zero inbound in 30 days, the issue is their marketing. Have an honest conversation.
+   - If they had leads but the system didn&apos;t engage them, that&apos;s a real failure. Apologize and fix the root cause. Offer to extend the free period.
 
 ### Layer 2: 90-Day Revenue Recovery (1 Attributed Project Opportunity)
 

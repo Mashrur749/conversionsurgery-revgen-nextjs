@@ -1,7 +1,7 @@
 # ConversionSurgery — Client-Facing Approved Copy
 
-Version 1.4
-Date: April 1, 2026
+Version 1.5
+Date: April 2, 2026
 Status: Approved for use in proposals, agreements, emails, leave-behinds, and website copy
 
 ---
@@ -119,39 +119,39 @@ The following lines are approved for live sales conversations, landing page head
 
 ## SECTION 3: GUARANTEE
 
-> **Our Performance Guarantee**
+> **Your first month is free.**
 >
-> **Layer 1 — 30-Day Proof of Life**
+> The system is live and working for 30 days before you pay a dollar. If you don&apos;t see value, you walk away with zero cost and keep every lead we captured.
 >
-> If you don't see at least 5 Qualified Lead Engagements in your first 30 days, we refund your first month.
+> **How it works:**
+>
+> - **Month 1 (free):** We set everything up, import your old quotes, and run the system. You see results before you pay. Billing starts on Day 31.
+> - **30-Day Proof of Life:** If the system doesn&apos;t deliver at least 5 Qualified Lead Engagements in your free month, you owe nothing and we part as friends.
+> - **90-Day Revenue Recovery Guarantee:** If after 90 days (counting from signup), you can&apos;t point to at least one project the system helped you win, we refund your most recent month&apos;s payment. You keep a full export of every lead and conversation we captured. You leave with everything.
 >
 > A Qualified Lead Engagement means: an inbound inquiry (call, form, or text) that received an automated response from our system, where the lead replied at least once. All engagements are visible in your dashboard with timestamps and full conversation logs.
->
-> **Layer 2 — 90-Day Revenue Recovery Guarantee**
->
-> If after 90 days, you can't point to at least one project that ConversionSurgery helped you win — a lead that the system engaged, followed up with, or booked — we refund your most recent month's payment. Plus, you keep a full export of every lead and conversation we captured. You leave with everything.
 >
 > An Attributed Project Opportunity means: a lead that received automated response or follow-up from the system and showed engagement after that system action (replied, booked, or resumed conversation), where our platform logs show the system engaged the lead through automated response or follow-up before the opportunity progressed.
 >
 > **Volume Condition**
 >
-> Both guarantees assume a minimum of 15 inbound inquiries per month. If your lead volume averages below that threshold during the guarantee period — due to seasonal slowdown, reduced marketing, or market conditions — the guarantee windows extend proportionally:
+> Both guarantees assume a minimum of 15 inbound inquiries per month. If your lead volume averages below that threshold during the guarantee period &mdash; due to seasonal slowdown, reduced marketing, or market conditions &mdash; the guarantee windows extend proportionally:
 >
-> Adjusted window = standard window × (15 ÷ your actual monthly average)
+> Adjusted window = standard window &times; (15 &divide; your actual monthly average)
 >
-> Example: 10 leads/month average → 30-day window becomes 45 days, 90-day window becomes 135 days. Below 8 leads/month, we'll review your situation individually — at that volume, the system needs more data to demonstrate its value.
+> Example: 10 leads/month average &rarr; 30-day window becomes 45 days, 90-day window becomes 135 days. Below 8 leads/month, we&apos;ll review your situation individually &mdash; at that volume, the system needs more data to demonstrate its value.
 >
-> **If there's a question about attribution:** If our platform logs show system-initiated engagement before a booking or resumed conversation, attribution is confirmed. If logs are inconclusive, we honor the refund. We'd rather refund a borderline case than lose your trust.
+> **If there&apos;s a question about attribution:** If our platform logs show system-initiated engagement before a booking or resumed conversation, attribution is confirmed. If logs are inconclusive, we honor the refund. We&apos;d rather refund a borderline case than lose your trust.
 
 ---
 
 ## SECTION 4: PRICING
 
-> **$1,000/month.**
+> **First month free. Then $1,000/month.**
 >
-> Month-to-month. No contract. No setup fee. No message limits. No overage charges.
+> Try it for 30 days at zero cost. Billing starts Day 31. Month-to-month after that. No contract. No setup fee. No message limits. No overage charges.
 >
-> One recovered kitchen or basement project pays for the entire year of service. Most clients see measurable results in the first month.
+> One recovered kitchen or basement project pays for the entire year of service. Most clients see results before they ever pay.
 
 ### Price Comparison Context (for verbal sales and proposals)
 
@@ -249,13 +249,13 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 >
 > **Complete Done-For-You Service** — We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week once calibrated.
 >
-> **90-Day Revenue Recovery Guarantee** — If after 90 days you can't point to at least one project this system helped you win, we refund your last month and you keep every lead and conversation we captured. Plus a 30-day proof-of-life guarantee: 5 leads engaged in 30 days or your first month is free. If your lead volume runs below 15/month, guarantee windows extend proportionally — you're never penalized for a slow period.
+> **First Month Free + 90-Day Guarantee** &mdash; Your first month costs nothing. The system runs for 30 days before you pay a dollar. If after 90 days you can&apos;t point to at least one project this system helped you win, we refund your last month and you keep every lead and conversation we captured. If your lead volume runs below 15/month, guarantee windows extend proportionally &mdash; you&apos;re never penalized for a slow period.
 >
 > **Month-to-month, no contract, no setup fee, no message limits, no overage charges.** We earn your business every single month.
 >
-> **$1,000/month.**
+> **First month free. Then $1,000/month.**
 >
-> One recovered kitchen or basement project pays for the entire year. Most clients see measurable results in the first month.
+> One recovered kitchen or basement project pays for the entire year. Most clients see results before they ever pay.
 
 ---
 
@@ -267,7 +267,7 @@ The following are approved written answers for the questions prospects ask most 
 > The system runs in a supervised review mode for the first two weeks — it generates responses and sends them after a five-minute window, giving you time to review. When the AI encounters a question it cannot answer confidently, it tells the lead it will follow up rather than guessing. Inaccuracies are flagged immediately and corrected in the AI&apos;s knowledge base.
 
 > **I tried a similar service before and it didn&apos;t work. How is this different?**
-> ConversionSurgery is a managed service, not software. We set it up, run it, monitor it, and fix it when something&apos;s off. You don&apos;t manage anything. The 30-day guarantee (5 qualified lead engagements or your first month is refunded) means you see proof before you commit long-term.
+> ConversionSurgery is a managed service, not software. We set it up, run it, monitor it, and fix it when something&apos;s off. You don&apos;t manage anything. Your first month is free &mdash; you see proof before you pay a dollar.
 
 > **I get most of my work from referrals. Is this relevant to me?**
 > Yes — the highest-ROI parts of the service are estimate follow-up, review generation, and dormant reactivation. These work regardless of how leads find you. Most referral contractors have outstanding quotes that went quiet; recovering even a fraction of those covers the service fee many times over.
@@ -289,9 +289,10 @@ The following are approved written answers for the questions prospects ask most 
 | 1.2     | April 1, 2026     | Layer 2 guarantee attribution made objective: removed subjective "confirm the system meaningfully contributed" language. Attribution now purely verified through platform logs of automated system engagement before opportunity progression. |
 | 1.3     | April 1, 2026     | Restored calendar booking claim: "books estimate appointments into your calendar" with Google Calendar sync language. CON-01 (two-way Google Calendar sync) is now built — availability checking, bidirectional sync, OAuth flow for contractors. |
 | 1.4     | April 1, 2026     | GAP-01: Added Section 10 (Common Questions) with approved written answers for the top 5 prospect objections. Added referral contractor positioning paragraph to Section 2. |
+| 1.5     | April 2, 2026     | First month free: restructured from "pay first, refund if fails" to "free Month 1, billing starts Day 31." Guarantee language rewritten. Section 3, 4, 9, and FAQ updated. |
 
 ---
 
-_ConversionSurgery — Client-Facing Approved Copy v1.4_
+_ConversionSurgery — Client-Facing Approved Copy v1.5_
 _Source: Grand Slam Offer Architecture v2.1 + Quality Review_
 _April 2026_

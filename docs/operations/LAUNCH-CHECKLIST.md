@@ -215,7 +215,7 @@ Now you&apos;re setting up the real thing. Everything above was local testing.
 
 1. Go to https://dashboard.stripe.com &rarr; Products &rarr; Add Product
 2. Name: &ldquo;ConversionSurgery Managed Service&rdquo;
-3. Add a price: $1,000/month, recurring
+3. Add a price: $1,000/month, recurring, with a **30-day free trial** (Stripe supports this natively &mdash; set `trial_period_days: 30` on the price or subscription)
 4. Copy the price ID (starts with `price_`)
 5. Go to Developers &rarr; Webhooks &rarr; Add Endpoint
 6. URL: `https://yourdomain.com/api/webhooks/stripe`
