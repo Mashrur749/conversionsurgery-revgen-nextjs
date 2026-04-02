@@ -1,6 +1,7 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { FeatureTogglesForm } from './feature-toggles-form';
+import { CalendarConnection } from './calendar-connection';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 import { AI_ASSIST_CATEGORY } from '@/lib/services/ai-send-policy';
@@ -35,6 +36,7 @@ export default async function ClientFeaturesPage() {
         </p>
       </div>
       <FeatureTogglesForm defaults={defaults} />
+      <CalendarConnection />
     </div>
   );
 }

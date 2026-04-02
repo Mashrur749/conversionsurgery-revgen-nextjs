@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb, clients, leads, dailyStats } from '@/db';
-import { jobs } from '@/db/schema';
+import { jobs, systemSettings } from '@/db/schema';
 import { eq, gte, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,6 +61,13 @@ export default async function AdminPage() {
     .from(jobs)
     .where(gte(jobs.createdAt, thirtyDaysAgo));
 
+  const operatorPhoneSetting = await db
+    .select()
+    .from(systemSettings)
+    .where(eq(systemSettings.key, 'operator_phone'))
+    .limit(1);
+  const operatorPhoneConfigured = operatorPhoneSetting.length > 0 && !!operatorPhoneSetting[0].value;
+
   const statusColors: Record<string, string> = {
     active: 'bg-[#E8F5E9] text-[#3D7A50]',
     pending: 'bg-[#FFF3E0] text-sienna',
@@ -70,6 +77,14 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-6">
+      {!operatorPhoneConfigured && (
+        <div className="rounded-lg p-4" style={{ backgroundColor: '#FFF3E0', border: '1px solid #C15B2E' }}>
+          <p className="text-sm font-medium" style={{ color: '#C15B2E' }}>
+            Operator phone number is not configured. Critical alerts (cron failures, SLA breaches) will not be delivered.
+            Set it in <a href="/admin/agency" className="underline">Agency Settings</a>.
+          </p>
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Client Management</h1>

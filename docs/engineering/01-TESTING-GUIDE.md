@@ -3,7 +3,7 @@
 Last updated: 2026-04-01
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `feat: Wave 1-2 operational and polish fixes (2026-04-01)`
+Last verified commit: `docs: Wave 4 consensus fixes (2026-04-01)`
 
 ## 0. Preflight (Run First)
 
@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback).
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -1313,6 +1313,198 @@ Combined verification for Wave 1 (OPS-01, OPS-02, resilience fixes) and Wave 2 (
 
 Expected: all 11 items pass.
 
+### Step 55: Wave 4 consensus fixes
+
+Combined verification for CON-02, CON-03, CON-05, CON-10, and CON-11.
+
+1. **Estimate nudge timing (CON-02):** Verify the fallback nudge cron identifies stale leads after 48 hours (not 5 days). Check the `ESTIMATE_NUDGE_STALE_DAYS` constant is set to `2`. Create a lead, leave it without an estimate sequence for 48+ hours, then run the cron. Verify the owner receives a nudge SMS: &quot;Did you send an estimate to [name]?&quot;
+
+2. **Confirmed revenue field (CON-03):** In the admin UI, mark a lead as &quot;won.&quot; Verify a `confirmedRevenue` input field appears where the operator enters the actual job value in dollars. Save it. Verify the value persists on the lead record. Generate a bi-weekly report for that client. Verify the report includes a &quot;Confirmed Won&quot; line showing the confirmed revenue total alongside pipeline estimates.
+
+3. **Log-based guarantee attribution (CON-05):** Review the Layer 2 guarantee evaluation logic. Verify attribution checks platform logs (automated response or follow-up engagement) rather than requiring subjective contractor confirmation. The criterion is: &quot;the platform logs show the system engaged the lead through automated response or follow-up before the opportunity progressed.&quot;
+
+4. **Report auto-follow-up SMS (CON-10):** Trigger a bi-weekly report delivery for a test client. After the report is sent (email delivery completes), verify the system auto-sends an SMS to the contractor via the agency number: &quot;[Business Name] &mdash; your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.&quot; Verify this is fire-and-forget (does not affect the report delivery state).
+
+5. **KB gap &quot;Ask Contractor&quot; button (CON-11):** Navigate to `/admin/clients/[id]/knowledge` &rarr; Gaps tab. Verify each knowledge gap card shows an &quot;Ask Contractor&quot; button. Click it. Verify an SMS is sent to the contractor: &quot;[Business Name] &mdash; a customer asked about [question]. How should we answer this?&quot; Verify the gap status changes to `in_progress`. Verify the API endpoint `POST /api/admin/clients/[id]/knowledge/gaps/[gapId]/ask` returns success.
+
+Expected: all 5 items pass.
+
+### Step 56: Google Calendar two-way sync (CON-01)
+
+Verifies that Google Calendar integration connects, syncs, and blocks booking slots correctly.
+
+**Prerequisites:**
+
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` env vars set in `.dev.vars`
+- A real Google account (for OAuth) or a test account with calendar access
+- `calendarSyncEnabled` feature flag enabled for the test client (admin UI or direct DB update)
+
+#### 56a: Enable and connect (admin path)
+
+1. Open `/admin/clients/<clientId>` and navigate to the **Configuration** tab.
+2. Locate the **Calendar Integration** card.
+3. Click **Connect Google Calendar** — verify an OAuth redirect to Google&apos;s consent screen.
+4. Complete OAuth with the test Google account.
+5. Verify the card shows **Connected** status with the connected account email.
+
+Expected:
+
+- OAuth token stored in `calendar_integrations` table.
+- Integration status is `active`.
+
+#### 56b: Connect from the client portal
+
+1. Log into the client portal as a test contractor.
+2. Navigate to **Settings &gt; Features**.
+3. Locate the **Calendar Connection** section.
+4. Click **Connect Google Calendar** and complete OAuth.
+5. Verify the connection is confirmed in the UI.
+
+Expected:
+
+- Same `calendar_integrations` row updated (or new row created if no prior admin connection).
+- Both portal and admin views reflect the connected state.
+
+#### 56c: Calendar sync cron
+
+1. Add an event directly to the connected Google Calendar (any test event in the next 30 days).
+2. Run the calendar sync cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/calendar-sync -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify the response includes the test client in the synced integrations list.
+4. Query the `calendar_events` table and confirm the Google Calendar event was imported:
+
+```sql
+SELECT id, title, start_time, end_time, external_id, source
+FROM calendar_events
+WHERE client_id = '<clientId>'
+ORDER BY created_at DESC
+LIMIT 5;
+```
+
+Expected:
+
+- Event row exists with `source = 'google_calendar'` and a populated `external_id` matching the Google event ID.
+
+#### 56d: Google Calendar event blocks booking slot
+
+1. Using the imported event from 56c, note its `start_time` and `end_time`.
+2. Attempt to book an appointment in the platform for the same client at the same time slot (via the booking conversation flow or admin UI).
+3. Verify the slot is unavailable — the booking is rejected or the slot does not appear in available options.
+
+Expected:
+
+- `getAvailableSlots()` returns the overlapping slot as unavailable.
+- No double-booking occurs.
+
+#### 56e: Platform appointment pushes to Google Calendar
+
+1. Book a new appointment for the test client (choose a slot that has no conflict).
+2. Wait up to 15 minutes for the sync cron, or trigger it manually:
+
+```bash
+curl -i http://localhost:3000/api/cron/calendar-sync -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Check the connected Google Calendar — verify the platform appointment appears as an event with the correct title and time.
+
+Expected:
+
+- Google Calendar event created with matching appointment details.
+- `calendar_events` row updated with `external_id` from Google.
+
+#### 56f: Disconnect
+
+1. Click **Disconnect** in the admin client detail Configuration tab (or portal Settings &gt; Features).
+2. Verify the card shows **Not Connected**.
+3. Run the sync cron again — verify the disconnected client is skipped.
+
+Expected:
+
+- `calendar_integrations` row marked inactive (or deleted).
+- Subsequent sync cron runs do not attempt to sync for this client.
+- Booking slots revert to using only the `appointments` table (Google Calendar events no longer block).
+
+### Step 57: Wave 7 — Operator Triage Dashboard, KB Intake Questionnaire, Engagement Health, Dormant Re-Engagement
+
+#### 57a: Operator Triage Dashboard
+
+1. Navigate to `/admin/triage` (Optimization group in admin nav).
+2. Verify the page loads and shows a cross-client prioritized action list.
+3. Confirm P1 escalations appear at the top, followed by overdue knowledge gaps, onboarding SLA breaches, and failed report deliveries.
+4. Click a listed item — verify it links to the correct client detail page or relevant admin page.
+
+Expected:
+
+- Page renders without errors.
+- Items are ordered by priority (P1 first).
+- Each item includes client name, issue type, and a direct link.
+
+#### 57b: KB Intake Questionnaire
+
+1. Open the admin client detail page for a new test client (one with an empty knowledge base).
+2. Navigate to the Knowledge tab — verify the intake questionnaire form is visible.
+3. Fill out the questionnaire fields (services offered, service area, pricing range, warranty, financing, etc.) and submit.
+4. Navigate to the KB entries list — verify submitted answers appear as KB entries.
+
+Expected:
+
+- Form submits without errors.
+- Each questionnaire answer creates a corresponding KB entry.
+- The AI can now answer the covered topics without deferring.
+
+#### 57c: Engagement Health Check Cron
+
+1. Run the engagement-health-check cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/engagement-health-check -H "Authorization: Bearer $CRON_SECRET"
+```
+
+2. Verify the cron returns `200` with a result payload including evaluated client count.
+3. For a client with no recent lead activity (simulate by aging `last_activity` in DB), verify a health flag or operator alert is created.
+
+Expected:
+
+- `2xx` response with per-client evaluation results.
+- Clients with 3+ weeks of declining engagement are flagged.
+- Flagged clients surface in the triage dashboard.
+
+#### 57d: Dormant Re-Engagement Cron
+
+1. Create a test lead with `status=dormant` and `updated_at` set to 180+ days ago.
+2. Run the dormant-reengagement cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/dormant-reengagement -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify the eligible lead receives a re-engagement SMS.
+4. Verify only one attempt is made (no follow-up scheduled for this lead).
+5. Run the cron again immediately — verify no duplicate is sent (idempotent).
+
+Expected:
+
+- Single AI-personalized SMS sent to the eligible dormant lead.
+- No additional follow-up messages scheduled.
+- Re-run produces no additional sends.
+
+#### 57e: Revenue Recovered Card (Client Portal)
+
+1. Log in to the client portal for a client that has at least one lead marked &quot;won&quot; with confirmed revenue.
+2. Verify the dashboard shows a &quot;Revenue Recovered&quot; card with a dollar amount.
+3. Verify the card supports 30/60/90-day window switching.
+4. For a new client with no won leads, verify the card shows an empty state (not an error).
+
+Expected:
+
+- Card renders with confirmed revenue total for the selected window.
+- Empty state is graceful (e.g., &quot;No confirmed wins yet&quot;).
+- API endpoint `GET /api/client/attributed-wins` returns `200` with correct data shape.
+
 ## 3. Useful Commands
 
 ```bash
@@ -1355,6 +1547,9 @@ curl -i http://localhost:3000/api/cron/quarterly-campaign-alerts -H "Authorizati
 curl -i http://localhost:3000/api/cron/knowledge-gap-alerts -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/no-show-recovery -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/win-back -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/calendar-sync -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/engagement-health-check -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/dormant-reengagement -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core

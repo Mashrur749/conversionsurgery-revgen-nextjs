@@ -5,7 +5,7 @@ import { isLeadEligibleForEstimateNudge } from './estimate-nudge';
 describe('isLeadEligibleForEstimateNudge', () => {
   const now = new Date('2026-02-24T00:00:00.000Z');
   const staleUpdatedAt = new Date('2026-02-18T00:00:00.000Z'); // 6 days old
-  const recentUpdatedAt = new Date('2026-02-22T00:00:00.000Z'); // 2 days old
+  const recentUpdatedAt = new Date('2026-02-23T12:00:00.000Z'); // 12 hours old (not stale at 48hr threshold)
 
   it('returns true for stale contacted lead without blockers', () => {
     const eligible = isLeadEligibleForEstimateNudge({

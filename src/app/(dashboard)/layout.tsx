@@ -40,6 +40,7 @@ const adminNavItems = [
     { href: '/admin/audit-log', label: 'Audit Log' },
   ]},
   { group: 'Optimization', items: [
+    { href: '/admin/triage', label: 'Client Triage' },
     { href: '/admin/flow-templates', label: 'Flow Templates' },
     { href: '/admin/analytics', label: 'Flow Analytics' },
     { href: '/admin/template-performance', label: 'Variant Results' },

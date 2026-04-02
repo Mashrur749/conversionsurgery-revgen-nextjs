@@ -6,8 +6,8 @@
  */
 
 import { getDb } from '@/db';
-import { appointments, auditLog, businessHours, clients, leads, scheduledMessages } from '@/db/schema';
-import { eq, and, gte, lte, not, inArray } from 'drizzle-orm';
+import { appointments, auditLog, businessHours, calendarEvents, clients, leads, scheduledMessages } from '@/db/schema';
+import { eq, and, gte, lte, not, inArray, lt, gt } from 'drizzle-orm';
 import { scheduleAppointmentReminders } from '@/lib/automations/appointment-reminder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail } from '@/lib/services/resend';
@@ -59,6 +59,23 @@ export async function getAvailableSlots(
       not(eq(appointments.status, 'cancelled'))
     ));
 
+  // Get calendar events (e.g. synced from Google Calendar) that overlap the window
+  const windowStart = parse(startDate, 'yyyy-MM-dd', new Date());
+  const windowEnd = parse(endDate, 'yyyy-MM-dd', new Date());
+
+  const existingCalendarEvents = await db
+    .select({
+      startTime: calendarEvents.startTime,
+      endTime: calendarEvents.endTime,
+    })
+    .from(calendarEvents)
+    .where(and(
+      eq(calendarEvents.clientId, clientId),
+      not(eq(calendarEvents.status, 'cancelled')),
+      lt(calendarEvents.startTime, windowEnd),
+      gt(calendarEvents.endTime, windowStart)
+    ));
+
   // Build blocked time set
   const blockedSlots = new Set(
     existingAppointments.map(a => `${a.date}|${a.time.substring(0, 5)}`)
@@ -89,8 +106,15 @@ export async function getAvailableSlots(
       // Skip past times
       if (isBefore(slotDateTime, now)) continue;
 
-      // Skip blocked slots
+      // Skip slots blocked by existing appointments
       if (blockedSlots.has(`${dateStr}|${timeStr}`)) continue;
+
+      // Skip slots blocked by calendar events (overlap: event.startTime < slotEnd AND event.endTime > slotStart)
+      const slotEnd = addHours(slotDateTime, 1);
+      const hasCalendarConflict = existingCalendarEvents.some(
+        event => isBefore(event.startTime, slotEnd) && isAfter(event.endTime, slotDateTime)
+      );
+      if (hasCalendarConflict) continue;
 
       slots.push({
         date: dateStr,

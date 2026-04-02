@@ -147,17 +147,26 @@ export function LeadHeader({ lead }: LeadHeaderProps) {
           />
         </div>
         <div>
-          <label className="text-muted-foreground text-xs">Quote Value</label>
+          <label className="text-muted-foreground text-xs">
+            {lead.status === 'won' ? 'Confirmed Revenue' : 'Confirmed Revenue'}
+          </label>
           <Input
             type="number"
-            defaultValue={''}
+            defaultValue={
+              typeof lead.confirmedRevenue === 'number'
+                ? Math.round(lead.confirmedRevenue / 100)
+                : ''
+            }
             onBlur={(e) => {
               const val = e.target.value ? Number(e.target.value) : null;
-              updateField('quoteValue', val);
+              updateField('confirmedRevenue', val);
             }}
             placeholder="$0"
-            className="h-8 mt-1"
+            className={`h-8 mt-1${lead.status === 'won' ? ' border-[#3D7A50] ring-1 ring-[#3D7A50]/30' : ''}`}
           />
+          {lead.status === 'won' && (
+            <p className="text-xs text-[#3D7A50] mt-0.5">Actual job value (dollars)</p>
+          )}
         </div>
         <div>
           <label className="text-muted-foreground text-xs">Created</label>

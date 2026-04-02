@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { getRevenueStats } from '@/lib/services/revenue';
-import { DollarSign, Phone, CreditCard, CheckCircle } from 'lucide-react';
+import { DollarSign, Phone, CreditCard, CheckCircle, TrendingUp } from 'lucide-react';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
@@ -47,6 +47,53 @@ export default async function ClientDashboardPage() {
     getCurrentQuarterlyCampaignSummary(clientId),
     getClientLatestReportDelivery(clientId),
   ]);
+
+  // Attributed wins: won jobs + revenue totals
+  const wonLeads = await db
+    .select({
+      id: leads.id,
+      name: leads.name,
+      confirmedRevenue: leads.confirmedRevenue,
+      updatedAt: leads.updatedAt,
+      projectType: leads.projectType,
+    })
+    .from(leads)
+    .where(and(
+      eq(leads.clientId, clientId),
+      eq(leads.status, 'won')
+    ))
+    .orderBy(desc(leads.updatedAt))
+    .limit(5);
+
+  const [wonAgg] = await db
+    .select({
+      totalConfirmedRevenue: sql<number>`COALESCE(SUM(${leads.confirmedRevenue}), 0)`,
+      totalWonJobs: sql<number>`COUNT(*)`,
+    })
+    .from(leads)
+    .where(and(
+      eq(leads.clientId, clientId),
+      eq(leads.status, 'won')
+    ));
+
+  const totalConfirmedRevenueCents = Number(wonAgg?.totalConfirmedRevenue ?? 0);
+  const totalWonJobs = Number(wonAgg?.totalWonJobs ?? 0);
+
+  // Total cost: months since client createdAt × $1,000/mo (in cents)
+  const [clientForCost] = await db
+    .select({ createdAt: clients.createdAt })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+
+  let totalCostCents = 0;
+  if (clientForCost?.createdAt) {
+    const diffMs = Date.now() - new Date(clientForCost.createdAt).getTime();
+    const months = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30.44)));
+    totalCostCents = months * 100000; // $1,000/mo in cents
+  }
+
+  const netReturnCents = totalConfirmedRevenueCents - totalCostCents;
   const quarterlyCampaign = quarterlyCampaignResult.status === 'fulfilled'
     ? quarterlyCampaignResult.value
     : (() => { console.error('[ClientDashboard] Failed to load quarterly campaign:', quarterlyCampaignResult.reason); return null; })();
@@ -149,6 +196,79 @@ export default async function ClientDashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Jobs We Helped Win — GAP-02 */}
+      <Card className="border-[#3D7A50]/30">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-base font-semibold text-[#1B2F26]">Jobs We Helped Win</CardTitle>
+          <TrendingUp className="h-5 w-5 text-[#3D7A50]" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {totalWonJobs === 0 ? (
+            <div className="py-6 text-center">
+              <p className="text-muted-foreground mb-1">No recovered revenue yet</p>
+              <p className="text-sm text-muted-foreground mb-3">
+                Mark a job as won in your conversations to start tracking revenue.
+              </p>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/client/conversations">View Conversations</Link>
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* Big number */}
+              <div>
+                <div className="text-3xl font-bold text-[#3D7A50]">
+                  ${Math.round(totalConfirmedRevenueCents / 100).toLocaleString()}
+                </div>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  from {totalWonJobs} {totalWonJobs === 1 ? 'job' : 'jobs'} the system helped win
+                </p>
+              </div>
+
+              {/* ROI line */}
+              <div className={`text-sm font-medium ${netReturnCents >= 0 ? 'text-[#3D7A50]' : 'text-[#C15B2E]'}`}>
+                Total service cost: ${Math.round(totalCostCents / 100).toLocaleString()}&nbsp;&bull;&nbsp;
+                Net return: {netReturnCents >= 0
+                  ? `+$${Math.round(netReturnCents / 100).toLocaleString()}`
+                  : `-$${Math.round(Math.abs(netReturnCents) / 100).toLocaleString()}`}
+              </div>
+
+              {/* Recent wins list */}
+              {wonLeads.length > 0 && (
+                <div className="divide-y">
+                  {wonLeads.slice(0, 5).map((lead) => (
+                    <Link
+                      key={lead.id}
+                      href={`/client/conversations/${lead.id}`}
+                      className="flex items-center justify-between py-2.5 hover:bg-[#F8F9FA] transition-colors rounded-md px-2 -mx-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{lead.name || 'Unknown'}</p>
+                        {lead.projectType && (
+                          <p className="text-xs text-muted-foreground">{lead.projectType}</p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0 ml-3">
+                        {lead.confirmedRevenue != null ? (
+                          <p className="text-sm font-medium text-[#3D7A50]">
+                            ${Math.round(lead.confirmedRevenue / 100).toLocaleString()}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">—</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(lead.updatedAt), { addSuffix: true })}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Account Manager card — only shown when operator_phone is configured */}
       {operatorPhone && (

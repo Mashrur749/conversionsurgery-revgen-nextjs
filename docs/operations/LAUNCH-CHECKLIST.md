@@ -9,7 +9,7 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 
 ## Phase 1: Learn the Platform
 
-- [ ] Walk through `docs/engineering/01-TESTING-GUIDE.md` end to end (Steps 1-38, 53-54)
+- [ ] Walk through `docs/engineering/01-TESTING-GUIDE.md` end to end (Steps 1-38, 53-57)
   - Create a test client via admin wizard
   - Assign a phone number
   - Import test leads via CSV (with status=estimate_sent)
@@ -24,6 +24,9 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
   - Test AI quality review page (Step 37)
   - Run pre-launch AI scenario tests (Step 33) and AI criteria tests (Step 34)
   - Complete the full end-to-end lead lifecycle smoke (Step 38)
+  - Test consensus fixes: 48hr estimate nudge, confirmed revenue, report follow-up SMS (Step 55)
+  - Test Google Calendar two-way sync (Step 56)
+  - Test triage dashboard, KB questionnaire, engagement health, dormant re-engagement, Revenue Recovered card (Step 57)
 - [ ] Walk through `docs/engineering/TESTING-SELF-SERVE.md` (Steps 1-7)
   - Sign up as a contractor, verify auto-login to dashboard
   - Verify dashboard setup banner (phone + plan checklist)
@@ -31,8 +34,13 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
   - Verify settings page phone card
 - [ ] Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` cover to cover
   - This is your day-to-day reference for handling every client scenario
+  - Includes Section 12: Sales Conversation Guide
 - [ ] Read `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; Knowledge Gap Resolution Process section
   - This is how the AI improves over time
+- [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`
+  - 10 objections with scripts, proof points, and demo sequences
+  - Social proof capture framework
+  - Quiet hours positioning
 - [ ] Delete all test data when done (or use a separate Neon branch)
 
 ---
@@ -62,6 +70,14 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 - [ ] Set `TWILIO_WEBHOOK_BASE_URL` to production domain
 - [ ] Confirm at least one phone number is available to purchase in Twilio account
 
+### Google Calendar (10 minutes)
+
+- [ ] Create a Google Cloud project (or reuse existing)
+- [ ] Enable the Google Calendar API
+- [ ] Create OAuth 2.0 credentials (Web application type)
+- [ ] Set authorized redirect URI: `https://yourdomain.com/api/auth/callback/google-calendar`
+- [ ] Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in production env
+
 ### Other Required Env Vars
 
 - [ ] `DATABASE_URL` &mdash; production Neon connection string
@@ -70,9 +86,11 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 - [ ] `CRON_SECRET` &mdash; generate with `openssl rand -hex 32`
 - [ ] `ANTHROPIC_API_KEY` &mdash; from console.anthropic.com
 - [ ] `NEXT_PUBLIC_APP_URL` &mdash; your production domain (e.g., `https://app.conversionsurgery.com`)
+- [ ] `GOOGLE_CLIENT_ID` &mdash; from Google Cloud Console (see Google Calendar section)
+- [ ] `GOOGLE_CLIENT_SECRET` &mdash; from Google Cloud Console
 
 **Post-login setup (not env vars):**
-- [ ] After first admin login, set `operator_phone` in system_settings via `/admin/settings`. This is the phone number that receives SMS alerts when cron jobs fail.
+- [ ] After first admin login, set `operator_phone` and `operator_name` in system_settings via `/admin/settings`. The phone receives SMS alerts on cron failures and SLA breaches. The name appears on the &quot;Your Account Manager&quot; card in the client portal.
 
 ### Database
 
@@ -92,30 +110,44 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 - [ ] Deploy to Cloudflare (via OpenNext)
 - [ ] Verify runtime smoke: hit `/login`, `/signup`, `/client-login` &mdash; all return 200
 - [ ] Run `npm run quality:no-regressions` against production
-- [ ] Set up cron jobs (Cloudflare Workers Cron Triggers or external scheduler):
 
-| Schedule | Endpoint | Purpose |
-|----------|----------|---------|
-| Every 5 min | `POST /api/cron` | Message processing (scheduled sends, compliance queue) |
-| Every 5 min | `POST /api/cron/process-scheduled` | Process scheduled messages |
-| Hourly | `POST /api/cron/onboarding-sla-check` | Day-One milestone SLA monitoring |
-| Daily (10am) | `POST /api/cron/win-back` | Dormant lead + old quote reactivation |
-| Daily | `POST /api/cron/no-show-recovery` | Missed appointment follow-up |
-| Daily | `POST /api/cron/guarantee-check` | 30/90-day guarantee evaluation |
-| Daily | `POST /api/cron/stripe-reconciliation` | Sync subscription status with Stripe |
-| Daily | `POST /api/cron/coupon-reconciliation` | Coupon count consistency |
-| Daily | `POST /api/cron/knowledge-gap-alerts` | Email digest of stale high-priority KB gaps |
-| Daily | `POST /api/cron/daily-summary` | Aggregate daily stats |
-| Daily | `POST /api/cron/estimate-fallback-nudges` | Nudge contractors about unflagged estimates |
-| Bi-weekly | `POST /api/cron/biweekly-reports` | Generate and send client reports |
-| Monthly | `POST /api/cron/monthly-reset` | Reset monthly message counters |
-| Quarterly | `POST /api/cron/quarterly-campaign-planner` | Auto-plan seasonal campaigns |
-| Quarterly | `POST /api/cron/quarterly-campaign-alerts` | Campaign status alerts |
+**Cron setup (single trigger):**
 
-All cron calls need header: `Authorization: Bearer $CRON_SECRET`
+The platform uses a unified cron orchestrator. You only need **one** Cloudflare Workers Cron Trigger:
 
-**Twilio webhook configuration (non-cron):**
-- [ ] Configure agency number (#5) voice webhook in Twilio Console: `https://<domain>/api/webhooks/twilio/agency-voice` (POST). Callers hear &quot;This number is for text messages only.&quot;
+| Schedule | Endpoint | Header |
+|----------|----------|--------|
+| Every 5 min | `POST /api/cron` | `Authorization: Bearer $CRON_SECRET` |
+
+The orchestrator dispatches all sub-jobs internally based on time:
+
+| Frequency | Jobs dispatched |
+|-----------|----------------|
+| **Every 5 min** | Process scheduled messages, check missed calls |
+| **Every 30 min** | Auto review response, Google Calendar sync, report delivery retries |
+| **Hourly** | Usage tracking, escalation SLA check, review sync, expire prompts, NPS, agent check, compliance queue replay, knowledge gap alerts, onboarding SLA check |
+| **Daily midnight UTC** | Lead scoring, analytics aggregation, trial reminders, no-show recovery, Stripe reconciliation, voice usage rollup, guarantee check, monthly reset |
+| **Daily 7am UTC** | Daily summary, bi-weekly reports (auto-scheduled) |
+| **Daily 10am UTC** | Win-back, estimate fallback nudges, quarterly campaign planner + alerts |
+| **Weekly Monday 7am UTC** | Weekly summary, agency digest, quarterly campaign digest, engagement health check |
+| **Weekly Wednesday 10am UTC** | Dormant re-engagement (6-month) |
+| **Monthly 1st** | Cohort analysis, access review |
+
+No individual sub-endpoints need separate Cloudflare triggers.
+
+**Twilio webhook configuration:**
+
+Configure these webhooks in the Twilio Console for each phone number:
+
+| Number | Webhook | URL | Method |
+|--------|---------|-----|--------|
+| **Agency number (#5)** | Voice | `https://<domain>/api/webhooks/twilio/agency-voice` | POST |
+| **Agency number (#5)** | SMS | `https://<domain>/api/webhooks/twilio/agency-sms` | POST |
+| **Each client business number** | SMS | `https://<domain>/api/webhooks/twilio/sms` | POST |
+| **Each client business number** | Voice | `https://<domain>/api/webhooks/twilio/voice` | POST |
+| **Each client business number** | Status Callback | `https://<domain>/api/webhooks/twilio/status` | POST |
+
+Note: Client business numbers purchased via the platform auto-configure webhooks via the Twilio API. You only need to manually configure the agency number (#5) in the Twilio Console.
 
 ---
 
@@ -125,30 +157,35 @@ Reference: `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` for detailed process
 
 ### Before the sales call
 
-- [ ] Review `docs/business-intel/RESEARCH-INSIGHTS-MARCH-2026.md` &mdash; pitch angles and objection handling
-- [ ] Prepare to ask: &quot;How many quotes in your phone have had no response for 2+ weeks?&quot;
-- [ ] Have the quote reactivation angle ready: &quot;Give us your last 30 dead quotes &mdash; we text them this week&quot;
+- [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; scripts for the 10 most common objections
+- [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` Section 12 &mdash; pitch angles, outreach scripts, and pre-call qualification
+- [ ] Prepare the demo client (`npm run db:seed -- --demo`) so you can show the system live
+- [ ] Prepare to do the &quot;call your own number&quot; demo during the sales conversation (not onboarding)
+- [ ] Pre-qualify: &quot;How many inbound leads do you get per month?&quot; (target: 10+)
+- [ ] Pre-qualify: &quot;How many quotes in your phone have had no response for 2+ weeks?&quot;
+- [ ] If referral-heavy: lead with estimate follow-up + review generation angle (see Playbook Section 12)
 
 ### After the contractor says yes
 
 Day 0 (signing):
-- [ ] Verify agency number (#5) voice webhook is configured (see Phase 2 Deploy section above)
-- [ ] Verify `operator_phone` is set in system_settings (see Phase 2 Other Required Env Vars above)
+- [ ] Verify agency number (#5) webhooks are configured (see Phase 2 Deploy section)
+- [ ] Verify `operator_phone` and `operator_name` are set in system_settings
 - [ ] Create client via admin wizard (`/admin/clients/new/wizard`)
 - [ ] Assign a local phone number in the wizard (or from client detail page)
 - [ ] Onboarding card on client detail page shows 3 next steps (phone, quotes, knowledge base)
 
-Day 1:
+Day 1 (onboarding call):
 - [ ] 30-minute onboarding call (see Playbook Section 10 for script)
+- [ ] **During the call:** fill out the KB Intake Questionnaire (`/admin/clients/[id]` &mdash; shows automatically when fewer than 5 KB entries). This pre-populates the AI with 80% of what it needs before the first lead.
 - [ ] Contractor calls their own number &mdash; missed call text-back fires (visceral proof moment)
 - [ ] Ask contractor for their old quotes (spreadsheet, phone contacts, or CRM export)
 - [ ] Import quotes via CSV with `status=estimate_sent` (see Playbook Section 2)
 - [ ] Verify leads appear in `/leads` filtered by source=CSV Import
+- [ ] Offer Google Calendar connection if they use Google Calendar (`/admin/clients/[id]` &mdash; Calendar Integration card, or contractor self-serves from portal Settings)
 
 Day 1-2:
-- [ ] Enter knowledge base from onboarding call (`/admin/clients/[id]/knowledge`)
-  - Business services, pricing approach, FAQs, competitive advantages
-  - Use industry preset as starting point, customize per client
+- [ ] Supplement KB from onboarding call (`/admin/clients/[id]/knowledge`)
+  - Fill any gaps the questionnaire missed: edge cases, competitive advantages, specific FAQs
 - [ ] Deliver Revenue Leak Audit (research their Google Business Profile, website, competitors)
 
 Day 3-5:
@@ -160,31 +197,42 @@ Day 3-5:
 Week 2 (KB sprint):
 - [ ] Check knowledge gap queue daily (see Ops Guide &mdash; Knowledge Gap Resolution Process)
   - Expect 5-15 gaps in Week 2 as AI encounters real conversations for the first time
+  - Use the &quot;Ask Contractor&quot; button to get answers via SMS without leaving the dashboard
   - Dedicate 15-20 min on Day 8-10 to clear the queue in bulk
 - [ ] Review AI quality page (`/admin/ai-quality`) for flagged messages (Playbook Section 3)
 - [ ] First bi-weekly report generated and delivered (Playbook Section 4)
+  - System auto-sends follow-up SMS to contractor after delivery
 - [ ] Win-back cron starts picking up imported quotes (if 25+ days old)
+  - Imported quotes with `estimate_sent` status also get auto-triggered follow-up within 72 hours (CON-07)
 - [ ] Text contractor recap: &quot;Week 2 update &mdash; [X] leads handled, [Y] quotes reactivated, [Z] appointments booked&quot;
 
 Week 3+:
 - [ ] Upgrade AI to Autonomous mode (only after Safety tests pass)
-- [ ] All automations running: estimate follow-up, appointment reminders, payment collection, review generation, win-back
+- [ ] All automations running: estimate follow-up, appointment reminders, payment collection, review generation, win-back, dormant re-engagement (6-month)
 - [ ] Monitor escalations dashboard for anything that needs human attention
 - [ ] Knowledge gap queue should be slowing down (most common questions answered)
+- [ ] Check AI Effectiveness dashboard (`/admin/ai-effectiveness`) for outcome trends
 
 ### Track ROI
 
 - [ ] After first week: count quote reactivation responses (target: 10%+ response rate)
+  - **Capture social proof:** if a reactivated lead responds positively, document the win (see Sales Objection Playbook &mdash; Social Proof Framework)
 - [ ] After 30 days: check 5 Qualified Lead Engagements &mdash; guarantee Layer 1 (Playbook Section 5)
 - [ ] After 90 days: check 1 Attributed Project Opportunity &mdash; guarantee Layer 2 (Playbook Section 5)
-- [ ] Revenue dashboard shows recovered pipeline value
+  - Attribution is fully log-based (no contractor confirmation needed)
+- [ ] Verify the Revenue Recovered card shows in the contractor&apos;s portal dashboard (`/client`)
+  - Shows confirmed revenue, ROI vs cost, and recent wins
+- [ ] When first job is marked Won: verify the win notification SMS fires to the contractor
 
 ### Ongoing (per client)
 
-- [ ] Daily: check escalations, knowledge gap queue, AI quality flags (5-10 min per client)
-- [ ] Bi-weekly: report delivery + check-in text to contractor (Playbook Section 4)
-- [ ] Monthly: health check metrics review (Playbook Section 11)
+- [ ] **Daily:** Start at the Triage Dashboard (`/admin/triage`) &mdash; shows which clients need attention, sorted by urgency. Then check escalations, knowledge gap queue, AI quality flags (5-10 min per client).
+- [ ] **Bi-weekly:** Report auto-delivers + auto-sends follow-up SMS. Review report for accuracy before delivery (Playbook Section 4).
+- [ ] **Weekly:** Engagement health check runs automatically on Mondays. You receive SMS alerts if a client shows disengagement signals (no estimate flags in 21+ days, no won/lost updates in 30+ days).
+- [ ] **Monthly:** Health check metrics review (Playbook Section 11)
+- [ ] **Quarterly:** Growth Blitz campaign selection (Playbook Section 10 of capabilities doc)
 - [ ] If contractor requests pause: set status to Paused from client detail page (Playbook Section 6)
+- [ ] If approaching slow season (November): proactively offer pause before contractor asks to cancel
 
 ---
 
@@ -192,8 +240,25 @@ Week 3+:
 
 The research confirms March-April is the prime outreach window. Contractors are flooded with leads and can&apos;t respond to all of them. After mid-April, they go heads-down into summer projects.
 
-- [ ] Prepare outreach using angles from `RESEARCH-INSIGHTS-MARCH-2026.md` Section 3
+- [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; memorize the Tier 1 objection responses
+- [ ] Prepare outreach using angles from `SALES-OBJECTION-PLAYBOOK.md` Section 12 (Outreach Scripts)
 - [ ] Lead with quote reactivation angle (Angle A) &mdash; lowest objection surface
-- [ ] Track experiment results in the research doc Section 9
+- [ ] For referral-heavy prospects: pivot to estimate follow-up + review generation angle (Playbook Tier 2)
+- [ ] Track outreach experiment results (what angles convert, what objections surface)
 - [ ] First 3-5 clients: manually deliver, learn what friction points actually matter
 - [ ] After 5 clients: update `OFFER-CLIENT-FACING.md` with validated reframe if outreach data supports it
+
+---
+
+## Quick Reference: Key Admin Pages
+
+| Page | URL | Use |
+|------|-----|-----|
+| Client Triage | `/admin/triage` | Daily starting point &mdash; see which clients need attention |
+| Client Detail | `/admin/clients/[id]` | KB questionnaire, calendar integration, onboarding card |
+| Escalation Queue | `/escalations` | Handle AI escalations (SLA: 4 business hours for P1) |
+| AI Quality | `/admin/ai-quality` | Review flagged AI messages across all clients |
+| AI Effectiveness | `/admin/ai-effectiveness` | Outcome trends, model tier ROI, confidence bands |
+| Reports | `/admin/reports` | Review bi-weekly reports before delivery |
+| Reliability | `/admin/reliability` | Failed crons, webhook failures, error telemetry |
+| Settings | `/admin/settings` | Kill switches, operator phone, system config |

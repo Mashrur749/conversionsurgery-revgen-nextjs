@@ -17,7 +17,7 @@ Purpose: Every business scenario a contractor generates, and exactly how you han
 1. Open `/escalations`. Review the conversation history for the flagged lead.
 2. Determine if this needs the contractor or if you can handle it:
    - **You handle:** Lead is asking about scheduling, general process, follow-up timing. Draft a response in the conversation view, send it.
-   - **Contractor handles:** Lead has a technical question about their specific property, wants to negotiate price, or is threatening legal action. Text the contractor: &quot;[Lead name] is asking about [topic] &mdash; how do you want me to respond?&quot; Enter their answer as a response.
+   - **Contractor handles:** Lead has a technical question about their specific property, wants to negotiate price, or is threatening legal action. If this is a knowledge gap (AI couldn&apos;t answer), use the &quot;Ask Contractor&quot; button on the gap card in the knowledge gap queue &mdash; it sends a formatted SMS and tracks the gap lifecycle automatically. Otherwise, text the contractor: &quot;[Lead name] is asking about [topic] &mdash; how do you want me to respond?&quot; Enter their answer as a response.
 3. After responding, mark the escalation as resolved. Set the lead back to `ai` conversation mode if the issue was a one-off.
 4. If the same type of escalation keeps recurring (e.g., 3 leads in a week asking about financing), that&apos;s a knowledge gap &mdash; add a KB entry so the AI handles it next time.
 
@@ -83,9 +83,9 @@ This is the moment they realize the service works. Protect it.
    - Is &quot;Revenue Recovered&quot; showing real value, or still $0? (If $0 after 2 weeks, the quote reactivation didn&apos;t work &mdash; investigate.)
    - Does the speed-to-lead metric look good? (Should be well under 5 minutes.)
 3. If the report looks thin (new client, few leads), add a personal note in the report delivery: &quot;Your system is ramping up. Here&apos;s what&apos;s active so far.&quot;
-4. The report sends automatically via email. Follow up with a text: &quot;Hey [name], your bi-weekly report just went out. Anything jump out at you?&quot;
+4. The report sends automatically via email. A follow-up SMS is now sent automatically to the contractor via the agency number: &quot;[Business Name] &mdash; your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.&quot; You no longer need to manually send this text.
 
-**This is your retention touchpoint.** Don&apos;t skip it. Even if the report is short.
+**This is your retention touchpoint.** The auto-SMS handles the nudge, but you should still proactively engage if the report is thin or you notice declining metrics. Even if the report is short.
 
 ---
 
@@ -220,6 +220,87 @@ At day 90:
 
 ---
 
+## 12. Sales Conversation Guide
+
+**When:** Before and during a sales call with a prospective contractor.
+
+---
+
+### Pre-Call Qualification
+
+Before the call, answer these two questions. If either is a hard no, adjust your pitch — don&apos;t waste a call.
+
+**1. Minimum lead volume check**
+
+> "Do you get at least 8-10 new inquiries per month — calls, form fills, referrals looking for a quote?"
+
+Below 8/month: the guarantee windows will extend substantially, and Week 1 reactivation results may be thin. Not a disqualifier, but manage expectations upfront. The dormant reactivation pitch is more important than the speed-to-lead pitch for low-volume contractors.
+
+**2. Referral vs. inbound ratio**
+
+Ask: "Where do most of your jobs come from — referrals, Google, yard signs, something else?"
+
+- Mostly referrals (60%+): lead with estimate follow-up + review generation + win-back, not speed-to-lead. See Objection 3 in the full playbook.
+- Mixed or mostly inbound: lead with speed-to-lead and the missed-call text-back.
+- Purely referrals + already has staff handling calls: the pitch is about follow-up depth and payment collection, not response time.
+
+---
+
+### The "Call Your Own Number" Demo
+
+Move this from the onboarding call (Section 10) into the sales call when possible. Do it toward the end after you&apos;ve described the missed call text-back feature.
+
+> "Before I let you go — want to try it right now? Call the demo number. Let it ring to voicemail. Watch what happens."
+
+When the text-back arrives in 10-15 seconds, say nothing. Let them react.
+
+This is the most effective demo in the sales sequence. It costs you nothing to run and converts skeptics immediately. If they&apos;re with you in person, show it from across the table. If you&apos;re on a video call, have them text the number and screen-share the response.
+
+---
+
+### Objection Quick-Reference
+
+Full scripts are in `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`. This is the cheat sheet for the call.
+
+| Objection | Core reframe | Section |
+|-----------|-------------|---------|
+| "What if the AI says something wrong?" | Show Smart Assist review window and correction loop | Tier 1, #1 |
+| "I got burned by a similar tool/agency" | Managed vs. software; lead with guarantee, not features | Tier 1, #2 |
+| "I work from referrals" | Estimate follow-up + reviews + win-back — not speed-to-lead | Tier 2, #3 |
+| "I already respond fast / have someone answering" | Consistency gap (3-hour job site window); follow-up depth | Tier 2, #4 |
+| "I don&apos;t want a robot talking to my customers" | Show disclosure, show escalation, emphasize 80/20 split | Tier 3, #5 |
+| "I&apos;ll look at this in spring" | Outstanding quote ROI math; setup takes one 30-min call | Tier 3, #6 |
+| "I already use Jobber/HubSpot" | Front-of-funnel complement, not replacement | Tier 3, #7 |
+| "$1,000/month is expensive" | ROI math on outstanding quotes; risk is one month | Tier 3, #8 |
+| "I don&apos;t have many leads right now" | Dormant reactivation is the pitch | Tier 3, #9 |
+| "Customers have my personal cell" | Supplement not replace; call forwarding setup | Tier 3, #10 |
+
+---
+
+### Post-Call Follow-Up Template
+
+Send within two hours of the call. Keep it short.
+
+> Subject: ConversionSurgery — what we covered
+>
+> [Name],
+>
+> Good talking today. Here&apos;s a quick summary of what we discussed:
+>
+> - [One sentence on what resonated most — estimate follow-up, reactivation, or response speed based on their profile]
+> - The guarantee: 5 qualified lead engagements in 30 days, or your first month is refunded. Month-to-month, no contract.
+> - Next step: a 30-minute onboarding call. Your number is live within 24 business hours of that call.
+>
+> To get started, [payment/signup link].
+>
+> If you have questions, reply here or text [your number].
+>
+> [Your name]
+
+Adjust the middle bullet to the specific objection they raised. If they were skeptical about AI quality, link to the sample conversation in the playbook and paste it into the email. If they were referral-heavy, lean into the estimate follow-up line.
+
+---
+
 ## Process Map: When Something Happens
 
 | Scenario | Who acts | Process |
@@ -241,3 +322,5 @@ At day 90:
 | Old quotes imported | You handle | CSV import with estimate_sent status (Section 2) |
 | New month starts | You review | Monthly health check (Section 11) |
 | Cron job fails | System alerts operator via SMS | Check reliability dashboard, investigate failed job |
+| Sales call booked | You prep | Run pre-call qualification (Section 12) |
+| Prospect raises objection | You handle | Follow Section 12 quick-reference |

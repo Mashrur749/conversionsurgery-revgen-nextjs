@@ -53,11 +53,13 @@ Every agent called this out. Week 2 alone is 50-75 minutes of AI review. The fig
 
 **Verdict**: Update the offer language. Say "under 15 minutes per week once the system is trained (typically by Week 3)" or similar.
 
-### Missing at $1,000/month: Calendar integration (9/10 agents)
+### ~~Missing at $1,000/month: Calendar integration (9/10 agents)~~ **Resolved (CON-01)**
 
-The platform books appointments internally but has no two-way sync with Google Calendar or any external calendar. Contractors who already use a calendar will have double-bookings and missed appointments.
+~~The platform books appointments internally but has no two-way sync with Google Calendar or any external calendar. Contractors who already use a calendar will have double-bookings and missed appointments.~~
 
-**Verdict**: Not a launch blocker for client 1-2 (manual workaround: operator adds to contractor's calendar). Becomes a blocker at scale.
+Google Calendar two-way sync is now built. Contractors connect via OAuth, platform appointments push to Google Calendar, and Google Calendar events block booking slots. Sync runs every 15 minutes automatically.
+
+**Verdict**: ~~Not a launch blocker for client 1-2 (manual workaround: operator adds to contractor's calendar). Becomes a blocker at scale.~~ **Resolved** — no longer a gap at any scale.
 
 ### Spouse/bookkeeper trigger: No visible dollar ROI (10/10 agents)
 
@@ -111,13 +113,21 @@ Agent 10 mapped the escalation chain from a single Week 2 error to cancellation 
 
 ### Must-do before first client (8+/10 agree)
 
-1. **Qualify lead volume in the sales conversation.** Ask: "How many calls/form submissions do you get per month?" If under 10, set explicit expectations about the guarantee timeline.
+1. **Qualify lead volume in the sales conversation.** Ask: "How many calls/form submissions do you get per month?" If under 10, set explicit expectations about the guarantee timeline. **Done** (CON-02: pre-onboarding qualification added to sales process).
 
 2. **Update "15 minutes/week" language.** Change to "under 15 minutes per week once the system is trained (usually by Week 3). During setup, expect 30-45 minutes per week as we calibrate the AI to your business."
 
-3. **Build a win notification SMS.** When contractor marks a lead "won," auto-send: "[Business Name] recovered [Lead Name] — estimated value $X. Powered by ConversionSurgery." This is the proof artifact the bookkeeper needs.
+3. **Build a win notification SMS.** When contractor marks a lead "won," auto-send: "[Business Name] recovered [Lead Name] — estimated value $X. Powered by ConversionSurgery." This is the proof artifact the bookkeeper needs. **Done** (CON-03: win notification now includes confirmed revenue field for actual job value).
 
 4. **Add "Your Account Manager" card to the client portal.** Show the operator's name and phone number. Costs nothing, solves the "no human I can reach" perception.
+
+#### Wave 4 consensus fixes (all done)
+
+- **CON-02:** Estimate nudge shortened from 5 days to 48 hours. Stale leads get flagged faster.
+- **CON-03:** Confirmed revenue field on leads. When marking &quot;won,&quot; contractor enters actual job value. Reports show &quot;Confirmed Won: $X.&quot;
+- **CON-05:** Layer 2 guarantee attribution is now fully log-based. No subjective contractor confirmation required.
+- **CON-10:** Bi-weekly report auto-follow-up SMS. System texts contractor after report delivery automatically.
+- **CON-11:** KB gap &quot;Ask Contractor&quot; button. Sends formatted SMS to contractor with the question, sets gap to in_progress.
 
 ### Should-do within 30 days of first client (5-7/10 agree)
 
@@ -125,7 +135,7 @@ Agent 10 mapped the escalation chain from a single Week 2 error to cancellation 
 
 6. **Add a pre-onboarding lead volume qualification question** to the sales process or signup flow.
 
-7. **Calendar integration** (Google Calendar sync) — critical for client 3+.
+7. ~~**Calendar integration** (Google Calendar sync) — critical for client 3+.~~ **Done (CON-01)** — Google Calendar two-way sync shipped: OAuth connect/disconnect (admin + portal), bidirectional sync, slot blocking, 15-min sync cron.
 
 ### Consider for future (3-4/10 suggest)
 

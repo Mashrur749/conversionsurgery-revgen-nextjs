@@ -1,6 +1,6 @@
 # ConversionSurgery — Client-Facing Approved Copy
 
-Version 1.0
+Version 1.3
 Date: February 23, 2026
 Status: Approved for use in proposals, agreements, emails, leave-behinds, and website copy
 
@@ -49,7 +49,7 @@ The following lines are approved for live sales conversations, landing page head
 > **The Revenue Recovery Engine**
 >
 > - **Near-Instant Lead Response** — Every inquiry (call, text, or web form) gets a near-instant response during permitted hours. The system monitors around the clock and responds within seconds during compliant windows.
-> - **AI Conversation Agent** — Not canned auto-replies. An AI configured with your business information that has real conversations, answers questions about your services, qualifies the project, and books estimate appointments.
+> - **AI Conversation Agent** — Not canned auto-replies. An AI configured with your business information that has real conversations, answers questions about your services, qualifies the project, and books estimate appointments into your calendar. Syncs with Google Calendar so your schedule stays up to date and double-bookings are prevented automatically.
 > - **Estimate Follow-Up** — When you flag an estimate as sent, we trigger a multi-touch follow-up sequence over several weeks. Personalized, not pushy. Designed for the long decision cycles renovation projects actually take.
 > - **Appointment Confirmation & No-Show Recovery** — Reminders before every appointment. If they miss it, the AI follows up same day and attempts to rebook.
 > - **Payment Collection** — Automated deposit and invoice reminders with one-click payment links.
@@ -92,6 +92,10 @@ The following lines are approved for live sales conversations, landing page head
 > Every two weeks, you receive a performance report showing exactly what the system did: leads captured, response times, conversations handled, estimates followed up, appointments booked, and revenue impact. Each report includes an estimate of what would have happened without the system — so the value of the service is always visible.
 >
 > Note on every report: "Actual outcomes vary by market, close process, and lead quality."
+
+### Works for Referral-Driven Contractors Too
+
+> If most of your work comes from referrals, the pitch is different — and it&apos;s actually stronger. The system&apos;s highest-value jobs are: following up on every estimate you send until you get a yes or a no, asking for a Google review after every completed project, collecting deposits and final payments without awkward conversations, and reactivating past quotes that went quiet. You don&apos;t need a lead problem to get value from this. You need a follow-up problem — and every renovation contractor has one.
 
 ### Managed Service — What We Handle vs. What You Do
 
@@ -233,7 +237,7 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 
 > **Here's what you get when you start with ConversionSurgery:**
 >
-> **The Revenue Recovery Engine** — Every lead gets a near-instant response during permitted hours. AI configured with your business information that has real conversations, books appointments, and follows up on every estimate for weeks. Payment collection, review generation, dormant lead reactivation. Unlimited conversations and messaging. All managed by us.
+> **The Revenue Recovery Engine** — Every lead gets a near-instant response during permitted hours. AI configured with your business information that has real conversations, books appointments into your Google Calendar, and follows up on every estimate for weeks. Payment collection, review generation, dormant lead reactivation. Unlimited conversations and messaging. All managed by us.
 >
 > **Your Own Dedicated Business Number + Lead CRM** — Everything in one place. Every conversation, every lead, every status. Separate from your personal phone.
 >
@@ -255,6 +259,27 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 
 ---
 
+## SECTION 10: COMMON QUESTIONS
+
+The following are approved written answers for the questions prospects ask most frequently. Use these verbatim in email follow-ups, proposal appendices, and FAQ sections.
+
+> **What if the AI says something wrong to a customer?**
+> The system runs in a supervised review mode for the first two weeks — it generates responses and sends them after a five-minute window, giving you time to review. When the AI encounters a question it cannot answer confidently, it tells the lead it will follow up rather than guessing. Inaccuracies are flagged immediately and corrected in the AI&apos;s knowledge base.
+
+> **I tried a similar service before and it didn&apos;t work. How is this different?**
+> ConversionSurgery is a managed service, not software. We set it up, run it, monitor it, and fix it when something&apos;s off. You don&apos;t manage anything. The 30-day guarantee (5 qualified lead engagements or your first month is refunded) means you see proof before you commit long-term.
+
+> **I get most of my work from referrals. Is this relevant to me?**
+> Yes — the highest-ROI parts of the service are estimate follow-up, review generation, and dormant reactivation. These work regardless of how leads find you. Most referral contractors have outstanding quotes that went quiet; recovering even a fraction of those covers the service fee many times over.
+
+> **What happens during quiet hours — do evening leads get ignored?**
+> No lead is ignored. The system monitors around the clock and queues responses for delivery at the next compliant window (10 AM). Evening form fills and missed calls receive a response first thing the following morning — typically before any competitor has responded.
+
+> **Can I cancel if it&apos;s not working?**
+> Yes. Month-to-month service, cancel with 30 days&apos; written notice, no penalties. You also receive a full export of every lead and conversation we captured. The 90-day guarantee provides an additional safety net — if after 90 days you cannot identify a project the system helped you win, your most recent month is refunded.
+
+---
+
 ## CHANGE LOG
 
 | Version | Date              | Changes                                                                                                                                                         |
@@ -262,9 +287,11 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 | 1.0     | February 23, 2026 | Initial extraction from Grand Slam Offer Architecture v2.1 + Quality Review findings. All Critical and High items from quality review resolved in this version. |
 | 1.1     | April 1, 2026     | 10-agent consensus review. Fixed 7 language issues: time commitment qualifier added (Week 1-2 is 30-45 min/week), "trained" changed to "configured," calendar booking claim scoped, dormant reactivation language aligned to platform reality, A/B testing removed, "no questions asked" removed from guarantee headline, Section 9 summary aligned. |
 | 1.2     | April 1, 2026     | Layer 2 guarantee attribution made objective: removed subjective "confirm the system meaningfully contributed" language. Attribution now purely verified through platform logs of automated system engagement before opportunity progression. |
+| 1.3     | April 1, 2026     | Restored calendar booking claim: "books estimate appointments into your calendar" with Google Calendar sync language. CON-01 (two-way Google Calendar sync) is now built — availability checking, bidirectional sync, OAuth flow for contractors. |
+| 1.4     | April 1, 2026     | GAP-01: Added Section 10 (Common Questions) with approved written answers for the top 5 prospect objections. Added referral contractor positioning paragraph to Section 2. |
 
 ---
 
-_ConversionSurgery — Client-Facing Approved Copy v1.0_
+_ConversionSurgery — Client-Facing Approved Copy v1.3_
 _Source: Grand Slam Offer Architecture v2.1 + Quality Review_
 _February 2026_

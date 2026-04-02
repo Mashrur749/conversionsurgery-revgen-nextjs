@@ -9,9 +9,10 @@ import {
   scheduledMessages,
   systemSettings,
 } from '@/db/schema';
-import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNotNull, lte, sum } from 'drizzle-orm';
 import { getTeamMembers } from '@/lib/services/team-bridge';
 import { sendBiWeeklyReportEmail } from '@/lib/services/report-email';
+import { sendAlert } from '@/lib/services/agency-communication';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
 import { getClientAiSummary } from '@/lib/services/ai-effectiveness-metrics';
 import {
@@ -259,6 +260,29 @@ export async function generateClientReport(
       )
     );
 
+  // Sum confirmed revenue for leads marked won and updated within the period
+  const periodStart = toPeriodStartUtc(startDate);
+  const periodEnd = toPeriodEndUtc(endDate);
+
+  const [confirmedRevenueRow] = await db
+    .select({ total: sum(leads.confirmedRevenue) })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.clientId, clientId),
+        eq(leads.status, 'won'),
+        isNotNull(leads.confirmedRevenue),
+        gte(leads.updatedAt, periodStart),
+        lte(leads.updatedAt, periodEnd)
+      )
+    );
+
+  // confirmedRevenue stored in cents; convert to whole dollars for the report
+  const confirmedRevenueDollars =
+    typeof confirmedRevenueRow?.total === 'string' && confirmedRevenueRow.total !== null
+      ? Math.round(Number(confirmedRevenueRow.total) / 100)
+      : 0;
+
   const teamMemsList = await getTeamMembers(clientId);
   const quarterlyCampaignSummary = await getCurrentQuarterlyCampaignSummary(
     clientId,
@@ -332,6 +356,8 @@ export async function generateClientReport(
       aggregatedMetrics.days > 0
         ? (aggregatedMetrics.messagesSent / aggregatedMetrics.days).toFixed(1)
         : '0.0',
+    /** Total confirmed revenue in dollars for leads marked won in this period. */
+    confirmedRevenue: confirmedRevenueDollars,
     quarterlyCampaign: quarterlyCampaignSummary,
     withoutUsModel,
     ...(aiSummary ? { aiEffectiveness: aiSummary } : {}),
@@ -510,6 +536,15 @@ export async function processBiWeeklyReportPeriod(periodEndDate: Date) {
             },
             errorCode: null,
             errorMessage: null,
+          });
+
+          // Auto-send follow-up SMS to the client owner (CON-10).
+          // Fire-and-forget — SMS failure must not affect report delivery status.
+          sendAlert({
+            clientId: client.id,
+            message: `${client.businessName} — your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.`,
+          }).catch((smsErr: unknown) => {
+            console.error('[BiWeeklyReports] Follow-up SMS failed for client', client.id, smsErr);
           });
         } else {
           failed++;

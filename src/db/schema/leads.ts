@@ -44,6 +44,7 @@ export const leads = pgTable(
       lastAnalysis: string;
     }>(),
     temperature: varchar('temperature', { length: 10 }).default('warm'),
+    confirmedRevenue: integer('confirmed_revenue'), // nullable; stored in cents
     stripeCustomerId: varchar('stripe_customer_id', { length: 100 }),
     tags: jsonb('tags').$type<string[]>().default([]),
     optedOut: boolean('opted_out').default(false),

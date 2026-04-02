@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb, withTransaction } from '@/db';
-import { clients, people, clientMemberships, roleTemplates } from '@/db/schema';
+import { clients, people, clientMemberships, roleTemplates, reviewSources } from '@/db/schema';
 import { eq, desc, and, inArray } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
+import { findGooglePlaceId } from '@/lib/services/google-places';
 import { z } from 'zod';
 
 export const GET = adminRoute(
@@ -129,6 +130,25 @@ export const POST = adminRoute(
 
       return createdClient;
     });
+
+    // Auto-discover Google Place ID (non-blocking — don't fail client creation)
+    try {
+      if (data.businessName) {
+        const googlePlaceId = await findGooglePlaceId(data.businessName);
+        if (googlePlaceId) {
+          await db.insert(reviewSources).values({
+            clientId: client.id,
+            source: 'google',
+            googlePlaceId,
+            isActive: true,
+          });
+        }
+      }
+    } catch (error) {
+      // Log but don't fail — Place ID discovery is best-effort
+      console.log('[Onboarding] Google Place ID auto-discovery failed (non-critical):',
+        error instanceof Error ? error.message : 'Unknown error');
+    }
 
     return NextResponse.json({ client });
   }

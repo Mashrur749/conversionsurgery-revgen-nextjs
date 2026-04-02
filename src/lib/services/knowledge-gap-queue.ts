@@ -494,7 +494,7 @@ export async function listKnowledgeGapQueue(
   };
 }
 
-async function getKnowledgeGapById(clientId: string, gapId: string) {
+export async function getKnowledgeGapById(clientId: string, gapId: string) {
   const db = getDb();
   const [row] = await db
     .select()

@@ -28,6 +28,8 @@ import { OnboardingQualityPanel } from './onboarding-quality-panel';
 import { ReminderRoutingPanel } from './reminder-routing-panel';
 import { ClientDetailTabs } from './client-detail-tabs';
 import { EmbedWidgetCard } from './embed-widget-card';
+import { CalendarIntegrationCard } from './calendar-integration-card';
+import { KbQuestionnaire } from './kb-questionnaire';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -229,6 +231,8 @@ export default async function ClientDetailPage({ params }: Props) {
     </Card>
   ) : null;
 
+  const kbEntryCount = Number(kbCount?.count ?? 0);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-start">
@@ -258,6 +262,11 @@ export default async function ClientDetailPage({ params }: Props) {
       <ClientDetailTabs
         teamMemberCount={members.length}
         onboardingChecklist={onboardingChecklist}
+        kbQuestionnaire={
+          kbEntryCount < 5 ? (
+            <KbQuestionnaire clientId={client.id} kbCount={kbEntryCount} />
+          ) : null
+        }
         roiDashboard={<ROIDashboard metrics={roiMetrics} />}
         usageCard={
           <Card>
@@ -326,6 +335,7 @@ export default async function ClientDetailPage({ params }: Props) {
         }
         reminderRoutingPanel={<ReminderRoutingPanel clientId={client.id} />}
         embedWidgetCard={<EmbedWidgetCard clientId={client.id} />}
+        calendarIntegrationCard={<CalendarIntegrationCard clientId={client.id} />}
         clientInfoCard={
           <Card>
             <CardHeader>

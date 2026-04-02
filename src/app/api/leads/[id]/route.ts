@@ -13,7 +13,8 @@ const leadUpdateSchema = z.object({
   temperature: z.string().max(10).optional(),
   notes: z.string().max(5000).optional(),
   projectType: z.string().max(255).optional(),
-  quoteValue: z.coerce.number().optional().nullable(),
+  /** Confirmed revenue in whole dollars; stored as cents in the DB. */
+  confirmedRevenue: z.coerce.number().min(0).optional().nullable(),
   address: z.string().max(500).optional(),
   name: z.string().max(255).optional(),
   email: z.string().email().max(255).optional().nullable(),
@@ -51,10 +52,21 @@ export async function PATCH(
 
     const db = getDb();
 
+    // Destructure to separate confirmedRevenue (dollars) from the rest of the
+    // update payload so we can store it as cents in the DB.
+    const { confirmedRevenue: confirmedRevenueDollars, ...restData } = parsed.data;
+    const confirmedRevenueCents =
+      typeof confirmedRevenueDollars === 'number'
+        ? Math.round(confirmedRevenueDollars * 100)
+        : confirmedRevenueDollars; // null or undefined — leave as-is
+
     const updated = await db
       .update(leads)
       .set({
-        ...parsed.data,
+        ...restData,
+        ...(confirmedRevenueCents !== undefined
+          ? { confirmedRevenue: confirmedRevenueCents }
+          : {}),
         updatedAt: new Date(),
       })
       .where(and(eq(leads.id, id), eq(leads.clientId, clientId)))
@@ -77,10 +89,11 @@ export async function PATCH(
 
         if (clientRow?.phone) {
           const leadName = updatedLead.name || updatedLead.phone;
-          // quoteValue is in the PATCH body (dollars); falls back to N/A if not provided
+          // confirmedRevenue is stored in cents; convert to dollars for display
+          const confirmedRevenueCentsDisplay = updatedLead.confirmedRevenue;
           const quoteDisplay =
-            typeof parsed.data.quoteValue === 'number'
-              ? `$${parsed.data.quoteValue.toLocaleString()}`
+            typeof confirmedRevenueCentsDisplay === 'number'
+              ? `$${Math.round(confirmedRevenueCentsDisplay / 100).toLocaleString()}`
               : 'N/A';
           const firstEngaged = new Date(updatedLead.createdAt).toLocaleDateString('en-US', {
             month: 'short',

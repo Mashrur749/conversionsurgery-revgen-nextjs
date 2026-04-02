@@ -2,7 +2,10 @@
 
 Central coordination file for parallel agent execution. The orchestrator (main conversation) owns this file — agents read it but only the orchestrator writes to it.
 
-Last updated: 2026-04-01
+Last updated: 2026-04-01 (Wave 5 complete)
+
+## Current Priority: Wave 7 — Remaining Consensus Gaps (Sales + Platform)
+All 11 CON items done. Now handling remaining sales process gaps + divergent/outlier platform gaps from the 10-agent consensus analysis.
 
 ## How This Works
 
@@ -53,17 +56,26 @@ Agents MUST NOT modify files owned by another in-progress item. The orchestrator
 
 | ID | Issue | Priority | Status | Files Touched | Depends On | Model Tier |
 |----|-------|----------|--------|---------------|------------|------------|
-| CON-01 | Google Calendar two-way sync (9/10 agents, #1 dealbreaker) | Critical | todo | New: `src/lib/services/calendar-sync.ts`, booking service, schema | None | opus |
-| CON-02 | Shorten estimate fallback nudge from 5 days to 48 hours | High | in_progress | `src/lib/automations/estimate-nudge.ts` or cron config | None | haiku |
-| CON-03 | Confirmed revenue field when marking lead "won" + headline in reports | High | in_progress | `src/app/api/leads/[id]/route.ts`, `src/lib/services/report-generation.ts` | None | sonnet |
+| CON-01 | Google Calendar two-way sync (9/10 agents, #1 dealbreaker) | Critical | done | `appointment-booking.ts`, admin UI, client portal UI, API routes | None | opus |
+| CON-02 | Shorten estimate fallback nudge from 5 days to 48 hours | High | done | `src/lib/automations/estimate-nudge.ts` or cron config | None | haiku |
+| CON-03 | Confirmed revenue field when marking lead "won" + headline in reports | High | done | `src/app/api/leads/[id]/route.ts`, `src/lib/services/report-generation.ts` | None | sonnet |
 | CON-04 | Win notification SMS when lead marked won | High | done | `src/app/api/leads/[id]/route.ts` | None | — |
-| CON-05 | Make Layer 2 guarantee attribution objective (log-based, remove "you confirm") | High | in_progress | `docs/business-intel/OFFER-CLIENT-FACING.md` (language), guarantee service | None | haiku |
+| CON-05 | Make Layer 2 guarantee attribution objective (log-based, remove "you confirm") | High | done | `docs/business-intel/OFFER-CLIENT-FACING.md` (language), guarantee service | None | haiku |
 | CON-06 | "Your Account Manager" card in client portal | High | done | `src/app/(client)/client/page.tsx` | None | — |
 | CON-07 | Auto-trigger estimate follow-up on CSV import (72h not 25-day) | High | done | `src/app/api/leads/import/route.ts`, `src/lib/services/estimate-triggers.ts` | None | — |
-| CON-08 | Backup operator protocol + published escalation SLA | Medium | todo | Docs only: ops guide, playbook, offer doc | None | — |
+| CON-08 | Backup operator protocol + published escalation SLA | Medium | done | Docs only: ops guide, playbook, offer doc | None | — |
 | CON-09 | Offer doc language fixes (7 items: 15min, trained, calendar, dormant, A/B, guarantee) | High | done | `docs/business-intel/OFFER-CLIENT-FACING.md` v1.1 | None | — |
-| CON-10 | Bi-weekly report auto-follow-up SMS (automate the retention touchpoint) | Medium | in_progress | `src/lib/services/report-generation.ts` or delivery service | None | sonnet |
-| CON-11 | KB gap "ask contractor" button (auto-SMS question, pre-populate KB draft) | Medium | in_progress | `src/components/escalations/` or knowledge gap UI | None | sonnet |
+| CON-10 | Bi-weekly report auto-follow-up SMS (automate the retention touchpoint) | Medium | done | `src/lib/services/report-generation.ts` or delivery service | None | sonnet |
+| CON-11 | KB gap "ask contractor" button (auto-SMS question, pre-populate KB draft) | Medium | done | `src/components/escalations/` or knowledge gap UI | None | sonnet |
+
+### Remaining Consensus Gaps — Wave 7 (10 items)
+
+| ID | Issue | Priority | Status | Files Touched | Depends On | Assigned Agent | Model Tier |
+|----|-------|----------|--------|---------------|------------|----------------|------------|
+| GAP-01 | Sales objection playbook + offer doc restructure + referral pitch variant + quiet hours doc | High | done | `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (new), `OFFER-CLIENT-FACING.md`, `02-MANAGED-SERVICE-PLAYBOOK.md` | None | Agent A | sonnet |
+| GAP-02 | "Jobs We Helped Win" running total in client portal dashboard | High | done | `src/app/(client)/client/page.tsx`, new API route | None | Agent B | sonnet |
+| GAP-03 | Engagement decay alerts + 6-month dormant re-engagement cron | Medium | done | `src/lib/services/engagement-health.ts` (new), `src/lib/automations/dormant-reengagement.ts` (new), cron route | None | Agent C | sonnet |
+| GAP-04 | KB intake questionnaire + Operator triage dashboard | Medium | done | Admin client page (new component), new admin page | None | Agent D | sonnet |
 
 ### Operational Readiness — New (4 items)
 
@@ -171,6 +183,12 @@ See `docs/specs/EDGE-CASES-AUDIT.md` for full history (EC-01 through EC-07 fixed
 | CON-06 | "Your Account Manager" card in client portal | 2026-04-01 |
 | CON-07 | Auto-trigger estimate follow-up on CSV import | 2026-04-01 |
 | CON-09 | Offer doc language fixes v1.1 (7 items) | 2026-04-01 |
+| CON-02 | Estimate nudge shortened to 48 hours | 2026-04-01 |
+| CON-03 | Confirmed revenue field + report headline | 2026-04-01 |
+| CON-05 | Layer 2 guarantee made objective (v1.2) | 2026-04-01 |
+| CON-10 | Bi-weekly report auto-follow-up SMS | 2026-04-01 |
+| CON-11 | KB gap "Ask Contractor" button | 2026-04-01 |
+| CON-08 | Backup operator protocol + SLA in ops guide | 2026-04-01 |
 | UX-3.3 | Onboarding checklist — actionable links, start-here banner, simplified gates | 2026-04-01 |
 | UX-4.1 | Cmd+K command palette — both portals | 2026-04-01 |
 | UX-4.2 | Billing skeleton matches content | 2026-04-01 |
@@ -181,6 +199,11 @@ See `docs/specs/EDGE-CASES-AUDIT.md` for full history (EC-01 through EC-07 fixed
 | EC-13 | Message polling pagination (limit=50, load earlier) | 2026-04-01 |
 | EC-14 | Notification bell AbortController on unmount | 2026-04-01 |
 | EC-16 | Booking email fallback when compliance blocks SMS | 2026-04-01 |
+| CON-01 | Google Calendar two-way sync — availability blocking, OAuth, admin/portal UI, API routes, cron sync | 2026-04-01 |
+| GAP-01 | Sales objection playbook + offer doc v1.4 + playbook Section 12 | 2026-04-01 |
+| GAP-02 | "Revenue Recovered" card in client portal dashboard | 2026-04-01 |
+| GAP-03 | Engagement decay detection + 6-month dormant re-engagement + 2 cron jobs | 2026-04-01 |
+| GAP-04 | KB intake questionnaire + Operator triage dashboard + nav item | 2026-04-01 |
 
 ---
 

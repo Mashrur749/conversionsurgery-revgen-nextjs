@@ -2,7 +2,35 @@
 
 Last updated: 2026-04-01
 Audience: Founder (solo operator), operations monitor
-Last verified commit: `feat: Wave 1-2 operational and polish fixes (2026-04-01)`
+Last verified commit: `docs: Wave 7 additions (2026-04-01)`
+
+## Backup Coverage Protocol
+
+**Before client 3, designate a backup person** who can triage the admin dashboard during a 48-hour operator absence (sick, travel, emergency).
+
+**What they need:**
+- Admin account with `agency_admin` role and `all` client scope
+- Access to `/escalations` (triage queue) and `/admin/ai-quality` (flag review)
+- SMS alerts forwarded (set their phone as secondary `operator_phone` or add them to escalation team)
+
+**Published escalation SLA for contractors:**
+- Priority 1 (legal threat, angry customer, explicit "talk to someone"): 4 business hours
+- Priority 2 (complex question, pricing negotiation): next business day
+- This SLA should be communicated verbally during onboarding, not in the offer doc
+
+**What still works during a 48-hour outage:**
+- All AI responses, automation sequences, cron jobs, compliance enforcement
+- Operator SMS alerts fire (to backup person if configured)
+
+**What breaks:**
+- Escalation queue piles up (SLA breach at 24h for P1)
+- Mid-onboarding clients go silent
+- Guarantee deadline remediation missed
+- Contractor can't reach a human
+
+**Capacity ceiling:** 7 clients comfortable for solo operator. 10 is the hard max. At 10+ clients, hire a part-time ops person or reduce onboarding pace.
+
+---
 
 ## Daily Operations Checklist
 1. Check cron health response and errors.
@@ -37,6 +65,13 @@ Last verified commit: `feat: Wave 1-2 operational and polish fixes (2026-04-01)`
 30. **Weekly AI effectiveness review:** Open `/admin/ai-effectiveness` and review 14-day window. Key health indicators: positive rate should be &gt;20% (alarm if &lt;10%), avg confidence &gt;60 (alarm if &lt;45), avg response time &lt;5s. Check model tier split (fast vs quality). If quality usage exceeds 30%, investigate &mdash; may indicate systematically low confidence or inflated lead scores. Review top escalation reasons and feed patterns back into knowledge base entries or guardrail tuning.
 31. **Operator alerting:** Verify `operator_phone` is set in `system_settings` (via `/admin/settings`). When any cron job fails, the system sends an SMS alert to this number from the agency line. Alerts are deduplicated (1 per subject per hour). If you are not receiving alerts, check: (a) `operator_phone` is set, (b) agency Twilio number is configured, (c) the phone number is valid and can receive SMS.
 32. **Agency voice webhook:** The agency number (#5) has a voice webhook at `/api/webhooks/twilio/agency-voice`. Callers hear &quot;This number is for text messages only.&quot; Verify this is configured in Twilio Console under the agency number&apos;s voice URL. If callers report the number just rings or goes to Twilio default voicemail, the webhook is not configured.
+33. **Confirmed revenue on lead wins:** When marking a lead as &quot;won&quot; in the admin UI, always enter the actual job value in the confirmed revenue field. This feeds into the bi-weekly report &quot;Confirmed Won&quot; total and provides concrete ROI proof for contractors and their bookkeepers. If the field is left blank, the report falls back to pipeline estimates only.
+34. **KB gap &quot;Ask Contractor&quot; button:** Instead of manually texting contractors about knowledge gaps, use the &quot;Ask Contractor&quot; button on each gap card in the gap queue (`/admin/clients/[id]/knowledge` &rarr; Gaps tab). This sends a formatted SMS to the contractor with the specific question and automatically sets the gap to `in_progress`. Saves time and keeps the gap lifecycle in sync.
+35. **Report follow-up SMS is automated:** After each bi-weekly report delivery, the system automatically sends a follow-up SMS to the contractor via the agency number prompting them to check their email or dashboard. No manual follow-up text is needed. If a contractor says they did not receive the text, verify the agency Twilio number is configured and the contractor phone number is correct.
+36. **Operator Triage Dashboard — start your day here:** Open `/admin/triage` before the full daily checklist. It surfaces the highest-priority action items across all clients in one view (P1 escalations, overdue KB gaps, onboarding SLA breaches, failed report deliveries). Use it to decide which clients need attention before opening individual client pages.
+37. **Engagement health (weekly, Mondays):** The `engagement-health-check` cron runs every Monday and flags clients with 3+ consecutive weeks of declining engagement. Flagged clients appear in the Triage dashboard. When a client is flagged, review their recent AI quality metrics and knowledge gap queue — declining engagement often signals KB staleness or a recurring AI deferral pattern.
+38. **KB Intake Questionnaire — new client onboarding:** When creating a new client, complete the KB intake questionnaire on the admin client detail Knowledge tab before activating any automations. This pre-populates the knowledge base and significantly reduces AI deferrals in Weeks 1-2. Aim to fill this out on the same day as the onboarding call.
+39. **Dormant re-engagement (Wednesdays):** The `dormant-reengagement` cron runs every Wednesday and sends a single re-contact message to leads that have been dormant for 6+ months. No action needed — monitor for any response that comes back as an escalation.
 
 ## Knowledge Gap Resolution Process
 
@@ -56,7 +91,7 @@ If multiple leads ask the same thing, occurrences increment and priority climbs.
 2. Sort by priority (highest first). Focus on gaps with 2+ occurrences &mdash; those are real patterns, not one-off questions.
 3. For each actionable gap:
    - **If you know the answer:** Add a KB entry directly. Link it to the gap. Mark resolved.
-   - **If you need the contractor&apos;s input:** Text/call them with the specific question. Keep it short: &quot;Hey, a couple of leads asked if you do flat roofs &mdash; do you? And roughly what price range?&quot; Add the KB entry from their response.
+   - **If you need the contractor&apos;s input:** Use the &quot;Ask Contractor&quot; button on the gap card &mdash; it sends a formatted SMS with the question and sets the gap to `in_progress` automatically. The contractor receives: &quot;[Business Name] &mdash; a customer asked about [question]. How should we answer this?&quot; Add the KB entry from their response.
    - **If it&apos;s not relevant** (spam, gibberish, off-topic): Mark as resolved with note &quot;not actionable.&quot;
 
 ### How to write a good KB entry
@@ -146,6 +181,12 @@ curl -s "$BASE_URL/api/cron/voice-usage-rollup" \
   -H "Authorization: Bearer $CRON_SECRET"
 
 curl -s "$BASE_URL/api/cron/knowledge-gap-alerts" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/engagement-health-check" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/dormant-reengagement" \
   -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helper (preferred)

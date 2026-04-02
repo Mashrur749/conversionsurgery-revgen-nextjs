@@ -13,7 +13,7 @@ Agents: 5 (capabilities gap analyst, contractor objection handler, spouse/bookke
 |---|-------|-----------|---------|-----|
 | 1 | "Under 15 minutes per week" is misleading for Month 1 | "Total ongoing time: under 15 minutes per week" | Week 2 alone is 50-75 min. Month 1 average is 30-45 min/week. | Add qualifier: "once the system is trained (typically by Week 3). During setup, expect 30-45 minutes per week." |
 | 2 | "AI trained on your business" implies fine-tuning | "An AI trained on your business" | AI reads a static knowledge base built from a 30-min call. Not trained/fine-tuned. | Change to: "An AI configured with your business information" |
-| 3 | "Books appointments into your calendar" implies external calendar | "books estimate appointments into your calendar" | Books into platform-internal calendar only. No Google Calendar sync. | Change to: "books estimate appointments" (remove "into your calendar") |
+| 3 | ~~"Books appointments into your calendar" implies external calendar~~ **Fixed (CON-01)** | ~~"books estimate appointments into your calendar"~~ | ~~Books into platform-internal calendar only. No Google Calendar sync.~~ Google Calendar two-way sync is now built. | ~~Change to: "books estimate appointments" (remove "into your calendar")~~ **Done** — offer doc can now be updated to restore "into your calendar" or add explicit Google Calendar sync language. **Note: do not edit OFFER-CLIENT-FACING.md directly — flag this to the operator for approval.** |
 | 4 | "Dormant Client Reactivation — 6+ months" doesn't match platform | "Past customers who haven't booked in 6+ months" | System targets stale pipeline leads (25-35 days), not completed-job customers. | Change to: "Past inquiries that went cold get re-engaged automatically" |
 | 5 | "A/B testing" listed under "what we handle" doesn't exist | "A/B testing and optimization" | No A/B testing capability exists in the platform. | Remove "A/B testing" or replace with "message optimization" |
 | 6 | "No questions asked" contradicts the defined conditions | "no questions asked" (Layer 1 guarantee) | Layer 1 has specific conditions (5 QLE). | Remove "no questions asked" or move to verbal-only |
@@ -41,7 +41,7 @@ Agents: 5 (capabilities gap analyst, contractor objection handler, spouse/bookke
 | 1 | "I've been burned by agencies before. Prove you're different." | **Deal-killer** | Weak — no social proof | A specific contractor story with dollar amounts. Until you have one: live demo where they text the number and see the AI respond. |
 | 2 | "What if the AI says something wrong to my customer?" | **Deal-killer** | Partial — guardrails mentioned but no liability statement | Demo the AI failing gracefully. Show the takeover button. Explain Week 2 review window. |
 | 3 | "What does near-instant actually mean at 10pm?" | **Speed-bump → deal-killer** | Hedged — interim quiet hours language | Give a straight answer: "9pm cutoff, they hear from you at 10am. We're working on removing that restriction." |
-| 4 | "The guarantee has escape hatches" | **Speed-bump** | Inconsistent — "you confirm" is subjective | Change Layer 2 to objective log-based attribution only |
+| 4 | "The guarantee has escape hatches" | **Speed-bump** | ~~Inconsistent — "you confirm" is subjective~~ **Fixed (CON-05):** Layer 2 attribution is now fully log-based | Done — no subjective confirmation required |
 | 5 | "I already have a number my customers know" | **Speed-bump** | Not addressed | Explain parallel operation or call forwarding |
 | 6 | "I don't get 15 leads a month" | **Speed-bump** | Well handled — volume condition | Sharpen the "below 8" clause with a defined outcome |
 | 7 | "Why not GHL for $50?" | **Speed-bump** | Adequate — "done for you" | Rep must deliver this confidently |
@@ -57,7 +57,7 @@ Agents: 5 (capabilities gap analyst, contractor objection handler, spouse/bookke
 | Concern | Would push to cancel? | Fix |
 |---------|----------------------|-----|
 | ROI numbers are modeled, not measured | Maybe | **Win notification SMS** (now built) — sends concrete "recovered [Lead] — $X" when contractor marks won |
-| 90-day guarantee requires subjective confirmation | Maybe | Make attribution objective or fully generous |
+| 90-day guarantee requires subjective confirmation | ~~Maybe~~ **Resolved** | ~~Make attribution objective or fully generous~~ **Done (CON-05):** attribution is now fully log-based |
 | "No message limits" has a vague review clause | No, but wants clarity | Define the threshold or remove the clause |
 | Quarterly campaigns contact old customers without approval | Maybe | Add contact-level exclusion option |
 | Voice AI has no spending cap | No, but wants cap | Add monthly cap or threshold alert |
@@ -99,8 +99,8 @@ Agents: 5 (capabilities gap analyst, contractor objection handler, spouse/bookke
 
 ### Top 3 Tasks to Automate Next
 
-1. **Bi-weekly report follow-up text** — currently manual, should auto-send after report delivery
-2. **KB gap contractor outreach** — "Send question to owner" button that fires formatted SMS
+1. ~~**Bi-weekly report follow-up text** — currently manual, should auto-send after report delivery~~ **Done (CON-10)**
+2. ~~**KB gap contractor outreach** — "Send question to owner" button that fires formatted SMS~~ **Done (CON-11)**
 3. **Guarantee at-risk proactive alert** — auto-text contractor when approaching 30/90-day mark
 
 ---
@@ -113,6 +113,12 @@ Agents: 5 (capabilities gap analyst, contractor objection handler, spouse/bookke
 | "Your Account Manager" card in client portal | Done |
 | Auto-trigger estimate follow-up on CSV import (72h, not 25-day wait) | Done |
 | Typecheck + tests | Pass |
+| CON-02: Estimate nudge shortened to 48 hours (was 5 days) | Done |
+| CON-03: Confirmed revenue field on leads (actual job value on win) | Done |
+| CON-05: Layer 2 guarantee attribution is now fully log-based (no subjective confirmation) | Done |
+| CON-10: Bi-weekly report auto-follow-up SMS to contractor | Done |
+| CON-11: KB gap "Ask Contractor" button (sends SMS, sets gap to in_progress) | Done |
+| CON-01: Google Calendar two-way sync (OAuth, bidirectional sync, slot blocking, 15-min cron) | Done |
 
 ---
 
@@ -133,9 +139,9 @@ Agents: 5 (capabilities gap analyst, contractor objection handler, spouse/bookke
 
 ### Before first client goes live (code, 1-2 sessions)
 
-11. Google Calendar two-way sync (most-requested missing feature)
-12. Bi-weekly report auto-follow-up SMS
-13. KB gap "ask contractor" button
+11. ~~Google Calendar two-way sync (most-requested missing feature)~~ **Done (CON-01)**
+12. ~~Bi-weekly report auto-follow-up SMS~~ **Done (CON-10)**
+13. ~~KB gap &quot;ask contractor&quot; button~~ **Done (CON-11)**
 14. Guarantee at-risk proactive alert
 
 ### Before client 5 (operational)

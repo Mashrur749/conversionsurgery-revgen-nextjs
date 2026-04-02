@@ -12,6 +12,7 @@ interface ClientDetailTabsProps {
   teamMemberCount: number;
   /* Tab 1: Overview */
   onboardingChecklist: ReactNode | null;
+  kbQuestionnaire: ReactNode | null;
   roiDashboard: ReactNode;
   usageCard: ReactNode;
   dayOneActivationCard: ReactNode;
@@ -21,6 +22,7 @@ interface ClientDetailTabsProps {
   onboardingQualityPanel: ReactNode;
   reminderRoutingPanel: ReactNode;
   embedWidgetCard: ReactNode;
+  calendarIntegrationCard: ReactNode;
   /* Tab 3: Team & Billing */
   clientInfoCard: ReactNode;
   phoneNumberCard: ReactNode;
@@ -39,6 +41,7 @@ function isValidTab(value: string | null): value is TabValue {
 export function ClientDetailTabs({
   teamMemberCount,
   onboardingChecklist,
+  kbQuestionnaire,
   roiDashboard,
   usageCard,
   dayOneActivationCard,
@@ -47,6 +50,7 @@ export function ClientDetailTabs({
   onboardingQualityPanel,
   reminderRoutingPanel,
   embedWidgetCard,
+  calendarIntegrationCard,
   clientInfoCard,
   phoneNumberCard,
   teamMembersCard,
@@ -94,6 +98,7 @@ export function ClientDetailTabs({
 
       <TabsContent value="overview" className="space-y-6 mt-4">
         {onboardingChecklist}
+        {kbQuestionnaire}
         {roiDashboard}
         {usageCard}
         {dayOneActivationCard}
@@ -105,6 +110,7 @@ export function ClientDetailTabs({
         {onboardingQualityPanel}
         {reminderRoutingPanel}
         {embedWidgetCard}
+        {calendarIntegrationCard}
       </TabsContent>
 
       <TabsContent value="team-billing" className="space-y-6 mt-4">

@@ -121,6 +121,7 @@ export default function KnowledgeGapQueue({ clientId, entries }: Props) {
   const [bulkStatus, setBulkStatus] = useState<GapStatus>('in_progress');
   const [activeGap, setActiveGap] = useState<QueueRow | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [askingContractor, setAskingContractor] = useState<Set<string>>(new Set());
 
   const [editStatus, setEditStatus] = useState<GapStatus>('new');
   const [editOwnerPersonId, setEditOwnerPersonId] = useState<string>('unassigned');
@@ -234,6 +235,30 @@ export default function KnowledgeGapQueue({ clientId, entries }: Props) {
         ? (prev.includes(id) ? prev : [...prev, id])
         : prev.filter((existing) => existing !== id)
     );
+  }
+
+  async function askContractor(gapId: string) {
+    setAskingContractor((prev) => new Set(prev).add(gapId));
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/admin/clients/${clientId}/knowledge/gaps/${gapId}/ask`,
+        { method: 'POST' }
+      );
+      if (!res.ok) {
+        const detail = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(detail?.error ?? `Request failed (${res.status})`);
+      }
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send SMS to contractor');
+    } finally {
+      setAskingContractor((prev) => {
+        const next = new Set(prev);
+        next.delete(gapId);
+        return next;
+      });
+    }
   }
 
   return (
@@ -354,9 +379,25 @@ export default function KnowledgeGapQueue({ clientId, entries }: Props) {
                         {row.isStale && <p className="text-xs text-red-700">stale</p>}
                       </td>
                       <td className="px-3 py-3 align-top text-right">
-                        <Button size="sm" variant="outline" onClick={() => openEditor(row)}>
-                          Manage
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          {row.status === 'in_progress' ? (
+                            <Button size="sm" variant="outline" disabled>
+                              Sent &mdash; Waiting for reply
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={askingContractor.has(row.id)}
+                              onClick={() => void askContractor(row.id)}
+                            >
+                              {askingContractor.has(row.id) ? 'Sending...' : 'Ask Contractor'}
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => openEditor(row)}>
+                            Manage
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

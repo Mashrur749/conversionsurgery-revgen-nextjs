@@ -245,4 +245,4 @@ export async function fullSync(clientId: string): Promise<{
 }
 
 // Re-export provider functions
-export { getGoogleAuthUrl, handleGoogleCallback } from './google-calendar';
+export { getGoogleAuthUrl, handleGoogleCallback, parseOAuthState } from './google-calendar';

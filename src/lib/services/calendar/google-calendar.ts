@@ -10,8 +10,9 @@ const oauth2Client = new google.auth.OAuth2(
 
 /**
  * Get auth URL for Google Calendar OAuth
+ * @param origin - 'admin' or 'portal' to redirect back to the correct UI after OAuth
  */
-export function getGoogleAuthUrl(clientId: string): string {
+export function getGoogleAuthUrl(clientId: string, origin: 'admin' | 'portal' = 'admin'): string {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
@@ -19,8 +20,23 @@ export function getGoogleAuthUrl(clientId: string): string {
       'https://www.googleapis.com/auth/calendar',
       'https://www.googleapis.com/auth/calendar.events',
     ],
-    state: clientId,
+    state: `${clientId}:${origin}`,
   });
+}
+
+/**
+ * Parse the OAuth state parameter into clientId and origin
+ */
+export function parseOAuthState(state: string): { clientId: string; origin: 'admin' | 'portal' } {
+  const separatorIndex = state.lastIndexOf(':');
+  if (separatorIndex === -1 || !['admin', 'portal'].includes(state.slice(separatorIndex + 1))) {
+    // Backwards-compatible: state is just the clientId (legacy admin flow)
+    return { clientId: state, origin: 'admin' };
+  }
+  return {
+    clientId: state.slice(0, separatorIndex),
+    origin: state.slice(separatorIndex + 1) as 'admin' | 'portal',
+  };
 }
 
 /**

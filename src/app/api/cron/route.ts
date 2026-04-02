@@ -12,6 +12,8 @@ import { verifyCronSecret } from '@/lib/utils/cron';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { alertOperator } from '@/lib/services/operator-alerts';
+import { runEngagementHealthCheck } from '@/lib/services/engagement-health';
+import { runDormantReengagement } from '@/lib/automations/dormant-reengagement';
 
 // Helper to dispatch a cron sub-endpoint via fetch.
 // Appends to failedJobs on non-2xx status or fetch exception so the caller
@@ -67,6 +69,7 @@ export async function POST(request: NextRequest) {
     // ── Every 5 minutes ──────────────────────────────────────
     results.scheduled = await dispatch(baseUrl, '/api/cron/process-scheduled', cronSecret!, 'GET', failedJobs);
     results.missedCalls = await dispatch(baseUrl, '/api/cron/check-missed-calls', cronSecret!, 'GET', failedJobs);
+    results.escalationRenotify = await dispatch(baseUrl, '/api/cron/escalation-renotify', cronSecret!, 'POST', failedJobs);
 
     // ── Every 30 minutes (minute 0-4 or 30-34) ──────────────
     if (minute < 5 || (minute >= 30 && minute < 35)) {
@@ -256,6 +259,29 @@ export async function POST(request: NextRequest) {
         'GET',
         failedJobs
       );
+
+      // GAP-03: engagement decay detection — runs weekly on Mondays
+      try {
+        const engagementSummary = await runEngagementHealthCheck();
+        results.engagementHealthCheck = { success: true, ...engagementSummary };
+      } catch (error) {
+        logSanitizedConsoleError('[Cron] Engagement health check error:', error);
+        results.engagementHealthCheck = { error: 'Failed' };
+        failedJobs.push('engagement-health-check');
+      }
+    }
+
+    // ── Weekly Wednesday 10am UTC ─────────────────────────────
+    if (day === 3 && hour === 10 && minute < 10) {
+      // GAP-03: 6-month dormant re-engagement — runs weekly on Wednesdays
+      try {
+        const dormantResult = await runDormantReengagement();
+        results.dormantReengagement = { success: true, ...dormantResult };
+      } catch (error) {
+        logSanitizedConsoleError('[Cron] Dormant re-engagement error:', error);
+        results.dormantReengagement = { error: 'Failed' };
+        failedJobs.push('dormant-reengagement');
+      }
     }
 
     // ── Operator alert on any dispatch failure ────────────────

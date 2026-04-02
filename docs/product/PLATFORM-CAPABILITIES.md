@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-01 (Wave 1-2)
+Last updated: 2026-04-01 (Wave 7)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -63,7 +63,7 @@ Triggered when owner flags an estimate as sent (SMS keyword `EST`, dashboard act
 | 3 | Day 10, 10am | Circling back, still available |
 | 4 | Day 14, 10am | Last check-in, no hard feelings |
 
-**Fallback nudge:** Cron identifies stale leads (5+ days, no estimate sequence) and prompts the owner: "Did you send an estimate to [name]? Reply YES to start follow-up."
+**Fallback nudge:** Cron identifies stale leads (48+ hours, no estimate sequence) and prompts the owner: "Did you send an estimate to [name]? Reply YES to start follow-up."
 
 Cancellation: new sequence auto-cancels prior unsent messages for the same lead.
 
@@ -74,6 +74,22 @@ Cancellation: new sequence auto-cancels prior unsent messages for the same lead.
 - **Contractor reminder** to business owner (via reminder routing policy — configurable primary/fallback chain)
 - Sent through compliance gateway with quiet-hours queueing
 - **Email fallback:** if compliance blocks all SMS recipients for a booking notification (e.g., quiet hours, opt-out), the system falls back to email notification so the contractor is never left uninformed
+
+### Google Calendar Two-Way Sync
+
+Contractors can connect their Google Calendar so platform appointments and external calendar events stay in sync automatically.
+
+| Capability | Detail |
+|------------|--------|
+| **OAuth connection** | Contractor connects via Google OAuth (read/write scope). Tokens stored securely and refreshed automatically. |
+| **Bidirectional sync** | Platform appointments push to Google Calendar as events. Google Calendar events pull into the platform and block booking slots. |
+| **Availability checking** | `getAvailableSlots()` checks both the `appointments` table and `calendar_events` table — Google Calendar events prevent double-booking. |
+| **Auto-sync cadence** | Cron job (`/api/cron/calendar-sync`) runs every 15 minutes, syncing all active integrations. |
+| **Event lifecycle** | Create, update, and delete operations propagate both directions. |
+| **Admin connection** | Operator can connect/disconnect a client&apos;s calendar from the client detail page (Configuration tab). |
+| **Portal connection** | Contractor can connect/disconnect from Settings &gt; Features in the client portal. |
+| **Feature toggle** | Controlled by the `calendarSyncEnabled` per-client feature flag. |
+| **Schema** | `calendar_integrations` (OAuth tokens, sync state) and `calendar_events` (events with external IDs for sync). |
 
 ### No-Show Recovery
 
@@ -117,6 +133,16 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 - Randomized send timing (10am-2pm weekdays, avoids Monday morning/Friday afternoon)
 - Follow-up 20-30 days later
 - After 2 attempts with no response, lead transitions to `dormant`
+
+### Dormant Re-Engagement (6-Month Stage)
+
+Follow-on stage after standard win-back for leads that have been dormant 6+ months.
+
+- Targets leads with `status=dormant` and 180+ days since last activity
+- Fresh AI-personalized outreach — acknowledges the time gap, low-pressure tone
+- Single-touch attempt with no additional follow-up
+- Runs weekly on Wednesdays via `engagement-health-check` and `dormant-reengagement` cron jobs
+- Prevents permanent loss of re-contact opportunity once the initial win-back pool is exhausted
 
 ---
 
@@ -220,7 +246,7 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 
 | Page | What it shows |
 |------|--------------|
-| **Dashboard** | Lead summary, recent activity, help articles. New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. |
+| **Dashboard** | Lead summary, recent activity, help articles, and **Revenue Recovered card** (shows confirmed revenue attributed to the platform over rolling 30/60/90-day windows). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. |
 | **Conversations** | All leads with message history, mode badges, action-required highlights |
 | **Revenue** | 30-day stats, pipeline value, speed-to-lead metrics, service breakdown |
 | **Knowledge Base** | Business info the AI uses — editable by owner |
@@ -294,6 +320,7 @@ Auto-generated and delivered to clients every 2 weeks:
 - Estimates followed up, appointments booked
 - Revenue impact estimate
 - **"Without Us" model:** low/base/high directional estimate of what would have happened without the system (with disclaimer)
+- **Confirmed Won revenue:** reports show &quot;Confirmed Won: $X&quot; alongside pipeline estimates, based on contractor-entered actual job values when marking leads &quot;won&quot;
 - Versioned output — shows `ready` or `insufficient_data` (never fabricates)
 
 ### Delivery Infrastructure
@@ -301,6 +328,7 @@ Auto-generated and delivered to clients every 2 weeks:
 - Report delivery lifecycle: generated &rarr; queued &rarr; sent &rarr; failed
 - Retry cron with exponential backoff
 - Terminal failure alerts to admin
+- **Auto-follow-up SMS:** after report delivery, the system auto-sends an SMS to the contractor via the agency number: &quot;[Business Name] &mdash; your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.&quot; Fire-and-forget; does not affect delivery state.
 - Client portal download link
 
 ### Funnel Tracking
@@ -371,6 +399,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 | **30-Day Proof** | First 30 days | 5 qualified lead engagements | Refund first month |
 | **90-Day Recovery** | Next 90 days | 1 attributed project opportunity | Refund most recent month |
 
+- **Layer 2 attribution is fully log-based:** attribution requires platform logs showing the system engaged the lead through automated response or follow-up before the opportunity progressed. No subjective contractor confirmation is required.
 - Volume condition: if &lt;15 leads/month, windows extend proportionally
 - State machine with automatic daily evaluation via cron
 - Metrics tracked: qualified engagements, attributed opportunities
@@ -499,7 +528,7 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 
 ### Cron Orchestrator
 
-28 scheduled jobs covering: message processing (5 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
+31 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
 
 ### Agency Communication
 
@@ -517,7 +546,27 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 - Resolution requires linking to a KB entry + note (&ge;10 chars)
 - High-priority items (score &ge;8) require reviewer verification
 - **Auto-reopen:** if a resolved gap recurs (AI still can&apos;t answer), it reopens automatically
+- **&quot;Ask Contractor&quot; button:** each gap card has a button that sends an SMS to the contractor: &quot;[Business Name] &mdash; a customer asked about [question]. How should we answer this?&quot; Sets the gap to `in_progress`. API: `POST /api/admin/clients/[id]/knowledge/gaps/[gapId]/ask`.
 - Stale gap alerts via daily cron email to agency owners
+- **KB Intake Questionnaire:** structured onboarding questionnaire on the admin client detail page (Knowledge tab) that pre-populates the knowledge base at client setup — reduces cold-start AI deferrals in Weeks 1-2. Answers are converted to KB entries automatically.
+
+### Operator Triage Dashboard
+
+Unified cross-client triage view at `/admin/triage` (Optimization group in admin nav).
+
+- Surfaces the highest-priority action items across all clients in a single prioritized list: open escalations (P1 first), knowledge gaps past due, onboarding SLA breaches, stale guarantee states, failed report deliveries
+- Designed as a daily starting point for the solo operator — open this before the full daily checklist
+- Replaces the need to open each client separately to find what needs attention
+- Accessible via admin nav: Optimization &rarr; Triage
+
+### Engagement Health Monitoring
+
+Automated detection of per-client engagement decay before it becomes visible churn risk.
+
+- `engagement-health-check` cron (Mondays) evaluates each active client: response rates, AI deferral frequency, escalation volume, and lead activity trends
+- Flags clients where engagement has declined for 3+ consecutive weeks — operator receives an alert with the specific health signal
+- Feeds into the Triage dashboard so declining clients surface automatically
+- `dormant-reengagement` cron (Wednesdays) re-contacts leads eligible for 6-month follow-up (see Section 2: Dormant Re-Engagement)
 
 ---
 
