@@ -1,7 +1,7 @@
 # ConversionSurgery — Client-Facing Approved Copy
 
-Version 1.3
-Date: February 23, 2026
+Version 1.4
+Date: April 1, 2026
 Status: Approved for use in proposals, agreements, emails, leave-behinds, and website copy
 
 ---
@@ -292,6 +292,6 @@ The following are approved written answers for the questions prospects ask most 
 
 ---
 
-_ConversionSurgery — Client-Facing Approved Copy v1.3_
+_ConversionSurgery — Client-Facing Approved Copy v1.4_
 _Source: Grand Slam Offer Architecture v2.1 + Quality Review_
-_February 2026_
+_April 2026_

@@ -317,5 +317,56 @@ Get the CRTC inbound-reply exemption legal opinion before the second client conv
 
 ---
 
-_ConversionSurgery Sales Objection Playbook v1.0_
+## Section 12: Outreach Scripts
+
+Use these angles for cold outreach (SMS, email, LinkedIn DM). Pick the angle that matches the prospect's profile from pre-qualification research.
+
+### Angle A — Quote Reactivation (Default)
+
+**Best for:** Any contractor with an established business (3+ years). Lowest objection surface.
+
+> **Cold SMS/LinkedIn opener:**
+> "Hey [Name] — quick question. How many quotes from the last 6 months are sitting in your phone with no response? Most renovation contractors I talk to have 15-30 dead quotes. We built a system that texts those people back automatically with personalized follow-up — and typically 20-30% respond. Would it be worth a 15-minute call to see if it makes sense for [Business Name]?"
+
+> **Email subject:** "Your outstanding quotes"
+> **Email body:**
+> "[Name], I noticed [Business Name] does [kitchen/bathroom/basement] renovations in [City]. Quick question — how many estimates from the last 6 months never got a response? Most contractors in your space have $200K-500K in dead quotes sitting in their phone. We recover those. 15 minutes to show you how. Worth a call?"
+
+**Conversation pivot (if they respond):** "What's your typical project value? And roughly how many quotes would you say went cold in the last 6 months?" Then do the math live: [quotes] x [value] x 15% recovery = pipeline recovered.
+
+### Angle B — Referral-Heavy Contractor
+
+**Best for:** Contractors who say "I get my work from referrals, I don't have a lead problem."
+
+> **Opener:**
+> "Hey [Name] — you probably don't have a lead problem. Most established contractors in [City] don't. But here's what I keep hearing: estimates go out, the homeowner goes quiet for 3 weeks, and nobody follows up because you're on a job site. The estimate follow-up alone — not lead gen — typically recovers 1-2 projects per quarter. Plus automated review requests after every job. Would a 15-minute call make sense?"
+
+**Conversation pivot:** "How many Google reviews do you have right now? And how many estimates went out last month that you never heard back on?"
+
+### Angle C — Speed-to-Lead
+
+**Best for:** Contractors running Google Ads or getting web form leads. Lead volume is high, response time is slow.
+
+> **Opener:**
+> "Hey [Name] — saw [Business Name] is running Google Ads for [service]. Quick question: when a lead fills out your form at 8 PM on a Tuesday, how fast do they hear back? Industry data says the first contractor to respond wins the job 78% of the time. We respond in under 10 seconds, 24/7. Worth a 15-minute call?"
+
+### Angle D — Seasonal Ramp
+
+**Best for:** March-April outreach when contractors are entering busy season and can't keep up with inquiries.
+
+> **Opener:**
+> "Hey [Name] — spring is here and renovation inquiries are about to spike. Last year, most contractors in [City] missed 30-40% of inbound calls during peak season because they were on job sites. We make sure every call, text, and form fill gets an instant response — even when you're elbow-deep in a demo. 15 minutes to see if it fits?"
+
+### Pre-Call Qualification (run before every sales call)
+
+Before the call, gather:
+1. **Lead volume**: "How many inbound inquiries do you get per month?" (target: 10+)
+2. **Outstanding quotes**: "How many estimates are sitting with no response?" (target: 5+)
+3. **Google reviews**: Check their Google Business Profile review count vs. top 3 competitors
+4. **Current tools**: "Do you use Jobber, ServiceTitan, or anything for lead management?"
+5. **Guarantee window**: If below 15 leads/month, calculate the adjusted guarantee window and state it explicitly during the call: "Your guarantee window would be X days, not 30, based on your lead volume."
+
+---
+
+_ConversionSurgery Sales Objection Playbook v1.1_
 _April 2026 — Internal use only, not for client distribution_
