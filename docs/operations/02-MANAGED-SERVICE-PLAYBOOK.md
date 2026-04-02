@@ -494,3 +494,76 @@ Two distinct mechanisms with different scopes. Use the right one.
 
 Script:
 > &quot;If someone texts STOP, we stop immediately &mdash; that&apos;s automatic. If you need someone permanently removed &mdash; say a difficult customer situation &mdash; let me know and I&apos;ll add them to the do-not-contact list. That blocks everything, even transactional texts.&quot;
+
+---
+
+## 20. What the Contractor Experiences (End-to-End Journey)
+
+Understand this before your first sales call. This is what you are promising.
+
+**Day 0 &mdash; Signing:**
+Contractor signs the service agreement. You create their account, assign an Alberta phone number. They see an onboarding dashboard with 3 steps: phone (done), AI setup, and old quotes.
+
+**Day 1 &mdash; Onboarding call (30 min):**
+You fill their KB, they call their own number and watch the missed-call text arrive in 3-5 seconds. This is the &ldquo;holy shit&rdquo; moment. You import their old quotes. They leave the call knowing the system is live.
+
+**Day 1-2 &mdash; Revenue Leak Audit delivered:**
+They receive a one-page assessment showing where money is leaking: slow response times, dead quotes, review gap vs competitors. This is the first proof the service is personalized, not generic.
+
+**Day 2-5 &mdash; AI starts responding to real leads:**
+The AI is in Smart Assist mode (5-min delay). They get a text when the AI drafts a response. They can review it, edit it, or let it auto-send after 5 minutes. Most contractors glance at the first few and then let it run.
+
+**Week 1 &mdash; Old quotes come alive:**
+Their imported dead quotes start getting re-engaged. They get a text: &ldquo;[Lead name] responded to your follow-up.&rdquo; One or two responses in Week 1 validates the entire service. This is the retention moment.
+
+**Week 2 &mdash; KB sprint:**
+The AI encounters questions it can&apos;t answer. They get SMS nudges: &ldquo;A customer asked about [topic] and the AI didn&apos;t know. Add the answer here: [link].&rdquo; They tap the link, type the answer, done. The AI improves in real time.
+
+**Week 3+ &mdash; Autonomous:**
+The AI handles conversations end to end. The contractor&apos;s phone buzzes only when: (a) a lead needs human attention (escalation), (b) a job needs to be marked won/lost (weekly nudge), or (c) a Google review needs their approval. Time commitment drops to under 15 min/week.
+
+**Bi-weekly &mdash; Performance report:**
+Every 2 weeks they get an email report showing: leads captured, response times, estimates followed up, revenue impact. The &ldquo;Without Us&rdquo; model shows what they would have lost. An auto-SMS follows up.
+
+**Quarterly &mdash; Growth Blitz:**
+You launch a proactive campaign: dormant lead reactivation (Q1), review push (Q2), pipeline builder (Q3), strategy review (Q4). Results reported within 2 weeks.
+
+**Ongoing &mdash; What they see daily:**
+Their portal dashboard shows: Revenue Recovered card, Since Last Visit activity summary, action-required count. When everything is working, the dashboard shows green: &ldquo;All caught up.&rdquo; When something needs attention, it shows a count with a clear CTA.
+
+---
+
+## 21. What Can Go Wrong (Honest Risk Table)
+
+Know these before you sell. Each risk has a built-in mitigation, but you must understand the failure mode so you never oversell.
+
+| Risk | Likelihood | What happens | What you do | How bad is it |
+|------|:----------:|--------------|-------------|:-------------:|
+| **AI gives wrong answer to a homeowner** | Medium (Week 1-2) | Lead gets incorrect info about services, pricing, or availability | Smart Assist catches it before sending (Week 2). Fix KB entry. If it got through, the operator correction loop fixes it same-day. | Low &mdash; fixable in minutes, AI learns immediately |
+| **AI is too generic / defers too much** | High (Week 1) | Lead gets &ldquo;I&apos;ll have someone get back to you&rdquo; on basic questions | KB is thin. Fill more entries from the gap queue. This is normal and expected in Week 1 &mdash; tell the contractor upfront. | Low &mdash; expected cold-start, resolves by Week 2-3 |
+| **Double-booking an appointment** | Low | AI books into a time slot the contractor blocked on Google Calendar | Calendar sync checks both appointments + Google Calendar events. If sync token expired (>60 days), sync fails silently. Monitor `consecutiveErrors`. | Medium &mdash; embarrassing but recoverable. Reconnect calendar. |
+| **Sending a message during quiet hours** | Very Low | Lead gets an SMS between 9 PM - 10 AM | STRICT mode prevents this. Messages queue until 10 AM. The system will NOT send during quiet hours unless the INBOUND_REPLY_ALLOWED mode is enabled (it is not). | Very Low &mdash; system prevents it |
+| **Contractor never flags estimates** | High | Estimate follow-up never fires, the highest-value automation is silent | 48-hour nudge fires automatically. Probable wins nudge catches outcomes. Portal has &ldquo;Mark Estimate Sent&rdquo; button. Explain the mechanism during onboarding. | Medium &mdash; automation depends on this habit. Nudges help but don&apos;t guarantee it. |
+| **Contractor never marks jobs won** | High | Revenue Recovered shows $0, reports look weak, guarantee at risk | Probable wins nudge (weekly YES/NO SMS). Portal has &ldquo;Mark Won&rdquo; button. Pre-populate revenue from AI-extracted context. | Medium &mdash; retention risk if $0 shows for 60+ days |
+| **Lead volume is very low (&lt;8/month)** | Depends on client | System works but results are thin. Guarantee windows extend. | Disclose adjusted windows during sales. Lead with dormant reactivation, not speed-to-lead. | Low &mdash; the system works, just slower |
+| **Twilio webhook goes down** | Very Low | Inbound SMS stops processing, leads go unanswered | Operator gets SMS alert from reliability cron. Check `/admin/reliability`. Redeploy or fix webhook URL. | High if undetected &mdash; but alerting is built |
+| **Anthropic API goes down** | Very Low | AI can&apos;t generate responses, conversations stall | AI kill switch in admin. Missed-call text-back still fires (template-based, no AI). Resume when API recovers. | Medium &mdash; temporary, manual handling needed |
+| **Contractor&apos;s Google review gets a bad AI-drafted response** | Low | Inappropriate or inaccurate response posted to Google Business Profile | Every response requires human approval (admin or contractor portal). Operator reviews negative-review drafts. Responses cannot auto-post. | Low &mdash; gated by approval. If posted, can be edited on Google. |
+
+**The honest summary for your own conscience:** The worst realistic scenario is the AI giving a generic or slightly wrong answer to a homeowner in Week 1-2, which Smart Assist catches before sending. The worst unlikely scenario is a stale calendar sync causing a double-booking. Neither is catastrophic. The system is built defensively &mdash; it defers rather than guesses, it escalates rather than wings it, and it has human checkpoints at every critical moment.
+
+---
+
+## 22. Honest Boundaries (What This System Does NOT Do)
+
+Know these so you never overpromise in a sales conversation.
+
+| What contractors might expect | What actually happens | How to frame it |
+|-------------------------------|----------------------|-----------------|
+| &ldquo;24/7 instant response&rdquo; | Messages queue during quiet hours (9 PM - 10 AM). Response at 10 AM. | &ldquo;Monitors 24/7, responds during compliant hours. Your lead gets a response before any competitor &mdash; first thing in the morning.&rdquo; |
+| &ldquo;It replaces my receptionist&rdquo; | Handles SMS/forms. Does not answer live phone calls unless Voice AI add-on is enabled. | &ldquo;It handles text-based inquiries. For calls, we offer Voice AI as an add-on &mdash; or missed calls get an instant text-back.&rdquo; |
+| &ldquo;It does my marketing&rdquo; | No lead generation. No Google Ads, SEO, social media. It converts leads you already get. | &ldquo;We handle what happens after someone reaches out. Getting them to reach out is your marketing &mdash; that&apos;s a different service.&rdquo; |
+| &ldquo;AI will know everything about my business&rdquo; | AI knows what&apos;s in the KB. Week 1 will have gaps. | &ldquo;The AI starts with what you tell it on the onboarding call. It gets smarter every week as we fill gaps. By Week 3 it handles 90%+ of questions.&rdquo; |
+| &ldquo;I never have to do anything&rdquo; | Contractor must: flag estimates, mark wins/losses, respond to escalations, approve review responses occasionally. Under 15 min/week. | &ldquo;You do 4 things: flag when you send a quote (one text), mark when you win or lose a job (one tap), respond when the AI escalates something to you, and approve review responses. Total: under 15 minutes a week.&rdquo; |
+| &ldquo;It integrates with Jobber&rdquo; | Webhook fires on lead status change. Contractor can connect via Zapier. No native integration. | &ldquo;We fire a webhook when leads change status. If you use Zapier, you can connect it to Jobber in 5 minutes. We don&apos;t have a native Jobber plugin yet.&rdquo; |
+| &ldquo;Guaranteed results&rdquo; | Guarantee is 5 engagements in 30 days (Layer 1) and 1 attributed project in 90 days (Layer 2). Both are platform-verified, not subjective. | &ldquo;The guarantee is specific: 5 real lead conversations in 30 days, or your first month is free. One project the system helped you win in 90 days, or your most recent month is refunded. Both are verified from our logs, not my opinion.&rdquo; |
