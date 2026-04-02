@@ -166,6 +166,7 @@ Reference: `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` for detailed process
 ### Before the sales call
 
 - [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; scripts for the 10 most common objections + Section 12 for pitch angles and outreach scripts
+- [ ] Open `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` &mdash; fill in the prospect&apos;s outstanding quotes and average job value before the call so the recoverable pipeline number is ready when price sensitivity comes up (Objection 8)
 - [ ] Prepare the demo client (`npm run db:seed -- --demo`) so you can show the system live
   - [ ] Assign a real phone number to the demo client (verify Alberta 403/780 area code)
   - [ ] Confirm Twilio webhooks are pointed at production for the demo number
@@ -221,6 +222,7 @@ Week 2 (KB sprint):
   - System auto-sends follow-up SMS to contractor after delivery
 - [ ] Win-back cron starts picking up imported quotes (if 25+ days old)
   - Imported quotes with `estimate_sent` status also get auto-triggered follow-up within 72 hours (CON-07)
+- [ ] Verify flow metrics are populating: check `templateMetricsDaily.leadsResponded` for any estimate or win-back flows triggered this week. If the count stays at 0 after the first inbound reply, confirm the SMS webhook is routing correctly and the flow execution row is marked `active`.
 - [ ] Text contractor recap: &quot;Week 2 update &mdash; [X] leads handled, [Y] quotes reactivated, [Z] appointments booked&quot;
 
 Week 3+:

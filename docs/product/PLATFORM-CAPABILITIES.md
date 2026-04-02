@@ -403,6 +403,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 
 - Response time averages, message volumes, AI response counts
 - Template performance metrics (which messages get replies)
+- **Flow reply-rate tracking:** when an inbound SMS arrives for a lead with an active flow execution, the system records the reply in `templateMetricsDaily.leadsResponded` and `templateStepMetrics`. Response time (minutes since flow start) is also captured. This means estimate follow-up, win-back, and all flow-based reply rates populate automatically from real conversations. Fire-and-forget — never blocks message processing.
 - Review collection and sentiment trends
 
 ---
@@ -470,6 +471,8 @@ Every funnel event is automatically linked to the agent decision that contribute
 | Business number live | 24 business hours |
 | Revenue Leak Audit delivered | 48 business hours |
 | Call-your-own-number proof | Day 1 |
+
+**Service agreement:** a fill-in-the-blanks contract template is provided at `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` (11 sections, using clause language from `docs/legal/02-LEGAL-CLAUSE-REDLINES.md`). The signed agreement must be received before platform setup begins.
 
 - SLA cron monitors and creates alerts for overdue milestones
 - Activity trail logs all events (draft, delivery, completion)

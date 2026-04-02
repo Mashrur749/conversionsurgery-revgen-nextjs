@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -1628,6 +1628,37 @@ Expected:
 - `consecutive_errors <= 3` AND sync stale (&gt;30 min) AND `last_error` set: yellow warning shown.
 - No banner when `consecutive_errors = 0` and sync is recent.
 - Portal OAuth flow redirects back to `/client/settings` on success.
+
+---
+
+### Step 59: Flow reply-rate tracking
+
+Verifies that inbound SMS replies from leads with an active flow execution are recorded in template metrics.
+
+1. Create a test lead and trigger an estimate follow-up (or win-back) flow via the admin UI or API so a flow execution row exists for that lead with `status=active`.
+2. Send an inbound SMS from the lead&apos;s number (Dev Phone #2) to the business line (#1).
+3. After the message is processed, query the metrics tables:
+
+```bash
+# Check templateMetricsDaily for the day
+# SELECT * FROM template_metrics_daily WHERE date = CURRENT_DATE;
+
+# Check templateStepMetrics for the flow step
+# SELECT * FROM template_step_metrics WHERE template_id = '<templateId>';
+```
+
+4. Verify `leadsResponded` incremented on the `templateMetricsDaily` row for today.
+5. Verify a `templateStepMetrics` row exists (or was updated) with `responsesReceived >= 1`.
+6. Verify `avgResponseTimeMinutes` reflects the time since the flow started (non-zero).
+7. Confirm message processing was not delayed — the reply handling is fire-and-forget.
+
+Expected:
+
+- `templateMetricsDaily.leadsResponded` increments when inbound SMS is received during an active flow.
+- `templateStepMetrics` records the response against the matching step.
+- `avgResponseTimeMinutes` is populated with minutes since the flow execution started.
+- No observable delay in inbound SMS processing.
+- No metrics recorded if the lead has no active flow execution.
 
 ---
 
