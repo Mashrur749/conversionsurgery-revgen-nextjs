@@ -52,6 +52,33 @@ The analyze-and-decide node always runs on fast tier (structured classification 
 
 ## 2. Follow-Up Automation (Never Drop a Lead)
 
+### KB Empty Nudge (48-Hour)
+
+Targets new clients who have not populated their knowledge base within the first 48-72 hours.
+
+- Daily cron at 10am UTC, fires once per client
+- Condition: client created 48-72 hours ago and has fewer than 3 KB entries
+- Message to contractor: &ldquo;Your AI needs your business info. Takes 10 min: [link]&rdquo;
+- Deduped via audit_log — only one nudge per client regardless of KB entry count
+
+### Day 3 Check-in SMS
+
+Automated check-in to the contractor shortly after signup with real activity data.
+
+- Daily cron at 7am UTC
+- Fires at 66-78 hours post-signup
+- Message includes live lead count and conversation count since signup
+- Deduped via audit_log
+
+### KB Gap Auto-Notify
+
+When the AI encounters questions it cannot answer, the contractor is automatically notified.
+
+- Daily cron at 10am UTC
+- Sends contractor SMS for each new unanswered question
+- Max 2 notifications per client per day
+- Deduped per gap via audit_log (no repeat for the same gap)
+
 ### Estimate Follow-Up
 
 Triggered when owner flags an estimate as sent (SMS keyword `EST`, dashboard action, or API call).
@@ -269,7 +296,7 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 
 | Page | What it shows |
 |------|--------------|
-| **Dashboard** | Lead summary, recent activity, help articles, and **Revenue Recovered card** (shows confirmed revenue attributed to the platform over rolling 30/60/90-day windows). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **Since Your Last Visit card** (see below). |
+| **Dashboard** | Lead summary, recent activity, help articles, and **Revenue Recovered card** (shows confirmed revenue attributed to the platform over rolling 30/60/90-day windows). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **Since Your Last Visit card** (see below). **&ldquo;Set up your AI&rdquo; CTA** when KB has fewer than 5 entries — links to the onboarding wizard. |
 | **Conversations** | All leads with message history, mode badges, action-required highlights |
 | **Revenue** | 30-day stats, pipeline value, speed-to-lead metrics, service breakdown |
 | **Knowledge Base** | Business info the AI uses — editable by owner |
@@ -277,7 +304,45 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 | **Billing** | Current plan, usage, add-on charges, invoice history, CSV export, payment methods |
 | **Team** | Add/remove team members, toggle escalation/hot transfer, manage permissions |
 | **Settings** | Phone number management, AI settings, notification preferences, feature toggles, business hours |
+| **Reviews** | Pending AI-drafted Google review responses — inline edit and approve before posting (see below). |
+| **Lead Import** | Self-serve CSV lead import with drag-and-drop, header auto-detection, preview, and downloadable template (see below). |
 | **Cancel** | Cancellation request with 30-day notice + data export |
+
+### KB Onboarding Wizard (Contractor Self-Serve)
+
+Contractors can populate the AI knowledge base themselves via a guided 4-step wizard at `/client/onboarding`, eliminating cold-start AI deferrals without requiring operator data entry.
+
+| Step | Fields |
+|------|--------|
+| 1. Services | Service types, service area, what the business does NOT do |
+| 2. Business | Business name, years in business, warranties, competitive advantages |
+| 3. Hours &amp; Pricing | Business hours, pricing approach, typical ranges |
+| 4. Booking | Booking process, response time, how leads should get in touch |
+
+- 12 fields total across 4 steps
+- Submitting creates KB entries automatically via `POST /api/client/kb-questionnaire`
+- Requires `PORTAL_PERMISSIONS.KNOWLEDGE_EDIT`
+- Dashboard shows &ldquo;Set up your AI&rdquo; CTA when KB has fewer than 5 entries
+
+### Portal Quote Import
+
+Contractors can import their own lead list via CSV without operator help.
+
+- Drag-and-drop CSV upload at `/client/leads/import` with automatic header detection
+- Preview table before import; downloadable CSV template for correct format
+- Accepts `status` column — import leads at `estimate_sent` stage to trigger estimate follow-up immediately
+- API: `POST /api/client/leads/import` with `PORTAL_PERMISSIONS.LEADS_EDIT`
+- Auto-triggers estimate follow-up sequence for any `estimate_sent` leads imported
+
+### Review Response Approval (Contractor Portal)
+
+Contractors review and approve AI-drafted Google review responses before they are posted.
+
+- Page at `/client/reviews` shows a card per pending AI draft
+- Each card displays: star rating, reviewer name, review text, and the AI-generated draft
+- Inline edit mode to modify the draft before approval
+- AlertDialog confirmation on approve to prevent accidental posting
+- APIs: `GET /api/client/reviews/pending`, `POST /api/client/reviews/[responseId]/approve`
 
 ### Since Your Last Visit Card
 
@@ -504,6 +569,24 @@ Every funnel event is automatically linked to the agent decision that contribute
 | 2 | Smart Assist (delayed auto-send, 5 min) | Review AI responses (10-15 min/day) |
 | 3+ | Autonomous | Escalations only |
 
+### AI Auto-Progression (Self-Serve)
+
+The platform advances contractors through AI modes automatically based on time and quality signals — no operator intervention required.
+
+| Trigger | Condition | Action |
+|---------|-----------|--------|
+| **Day 7** | Quality gates pass | Advance from `off` &rarr; `assist` (Smart Assist enabled) |
+| **Day 14** | No AI flags in the last 7 days | Advance from `assist` &rarr; `autonomous` |
+
+- Never downgrades — manual overrides are preserved and not overwritten
+- Each advancement sends an SMS notification to the contractor explaining the new mode
+- All transitions are logged to audit_log
+- Cron: `/api/cron/ai-mode-progression` runs daily at 10am UTC
+
+### Self-Serve KB Onboarding Wizard
+
+New contractors are guided through a 4-step KB wizard at `/client/onboarding` that pre-populates the AI with business information before the first lead arrives. See Section 5 (Client Portal) for details.
+
 ---
 
 ## 10. Quarterly Growth Blitz
@@ -588,7 +671,7 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 
 ### Cron Orchestrator
 
-32 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
+36 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), KB empty nudge (daily), day 3 check-in (daily), KB gap auto-notify (daily), AI auto-progression (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
 
 ### Agency Communication
 
@@ -646,7 +729,8 @@ Beyond the review *request* automation (Section 2), the platform monitors and re
 - Template matching with keyword scoring (before AI fallback)
 - Draft &rarr; approved &rarr; posted lifecycle
 - Auto-post to Google Business Profile via OAuth (with token refresh)
-- Admin approval required before posting
+- Admin approval required before posting (admin dashboard)
+- **Contractor portal approval:** Contractors can view pending AI-drafted responses at `/client/reviews`, edit the draft inline, and approve — posts to Google without operator involvement. See Section 5 for portal detail.
 
 ---
 

@@ -194,11 +194,11 @@ At day 90:
 6. **Expectations (3 min):** &quot;Week 1: missed call text-back is live, I&apos;ll import your old quotes. Week 2: the AI starts responding to web form leads with a 5-minute review window. Week 3: fully autonomous. I&apos;ll check in every 2 weeks with a report.&quot;
 
 **After the call:**
-- Enter all KB entries.
+- Enter all KB entries (or encourage the contractor to use the self-serve KB wizard at `/client/onboarding` — it covers the same 12 fields in 4 guided steps and takes about 10 minutes without operator involvement).
 - Set AI tone based on their communication style.
 - Configure business hours from the call.
-- Send a recap text: &quot;Great call. Your number is live. Send me those old quotes when you get a chance and I&apos;ll get them working this week.&quot;
-- Note: the onboarding checklist now has actionable links to each setup step &mdash; the contractor can self-serve some configuration (phone setup, business hours, team members) directly from their dashboard without waiting for you.
+- Send a recap text: &quot;Great call. Your number is live. Send me those old quotes when you get a chance and I&apos;ll get them working this week. You can also fill in your business info at [portal link] — the AI will use it immediately.&quot;
+- Note: the onboarding checklist now has actionable links to each setup step &mdash; the contractor can self-serve some configuration (phone setup, business hours, team members, KB wizard) directly from their dashboard without waiting for you.
 
 **Revenue Leak Audit (48-hour deliverable):**
 Within 48 business hours of the onboarding call, complete and send the Revenue Leak Audit. This is the first tangible proof the managed service is real &mdash; do not skip it.
@@ -350,6 +350,9 @@ Adjust the middle bullet to the specific objection they raised. If they were ske
 | Voice transfer fails | System handles, you monitor | P1 escalation created, contractor alerted (Section 15) |
 | Contractor reports calendar sync issue | You handle | Check errors count, reconnect if needed (Section 16) |
 | Contractor asks about weekly YES/NO texts | You explain | Probable wins nudge (Section 17) |
+| Contractor asks &ldquo;how do I set up the AI myself?&rdquo; | You direct | KB wizard at `/client/onboarding` (Section 10) |
+| Contractor wants to approve review responses without calling you | You direct | Portal review approval at `/client/reviews` (Section 13) |
+| AI mode advances to Smart Assist or Autonomous without operator action | System (automatic) | AI auto-progression cron — contractor receives SMS notification |
 | Contractor gets email instead of SMS for booking | You explain | Email fallback (Section 18) |
 | Lead or contractor asks about STOP vs. permanent block | You handle | DNC vs opt-out (Section 19) |
 
@@ -366,12 +369,14 @@ Adjust the middle bullet to the specific objection they raised. If they were ske
 3. Approve to post to Google Business Profile. The system posts via OAuth automatically.
 4. For sensitive reviews (legal threats, health/safety claims, specific job site incidents): do NOT approve immediately. Contact the contractor first to confirm the facts before any public response goes live.
 
+**Contractor self-serve approval:** Contractors can approve review responses directly from their portal at `/client/reviews`. Each pending draft shows the star rating, reviewer name, review text, and AI draft &mdash; they can edit inline before approving. Encourage contractors to use this for routine positive-review responses. Advise them to let you handle negative reviews so you can review the draft first.
+
 **During onboarding:** explain the review monitoring system during the Section 10 call.
 
 Script:
-> &quot;We monitor your Google reviews in real time. When a new review comes in &mdash; especially a negative one &mdash; you&apos;ll get a text immediately. We also draft a professional response for you to review. You approve it before it goes live.&quot;
+> &quot;We monitor your Google reviews in real time. When a new review comes in &mdash; especially a negative one &mdash; you&apos;ll get a text immediately. We also draft a professional response for you to review. You can approve routine responses from your portal, or let me handle them. Nothing posts without a human approving it.&quot;
 
-If the contractor asks whether the response auto-posts: clarify that every response requires approval from the admin dashboard before it reaches Google. Nothing posts without a human approving it.
+If the contractor asks whether the response auto-posts: clarify that every response requires approval (from the admin dashboard or the contractor&apos;s own portal) before it reaches Google. Nothing posts without a human approving it.
 
 ---
 

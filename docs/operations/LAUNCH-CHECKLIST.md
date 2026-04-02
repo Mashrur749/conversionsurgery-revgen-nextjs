@@ -28,6 +28,11 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
   - Test Google Calendar two-way sync (Step 56)
   - Test triage dashboard, KB questionnaire, engagement health, dormant re-engagement, Revenue Recovered card (Step 57)
   - Complete Testing Guide Steps 60-64 (review monitoring, voice AI modes, DNC list, feature toggles, billing/trial)
+  - Test self-serve KB wizard (Step 65a): sign in as contractor, trigger &ldquo;Set up your AI&rdquo; CTA, complete wizard, verify KB entries created
+  - Test portal quote import (Step 65c): upload CSV with `estimate_sent` status, verify follow-up triggered
+  - Test review response approval in portal (Step 65d): verify contractor can view, edit, and approve AI-drafted responses at `/client/reviews`
+  - Test AI auto-progression cron (Step 65b): verify Day 7 and Day 14 mode advances, contractor SMS sent each time
+  - Test KB empty nudge (Step 65e), Day 3 check-in (Step 65f), KB gap auto-notify (Step 65g): verify deduplication via audit_log
 - [ ] Verify Google Places review sync is running for the demo client (check `review_sources` table has a Place ID)
 - [ ] Walk through `docs/engineering/TESTING-SELF-SERVE.md` (Steps 1-7)
   - Sign up as a contractor, verify auto-login to dashboard
@@ -149,8 +154,8 @@ The orchestrator dispatches all sub-jobs internally based on time:
 | **Every 30 min** | Auto review response, Google Calendar sync, report delivery retries |
 | **Hourly** | Usage tracking, escalation SLA check, review sync, expire prompts, NPS, agent check, compliance queue replay, knowledge gap alerts, onboarding SLA check |
 | **Daily midnight UTC** | Lead scoring, analytics aggregation, trial reminders, no-show recovery, Stripe reconciliation, voice usage rollup, guarantee check, monthly reset |
-| **Daily 7am UTC** | Daily summary, bi-weekly reports (auto-scheduled) |
-| **Daily 10am UTC** | Win-back, estimate fallback nudges, quarterly campaign planner + alerts |
+| **Daily 7am UTC** | Daily summary, bi-weekly reports (auto-scheduled), day 3 check-in SMS |
+| **Daily 10am UTC** | Win-back, estimate fallback nudges, KB empty nudge, KB gap auto-notify, AI auto-progression, quarterly campaign planner + alerts |
 | **Weekly Monday 7am UTC** | Weekly summary, agency digest, quarterly campaign digest, engagement health check |
 | **Weekly Wednesday 10am UTC** | Dormant re-engagement (6-month) |
 | **Monthly 1st** | Cohort analysis, access review |
@@ -248,7 +253,8 @@ Week 2 (KB sprint):
 - [ ] Text contractor recap: &quot;Week 2 update &mdash; [X] leads handled, [Y] quotes reactivated, [Z] appointments booked&quot;
 
 Week 3+:
-- [ ] Upgrade AI to Autonomous mode (only after Safety tests pass)
+- [ ] Verify AI auto-progression has run: check audit_log for `ai_mode_progression` entries. Day 7 should show `off → assist`; Day 14+ (no flags) should show `assist → autonomous`. Confirm contractor received the SMS notification for each transition.
+- [ ] Upgrade AI to Autonomous mode (only after Safety tests pass, or if auto-progression has already advanced to autonomous)
 - [ ] All automations running: estimate follow-up, appointment reminders, payment collection, review generation, win-back, dormant re-engagement (6-month)
 - [ ] Monitor escalations dashboard for anything that needs human attention
 - [ ] Knowledge gap queue should be slowing down (most common questions answered)

@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -2003,6 +2003,127 @@ Expected:
 - Payment confirmation SMS delivered to the contractor&apos;s phone.
 - `invoices` table (if present) updated with payment record.
 
+### Step 65: Self-Serve Features (KB Wizard, AI Auto-Progression, Portal Import, Review Approval, Nudges)
+
+Combined verification for the 9 self-serve features shipped post-Wave 7.
+
+#### 65a: KB Onboarding Wizard (contractor self-serve)
+
+1. Log into the client portal as a contractor with fewer than 5 KB entries.
+2. Verify the dashboard shows a &ldquo;Set up your AI&rdquo; CTA banner.
+3. Click the CTA — verify navigation to `/client/onboarding`.
+4. Complete all 4 wizard steps (Services, Business, Hours &amp; Pricing, Booking) and submit.
+5. Navigate to the Knowledge Base page and verify the submitted answers appear as KB entries.
+6. Verify the API: `POST /api/client/kb-questionnaire` returns `200` with created entry IDs.
+
+Expected:
+- Wizard is gated by `PORTAL_PERMISSIONS.KNOWLEDGE_EDIT`.
+- Each submitted answer creates a corresponding KB entry.
+- &ldquo;Set up your AI&rdquo; CTA disappears once the client has 5+ KB entries.
+
+#### 65b: AI Auto-Progression Cron
+
+1. Set a test client&apos;s AI mode to `off` and set `createdAt` to 7+ days ago in the DB.
+2. Ensure onboarding quality gates are passing for that client.
+3. Run the cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/ai-mode-progression -H "Authorization: Bearer $CRON_SECRET"
+```
+
+4. Verify the client&apos;s AI mode advances from `off` to `assist`.
+5. Verify the contractor (Dev Phone #3) receives an SMS notification about the mode change.
+6. Verify the transition is logged in audit_log.
+7. Now set `createdAt` to 14+ days ago and confirm no AI flags exist in the last 7 days.
+8. Run the cron again — verify mode advances from `assist` to `autonomous`.
+9. Run the cron a third time — verify the mode does NOT change (no downgrade, no duplicate SMS).
+
+Expected:
+- Day 7 + quality gates pass → `off` → `assist`.
+- Day 14 + no flags in 7 days → `assist` → `autonomous`.
+- Manual overrides (client already set to `autonomous` manually) are not overwritten.
+- Cron is idempotent — no duplicate transitions on re-run.
+
+#### 65c: Portal Quote Import
+
+1. Log into the client portal as a contractor.
+2. Navigate to `/client/leads/import`.
+3. Download the CSV template — verify it opens with correct column headers.
+4. Prepare a test CSV with `status=estimate_sent` for 2 leads and `status=new` for 1 lead.
+5. Drag and drop the file onto the upload area.
+6. Verify the header auto-detection shows the mapped columns.
+7. Verify the preview table shows all 3 rows with correct mapped values.
+8. Click Import and confirm all 3 leads are created.
+9. Verify the 2 `estimate_sent` leads have an estimate follow-up sequence triggered.
+10. Test with an invalid CSV (missing required column) — verify a helpful error message.
+
+Expected:
+- `POST /api/client/leads/import` is gated by `PORTAL_PERMISSIONS.LEADS_EDIT`.
+- Auto-detection maps common column name aliases correctly.
+- `estimate_sent` imports trigger estimate follow-up automatically.
+- Invalid rows show per-row error detail; valid rows still import.
+
+#### 65d: Review Response Approval (client portal)
+
+1. Ensure the test client has at least one Google review with an AI-drafted response (run review sync if needed).
+2. Log into the client portal as a contractor.
+3. Navigate to `/client/reviews`.
+4. Verify a card appears showing: star rating, reviewer name, review text, and AI-drafted response.
+5. Click the edit icon on the draft — verify inline edit mode activates.
+6. Modify the draft text and verify the change is saved locally.
+7. Click Approve — verify an AlertDialog confirmation appears.
+8. Confirm the approval — verify the draft is sent and the card is removed from the pending list.
+
+Expected:
+- `GET /api/client/reviews/pending` returns pending drafts for the authenticated client.
+- `POST /api/client/reviews/[responseId]/approve` returns `200` and marks the draft as approved.
+- Empty state renders gracefully when no pending drafts exist.
+
+#### 65e: KB Empty Nudge (48-hour)
+
+1. Create a test client with fewer than 3 KB entries and set `createdAt` to 50 hours ago in the DB.
+2. Run the cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/ai-mode-progression -H "Authorization: Bearer $CRON_SECRET"
+```
+
+(The KB empty nudge fires as part of the daily onboarding cron — adjust the cron name to the actual route if different.)
+
+3. Verify the contractor (Dev Phone #3) receives an SMS: &ldquo;Your AI needs your business info. Takes 10 min: [link]&rdquo;.
+4. Run the cron again — verify no duplicate SMS is sent (deduped via audit_log).
+5. Set `createdAt` to 25 hours ago — verify the nudge does NOT fire (outside the 48-72h window).
+
+Expected:
+- Fires once per client when client age is 48-72 hours and KB entry count is &lt; 3.
+- Deduped via audit_log — only one nudge total per client.
+
+#### 65f: Day 3 Check-in SMS
+
+1. Set a test client&apos;s `createdAt` to 68 hours ago in the DB.
+2. Ensure the client has some lead and conversation activity (create test records if needed).
+3. Run the daily cron (7am UTC) or trigger it manually.
+4. Verify the contractor (Dev Phone #3) receives an SMS containing the lead count and conversation count.
+5. Run the cron again — verify no duplicate SMS (deduped via audit_log).
+
+Expected:
+- Fires once at 66-78 hours post-signup.
+- Message body includes real counts from the DB (not placeholder text).
+- Deduped via audit_log — only one check-in per client.
+
+#### 65g: KB Gap Auto-Notify
+
+1. Ensure the test client has at least 1 unresolved knowledge gap with no prior notification sent today.
+2. Run the daily cron (10am UTC) or trigger it manually.
+3. Verify the contractor (Dev Phone #3) receives an SMS about the unanswered question.
+4. If the client has 3+ unresolved gaps, verify at most 2 notifications are sent (daily cap).
+5. Run the cron again the same day — verify no additional SMS (deduped per gap via audit_log).
+
+Expected:
+- Max 2 gap notifications per client per day.
+- Deduped per gap — same gap does not trigger duplicate notifications on re-run.
+- Clients with no new gaps receive no SMS.
+
 ---
 
 ## 3. Useful Commands
@@ -2051,6 +2172,7 @@ curl -i http://localhost:3000/api/cron/calendar-sync -H "Authorization: Bearer $
 curl -i http://localhost:3000/api/cron/engagement-health-check -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/dormant-reengagement -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/ai-mode-progression -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core
