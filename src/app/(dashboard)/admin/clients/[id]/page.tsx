@@ -30,6 +30,7 @@ import { ClientDetailTabs } from './client-detail-tabs';
 import { EmbedWidgetCard } from './embed-widget-card';
 import { CalendarIntegrationCard } from './calendar-integration-card';
 import { KbQuestionnaire } from './kb-questionnaire';
+import { AiPreviewPanel } from './ai-preview-panel';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -334,6 +335,7 @@ export default async function ClientDetailPage({ params }: Props) {
           />
         }
         reminderRoutingPanel={<ReminderRoutingPanel clientId={client.id} />}
+        aiPreviewPanel={<AiPreviewPanel clientId={client.id} />}
         embedWidgetCard={<EmbedWidgetCard clientId={client.id} />}
         calendarIntegrationCard={<CalendarIntegrationCard clientId={client.id} />}
         clientInfoCard={

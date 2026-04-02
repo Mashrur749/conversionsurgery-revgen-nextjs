@@ -117,6 +117,29 @@ export async function PATCH(
       }
     }
 
+    // Webhook dispatch: fire on status change to won or lost (Zapier/Jobber integration)
+    if (parsed.data.status === 'won' || parsed.data.status === 'lost') {
+      try {
+        const { dispatchWebhook } = await import('@/lib/services/webhook-dispatch');
+        await dispatchWebhook(clientId, 'lead.status_changed', {
+          leadId: updatedLead.id,
+          name: updatedLead.name,
+          phone: updatedLead.phone,
+          email: updatedLead.email,
+          status: parsed.data.status,
+          confirmedRevenue:
+            typeof updatedLead.confirmedRevenue === 'number'
+              ? Math.round(updatedLead.confirmedRevenue / 100)
+              : null,
+          projectType: updatedLead.projectType,
+          address: updatedLead.address,
+        });
+      } catch (webhookError) {
+        // Non-fatal: log and continue — the status update already succeeded
+        console.error('[LeadManagement] Webhook dispatch failed:', webhookError);
+      }
+    }
+
     return NextResponse.json(updatedLead);
   } catch (error) {
     return safeErrorResponse('[LeadManagement][leads.patch]', error, 'Failed');

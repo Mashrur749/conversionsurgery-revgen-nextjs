@@ -24,6 +24,7 @@ export const GET = portalRoute(
         syncEnabled: calendarIntegrations.syncEnabled,
         lastSyncAt: calendarIntegrations.lastSyncAt,
         lastError: calendarIntegrations.lastError,
+        consecutiveErrors: calendarIntegrations.consecutiveErrors,
       })
       .from(calendarIntegrations)
       .where(eq(calendarIntegrations.clientId, session.clientId));

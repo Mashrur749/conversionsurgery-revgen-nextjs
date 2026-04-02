@@ -248,6 +248,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ── Weekly Monday 10am UTC ───────────────────────────────
+    if (day === 1 && hour === 10 && minute < 10) {
+      results.probableWinsNudge = await dispatch(
+        baseUrl,
+        '/api/cron/probable-wins-nudge',
+        cronSecret!,
+        'GET',
+        failedJobs
+      );
+    }
+
     // ── Weekly Monday 7am UTC ────────────────────────────────
     if (day === 1 && hour === 7 && minute < 10) {
       results.weeklySummary = await dispatch(baseUrl, '/api/cron/weekly-summary', cronSecret!, 'GET', failedJobs);

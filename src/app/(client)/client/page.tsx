@@ -13,6 +13,7 @@ import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
 import { getClientLatestReportDelivery } from '@/lib/services/client-report-delivery';
+import { SinceLastVisitCard } from './since-last-visit-card';
 
 export default async function ClientDashboardPage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.DASHBOARD);
@@ -156,6 +157,8 @@ export default async function ClientDashboardPage() {
       <div className="sticky top-0 z-10 bg-[#F8F9FA] pb-4">
         <h1 className="text-2xl font-bold">Dashboard</h1>
       </div>
+
+      <SinceLastVisitCard clientId={clientId} />
 
       {needsSetup && (
         <Card className="border-olive/30 bg-moss-light">

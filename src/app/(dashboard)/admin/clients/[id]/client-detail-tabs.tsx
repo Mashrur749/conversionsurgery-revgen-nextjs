@@ -23,6 +23,7 @@ interface ClientDetailTabsProps {
   reminderRoutingPanel: ReactNode;
   embedWidgetCard: ReactNode;
   calendarIntegrationCard: ReactNode;
+  aiPreviewPanel: ReactNode;
   /* Tab 3: Team & Billing */
   clientInfoCard: ReactNode;
   phoneNumberCard: ReactNode;
@@ -51,6 +52,7 @@ export function ClientDetailTabs({
   reminderRoutingPanel,
   embedWidgetCard,
   calendarIntegrationCard,
+  aiPreviewPanel,
   clientInfoCard,
   phoneNumberCard,
   teamMembersCard,
@@ -107,6 +109,7 @@ export function ClientDetailTabs({
       <TabsContent value="configuration" className="space-y-6 mt-4">
         {featureToggles}
         {featureStatusList}
+        {aiPreviewPanel}
         {onboardingQualityPanel}
         {reminderRoutingPanel}
         {embedWidgetCard}

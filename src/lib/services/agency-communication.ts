@@ -388,6 +388,49 @@ export async function handleAgencyInboundSMS(payload: {
     .set({ inReplyTo: pendingPrompt.id })
     .where(eq(agencyMessages.id, inboundMsg.id));
 
+  // ── Handle won_revenue_entry: numeric reply updates confirmed revenue ──
+  if (
+    pendingPrompt.promptType === "won_revenue_entry" &&
+    /^\d[\d,.\s]*$/.test(body.trim())
+  ) {
+    const raw = body.replace(/[,\s]/g, "").replace(/\..*$/, ""); // strip decimals/commas
+    const dollars = parseInt(raw, 10);
+    const leadId =
+      typeof (pendingPrompt.actionPayload as Record<string, unknown>)?.leadId === "string"
+        ? ((pendingPrompt.actionPayload as Record<string, unknown>).leadId as string)
+        : null;
+
+    if (leadId && !isNaN(dollars) && dollars > 0) {
+      const db2 = getDb();
+      await db2
+        .update(leads)
+        .set({ confirmedRevenue: dollars * 100, updatedAt: new Date() }) // stored in cents
+        .where(and(eq(leads.id, leadId), eq(leads.clientId, client.id)));
+
+      await db2
+        .update(agencyMessages)
+        .set({ actionStatus: "executed", clientReply: body })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
+
+      await sendAgencySMS({
+        clientId: client.id,
+        toPhone: client.phone,
+        body: `Logged. Job value set to $${dollars.toLocaleString()} for this lead. Thanks!`,
+        category: "reply",
+        inReplyTo: pendingPrompt.id,
+      });
+    } else {
+      await sendAgencySMS({
+        clientId: client.id,
+        toPhone: client.phone,
+        body: `Could not read that amount. Please reply with a whole number (e.g. 55000).`,
+        category: "reply",
+        inReplyTo: pendingPrompt.id,
+      });
+    }
+    return;
+  }
+
   // Handle STOP/opt-out
   if (normalizedReply === "STOP") {
     await db
@@ -414,13 +457,16 @@ export async function handleAgencyInboundSMS(payload: {
         .set({ actionStatus: "executed", clientReply: body })
         .where(eq(agencyMessages.id, pendingPrompt.id));
 
-      await sendAgencySMS({
-        clientId: client.id,
-        toPhone: client.phone,
-        body: actionResult.ackMessage,
-        category: "reply",
-        inReplyTo: pendingPrompt.id,
-      });
+      // Only send ack if the handler produced a message
+      if (actionResult.ackMessage) {
+        await sendAgencySMS({
+          clientId: client.id,
+          toPhone: client.phone,
+          body: actionResult.ackMessage,
+          category: "reply",
+          inReplyTo: pendingPrompt.id,
+        });
+      }
     } catch (error) {
       console.error("[Agency Inbound] Failed to execute prompt action:", error);
 
@@ -449,6 +495,36 @@ export async function handleAgencyInboundSMS(payload: {
 
   // Handle NO/N
   if (normalizedReply === "NO" || normalizedReply === "N") {
+    // Special case: won_lost_nudge NO → mark lead as lost
+    if (pendingPrompt.promptType === "won_lost_nudge") {
+      const leadId =
+        typeof (pendingPrompt.actionPayload as Record<string, unknown>)?.leadId === "string"
+          ? ((pendingPrompt.actionPayload as Record<string, unknown>).leadId as string)
+          : null;
+
+      if (leadId) {
+        const db3 = getDb();
+        await db3
+          .update(leads)
+          .set({ status: "lost", updatedAt: new Date() })
+          .where(and(eq(leads.id, leadId), eq(leads.clientId, client.id)));
+      }
+
+      await db
+        .update(agencyMessages)
+        .set({ actionStatus: "executed", clientReply: body })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
+
+      await sendAgencySMS({
+        clientId: client.id,
+        toPhone: client.phone,
+        body: `Got it — lead marked as lost. Thanks for the update.`,
+        category: "reply",
+        inReplyTo: pendingPrompt.id,
+      });
+      return;
+    }
+
     await db
       .update(agencyMessages)
       .set({ actionStatus: "replied", clientReply: body })
@@ -587,10 +663,107 @@ async function handleScheduleCallbackPrompt(
   throw new Error("schedule_callback requires callback scheduler integration");
 }
 
+/**
+ * Handle YES reply to a won/lost nudge.
+ * Marks the lead as won and sends a follow-up prompt asking for revenue.
+ */
+async function handleWonLostNudgeYesPrompt(
+  actionPayload: Record<string, unknown>,
+  clientId: string,
+): Promise<PromptActionResult> {
+  const leadId = actionPayload.leadId;
+  if (typeof leadId !== "string" || !leadId) {
+    throw new Error("won_lost_nudge: missing leadId in actionPayload");
+  }
+
+  const db = getDb();
+
+  // Mark lead as won
+  await db
+    .update(leads)
+    .set({ status: "won", updatedAt: new Date() })
+    .where(and(eq(leads.id, leadId), eq(leads.clientId, clientId)));
+
+  // Immediately send a revenue follow-up prompt (the sendActionPrompt call
+  // happens here so we can return ackMessage from the same execution path)
+  const [client] = await db
+    .select({ phone: clients.phone })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+
+  if (client?.phone) {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 48);
+
+    await db.insert(agencyMessages).values({
+      clientId,
+      direction: "outbound",
+      channel: "sms",
+      content: "Great! What was the job value? Reply with the amount (e.g. 55000)",
+      category: "action_prompt",
+      promptType: "won_revenue_entry",
+      actionPayload: { leadId },
+      actionStatus: "pending",
+      expiresAt,
+    });
+
+    // Send via Twilio
+    const twilioClient = (await import("twilio")).default(
+      process.env.TWILIO_ACCOUNT_SID!,
+      process.env.TWILIO_AUTH_TOKEN!,
+    );
+    const agencyNumber = await getAgencyNumber();
+    if (agencyNumber) {
+      try {
+        const msg = await twilioClient.messages.create({
+          to: client.phone,
+          from: agencyNumber,
+          body: "Great! What was the job value? Reply with the amount (e.g. 55000)",
+        });
+        // Update the inserted record with the Twilio SID
+        await db
+          .update(agencyMessages)
+          .set({ twilioSid: msg.sid, delivered: true })
+          .where(
+            and(
+              eq(agencyMessages.clientId, clientId),
+              eq(agencyMessages.promptType, "won_revenue_entry"),
+              eq(agencyMessages.actionStatus, "pending"),
+            ),
+          );
+      } catch {
+        // Non-fatal — the prompt record exists and can be answered later
+      }
+    }
+  }
+
+  return { ackMessage: "" }; // ackMessage is handled by the revenue prompt above
+}
+
+/**
+ * Handle YES reply to a won_revenue_entry prompt.
+ * The actual revenue update is handled inline in handleAgencyInboundSMS
+ * because the reply is numeric, not YES/NO. This handler is a no-op fallback.
+ */
+async function handleWonRevenueEntryPrompt(
+  _actionPayload: Record<string, unknown>,
+  _clientId: string,
+): Promise<PromptActionResult> {
+  // Numeric replies are intercepted before executePromptAction is called.
+  // This handler only fires if someone replies YES to a revenue prompt — treat
+  // it as a prompt for a specific number.
+  return {
+    ackMessage: "Please reply with a number for the job value (e.g. 55000).",
+  };
+}
+
 const PROMPT_ACTION_HANDLERS: Record<string, PromptActionHandler> = {
   start_sequences: handleStartSequencesPrompt,
   schedule_callback: handleScheduleCallbackPrompt,
   confirm_action: handleConfirmActionPrompt,
+  won_lost_nudge: handleWonLostNudgeYesPrompt,
+  won_revenue_entry: handleWonRevenueEntryPrompt,
 };
 
 /** Dispatch prompt action based on promptType. */

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { voiceCalls } from '@/db/schema';
+import { voiceCalls, leads, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
+import { createEscalation } from '@/lib/services/escalation';
+import { sendAlert } from '@/lib/services/agency-communication';
 
 const MISSED_STATUSES = new Set(['no-answer', 'busy', 'failed', 'canceled']);
 
@@ -66,10 +69,72 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If the dial failed, offer voicemail
+    // If the dial failed, send homeowner SMS, create escalation, notify team member
     if (MISSED_STATUSES.has(dialCallStatus)) {
+      if (call?.leadId) {
+        // Run side effects in parallel — never fail the TwiML response
+        void (async () => {
+          try {
+            const db2 = getDb();
+
+            const [[lead], [client]] = await Promise.all([
+              db2.select().from(leads).where(eq(leads.id, call.leadId!)).limit(1),
+              db2
+                .select({
+                  businessName: clients.businessName,
+                  twilioNumber: clients.twilioNumber,
+                  phone: clients.phone,
+                })
+                .from(clients)
+                .where(eq(clients.id, call.clientId))
+                .limit(1),
+            ]);
+
+            if (lead && client?.twilioNumber) {
+              // 1. SMS to homeowner via compliance gateway
+              await sendCompliantMessage({
+                clientId: call.clientId,
+                to: lead.phone,
+                from: client.twilioNumber,
+                body: `${client.businessName} tried to connect you with a team member but they're currently unavailable. Someone will call you back shortly.`,
+                messageClassification: 'proactive_outreach',
+                messageCategory: 'transactional',
+                consentBasis: { type: 'existing_consent' },
+                leadId: lead.id,
+              });
+
+              // 2. Create P1 escalation entry in the triage dashboard
+              try {
+                await createEscalation(
+                  lead.id,
+                  lead.id, // no conversation thread — use lead id as placeholder
+                  'Missed hot transfer — team member unavailable',
+                  'critical'
+                );
+              } catch (escErr) {
+                console.error('[Voice AI Dial Complete] Failed to create escalation:', escErr);
+              }
+            }
+
+            // 3. Notify the team member who was dialled (if phone is on the call record)
+            if (call.transferredTo && lead) {
+              await sendAlert({
+                clientId: call.clientId,
+                message: `Missed transfer: ${lead.name} called and was transferred to you but the call was not answered. Please call them back at ${lead.phone}.`,
+                isUrgent: true,
+              });
+            }
+          } catch (sideEffectErr) {
+            logSanitizedConsoleError('[Voice AI Dial Complete] Side-effect error on missed transfer:', sideEffectErr, {
+              callId: call.id,
+              leadId: call.leadId,
+            });
+          }
+        })();
+      }
+
       return twimlResponse(
-        '<Say>Sorry, no one was available to take your call. We\'ll call you back soon. Goodbye!</Say><Hangup/>'
+        '<Say>Sorry, no one was available to take your call. We&apos;ll call you back soon. Goodbye!</Say><Hangup/>'
       );
     }
 

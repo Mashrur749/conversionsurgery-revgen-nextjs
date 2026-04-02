@@ -23,6 +23,7 @@ interface CalendarIntegration {
   syncEnabled: boolean;
   lastSyncAt: string | null;
   lastError: string | null;
+  consecutiveErrors: number;
 }
 
 function formatLastSync(lastSyncAt: string | null): string {
@@ -37,6 +38,15 @@ function formatLastSync(lastSyncAt: string | null): string {
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+}
+
+function isSyncStale(lastSyncAt: string | null): boolean {
+  if (!lastSyncAt) return false;
+  const date = new Date(lastSyncAt);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  return diffMins > 30;
 }
 
 export function CalendarConnection() {
@@ -202,11 +212,27 @@ export function CalendarConnection() {
         )}
 
         {!loading && integration && (
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
               Last synced: {formatLastSync(integration.lastSyncAt)}
             </p>
-            {integration.lastError && (
+            {integration.consecutiveErrors > 3 && (
+              <div
+                className="rounded-md p-3 text-sm"
+                style={{ backgroundColor: '#FDEAE4', color: '#C15B2E' }}
+              >
+                <span className="font-medium">Sync failed multiple times.</span> Please reconnect your Google Calendar.
+              </div>
+            )}
+            {integration.consecutiveErrors <= 3 && isSyncStale(integration.lastSyncAt) && integration.lastError && (
+              <div
+                className="rounded-md p-3 text-sm"
+                style={{ backgroundColor: '#FFF3E0', color: '#C15B2E' }}
+              >
+                <span className="font-medium">Calendar sync may be disconnected.</span> Try reconnecting below.
+              </div>
+            )}
+            {integration.lastError && integration.consecutiveErrors <= 3 && !isSyncStale(integration.lastSyncAt) && (
               <div
                 className="rounded-md p-3 text-sm"
                 style={{ backgroundColor: '#FDEAE4', color: '#C15B2E' }}
