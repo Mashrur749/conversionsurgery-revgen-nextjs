@@ -78,6 +78,7 @@ When the AI encounters questions it cannot answer, the contractor is automatical
 - Sends contractor SMS for each new unanswered question
 - Max 2 notifications per client per day
 - Deduped per gap via audit_log (no repeat for the same gap)
+- **Deep link:** each notification SMS includes a `?add=` query parameter with the gap question URL-encoded. Tapping the link opens the portal Knowledge Base page with the add-entry form pre-filled with the question — contractor types the answer and submits without any copy/paste.
 
 ### Estimate Follow-Up
 
@@ -267,6 +268,7 @@ Every lead accumulates:
 - Up to 1,000 leads per import with per-row error reporting
 - Preview table before import with column mapping summary
 - Source tracked as `csv_import` for attribution
+- **CASL consent attestation:** both the admin CSV import route and the portal quote import require the importer to confirm: &ldquo;I confirm all contacts have made an inquiry to my business under CASL.&rdquo; Import is rejected (400) if the attestation checkbox is not checked. The attestation is recorded in the import response audit trail.
 
 ### Team Coordination
 
@@ -334,6 +336,19 @@ Contractors can import their own lead list via CSV without operator help.
 - API: `POST /api/client/leads/import` with `PORTAL_PERMISSIONS.LEADS_EDIT`
 - Auto-triggers estimate follow-up sequence for any `estimate_sent` leads imported
 
+### Lead Action Buttons (Contractor Portal)
+
+Contractors can update lead status directly from the conversation detail view in the portal — no admin intervention required.
+
+| Button | Action | Detail |
+|--------|--------|--------|
+| **Mark Estimate Sent** | Sets lead status to `estimate_sent` | Triggers the 4-touch estimate follow-up sequence automatically |
+| **Mark Won** | Sets lead status to `won` | Opens a dialog to enter confirmed revenue (dollar value recorded for ROI reporting) |
+| **Mark Lost** | Sets lead status to `lost` | AlertDialog confirmation prevents accidental dismissal |
+
+- API: `PATCH /api/client/leads/[id]/status` via `portalRoute` with `PORTAL_PERMISSIONS.LEADS_EDIT`
+- Won and Lost status changes also fire the `lead.status_changed` webhook (if configured) for Jobber/Zapier integrations
+
 ### Review Response Approval (Contractor Portal)
 
 Contractors review and approve AI-drafted Google review responses before they are posted.
@@ -399,6 +414,13 @@ CASL and CRTC compliant by default — the contractor never has to think about i
 - **DNC list:** global + per-client do-not-contact registry with expiry and source tracking
 - **Blocked numbers:** per-client number blocking
 - **Per-client automation pause:** setting a client&apos;s status to &quot;paused&quot; blocks all outbound messages for that client only (other clients unaffected). Used for contractor vacations or temporary holds without touching the platform-wide kill switch.
+
+### CASL Consent Attestation on Import
+
+- Both the admin CSV import (`POST /api/leads/import`) and the portal quote import (`POST /api/client/leads/import`) require an explicit consent attestation before import is processed
+- Required attestation text: &ldquo;I confirm all contacts have made an inquiry to my business under CASL&rdquo;
+- Import returns 400 if the attestation field is absent or false — no leads are created
+- Attestation is echoed back in the import response for audit purposes
 
 ### Audit Trail
 
@@ -672,6 +694,20 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 ### Cron Orchestrator
 
 36 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), KB empty nudge (daily), day 3 check-in (daily), KB gap auto-notify (daily), AI auto-progression (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
+
+### Help Center Seed Articles
+
+The platform ships with 12 pre-written help articles seeded via `npm run db:seed -- --lean`. Articles cover the topics contractors ask about most in their first two weeks.
+
+| Category | Articles |
+|----------|---------|
+| Getting Started (3) | Setting up your AI, importing quotes, connecting Google Calendar |
+| AI &amp; KB (3) | AI response modes, flagging estimates for follow-up, won/lost tracking |
+| Leads &amp; Follow-Up (3) | How follow-up works, probable wins nudge, understanding lead stages |
+| Billing (2) | Plans and pricing, pausing or cancelling |
+| Compliance (1) | Quiet hours and CASL consent |
+
+Articles appear in the contractor portal Help section and reduce first-week support volume. Seeded on every fresh deploy — no manual data entry required.
 
 ### Agency Communication
 

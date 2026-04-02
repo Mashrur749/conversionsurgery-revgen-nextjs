@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify. Step 66 covers four features shipped after Step 65: CASL consent attestation on CSV import (admin and portal), help center seed articles, portal lead action buttons (Mark Estimate Sent, Mark Won, Mark Lost), and KB gap SMS deep link (auto-opens add form with question pre-filled).
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -2123,6 +2123,110 @@ Expected:
 - Max 2 gap notifications per client per day.
 - Deduped per gap — same gap does not trigger duplicate notifications on re-run.
 - Clients with no new gaps receive no SMS.
+
+### Step 66: CASL Attestation, Help Center Articles, Lead Action Buttons, KB Gap Deep Link
+
+Combined verification for four features shipped post-Step 65.
+
+#### 66a: CASL consent attestation — admin CSV import
+
+1. Prepare a valid CSV with 2 leads.
+2. Attempt import via the admin UI (`/leads` &rarr; Import CSV) **without** checking the CASL consent checkbox.
+3. Verify the import is blocked — UI prevents submission and/or the API returns `400`.
+4. Check the request — verify the attestation field is absent or `false`.
+5. Repeat with the checkbox checked.
+6. Verify import succeeds and the response includes the attestation in the audit trail.
+
+Expected:
+
+- Import rejected (400) when `caslAttested` is missing or `false`.
+- Import succeeds when `caslAttested: true` is sent.
+- Audit trail in the import response echoes the attestation.
+
+#### 66b: CASL consent attestation — portal quote import
+
+1. Log into the client portal as a contractor.
+2. Navigate to `/client/leads/import`.
+3. Upload a valid CSV file.
+4. Verify the CASL consent checkbox is present and required before Import can be clicked.
+5. Try to submit without checking it — verify the button is disabled or a validation message appears.
+6. Check the box and complete the import.
+7. Verify `POST /api/client/leads/import` returns `200` with audit trail confirming attestation.
+
+Expected:
+
+- Checkbox is required; import is blocked without it.
+- Attestation recorded in response.
+- No leads created from unattestation attempts.
+
+#### 66c: Help center seed articles
+
+1. After running `npm run db:seed -- --lean`, log into the client portal.
+2. Navigate to the Help section (or wherever help articles are surfaced in the portal).
+3. Verify at least 12 articles exist across the expected categories: Getting Started, AI &amp; KB, Leads &amp; Follow-Up, Billing, Compliance.
+4. Verify article content loads without errors.
+
+Expected:
+
+- 12 articles seeded, grouped into 5 categories.
+- Articles are readable and contain expected content (no placeholder/lorem text).
+- Help section renders without errors for the contractor portal user.
+
+If blocked:
+
+- No articles visible: run `npm run db:seed -- --lean` and reload. If still missing, check `help_articles` table directly.
+
+#### 66d: Portal lead action buttons
+
+1. Log into the client portal as a contractor.
+2. Open a lead conversation that is in `new` or `contacted` status.
+3. Verify three action buttons are visible: **Mark Estimate Sent**, **Mark Won**, **Mark Lost**.
+
+**Mark Estimate Sent:**
+
+4. Click **Mark Estimate Sent** — verify the lead status updates to `estimate_sent`.
+5. Verify an estimate follow-up sequence is triggered for that lead (check `scheduledMessages` for a new estimate follow-up).
+
+**Mark Won:**
+
+6. Open a different lead. Click **Mark Won** — verify a dialog appears asking for confirmed revenue.
+7. Enter a dollar amount (e.g., `4500`) and confirm.
+8. Verify the lead status updates to `won` and the confirmed revenue is stored.
+
+**Mark Lost:**
+
+9. Open a third lead. Click **Mark Lost** — verify an AlertDialog confirmation appears.
+10. Confirm the dismissal — verify lead status updates to `lost`.
+
+Expected:
+
+- `PATCH /api/client/leads/[id]/status` returns `200` for all three actions.
+- Won action stores confirmed revenue in the lead record.
+- Estimate Sent action schedules estimate follow-up sequence.
+- Lost action requires AlertDialog confirmation before firing.
+
+#### 66e: KB gap SMS deep link
+
+1. Ensure the test client has at least one unresolved knowledge gap.
+2. Run the KB gap auto-notify cron (or trigger manually):
+
+```bash
+curl -i http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify the contractor (Dev Phone #3) receives an SMS about the unanswered question.
+4. Inspect the SMS body — verify it contains a URL with a `?add=` query parameter.
+5. Open the URL in a browser (or copy the path after the domain).
+6. Navigate to the portal Knowledge Base page via that URL.
+7. Verify the add-entry form opens automatically with the gap question pre-filled in the question field.
+8. Submit an answer — verify the KB entry is created and the gap is updated.
+
+Expected:
+
+- SMS includes `?add=<encoded-question>` deep link.
+- Portal KB page reads the `add` query param and opens the add form with the question pre-populated.
+- Submitting the form creates a KB entry and links it to the gap.
+- Navigating to the KB page without the param shows normal view (no stale pre-fill).
 
 ---
 

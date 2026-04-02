@@ -33,6 +33,10 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
   - Test review response approval in portal (Step 65d): verify contractor can view, edit, and approve AI-drafted responses at `/client/reviews`
   - Test AI auto-progression cron (Step 65b): verify Day 7 and Day 14 mode advances, contractor SMS sent each time
   - Test KB empty nudge (Step 65e), Day 3 check-in (Step 65f), KB gap auto-notify (Step 65g): verify deduplication via audit_log
+  - Test CASL attestation on admin and portal CSV import (Step 66a-b): verify 400 without checkbox, success with it
+  - Test help center articles seeded (Step 66c): verify 12 articles visible in contractor portal Help section after `db:seed -- --lean`
+  - Test portal lead action buttons (Step 66d): Mark Estimate Sent triggers follow-up; Mark Won captures revenue; Mark Lost requires AlertDialog
+  - Test KB gap SMS deep link (Step 66e): SMS contains `?add=` param; portal KB page pre-fills question form on tap
 - [ ] Verify Google Places review sync is running for the demo client (check `review_sources` table has a Place ID)
 - [ ] Walk through `docs/engineering/TESTING-SELF-SERVE.md` (Steps 1-7)
   - Sign up as a contractor, verify auto-login to dashboard
@@ -48,7 +52,8 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
   - Sections 13-19: Feature-specific delivery (review monitoring, quarterly blitz, voice AI, calendar sync, probable wins nudge, email fallback, DNC vs opt-out)
 - [ ] Read `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; full daily/weekly ops checklist
   - Items 1-44: Core ops (escalations, reports, billing, AI quality, engagement health)
-  - Items 45-63: Feature ops (review monitoring, voice AI, calendar troubleshooting, DNC management, Stripe health, trial management, feature toggle reference)
+  - Items 45-51: Self-serve onboarding monitoring (KB nudge, Day 3 check-in, KB gap auto-notify, deep link, CASL attestation, help articles)
+  - Items 52-70: Feature ops (review monitoring, voice AI, calendar troubleshooting, DNC management, Stripe health, trial management, feature toggle reference)
   - Knowledge Gap Resolution Process section &mdash; this is how the AI improves over time
 - [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`
   - 10 objections with scripts, proof points, and demo sequences
@@ -125,8 +130,9 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
   - Set `DATABASE_URL` in `.env.local` to staging (never production for local dev)
   - Run pending migrations on staging first, verify, then apply to production
 - [ ] Run `npm run db:migrate` on production
-- [ ] Run `npm run db:seed -- --lean` (seeds plans, role templates, flow templates, system settings)
+- [ ] Run `npm run db:seed -- --lean` (seeds plans, role templates, flow templates, system settings, and 12 help center articles)
 - [ ] Verify seed created the Pro plan with your Stripe price ID
+- [ ] Verify 12 help center articles are present: log in to the contractor portal and confirm the Help section shows articles across Getting Started, AI &amp; KB, Leads &amp; Follow-Up, Billing, and Compliance categories
 - [ ] Confirm the production plan seed has `isUnlimitedMessaging: true` for the $1,000/month Pro plan
 - [ ] Run `npm run db:seed -- --demo` to create a demo client for sales calls (removable via `--demo-cleanup`)
 

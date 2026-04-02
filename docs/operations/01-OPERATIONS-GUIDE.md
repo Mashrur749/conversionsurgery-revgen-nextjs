@@ -83,43 +83,46 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 46. **KB empty nudge delivery (daily):** The nudge fires once per client when client age is 48-72 hours and KB entries &lt; 3. If a contractor reports no nudge despite a thin KB, check audit_log for a prior `kb_empty_nudge` entry — it may have already fired. No second nudge is sent regardless of KB count.
 47. **Day 3 check-in SMS (daily):** Fires once at 66-78 hours post-signup. If a contractor reports not receiving it, check audit_log for `day3_checkin` and confirm the client&apos;s phone number is set. Check that the daily 7am UTC cron ran without errors.
 48. **KB gap auto-notify (daily):** The cron sends at most 2 gap notifications per client per day. If a contractor reports excessive gap notifications, verify the audit_log deduplication is working (one entry per gap per day). If a contractor reports no notifications despite open gaps, confirm the cron ran and check for per-client SMS delivery failures.
+49. **KB gap deep link (quality check):** Each gap notification SMS now includes a `?add=` deep link that pre-fills the portal KB add form with the gap question. If a contractor reports the link is not working or the form is blank on arrival, verify the `?add=` parameter is URL-encoded correctly in the SMS body and that the portal KB page is reading the query param.
+50. **CASL attestation audit trail (import verification):** After any CSV lead import (admin or portal), confirm the import response includes the `caslAttested` field. If a contractor claims they imported without consenting, check the import route&apos;s audit response — the attestation value is echoed at time of import. If `caslAttested` is missing from old imports, those were pre-attestation and should be reviewed against your CASL records.
+51. **Help center articles (post-deploy check):** After every production deploy with a fresh seed (`npm run db:seed -- --lean`), verify 12 help articles are present in the contractor portal Help section. If articles are missing, re-run the seed. Articles cover: Getting Started (3), AI &amp; KB (3), Leads &amp; Follow-Up (3), Billing (2), Compliance (1).
 
 ### Review Monitoring (daily)
-49. **Pending review response drafts:** Check `/admin/reviews` or the client detail Reviews tab daily. Approve or edit AI-generated response drafts before they auto-post. A draft sitting unreviewed past 24 hours risks posting stale or misworded copy.
-50. **Negative review triage:** When a &le;2-star review arrives, contact the contractor within 2 hours to discuss response strategy. The AI will draft a response, but contractor guidance is required before posting anything on a negative review.
-51. **Google Places sync health:** Verify `lastSyncAt` on each client&apos;s review source record is within the last 2 hours. If stale, check cron logs for `review-sync` failures and the client&apos;s Google Places API key configuration.
+52. **Pending review response drafts:** Check `/admin/reviews` or the client detail Reviews tab daily. Approve or edit AI-generated response drafts before they auto-post. A draft sitting unreviewed past 24 hours risks posting stale or misworded copy.
+53. **Negative review triage:** When a &le;2-star review arrives, contact the contractor within 2 hours to discuss response strategy. The AI will draft a response, but contractor guidance is required before posting anything on a negative review.
+54. **Google Places sync health:** Verify `lastSyncAt` on each client&apos;s review source record is within the last 2 hours. If stale, check cron logs for `review-sync` failures and the client&apos;s Google Places API key configuration.
 
 ### Voice AI Operations (per client with voice enabled)
-52. **Activation mode verification:** Confirm each voice-enabled client&apos;s mode matches their preference: always-on, after-hours, or overflow. Check the client feature configuration in admin. A misconfigured mode can result in the AI answering calls that should go directly to the contractor.
-53. **Post-call transcript review (weekly):** Review recent call transcripts for quality. Flag calls where the AI provided incorrect information, made promises outside scope, or failed to transfer when the caller requested a human. Feed patterns back into KB entries.
-54. **Voice usage cost monitoring:** Check the admin billing page weekly for voice minutes consumed per client. Alert contractors approaching their plan&apos;s voice allocation before they hit an overage.
+55. **Activation mode verification:** Confirm each voice-enabled client&apos;s mode matches their preference: always-on, after-hours, or overflow. Check the client feature configuration in admin. A misconfigured mode can result in the AI answering calls that should go directly to the contractor.
+56. **Post-call transcript review (weekly):** Review recent call transcripts for quality. Flag calls where the AI provided incorrect information, made promises outside scope, or failed to transfer when the caller requested a human. Feed patterns back into KB entries.
+57. **Voice usage cost monitoring:** Check the admin billing page weekly for voice minutes consumed per client. Alert contractors approaching their plan&apos;s voice allocation before they hit an overage.
 
 ### Speed-to-Lead Monitoring (weekly)
-55. **Average response time audit:** Review average lead response time across all active clients. Investigate any client whose average exceeds 5 minutes — this is the primary conversion driver and the guarantee anchor. If degraded, check: cron orchestrator health, Anthropic API latency, and Twilio webhook delivery logs.
+58. **Average response time audit:** Review average lead response time across all active clients. Investigate any client whose average exceeds 5 minutes — this is the primary conversion driver and the guarantee anchor. If degraded, check: cron orchestrator health, Anthropic API latency, and Twilio webhook delivery logs.
 
 ### Calendar Sync Troubleshooting
-56. **Consecutive error check (weekly):** Review `consecutiveErrors` for all calendar integrations. Any integration with 3+ consecutive errors needs immediate investigation — the contractor may be missing booking notifications.
-57. **Token expiry fix:** The most common calendar sync failure is an expired OAuth token. Have the contractor reconnect via Settings &rarr; Features &rarr; Calendar. Reconnection resets the error counter and resumes sync immediately.
-58. **Stale sync detection:** If a calendar integration shows no sync activity in the last 30 minutes, verify the `calendar-sync` cron is running and check for `error_log` entries with source `[CalendarSync]`.
+59. **Consecutive error check (weekly):** Review `consecutiveErrors` for all calendar integrations. Any integration with 3+ consecutive errors needs immediate investigation — the contractor may be missing booking notifications.
+60. **Token expiry fix:** The most common calendar sync failure is an expired OAuth token. Have the contractor reconnect via Settings &rarr; Features &rarr; Calendar. Reconnection resets the error counter and resumes sync immediately.
+61. **Stale sync detection:** If a calendar integration shows no sync activity in the last 30 minutes, verify the `calendar-sync` cron is running and check for `error_log` entries with source `[CalendarSync]`.
 
 ### DNC List Management
-59. **Permanent removal requests:** When a lead requests permanent removal beyond the standard STOP opt-out, add their number to the global DNC list via the admin compliance tools. DNC blocks ALL outbound including transactional messages, unlike opt-out which only blocks commercial messages.
-60. **DNC list audit (monthly):** Periodically audit the DNC list to confirm no legitimate leads were accidentally added. Check for numbers that were added without a clear opt-out or removal request in the audit log.
+62. **Permanent removal requests:** When a lead requests permanent removal beyond the standard STOP opt-out, add their number to the global DNC list via the admin compliance tools. DNC blocks ALL outbound including transactional messages, unlike opt-out which only blocks commercial messages.
+63. **DNC list audit (monthly):** Periodically audit the DNC list to confirm no legitimate leads were accidentally added. Check for numbers that were added without a clear opt-out or removal request in the audit log.
 
 ### Feature Toggle Reference
-61. **Toggle-first diagnosis:** When a contractor reports unexpected behavior (AI not responding, flows not sending, voice not activating), check their feature toggle state before investigating code. The 18 toggles are: `missedCallSms`, `aiResponse`, `aiAgent`, `autoEscalation`, `voice`, `flows`, `leadScoring`, `reputationMonitoring`, `autoReviewResponse`, `calendarSync`, `hotTransfer`, `paymentLinks`, `photoRequests`, `multiLanguage`, `smartAssist`, `smartAssistDelay`, `smartAssistManualCategories`, `preferredLanguage`. Most &ldquo;broken feature&rdquo; reports are a disabled toggle.
+64. **Toggle-first diagnosis:** When a contractor reports unexpected behavior (AI not responding, flows not sending, voice not activating), check their feature toggle state before investigating code. The 18 toggles are: `missedCallSms`, `aiResponse`, `aiAgent`, `autoEscalation`, `voice`, `flows`, `leadScoring`, `reputationMonitoring`, `autoReviewResponse`, `calendarSync`, `hotTransfer`, `paymentLinks`, `photoRequests`, `multiLanguage`, `smartAssist`, `smartAssistDelay`, `smartAssistManualCategories`, `preferredLanguage`. Most &ldquo;broken feature&rdquo; reports are a disabled toggle.
 
 ### Email Fallback Awareness
-62. **Booking notification email fallback:** When a booking notification is blocked by compliance (quiet hours, opt-out), the system falls back to email. If a contractor reports receiving unexpected booking emails, check the audit log for `reminder_delivery_no_recipient` entries — these confirm the SMS chain failed and email was used as fallback. Resolve by reviewing the contractor&apos;s notification routing policy.
+65. **Booking notification email fallback:** When a booking notification is blocked by compliance (quiet hours, opt-out), the system falls back to email. If a contractor reports receiving unexpected booking emails, check the audit log for `reminder_delivery_no_recipient` entries — these confirm the SMS chain failed and email was used as fallback. Resolve by reviewing the contractor&apos;s notification routing policy.
 
 ### Stripe &amp; Billing Health (weekly)
-63. **Stripe reconciliation verification:** Confirm the Stripe reconciliation cron ran and subscription status in the database matches Stripe. Discrepancies (e.g., active in Stripe but &ldquo;cancelled&rdquo; in DB) can silently disable client features. Resolve via admin client billing page.
-64. **Message limit monitoring:** For clients not on unlimited plans, check weekly whether they are approaching their plan&apos;s message limit. Proactively notify before they hit the cap to avoid unexpected send failures.
-65. **Plan change processing:** For upgrade or downgrade requests, process via the admin client billing page and verify Stripe reflects the change within 60 seconds. If Stripe does not update, check for webhook delivery failures in the Stripe dashboard.
+66. **Stripe reconciliation verification:** Confirm the Stripe reconciliation cron ran and subscription status in the database matches Stripe. Discrepancies (e.g., active in Stripe but &ldquo;cancelled&rdquo; in DB) can silently disable client features. Resolve via admin client billing page.
+67. **Message limit monitoring:** For clients not on unlimited plans, check weekly whether they are approaching their plan&apos;s message limit. Proactively notify before they hit the cap to avoid unexpected send failures.
+68. **Plan change processing:** For upgrade or downgrade requests, process via the admin client billing page and verify Stripe reflects the change within 60 seconds. If Stripe does not update, check for webhook delivery failures in the Stripe dashboard.
 
 ### Trial Management
-66. **Trial expiry outreach:** Monitor clients in trial status and proactively reach out at least 3 days before trial expiry to convert to paid. Waiting until expiry day risks losing the client to inertia.
-67. **Post-expiry behavior verification:** If a trial expires without payment, verify the system correctly transitions the client (features disabled or grace period active per current policy). Check the client status in admin and confirm no automation sequences are still firing for an expired trial client.
+69. **Trial expiry outreach:** Monitor clients in trial status and proactively reach out at least 3 days before trial expiry to convert to paid. Waiting until expiry day risks losing the client to inertia.
+70. **Post-expiry behavior verification:** If a trial expires without payment, verify the system correctly transitions the client (features disabled or grace period active per current policy). Check the client status in admin and confirm no automation sequences are still firing for an expired trial client.
 
 ## Knowledge Gap Resolution Process
 
