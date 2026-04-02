@@ -239,9 +239,52 @@ Purpose: Manages contractor expectations during the 3-week ramp, creates a natur
 
 ---
 
+### Who Gets 5-10x ROI (Sign Them)
+
+These contractors will get massive value. Prioritize them.
+
+| Signal | Why it works | Expected ROI |
+|--------|-------------|:------------:|
+| **10+ leads/month** from any source (calls, forms, referrals) | System has volume to work with. Speed-to-lead advantage kicks in. | 10-25x |
+| **15+ dead quotes** sitting unanswered from last 6 months | Day 1 quote reactivation delivers visible wins in Week 1. | 5-15x |
+| **Average project $25K+** (kitchens, basements, additions) | One recovered project covers 2-5 years of the service. | 8-20x |
+| **Currently does zero systematic follow-up** on estimates | The 4-touch sequence over 14 days is pure incremental value. | 10-20x |
+| **Responds to inquiries in hours, not minutes** | Speed-to-lead gap is huge. System responds in 2-8 seconds. | 15-25x |
+| **Has a Google Business Profile** with fewer than 50 reviews | Review generation compounds over 6-12 months. | Long-term |
+| **2+ crew operation** ($400K+ revenue) | Enough deal flow for the system to demonstrate value quickly. | 10-20x |
+
+**The ideal client has 3+ of these signals.** One signal is enough if the project value is high enough (one $50K kitchen covers 4 years).
+
+### Who Will NOT Get ROI (Do Not Sign Them)
+
+Be honest with these prospects. Signing them wastes their money and your time, and generates negative word-of-mouth.
+
+| Signal | Why it fails | What to say |
+|--------|-------------|-------------|
+| **Fewer than 5 leads/month** with no dead quote backlog | System has nothing to work with. Guarantee window extends to 90+ days. | &ldquo;At your current volume, the system needs more time to prove itself. Let&apos;s revisit when your pipeline picks up, or start with importing your old quotes to see if there&apos;s recovery potential.&rdquo; |
+| **Average project under $10K** (handyman, small repairs) | Break-even requires 1.2 projects/year at $10K &mdash; achievable but the margin is too thin to feel like a win. | &ldquo;At your project size, the math is tight. This service is built for contractors doing $25K+ jobs where one recovery covers the year.&rdquo; |
+| **100% word-of-mouth, zero inbound, zero estimates sent** | No digital lead flow = no SMS conversations = AI has nothing to do. | &ldquo;Your business runs on relationships, which is great. This system works on leads that come through your phone or website. If you ever start getting inbound inquiries, we&apos;d be a great fit.&rdquo; |
+| **Already has a receptionist or office manager handling all follow-ups** | Incremental value is low if follow-up is already systematic. Speed advantage is the only differentiator. | &ldquo;It sounds like you&apos;ve already solved the follow-up problem. The main value for you would be the after-hours speed advantage and review automation. Worth discussing, but only if those gaps are real for you.&rdquo; |
+| **Contractor who doesn&apos;t use a smartphone or text** | The system communicates via SMS. A contractor who only uses phone calls has no interaction path. | &ldquo;The system works through text messaging. If your customers primarily reach you by phone call, our Voice AI add-on might fit &mdash; but the core service relies on SMS.&rdquo; |
+| **Contractor in active financial distress** | $1,000/month when they can&apos;t make payroll is irresponsible to sell. | &ldquo;I&apos;d rather wait until your cash flow stabilizes. This service pays for itself, but not if the $1,000 is money you need for materials this week.&rdquo; |
+
+**The rule:** If you wouldn&apos;t feel good explaining to their spouse why they should pay $1,000/month, don&apos;t sign them.
+
+### The Gray Zone (Proceed with Caution)
+
+| Signal | Approach |
+|--------|----------|
+| **8-12 leads/month** (below guarantee floor but not zero) | Sign them, but disclose the extended guarantee window upfront. Lead with dormant quote reactivation, not speed-to-lead. |
+| **Referral-only but sends 8+ estimates/month** | Great fit for estimate follow-up + review generation. Skip the speed-to-lead pitch entirely. |
+| **Seasonal contractor** (roofing, concrete, landscaping) | Discuss the seasonal pause option upfront. Sign them in spring when volume is high, not in November. |
+| **Contractor with existing CRM** (Jobber, ServiceTitan) | Position as front-of-funnel complement. Webhook integration sends won leads to their CRM. Not a replacement. |
+| **Contractor doing $1M+** with a full office staff | The managed service at $1,000/mo may feel low-touch for their expectations. Consider whether they need a higher-touch engagement or if the automation alone is enough. |
+
+---
+
 ### Pre-Call Qualification
 
-Before the call, answer these two questions. If either is a hard no, adjust your pitch — don&apos;t waste a call.
+Before the call, answer these two questions. If either is a hard no, adjust your pitch &mdash; don&apos;t waste a call.
 
 **1. Minimum lead volume check**
 
