@@ -181,9 +181,19 @@ npm run test:ai
 
 ---
 
-## Step 3: Learn the System (3-4 hours, can split across days)
+## Step 3: Learn the System (~90 minutes for the core, then reference docs)
 
-Two goals. Do them in order.
+### Start here: The Operator Guide
+
+- [ ] Read `docs/operations/00-OPERATOR-GUIDE.md` end to end (~90 minutes)
+
+This single document covers everything you need to sell and operate: what the system does, the deal structure, how the AI works, the failure modes, the honest boundaries, the sales conversation flow, the top 3 objections, the onboarding script, the daily routine, and the 7 legal hard rules. All in one place, all connected.
+
+**After reading the Operator Guide, do the self-tests below. If you can answer all of them without looking, you&apos;re ready to sell.**
+
+### Then go deeper as needed
+
+The Operator Guide gives you the complete picture. The docs below go deeper on specific areas &mdash; read them when you need the detail, not before.
 
 ### Goal A: Understand the System End to End
 
