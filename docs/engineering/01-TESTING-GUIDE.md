@@ -1662,6 +1662,349 @@ Expected:
 
 ---
 
+### Step 60: Review Monitoring &amp; Auto-Response
+
+#### 60a: Review sync cron populates the `reviews` table
+
+1. Ensure the test client has a Google Business URL set in the admin UI.
+2. Run the review sync cron:
+
+```bash
+curl -i http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Query the `reviews` table for the test client:
+
+```sql
+SELECT * FROM reviews WHERE client_id = '<clientId>' ORDER BY created_at DESC LIMIT 5;
+```
+
+Expected:
+
+- Cron returns `200` with a summary payload.
+- At least one row appears in `reviews` for the client (or rows are present from a prior sync).
+- `rating`, `author_name`, `text`, and `review_date` are populated.
+
+#### 60b: Negative review alert
+
+1. Insert a test review with `rating <= 2` directly into the `reviews` table (or simulate via the sync cron if a low-rated review exists in the connected Google account).
+2. Verify the contractor (Dev Phone #3) receives an SMS alert within the next cron cycle.
+
+Expected:
+
+- Outbound SMS is sent to the contractor&apos;s phone containing the reviewer&apos;s name and rating.
+- Alert is sent only once per review (no duplicate on re-run).
+
+#### 60c: AI review response draft generation
+
+1. After Step 60a, query the `review_responses` table for the test client:
+
+```sql
+SELECT * FROM review_responses WHERE client_id = '<clientId>' ORDER BY created_at DESC LIMIT 5;
+```
+
+2. Confirm at least one row with `status = 'draft'` exists for a recent review.
+
+Expected:
+
+- `review_responses` row present with `status = 'draft'` and non-empty `response_text`.
+- Draft is linked to the correct `review_id`.
+
+#### 60d: Draft approval workflow
+
+1. In the admin UI, navigate to the client&apos;s review management view.
+2. Find a draft response and click **Approve**.
+3. Verify the row in `review_responses` updates to `status = 'approved'` (or `'posted'`).
+4. If live posting is configured, verify the API call to Google My Business is attempted (check server logs for the outbound POST).
+
+Expected:
+
+- `review_responses.status` transitions from `'draft'` to `'approved'` or `'posted'` after approval.
+- No duplicate posts on re-approval attempt.
+
+#### 60e: Review request automation fires after job completion
+
+1. Mark a lead&apos;s job as complete via the admin lead detail page or API.
+2. Wait for the configured review request delay (or set the delay to 1 minute for testing, then wait).
+3. Verify Dev Phone #2 (the lead&apos;s number) receives a review request SMS containing the Google Business URL.
+
+Expected:
+
+- Review request SMS delivered to the lead after the configured delay.
+- Message includes the Google Business URL set on the client.
+- No duplicate request sent on subsequent completions of the same job.
+
+---
+
+### Step 61: Voice AI Activation Modes
+
+#### 61a: Always-on mode
+
+1. In the admin client detail page, set Voice AI mode to **always-on** and save.
+2. Call the business line (Dev Phone #2 → #1).
+3. Verify Voice AI answers immediately without ringing through to the contractor.
+
+Expected:
+
+- Voice AI picks up the call on the first ring.
+- Call is handled entirely by the AI (or transferred on request).
+- `voice_calls` row is created with `mode = 'always_on'`.
+
+#### 61b: After-hours mode
+
+1. Set Voice AI mode to **after-hours** and configure business hours (e.g., 9am–5pm local time).
+2. Call during business hours — verify the call rings through normally (no Voice AI interception).
+3. Call outside business hours — verify Voice AI answers.
+
+Expected:
+
+- During business hours: call passes through to the contractor&apos;s forwarding number.
+- Outside business hours: Voice AI answers and a `voice_calls` row is created.
+- Mode and time-of-call are logged in `voice_calls`.
+
+#### 61c: Overflow mode
+
+1. Set Voice AI mode to **overflow** and configure the ring timeout (e.g., 20 seconds).
+2. Call the business line and let it ring without answering.
+3. After the timeout, verify Voice AI picks up.
+
+Expected:
+
+- Voice AI answers after the configured ring timeout.
+- If the contractor answers before timeout, Voice AI does not activate.
+- `voice_calls` row records the overflow trigger.
+
+#### 61d: ElevenLabs voice persona selection
+
+1. In the admin client settings, change the ElevenLabs voice persona to a different option.
+2. Make a test call to the business line (Voice AI mode must be active).
+3. Verify the voice heard on the call matches the newly selected persona (audible difference from the prior setting).
+
+Expected:
+
+- Voice persona change takes effect on the next call without redeployment.
+- `voice_calls` row logs the persona ID used.
+
+#### 61e: Post-call transcript and summary storage
+
+1. Complete a short test call with Voice AI active (say a sentence, then hang up).
+2. Query the `voice_calls` table:
+
+```sql
+SELECT id, transcript, ai_summary, duration_seconds, created_at
+FROM voice_calls
+WHERE client_id = '<clientId>'
+ORDER BY created_at DESC LIMIT 1;
+```
+
+Expected:
+
+- Row exists with non-null `transcript` (verbatim conversation text).
+- `ai_summary` contains a brief summary of the call intent.
+- `duration_seconds` is populated and non-zero.
+
+---
+
+### Step 62: DNC List &amp; Blocked Numbers
+
+#### 62a: Global DNC blocks outbound messages
+
+1. Add a phone number (Dev Phone #2) to the global DNC list via the admin UI or API:
+
+```bash
+curl -i -X POST "http://localhost:3000/api/admin/dnc" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <admin-session-cookie>" \
+  -d '{"phoneNumber": "+15550001111"}'
+```
+
+2. Attempt to send a message to that number (trigger an automation or use the send-message API).
+3. Verify no SMS is delivered to Dev Phone #2.
+4. Check the compliance gateway audit log — confirm the message was blocked with reason `dnc_global`.
+
+Expected:
+
+- Outbound SMS is silently blocked by `sendCompliantMessage()`.
+- No Twilio API call is made for the blocked number.
+- Compliance audit log records a `blocked` entry with reason `dnc_global`.
+
+#### 62b: Per-client blocked number
+
+1. Add Dev Phone #2 to the per-client blocked number list for the test client (admin client detail → Compliance or Contacts tab).
+2. Trigger an outbound automation for a lead with that phone number.
+3. Verify the message is blocked.
+
+Expected:
+
+- Message blocked with reason `blocked_number` (per-client).
+- Global DNC and per-client blocks are independent — removing from per-client does not affect global DNC.
+
+#### 62c: Remove from DNC resumes messages
+
+1. Remove Dev Phone #2 from the global DNC list.
+2. Trigger a new outbound message to that number.
+3. Verify the SMS is delivered.
+
+Expected:
+
+- Message sends successfully after removal.
+- Compliance audit log shows `allowed` status for the new send.
+
+#### 62d: DNC blocking appears in the audit log
+
+1. Review the compliance audit log (admin UI or direct DB query):
+
+```sql
+SELECT * FROM compliance_audit_log
+WHERE phone_number = '+15550001111'
+ORDER BY created_at DESC LIMIT 10;
+```
+
+Expected:
+
+- Blocked entries show `status = 'blocked'` and `reason = 'dnc_global'` (or `'blocked_number'`).
+- Each block event is timestamped and associated with the correct client and lead.
+
+---
+
+### Step 63: Feature Toggles Inventory
+
+#### 63a: All 18 feature toggles save correctly
+
+1. Open the admin client edit form for the test client.
+2. Toggle each feature flag on and off, saving after each change. The 18 toggles are:
+
+| Toggle | Purpose |
+|--------|---------|
+| `aiAgentEnabled` | AI agent responds autonomously |
+| `flowsEnabled` | Multi-step follow-up flows active |
+| `calendarSyncEnabled` | Google Calendar two-way sync |
+| `voiceEnabled` | Voice AI active on the business line |
+| `reviewMonitoringEnabled` | Google review sync and alerts |
+| `reviewAutoResponseEnabled` | AI auto-drafts review responses |
+| `knowledgeBaseEnabled` | KB gap detection and intake |
+| `reportingEnabled` | Bi-weekly and monthly report delivery |
+| `guaranteeEnabled` | Revenue guarantee tracking active |
+| `smsEnabled` | Outbound SMS allowed |
+| `smartAssistEnabled` | Smart Assist draft mode active |
+| `estimateFollowUpEnabled` | Estimate follow-up sequence fires |
+| `appointmentRemindersEnabled` | Appointment reminder messages send |
+| `winBackEnabled` | Win-back cron targets this client |
+| `dormantReengagementEnabled` | Dormant re-engagement cron targets this client |
+| `engagementHealthEnabled` | Engagement health check monitors this client |
+| `noShowRecoveryEnabled` | No-show recovery cron targets this client |
+| `quarterlyBlitzEnabled` | Quarterly campaign planner includes this client |
+
+3. After saving each toggle, query the DB to confirm the value persisted:
+
+```sql
+SELECT features FROM clients WHERE id = '<clientId>';
+```
+
+Expected:
+
+- Each toggle saves immediately without error.
+- DB value matches what was set in the UI.
+- No other toggles are affected by changing one.
+
+#### 63b: Key toggle gates actually prevent the feature
+
+1. **`aiAgentEnabled = false`:** Send an inbound SMS from Dev Phone #2. Verify no AI response is sent (Smart Assist or autonomous response is suppressed).
+2. **`calendarSyncEnabled = false`:** Run the calendar-sync cron — verify the client is skipped in the result payload.
+3. **`voiceEnabled = false`:** Call the business line — verify Voice AI does not answer (call passes through or plays default Twilio handling).
+4. **`flowsEnabled = false`:** Trigger an estimate follow-up — verify no flow execution row is created and no messages are scheduled.
+
+Expected:
+
+- Each disabled toggle prevents the associated feature from executing.
+- No errors thrown — the feature is skipped gracefully.
+- Cron result payloads indicate the client was skipped due to toggle being off.
+
+---
+
+### Step 64: Billing — Trial, Plan Changes, Reconciliation
+
+#### 64a: Trial creation and countdown display
+
+1. Create a new test client and set a trial end date 14 days in the future via the admin client edit form.
+2. Navigate to the client detail page — verify a trial badge or countdown is visible (e.g., &ldquo;Trial: 14 days remaining&rdquo;).
+3. Log into the client portal for that client — verify the trial status is also shown.
+
+Expected:
+
+- Trial end date saves correctly to `clients.trialEndsAt`.
+- Admin client detail and portal both display the remaining trial days.
+- No payment prompt shown while trial is active.
+
+#### 64b: Trial expiry behavior
+
+1. Set a test client&apos;s `trial_ends_at` to yesterday (past).
+2. Reload the admin client detail page.
+3. Verify the client is flagged as trial-expired (badge, status indicator, or locked state).
+4. Attempt to use a gated feature (e.g., trigger an AI response) — verify the feature is blocked or a payment prompt appears.
+
+Expected:
+
+- Expired trial is surfaced clearly in the UI.
+- Gated features are inaccessible or prompt for payment.
+- Client data is preserved (no deletion on trial expiry).
+
+#### 64c: Plan upgrade adjusts quotas in Stripe
+
+1. In the admin client detail, change the subscription plan from a lower tier to a higher tier and save.
+2. Check the Stripe dashboard — verify the subscription item was updated to the new price ID.
+3. Query the DB to confirm the plan change:
+
+```sql
+SELECT subscription_plan, stripe_subscription_id FROM clients WHERE id = '<clientId>';
+```
+
+Expected:
+
+- `clients.subscription_plan` updated in DB.
+- Stripe subscription reflects the new plan (check via Stripe dashboard or API).
+- Lead/message quotas for the new plan are enforced from the next billing period.
+
+#### 64d: Stripe reconciliation cron
+
+1. Manually change a client&apos;s `subscription_status` in the DB to `'active'` while their Stripe subscription is actually `'past_due'` (simulate by pausing payment in Stripe test mode).
+2. Run the reconciliation cron:
+
+```bash
+curl -i http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. After the cron completes, query the DB:
+
+```sql
+SELECT subscription_status FROM clients WHERE id = '<clientId>';
+```
+
+Expected:
+
+- `subscription_status` in DB is corrected to match Stripe&apos;s state (`'past_due'` or equivalent).
+- Cron result payload lists the reconciled client IDs.
+- No data loss or unintended side effects.
+
+#### 64e: Payment confirmation SMS after Stripe `invoice.paid`
+
+1. In Stripe test mode, trigger an `invoice.paid` webhook event for the test client&apos;s subscription (use the Stripe CLI):
+
+```bash
+stripe trigger invoice.paid --add invoice:customer=<stripe-customer-id>
+```
+
+2. Verify the Stripe webhook endpoint (`/api/webhooks/stripe`) returns `200`.
+3. Verify the contractor (Dev Phone #3) receives a payment confirmation SMS.
+
+Expected:
+
+- Webhook processed with `200` response.
+- Payment confirmation SMS delivered to the contractor&apos;s phone.
+- `invoices` table (if present) updated with payment record.
+
+---
+
 ## 3. Useful Commands
 
 ```bash

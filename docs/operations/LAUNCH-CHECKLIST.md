@@ -27,6 +27,8 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
   - Test consensus fixes: 48hr estimate nudge, confirmed revenue, report follow-up SMS (Step 55)
   - Test Google Calendar two-way sync (Step 56)
   - Test triage dashboard, KB questionnaire, engagement health, dormant re-engagement, Revenue Recovered card (Step 57)
+  - Complete Testing Guide Steps 60-64 (review monitoring, voice AI modes, DNC list, feature toggles, billing/trial)
+- [ ] Verify Google Places review sync is running for the demo client (check `review_sources` table has a Place ID)
 - [ ] Walk through `docs/engineering/TESTING-SELF-SERVE.md` (Steps 1-7)
   - Sign up as a contractor, verify auto-login to dashboard
   - Verify dashboard setup banner (phone + plan checklist)
@@ -111,6 +113,7 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 - [ ] Run `npm run db:migrate` on production
 - [ ] Run `npm run db:seed -- --lean` (seeds plans, role templates, flow templates, system settings)
 - [ ] Verify seed created the Pro plan with your Stripe price ID
+- [ ] Confirm the production plan seed has `isUnlimitedMessaging: true` for the $1,000/month Pro plan
 - [ ] Run `npm run db:seed -- --demo` to create a demo client for sales calls (removable via `--demo-cleanup`)
 
 ### Deploy
@@ -118,6 +121,8 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 - [ ] Deploy to Cloudflare (via OpenNext)
 - [ ] Verify runtime smoke: hit `/login`, `/signup`, `/client-login` &mdash; all return 200
 - [ ] Run `npm run quality:no-regressions` against production
+- [ ] Verify the Stripe reconciliation cron runs without errors
+- [ ] Verify the review sync cron runs without errors
 
 **Cron setup (single trigger):**
 
@@ -191,6 +196,8 @@ Day 0 (signing):
 - [ ] Create client via admin wizard (`/admin/clients/new/wizard`)
 - [ ] Assign a local phone number in the wizard (or from client detail page)
 - [ ] Onboarding card on client detail page shows 3 next steps (phone, quotes, knowledge base)
+- [ ] If contractor uses Google Calendar: connect during setup, verify first sync completes
+- [ ] If contractor wants Voice AI: configure activation mode (always-on / after-hours / overflow) and verify with a test call
 
 Day 1 (onboarding call):
 - [ ] 30-minute onboarding call (see Playbook Section 10 for script)
@@ -200,6 +207,9 @@ Day 1 (onboarding call):
 - [ ] Import quotes via CSV with `status=estimate_sent` (see Playbook Section 2)
 - [ ] Verify leads appear in `/leads` filtered by source=CSV Import
 - [ ] Offer Google Calendar connection if they use Google Calendar (`/admin/clients/[id]` &mdash; Calendar Integration card, or contractor self-serves from portal Settings)
+- [ ] Walk contractor through the weekly &quot;probable wins&quot; nudge SMS &mdash; explain they&apos;ll get a weekly text asking about appointment outcomes
+- [ ] Explain the review monitoring feature: negative review alerts, AI-drafted responses, approval before posting
+- [ ] If contractor reports booking notification emails instead of SMS: check compliance audit log for blocked SMS entries
 
 Day 1-2:
 - [ ] Supplement KB from onboarding call (`/admin/clients/[id]/knowledge`)
@@ -222,6 +232,9 @@ Week 2 (KB sprint):
   - System auto-sends follow-up SMS to contractor after delivery
 - [ ] Win-back cron starts picking up imported quotes (if 25+ days old)
   - Imported quotes with `estimate_sent` status also get auto-triggered follow-up within 72 hours (CON-07)
+- [ ] Verify flow reply-rate metrics are populating (`templateMetricsDaily.leadsResponded` &gt; 0 for active flows)
+- [ ] Check AI Preview panel works for this client&apos;s KB &mdash; test with 3 sample homeowner questions
+- [ ] Verify probable wins nudge cron fires for the first time (runs weekly, 14-day cooldown)
 - [ ] Verify flow metrics are populating: check `templateMetricsDaily.leadsResponded` for any estimate or win-back flows triggered this week. If the count stays at 0 after the first inbound reply, confirm the SMS webhook is routing correctly and the flow execution row is marked `active`.
 - [ ] Text contractor recap: &quot;Week 2 update &mdash; [X] leads handled, [Y] quotes reactivated, [Z] appointments booked&quot;
 
@@ -260,6 +273,8 @@ Week 3+:
 The research confirms March-April is the prime outreach window. Contractors are flooded with leads and can&apos;t respond to all of them. After mid-April, they go heads-down into summer projects.
 
 - [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; memorize the Tier 1 objection responses
+- [ ] Open ROI worksheet (`docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`) before each call
+- [ ] 5 minutes before each sales call: call the demo number from a separate phone and verify missed-call text-back fires within 10 seconds
 - [ ] Prepare outreach using angles from `SALES-OBJECTION-PLAYBOOK.md` Section 12 (Outreach Scripts)
 - [ ] Lead with quote reactivation angle (Angle A) &mdash; lowest objection surface
 - [ ] For referral-heavy prospects: pivot to estimate follow-up + review generation angle (Playbook Tier 2)

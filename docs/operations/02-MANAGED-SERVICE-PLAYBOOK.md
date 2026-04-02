@@ -345,3 +345,147 @@ Adjust the middle bullet to the specific objection they raised. If they were ske
 | Cron job fails | System alerts operator via SMS | Check reliability dashboard, investigate failed job |
 | Sales call booked | You prep | Run pre-call qualification (Section 12) |
 | Prospect raises objection | You handle | Follow Section 12 quick-reference |
+| Negative review comes in | System alerts, you review | Check AI draft in admin, approve or edit (Section 13) |
+| Quarterly campaign recommended | You review | Launch or customize per Section 14 |
+| Voice transfer fails | System handles, you monitor | P1 escalation created, contractor alerted (Section 15) |
+| Contractor reports calendar sync issue | You handle | Check errors count, reconnect if needed (Section 16) |
+| Contractor asks about weekly YES/NO texts | You explain | Probable wins nudge (Section 17) |
+| Contractor gets email instead of SMS for booking | You explain | Email fallback (Section 18) |
+| Lead or contractor asks about STOP vs. permanent block | You handle | DNC vs opt-out (Section 19) |
+
+---
+
+## 13. Review Monitoring &amp; Response
+
+**What it does:** The system syncs Google reviews hourly. When a review of 2 stars or fewer comes in, it sends an instant SMS alert to the contractor and generates an AI draft response.
+
+**Operator role:**
+
+1. Open the admin client detail &rarr; Reviews section.
+2. Review the AI-generated response draft. Edit if the tone is off or the draft misses context.
+3. Approve to post to Google Business Profile. The system posts via OAuth automatically.
+4. For sensitive reviews (legal threats, health/safety claims, specific job site incidents): do NOT approve immediately. Contact the contractor first to confirm the facts before any public response goes live.
+
+**During onboarding:** explain the review monitoring system during the Section 10 call.
+
+Script:
+> &quot;We monitor your Google reviews in real time. When a new review comes in &mdash; especially a negative one &mdash; you&apos;ll get a text immediately. We also draft a professional response for you to review. You approve it before it goes live.&quot;
+
+If the contractor asks whether the response auto-posts: clarify that every response requires approval from the admin dashboard before it reaches Google. Nothing posts without a human approving it.
+
+---
+
+## 14. Quarterly Growth Blitz Delivery
+
+**What it is:** Each quarter, a cron recommends a campaign type based on the client&apos;s data. This runs on top of always-on automation &mdash; it is a supplementary manual push, not a replacement.
+
+| Quarter | Default campaign | Goal |
+|---------|-----------------|------|
+| Q1 | Dormant lead reactivation | Re-engage past inquiries who never converted |
+| Q2 | Review acceleration | Targeted push to increase Google review count |
+| Q3 | Pipeline builder | Reach out to past inquiries ahead of fall season |
+| Q4 | Year-end review + 30-min strategy call | Annual planning and retention |
+
+**Operator steps:**
+
+1. Check the quarterly campaign recommendation in the admin dashboard (Campaign Planner section).
+2. Review the suggested copy. Customize if the tone or offer needs adjustment for this contractor.
+3. Launch the campaign and note the send date.
+4. After 2 weeks, report results to the contractor: engagements, replies, appointments booked.
+
+**Expected outcomes per quarter:** 3-8 additional qualified engagements; 2-5 additional reviews (Q2); 1-2 recovered projects (Q1/Q3).
+
+If the contractor prefers a different campaign type than the recommendation, accommodate the request from the available menu &mdash; the recommendation is a default, not a mandate.
+
+---
+
+## 15. Voice AI Delivery
+
+**Add-on:** $0.15/minute. Typically enabled at Week 3 or later once the KB is solid and the client is in Autonomous mode.
+
+**Activation modes:**
+
+| Mode | Behavior |
+|------|----------|
+| Always on | AI answers every inbound call |
+| After-hours | AI answers only outside configured business hours |
+| Overflow | AI answers only when the call rings past a timeout with no answer |
+
+**During onboarding (if voice is enabled):** ask which mode the contractor prefers and configure it in admin settings.
+
+**Missed transfer recovery:** when the AI attempts a hot transfer to a team member and no one answers, three things happen automatically: (1) the homeowner receives an SMS saying someone will call them back, (2) a P1 escalation appears in the triage dashboard, and (3) the team member receives an alert SMS. You do not need to manually intervene &mdash; but monitor the triage queue to confirm the contractor follows up.
+
+Explain this to the contractor before enabling voice:
+> &quot;If our AI answers a call and the customer wants to talk to a person, we transfer them to your team. If nobody picks up, we text the customer that you&apos;ll call back and alert your team immediately.&quot;
+
+**Kill switch:** if the contractor reports unexpected call behavior, toggle the Voice AI kill switch in admin settings. Calls will forward directly to the owner until the issue is resolved.
+
+---
+
+## 16. Calendar Sync Support
+
+**What it does:** Connects the contractor&apos;s Google Calendar. Platform appointments push to Google Calendar as events. Google Calendar events block booking slots so the AI never double-books.
+
+**During onboarding:** walk the contractor through the connection in Settings &gt; Features (client portal) or the Configuration tab in admin.
+
+Script:
+> &quot;Connect your Google Calendar so we can see when you&apos;re busy. When we book an appointment, it shows up in your calendar automatically. And if you block time in Google Calendar, we won&apos;t book over it.&quot;
+
+**Troubleshooting sync issues:**
+
+1. Go to admin client detail &rarr; Configuration tab. Check the `consecutiveErrors` count on the calendar integration card.
+2. If errors &gt; 3: red &ldquo;Sync failed&rdquo; banner is showing on the contractor&apos;s portal. Have them disconnect and reconnect via Settings &gt; Features.
+3. If sync is stale (&gt;30 minutes since last sync): verify the calendar-sync cron is running on the reliability dashboard.
+4. If the token expired: the contractor needs to re-authenticate via Google OAuth. Disconnect and reconnect resolves this.
+
+Sync runs every 15 minutes via the `calendar-sync` cron. Connection requires Google OAuth with calendar read/write permissions.
+
+---
+
+## 17. Probable Wins Nudge
+
+**What it is:** An automated weekly SMS to the contractor asking about leads that had appointments 14 or more days ago but have no won/lost outcome recorded. The message asks: &quot;Did you win [Lead Name]&apos;s [project]? Reply YES or NO&quot;. If YES, a follow-up asks for the job value so the reports reflect real numbers.
+
+**Why it matters:** Without this, pipeline reports undercount wins. Contractors often close jobs and forget to update the system.
+
+**During onboarding:** tell the contractor about this so they are not surprised when the texts start arriving.
+
+Script:
+> &quot;Every week, the system will text you about leads that had appointments but we don&apos;t know the outcome yet. Just reply YES or NO &mdash; it takes 2 seconds. This is how we track your wins and make sure the reports show real numbers.&quot;
+
+If a contractor asks to stop receiving these nudges, they can be disabled per-client in admin settings. Note that disabling them will cause win-rate reporting to drift unless the contractor updates outcomes manually.
+
+---
+
+## 18. Email Fallback for Booking Notifications
+
+**What it is:** When a booking notification SMS is blocked for all recipients (quiet hours, all recipients opted out, or compliance hold), the system falls back to email to ensure the contractor is notified.
+
+**Contractor may ask:** &ldquo;Why did I get an email instead of a text about a new booking?&rdquo;
+
+Response:
+> &quot;The SMS was blocked by quiet hours or a compliance rule, so we sent an email to make sure you didn&apos;t miss the booking. If you prefer to receive these in a different way, we can adjust your notification settings.&quot;
+
+This is expected behavior, not an error. No action needed unless the contractor wants notification routing adjusted.
+
+---
+
+## 19. DNC vs. Opt-Out
+
+Two distinct mechanisms with different scopes. Use the right one.
+
+| Mechanism | Trigger | Effect | Can reverse? |
+|-----------|---------|--------|-------------|
+| **Opt-out (STOP)** | Lead texts STOP | Commercial messages stop; transactional messages (booking reminders) continue | Yes &mdash; lead texts START to re-opt in |
+| **DNC (Do Not Contact)** | Operator adds to global DNC list | ALL messages blocked (commercial + transactional) | No &mdash; DNC cannot be overridden by re-opt-in |
+
+**When to use DNC:** a homeowner contacts the contractor directly to demand all contact cease; any legal or harassment concern is raised; contractor explicitly requests someone be permanently removed.
+
+**When opt-out applies:** standard &ldquo;stop texting me&rdquo; requests. The system handles these automatically when the lead texts STOP.
+
+**To add a number to DNC:** operator adds it via admin &rarr; the compliance gateway blocks all subsequent sends regardless of client or message type.
+
+**During onboarding:** mention this distinction briefly so the contractor knows there are two levels of protection.
+
+Script:
+> &quot;If someone texts STOP, we stop immediately &mdash; that&apos;s automatic. If you need someone permanently removed &mdash; say a difficult customer situation &mdash; let me know and I&apos;ll add them to the do-not-contact list. That blocks everything, even transactional texts.&quot;
