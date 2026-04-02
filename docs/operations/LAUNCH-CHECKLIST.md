@@ -9,61 +9,53 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 
 ## Phase 1: Learn the Platform
 
-- [ ] Walk through `docs/engineering/01-TESTING-GUIDE.md` end to end (Steps 1-38, 53-57)
-  - Create a test client via admin wizard
-  - Assign a phone number
-  - Import test leads via CSV (with status=estimate_sent)
-  - Trigger all automations manually (estimate follow-up, win-back, no-show, payment)
-  - Send a test message, verify AI responds
-  - Generate a report
-  - Test Stripe Checkout subscription flow (Step 26)
-  - Test CSV import with status column (Step 27)
-  - Test AI agent graceful handling without Twilio number (Step 28)
-  - Test self-serve phone provisioning (Step 30)
-  - Test per-client automation pause (Step 36)
-  - Test AI quality review page (Step 37)
-  - Run pre-launch AI scenario tests (Step 33) and AI criteria tests (Step 34)
-  - Complete the full end-to-end lead lifecycle smoke (Step 38)
-  - Test consensus fixes: 48hr estimate nudge, confirmed revenue, report follow-up SMS (Step 55)
-  - Test Google Calendar two-way sync (Step 56)
-  - Test triage dashboard, KB questionnaire, engagement health, dormant re-engagement, Revenue Recovered card (Step 57)
-  - Complete Testing Guide Steps 60-64 (review monitoring, voice AI modes, DNC list, feature toggles, billing/trial)
-  - Test self-serve KB wizard (Step 65a): sign in as contractor, trigger &ldquo;Set up your AI&rdquo; CTA, complete wizard, verify KB entries created
-  - Test portal quote import (Step 65c): upload CSV with `estimate_sent` status, verify follow-up triggered
-  - Test review response approval in portal (Step 65d): verify contractor can view, edit, and approve AI-drafted responses at `/client/reviews`
-  - Test AI auto-progression cron (Step 65b): verify Day 7 and Day 14 mode advances, contractor SMS sent each time
-  - Test KB empty nudge (Step 65e), Day 3 check-in (Step 65f), KB gap auto-notify (Step 65g): verify deduplication via audit_log
-  - Test CASL attestation on admin and portal CSV import (Step 66a-b): verify 400 without checkbox, success with it
-  - Test help center articles seeded (Step 66c): verify 12 articles visible in contractor portal Help section after `db:seed -- --lean`
-  - Test portal lead action buttons (Step 66d): Mark Estimate Sent triggers follow-up; Mark Won captures revenue; Mark Lost requires AlertDialog
-  - Test KB gap SMS deep link (Step 66e): SMS contains `?add=` param; portal KB page pre-fills question form on tap
-- [ ] Verify Google Places review sync is running for the demo client (check `review_sources` table has a Place ID)
-- [ ] Walk through `docs/engineering/TESTING-SELF-SERVE.md` (Steps 1-7)
-  - Sign up as a contractor, verify auto-login to dashboard
-  - Verify dashboard setup banner (phone + plan checklist)
-  - Set up phone, choose plan via Stripe Checkout
-  - Verify settings page phone card
-- [ ] Read `docs/product/PLATFORM-CAPABILITIES.md` &mdash; ground truth of every feature
-  - Skim all 12 sections to understand what the system does end to end
-  - Pay attention to: AI response modes (Section 1), automation triggers and timing (Section 2), compliance gateway chain (Section 6), cron orchestrator job list (Section 11)
-- [ ] Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` cover to cover
-  - This is your day-to-day reference for handling every client scenario
+Split into two tracks. Do the critical path first (~4 hours), then the deep dive.
+
+### 1A. Critical Path Testing (~4 hours)
+
+These are the tests that verify the core client experience works end to end. Do these first.
+
+- [ ] Create a test client via admin wizard, assign a phone number
+- [ ] Call the number from a separate phone &mdash; verify missed-call text-back fires within 5 seconds
+- [ ] Send an inbound SMS to the number &mdash; verify AI responds (Steps 5-7)
+- [ ] Import test leads via CSV with `status=estimate_sent` &mdash; verify estimate follow-up triggers (Step 27)
+- [ ] Mark a lead as Won from the portal conversations view &mdash; verify revenue captures (Step 66d)
+- [ ] Generate a bi-weekly report (Step 11) &mdash; verify it delivers and the follow-up SMS fires
+- [ ] Run the full end-to-end lead lifecycle smoke (Step 38)
+- [ ] Run pre-launch AI scenario tests: `npm run test:ai` &mdash; all Safety tests must pass (Steps 33-34)
+- [ ] Test Google Calendar sync: connect OAuth, verify event appears (Step 56)
+- [ ] Test Stripe Checkout subscription flow (Step 26)
+- [ ] Verify the demo client KB is populated and AI Preview panel returns reasonable answers
+
+### 1B. Deep Verification (~2-3 hours, can do alongside reading)
+
+These tests cover secondary features. Important but not blocking for your first sales call.
+
+- [ ] Test per-client automation pause (Step 36)
+- [ ] Test KB intake questionnaire in admin + portal KB wizard (Steps 57b, 65a)
+- [ ] Test portal quote import with CASL consent checkbox (Steps 65c, 66a-b)
+- [ ] Test review response approval in portal (Step 65d)
+- [ ] Test triage dashboard, engagement health, dormant re-engagement (Step 57)
+- [ ] Test AI auto-progression cron &mdash; verify Day 7/14 mode advances (Step 65b)
+- [ ] Test probable wins nudge, Day 3 check-in, KB gap deep link (Steps 65e-g, 66e)
+- [ ] Verify help center shows 12 articles (Step 66c)
+- [ ] Test review monitoring, voice AI modes, DNC list, feature toggles (Steps 60-64)
+- [ ] Walk through self-serve signup flow (TESTING-SELF-SERVE.md Steps 1-7)
+
+### 1C. Read the Docs (~3-4 hours, can do across multiple sittings)
+
+- [ ] `docs/product/PLATFORM-CAPABILITIES.md` &mdash; ground truth of every feature (skim all 12 sections)
+- [ ] `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` &mdash; your day-to-day delivery reference
   - Sections 1-12: Core delivery (escalations, onboarding, reports, sales, guarantee, cancellation)
-  - Sections 13-19: Feature-specific delivery (review monitoring, quarterly blitz, voice AI, calendar sync, probable wins nudge, email fallback, DNC vs opt-out)
-- [ ] Read `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; full daily/weekly ops checklist
-  - Items 1-44: Core ops (escalations, reports, billing, AI quality, engagement health)
-  - Items 45-51: Self-serve onboarding monitoring (KB nudge, Day 3 check-in, KB gap auto-notify, deep link, CASL attestation, help articles)
-  - Items 52-70: Feature ops (review monitoring, voice AI, calendar troubleshooting, DNC management, Stripe health, trial management, feature toggle reference)
-  - Knowledge Gap Resolution Process section &mdash; this is how the AI improves over time
-- [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`
-  - 10 objections with scripts, proof points, and demo sequences
-  - Section 12: Outreach scripts (Angles A-D) and pre-call qualification
-  - Social proof capture framework and quiet hours positioning
-- [ ] Review `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` &mdash; the 7 hard rules for clients 1-5
-- [ ] Familiarize with templates in `docs/operations/templates/`:
-  - `REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; Day 1 deliverable (30-45 min per client)
-  - `REACTIVATION-ROI-WORKSHEET.md` &mdash; live math during sales calls
-- [ ] Review `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill-in-the-blanks contract for Day 0 signing
+  - Sections 13-19: Feature delivery (review monitoring, quarterly blitz, voice AI, calendar sync, probable wins, email fallback, DNC)
+- [ ] `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; daily/weekly ops checklist (70 items)
+  - Focus on: Knowledge Gap Resolution Process, items 1-20 (daily core ops)
+- [ ] `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; 10 objections + Section 12 outreach scripts
+- [ ] `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` &mdash; the 7 hard rules for clients 1-5
+- [ ] `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill in your details now, have it ready for Day 0
+- [ ] `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; Day 1 deliverable (30-45 min)
+- [ ] `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` &mdash; open before each sales call
+
 - [ ] Delete all test data when done (or use a separate Neon branch)
 
 ---
@@ -101,16 +93,49 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 - [ ] Set authorized redirect URI: `https://yourdomain.com/api/auth/callback/google-calendar`
 - [ ] Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in production env
 
-### Other Required Env Vars
+### All Required Env Vars (consolidated checklist)
 
-- [ ] `DATABASE_URL` &mdash; production Neon connection string
-- [ ] `AUTH_SECRET` &mdash; generate with `openssl rand -hex 32`
-- [ ] `CLIENT_SESSION_SECRET` &mdash; generate with `openssl rand -hex 32`
-- [ ] `CRON_SECRET` &mdash; generate with `openssl rand -hex 32`
-- [ ] `ANTHROPIC_API_KEY` &mdash; from console.anthropic.com
-- [ ] `NEXT_PUBLIC_APP_URL` &mdash; your production domain (e.g., `https://app.conversionsurgery.com`)
-- [ ] `GOOGLE_CLIENT_ID` &mdash; from Google Cloud Console (see Google Calendar section)
-- [ ] `GOOGLE_CLIENT_SECRET` &mdash; from Google Cloud Console
+Copy this list into your production environment. Check each one off as you set it.
+
+```
+# Database
+DATABASE_URL=                    # Neon production connection string
+
+# Auth
+AUTH_SECRET=                     # openssl rand -hex 32
+CLIENT_SESSION_SECRET=           # openssl rand -hex 32
+
+# Cron
+CRON_SECRET=                     # openssl rand -hex 32
+
+# AI
+ANTHROPIC_API_KEY=               # console.anthropic.com
+
+# App
+NEXT_PUBLIC_APP_URL=             # https://app.conversionsurgery.com
+
+# Stripe (from Stripe section above)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_PRO_MONTHLY=       # price_xxxxx from Stripe
+
+# Email
+RESEND_API_KEY=
+EMAIL_FROM=                      # noreply@conversionsurgery.com
+
+# Twilio (from Twilio section above)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_WEBHOOK_BASE_URL=         # https://app.conversionsurgery.com
+
+# Google Calendar
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+```
+
+- [ ] All env vars above are set in production
+- [ ] Verify no placeholder values remain (search for `xxxxx`, `your`, `example`)
 
 **Post-login setup (not env vars):**
 - [ ] After first admin login, set `operator_phone` and `operator_name` in system_settings via `/admin/settings`. The phone receives SMS alerts on cron failures and SLA breaches. The name appears on the &quot;Your Account Manager&quot; card in the client portal.
