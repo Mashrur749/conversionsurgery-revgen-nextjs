@@ -181,29 +181,74 @@ npm run test:ai
 
 ---
 
-## Step 3: Read the Docs (3-4 hours, can split across days)
+## Step 3: Learn the System (3-4 hours, can split across days)
 
-Read these in order. Each one builds on the last.
+Two goals. Do them in order.
 
-| Order | Doc | What you learn | Time |
-|:-----:|-----|----------------|:----:|
-| 1 | `docs/product/PLATFORM-CAPABILITIES.md` | What the system does (all 12 sections) | 45 min |
-| 2 | `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` | How to deliver the service (22 sections) | 60 min |
-| 3 | `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` | How to sell (10 objections + outreach scripts) | 30 min |
-| 4 | `docs/operations/01-OPERATIONS-GUIDE.md` | Daily/weekly ops checklist (70 items) | 30 min |
-| 5 | `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` | 7 hard rules for clients 1-5 | 10 min |
-| 6 | `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` | Fill in YOUR details now | 15 min |
-| 7 | `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` | Day 1 deliverable format | 10 min |
-| 8 | `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` | Sales call math tool | 5 min |
+### Goal A: Understand the System End to End
 
-**After reading the Playbook, you should be able to answer these from memory:**
-- What happens when the AI doesn&apos;t know something? (Section 1)
-- How do I import a contractor&apos;s old quotes? (Section 2)
-- What do I check before switching AI to autonomous? (Section 3)
-- What are the guarantee terms and when do I refund? (Section 5)
-- What&apos;s the onboarding call script? (Section 10)
-- What are the 10 failure modes and how bad are they? (Section 21)
-- What should I never promise? (Section 22)
+Read these first. After this you should know every feature, every scenario, every failure mode, and every honest boundary &mdash; well enough to explain it to a contractor without looking anything up.
+
+**Read 1: What the system does**
+- [ ] `docs/product/PLATFORM-CAPABILITIES.md` &mdash; all 12 sections (45 min)
+- After reading, you should know: the 4 AI modes, the 7 automation sequences, the compliance chain, the cron job architecture, and every portal page
+
+**Read 2: How you deliver the service**
+- [ ] `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` &mdash; all 22 sections (60 min)
+- **Sections 1-11:** Core delivery &mdash; escalations, quote reactivation, AI quality, reports, guarantee evaluation, pause, cancel, compliance, onboarding call, monthly health check, sales guide
+- **Sections 12:** Sales conversation guide with qualification framework (who gets 5-10x ROI, who to walk away from, gray zone)
+- **Sections 13-19:** Feature delivery &mdash; review monitoring, quarterly blitz, voice AI, calendar sync, probable wins, email fallback, DNC
+- **Sections 20-22:** The sections you need for ethical selling:
+  - Section 20: What the contractor actually experiences (Day 0 through Week 3+)
+  - Section 21: What can go wrong &mdash; 10 failure modes with likelihood and severity
+  - Section 22: Honest boundaries &mdash; what the system does NOT do, with exact framing language
+
+**Self-test after Reads 1-2 (answer from memory):**
+- [ ] What happens when the AI doesn&apos;t know something? (Playbook Section 1)
+- [ ] What&apos;s the 4-touch estimate follow-up timing? (Capabilities Section 2)
+- [ ] What are the guarantee terms? First month is free, then what? (Playbook Section 5)
+- [ ] What&apos;s the onboarding call script? (Playbook Section 10)
+- [ ] Name 3 things the system does NOT do. (Playbook Section 22)
+- [ ] What&apos;s the worst realistic failure? (Playbook Section 21)
+- [ ] Who should you NOT sign? (Playbook Section 12 &mdash; disqualifiers)
+
+**Read 3: How you run it daily**
+- [ ] `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; skim the 70-item checklist, focus on items 1-20 (30 min)
+- You don&apos;t need to memorize this &mdash; it&apos;s a daily reference. Know where it is and what it covers.
+
+**Read 4: Legal rules for clients 1-5**
+- [ ] `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` (10 min)
+- 7 hard rules. Memorize them. Especially: STRICT quiet hours only, honor every guarantee dispute, never promise evening response.
+
+### Goal B: Prepare for Sales and Demo
+
+Now that you understand the system, prepare to sell it.
+
+**Read 5: How to sell**
+- [ ] `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (30 min)
+- Objections 1-10 with scripts. Memorize Tier 1 (Objections 1-2) &mdash; they come up every call.
+- Section 12: Outreach scripts (Angles A-D). Pick your default angle (probably Angle A &mdash; quote reactivation).
+- Pre-call Lead Leak Snapshot workflow and qualification checklist.
+
+**Self-test after Read 5 (answer without looking):**
+- [ ] A contractor says &ldquo;What if the AI says something wrong?&rdquo; &mdash; what do you say? (Objection 1)
+- [ ] A contractor says &ldquo;I got burned before.&rdquo; &mdash; what do you say? (Objection 2)
+- [ ] A contractor says &ldquo;$1,000 is expensive.&rdquo; &mdash; what do you say? (Objection 8)
+- [ ] What&apos;s the loss ceiling you state on every call? (Pre-call qualification #6)
+- [ ] What&apos;s the demo moment that closes deals? (Section 12 &mdash; &ldquo;Call Your Own Number&rdquo;)
+
+**Prepare 6: Get your materials ready**
+- [ ] `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill in YOUR name, email, address now (15 min)
+- [ ] `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; read the format, know what research is needed (10 min)
+- [ ] `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` &mdash; save where you can open it on a call (5 min)
+
+**After Step 3, you should be able to:**
+- Explain the full contractor experience from Day 0 to Week 3 without notes
+- Handle any of the 10 objections without hesitation
+- Know exactly who to sign and who to walk away from
+- Demo the system live with the &ldquo;call your own number&rdquo; moment
+- Deliver the onboarding call from the script
+- Know the 7 legal hard rules by heart
 
 ---
 
