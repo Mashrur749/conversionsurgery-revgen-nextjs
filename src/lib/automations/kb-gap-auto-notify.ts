@@ -135,10 +135,13 @@ export async function runKbGapAutoNotify(): Promise<KbGapAutoNotifyResult> {
       ? `${gap.category}: ${gap.question.slice(0, 80)}`
       : gap.question.slice(0, 100);
 
+    const encodedQuestion = encodeURIComponent(gap.question.slice(0, 200));
+    const deepLink = `${appUrl}/client/knowledge?add=${encodedQuestion}`;
+
     try {
       await sendAlert({
         clientId: gap.clientId,
-        message: `A customer asked about ${topic} and the AI didn't have an answer. Add it here: ${appUrl}/client/knowledge`,
+        message: `Your AI was asked about ${topic} and didn't know the answer. Add it here: ${deepLink}`,
       });
 
       // Log to audit_log to prevent repeats for this gap

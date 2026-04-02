@@ -10,10 +10,16 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 
 export const dynamic = 'force-dynamic';
 
-export default async function KnowledgeBasePage() {
+interface KnowledgeBasePageProps {
+  searchParams: Promise<{ add?: string }>;
+}
+
+export default async function KnowledgeBasePage({ searchParams }: KnowledgeBasePageProps) {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.KNOWLEDGE_VIEW);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
+
+  const { add: prefillQuestion } = await searchParams;
 
   const db = getDb();
   const entries = await db
@@ -43,7 +49,7 @@ export default async function KnowledgeBasePage() {
           Manage what your AI assistant knows about your business. The more detail you add, the better it can answer customer questions.
         </p>
       </div>
-      <KnowledgeList grouped={grouped} />
+      <KnowledgeList grouped={grouped} prefillQuestion={prefillQuestion} />
     </div>
   );
 }

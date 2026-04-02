@@ -80,6 +80,7 @@ export function ImportWizard() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [consentAttested, setConsentAttested] = useState(false);
 
   function reset() {
     setFileName(null);
@@ -87,6 +88,7 @@ export function ImportWizard() {
     setParseErrors([]);
     setResult(null);
     setImportError(null);
+    setConsentAttested(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
@@ -128,7 +130,7 @@ export function ImportWizard() {
       const res = await fetch('/api/client/leads/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rows: parsedRows }),
+        body: JSON.stringify({ rows: parsedRows, consentAttested: true }),
       });
       const data: ImportResult & { error?: string } = await res.json();
       if (!res.ok) {
@@ -276,18 +278,33 @@ export function ImportWizard() {
 
       {/* Actions */}
       {parsedRows && parsedRows.length > 0 && (
-        <div className="flex gap-3 justify-end">
-          <Button variant="outline" onClick={reset} disabled={importing}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleImport}
-            disabled={importing || parsedRows.length === 0}
-            className="bg-[#1B2F26] hover:bg-[#1B2F26]/90 text-white"
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            {importing ? 'Importing...' : `Import ${parsedRows.length} lead${parsedRows.length !== 1 ? 's' : ''}`}
-          </Button>
+        <div className="space-y-4">
+          {/* CASL consent attestation */}
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={consentAttested}
+              onChange={(e) => setConsentAttested(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border border-input accent-[#1B2F26] cursor-pointer"
+            />
+            <span className="text-sm text-muted-foreground leading-snug">
+              I confirm that all contacts in this file have made an inquiry to my business and I have
+              the right to follow up with them under Canadian anti-spam law (CASL).
+            </span>
+          </label>
+          <div className="flex gap-3 justify-end">
+            <Button variant="outline" onClick={reset} disabled={importing}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={importing || parsedRows.length === 0 || !consentAttested}
+              className="bg-[#1B2F26] hover:bg-[#1B2F26]/90 text-white"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              {importing ? 'Importing...' : `Import ${parsedRows.length} lead${parsedRows.length !== 1 ? 's' : ''}`}
+            </Button>
+          </div>
         </div>
       )}
     </div>

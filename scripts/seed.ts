@@ -30,6 +30,7 @@ import {
   AGENCY_PERMISSIONS,
 } from "@/lib/permissions/constants";
 import { eq, and } from "drizzle-orm";
+import { seedHelpArticles } from "@/db/seeds/help-articles";
 
 const db = getDb();
 
@@ -2843,6 +2844,7 @@ export async function seed(options: { lean?: boolean } = {}) {
     await seedAdminUser();
     await seedSystemSettings();
     await seedTemplateVariants();
+    await seedHelpArticles();
 
     if (!lean) {
       // Demo data (has dependencies: clients → leads → conversations/appointments)

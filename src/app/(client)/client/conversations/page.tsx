@@ -22,6 +22,7 @@ export default async function ConversationsPage() {
       source: leads.source,
       conversationMode: leads.conversationMode,
       actionRequired: leads.actionRequired,
+      status: leads.status,
       createdAt: leads.createdAt,
       lastMessageAt: sql<string>`(
         SELECT created_at FROM conversations
@@ -55,6 +56,7 @@ export default async function ConversationsPage() {
     source: lead.source,
     conversationMode: lead.conversationMode,
     actionRequired: lead.actionRequired,
+    status: lead.status ?? null,
     createdAt: lead.createdAt?.toISOString() ?? new Date().toISOString(),
     lastMessageAt: lead.lastMessageAt ?? null,
     lastMessage: lead.lastMessage ?? null,

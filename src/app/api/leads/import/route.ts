@@ -42,8 +42,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No client selected' }, { status: 400 });
     }
 
-    const body: { rows?: unknown[] } = await request.json();
+    const body: { rows?: unknown[]; consentAttested?: unknown } = await request.json();
     const rows = body.rows;
+
+    if (body.consentAttested !== true) {
+      return NextResponse.json(
+        { error: 'CASL consent attestation is required before importing contacts' },
+        { status: 400 }
+      );
+    }
 
     if (!Array.isArray(rows)) {
       return NextResponse.json({ error: 'Expected rows array' }, { status: 400 });
@@ -195,6 +202,7 @@ export async function POST(request: NextRequest) {
       skipped: deduped.length - toInsert.length,
       errors: errors.length > 0 ? errors : undefined,
       total: rows.length,
+      _audit: { consentAttested: true },
     });
   } catch (error) {
     return safeErrorResponse('[Leads][import]', error, 'Import failed', 500);

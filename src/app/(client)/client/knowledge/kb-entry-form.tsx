@@ -27,14 +27,16 @@ interface KbEntry {
 
 interface KbEntryFormProps {
   entry: KbEntry | null;
+  /** Pre-populate the title/question field (used when opened via ?add= deep link) */
+  prefillTitle?: string;
   onSaved: () => void;
   onCancel: () => void;
 }
 
-export function KbEntryForm({ entry, onSaved, onCancel }: KbEntryFormProps) {
+export function KbEntryForm({ entry, prefillTitle, onSaved, onCancel }: KbEntryFormProps) {
   const isEditing = !!entry;
   const [category, setCategory] = useState(entry?.category || 'faq');
-  const [title, setTitle] = useState(entry?.title || '');
+  const [title, setTitle] = useState(entry?.title || prefillTitle || '');
   const [content, setContent] = useState(entry?.content || '');
   const [keywords, setKeywords] = useState(entry?.keywords || '');
   const [saving, setSaving] = useState(false);

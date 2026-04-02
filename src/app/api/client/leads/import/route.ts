@@ -31,8 +31,15 @@ export const POST = portalRoute(
   async ({ request, session }) => {
     const { clientId } = session;
 
-    const body: { rows?: unknown[] } = await request.json();
+    const body: { rows?: unknown[]; consentAttested?: unknown } = await request.json();
     const rows = body.rows;
+
+    if (body.consentAttested !== true) {
+      return NextResponse.json(
+        { error: 'CASL consent attestation is required before importing contacts' },
+        { status: 400 }
+      );
+    }
 
     if (!Array.isArray(rows)) {
       return NextResponse.json({ error: 'Expected rows array' }, { status: 400 });
@@ -171,6 +178,7 @@ export const POST = portalRoute(
       skipped: deduped.length - toInsert.length,
       errors: errors.length > 0 ? errors : undefined,
       total: rows.length,
+      _audit: { consentAttested: true },
     });
   }
 );

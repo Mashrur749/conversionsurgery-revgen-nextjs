@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, MessageCircleQuestion } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -42,12 +42,14 @@ const categoryColors: Record<string, string> = {
 
 interface KnowledgeListProps {
   grouped: Record<string, KbEntry[]>;
+  prefillQuestion?: string;
 }
 
-export function KnowledgeList({ grouped }: KnowledgeListProps) {
+export function KnowledgeList({ grouped, prefillQuestion }: KnowledgeListProps) {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
+  // Auto-open the add form when a prefill question is provided via the ?add= deep link
+  const [showForm, setShowForm] = useState(!!prefillQuestion);
   const [editingEntry, setEditingEntry] = useState<KbEntry | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -80,6 +82,17 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
 
   return (
     <>
+      {prefillQuestion && (
+        <div className="flex items-start gap-3 rounded-lg border border-[#D4754A]/30 bg-[#FFF3E0] px-4 py-3">
+          <MessageCircleQuestion className="h-5 w-5 shrink-0 text-terracotta mt-0.5" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">Your AI was asked a question it couldn&apos;t answer</p>
+            <p className="text-sm text-muted-foreground mt-0.5 break-words">&ldquo;{prefillQuestion}&rdquo;</p>
+            <p className="text-sm text-muted-foreground mt-1">Add your answer below so the AI can handle it next time.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -99,6 +112,7 @@ export function KnowledgeList({ grouped }: KnowledgeListProps) {
       {(showForm || editingEntry) && (
         <KbEntryForm
           entry={editingEntry}
+          prefillTitle={!editingEntry ? prefillQuestion : undefined}
           onSaved={handleSaved}
           onCancel={() => { setShowForm(false); setEditingEntry(null); }}
         />

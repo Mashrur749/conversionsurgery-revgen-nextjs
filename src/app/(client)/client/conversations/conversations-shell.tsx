@@ -7,6 +7,27 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -21,6 +42,7 @@ interface ConversationListItem {
   source: string | null;
   conversationMode: string | null;
   actionRequired: boolean | null;
+  status: string | null;
   createdAt: string;
   lastMessageAt: string | null;
   lastMessage: string | null;
@@ -45,17 +67,20 @@ interface Suggestion {
   createdAt: string | null;
 }
 
+interface LeadDetail {
+  id: string;
+  name: string | null;
+  phone: string;
+  conversationMode: string | null;
+  actionRequired: boolean | null;
+  status: string | null;
+}
+
 interface ConversationsShellProps {
   initialConversations: ConversationListItem[];
   initialLeadId?: string;
   initialMessages?: Message[];
-  initialLead?: {
-    id: string;
-    name: string | null;
-    phone: string;
-    conversationMode: string | null;
-    actionRequired: boolean | null;
-  };
+  initialLead?: LeadDetail;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,7 +153,7 @@ export function ConversationsShell({
     initialLeadId ?? null
   );
   const [messages, setMessages] = useState<Message[]>(initialMessages ?? []);
-  const [lead, setLead] = useState(initialLead ?? null);
+  const [lead, setLead] = useState<LeadDetail | null>(initialLead ?? null);
   const [mode, setMode] = useState(initialLead?.conversationMode ?? 'ai');
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState('');
@@ -142,6 +167,11 @@ export function ConversationsShell({
   const [pollingFailures, setPollingFailures] = useState(0);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
+  // Lead status actions
+  const [statusActionLoading, setStatusActionLoading] = useState(false);
+  const [statusActionMessage, setStatusActionMessage] = useState<string | null>(null);
+  const [wonDialogOpen, setWonDialogOpen] = useState(false);
+  const [confirmedRevenueInput, setConfirmedRevenueInput] = useState('');
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -236,9 +266,13 @@ export function ConversationsShell({
           phone: conv.phone,
           conversationMode: conv.conversationMode,
           actionRequired: conv.actionRequired,
+          status: conv.status,
         });
         setMode(conv.conversationMode ?? 'ai');
       }
+      // Reset status action state when switching conversations
+      setStatusActionMessage(null);
+      setConfirmedRevenueInput('');
 
       // EC-05: Race the fetch against a 5-second timeout
       const timeoutId = setTimeout(() => {
@@ -495,6 +529,116 @@ export function ConversationsShell({
     }, 300);
   }
 
+  // ----- Lead status actions -----
+  async function handleMarkEstimateSent() {
+    if (!selectedLeadId || statusActionLoading) return;
+    setStatusActionLoading(true);
+    setStatusActionMessage(null);
+    try {
+      const res = await fetch(`/api/client/leads/${selectedLeadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'estimate_sent' }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { lead: { id: string; status: string } };
+        setLead((prev) => (prev ? { ...prev, status: data.lead.status } : prev));
+        setConversations((prev) =>
+          prev.map((c) => (c.id === selectedLeadId ? { ...c, status: data.lead.status } : c))
+        );
+        setStatusActionMessage('Estimate follow-up started');
+        setTimeout(() => setStatusActionMessage(null), 4000);
+      } else {
+        setStatusActionMessage('Failed to update status. Please try again.');
+        setTimeout(() => setStatusActionMessage(null), 4000);
+      }
+    } catch {
+      setStatusActionMessage('Network error. Please try again.');
+      setTimeout(() => setStatusActionMessage(null), 4000);
+    }
+    setStatusActionLoading(false);
+  }
+
+  async function handleMarkWon() {
+    if (!selectedLeadId || statusActionLoading) return;
+    const revenue = confirmedRevenueInput.trim()
+      ? parseFloat(confirmedRevenueInput.trim())
+      : undefined;
+    if (confirmedRevenueInput.trim() && (isNaN(revenue!) || revenue! < 0)) {
+      setStatusActionMessage('Enter a valid revenue amount.');
+      setTimeout(() => setStatusActionMessage(null), 4000);
+      return;
+    }
+    setWonDialogOpen(false);
+    setStatusActionLoading(true);
+    setStatusActionMessage(null);
+    try {
+      const res = await fetch(`/api/client/leads/${selectedLeadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'won',
+          ...(revenue !== undefined ? { confirmedRevenue: revenue } : {}),
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { lead: { id: string; status: string } };
+        setLead((prev) => (prev ? { ...prev, status: data.lead.status } : prev));
+        setConversations((prev) =>
+          prev.map((c) => (c.id === selectedLeadId ? { ...c, status: data.lead.status } : c))
+        );
+        setConfirmedRevenueInput('');
+        setStatusActionMessage('Lead marked as won');
+        setTimeout(() => setStatusActionMessage(null), 4000);
+      } else {
+        setStatusActionMessage('Failed to update status. Please try again.');
+        setTimeout(() => setStatusActionMessage(null), 4000);
+      }
+    } catch {
+      setStatusActionMessage('Network error. Please try again.');
+      setTimeout(() => setStatusActionMessage(null), 4000);
+    }
+    setStatusActionLoading(false);
+  }
+
+  async function handleMarkLost() {
+    if (!selectedLeadId || statusActionLoading) return;
+    setStatusActionLoading(true);
+    setStatusActionMessage(null);
+    try {
+      const res = await fetch(`/api/client/leads/${selectedLeadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'lost' }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { lead: { id: string; status: string } };
+        setLead((prev) => (prev ? { ...prev, status: data.lead.status } : prev));
+        setConversations((prev) =>
+          prev.map((c) => (c.id === selectedLeadId ? { ...c, status: data.lead.status } : c))
+        );
+        setStatusActionMessage('Lead marked as lost');
+        setTimeout(() => setStatusActionMessage(null), 4000);
+      } else {
+        setStatusActionMessage('Failed to update status. Please try again.');
+        setTimeout(() => setStatusActionMessage(null), 4000);
+      }
+    } catch {
+      setStatusActionMessage('Network error. Please try again.');
+      setTimeout(() => setStatusActionMessage(null), 4000);
+    }
+    setStatusActionLoading(false);
+  }
+
+  // ----- Derived: which action buttons to show -----
+  const leadStatus = lead?.status ?? null;
+  const isTerminalStatus =
+    leadStatus === 'estimate_sent' ||
+    leadStatus === 'won' ||
+    leadStatus === 'lost';
+  const showEstimateButton = !isTerminalStatus;
+  const showWonLostButtons = leadStatus !== 'won' && leadStatus !== 'lost';
+
   // =========================================================================
   // Render
   // =========================================================================
@@ -631,45 +775,155 @@ export function ConversationsShell({
           ) : (
             <>
               {/* Header */}
-              <div className="flex justify-between items-center px-3 py-2.5 border-b flex-shrink-0">
-                <div className="flex items-center gap-2 min-w-0">
-                  {/* Mobile back button */}
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="md:hidden text-muted-foreground hover:text-foreground p-1"
-                  >
-                    &larr;
-                  </button>
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm truncate">
-                      {lead?.name || lead?.phone}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{lead?.phone}</p>
+              <div className="border-b flex-shrink-0">
+                {/* Row 1: lead name + mode controls */}
+                <div className="flex justify-between items-center px-3 py-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {/* Mobile back button */}
+                    <button
+                      type="button"
+                      onClick={handleBack}
+                      className="md:hidden text-muted-foreground hover:text-foreground p-1"
+                    >
+                      &larr;
+                    </button>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">
+                        {lead?.name || lead?.phone}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{lead?.phone}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <Badge
+                      className={modeColors[mode]}
+                      variant="outline"
+                    >
+                      {mode === 'ai' ? 'AI' : mode === 'human' ? 'Human' : 'Paused'}
+                    </Badge>
+                    {mode === 'ai' ? (
+                      <Button size="sm" className="h-7 text-xs" onClick={handleTakeover}>
+                        Take Over
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={handleHandback}
+                      >
+                        Hand Back to AI
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <Badge
-                    className={modeColors[mode]}
-                    variant="outline"
-                  >
-                    {mode === 'ai' ? 'AI' : mode === 'human' ? 'Human' : 'Paused'}
-                  </Badge>
-                  {mode === 'ai' ? (
-                    <Button size="sm" className="h-7 text-xs" onClick={handleTakeover}>
-                      Take Over
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={handleHandback}
-                    >
-                      Hand Back to AI
-                    </Button>
-                  )}
-                </div>
+
+                {/* Row 2: lead status action buttons */}
+                {(showEstimateButton || showWonLostButtons) && (
+                  <div className="flex items-center gap-1.5 px-3 pb-2 flex-wrap">
+                    {showEstimateButton && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs border-forest/40 text-forest hover:bg-moss-light"
+                        disabled={statusActionLoading}
+                        onClick={handleMarkEstimateSent}
+                      >
+                        Mark Estimate Sent
+                      </Button>
+                    )}
+
+                    {showWonLostButtons && (
+                      <>
+                        {/* Mark Won — dialog for revenue input */}
+                        <Dialog open={wonDialogOpen} onOpenChange={setWonDialogOpen}>
+                          <DialogTrigger
+                            className="inline-flex items-center justify-center h-7 px-3 text-xs rounded-md border border-[#3D7A50]/40 text-[#3D7A50] bg-transparent hover:bg-[#E8F5E9] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                            disabled={statusActionLoading}
+                          >
+                            Mark Won
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-xs">
+                            <DialogHeader>
+                              <DialogTitle>Mark Lead as Won</DialogTitle>
+                              <DialogDescription>
+                                Optionally enter the confirmed project value.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-2">
+                              <Label htmlFor="confirmed-revenue" className="text-sm">
+                                Confirmed Revenue (optional)
+                              </Label>
+                              <div className="flex items-center mt-1.5">
+                                <span className="text-sm text-muted-foreground mr-1.5">$</span>
+                                <Input
+                                  id="confirmed-revenue"
+                                  type="number"
+                                  min="0"
+                                  step="1"
+                                  placeholder="e.g. 4500"
+                                  value={confirmedRevenueInput}
+                                  onChange={(e) => setConfirmedRevenueInput(e.target.value)}
+                                  className="h-8 text-sm"
+                                />
+                              </div>
+                            </div>
+                            <DialogFooter>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setWonDialogOpen(false)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="bg-[#3D7A50] hover:bg-[#3D7A50]/90 text-white"
+                                onClick={handleMarkWon}
+                              >
+                                Confirm Won
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Mark Lost — AlertDialog confirmation */}
+                        <AlertDialog>
+                          <AlertDialogTrigger
+                            className="inline-flex items-center justify-center h-7 px-3 text-xs rounded-md border border-sienna/40 text-sienna bg-transparent hover:bg-[#FDEAE4] disabled:opacity-50 disabled:pointer-events-none transition-colors"
+                            disabled={statusActionLoading}
+                          >
+                            Mark Lost
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Mark Lead as Lost?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will stop all automated follow-up for this lead. You can still send manual messages.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={handleMarkLost}
+                                className="bg-sienna hover:bg-sienna/90 text-white"
+                              >
+                                Mark Lost
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Status action feedback */}
+                {statusActionMessage && (
+                  <div className="px-3 pb-2">
+                    <p className="text-xs text-forest">{statusActionMessage}</p>
+                  </div>
+                )}
               </div>
 
               {/* EC-06: Polling failure banner */}
