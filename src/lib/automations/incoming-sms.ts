@@ -17,7 +17,9 @@ import { processIncomingMessage } from '@/lib/agent/orchestrator';
 import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
 import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 import { ComplianceService } from '@/lib/compliance/compliance-service';
-import { eq, and, sql } from 'drizzle-orm';
+import { recordLeadResponse } from '@/lib/services/flow-metrics';
+import { flowExecutions, flows } from '@/db/schema';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
 import type { MediaAttachment } from '@/db/schema/media-attachments';
@@ -228,7 +230,42 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     console.log(`[MMS] Processed ${savedMedia.length}/${NumMedia} media items for lead ${lead.id}`);
   }
 
-  // 5a. Update lead score (quick mode for speed)
+  // 5a. Record reply-rate metrics for any active flow execution (fire-and-forget)
+  try {
+    const db2 = getDb();
+    const [activeFlow] = await db2
+      .select({
+        templateId: flows.templateId,
+        currentStep: flowExecutions.currentStep,
+        startedAt: flowExecutions.startedAt,
+      })
+      .from(flowExecutions)
+      .innerJoin(flows, eq(flows.id, flowExecutions.flowId))
+      .where(
+        and(
+          eq(flowExecutions.leadId, lead.id),
+          eq(flowExecutions.status, 'active')
+        )
+      )
+      .orderBy(desc(flowExecutions.startedAt))
+      .limit(1);
+
+    if (activeFlow?.templateId) {
+      const refTime = activeFlow.startedAt ?? new Date();
+      const responseTimeMinutes = Math.round(
+        (Date.now() - new Date(refTime).getTime()) / 60000
+      );
+      await recordLeadResponse(
+        activeFlow.templateId,
+        activeFlow.currentStep ?? 1,
+        responseTimeMinutes
+      );
+    }
+  } catch (err) {
+    console.error('[FlowMetrics] Failed to record lead response:', err);
+  }
+
+  // 5b. Update lead score (quick mode for speed)
   scoreLead(lead.id, { useAI: false }).catch(console.error);
 
   // If high-value signals detected, do full AI scoring async

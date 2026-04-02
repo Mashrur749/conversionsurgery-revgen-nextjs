@@ -180,6 +180,11 @@ Reference: `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` for detailed process
 ### After the contractor says yes
 
 Day 0 (signing):
+- [ ] Send the service agreement for signature — template at `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md`
+  - Fill in all [bracketed] fields (client name, address, email, start date, operator name/email)
+  - Send as PDF via DocuSign, HelloSign, or email confirmation
+  - Do not proceed with platform setup until signed agreement is received
+  - Note: sections marked [PENDING COUNSEL REVIEW] are draft language — get counsel review at client #5
 - [ ] Verify agency number (#5) webhooks are configured (see Phase 2 Deploy section)
 - [ ] Verify `operator_phone` and `operator_name` are set in system_settings
 - [ ] Create client via admin wizard (`/admin/clients/new/wizard`)

@@ -206,7 +206,7 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 >
 > On the risk side: there's no contract. Month-to-month, cancel with 30 days' notice. And the guarantee: if you don't see 5 real leads engage in the first 30 days, you get that first month back. The risk on your side is one month."
 
-**Proof point:** Show the reactivation calculator — take their number of outstanding quotes and do the math live. One $30k project at even a 10% reactivation rate on 20 old quotes is recoverable pipeline that dwarfs the service fee.
+**Proof point:** Pull up the ROI worksheet (`docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`) and do the math live with the prospect's numbers. Take their outstanding quote count and average project value — at even a 10% reactivation rate, one recovered project covers the entire year.
 
 ---
 
