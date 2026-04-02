@@ -34,15 +34,26 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
   - Verify dashboard setup banner (phone + plan checklist)
   - Set up phone, choose plan via Stripe Checkout
   - Verify settings page phone card
+- [ ] Read `docs/product/PLATFORM-CAPABILITIES.md` &mdash; ground truth of every feature
+  - Skim all 12 sections to understand what the system does end to end
+  - Pay attention to: AI response modes (Section 1), automation triggers and timing (Section 2), compliance gateway chain (Section 6), cron orchestrator job list (Section 11)
 - [ ] Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` cover to cover
   - This is your day-to-day reference for handling every client scenario
-  - Includes Section 12: Sales Conversation Guide
-- [ ] Read `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; Knowledge Gap Resolution Process section
-  - This is how the AI improves over time
+  - Sections 1-12: Core delivery (escalations, onboarding, reports, sales, guarantee, cancellation)
+  - Sections 13-19: Feature-specific delivery (review monitoring, quarterly blitz, voice AI, calendar sync, probable wins nudge, email fallback, DNC vs opt-out)
+- [ ] Read `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; full daily/weekly ops checklist
+  - Items 1-44: Core ops (escalations, reports, billing, AI quality, engagement health)
+  - Items 45-63: Feature ops (review monitoring, voice AI, calendar troubleshooting, DNC management, Stripe health, trial management, feature toggle reference)
+  - Knowledge Gap Resolution Process section &mdash; this is how the AI improves over time
 - [ ] Read `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`
   - 10 objections with scripts, proof points, and demo sequences
-  - Social proof capture framework
-  - Quiet hours positioning
+  - Section 12: Outreach scripts (Angles A-D) and pre-call qualification
+  - Social proof capture framework and quiet hours positioning
+- [ ] Review `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` &mdash; the 7 hard rules for clients 1-5
+- [ ] Familiarize with templates in `docs/operations/templates/`:
+  - `REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; Day 1 deliverable (30-45 min per client)
+  - `REACTIVATION-ROI-WORKSHEET.md` &mdash; live math during sales calls
+- [ ] Review `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill-in-the-blanks contract for Day 0 signing
 - [ ] Delete all test data when done (or use a separate Neon branch)
 
 ---
