@@ -1,14 +1,14 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { getDb, leads, dailyStats, appointments } from '@/db';
-import { clients, subscriptions, systemSettings } from '@/db/schema';
+import { clients, subscriptions, systemSettings, knowledgeBase } from '@/db/schema';
 import { eq, and, gte, sql, desc, inArray } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { getRevenueStats } from '@/lib/services/revenue';
-import { DollarSign, Phone, CreditCard, CheckCircle, TrendingUp } from 'lucide-react';
+import { DollarSign, Phone, CreditCard, CheckCircle, TrendingUp, BookOpen } from 'lucide-react';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
@@ -125,6 +125,13 @@ export default async function ClientDashboardPage() {
   const hasSubscription = !!sub;
   const needsSetup = !hasPhone || !hasSubscription;
 
+  // KB count — show AI setup card when KB is sparse
+  const [kbCountRow] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(knowledgeBase)
+    .where(and(eq(knowledgeBase.clientId, clientId), eq(knowledgeBase.isActive, true)));
+  const kbCount = Number(kbCountRow?.count ?? 0);
+
   // Recent activity
   const recentLeads = await db
     .select()
@@ -195,6 +202,28 @@ export default async function ClientDashboardPage() {
                   </Button>
                 )}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Setup card — show when KB is empty or sparse */}
+      {kbCount < 5 && (
+        <Card className="border-[#C15B2E]/30 bg-[#FDEAE4]">
+          <CardContent className="py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <BookOpen className="h-5 w-5 text-[#C15B2E] shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-medium text-[#1B2F26]">Set up your AI</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Answer 12 questions about your business (10 min) so the AI can handle homeowner questions accurately from day one.
+                  </p>
+                </div>
+              </div>
+              <Button asChild size="sm" className="shrink-0" style={{ backgroundColor: '#C15B2E' }}>
+                <Link href="/client/onboarding">Start Setup</Link>
+              </Button>
             </div>
           </CardContent>
         </Card>

@@ -220,10 +220,18 @@ export async function POST(request: NextRequest) {
     if (hour === 7 && minute < 10) {
       results.dailySummary = await dispatch(baseUrl, '/api/cron/daily-summary', cronSecret!, 'GET', failedJobs);
       results.biweeklyReports = await dispatch(baseUrl, '/api/cron/biweekly-reports', cronSecret!, 'GET', failedJobs);
+      results.day3Checkin = await dispatch(baseUrl, '/api/cron/day3-checkin', cronSecret!, 'GET', failedJobs);
     }
 
     // ── Daily 10am UTC ───────────────────────────────────────
     if (hour === 10 && minute < 10) {
+      results.aiModeProgression = await dispatch(
+        baseUrl,
+        '/api/cron/ai-mode-progression',
+        cronSecret!,
+        'GET',
+        failedJobs
+      );
       results.winBack = await dispatch(baseUrl, '/api/cron/win-back', cronSecret!, 'GET', failedJobs);
       results.estimateFallbackNudges = await dispatch(
         baseUrl,
@@ -246,6 +254,8 @@ export async function POST(request: NextRequest) {
         'GET',
         failedJobs
       );
+      results.kbEmptyNudge = await dispatch(baseUrl, '/api/cron/kb-empty-nudge', cronSecret!, 'GET', failedJobs);
+      results.kbGapNotify = await dispatch(baseUrl, '/api/cron/kb-gap-notify', cronSecret!, 'GET', failedJobs);
     }
 
     // ── Weekly Monday 10am UTC ───────────────────────────────
