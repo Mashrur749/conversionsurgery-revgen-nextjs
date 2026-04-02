@@ -134,12 +134,15 @@ Do each one. If something fails, stop and fix it before moving on.
 5. After import, check the lead list &mdash; they should appear with estimate follow-up scheduled
 - [ ] Leads imported, follow-up scheduled? Move on.
 
-**Test D: Mark a Lead Won**
+**Test D: Mark a Lead Won + Verify System Activity**
 1. Go to the contractor portal (log in as a contractor via `/client-login`)
-2. Open Conversations, pick a lead
-3. Click &ldquo;Mark Won&rdquo;, enter a revenue amount (e.g., 45000)
-4. Check the Revenue Recovered card on the dashboard
-- [ ] Revenue shows on the dashboard? Move on.
+2. On the dashboard, verify the **System Activity** card appears above the Revenue Recovered card and shows 6 stat tiles (Leads Responded To, Estimates in Follow-Up, Missed Calls Caught, Dead Quotes Re-Engaged, Appointments Booked, Avg Response Time)
+3. Verify the Revenue Recovered card has a &ldquo;Confirmed by you&rdquo; subtitle
+4. Open Conversations, pick a lead
+5. Click &ldquo;Mark Won&rdquo;, enter a revenue amount (e.g., 45000)
+6. Check the Revenue Recovered card on the dashboard
+- [ ] System Activity card visible with stats? Move on.
+- [ ] Revenue shows on the dashboard after marking won? Move on.
 
 **Test E: Generate a Report**
 1. Trigger the report cron: `curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"`

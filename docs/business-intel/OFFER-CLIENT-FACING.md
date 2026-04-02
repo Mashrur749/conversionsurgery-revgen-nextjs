@@ -1,6 +1,6 @@
 # ConversionSurgery — Client-Facing Approved Copy
 
-Version 1.5
+Version 1.6
 Date: April 2, 2026
 Status: Approved for use in proposals, agreements, emails, leave-behinds, and website copy
 
@@ -89,7 +89,7 @@ The following lines are approved for live sales conversations, landing page head
 
 ### Bi-Weekly Performance Scoreboard
 
-> Every two weeks, you receive a performance report showing exactly what the system did: leads captured, response times, conversations handled, estimates followed up, appointments booked, and revenue impact. Each report includes an estimate of what would have happened without the system — so the value of the service is always visible.
+> Every two weeks, you receive a performance report showing exactly what the system did: leads captured, response times, conversations handled, estimates followed up, appointments booked, and revenue impact. Each report includes auto-tracked pipeline activity — leads the system responded to, missed calls caught, appointments booked, dead quotes re-engaged, and a probable pipeline value — all calculated without any input from you. Each report also includes an estimate of what would have happened without the system — so the value of the service is always visible.
 >
 > Note on every report: "Actual outcomes vary by market, close process, and lead quality."
 
@@ -290,9 +290,10 @@ The following are approved written answers for the questions prospects ask most 
 | 1.3     | April 1, 2026     | Restored calendar booking claim: "books estimate appointments into your calendar" with Google Calendar sync language. CON-01 (two-way Google Calendar sync) is now built — availability checking, bidirectional sync, OAuth flow for contractors. |
 | 1.4     | April 1, 2026     | GAP-01: Added Section 10 (Common Questions) with approved written answers for the top 5 prospect objections. Added referral contractor positioning paragraph to Section 2. |
 | 1.5     | April 2, 2026     | First month free: restructured from "pay first, refund if fails" to "free Month 1, billing starts Day 31." Guarantee language rewritten. Section 3, 4, 9, and FAQ updated. |
+| 1.6     | April 2, 2026     | Section 2 (Bi-Weekly Performance Scoreboard): updated to describe auto-tracked pipeline proof metrics in the report (leads responded to, missed calls caught, appointments booked, probable pipeline value). Additive factual change — no guarantee, pricing, or compliance language changed. |
 
 ---
 
-_ConversionSurgery — Client-Facing Approved Copy v1.5_
+_ConversionSurgery — Client-Facing Approved Copy v1.6_
 _Source: Grand Slam Offer Architecture v2.1 + Quality Review_
 _April 2026_

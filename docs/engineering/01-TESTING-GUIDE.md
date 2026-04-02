@@ -1629,6 +1629,33 @@ Expected:
 - No banner when `consecutive_errors = 0` and sync is recent.
 - Portal OAuth flow redirects back to `/client/settings` on success.
 
+#### 58g: System Activity card and pipelineProof in reports
+
+**Verifies the pipeline proof feature: auto-tracked metrics on the contractor dashboard and in the bi-weekly report `roiSummary`.**
+
+1. Log into the client portal as a test contractor on a client that has at least a few leads with automated responses.
+2. Navigate to the dashboard (`/client`).
+3. Verify the **System Activity** card appears above the Revenue Recovered card.
+4. Verify the card shows 6 stat tiles: &ldquo;Leads Responded To,&rdquo; &ldquo;Estimates in Follow-Up,&rdquo; &ldquo;Missed Calls Caught,&rdquo; &ldquo;Dead Quotes Re-Engaged,&rdquo; &ldquo;Appointments Booked,&rdquo; and &ldquo;Avg Response Time.&rdquo;
+5. Verify a **Probable Pipeline Value** figure is shown (calculated as appointments booked + reactivated quotes, multiplied by avg project value — defaults to $40,000 if no confirmed wins exist).
+6. Verify the Revenue Recovered card shows a &ldquo;Confirmed by you&rdquo; subtitle.
+7. Generate or view a bi-weekly report for this client:
+
+```bash
+curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Bearer $CRON_SECRET"
+```
+
+8. Open the report at `/admin/reports/<id>`. Verify the `roiSummary` JSON includes a `pipelineProof` block with the 6 metrics and `probablePipelineValue`.
+9. If the client has no confirmed wins, verify `probablePipelineValue` uses the $40,000 default rather than showing $0 or `null`.
+
+Expected:
+
+- System Activity card renders on the client dashboard independently of whether any wins have been confirmed.
+- All 6 stat tiles populate from platform activity (no contractor input required).
+- Probable Pipeline Value is a positive number when any bookings or reactivations exist.
+- Revenue Recovered card subtitle reads &ldquo;Confirmed by you.&rdquo;
+- `pipelineProof` key is present in `roiSummary` of every generated report.
+
 ---
 
 ### Step 59: Flow reply-rate tracking

@@ -22,7 +22,8 @@ ConversionSurgery is a managed revenue recovery service. You run the system for 
 | **Appointment booking** | AI books estimates into Google Calendar. Sends reminders. Follows up on no-shows. | No double-bookings. No forgotten appointments. |
 | **Payment collection** | Automated deposit and invoice reminders with one-click payment links | Gets contractors paid faster without awkward conversations. |
 | **Review generation** | After every completed job, automated review request with direct Google link | More reviews = more referrals. Most contractors have 8-15 reviews; competitors have 50+. |
-| **Bi-weekly performance report** | Shows exactly what the system did, revenue impact, and &ldquo;Without Us&rdquo; comparison | Proof of value every 2 weeks. The contractor sees ROI, not activity. |
+| **System Activity dashboard card** | Auto-tracks leads responded to, missed calls caught, dead quotes re-engaged, appointments booked, estimates in follow-up, avg response time, and probable pipeline value | Proves ROI without the contractor doing anything. Shows up on their dashboard from Day 1 — no wins need to be manually confirmed for the numbers to appear. |
+| **Bi-weekly performance report** | Shows exactly what the system did, revenue impact, &ldquo;Without Us&rdquo; comparison, and pipeline proof metrics | Proof of value every 2 weeks. The contractor sees ROI, not activity. |
 
 ### What the Contractor Does
 
@@ -146,6 +147,7 @@ This is the highest-ROI feature. Most contractors never follow up on estimates. 
 | Double-booking | Low | Calendar sync checks both systems. If sync token expires, reconnect. | Medium &mdash; embarrassing but recoverable |
 | Message during quiet hours | Very low | STRICT mode prevents this. Will not happen. | N/A &mdash; system blocks it |
 | Contractor never flags estimates | High | Follow-up never fires. 48-hour nudge and portal button help. | Medium &mdash; depends on habit |
+| Contractor never marks jobs won | High | Revenue Recovered shows $0 — but System Activity card auto-tracks pipeline proof with no contractor action. Probable wins nudge (weekly YES/NO SMS) recovers some wins. | Low &mdash; mitigated by pipeline proof card |
 
 ### What This System Does NOT Do (Know This Cold)
 

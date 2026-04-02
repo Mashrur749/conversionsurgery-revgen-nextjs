@@ -298,7 +298,7 @@ The business owner&apos;s view — everything they need, nothing they don&apos;t
 
 | Page | What it shows |
 |------|--------------|
-| **Dashboard** | Lead summary, recent activity, help articles, and **Revenue Recovered card** (shows confirmed revenue attributed to the platform over rolling 30/60/90-day windows). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **Since Your Last Visit card** (see below). **&ldquo;Set up your AI&rdquo; CTA** when KB has fewer than 5 entries — links to the onboarding wizard. |
+| **Dashboard** | Lead summary, recent activity, help articles. **System Activity card** (auto-tracked pipeline proof — see below) positioned above the **Revenue Recovered card** (confirmed revenue, &ldquo;Confirmed by you&rdquo; subtitle — shows $0 nudge when no wins recorded). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **Since Your Last Visit card** (see below). **&ldquo;Set up your AI&rdquo; CTA** when KB has fewer than 5 entries — links to the onboarding wizard. |
 | **Conversations** | All leads with message history, mode badges, action-required highlights |
 | **Revenue** | 30-day stats, pipeline value, speed-to-lead metrics, service breakdown |
 | **Knowledge Base** | Business info the AI uses — editable by owner |
@@ -358,6 +358,27 @@ Contractors review and approve AI-drafted Google review responses before they ar
 - Inline edit mode to modify the draft before approval
 - AlertDialog confirmation on approve to prevent accidental posting
 - APIs: `GET /api/client/reviews/pending`, `POST /api/client/reviews/[responseId]/approve`
+
+### System Activity Card (Pipeline Proof)
+
+Shown on the contractor portal dashboard (`/client`) above the Revenue Recovered card. Displays auto-tracked metrics that require zero contractor action — proving system ROI before any wins are manually confirmed.
+
+**6 stat tiles:**
+
+| Tile | What it measures |
+|------|-----------------|
+| Leads responded to | Inbound leads where the AI sent at least one automated response |
+| Estimates in follow-up | Leads currently in an active estimate follow-up sequence |
+| Missed calls caught | Calls that triggered the missed-call text-back automation |
+| Dead quotes re-engaged | Win-back or dormant reactivation sequences completed |
+| Appointments booked | Appointments created via the AI booking flow |
+| Avg response time | Median time from lead creation to first automated reply |
+
+**Probable Pipeline Value:** Calculated automatically as (appointments booked + reactivated quotes) &times; average project value. Uses the actual average confirmed win value from the client&apos;s history; falls back to $40,000 if no confirmed wins exist yet.
+
+This card solves the &ldquo;$0 on the dashboard for 60 days&rdquo; churn risk. The Revenue Recovered card remains for contractor-confirmed wins (manual input required). The System Activity card shows proof automatically, with no contractor effort.
+
+Data source: `GET /api/client/activity-summary` (same endpoint as the Since Your Last Visit card).
 
 ### Since Your Last Visit Card
 
@@ -456,6 +477,7 @@ Auto-generated and delivered to clients every 2 weeks:
 - Revenue impact estimate
 - **"Without Us" model:** low/base/high directional estimate of what would have happened without the system (with disclaimer)
 - **Confirmed Won revenue:** reports show &quot;Confirmed Won: $X&quot; alongside pipeline estimates, based on contractor-entered actual job values when marking leads &quot;won&quot;
+- **Pipeline Proof (`pipelineProof` in `roiSummary`):** 6 auto-tracked metrics added to every report — leads responded to, estimates in follow-up, missed calls caught, dead quotes re-engaged, appointments booked, and average response time. `probablePipelineValue` is calculated automatically as (appointments booked + reactivated quotes) &times; avg project value ($40K default). These metrics require zero contractor action and prove system value even before any wins are confirmed.
 - Versioned output — shows `ready` or `insufficient_data` (never fabricates)
 
 ### Delivery Infrastructure
