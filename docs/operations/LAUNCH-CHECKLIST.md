@@ -115,12 +115,10 @@ Reference docs: `02-MANAGED-SERVICE-PLAYBOOK.md` (delivery processes), `01-OPERA
 
 ### Database
 
-- [ ] Create a staging Neon branch for safe testing:
-  - Via Neon Dashboard: Project &rarr; Branches &rarr; Create Branch (name: `staging`)
-  - Or via CLI: `neonctl branches create --name staging --project-id <project-id>`
-  - Use the staging branch connection string for local dev (`DATABASE_URL` in `.env.local`)
-  - Production branch stays untouched until `db:migrate` is explicitly run against it
-  - Reset staging to match production anytime: `neonctl branches reset staging --parent`
+- [ ] Set up Neon staging branch &mdash; follow `docs/engineering/03-NEON-BRANCH-SETUP.md` end to end
+  - Install `neonctl`, create staging branch, get connection string
+  - Set `DATABASE_URL` in `.env.local` to staging (never production for local dev)
+  - Run pending migrations on staging first, verify, then apply to production
 - [ ] Run `npm run db:migrate` on production
 - [ ] Run `npm run db:seed -- --lean` (seeds plans, role templates, flow templates, system settings)
 - [ ] Verify seed created the Pro plan with your Stripe price ID
