@@ -43,50 +43,85 @@ Call your demo number from your personal phone. Missed-call text-back fires in 5
 
 ## Week 1: Volume + First Demos
 
-**Goal: 150+ contacts touched. 3-5 demos booked.**
+**Goal: 80-100 contacts touched. 2-3 demos booked.**
 
-### Daily Schedule
+### The Schedule (You Have a 9-5 Job)
 
-| Time | Activity |
-|------|----------|
-| 7:00 AM | Send 10-15 text/DM outreach messages (contractors check phones early) |
-| 9:00 AM - 12:00 PM | 30-40 cold calls |
-| 12:00 - 1:00 PM | Reply to Facebook Group comments, DM engaged people |
-| 1:00 - 4:00 PM | 20 more cold calls + follow-ups |
-| 4:00 - 5:30 PM | 2-3 job site visits (if in Edmonton/Calgary) |
-| Evening | Monitor Facebook Groups, respond to messages |
+Good news: contractors are ALSO unavailable 9-5 &mdash; they&apos;re on job sites. The best time to reach them is early morning and evening, which is exactly when you&apos;re free.
 
-### Day 1 Actions
+**Weekday Schedule (~2.5 hours/day)**
 
-1. Send 20 Kijiji/FB Marketplace replies (see Script A below)
-2. Post in 2 Facebook Groups (see Script B below)
-3. Make 10 cold calls from Google Maps list (see Script C below)
+| Time | Activity | Duration |
+|------|----------|:--------:|
+| 6:30 - 7:15 AM | Send 5-8 text/DM messages (contractors check phones before the crew arrives) | 45 min |
+| 12:00 - 12:30 PM (lunch) | Reply to messages, DM Facebook Group engagers, quick follow-ups | 30 min |
+| 5:30 - 7:30 PM | Cold calls (contractors are home, done for the day, in &ldquo;business mode&rdquo; before dinner). Target: 10-15 calls. | 2 hrs |
+
+**Weekend Schedule (~4-5 hours/day)**
+
+| Time | Activity | Duration |
+|------|----------|:--------:|
+| Saturday 8:00 - 12:00 PM | Batch work: build prospect list, send 20 DMs/texts, record Loom videos, post in Facebook Groups | 4 hrs |
+| Saturday afternoon | Job site visits if local (contractors sometimes work Saturdays) | 2 hrs optional |
+| Sunday 9:00 - 11:00 AM | Follow-ups from the week, plan next week&apos;s outreach, respond to messages | 2 hrs |
+
+**Weekly total: ~17-20 hours** (12.5 weekday + 6 weekend)
+
+### Day 1 Actions (evening + next morning)
+
+**Tonight (1.5 hours):**
+1. Build your prospect list &mdash; Kijiji + Google Maps, target 50 contacts
+2. Join 5 Facebook Groups (some take 24-48 hours to approve)
+3. Send 10 Kijiji/FB Marketplace replies (see Script A below)
+
+**Tomorrow morning (6:30 AM):**
 4. Send 5 text messages to contractors with visible phone numbers (see Script D below)
+5. Post in 1 approved Facebook Group (see Script B below)
 
-### Day 2-5
+**Tomorrow evening (5:30 PM):**
+6. Make 10 cold calls (see Script C below)
 
-Continue the same cadence:
-- 30-40 cold calls/day
-- 10-15 DMs/texts per day
+### Day 2-5 (Weekday Evenings)
+
+Same cadence every evening:
+- 6:30 AM: 5-8 texts/DMs (15 min before work)
+- Lunch: reply to any responses
+- 5:30-7:30 PM: 10-15 cold calls + follow-ups
 - Reply to all Facebook Group engagement
 - DM anyone who commented on your group posts
-- 2-3 job site visits if local
 
 ### Day 6-7 (Weekend)
 
-Rest. Respond to messages only. Do not cold call on weekends.
+Saturday is your power day:
+- Morning: batch 20 DMs, 5 Loom videos, 2 Facebook Group posts
+- Afternoon: 15-20 cold calls (contractors often answer Saturday AM)
+- Sunday: follow-ups, list building, respond to messages
+
+**Weekly targets:**
+
+| Metric | Weekday (5 days) | Weekend | Weekly Total |
+|--------|:-:|:-:|:-:|
+| Cold calls | 50-75 | 20-30 | 70-105 |
+| Texts/DMs | 25-40 | 20-25 | 45-65 |
+| Facebook Group posts | 1-2 | 2 | 3-4 |
+| Loom videos | 0 | 5 | 5 |
+| **Total contacts** | **75-115** | **40-55** | **~120-170** |
 
 ---
 
 ## Week 2: Qualify + Demo + First Close Attempt
 
-**Goal: 5-10 demos completed. 1-2 close attempts.**
+**Goal: 3-6 demos completed. 1-2 close attempts.**
 
-- Continue 30 calls/day + 10 DMs/day
-- Run all booked demos (see Script F below)
-- Follow up with everyone from Week 1 who said &ldquo;maybe&rdquo; (see Script G below)
-- Post in 2 more Facebook Groups
-- Send personalized Loom videos to 5 warm prospects who haven&apos;t replied (see Script E below)
+Same weekday/weekend schedule. But now your evenings split between new outreach and demos:
+
+- **5:30-6:30 PM:** Demos with booked prospects (Zoom or phone &mdash; contractors prefer phone)
+- **6:30-7:30 PM:** New cold calls + follow-ups
+- **Lunch breaks:** Follow up with Week 1 &ldquo;maybe&rdquo; prospects (see Script G)
+- **Saturday morning:** 5 Loom videos to warm prospects + 2 Facebook Group posts
+- **Sunday:** Follow-up all open conversations
+
+**Demo scheduling tip:** Contractors are most available for a call at 5:30-7:00 PM weekdays or Saturday morning. These times work for both of you. When booking, say: &ldquo;Does 5:30 or 6:00 PM work? Or Saturday morning if that&apos;s easier?&rdquo;
 
 ---
 
@@ -94,10 +129,12 @@ Rest. Respond to messages only. Do not cold call on weekends.
 
 **Goal: Close. Onboard. System live.**
 
-- Drop cold call volume to 20/day
-- Focus on converting warm pipeline
+- Drop new outreach to 5 calls/evening &mdash; focus on converting warm pipeline
+- Use every lunch break for follow-up texts
+- Run any remaining demos 5:30-6:30 PM
 - Use the &ldquo;I need to think about it&rdquo; script (Script H below)
 - Soft deadline: &ldquo;I&apos;m onboarding my first clients this week. If you want the free month, now is the time.&rdquo;
+- **When they say yes:** schedule the onboarding call for the next Saturday morning (your first available block)
 
 ---
 
@@ -230,19 +267,21 @@ Lock a specific date and time. Call at exactly that time.
 
 ---
 
-## The Numbers
+## The Numbers (Adjusted for 9-5 Job)
 
-To close 1 client in 21 days:
+To close 1 client in 21 days with ~17-20 hours/week:
 
-| Metric | Target |
-|--------|:------:|
-| Total outreach contacts | 150-200 |
-| Conversations (phone/DM) | 20-40 |
-| Demos booked | 5-8 |
-| Close attempts | 2-3 |
-| Closes | 1 |
+| Metric | Week 1 | Week 2 | Week 3 | Total |
+|--------|:------:|:------:|:------:|:-----:|
+| Cold calls | 70-100 | 50-70 | 20-30 | 140-200 |
+| Texts/DMs | 45-65 | 30-40 | 15-20 | 90-125 |
+| Loom videos | 5 | 5 | 3 | 13 |
+| Demos | 0-1 | 3-5 | 2-3 | 5-9 |
+| **Total contacts** | **120-170** | **80-110** | **35-50** | **~250-330** |
 
-**That&apos;s 8-10 outreach contacts per day for 21 days.** Not heroic. Consistent.
+**That&apos;s 5-8 evening calls + 5-8 morning texts/DMs per weekday, plus a Saturday power session.** Consistent, not heroic.
+
+**The math:** 250 contacts &times; 15% reply &times; 25% demo &times; 40% close = 3.75 closes. You only need 1.
 
 ---
 
