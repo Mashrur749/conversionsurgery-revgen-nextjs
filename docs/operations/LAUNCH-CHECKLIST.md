@@ -147,23 +147,23 @@ Do each one. If something fails, stop and fix it before moving on.
 **Test E: Generate a Report**
 1. Trigger the report cron: `curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"`
 2. Check `/admin/reports` for the generated report
-3. Check that a follow-up SMS was sent to the owner
+3. Check that a follow-up SMS was sent to the owner (requires Twilio + Resend configured)
 - [ ] Report generated, SMS sent? Move on.
 
-**Test F: Google Calendar Sync**
+**Test F: Google Calendar Sync** (skip if Google OAuth not yet configured &mdash; you&apos;ll test in Step 4)
 1. Go to `/admin/clients/[id]` &rarr; Configuration tab
 2. Click &ldquo;Connect Google Calendar&rdquo;
 3. Authorize with a Google account
 4. Create an appointment for a lead
 5. Check your Google Calendar &mdash; the event should appear
-- [ ] Event synced to Google Calendar? Move on.
+- [ ] Event synced to Google Calendar? Move on. (Or: skipped, will test after Step 4.)
 
-**Test G: Stripe Checkout**
+**Test G: Stripe Checkout** (skip if Stripe not yet configured &mdash; you&apos;ll test in Step 4)
 1. Go to the contractor portal &rarr; Billing
 2. Click upgrade/subscribe
 3. Complete Stripe Checkout with test card `4242 4242 4242 4242`
 4. Verify the subscription is active
-- [ ] Subscription active in Stripe dashboard? Move on.
+- [ ] Subscription active in Stripe dashboard? Move on. (Or: skipped, will test after Step 4.)
 
 **Test H: AI Safety Tests**
 ```bash
@@ -194,74 +194,34 @@ This single document covers everything you need to sell and operate: what the sy
 
 **After reading the Operator Guide, do the self-tests below. If you can answer all of them without looking, you&apos;re ready to sell.**
 
-### Then go deeper as needed
+### Self-test (answer from memory before moving on)
 
-The Operator Guide gives you the complete picture. The docs below go deeper on specific areas &mdash; read them when you need the detail, not before.
+- [ ] What does the contractor get for their money? (Part 1)
+- [ ] What&apos;s the deal structure? First month free, then what? (Part 2)
+- [ ] What happens when the AI doesn&apos;t know something? (Part 3)
+- [ ] What are the 3 objections you&apos;ll hear every time? (Part 4)
+- [ ] What&apos;s the onboarding call flow? (Part 5)
+- [ ] What are the 7 hard rules? (Part 6)
+- [ ] Who should you NOT sign? (Part 2 &mdash; disqualifiers)
 
-### Goal A: Understand the System End to End
+**If you can answer all 7: you&apos;re ready to sell.** Move to Step 4.
 
-Read these first. After this you should know every feature, every scenario, every failure mode, and every honest boundary &mdash; well enough to explain it to a contractor without looking anything up.
+### Prepare your materials
 
-**Read 1: What the system does**
-- [ ] `docs/product/PLATFORM-CAPABILITIES.md` &mdash; all 12 sections (45 min)
-- After reading, you should know: the 4 AI modes, the 7 automation sequences, the compliance chain, the cron job architecture, and every portal page
-
-**Read 2: How you deliver the service**
-- [ ] `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` &mdash; all 22 sections (60 min)
-- **Sections 1-11:** Core delivery &mdash; escalations, quote reactivation, AI quality, reports, guarantee evaluation, pause, cancel, compliance, onboarding call, monthly health check, sales guide
-- **Sections 12:** Sales conversation guide with qualification framework (who gets 5-10x ROI, who to walk away from, gray zone)
-- **Sections 13-19:** Feature delivery &mdash; review monitoring, quarterly blitz, voice AI, calendar sync, probable wins, email fallback, DNC
-- **Sections 20-22:** The sections you need for ethical selling:
-  - Section 20: What the contractor actually experiences (Day 0 through Week 3+)
-  - Section 21: What can go wrong &mdash; 10 failure modes with likelihood and severity
-  - Section 22: Honest boundaries &mdash; what the system does NOT do, with exact framing language
-
-**Self-test after Reads 1-2 (answer from memory):**
-- [ ] What happens when the AI doesn&apos;t know something? (Playbook Section 1)
-- [ ] What&apos;s the 4-touch estimate follow-up timing? (Capabilities Section 2)
-- [ ] What are the guarantee terms? First month is free, then what? (Playbook Section 5)
-- [ ] What&apos;s the onboarding call script? (Playbook Section 10)
-- [ ] Name 3 things the system does NOT do. (Playbook Section 22)
-- [ ] What&apos;s the worst realistic failure? (Playbook Section 21)
-- [ ] Who should you NOT sign? (Playbook Section 12 &mdash; disqualifiers)
-
-**Read 3: How you run it daily**
-- [ ] `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; skim the 70-item checklist, focus on items 1-20 (30 min)
-- You don&apos;t need to memorize this &mdash; it&apos;s a daily reference. Know where it is and what it covers.
-
-**Read 4: Legal rules for clients 1-5**
-- [ ] `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` (10 min)
-- 7 hard rules. Memorize them. Especially: STRICT quiet hours only, honor every guarantee dispute, never promise evening response.
-
-### Goal B: Prepare for Sales and Demo
-
-Now that you understand the system, prepare to sell it.
-
-**Read 5: How to sell**
-- [ ] `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (30 min)
-- Objections 1-10 with scripts. Memorize Tier 1 (Objections 1-2) &mdash; they come up every call.
-- Section 12: Outreach scripts (Angles A-D). Pick your default angle (probably Angle A &mdash; quote reactivation).
-- Pre-call Lead Leak Snapshot workflow and qualification checklist.
-
-**Self-test after Read 5 (answer without looking):**
-- [ ] A contractor says &ldquo;What if the AI says something wrong?&rdquo; &mdash; what do you say? (Objection 1)
-- [ ] A contractor says &ldquo;I got burned before.&rdquo; &mdash; what do you say? (Objection 2)
-- [ ] A contractor says &ldquo;$1,000 is expensive.&rdquo; &mdash; what do you say? (Objection 8)
-- [ ] What&apos;s the loss ceiling you state on every call? (Pre-call qualification #6)
-- [ ] What&apos;s the demo moment that closes deals? (Section 12 &mdash; &ldquo;Call Your Own Number&rdquo;)
-
-**Prepare 6: Get your materials ready**
 - [ ] `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill in YOUR name, email, address now (15 min)
-- [ ] `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; read the format, know what research is needed (10 min)
 - [ ] `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` &mdash; save where you can open it on a call (5 min)
 
-**After Step 3, you should be able to:**
-- Explain the full contractor experience from Day 0 to Week 3 without notes
-- Handle any of the 10 objections without hesitation
-- Know exactly who to sign and who to walk away from
-- Demo the system live with the &ldquo;call your own number&rdquo; moment
-- Deliver the onboarding call from the script
-- Know the 7 legal hard rules by heart
+### Deep reference docs (read during Week 1 of delivery, not before selling)
+
+These go deeper than the Operator Guide. You don&apos;t need them to sell &mdash; you need them when you&apos;re delivering.
+
+| Doc | When to read | What it adds |
+|-----|-------------|-------------|
+| `docs/product/PLATFORM-CAPABILITIES.md` | Before onboarding client #1 | Every feature in detail (12 sections, 45 min) |
+| `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` | Before onboarding client #1 | Every delivery scenario (22 sections, 60 min) |
+| `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` | Before your 3rd sales call | All 10 objections with full scripts + outreach angles (30 min) |
+| `docs/operations/01-OPERATIONS-GUIDE.md` | When client #1 is live | Daily ops checklist &mdash; 70 items (skim 30 min) |
+| `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` | Day 1-2 of client #1 | The 48-hour deliverable format (10 min) |
 
 ---
 
@@ -359,7 +319,9 @@ If both pass: production is live. If either fails: check Twilio webhooks and the
 
 ---
 
-## Step 5: Prepare for Sales (1-2 hours)
+## Step 5: Start Selling
+
+Your outreach plan with day-by-day schedule, word-for-word scripts, and channel strategy is at `docs/operations/COLD-START-PLAYBOOK.md`. It&apos;s designed for someone with a 9-5 job (early mornings + evenings + weekends).
 
 ### 5.1 Get Your Materials Ready
 
