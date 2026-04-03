@@ -1,387 +1,343 @@
 # Launch Checklist
 
-Go top to bottom. Don&apos;t skip steps. Each step tells you exactly what to do.
+Your sequence: Local Setup &rarr; Test Everything Locally &rarr; Operate a Simulated Client &rarr; Learn the Value + Sales &rarr; Deploy to Production &rarr; Start Selling.
+
+Go top to bottom. Fix issues as you find them locally, not in production.
 
 ---
 
-## Step 1: Set Up Your Local Environment (30 min)
+## Phase 1: Local Environment Setup
 
-You need a database and API keys before you can test anything.
+Follow `docs/engineering/ENVIRONMENT-SETUP.md` end to end. It covers: Neon staging branch, env vars, Twilio dev phones, first login.
 
-### 1.1 Database
-
-```bash
-# Install the Neon CLI
-npm install -g neonctl
-neonctl auth
-
-# Find your project ID
-neonctl projects list
-# Copy the ID (looks like: aged-forest-12345678)
-
-# Create a staging branch (safe copy of production)
-neonctl branches create --name staging --project-id YOUR_PROJECT_ID
-
-# Get the connection string
-neonctl connection-string staging --project-id YOUR_PROJECT_ID
-# Copy this — you'll paste it below
-```
-
-- [ ] Add the staging connection string to `.env.local` as `DATABASE_URL`
-- [ ] Run: `npm run db:migrate`
-- [ ] Run: `npm run db:seed -- --lean`
-
-### 1.2 Env Vars
-
-Copy this entire block into `.env.local`. Fill in each value.
-
-```
-# Database (from step 1.1)
-DATABASE_URL=postgresql://...your-staging-string...
-
-# Auth (generate these — run each command, paste the output)
-# Run: openssl rand -hex 32
-AUTH_SECRET=
-CLIENT_SESSION_SECRET=
-CRON_SECRET=
-
-# AI (https://console.anthropic.com → API Keys → Create)
-ANTHROPIC_API_KEY=
-
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# Stripe (https://dashboard.stripe.com → Developers → API Keys)
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_PRO_MONTHLY=price_...
-
-# Email (https://resend.com → API Keys)
-RESEND_API_KEY=re_...
-EMAIL_FROM=noreply@yourdomain.com
-
-# Twilio (https://console.twilio.com → Account Info)
-TWILIO_ACCOUNT_SID=AC...
-TWILIO_AUTH_TOKEN=...
-TWILIO_WEBHOOK_BASE_URL=http://localhost:3000
-
-# Google Calendar (https://console.cloud.google.com → APIs → Credentials)
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-```
-
-- [ ] Every line above has a real value (no blanks, no placeholders)
-- [ ] Run: `npm run dev` &mdash; app starts without errors at http://localhost:3000
-
-### 1.3 First Login
-
-- [ ] Go to http://localhost:3000/login
-- [ ] Enter your admin email &mdash; check your inbox for the magic link
-- [ ] After login, go to `/admin/settings`
-- [ ] Set `operator_phone` to your real phone number (you&apos;ll get SMS alerts here)
-- [ ] Set `operator_name` to your name (shows on the contractor&apos;s &ldquo;Your Account Manager&rdquo; card)
+- [ ] Environment setup complete &mdash; `npm run dev` runs, you can log in at localhost:3000
+- [ ] Twilio dev phones working (5 numbers, 3 browser tabs, ngrok tunnel)
+- [ ] Agency line (#5) configured at `/admin/settings`
 
 ---
 
-## Step 2: Test the Core Experience (4 hours)
+## Phase 2: Test Everything Locally
 
-This is where you learn what the system actually does. Follow the Testing Guide for details, but here&apos;s the simplified version.
+Run every test. If something breaks, fix it here &mdash; not in production.
 
-### 2.1 Set Up Twilio Dev Phones
-
-You need 5 phone numbers and 3 browser tabs to simulate real conversations. See `docs/engineering/01-TESTING-GUIDE.md` Section 0 for the full setup, but here&apos;s the short version:
-
-```bash
-# Terminal 1: Tunnel (so Twilio can reach your local app)
-ngrok http 3000
-# Copy the https URL
-
-# Terminal 2: App
-npm run dev
-
-# Terminal 3-5: Dev Phones (simulate lead, owner, team member)
-twilio dev-phone --port 3001   # Lead phone
-twilio dev-phone --port 3002   # Owner phone
-twilio dev-phone --port 3003   # Team member phone
-```
-
-- [ ] Update `TWILIO_WEBHOOK_BASE_URL` in `.env.local` to your ngrok URL
-- [ ] In Twilio Console: point your business line (#1) SMS + Voice webhooks to the ngrok URL
-- [ ] Configure the Agency Line (#5) at `/admin/agency` in the app
-
-### 2.2 The Tests That Matter
-
-Do each one. If something fails, stop and fix it before moving on.
+### 2.1 Core Tests (must all pass)
 
 **Test A: Missed Call Text-Back**
-1. From Dev Phone #2 (Lead), call your business number (#1)
-2. Let it ring to voicemail
-3. Within 5 seconds, Dev Phone #2 should receive a text from #1
-- [ ] Text arrived within 5 seconds? Move on.
+1. From Dev Phone #2 (Lead), call your business number (#1). Let it ring.
+2. Within 5 seconds, Dev Phone #2 receives a text from #1.
+- [ ] Pass
 
 **Test B: AI Conversation**
 1. From Dev Phone #2, text the business number: &ldquo;Hi, I need a quote for a kitchen renovation&rdquo;
-2. Wait 2-8 seconds
-3. You should get an AI-generated response
-- [ ] AI responded with something relevant? Move on.
+2. AI responds in 2-8 seconds with something relevant.
+- [ ] Pass
 
 **Test C: Import Old Quotes**
-1. Go to `/leads` in the admin dashboard
-2. Click Import, upload a CSV with columns: `name, phone, status`
-3. Set status to `estimate_sent` for all rows
-4. Check the CASL consent checkbox
-5. After import, check the lead list &mdash; they should appear with estimate follow-up scheduled
-- [ ] Leads imported, follow-up scheduled? Move on.
+1. Admin dashboard &rarr; `/leads` &rarr; Import CSV (`name, phone, status` with `estimate_sent`)
+2. Check CASL consent checkbox. Import.
+3. Leads appear with estimate follow-up scheduled.
+- [ ] Pass
 
-**Test D: Mark a Lead Won + Verify System Activity**
-1. Go to the contractor portal (log in as a contractor via `/client-login`)
-2. On the dashboard, verify the **System Activity** card appears above the Revenue Recovered card and shows 6 stat tiles (Leads Responded To, Estimates in Follow-Up, Missed Calls Caught, Dead Quotes Re-Engaged, Appointments Booked, Avg Response Time)
-3. Verify the Revenue Recovered card has a &ldquo;Confirmed by you&rdquo; subtitle
-4. Open Conversations, pick a lead
-5. Click &ldquo;Mark Won&rdquo;, enter a revenue amount (e.g., 45000)
-6. Check the Revenue Recovered card on the dashboard
-- [ ] System Activity card visible with stats? Move on.
-- [ ] Revenue shows on the dashboard after marking won? Move on.
+**Test D: Portal Lead Actions**
+1. Log in as contractor via `/client-login`
+2. Verify System Activity card shows stats (above Revenue Recovered)
+3. Open Conversations &rarr; pick a lead &rarr; click &ldquo;Mark Estimate Sent&rdquo;
+4. Pick another lead &rarr; click &ldquo;Mark Won&rdquo; &rarr; enter revenue amount
+5. Dashboard Revenue Recovered card updates.
+- [ ] Pass
 
 **Test E: Generate a Report**
-1. Trigger the report cron: `curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"`
-2. Check `/admin/reports` for the generated report
-3. Check that a follow-up SMS was sent to the owner (requires Twilio + Resend configured)
-- [ ] Report generated, SMS sent? Move on.
+1. `curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"`
+2. Check `/admin/reports` &mdash; report generated.
+3. Owner phone receives follow-up SMS.
+- [ ] Pass
 
-**Test F: Google Calendar Sync** (skip if Google OAuth not yet configured &mdash; you&apos;ll test in Step 4)
-1. Go to `/admin/clients/[id]` &rarr; Configuration tab
-2. Click &ldquo;Connect Google Calendar&rdquo;
-3. Authorize with a Google account
-4. Create an appointment for a lead
-5. Check your Google Calendar &mdash; the event should appear
-- [ ] Event synced to Google Calendar? Move on. (Or: skipped, will test after Step 4.)
-
-**Test G: Stripe Checkout** (skip if Stripe not yet configured &mdash; you&apos;ll test in Step 4)
-1. Go to the contractor portal &rarr; Billing
-2. Click upgrade/subscribe
-3. Complete Stripe Checkout with test card `4242 4242 4242 4242`
-4. Verify the subscription is active
-- [ ] Subscription active in Stripe dashboard? Move on. (Or: skipped, will test after Step 4.)
-
-**Test H: AI Safety Tests**
+**Test F: AI Safety**
 ```bash
 npm run test:ai
 ```
-- [ ] All Safety tests pass? Move on.
+- [ ] All Safety tests pass
 
-**Test I: AI Preview**
-1. Go to `/admin/clients/[id]` &rarr; AI Preview panel
+**Test G: AI Preview**
+1. `/admin/clients/[id]` &rarr; AI Preview panel
 2. Type: &ldquo;How much does a kitchen renovation cost?&rdquo;
-3. The AI should respond using the client&apos;s KB (not hallucinate)
-- [ ] Response is reasonable and uses KB data? Move on.
+3. AI responds using KB data, not hallucinating.
+- [ ] Pass
+
+### 2.2 Integration Tests (configure first, then test)
+
+**Test H: Google Calendar Sync**
+1. `/admin/clients/[id]` &rarr; Configuration tab &rarr; Connect Google Calendar
+2. Authorize. Create an appointment for a lead.
+3. Event appears in your Google Calendar.
+- [ ] Pass (or skip if Google OAuth not yet configured)
+
+**Test I: Stripe Checkout**
+1. Contractor portal &rarr; Billing &rarr; Subscribe
+2. Test card: `4242 4242 4242 4242`
+3. Subscription active in Stripe dashboard.
+- [ ] Pass (or skip if Stripe not yet configured)
 
 ### 2.3 Cleanup
 
-- [ ] Run `npm run db:seed -- --demo-cleanup` to remove test data
-- [ ] Or just reset your staging branch: `neonctl branches reset staging --parent --project-id YOUR_PROJECT_ID`
+- [ ] Reset: `npm run db:seed -- --demo-cleanup` or `neonctl branches reset staging --parent`
 
 ---
 
-## Step 3: Learn the System (~90 minutes for the core, then reference docs)
+## Phase 3: Operate a Simulated Client End-to-End
 
-### Start here: The Operator Guide
+This is where you truly learn the system. You play both roles &mdash; the operator AND the contractor &mdash; walking through the entire client lifecycle as if it were real.
 
-- [ ] Read `docs/operations/00-OPERATOR-GUIDE.md` end to end (~90 minutes)
+### 3.1 Day 0: Signing
 
-This single document covers everything you need to sell and operate: what the system does, the deal structure, how the AI works, the failure modes, the honest boundaries, the sales conversation flow, the top 3 objections, the onboarding script, the daily routine, and the 7 legal hard rules. All in one place, all connected.
+- [ ] Create a new test client via admin wizard (`/admin/clients/new/wizard`)
+- [ ] Use a real business name (e.g., &ldquo;Summit Renovations&rdquo;) and realistic details
+- [ ] Assign a phone number to the client
+- [ ] Open the service agreement template (`docs/legal/SERVICE-AGREEMENT-TEMPLATE.md`) &mdash; imagine you just sent this to &ldquo;Summit Renovations&rdquo;
 
-**After reading the Operator Guide, do the self-tests below. If you can answer all of them without looking, you&apos;re ready to sell.**
+### 3.2 Day 1: Practice the Onboarding Call
 
-### 3.2 Self-test (answer from memory before moving on)
+**Actually talk through the script out loud.** Read Playbook Section 10, then run through it as if you&apos;re on a real call with the contractor from &ldquo;Summit Renovations.&rdquo;
 
-- [ ] What does the contractor get for their money? (Part 1)
-- [ ] What&apos;s the deal structure? First month free, then what? (Part 2)
-- [ ] What happens when the AI doesn&apos;t know something? (Part 3)
-- [ ] What are the 3 objections you&apos;ll hear every time? (Part 4)
-- [ ] What&apos;s the onboarding call flow? (Part 5)
-- [ ] What are the 7 hard rules? (Part 6)
-- [ ] Who should you NOT sign? (Part 2 &mdash; disqualifiers)
+Practice saying these out loud (not just reading):
+- &ldquo;Walk me through your most common job types. What do you typically charge for each?&rdquo;
+- &ldquo;When a lead asks for a price, what do you want the AI to say?&rdquo;
+- &ldquo;Can you send me a list of everyone you quoted in the last 90 days who never got back to you?&rdquo;
 
-### 3.3 Go Deep &mdash; Know Every Detail Before You Sell
+While you practice the script, do the actual system work:
+- [ ] Fill out the KB Intake Questionnaire at `/admin/clients/[id]` &mdash; answer all 12 questions as if you were &ldquo;Summit Renovations&rdquo; (kitchen, bathroom, basement renos in Edmonton)
+- [ ] After filling KB, check `/admin/clients/[id]/knowledge` &mdash; entries populated
+- [ ] Call the client&apos;s business number from your personal phone &mdash; missed-call text-back fires (this is the &ldquo;wow moment&rdquo; you&apos;ll do live on every onboarding call)
+- [ ] Import 10-15 test leads via CSV with `status=estimate_sent`
+- [ ] Check `/leads` &mdash; estimate follow-up sequences scheduled
+- [ ] Try the portal KB wizard at `/client/onboarding` (log in as the contractor) &mdash; see what they see
+- [ ] Practice the expectations script out loud: &ldquo;Week 1: missed call text-back is live, I&apos;ll import your old quotes. Week 2: the AI starts responding with a 5-minute review window. Week 3: fully autonomous.&rdquo;
 
-You can&apos;t sell what you don&apos;t fully understand. Read these across 2-3 evenings.
+### 3.3 Day 1-2: Revenue Leak Audit
+
+- [ ] Open `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md`
+- [ ] Fill it out as if &ldquo;Summit Renovations&rdquo; were real: research a real contractor&apos;s Google Business Profile, count their reviews, check competitor review counts
+- [ ] This is practice for the real deliverable &mdash; it takes 30-45 min per client
+
+### 3.4 Week 1: Watch the Automations
+
+- [ ] From Dev Phone #2, text the business number as various &ldquo;homeowners&rdquo; with different questions
+- [ ] Watch the AI respond. Note where it defers (knowledge gaps).
+- [ ] Check `/admin/ai-quality` &mdash; are any messages flagged?
+- [ ] Check the knowledge gap queue &mdash; gaps should appear from questions the AI couldn&apos;t answer
+- [ ] Fill a gap from the queue (as the operator would)
+- [ ] Trigger a cron cycle: `curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"`
+- [ ] Check if estimate follow-up messages were sent to your imported leads
+
+### 3.5 Week 2: Smart Assist Mode
+
+- [ ] Set AI mode to Smart Assist (5-min delay) in client settings
+- [ ] From Dev Phone #2, text the business number again
+- [ ] Verify: the AI drafts a response, holds it for 5 minutes, then auto-sends
+- [ ] On Dev Phone #3 (Owner), check that you receive the Smart Assist notification
+- [ ] Try editing or cancelling a pending response from the admin dashboard
+
+### 3.6 Escalation Handling
+
+- [ ] From Dev Phone #2, text something the AI can&apos;t handle: &ldquo;I want to speak to someone about a complaint&rdquo;
+- [ ] Verify: lead is flagged `action_required`, escalation entry created
+- [ ] Check `/escalations` &mdash; the escalation should appear
+- [ ] Resolve it: respond as the operator, mark escalation resolved
+
+### 3.7 Appointment Booking
+
+- [ ] From Dev Phone #2, text: &ldquo;Can I book an estimate for next Tuesday?&rdquo;
+- [ ] Verify: AI offers available slots based on business hours
+- [ ] Book an appointment. Check `/admin/clients/[id]` for the appointment.
+- [ ] If Google Calendar is connected: verify the event appears in the calendar
+
+### 3.8 Review Response
+
+- [ ] Check if there are any review response drafts at `/admin/clients/[id]` &rarr; Reviews
+- [ ] If yes: review the AI-generated response, edit it, approve it
+- [ ] Check the contractor portal at `/client/reviews` &mdash; contractor can also approve from here
+
+### 3.9 Report + Dashboard
+
+- [ ] Trigger another cron cycle to generate the bi-weekly report
+- [ ] Check `/admin/reports` &mdash; review the report for your simulated client
+- [ ] Check the contractor portal dashboard &mdash; does the System Activity card show realistic numbers?
+- [ ] Check the Revenue Recovered card &mdash; does it show $0 with the nudge to mark wins?
+- [ ] Mark a lead as Won in the portal conversations view. Check the card updates.
+
+### 3.10 What You Should Now Understand
+
+After walking through all of the above, you should be able to answer:
+
+- [ ] What does the contractor see on Day 1? What&apos;s the &ldquo;wow&rdquo; moment?
+- [ ] What does Week 2 feel like for the contractor? How much attention do they need to give?
+- [ ] What does the operator do daily? How long does it take?
+- [ ] What happens when the AI doesn&apos;t know something?
+- [ ] What does the bi-weekly report actually look like?
+- [ ] What does the escalation flow feel like from both sides?
+
+---
+
+## Phase 4: Understand the Value + Sales
+
+Now you&apos;ve operated the system. The docs will make sense because you&apos;ve seen it all work.
+
+### 4.1 Read the Operator Guide (90 min)
+
+- [ ] `docs/operations/00-OPERATOR-GUIDE.md` &mdash; everything connected in one doc
+
+### 4.2 Go Deep on Delivery (2-3 evenings)
 
 **Evening 1: How every feature works (~45 min)**
 - [ ] `docs/product/PLATFORM-CAPABILITIES.md` &mdash; all 12 sections
-- After reading: you know the 4 AI modes, the 7 automation sequences, the compliance chain, every cron job, every portal page
+- This will click fast because you just tested most of these features yourself
 
 **Evening 2: How you deliver every scenario (~60 min)**
 - [ ] `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` &mdash; all 22 sections
-- Sections 1-11: Core delivery (escalations, quote reactivation, AI quality, reports, guarantee, pause, cancel, onboarding)
-- Section 12: Qualification framework (who gets 5-10x ROI, who to walk away from)
-- Sections 13-19: Feature delivery (review monitoring, quarterly blitz, voice AI, calendar, probable wins, email fallback, DNC)
-- Sections 20-22: Ethical selling (contractor experience, failure modes, honest boundaries)
+- Pay special attention to Sections 20-22 (contractor experience, failure modes, honest boundaries)
+- Section 12 has the qualification framework (who to sign, who to walk away from)
 
-**Evening 3: How to sell + legal rules + materials (~60 min)**
-- [ ] `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; all 10 objections + Section 12 outreach scripts
-- [ ] `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` &mdash; the 7 hard rules (10 min)
-- [ ] `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill in YOUR details now (15 min)
-- [ ] `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` &mdash; save where you can open it on a call (5 min)
-- [ ] `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; read the format (10 min)
+**Evening 3: How to sell + legal + materials (~60 min)**
+- [ ] `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; 10 objections + Section 12 outreach scripts
+- [ ] `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` &mdash; 7 hard rules (10 min)
+- [ ] Fill in `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` with YOUR details (15 min)
+- [ ] Save `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` where you can open it on a call
+- [ ] Read `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; you already practiced this in Phase 3
 
-**Skim when client #1 is live (daily reference, not pre-reading):**
-- [ ] `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; 70-item daily/weekly checklist (skim 20 min, use as reference)
+**Reference (skim when client #1 is live):**
+- [ ] `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; 70-item daily/weekly checklist
 
-### 3.4 Final self-test (answer ALL of these without looking)
+### 4.3 Final Self-Test (answer ALL without looking)
 
-- [ ] What happens when the AI doesn&apos;t know something? (Playbook Section 1)
-- [ ] What&apos;s the 4-touch estimate follow-up timing? (Capabilities Section 2)
-- [ ] What are the guarantee terms? (Playbook Section 5)
-- [ ] What&apos;s the onboarding call script flow? (Playbook Section 10)
-- [ ] Name 3 things the system does NOT do. (Playbook Section 22)
-- [ ] What&apos;s the worst realistic failure and how bad is it? (Playbook Section 21)
-- [ ] Who should you NOT sign? Name 3 disqualifiers. (Playbook Section 12)
-- [ ] A contractor says &ldquo;What if the AI says something wrong?&rdquo; (Objection 1)
-- [ ] A contractor says &ldquo;I got burned before.&rdquo; (Objection 2)
-- [ ] A contractor says &ldquo;$1,000 is expensive.&rdquo; (Objection 8)
-- [ ] What&apos;s the demo moment that closes deals? (&ldquo;Call Your Own Number&rdquo;)
-- [ ] What&apos;s the max the contractor can lose? (First month is free)
+- [ ] What does the contractor get for their money?
+- [ ] What&apos;s the deal? First month free, then what?
+- [ ] What&apos;s the 4-touch estimate follow-up timing?
+- [ ] What happens when the AI doesn&apos;t know something?
+- [ ] What&apos;s the onboarding call script flow?
+- [ ] Name 3 things the system does NOT do.
+- [ ] What&apos;s the worst realistic failure and how bad is it?
+- [ ] Who should you NOT sign? Name 3 disqualifiers.
+- [ ] A contractor says &ldquo;What if the AI says something wrong?&rdquo; &mdash; what do you say?
+- [ ] A contractor says &ldquo;I got burned before.&rdquo; &mdash; what do you say?
+- [ ] A contractor says &ldquo;$1,000 is expensive.&rdquo; &mdash; what do you say?
+- [ ] What&apos;s the demo moment that closes deals?
+- [ ] What&apos;s the max the contractor can lose?
 
-**If you can answer all 12: you know the system inside out. You can sell with full confidence.**
+**If you can answer all 13: you know the system inside out.**
+
+### 4.4 Practice the Sales Conversation
+
+Before your first real outreach, practice the full sales flow out loud:
+
+**Practice the cold call script** (from `docs/operations/COLD-START-PLAYBOOK.md`):
+- [ ] Say the cold call opener out loud 3 times until it feels natural
+- [ ] Practice the &ldquo;I&apos;m busy&rdquo; response
+- [ ] Practice the voicemail script
+- [ ] Record yourself on your phone &mdash; listen back. Does it sound like a person or a salesperson?
+
+**Practice the demo flow** (from Playbook Section 12):
+- [ ] Walk through the demo on your local environment as if a prospect is watching
+- [ ] Say out loud: &ldquo;Call this number right now. Let it ring. Watch what happens.&rdquo;
+- [ ] Practice the silence after the text-back arrives (don&apos;t fill it &mdash; let them react)
+- [ ] Practice the transition to the close: &ldquo;First month is free. I set everything up. You pay nothing until you see results.&rdquo;
+
+**Practice objection handling:**
+- [ ] Have someone (friend, partner) ask you: &ldquo;What if the AI says something wrong?&rdquo; &mdash; respond without looking at notes
+- [ ] Same with: &ldquo;I got burned by something like this before&rdquo;
+- [ ] Same with: &ldquo;$1,000 a month is a lot&rdquo;
+- [ ] If you stumble, re-read the script and try again
+
+**You&apos;re ready to sell when the scripts feel like YOUR words, not something you&apos;re reading.**
 
 ---
 
-## Step 4: Deploy to Production (2-3 hours)
+## Phase 5: Deploy to Production
 
-Now you&apos;re setting up the real thing. Everything above was local testing.
+Everything works locally. Now replicate it in production.
 
-### 4.1 Stripe (30 min)
+### 5.1 External Services
 
-1. Go to https://dashboard.stripe.com &rarr; Products &rarr; Add Product
+**Stripe (30 min)**
+1. https://dashboard.stripe.com &rarr; Products &rarr; Add Product
 2. Name: &ldquo;ConversionSurgery Managed Service&rdquo;
-3. Add a price: $1,000/month, recurring, with a **30-day free trial** (Stripe supports this natively &mdash; set `trial_period_days: 30` on the price or subscription)
-4. Copy the price ID (starts with `price_`)
-5. Go to Developers &rarr; Webhooks &rarr; Add Endpoint
-6. URL: `https://yourdomain.com/api/webhooks/stripe`
-7. Select these events:
-   - `checkout.session.completed`
-   - `customer.subscription.created`, `.updated`, `.deleted`
-   - `invoice.paid`, `.payment_failed`, `.payment_action_required`
-   - `charge.refunded`, `.dispute.created`, `.dispute.closed`
-   - `customer.subscription.paused`, `.resumed`, `.trial_will_end`
-   - `payment_method.attached`
-8. Copy the webhook signing secret
+3. Price: $1,000/month recurring with **30-day free trial**
+4. Copy the price ID
+5. Webhooks &rarr; Add Endpoint: `https://yourdomain.com/api/webhooks/stripe`
+6. Events: `checkout.session.completed`, `customer.subscription.created`, `.updated`, `.deleted`, `invoice.paid`, `.payment_failed`, `.payment_action_required`, `charge.refunded`, `.dispute.created`, `.dispute.closed`, `customer.subscription.paused`, `.resumed`, `.trial_will_end`, `payment_method.attached`
+- [ ] Price ID, API keys, webhook secret set in production env
 
-- [ ] Price ID, API keys, and webhook secret are set in production env
+**Email (10 min)**
+1. https://resend.com &rarr; API Key + Domain verification
+- [ ] `RESEND_API_KEY` and `EMAIL_FROM` set
 
-### 4.2 Email (10 min)
+**Google Calendar (10 min)**
+1. https://console.cloud.google.com &rarr; Enable Calendar API &rarr; OAuth credentials
+2. Redirect URI: `https://yourdomain.com/api/auth/callback/google-calendar`
+- [ ] `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` set
 
-1. Go to https://resend.com &rarr; API Keys &rarr; Create
-2. Go to Domains &rarr; Add your domain &rarr; Add the DNS records they give you
-3. Wait for verification (usually 5-15 min)
-
-- [ ] `RESEND_API_KEY` and `EMAIL_FROM` set in production env
-
-### 4.3 Google Calendar (10 min)
-
-1. Go to https://console.cloud.google.com
-2. Create a project (or use existing)
-3. Enable &ldquo;Google Calendar API&rdquo;
-4. Go to Credentials &rarr; Create OAuth 2.0 Client ID (Web application)
-5. Add authorized redirect URI: `https://yourdomain.com/api/auth/callback/google-calendar`
-6. Copy Client ID and Secret
-
-- [ ] `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` set in production env
-
-### 4.4 Production Database
+### 5.2 Production Database
 
 ```bash
-# Get production connection string from Neon dashboard
-# Set it in your production environment as DATABASE_URL
-
-# Run migrations against production
 DATABASE_URL=your_production_string npm run db:migrate
-
-# Seed production
 DATABASE_URL=your_production_string npm run db:seed -- --lean
 ```
 
-- [ ] Verify the Pro plan exists with your Stripe price ID
-- [ ] Verify `isUnlimitedMessaging: true` on the Pro plan
-- [ ] Verify 12 help center articles are seeded
+- [ ] Pro plan exists with Stripe price ID
+- [ ] `isUnlimitedMessaging: true` on Pro plan
+- [ ] 12 help center articles seeded
+- [ ] Demo client seeded: `DATABASE_URL=prod_string npm run db:seed -- --demo`
 
-### 4.5 Deploy
+### 5.3 Deploy + Configure
 
 - [ ] Deploy to Cloudflare via OpenNext
-- [ ] Hit these URLs and confirm they load:
-  - `https://yourdomain.com/login` &rarr; admin login page
-  - `https://yourdomain.com/signup` &rarr; signup page
-  - `https://yourdomain.com/client-login` &rarr; contractor login
-- [ ] Set up one Cloudflare Workers Cron Trigger:
-  - Schedule: every 5 minutes
-  - URL: `POST https://yourdomain.com/api/cron`
-  - Header: `Authorization: Bearer YOUR_CRON_SECRET`
-- [ ] In Twilio Console, configure your agency number (#5) webhooks:
-  - Voice: `https://yourdomain.com/api/webhooks/twilio/agency-voice` (POST)
-  - SMS: `https://yourdomain.com/api/webhooks/twilio/agency-sms` (POST)
-- [ ] Log in to production, set `operator_phone` and `operator_name` at `/admin/settings`
-- [ ] Seed the demo client: `DATABASE_URL=prod_string npm run db:seed -- --demo`
+- [ ] Pages load: `/login`, `/signup`, `/client-login`
+- [ ] Cloudflare Workers Cron Trigger: every 5 min, `POST /api/cron`, `Authorization: Bearer CRON_SECRET`
+- [ ] Twilio agency number (#5) webhooks pointed at production
+- [ ] `operator_phone` and `operator_name` set at `/admin/settings`
 
-### 4.6 GST/Tax (before first invoice)
+### 5.4 GST/Tax
 
-- [ ] Are you GST-registered? If under $30K annual revenue, you&apos;re likely exempt (small supplier)
-- [ ] If registered: configure Stripe Tax, update pricing to &ldquo;$1,000/month plus applicable taxes&rdquo;
-- [ ] If not registered: note the decision, revisit at $30K revenue
+- [ ] Under $30K revenue? Document small supplier exemption. Revisit at $30K.
+- [ ] If registered: configure Stripe Tax (5% GST)
 
-### 4.7 Smoke Test Production
+### 5.5 Smoke Test Production
 
 - [ ] Assign a real Alberta phone number (403/780) to the demo client
 - [ ] Call the demo number from your personal phone
 - [ ] Missed-call text-back arrives within 5 seconds?
-- [ ] Text the demo number: &ldquo;I need a quote for a bathroom renovation&rdquo;
+- [ ] Text it: &ldquo;I need a quote for a bathroom renovation&rdquo;
 - [ ] AI responds within 10 seconds?
 
-If both pass: production is live. If either fails: check Twilio webhooks and the reliability dashboard at `/admin/reliability`.
+**Both pass? Production is live.**
 
 ---
 
-## Step 5: Start Selling
+## Phase 6: Start Selling
 
-Your outreach plan with day-by-day schedule, word-for-word scripts, and channel strategy is at `docs/operations/COLD-START-PLAYBOOK.md`. It&apos;s designed for someone with a 9-5 job (early mornings + evenings + weekends).
+Your complete outreach plan: `docs/operations/COLD-START-PLAYBOOK.md`
+Designed for a 9-5 schedule (early mornings + evenings + weekends).
 
-### 5.1 Get Your Materials Ready
+### Before your first outreach
 
-- [ ] Service agreement template is filled with YOUR details (name, email, address) &mdash; ready to send as PDF
-- [ ] ROI worksheet is saved where you can pull it up on a call
-- [ ] You&apos;ve memorized the response to: &ldquo;What if the AI says something wrong?&rdquo; (Playbook Objection 1)
-- [ ] You&apos;ve memorized the response to: &ldquo;I got burned before&rdquo; (Playbook Objection 2)
-- [ ] You know your demo number and have tested it today
+- [ ] Service agreement filled with YOUR details &mdash; ready as PDF
+- [ ] ROI worksheet saved where you can open it on a call
+- [ ] Demo number tested today
+- [ ] Prospect list built (80+ contacts from Kijiji, Google Maps, HomeStars)
+- [ ] Joined 5 Alberta contractor Facebook Groups
+- [ ] Memorized top 3 objection responses
 
-### 5.2 Before Each Sales Call
+### The daily rhythm
 
-- [ ] 5 min before: call the demo number, verify text-back fires
-- [ ] Have the ROI worksheet open with the prospect&apos;s info pre-filled (if available)
-- [ ] Know which angle to lead with:
-  - Most contractors: Angle A (quote reactivation) &mdash; &ldquo;How many dead quotes in your phone?&rdquo;
-  - Referral-heavy: Angle B &mdash; estimate follow-up + review generation
-  - Running ads: Angle C &mdash; speed-to-lead
-  - Spring timing: Angle D &mdash; seasonal ramp
+| Time | What |
+|------|------|
+| 6:30 AM | Send 5-8 texts/DMs |
+| Lunch | Reply to messages, follow-ups |
+| 5:30-7:30 PM | 10-15 cold calls + demos |
+| Saturday | Power session: 20 DMs, calls, Facebook posts |
 
-### 5.3 After They Say Yes
+### After they say yes
 
-Follow the Day 0 &rarr; Day 1 &rarr; Week 2 &rarr; Week 3 timeline in Playbook Section 10. The short version:
-
-1. **Day 0:** Send service agreement. Create client in admin. Assign phone number.
-2. **Day 1:** 30-min onboarding call. Fill KB. Import old quotes. They call their own number.
-3. **Day 1-2:** Deliver Revenue Leak Audit. Supplement KB.
-4. **Day 3-5:** Enable Smart Assist mode. Run AI safety tests.
-5. **Week 2:** Clear KB gap queue daily. First report delivers.
-6. **Week 3+:** AI goes autonomous. You&apos;re on cruise control (5-10 min/day per client).
-
-### 5.4 Daily Routine (per client, 5-10 min)
-
-1. Start at `/admin/triage` &mdash; which clients need attention?
-2. Check `/escalations` &mdash; any hot leads waiting?
-3. Check knowledge gap queue &mdash; any new AI gaps to fill?
-4. Check `/admin/ai-quality` &mdash; any flagged messages?
-5. Done.
+Day 0 &rarr; Day 1 &rarr; Week 2 &rarr; Week 3 &mdash; follow Playbook Section 10. Onboarding calls on Saturday mornings.
 
 ---
 
@@ -397,31 +353,3 @@ Follow the Day 0 &rarr; Day 1 &rarr; Week 2 &rarr; Week 3 timeline in Playbook S
 | Reports | `/admin/reports` | Bi-weekly report review |
 | Reliability | `/admin/reliability` | Cron/webhook health |
 | Settings | `/admin/settings` | Kill switches, operator info |
-
----
-
-## Cron Job Reference
-
-You set up ONE cron trigger (every 5 min). The system handles everything else internally:
-
-| When | What runs |
-|------|-----------|
-| Every 5 min | Process message queue, check missed calls |
-| Every 30 min | Calendar sync, review responses, report retries |
-| Hourly | Usage tracking, escalation SLA, review sync, compliance replay |
-| Daily midnight | Lead scoring, analytics, no-show recovery, Stripe reconciliation |
-| Daily 7am | Daily summary, bi-weekly reports, Day 3 check-in |
-| Daily 10am | Win-back, estimate nudges, KB nudges, AI auto-progression |
-| Weekly Monday | Engagement health, agency digest |
-| Weekly Wednesday | Dormant re-engagement (6-month leads) |
-| Monthly 1st | Cohort analysis, access review |
-
----
-
-## Twilio Webhook Reference
-
-| Number | What | URL |
-|--------|------|-----|
-| Agency (#5) | Voice | `https://yourdomain.com/api/webhooks/twilio/agency-voice` |
-| Agency (#5) | SMS | `https://yourdomain.com/api/webhooks/twilio/agency-sms` |
-| Client numbers | Auto-configured when purchased via the platform | No manual setup needed |
