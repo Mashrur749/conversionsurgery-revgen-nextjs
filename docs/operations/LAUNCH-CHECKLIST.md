@@ -194,7 +194,7 @@ This single document covers everything you need to sell and operate: what the sy
 
 **After reading the Operator Guide, do the self-tests below. If you can answer all of them without looking, you&apos;re ready to sell.**
 
-### Self-test (answer from memory before moving on)
+### 3.2 Self-test (answer from memory before moving on)
 
 - [ ] What does the contractor get for their money? (Part 1)
 - [ ] What&apos;s the deal structure? First month free, then what? (Part 2)
@@ -204,24 +204,47 @@ This single document covers everything you need to sell and operate: what the sy
 - [ ] What are the 7 hard rules? (Part 6)
 - [ ] Who should you NOT sign? (Part 2 &mdash; disqualifiers)
 
-**If you can answer all 7: you&apos;re ready to sell.** Move to Step 4.
+### 3.3 Go Deep &mdash; Know Every Detail Before You Sell
 
-### Prepare your materials
+You can&apos;t sell what you don&apos;t fully understand. Read these across 2-3 evenings.
 
-- [ ] `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill in YOUR name, email, address now (15 min)
+**Evening 1: How every feature works (~45 min)**
+- [ ] `docs/product/PLATFORM-CAPABILITIES.md` &mdash; all 12 sections
+- After reading: you know the 4 AI modes, the 7 automation sequences, the compliance chain, every cron job, every portal page
+
+**Evening 2: How you deliver every scenario (~60 min)**
+- [ ] `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` &mdash; all 22 sections
+- Sections 1-11: Core delivery (escalations, quote reactivation, AI quality, reports, guarantee, pause, cancel, onboarding)
+- Section 12: Qualification framework (who gets 5-10x ROI, who to walk away from)
+- Sections 13-19: Feature delivery (review monitoring, quarterly blitz, voice AI, calendar, probable wins, email fallback, DNC)
+- Sections 20-22: Ethical selling (contractor experience, failure modes, honest boundaries)
+
+**Evening 3: How to sell + legal rules + materials (~60 min)**
+- [ ] `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; all 10 objections + Section 12 outreach scripts
+- [ ] `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` &mdash; the 7 hard rules (10 min)
+- [ ] `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill in YOUR details now (15 min)
 - [ ] `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` &mdash; save where you can open it on a call (5 min)
+- [ ] `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; read the format (10 min)
 
-### Deep reference docs (read during Week 1 of delivery, not before selling)
+**Skim when client #1 is live (daily reference, not pre-reading):**
+- [ ] `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; 70-item daily/weekly checklist (skim 20 min, use as reference)
 
-These go deeper than the Operator Guide. You don&apos;t need them to sell &mdash; you need them when you&apos;re delivering.
+### 3.4 Final self-test (answer ALL of these without looking)
 
-| Doc | When to read | What it adds |
-|-----|-------------|-------------|
-| `docs/product/PLATFORM-CAPABILITIES.md` | Before onboarding client #1 | Every feature in detail (12 sections, 45 min) |
-| `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` | Before onboarding client #1 | Every delivery scenario (22 sections, 60 min) |
-| `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` | Before your 3rd sales call | All 10 objections with full scripts + outreach angles (30 min) |
-| `docs/operations/01-OPERATIONS-GUIDE.md` | When client #1 is live | Daily ops checklist &mdash; 70 items (skim 30 min) |
-| `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` | Day 1-2 of client #1 | The 48-hour deliverable format (10 min) |
+- [ ] What happens when the AI doesn&apos;t know something? (Playbook Section 1)
+- [ ] What&apos;s the 4-touch estimate follow-up timing? (Capabilities Section 2)
+- [ ] What are the guarantee terms? (Playbook Section 5)
+- [ ] What&apos;s the onboarding call script flow? (Playbook Section 10)
+- [ ] Name 3 things the system does NOT do. (Playbook Section 22)
+- [ ] What&apos;s the worst realistic failure and how bad is it? (Playbook Section 21)
+- [ ] Who should you NOT sign? Name 3 disqualifiers. (Playbook Section 12)
+- [ ] A contractor says &ldquo;What if the AI says something wrong?&rdquo; (Objection 1)
+- [ ] A contractor says &ldquo;I got burned before.&rdquo; (Objection 2)
+- [ ] A contractor says &ldquo;$1,000 is expensive.&rdquo; (Objection 8)
+- [ ] What&apos;s the demo moment that closes deals? (&ldquo;Call Your Own Number&rdquo;)
+- [ ] What&apos;s the max the contractor can lose? (First month is free)
+
+**If you can answer all 12: you know the system inside out. You can sell with full confidence.**
 
 ---
 
