@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { useAdmin } from '@/lib/admin-context';
 import {
   Select,
@@ -29,6 +31,18 @@ export function ClientSelector({ clients }: Props) {
       setSelectedClientId(clients[0].id);
     }
   }, [clients, selectedClientId, setClients, setSelectedClientId]);
+
+  if (clients.length === 0) {
+    return (
+      <Link
+        href="/admin/clients/new"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-forest-light text-white/80 hover:text-white transition-colors"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Add first client
+      </Link>
+    );
+  }
 
   return (
     <Select
