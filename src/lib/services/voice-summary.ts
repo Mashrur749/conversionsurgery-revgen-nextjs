@@ -1,8 +1,9 @@
 import { getDb } from '@/db';
-import { voiceCalls, clients } from '@/db/schema';
+import { voiceCalls, clients, systemSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getTrackedAI } from '@/lib/ai';
 import { sendSMS } from './twilio';
+import { normalizePhoneNumber } from '@/lib/utils/phone';
 
 /**
  * [Voice] Generate an AI summary of a voice call transcript
@@ -65,13 +66,23 @@ export async function notifyClientOfCall(callId: string): Promise<void> {
 
   if (!client?.phone) return;
 
+  // Route voice call notifications to operator first, fall back to contractor
+  const [operatorRow] = await db
+    .select({ value: systemSettings.value })
+    .from(systemSettings)
+    .where(eq(systemSettings.key, 'operator_phone'))
+    .limit(1);
+  const operatorPhone = operatorRow?.value ? normalizePhoneNumber(operatorRow.value) : null;
+  const notifyPhone = operatorPhone ?? client.phone;
+
   const summary = call.aiSummary || (await generateCallSummary(callId));
 
   const durationMin = Math.round((call.duration || 0) / 60);
   const callbackLine = call.callbackRequested ? '\nCallback requested!' : '';
 
   const message =
-    `New AI call from ${call.from}\n` +
+    `Voice call for ${client.businessName}\n` +
+    `From: ${call.from}\n` +
     `Duration: ${durationMin}min\n` +
     `Intent: ${call.callerIntent || 'Unknown'}` +
     callbackLine +
@@ -79,7 +90,7 @@ export async function notifyClientOfCall(callId: string): Promise<void> {
 
   const twilioFrom = client.twilioNumber || process.env.TWILIO_PHONE_NUMBER!;
 
-  await sendSMS(client.phone, message, twilioFrom);
+  await sendSMS(notifyPhone, message, twilioFrom);
 
-  console.log('[Voice] Notification sent to:', client.phone);
+  console.log('[Voice] Notification sent to:', notifyPhone);
 }

@@ -74,7 +74,7 @@ The following lines are approved for live sales conversations, landing page head
 > - **Missed Call Text-Back** — Every missed call gets an automatic text during permitted hours, capturing leads that would otherwise disappear.
 > - **Revenue Leak Audit** — Within 48 business hours, we deliver a personalized one-page assessment of where leads are falling through in your business. Your numbers, not generic stats.
 >
-> By the end of Week 1, the system is configured with your business information and handling web form responses. By Week 2, smart assist mode is active — the system generates responses and auto-sends after a 5-minute window so you can review if you&apos;re available, but speed is never sacrificed. By Week 3, the system runs fully on autopilot.
+> By the end of Week 1, the system is configured with your business information and handling web form responses. By Week 2, smart assist mode is active &mdash; every response is reviewed by our team before it reaches your customers. Nothing goes out without a human check. Speed is never sacrificed. By Week 3, the system runs fully on autopilot.
 
 ### Quarterly Growth Blitz
 
@@ -110,7 +110,7 @@ The following lines are approved for live sales conversations, landing page head
 > | What you do                                                                                          | Time required             |
 > | ---------------------------------------------------------------------------------------------------- | ------------------------- |
 > | One onboarding call                                                                                  | 30 minutes, once          |
-> | Review responses during Week 2 (optional — auto-sends after 5 min if you don&apos;t)                     | 10-15 min/day for ~5 days |
+> | Nothing extra during Week 2 &mdash; our team reviews every response before it reaches your customers  | 0 min (we handle it)      |
 > | Flag estimates as sent (reply to a notification text, send a keyword SMS, or click in the dashboard) | 10 seconds each           |
 > | Mark jobs as won or lost                                                                             | 30 seconds each           |
 > | Respond when the system escalates to you (complex questions or high-value opportunities)             | As needed                 |
@@ -269,7 +269,7 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 The following are approved written answers for the questions prospects ask most frequently. Use these verbatim in email follow-ups, proposal appendices, and FAQ sections.
 
 > **What if the system says something wrong to a customer?**
-> The system runs in a supervised review mode for the first two weeks &mdash; it generates responses and sends them after a five-minute window, giving you time to review. When the system encounters a question it cannot answer confidently, it tells the lead it will follow up rather than guessing. Inaccuracies are flagged immediately and corrected in the knowledge base.
+> For the first two weeks, every response is reviewed by our team before it reaches your customers. Nothing goes out without a human check. When the system encounters a question it cannot answer confidently, it tells the lead it will follow up rather than guessing. Inaccuracies are flagged immediately and corrected in the knowledge base. You don&apos;t review messages &mdash; we do.
 
 > **I tried a similar service before and it didn&apos;t work. How is this different?**
 > ConversionSurgery is a managed service, not software. We set it up, run it, monitor it, and fix it when something&apos;s off. You don&apos;t manage anything. Your first month is free &mdash; you see proof before you pay a dollar.

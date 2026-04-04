@@ -42,7 +42,7 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 7. Review Day-One activation panel per onboarding client (milestones, open SLA alerts, audit delivery proof).
 8. Review subscriptions in guarantee-v2 risk states (`proof_pending`, `recovery_pending`, `refund_review_required`) and action queues.
 9. Review data export SLA queue in admin billing (`requested`, `processing`, `ready`, `failed`) and clear at-risk/breached items.
-10. Review Smart Assist pending approvals and auto-send backlog (manual-only categories especially).
+10. Review Smart Assist pending approvals and auto-send backlog. **During Week 2 per client, you are the reviewer** &mdash; notifications go to your `operator_phone`, not the contractor. Approve (`SEND [ref]`), edit (`EDIT [ref]: text`), cancel (`CANCEL [ref]`), or let auto-send fire. Estimate follow-up and payment messages never auto-send &mdash; you must explicitly approve those.
 11. Review quarterly campaign lifecycle health (planned/scheduled/launched/completed + overdue launches).
 12. Review latest bi-weekly report "Without Us" status per client (`ready` vs `insufficient_data`) and investigate repeated insufficiency.
 13. Review `Report Delivery Operations` panel for latest cycle states (`generated`, `queued`, `retried`, `sent`, `failed`) and clear failed/terminal queues.

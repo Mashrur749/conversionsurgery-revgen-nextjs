@@ -1,4 +1,4 @@
-import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats, clientAgentSettings } from '@/db';
+import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats, clientAgentSettings, systemSettings } from '@/db';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
@@ -68,8 +68,20 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     return { processed: true, action: 'dashboard_link_sent' };
   }
 
-  // 1b. Check for flow approval responses from client owner
-  if (normalizePhoneNumber(client.phone) === senderPhone) {
+  // 1b. Check for flow approval responses from client owner or operator
+  const operatorPhoneRow = await db
+    .select({ value: systemSettings.value })
+    .from(systemSettings)
+    .where(eq(systemSettings.key, 'operator_phone'))
+    .limit(1);
+  const operatorPhone = operatorPhoneRow[0]?.value
+    ? normalizePhoneNumber(operatorPhoneRow[0].value)
+    : null;
+  const isOwnerOrOperator =
+    normalizePhoneNumber(client.phone) === senderPhone ||
+    (operatorPhone !== null && operatorPhone === senderPhone);
+
+  if (isOwnerOrOperator) {
     const approvalCheck = await handleApprovalResponse(client.id, messageBody);
     if (approvalCheck.handled) {
       return { processed: true, action: approvalCheck.action };
@@ -651,7 +663,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       leadId: lead.id,
       leadPhone: senderPhone,
       leadName: lead.name,
-      ownerPhone: client.phone,
+      ownerPhone: operatorPhone ?? client.phone,
       fromTwilioNumber: client.twilioNumber,
       content: aiResult.response,
       category: assistCategory,

@@ -33,6 +33,7 @@ import { KbQuestionnaire } from './kb-questionnaire';
 import { AiPreviewPanel } from './ai-preview-panel';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SendPaymentLink } from './send-payment-link';
+import { DataExportButton } from './data-export-button';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -466,6 +467,7 @@ export default async function ClientDetailPage({ params }: Props) {
                   plans={availablePlans}
                 />
               )}
+              <DataExportButton clientId={client.id} />
             </CardContent>
           </Card>
         }

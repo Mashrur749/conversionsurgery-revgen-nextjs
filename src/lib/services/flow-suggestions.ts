@@ -1,8 +1,9 @@
 import { getDb } from '@/db';
-import { flows, suggestedActions, clients, leads } from '@/db/schema';
+import { flows, suggestedActions, clients, leads, systemSettings } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { detectSignals, mapSignalsToFlows, type DetectedSignals } from './signal-detection';
 import { sendSMS } from './twilio';
+import { normalizePhoneNumber } from '@/lib/utils/phone';
 
 /**
  * Check conversation for signals and suggest matching flows (FROZEN EXPORT)
@@ -118,11 +119,21 @@ async function sendApprovalSMS(
     .where(eq(leads.id, leadId))
     .limit(1);
 
-  if (!client?.phone || !client.twilioNumber) return;
+  if (!client?.twilioNumber) return;
+
+  // Route flow suggestions to operator first, fall back to contractor
+  const [operatorRow] = await db
+    .select({ value: systemSettings.value })
+    .from(systemSettings)
+    .where(eq(systemSettings.key, 'operator_phone'))
+    .limit(1);
+  const operatorPhone = operatorRow?.value ? normalizePhoneNumber(operatorRow.value) : null;
+  const notifyPhone = operatorPhone ?? client.phone;
+  if (!notifyPhone) return;
 
   const message = `AI suggests: "${flowName}" for ${lead?.name || lead?.phone}\n\nReply:\nYES ${suggestionId.slice(0, 8)} - to approve\nNO ${suggestionId.slice(0, 8)} - to skip`;
 
-  await sendSMS(client.phone, message, client.twilioNumber);
+  await sendSMS(notifyPhone, message, client.twilioNumber);
 }
 
 /**

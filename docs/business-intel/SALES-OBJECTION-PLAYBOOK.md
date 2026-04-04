@@ -44,9 +44,9 @@ Tier 1 objections (10/10 and 7/10 agent consensus) will come up in almost every 
 
 **The right response:**
 
-> "That's exactly why we don't flip it to autopilot on day one. In Week 2, it runs in what we call Smart Assist mode — the AI writes the response, but it waits five minutes before it sends. If you're available, you can read it and edit it. If you're on a roof, it sends without you. By the time we go fully autonomous in Week 3, you've already seen fifty responses and know exactly how it handles your customers.
+> "That's exactly why we don't flip it to autopilot on day one. For the first two weeks, I personally review every single response before it reaches your customers. Nothing goes out without a human check. You don't see notifications, you don't approve messages — I handle all of that. By the time we go fully autonomous in Week 3, I've reviewed fifty-plus responses and the system knows your business inside out.
 >
-> And when the AI doesn't know something — let's say a lead asks about a specific permit situation — it doesn't guess. It says something like 'Great question, let me have [your name] follow up on that directly.' We flag it, I look at it that day, and we add the answer to its knowledge base. It gets sharper every week.
+> And when the system doesn't know something — let's say a lead asks about a specific permit situation — it doesn't guess. It says something like 'Great question, let me have [your name] follow up on that directly.' I flag it, look at it that day, and add the answer so it never misses that question again. It gets sharper every week.
 >
 > Can I show you what that actually looks like?"
 

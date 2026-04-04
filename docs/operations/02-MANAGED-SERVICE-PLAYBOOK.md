@@ -53,11 +53,36 @@ This is the moment they realize the service works. Protect it.
 
 ---
 
-## 3. AI Quality Monitoring
+## 3. AI Quality Monitoring + Smart Assist Operations
 
 **When:** Daily during Week 2 (Smart Assist mode), then 2-3 times/week once autonomous.
 
-**Process:**
+### Smart Assist — Operator-First Review (Week 2)
+
+During Smart Assist mode, **you** (the operator) review AI drafts, not the contractor. This is how the "you don&apos;t manage anything" promise actually works.
+
+**How it works in the code:** Smart Assist notifications (the `SEND/EDIT/CANCEL` SMS) are sent to the `operator_phone` configured in system settings. If `operator_phone` is not set, they fall back to the contractor&apos;s phone. Both the operator and the contractor are authorized to issue Smart Assist commands.
+
+**Your Week 2 routine (per client, 3x/day, ~5 min each check):**
+
+1. You receive SMS notifications for every AI-drafted response: `"AI draft for Sarah T.: 'Hi Sarah...' Ref ABC123. Auto-send in 5 min."`
+2. Scan the draft. If it sounds right &mdash; do nothing. It auto-sends in 5 minutes.
+3. If the tone is off or the info is wrong:
+   - Reply `EDIT ABC123: [corrected message]` &mdash; sends your version immediately
+   - Reply `CANCEL ABC123` &mdash; kills the draft, nothing sent
+4. If you need the contractor&apos;s input: text them directly: &ldquo;Quick one &mdash; a lead asked about [topic]. What should I tell them?&rdquo; Then either edit the draft with their answer or add a KB entry.
+
+**What the contractor experiences during Week 2:** Nothing changes for them. They don&apos;t receive draft notifications. They don&apos;t approve messages. From their perspective, the system just works. If you need their input, they get a normal text from you &mdash; not a system notification.
+
+**Categories that NEVER auto-send (even if you don&apos;t act):**
+- Estimate follow-up messages
+- Payment reminder messages
+
+These sit in `pending_manual` until explicitly approved. You must reply `SEND [ref]` for these. This prevents sensitive financial messages from going out without human review.
+
+**When to switch from Smart Assist to Autonomous:** After you&apos;ve reviewed ~30+ AI interactions for this client and the KB is covering 90%+ of questions without escalation. Run `npm run test:ai` with their KB loaded. All Safety tests must pass. This is non-negotiable.
+
+### General AI Quality Monitoring (ongoing)
 
 1. Open `/admin/ai-quality` (or the AI quality section in the admin dashboard).
 2. Review flagged messages from the past 24 hours. Each flag has a category: wrong tone, inaccurate, too pushy, hallucinated, off topic, other.
@@ -66,8 +91,6 @@ This is the moment they realize the service works. Protect it.
    - **Wrong tone / too pushy:** Check the AI settings for this client. Adjust tone (professional/friendly/casual) or update guardrail prompts.
    - **Off topic:** Usually a lead sending irrelevant messages. Not actionable unless the AI engaged with it (which it shouldn&apos;t per guardrails).
 4. If you see patterns (same flag reason across multiple clients), the issue is in the system prompt or guardrails, not a single client&apos;s KB.
-
-**Pre-autonomous gate:** Before switching a client from Smart Assist to Autonomous mode, run `npm run test:ai` with their KB loaded. All Safety tests must pass. This is non-negotiable.
 
 ---
 
@@ -294,7 +317,7 @@ Stay on the line. Confirm in Stripe. See Payment Capture section below for hesit
 
 8. **Expectations (2 min):**
 
-   &gt; &quot;Week 1: missed call text-back is live, your old quotes are getting followed up. Week 2: the system starts responding to new web form leads with a 5-minute review window &mdash; you see every message before it sends. Week 3: fully autonomous. After every completed job, it asks for a Google review with a direct link. I check in every 2 weeks with a report showing exactly what happened.&quot;
+   &gt; &quot;Week 1: missed call text-back is live, your old quotes are getting followed up. Week 2: the system starts responding to new web form leads &mdash; I review every message before it goes out, so nothing hits your customers without a human check first. Week 3: fully autonomous. After every completed job, it asks for a Google review with a direct link. I check in every 2 weeks with a report showing exactly what happened. You don&apos;t manage any of this.&quot;
 
 9. **Book Day 7 check-in BEFORE hanging up:**
 
@@ -785,7 +808,7 @@ You fill their KB, they call their own number and watch the missed-call text arr
 They receive a one-page assessment showing where money is leaking: slow response times, dead quotes, review gap vs competitors. This is the first proof the service is personalized, not generic.
 
 **Day 2-5 &mdash; AI starts responding to real leads:**
-The AI is in Smart Assist mode (5-min delay). They get a text when the AI drafts a response. They can review it, edit it, or let it auto-send after 5 minutes. Most contractors glance at the first few and then let it run.
+The AI is in Smart Assist mode (5-min delay). The operator reviews every draft via SMS before it sends &mdash; the contractor doesn&apos;t see notifications or manage anything. If the operator needs input on a specific response, they text the contractor directly. Most drafts are fine and auto-send after 5 minutes untouched.
 
 **Week 1 &mdash; Old quotes come alive:**
 Their imported dead quotes start getting re-engaged. They get a text: &ldquo;[Lead name] responded to your follow-up.&rdquo; One or two responses in Week 1 validates the entire service. This is the retention moment.

@@ -130,10 +130,12 @@ Messages are queued and delivered at 10 AM. The system monitors 24/7 but only se
 | Week | Mode | What happens |
 |:----:|------|-------------|
 | 1 | Off (missed call text-back only) | Only fires a text when a call is missed. Safe, no AI risk. |
-| 2 | Smart Assist (5-min review window) | AI drafts a response. It sits for 5 minutes. Contractor can review, edit, or cancel. Auto-sends if untouched. |
+| 2 | Smart Assist (5-min review window) | AI drafts a response. **You** (the operator) get an SMS with the draft and a reference code. You can approve (`SEND ABC123`), edit (`EDIT ABC123: new text`), cancel (`CANCEL ABC123`), or do nothing (auto-sends after 5 min). The contractor never sees these notifications. |
 | 3+ | Autonomous | AI handles everything. Escalates to human only when uncertain or when the lead explicitly asks for a person. |
 
 The system auto-advances through these modes based on quality gates. You don&apos;t flip a switch &mdash; it happens when the AI is ready.
+
+**Smart Assist notifications go to `operator_phone` (configured in admin settings), not to the contractor.** This is how the &ldquo;you don&apos;t manage anything&rdquo; promise works in practice. The contractor is shielded from all draft review. If you need their input on a specific response, text them directly. Estimate follow-up and payment messages never auto-send &mdash; you must explicitly approve those.
 
 ### The 4-Touch Estimate Follow-Up
 
