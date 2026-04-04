@@ -42,17 +42,18 @@ const SMART_ASSIST_CATEGORY_LABELS: Record<string, string> = {
 
 const TOGGLE_LABELS: Record<string, { label: string; description: string; tooltip?: string }> = {
   missedCallSmsEnabled: {
-    label: 'Missed Call SMS',
+    label: 'Missed Call Text-Back',
     description: 'Automatically text back when you miss a call',
   },
   aiResponseEnabled: {
-    label: 'AI Responses',
-    description: 'Let AI respond to incoming messages',
+    label: 'AI Lead Response',
+    description: 'AI responds to incoming leads on your behalf',
+    tooltip: 'When off, incoming messages won\u0027t get an automatic response. Turn this off only if you want to handle all messages yourself.',
   },
   smartAssistEnabled: {
-    label: 'Smart Assist Auto-Send',
-    description: 'AI drafts auto-send after your review window',
-    tooltip: 'AI drafts responses for your review before sending. Auto-sends after the delay if you don\u0027t act.',
+    label: 'Review Before Sending',
+    description: 'Preview AI responses before they send',
+    tooltip: 'When on, AI drafts a response and waits for your review window (set below) before sending. When off, AI sends immediately.',
   },
   photoRequestsEnabled: {
     label: 'Photo Requests',
@@ -146,6 +147,17 @@ export function FeatureTogglesForm({ defaults }: Props) {
           </CardContent>
         </Card>
       ))}
+
+      {form.smartAssistEnabled && (
+        <Card className="border-[#6B7E54]/30 bg-[#E3E9E1]/30">
+          <CardContent className="py-3 text-sm text-foreground">
+            <p className="font-medium mb-1">How it works</p>
+            <p className="text-xs text-muted-foreground">
+              When a lead messages you, the AI drafts a response. You have a review window to approve, edit, or cancel it. If you don&apos;t act, it auto-sends after the delay below.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {form.smartAssistEnabled && (
         <Card>

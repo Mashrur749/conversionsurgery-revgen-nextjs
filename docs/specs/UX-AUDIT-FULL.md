@@ -37,7 +37,7 @@ Items identified in initial UX pass, code changes shipped and verified:
 | F23 | Leads table not responsive (2.8) | Mobile card layout (< 640px) replacing table. Each card shows lead name/phone, status badge, temperature badge, source, score, last updated. Checkbox selection preserved for bulk actions. Desktop table headers now sticky. | Done |
 | F24 | AI quality flags cannot be resolved (2.9) | Resolve button on each flagged message card. Resolve All with confirmation dialog. Open/Resolved tab toggle. Resolved tab shows who resolved and when. New schema columns: flagResolvedAt, flagResolvedBy on conversations table. New API: POST /api/admin/ai-quality. | Done |
 | F25 | No breadcrumbs on deep pages (3.1) | Reusable Breadcrumbs component added to 6 client portal pages: billing, revenue, knowledge base, team, help, discussions. Shows "Dashboard > Page Name" with links. | Done |
-| F26 | No inline help/tooltips on settings (3.2) | Info icon tooltips added next to: Quiet Hours, Smart Assist Auto-Send, AI Tone, Auto-send delay. Uses shadcn Tooltip component. | Done |
+| F26 | No inline help/tooltips on settings (3.2) | Info icon tooltips added next to: Quiet Hours, Review Before Sending, AI Lead Response, AI Tone, Auto-send delay. Uses shadcn Tooltip component. Labels updated: &ldquo;AI Responses&rdquo; &rarr; &ldquo;AI Lead Response&rdquo;, &ldquo;Smart Assist Auto-Send&rdquo; &rarr; &ldquo;Review Before Sending&rdquo;. | Done |
 | F27 | Phone provisioning has no progress indicator (3.4) | 3-step progress indicator: "Choose location" > "Search numbers" > "Select your number". Numbered circles with brand colors. | Done |
 | F28 | Escalation SLA deadline has no countdown (3.5) | Live countdown component on escalation queue cards. Updates every 60s. Color-coded: green (>1h), sienna (30-60m), red (<30m), "SLA breached" when past deadline. | Done |
 | F29 | Reports table lacks filtering (3.6) | Client dropdown + date range presets (7d/30d/90d/All) above reports table. Client-side filtering with count indicator. | Done |
@@ -150,7 +150,7 @@ All Tier 1 items (1.1 through 1.6) have been implemented. See the "Already Fixed
 **Who:** Contractor (client portal)
 **Where:** Settings pages (quiet hours, smart assist, AI tone)
 **Problem:** "Quiet Hours" and "Smart Assist Auto-Send" have no explanation of what they do. Contractor has to guess.
-**Fix:** Info icon next to each setting with tooltip or expandable help text.
+**Fix:** Info icon tooltips added. Labels also renamed for clarity: &ldquo;AI Responses&rdquo; &rarr; &ldquo;AI Lead Response&rdquo;, &ldquo;Smart Assist Auto-Send&rdquo; &rarr; &ldquo;Review Before Sending&rdquo;. &ldquo;How it works&rdquo; explanation card added when Review Before Sending is enabled.
 **Status:** Done (P3). See F26 in the Already Fixed table.
 
 ### 3.3 Self-serve onboarding checklist lacks direction

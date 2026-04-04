@@ -49,13 +49,13 @@ const ACTION_CATEGORIES: Record<string, { label: string; actions: string[] }> = 
 const ALL_ACTIONS = Object.values(ACTION_CATEGORIES).flatMap((c) => c.actions);
 
 function getActionBadgeColor(action: string): string {
-  if (action.startsWith('auth.')) return 'bg-blue-100 text-blue-800';
+  if (action.startsWith('auth.')) return 'bg-[#E3E9E1] text-[#1B2F26]';
   if (action.startsWith('member.invited') || action.startsWith('member.reactivated'))
-    return 'bg-green-100 text-green-800';
-  if (action.startsWith('member.removed')) return 'bg-red-100 text-red-800';
-  if (action.startsWith('role.')) return 'bg-amber-100 text-amber-800';
-  if (action.startsWith('owner.')) return 'bg-purple-100 text-purple-800';
-  return 'bg-gray-100 text-gray-800';
+    return 'bg-[#E8F5E9] text-[#3D7A50]';
+  if (action.startsWith('member.removed')) return 'bg-[#FDEAE4] text-[#C15B2E]';
+  if (action.startsWith('role.')) return 'bg-[#FFF3E0] text-[#C15B2E]';
+  if (action.startsWith('owner.')) return 'bg-[#C8D4CC] text-[#1B2F26]';
+  return 'bg-muted text-muted-foreground';
 }
 
 function formatAction(action: string): string {
@@ -296,8 +296,8 @@ export function AuditLogClient({
         </CardContent>
       </Card>
 
-      {/* Results */}
-      <Card>
+      {/* Results — desktop table */}
+      <Card className="hidden sm:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -375,6 +375,54 @@ export function AuditLogClient({
           </Table>
         </CardContent>
       </Card>
+
+      {/* Results — mobile card list */}
+      <div className="sm:hidden space-y-2">
+        {entries.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground text-sm">
+              No audit entries match your filters.
+            </CardContent>
+          </Card>
+        ) : (
+          entries.map((entry) => {
+            const isExpanded = expandedId === entry.id;
+            return (
+              <Card
+                key={entry.id}
+                className="cursor-pointer"
+                onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+              >
+                <CardContent className="py-3 px-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <Badge
+                      variant="secondary"
+                      className={getActionBadgeColor(entry.action)}
+                    >
+                      {formatAction(entry.action)}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatTimestamp(entry.createdAt)}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium">{entry.personName || 'System'}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {generateDescription(entry.action, entry.metadata)}
+                  </p>
+                  {entry.clientName && (
+                    <p className="text-xs text-muted-foreground">{entry.clientName}</p>
+                  )}
+                  {isExpanded && entry.metadata && (
+                    <pre className="text-xs bg-muted/50 rounded p-2 overflow-x-auto mt-2">
+                      {JSON.stringify(entry.metadata, null, 2)}
+                    </pre>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+      </div>
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (

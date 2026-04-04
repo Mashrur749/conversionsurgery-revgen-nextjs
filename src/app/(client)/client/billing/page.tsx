@@ -5,6 +5,9 @@ import { getBillingData } from '@/lib/billing/queries';
 import { BillingPageClient } from './billing-client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { getDb } from '@/db';
+import { clients } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export const metadata = {
   title: 'Billing | ConversionSurgery',
@@ -16,9 +19,19 @@ async function BillingContent() {
     redirect('/link-expired');
   }
 
-  const data = await getBillingData(session.clientId);
+  const db = getDb();
+  const [clientRows, data] = await Promise.all([
+    db
+      .select({ serviceModel: clients.serviceModel })
+      .from(clients)
+      .where(eq(clients.id, session.clientId))
+      .limit(1),
+    getBillingData(session.clientId),
+  ]);
 
-  return <BillingPageClient clientId={session.clientId} data={data} />;
+  const serviceModel = clientRows[0]?.serviceModel ?? 'managed';
+
+  return <BillingPageClient clientId={session.clientId} serviceModel={serviceModel} data={data} />;
 }
 
 export default function BillingPage() {

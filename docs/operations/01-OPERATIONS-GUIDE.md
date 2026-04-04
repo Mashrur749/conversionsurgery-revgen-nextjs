@@ -28,7 +28,7 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 - Guarantee deadline remediation missed
 - Contractor can't reach a human
 
-**Capacity ceiling:** 7 clients comfortable for solo operator. 10 is the hard max. At 10+ clients, hire a part-time ops person or reduce onboarding pace.
+**Capacity ceiling:** 10 clients comfortable for solo operator (post-automation: weekly pipeline SMS, Voice AI default-on, Jobber sync reduce per-client time to ~30-45 min/week). 15 is the stretch max before quality degrades. At 15+ clients, hire a part-time ops person or reduce onboarding pace. Onboarding cap remains 2 new clients per week regardless of total count.
 
 ---
 
@@ -276,7 +276,9 @@ curl -s "$BASE_URL/api/cron/ai-mode-progression" \
 - Calendar, team-member, and client conversation/team workflow failures should also use centralized safe/sanitized logging.
 - API routes should have zero raw `console.error`; verify with `rg -n "console\\.error" src/app/api`.
 - If kill switches are enabled, message/voice behavior should match containment mode and be documented in incident notes.
-- **Voice AI two-step flow:** The `/gather` route is a thin handler — it captures caller speech, saves it to the transcript, and returns a filler phrase ("One moment please...") with a `<Redirect>` to `/process`. The `/process` route loads full context (client, KB, agent settings, SMS history) and generates the AI response. If debugging voice AI issues, check the `/process` route for AI inference failures — the `/gather` route only handles speech capture and kill-switch bypass.
+- **Voice AI ConversationRelay flow:** Inbound calls hit `/api/webhooks/twilio/voice/ai` which returns `<Connect><ConversationRelay>` TwiML pointing at the Durable Object WebSocket server (`packages/voice-agent/`). The DO handles the full conversation (Claude streaming, tool use, interruptions). When the session ends, `/api/webhooks/twilio/voice/ai/session-end` handles transfer, summary, and notifications. If debugging voice AI issues, check the DO logs via `wrangler tail` from `packages/voice-agent/`.
+- **Voice AI kill switch:** Prominent toggle on `/admin/voice-ai` page. Per-client `voiceEnabled` toggle also available in the voice settings per client. Both bypass AI and forward calls directly to the owner.
+- **Voice AI configuration:** `canDiscussPricing` and `voiceMaxDuration` are configurable per client on the admin Voice AI page. Business hours display inline when mode is "after hours." Operator can see the contractor-set `agentTone` as a badge on each client row.
 - **HELP keyword (CTIA):** inbound `HELP`/`INFO` messages trigger auto-reply with business contact + opt-out info. Works even for opted-out leads. All exempt sends (HELP, opt-in, opt-out confirmations) produce `compliance_exempt_send` audit events.
 - **Stuck message recovery:** `process-scheduled` cron recovers messages claimed >5 minutes ago (within 1-hour lookback) by resetting them for retry. This handles serverless function kills mid-send.
 - **Max-attempts retry cap:** scheduled messages retry up to `maxAttempts` (default 3) before permanent cancellation. Prevents infinite retry loops on permanently-failing sends.

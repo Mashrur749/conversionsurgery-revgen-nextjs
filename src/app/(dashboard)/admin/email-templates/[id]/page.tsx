@@ -9,6 +9,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface Template {
   id: string;
@@ -69,6 +70,10 @@ export default function EmailTemplateEditorPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Email Templates', href: '/admin/email-templates' },
+        { label: 'Template' },
+      ]} />
       <div className="flex items-center gap-3">
         <Link href="/admin/email-templates">
           <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>

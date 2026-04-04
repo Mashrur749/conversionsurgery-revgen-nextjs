@@ -136,6 +136,18 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Fire-and-forget welcome communications (email + SMS)
+    void (async () => {
+      try {
+        const { sendOnboardingNotification } = await import('@/lib/services/agency-communication');
+        await sendOnboardingNotification(client.id);
+      } catch (commsError) {
+        logSanitizedConsoleError('[PublicSignup] Welcome comms failed:', commsError, {
+          clientId: client.id,
+        });
+      }
+    })();
+
     // Auto-establish portal session so contractor can proceed without re-authenticating
     try {
       await setClientSessionCookieWithPermissions(client.personId, client.id);

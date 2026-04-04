@@ -189,15 +189,15 @@ export async function runAiModeProgression(): Promise<AiModeProgressionResult> {
       });
 
       // ── SMS notification to contractor ───────────────────────────────────
-      const modeLabel = targetMode === 'assist' ? 'Assist' : 'Autonomous';
-      const explanation =
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.conversionsurgery.com';
+      const smsMessage =
         targetMode === 'assist'
-          ? 'The AI will now draft responses and send them automatically after a short review window.'
-          : 'The AI is now fully autonomous and will handle leads without delay.';
+          ? `Your AI for ${client.businessName} is now active. It will draft responses to leads and auto-send after 5 minutes — giving you a window to review or edit. Check drafts in your portal: ${appUrl}/client/conversations`
+          : `Your AI for ${client.businessName} is now running on autopilot. Responses send instantly — no review window. You can take over any conversation anytime from your portal: ${appUrl}/client/conversations`;
 
       await sendAlert({
         clientId: client.id,
-        message: `Your AI assistant is now in ${modeLabel} mode. ${explanation}`,
+        message: smsMessage,
       });
 
       details.push({

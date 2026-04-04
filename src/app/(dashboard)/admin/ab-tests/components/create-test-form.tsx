@@ -104,9 +104,10 @@ export function CreateTestForm({ clients }: Props) {
       if (data.test) {
         router.push(`/admin/ab-tests/${data.test.id}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Create test error:', err);
-      setError(err.message || 'Failed to create test');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create test';
+      setError(errorMessage);
       setIsLoading(false);
     }
   };

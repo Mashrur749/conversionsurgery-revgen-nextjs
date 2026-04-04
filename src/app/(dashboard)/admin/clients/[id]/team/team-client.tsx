@@ -306,10 +306,10 @@ export function ClientTeamClient({
       <div className="space-y-6">
         {/* Owner Section */}
         {owner && (
-          <Card className="border-l-4 border-l-green-500">
+          <Card className="border-l-4 border-l-[#3D7A50]">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Crown className="size-4 text-amber-500" />
+                <Crown className="size-4 text-terracotta" />
                 Business Owner
               </CardTitle>
             </CardHeader>
@@ -509,8 +509,8 @@ export function ClientTeamClient({
                               variant={member.isActive ? 'default' : 'secondary'}
                               className={
                                 member.isActive
-                                  ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-100'
+                                  ? 'bg-[#E8F5E9] text-[#3D7A50] hover:bg-[#E8F5E9]'
+                                  : 'bg-muted text-muted-foreground hover:bg-muted'
                               }
                             >
                               {member.isActive ? 'Active' : 'Inactive'}
@@ -538,7 +538,7 @@ export function ClientTeamClient({
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="text-[#C15B2E] hover:text-[#C15B2E] hover:bg-[#FDEAE4]"
                                 onClick={() => setRemoveMember(member)}
                               >
                                 Remove
@@ -562,7 +562,7 @@ export function ClientTeamClient({
               <DialogTitle>Edit {editMember?.name}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
+              <p className="text-sm text-[#C15B2E] bg-[#FFF3E0] p-3 rounded-md">
                 Changes to this member&apos;s role or status will take effect immediately
                 and they will be logged out.
               </p>
@@ -652,7 +652,7 @@ export function ClientTeamClient({
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleRemoveMember}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-[#C15B2E] hover:bg-[#B84A1F]"
                 disabled={loading}
               >
                 {loading ? 'Removing...' : 'Remove'}
@@ -720,7 +720,7 @@ export function ClientTeamClient({
                   transferConfirmName !== targetMember?.name ||
                   loading
                 }
-                className="bg-amber-600 hover:bg-amber-700"
+                className="bg-terracotta hover:bg-[#C15B2E]"
               >
                 {loading ? 'Transferring...' : 'Transfer Ownership'}
               </AlertDialogAction>

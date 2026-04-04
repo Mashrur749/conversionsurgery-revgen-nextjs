@@ -170,7 +170,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify. Step 66 covers four features shipped after Step 65: CASL consent attestation on CSV import (admin and portal), help center seed articles, portal lead action buttons (Mark Estimate Sent, Mark Won, Mark Lost), and KB gap SMS deep link (auto-opens add form with question pre-filled).
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify. Step 66 covers four features shipped after Step 65: CASL consent attestation on CSV import (admin and portal), help center seed articles, portal lead action buttons (Mark Estimate Sent, Mark Won, Mark Lost), and KB gap SMS deep link (auto-opens add form with question pre-filled). Step 67 covers SPEC-07 through SPEC-12 features: Weekly Pipeline SMS (dollar values + needs-attention count), ROI Calculator public endpoint, Jobber webhook integration (inbound job_completed triggers review, outbound appointment_booked fires to Jobber), and Voice AI default-on for new clients.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -614,18 +614,34 @@ Expected:
 10. Set `ops.kill_switch.voice_ai=true`.
 11. Place test call through Voice AI number and confirm AI conversation is bypassed to human fallback path.
 12. Set `ops.kill_switch.voice_ai=false`.
-13. Place a normal test call (kill switch off) and confirm the two-step voice flow works:
+13. Place a normal test call (kill switch off) and confirm the ConversationRelay voice flow works:
     - **Lead Dev Phone (port 3001):** Call the Business Line (#1). Voice AI answers.
-    - Caller speaks, hears a filler phrase ("One moment please..." / "Let me look into that..." / "Sure, give me just a second...")
-    - After a brief pause, the AI response plays and the conversation continues.
-    - The filler phrase is served by `/api/webhooks/twilio/voice/ai/gather` (thin handler), which redirects to `/api/webhooks/twilio/voice/ai/process` (heavy AI handler) for the actual response.
-    - Say something that triggers transfer intent → **Team Member Dev Phone (port 3003)** rings for hot transfer.
+    - Caller speaks, AI responds in ~1 second with a natural ElevenLabs voice (streamed token-by-token via ConversationRelay).
+    - Caller can interrupt mid-response &mdash; AI stops and listens.
+    - The conversation is handled by a Cloudflare Durable Object WebSocket server (`packages/voice-agent/`), which streams Claude responses to Twilio ConversationRelay.
+    - Say something that triggers transfer intent &rarr; AI sends `end` message &rarr; session-end handler dials **Team Member Dev Phone (port 3003)** for hot transfer.
 
 Expected:
 
 - Each switch changes behavior without code changes/redeploy.
 - Switching back to `false` restores normal behavior.
-- Voice AI two-step flow: caller never hears extended dead silence — filler phrase bridges the AI processing gap.
+- Voice AI ConversationRelay flow: caller never hears dead silence &mdash; streamed token-by-token responses start within ~1 second.
+
+#### 16a-2: Voice AI Admin Configuration UI
+
+1. Navigate to `/admin/voice-ai`. Verify the **global kill switch banner** shows at the top: green &ldquo;Voice AI is active&rdquo; status.
+2. Click &ldquo;Pause All Voice AI&rdquo; &rarr; confirm AlertDialog &rarr; banner turns red &ldquo;PAUSED.&rdquo; Click &ldquo;Resume&rdquo; &rarr; returns to green.
+3. Expand a client accordion. Verify you see: voiceEnabled toggle, mode dropdown, greeting textarea, `canDiscussPricing` toggle, max duration selector, and business hours summary (when mode = after_hours).
+4. Verify `agentTone` badge appears on the client accordion summary row (e.g., &ldquo;professional&rdquo;).
+5. Toggle `canDiscussPricing` ON, save. Place a test voice call and ask about pricing &mdash; AI should share knowledge-base ranges.
+6. Change `voiceMaxDuration` to 2 minutes, save. Place a test call longer than 2 minutes &mdash; AI should wrap up gracefully.
+
+#### 16a-3: Contractor Portal Voice Status Card
+
+1. Log into the client portal. Verify the **Voice AI status card** appears on the dashboard.
+2. Card shows: Active/Off badge, current mode, phone number, and this week&apos;s call stats (calls handled, appointments booked, transfers).
+3. If no calls this week, card shows &ldquo;No voice calls this week yet.&rdquo;
+4. If voice is disabled for the client, the card should not render.
 
 #### 16b: HELP keyword + compliance audit logging
 
@@ -1267,7 +1283,7 @@ Combined verification for all Tier 3 UX improvements (breadcrumbs, tooltips, pro
    - `/client/help`
    - `/client/discussions`
 
-2. **Settings tooltips (3.2):** Open `/client/settings` (AI tab and Notifications tab). Verify info icon tooltips appear next to: Quiet Hours, Smart Assist Auto-Send, AI Tone, and Auto-send delay. Hover (desktop) or tap (mobile) to confirm tooltip text displays.
+2. **Settings tooltips (3.2):** Open `/client/settings` (AI tab and Features tab). Verify info icon tooltips appear next to: Quiet Hours, Review Before Sending, AI Lead Response, AI Tone, and Auto-send delay. Hover (desktop) or tap (mobile) to confirm tooltip text displays.
 
 3. **Phone provisioning progress indicator (3.4):** Navigate to `/client/settings` (Phone tab) and start the provisioning flow. Verify a 3-step indicator appears: &quot;Choose location&quot; &rarr; &quot;Search numbers&quot; &rarr; &quot;Select your number&quot;. Each step shows a numbered circle. Current step is highlighted in brand color; completed steps are filled; future steps are muted.
 
@@ -2255,13 +2271,96 @@ Expected:
 - Submitting the form creates a KB entry and links it to the gap.
 - Navigating to the KB page without the param shows normal view (no stale pre-fill).
 
+### Step 67: SPEC-07 through SPEC-12 features (Weekly Pipeline SMS, ROI Calculator, Jobber Integration, Voice AI Default)
+
+#### 67a: Weekly Pipeline SMS
+
+1. Ensure the test client has at least one active lead and one `action_required` lead.
+2. Trigger the weekly digest cron:
+
+```bash
+curl -i http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. **Owner Dev Phone (port 3002):** Verify an SMS arrives with dollar pipeline values (e.g., &quot;Probable pipeline: $80K | Confirmed: $25K&quot;) and a needs-attention count.
+
+Expected:
+- SMS includes dollar values for probable and confirmed pipeline.
+- SMS includes the count of leads needing attention (action_required).
+- SMS is sent via agency number (#5), not the business line.
+
+#### 67b: ROI Calculator endpoint
+
+```bash
+curl -i -X POST http://localhost:3000/api/public/roi-calculator \
+  -H "Content-Type: application/json" \
+  -d '{"monthlyLeadVolume": 20, "avgProjectValue": 40000, "followUpGapPct": 60, "currentWinRate": 0.25}'
+```
+
+Expected:
+- `200` response with `annualRevenueAtRisk`, `monthlyRecoveryPotential`, and `monthsToBreakEven` fields.
+- No auth required (public endpoint).
+- Invalid inputs return `400` with validation details.
+
+#### 67c: Jobber webhook integration
+
+**Inbound: job_completed event triggers review generation**
+
+1. POST a simulated Jobber `job_completed` event to the platform:
+
+```bash
+curl -i -X POST http://localhost:3000/api/webhooks/jobber/job-completed \
+  -H "Content-Type: application/json" \
+  -d '{"jobId": "test-job-123", "clientPhone": "<lead-phone>", "clientId": "<client-id>"}'
+```
+
+2. Run the scheduled message processor:
+
+```bash
+curl -i http://localhost:3000/api/cron/process-scheduled -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. **Lead Dev Phone (port 3001):** Verify review request SMS is received.
+
+Expected:
+- `200` response from webhook endpoint.
+- Review request sequence scheduled for the matching lead.
+- If no matching lead is found by phone, endpoint returns `404` (lead not found) — not a 500.
+
+**Outbound: appointment_booked fires to configured Jobber URL**
+
+4. Configure a mock webhook URL on the test client (`webhookUrl` in client settings or integration_webhooks table) pointing to a local test receiver (e.g., `http://localhost:9999/jobber`).
+5. Book an appointment for a test lead via the booking flow.
+6. Verify the mock receiver receives an `appointment_booked` event payload with the appointment details.
+
+Expected:
+- Outbound webhook fires non-blocking (appointment booking is not delayed or failed if webhook fails).
+- Event payload includes `appointmentId`, `leadName`, `scheduledAt`, `eventType: "appointment_booked"`.
+
+#### 67d: Voice AI default-on for new clients
+
+1. Create a new test client via admin wizard (or `POST /api/admin/clients`).
+2. Check the client record:
+
+```sql
+select id, business_name, settings->>'voiceEnabled' as voice_enabled
+from clients
+where id = '<new-client-id>';
+```
+
+Expected:
+- `voiceEnabled` is `true` for the new client.
+- An existing client that previously had `voiceEnabled = false` is NOT automatically changed.
+
+3. Verify the Voice AI answers an inbound call to the new client&apos;s business line (if Twilio is configured and the new client has a phone number assigned).
+
 ---
 
 ## 3. Useful Commands
 
 ```bash
 # Automated baseline
-npm test                    # 312 deterministic tests (no LLM calls)
+npm test                    # 315 deterministic tests (no LLM calls)
 npm run test:ai             # 29 AI tests: 23 single-turn criteria + 6 multi-turn scenarios (requires ANTHROPIC_API_KEY)
 npm run build
 npm run quality:logging-guard
@@ -2304,6 +2403,8 @@ curl -i http://localhost:3000/api/cron/engagement-health-check -H "Authorization
 curl -i http://localhost:3000/api/cron/dormant-reengagement -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/ai-mode-progression -H "Authorization: Bearer $CRON_SECRET"
+curl -i -X POST http://localhost:3000/api/cron/trial-reminders -H "Authorization: Bearer $CRON_SECRET"
+curl -i -X POST http://localhost:3000/api/cron/cancellation-reminders -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core

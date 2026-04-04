@@ -1,6 +1,9 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getClientSession } from '@/lib/client-auth';
+import { getDb } from '@/db';
+import { clients } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { getPlans, getCurrentSubscription } from '@/lib/billing/queries';
 import { UpgradePageClient } from './upgrade-client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,6 +16,17 @@ async function UpgradeContent() {
   const session = await getClientSession();
   if (!session) {
     redirect('/link-expired');
+  }
+
+  const db = getDb();
+  const [clientRow] = await db
+    .select({ serviceModel: clients.serviceModel })
+    .from(clients)
+    .where(eq(clients.id, session.clientId))
+    .limit(1);
+
+  if (clientRow?.serviceModel === 'managed') {
+    redirect('/client');
   }
 
   const [allPlans, currentSubscription] = await Promise.all([

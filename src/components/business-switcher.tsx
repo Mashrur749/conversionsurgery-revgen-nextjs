@@ -31,11 +31,13 @@ export function BusinessSwitcher({
 }: BusinessSwitcherProps) {
   const router = useRouter();
   const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState('');
 
   async function handleSwitch(clientId: string) {
     if (clientId === currentClientId || switching) return;
 
     setSwitching(true);
+    setSwitchError('');
     try {
       const res = await fetch('/api/client/auth/switch-business', {
         method: 'POST',
@@ -44,15 +46,15 @@ export function BusinessSwitcher({
       });
 
       if (!res.ok) {
-        console.error('Failed to switch business');
+        setSwitchError('Failed to switch. Please try again.');
         setSwitching(false);
         return;
       }
 
       router.push('/client');
       router.refresh();
-    } catch (error) {
-      console.error('Error switching business:', error);
+    } catch {
+      setSwitchError('Failed to switch. Please try again.');
       setSwitching(false);
     }
   }
@@ -68,6 +70,7 @@ export function BusinessSwitcher({
   }
 
   return (
+    <div>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -89,7 +92,7 @@ export function BusinessSwitcher({
           >
             <span className="truncate">{b.businessName}</span>
             {b.clientId === currentClientId && (
-              <Check className="size-4 shrink-0 text-green-600" />
+              <Check className="size-4 shrink-0 text-[#3D7A50]" />
             )}
           </DropdownMenuItem>
         ))}
@@ -100,5 +103,9 @@ export function BusinessSwitcher({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    {switchError && (
+      <p className="text-xs text-[#C15B2E] mt-1">{switchError}</p>
+    )}
+    </div>
   );
 }

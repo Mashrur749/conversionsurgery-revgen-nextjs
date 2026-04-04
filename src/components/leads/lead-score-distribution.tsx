@@ -108,7 +108,7 @@ export function LeadScoreDistribution({
               {hotLeads.map((lead) => (
                 <div
                   key={lead.id}
-                  className="flex items-center justify-between p-2 rounded bg-[#FDEAE4] dark:bg-red-900/20"
+                  className="flex items-center justify-between p-2 rounded bg-[#FDEAE4]"
                 >
                   <div>
                     <p className="font-medium">{lead.name || lead.phone}</p>

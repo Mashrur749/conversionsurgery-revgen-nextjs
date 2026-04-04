@@ -112,84 +112,121 @@ export function AdminSubscriptionTable() {
         ) : subscriptions.length === 0 ? (
           <p className="text-center py-8 text-muted-foreground">No subscriptions yet.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">MRR</TableHead>
-                <TableHead>Renews</TableHead>
-                <TableHead>Guarantee</TableHead>
-                <TableHead>Started</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            {/* Desktop table */}
+            <div className="hidden sm:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">MRR</TableHead>
+                    <TableHead>Renews</TableHead>
+                    <TableHead>Guarantee</TableHead>
+                    <TableHead>Started</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subscriptions.map((sub, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell className="font-medium">{sub.clientName}</TableCell>
+                      <TableCell>{sub.planName}</TableCell>
+                      <TableCell>
+                        <Badge className={statusColors[sub.status] || 'bg-muted text-foreground'}>
+                          {sub.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        ${(sub.priceMonthly / 100).toFixed(2)}
+                      </TableCell>
+                      <TableCell>
+                        {sub.currentPeriodEnd
+                          ? format(new Date(sub.currentPeriodEnd), 'MMM d, yyyy')
+                          : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <Badge
+                            className={
+                              guaranteeColors[sub.guarantee.status] || 'bg-muted text-foreground'
+                            }
+                          >
+                            {sub.guarantee.statusLabel}
+                          </Badge>
+                          {sub.guarantee.proofWindow.startAt && sub.guarantee.proofWindow.adjustedEndAt && (
+                            <span className="text-xs text-muted-foreground">
+                              Proof {format(new Date(sub.guarantee.proofWindow.startAt), 'MMM d')} - {format(new Date(sub.guarantee.proofWindow.adjustedEndAt), 'MMM d')}
+                            </span>
+                          )}
+                          {sub.guarantee.recoveryWindow.startAt && sub.guarantee.recoveryWindow.adjustedEndAt && (
+                            <span className="text-xs text-muted-foreground">
+                              Recovery {format(new Date(sub.guarantee.recoveryWindow.startAt), 'MMM d')} - {format(new Date(sub.guarantee.recoveryWindow.adjustedEndAt), 'MMM d')}
+                            </span>
+                          )}
+                          {sub.guarantee.timeline.map((item) => (
+                            <span key={item.key} className="text-xs text-muted-foreground">
+                              {item.label}: {timelineStateLabel[item.state]} ({item.detail})
+                            </span>
+                          ))}
+                          {sub.guarantee.extension.adjusted && (
+                            <span className="text-xs text-muted-foreground">
+                              Extension x{sub.guarantee.extension.factorMultiplier.toFixed(2)}
+                              {sub.guarantee.extension.observedMonthlyLeadAverage !== null
+                                ? ` (${sub.guarantee.extension.observedMonthlyLeadAverage}/mo)`
+                                : ''}
+                            </span>
+                          )}
+                          {sub.guarantee.refundReviewRequired && sub.guarantee.refundEligibleAt && (
+                            <span className="text-xs text-muted-foreground">
+                              Refund review flagged {format(new Date(sub.guarantee.refundEligibleAt), 'MMM d')}
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {sub.createdAt
+                          ? format(new Date(sub.createdAt), 'MMM d, yyyy')
+                          : '-'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-3">
               {subscriptions.map((sub, idx) => (
-                <TableRow key={idx}>
-                  <TableCell className="font-medium">{sub.clientName}</TableCell>
-                  <TableCell>{sub.planName}</TableCell>
-                  <TableCell>
+                <Card key={idx} className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-sm">{sub.clientName}</span>
                     <Badge className={statusColors[sub.status] || 'bg-muted text-foreground'}>
                       {sub.status}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    ${(sub.priceMonthly / 100).toFixed(2)}
-                  </TableCell>
-                  <TableCell>
+                  </div>
+                  <div className="text-lg font-bold">
+                    ${(sub.priceMonthly / 100).toFixed(0)}/mo
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {sub.planName}
                     {sub.currentPeriodEnd
-                      ? format(new Date(sub.currentPeriodEnd), 'MMM d, yyyy')
-                      : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <Badge
-                        className={
-                          guaranteeColors[sub.guarantee.status] || 'bg-muted text-foreground'
-                        }
-                      >
-                        {sub.guarantee.statusLabel}
-                      </Badge>
-                      {sub.guarantee.proofWindow.startAt && sub.guarantee.proofWindow.adjustedEndAt && (
-                        <span className="text-xs text-muted-foreground">
-                          Proof {format(new Date(sub.guarantee.proofWindow.startAt), 'MMM d')} - {format(new Date(sub.guarantee.proofWindow.adjustedEndAt), 'MMM d')}
-                        </span>
-                      )}
-                      {sub.guarantee.recoveryWindow.startAt && sub.guarantee.recoveryWindow.adjustedEndAt && (
-                        <span className="text-xs text-muted-foreground">
-                          Recovery {format(new Date(sub.guarantee.recoveryWindow.startAt), 'MMM d')} - {format(new Date(sub.guarantee.recoveryWindow.adjustedEndAt), 'MMM d')}
-                        </span>
-                      )}
-                      {sub.guarantee.timeline.map((item) => (
-                        <span key={item.key} className="text-xs text-muted-foreground">
-                          {item.label}: {timelineStateLabel[item.state]} ({item.detail})
-                        </span>
-                      ))}
-                      {sub.guarantee.extension.adjusted && (
-                        <span className="text-xs text-muted-foreground">
-                          Extension x{sub.guarantee.extension.factorMultiplier.toFixed(2)}
-                          {sub.guarantee.extension.observedMonthlyLeadAverage !== null
-                            ? ` (${sub.guarantee.extension.observedMonthlyLeadAverage}/mo)`
-                            : ''}
-                        </span>
-                      )}
-                      {sub.guarantee.refundReviewRequired && sub.guarantee.refundEligibleAt && (
-                        <span className="text-xs text-muted-foreground">
-                          Refund review flagged {format(new Date(sub.guarantee.refundEligibleAt), 'MMM d')}
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {sub.createdAt
-                      ? format(new Date(sub.createdAt), 'MMM d, yyyy')
-                      : '-'}
-                  </TableCell>
-                </TableRow>
+                      ? ` — Renews ${format(new Date(sub.currentPeriodEnd), 'MMM d, yyyy')}`
+                      : ''}
+                  </div>
+                  <div className="mt-2">
+                    <Badge
+                      className={
+                        guaranteeColors[sub.guarantee.status] || 'bg-muted text-foreground'
+                      }
+                    >
+                      {sub.guarantee.statusLabel}
+                    </Badge>
+                  </div>
+                </Card>
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

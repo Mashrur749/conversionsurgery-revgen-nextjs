@@ -47,6 +47,25 @@ export function AdminDiscussionThread({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [replies]);
 
+  // Poll for new replies every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/support-messages/${message.id}`);
+        if (!res.ok) return;
+        const data = await res.json() as { message: Message; replies: Reply[] };
+        const serialized = data.replies.map((r) => ({
+          ...r,
+          createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : null,
+        }));
+        setReplies(serialized);
+      } catch {
+        // Silently ignore polling errors
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [message.id]);
+
   async function handleSubmit() {
     if (!replyText.trim()) return;
     setSending(true);

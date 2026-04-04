@@ -18,6 +18,23 @@ Running all three: **75-85% probability** in 21 days.
 
 ---
 
+## Before Every Outreach: Run the Pre-Sale Revenue Leak Audit
+
+Before contacting any prospect, run the lightweight audit using public data only. Takes 15-20 minutes per prospect. Template: `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`
+
+**What you do:**
+
+1. Call their business number after 6 PM. Document: did anyone answer? How long until callback/text?
+2. Submit their website contact form. Document: response time and channel.
+3. Pull their Google Business Profile: review count, rating, most recent review.
+4. Pull their top 3 competitors&apos; review counts from Google Maps.
+5. Run their estimated numbers through the ROI calculator (POST `/api/public/roi-calculator` or use the worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`).
+6. Fill out the one-page audit template with their specific data.
+
+This gives you a personalized opener for every outreach channel &mdash; cold call, DM, or text. Instead of &ldquo;we help contractors recover leads,&rdquo; you say: &ldquo;I did some research on your business &mdash; you have 34 reviews, your competitor has 140, and your response time is 14 hours. Worth 15 minutes to talk about it?&rdquo;
+
+---
+
 ## Before Day 1 (2-3 hours of setup)
 
 ### Build your prospect list (target: 200 contacts)
@@ -37,7 +54,7 @@ Google Sheet: Name | Business | Phone | City | Channel | Date Contacted | Status
 
 ### Verify your demo
 
-Call your demo number from your personal phone. Missed-call text-back fires in 5 seconds. If it doesn&apos;t, fix it before anything else.
+Call your demo number from your personal phone. Missed-call text-back fires in 5 seconds. If it doesn&apos;t, fix it before anything else. Note: if the prospect asks what happens when a lead calls and no one answers, the answer is Voice AI picks up automatically &mdash; it handles the call and hands off to the contractor when they&apos;re available.
 
 ---
 
@@ -166,7 +183,11 @@ Same weekday/weekend schedule. But now your evenings split between new outreach 
 
 ### Script C: Cold Call
 
-**When they pick up:**
+**When you have audit data, open with it:**
+
+> Hey [Name] &mdash; I noticed [Business Name] has [X] Google reviews while [Competitor] has [Y]. I can tell you what that gap is likely costing you. 60 seconds?
+
+**Default opener (no audit data):**
 
 > Hey [Name], this is [Your Name] &mdash; I&apos;ll be super quick, 60 seconds. I built a tool that texts back missed calls in 5 seconds &mdash; every missed call, automatically. I know you guys miss calls on job sites all the time. I&apos;m not pitching you today. Can I send you our demo number right now? You call it, hang up, and your phone buzzes in 5 seconds. That&apos;s it.
 
@@ -223,7 +244,13 @@ They do the math for you. A kitchen is $35-65K.
 
 > Let me show you what happens when those leads go through the system instead.
 
-Show the demo. Walk through one lead cycle. Show what the homeowner sees. Show what the contractor sees.
+Show the demo. Walk through one lead cycle. Show what the homeowner sees. Show what the contractor sees. If they ask about alternatives, `docs/business-intel/COMPETITIVE-COMPARISON.md` is available as a reference &mdash; you don&apos;t need to pitch it, just know it cold.
+
+**If price comes up:**
+
+> Let&apos;s run your numbers. How many estimates do you send per month? What&apos;s your average project value? How many go quiet?
+
+Run the ROI calculator live (POST `/api/public/roi-calculator` or the worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`). Show them the annual revenue at risk &mdash; they close themselves.
 
 **Close (5 min):**
 
@@ -258,6 +285,10 @@ Do not send a third follow-up to cold prospects.
 Handle the specific objection. Then:
 
 > Here&apos;s what I&apos;d suggest: don&apos;t decide today. Let me get you set up on the free month &mdash; takes 20 minutes. You use it for two weeks. If nothing happens, you cancel and owe nothing. The only way to know is to run it.
+
+**Capacity signal (use when it&apos;s true):**
+
+> One thing worth knowing: we limit this to one to three contractors per trade per city &mdash; we don&apos;t want your system texting the same homeowner you are. If your area&apos;s available, now&apos;s the time. Let me check. [Check the admin dashboard.] You&apos;re good &mdash; we have [X] slot(s) open for [trade] in [city] right now.
 
 If still no:
 

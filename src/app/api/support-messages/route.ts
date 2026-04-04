@@ -10,6 +10,7 @@ import { safeErrorResponse } from '@/lib/utils/api-errors';
 const supportMessageSchema = z.object({
   page: z.string().min(1).max(500),
   message: z.string().min(1).max(2000),
+  targetEmail: z.string().email().max(255).optional(),
 });
 
 // Resolve the caller's identity from either auth system
@@ -53,6 +54,53 @@ export async function POST(request: NextRequest) {
 
     const db = getDb();
 
+    // Admin initiating a thread with a specific client
+    if (caller.isAgency && parsed.targetEmail) {
+      const [thread] = await db.insert(supportMessages).values({
+        userId: caller.userId,
+        userEmail: parsed.targetEmail,
+        page: parsed.page,
+        message: 'New message from your support team',
+      }).returning();
+
+      // Add the admin's actual message as the first reply
+      await db.insert(supportReplies).values({
+        supportMessageId: thread.id,
+        content: parsed.message,
+        isAdmin: true,
+        authorEmail: caller.userEmail,
+      });
+
+      // Email the client
+      const { sendEmail } = await import('@/lib/services/resend');
+      const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      const threadUrl = `${appUrl}/client/discussions/${thread.id}`;
+
+      sendEmail({
+        to: parsed.targetEmail,
+        subject: 'New message from your support team',
+        html: `
+          <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1B2F26;">You have a new message</h2>
+            <div style="background: #F8F9FA; padding: 16px; border-radius: 8px; margin: 16px 0;">
+              <p style="margin: 0; color: #1B2F26;">${parsed.message}</p>
+            </div>
+            <a href="${threadUrl}" style="display: inline-block; background: #1B2F26; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 8px;">View Discussion</a>
+          </div>
+        `,
+      });
+
+      // Slack notification
+      sendSlackSupportNotification({
+        userEmail: caller.userEmail,
+        page: `Admin initiated thread with: ${parsed.targetEmail}`,
+        message: parsed.message,
+      });
+
+      return NextResponse.json({ success: true, threadId: thread.id });
+    }
+
+    // Normal flow: user creating their own support message
     await db.insert(supportMessages).values({
       userId: caller.userId,
       userEmail: caller.userEmail,

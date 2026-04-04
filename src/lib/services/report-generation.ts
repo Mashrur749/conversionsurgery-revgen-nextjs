@@ -12,6 +12,10 @@ import {
   systemSettings,
 } from '@/db/schema';
 import { and, asc, count, eq, gte, inArray, isNotNull, lte, ne, sum } from 'drizzle-orm';
+import {
+  calculateProbablePipelineValueCents,
+  calculateConfirmedRevenueCents,
+} from '@/lib/services/pipeline-value';
 import { getTeamMembers } from '@/lib/services/team-bridge';
 import { sendBiWeeklyReportEmail } from '@/lib/services/report-email';
 import { sendAlert } from '@/lib/services/agency-communication';
@@ -266,26 +270,16 @@ export async function generateClientReport(
   const periodStart = toPeriodStartUtc(startDate);
   const periodEnd = toPeriodEndUtc(endDate);
 
-  const [confirmedRevenueRow] = await db
-    .select({ total: sum(leads.confirmedRevenue) })
-    .from(leads)
-    .where(
-      and(
-        eq(leads.clientId, clientId),
-        eq(leads.status, 'won'),
-        isNotNull(leads.confirmedRevenue),
-        gte(leads.updatedAt, periodStart),
-        lte(leads.updatedAt, periodEnd)
-      )
-    );
-
   // confirmedRevenue stored in cents; convert to whole dollars for the report
-  const confirmedRevenueDollars =
-    typeof confirmedRevenueRow?.total === 'string' && confirmedRevenueRow.total !== null
-      ? Math.round(Number(confirmedRevenueRow.total) / 100)
-      : 0;
+  const confirmedRevenueCents = await calculateConfirmedRevenueCents(
+    clientId,
+    periodStart,
+    periodEnd
+  );
+  const confirmedRevenueDollars = Math.round(confirmedRevenueCents / 100);
 
-  // Total won jobs for avgProjectValue calculation
+  // avgProjectValue: derive from all-time won leads (used in pipeline proof below)
+  // Recalculate locally here for appointmentsBooked/reactivatedResponses context
   const [totalWonJobsRow] = await db
     .select({ total: count(leads.id) })
     .from(leads)
@@ -298,10 +292,26 @@ export async function generateClientReport(
     );
   const totalWonJobs = totalWonJobsRow?.total ?? 0;
 
+  const [allTimeConfirmedRevenueRow] = await db
+    .select({ total: sum(leads.confirmedRevenue) })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.clientId, clientId),
+        eq(leads.status, 'won'),
+        isNotNull(leads.confirmedRevenue)
+      )
+    );
+  const allTimeConfirmedRevenueDollars =
+    typeof allTimeConfirmedRevenueRow?.total === 'string' &&
+    allTimeConfirmedRevenueRow.total !== null
+      ? Math.round(Number(allTimeConfirmedRevenueRow.total) / 100)
+      : 0;
+
   // avgProjectValue: use actual average if confirmed revenue exists, else $40,000 default
   const avgProjectValue =
-    confirmedRevenueDollars > 0 && totalWonJobs > 0
-      ? Math.round(confirmedRevenueDollars / totalWonJobs)
+    allTimeConfirmedRevenueDollars > 0 && totalWonJobs > 0
+      ? Math.round(allTimeConfirmedRevenueDollars / totalWonJobs)
       : 40000;
 
   // --- Pipeline Proof (auto-tracked, zero contractor effort) ---
@@ -376,8 +386,13 @@ export async function generateClientReport(
       ? Math.round(withoutUsInput.averageObservedResponseMinutes * 60)
       : null;
 
-  // Probable pipeline value: booked + reactivated * avgProjectValue
-  const probablePipelineValue = (appointmentsBooked + reactivatedResponses) * avgProjectValue;
+  // Probable pipeline value via shared utility (cents → dollars)
+  const probablePipelineValueCents = await calculateProbablePipelineValueCents(
+    clientId,
+    periodStart,
+    periodEnd
+  );
+  const probablePipelineValue = Math.round(probablePipelineValueCents / 100);
 
   const pipelineProof = {
     leadsEngaged,

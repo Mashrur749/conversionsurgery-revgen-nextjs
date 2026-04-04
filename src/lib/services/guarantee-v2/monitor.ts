@@ -16,6 +16,7 @@ import {
 import { applyLowVolumeExtensionFormula } from '@/lib/services/guarantee-v2/extension-formula';
 import { evaluateProofWindowStatus } from '@/lib/services/guarantee-v2/proof-evaluator';
 import { evaluateRecoveryWindowStatus } from '@/lib/services/guarantee-v2/recovery-evaluator';
+import { calculateProbablePipelineValueCents } from '@/lib/services/pipeline-value';
 
 const GUARANTEE_ELIGIBLE_STATUSES = [
   'pending',
@@ -548,9 +549,16 @@ export async function processGuaranteeStatus(): Promise<GuaranteeRunResult> {
       windowContext.recoveryWindowEnd
     );
 
+    const probablePipelineValueCents = await calculateProbablePipelineValueCents(
+      sub.clientId,
+      windowContext.recoveryWindowStart,
+      windowContext.recoveryWindowEnd
+    );
+
     const recoveryAction = evaluateRecoveryWindowStatus({
       status: currentStatus,
       attributedOpportunities: recoveryMetrics.count,
+      probablePipelineValueCents,
       now,
       recoveryWindowEnd: windowContext.recoveryWindowEnd,
     });

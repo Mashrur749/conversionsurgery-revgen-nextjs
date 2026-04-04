@@ -14,6 +14,7 @@ import { requirePortalPagePermission } from '@/lib/permissions/require-portal-pa
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
 import { getClientLatestReportDelivery } from '@/lib/services/client-report-delivery';
 import { SinceLastVisitCard } from './since-last-visit-card';
+import { VoiceStatusCard } from './voice-status-card';
 
 export default async function ClientDashboardPage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.DASHBOARD);
@@ -201,6 +202,8 @@ export default async function ClientDashboardPage() {
       </div>
 
       <SinceLastVisitCard clientId={clientId} />
+
+      <VoiceStatusCard />
 
       {needsSetup && (
         <Card className="border-olive/30 bg-moss-light">

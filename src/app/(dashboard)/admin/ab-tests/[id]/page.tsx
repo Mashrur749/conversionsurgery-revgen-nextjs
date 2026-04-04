@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { TestResultsCard } from '../components/test-results-card';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { TestActions } from '../components/test-actions';
 import { format } from 'date-fns';
 
@@ -52,6 +53,10 @@ export default async function TestDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'A/B Tests', href: '/admin/ab-tests' },
+        { label: 'Test Details' },
+      ]} />
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>

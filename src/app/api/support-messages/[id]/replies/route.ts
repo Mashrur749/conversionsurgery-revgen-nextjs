@@ -107,6 +107,15 @@ export async function POST(
       });
     }
 
+    // If client reply, notify admin via Slack
+    if (!caller.isAgency) {
+      sendSlackSupportNotification({
+        userEmail: caller.userEmail,
+        page: `Client reply on thread: ${message.userEmail}`,
+        message: parsed.content,
+      });
+    }
+
     return NextResponse.json({ reply });
   } catch (error) {
     if (error instanceof z.ZodError) {

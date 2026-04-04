@@ -41,6 +41,37 @@ export function DiscussionThread({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [replies]);
 
+  // Poll for new replies every 15 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/support-messages/${message.id}`);
+        if (!res.ok) return;
+        const data = await res.json() as { message: Message; replies: Reply[] };
+        const serialized = data.replies.map((r) => ({
+          ...r,
+          createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : null,
+        }));
+        setReplies(serialized);
+      } catch {
+        // Silently ignore polling errors
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [message.id]);
+
+  // Mark thread as read in localStorage whenever replies update
+  useEffect(() => {
+    try {
+      const key = 'cs_discussions_read';
+      const read = JSON.parse(localStorage.getItem(key) ?? '{}') as Record<string, string>;
+      read[message.id] = new Date().toISOString();
+      localStorage.setItem(key, JSON.stringify(read));
+    } catch {
+      // Ignore storage errors
+    }
+  }, [message.id, replies]);
+
   async function handleSubmit() {
     if (!replyText.trim()) return;
     setSending(true);

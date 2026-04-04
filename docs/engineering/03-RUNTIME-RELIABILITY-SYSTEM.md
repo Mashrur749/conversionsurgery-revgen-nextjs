@@ -114,9 +114,7 @@ SKIP_RUNTIME_SMOKE=1 npm run quality:no-regressions
   - `/api/webhooks/twilio/status`
   - `/api/webhooks/twilio/voice`
   - `/api/webhooks/twilio/voice/ai`
-  - `/api/webhooks/twilio/voice/ai/gather`
-  - `/api/webhooks/twilio/voice/ai/process`
-  - `/api/webhooks/twilio/voice/ai/transfer`
+  - `/api/webhooks/twilio/voice/ai/session-end`
   - `/api/webhooks/twilio/voice/ai/dial-complete`
   - `/api/webhooks/twilio/member-answered`
   - `/api/webhooks/twilio/ring-connect`

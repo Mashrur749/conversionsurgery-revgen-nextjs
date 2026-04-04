@@ -19,7 +19,7 @@ interface Props {
 export function StepBusinessHours({ data, updateData, onNext, onBack }: Props) {
   const [error, setError] = useState('');
 
-  function updateHour(dayOfWeek: number, field: string, value: any) {
+  function updateHour(dayOfWeek: number, field: string, value: string | boolean) {
     const newHours = data.businessHours.map(h =>
       h.dayOfWeek === dayOfWeek ? { ...h, [field]: value } : h
     );

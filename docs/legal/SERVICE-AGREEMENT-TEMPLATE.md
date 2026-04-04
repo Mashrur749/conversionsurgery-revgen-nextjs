@@ -90,9 +90,9 @@ A Qualified Lead Engagement means: (a) an inbound lead received by the system, (
 
 **Layer 2 — 90-Day Revenue Recovery Guarantee**
 
-If, by the end of the applicable recovery window, Client cannot identify at least one (1) Attributed Project Opportunity materially advanced by the Service, Client is eligible for a refund of the most recent monthly service fee and may request export of all captured lead and conversation records.
+If, by the end of the applicable recovery window, neither of the following Attributed Results has occurred, Client is eligible for a refund of the most recent monthly service fee and may request export of all captured lead and conversation records.
 
-An Attributed Project Opportunity means: (a) a lead received an automated system response or follow-up action, (b) subsequent recorded engagement occurred (reply, booking, or resumed conversation), and (c) platform logs confirm system-initiated engagement before the opportunity progressed. If logs are inconclusive, ConversionSurgery will honor the refund.
+An Attributed Result means either: (a) at least one (1) estimate appointment booked through the Service from a lead that was previously unresponsive, visible in the Client&apos;s calendar with full conversation log; or (b) five thousand dollars ($5,000) or more in probable pipeline value from leads the Service engaged, calculated automatically from appointments booked and quotes re-engaged, visible in the Client&apos;s dashboard and bi-weekly reports. If platform logs are inconclusive, ConversionSurgery will honor the refund.
 
 **Volume Condition — Low-Volume Extension Formula** [PENDING COUNSEL REVIEW]
 

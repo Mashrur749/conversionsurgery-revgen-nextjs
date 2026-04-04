@@ -18,13 +18,19 @@ const TAB_META: Record<TabId, { label: string; icon: React.ReactNode }> = {
 
 interface SettingsTabsProps {
   children: Record<TabId, React.ReactNode>;
+  serviceModel?: string;
 }
 
-function SettingsTabsInner({ children }: SettingsTabsProps) {
+function SettingsTabsInner({ children, serviceModel }: SettingsTabsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawTab = searchParams.get('tab');
-  const activeTab: TabId = rawTab && TAB_IDS.includes(rawTab as TabId)
+
+  const visibleTabs: TabId[] = serviceModel === 'managed'
+    ? (TAB_IDS as readonly TabId[]).filter(id => id !== 'features')
+    : [...TAB_IDS];
+
+  const activeTab: TabId = rawTab && TAB_IDS.includes(rawTab as TabId) && visibleTabs.includes(rawTab as TabId)
     ? (rawTab as TabId)
     : 'general';
 
@@ -56,7 +62,7 @@ function SettingsTabsInner({ children }: SettingsTabsProps) {
                    flex-row overflow-x-auto w-full border-b border-border pb-2 md:pb-0 md:border-b-0
                    shrink-0"
       >
-        {TAB_IDS.map((id) => (
+        {visibleTabs.map((id) => (
           <TabsTrigger
             key={id}
             value={id}
@@ -69,7 +75,7 @@ function SettingsTabsInner({ children }: SettingsTabsProps) {
       </TabsList>
 
       <div className="flex-1 min-w-0 md:pl-2">
-        {TAB_IDS.map((id) => (
+        {visibleTabs.map((id) => (
           <TabsContent key={id} value={id}>
             {children[id]}
           </TabsContent>
@@ -86,3 +92,4 @@ export function SettingsTabs(props: SettingsTabsProps) {
     </Suspense>
   );
 }
+

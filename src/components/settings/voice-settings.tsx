@@ -13,8 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Phone, Clock, MessageSquare } from 'lucide-react';
+import { Phone, Clock, MessageSquare, Timer, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
+import { BusinessHoursSummary } from './business-hours-summary';
 
 interface VoiceSettingsProps {
   clientId: string;
@@ -22,6 +23,8 @@ interface VoiceSettingsProps {
     voiceEnabled: boolean;
     voiceMode: string;
     voiceGreeting: string;
+    voiceMaxDuration: number;
+    canDiscussPricing: boolean;
   };
 }
 
@@ -32,16 +35,27 @@ export function VoiceSettings({ clientId, settings }: VoiceSettingsProps) {
   const save = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/admin/clients/${clientId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          voiceEnabled: form.voiceEnabled,
-          voiceMode: form.voiceMode,
-          voiceGreeting: form.voiceGreeting,
+      const [voiceRes, agentRes] = await Promise.all([
+        fetch(`/api/admin/clients/${clientId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            voiceEnabled: form.voiceEnabled,
+            voiceMode: form.voiceMode,
+            voiceGreeting: form.voiceGreeting,
+            voiceMaxDuration: form.voiceMaxDuration,
+          }),
         }),
-      });
-      if (!res.ok) throw new Error('Failed to save');
+        fetch(`/api/admin/clients/${clientId}/agent-settings`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            canDiscussPricing: form.canDiscussPricing,
+          }),
+        }),
+      ]);
+
+      if (!voiceRes.ok || !agentRes.ok) throw new Error('Failed to save');
       toast.success('Voice settings saved!');
     } catch {
       toast.error('Failed to save voice settings');
@@ -99,6 +113,9 @@ export function VoiceSettings({ clientId, settings }: VoiceSettingsProps) {
                 {form.voiceMode === 'overflow' && 'AI answers when no one picks up within 20 seconds'}
                 {form.voiceMode === 'always' && 'AI always answers incoming calls'}
               </p>
+              {form.voiceMode === 'after_hours' && (
+                <BusinessHoursSummary clientId={clientId} />
+              )}
             </div>
 
             {/* Greeting */}
@@ -118,6 +135,48 @@ export function VoiceSettings({ clientId, settings }: VoiceSettingsProps) {
               <p className="text-xs text-muted-foreground">
                 This is what callers hear first when AI answers
               </p>
+            </div>
+
+            {/* Max call duration */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Timer className="h-4 w-4" />
+                Max Call Duration
+              </Label>
+              <select
+                value={String(form.voiceMaxDuration)}
+                onChange={(e) => setForm({ ...form, voiceMaxDuration: Number(e.target.value) })}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="120">2 minutes</option>
+                <option value="180">3 minutes</option>
+                <option value="300">5 minutes (default)</option>
+                <option value="480">8 minutes</option>
+                <option value="600">10 minutes</option>
+                <option value="900">15 minutes</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                AI will wrap up the conversation after this time
+              </p>
+            </div>
+
+            {/* Pricing discussion */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="flex items-center gap-1">
+                  <DollarSign className="h-4 w-4" />
+                  Discuss Pricing
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  AI can share price ranges from the knowledge base with callers
+                </p>
+              </div>
+              <Switch
+                checked={form.canDiscussPricing}
+                onCheckedChange={(v) =>
+                  setForm({ ...form, canDiscussPricing: v })
+                }
+              />
             </div>
           </>
         )}

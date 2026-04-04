@@ -10,6 +10,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { ClientTeamClient } from './team-client';
 import { ALL_PORTAL_PERMISSIONS } from '@/lib/permissions';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +88,10 @@ export default async function ClientTeamPage({
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Clients', href: '/admin/clients' },
+        { label: 'Team Management' },
+      ]} />
       <div>
         <h1 className="text-2xl font-bold">Team &amp; Access</h1>
         <p className="text-muted-foreground">

@@ -116,6 +116,9 @@ export * from './agency-memberships';
 export * from './agency-client-assignments';
 export * from './audit-log';
 
+// External Integrations
+export * from './integration-webhooks';
+
 // Public tools
 export * from './roi-calculator-leads';
 

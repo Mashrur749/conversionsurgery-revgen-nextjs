@@ -421,7 +421,7 @@ export default function KnowledgeForm({ clientId, initialData, onSave }: Knowled
         <Button onClick={handleSave} disabled={saving}>
           {saving ? 'Saving...' : 'Save Knowledge Base'}
         </Button>
-        {saved && <p className="text-sm text-[#3D7A50]">Saved successfully!</p>}
+        {saved && <p className="text-sm text-[#3D7A50]">Saved successfully</p>}
         {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
     </div>

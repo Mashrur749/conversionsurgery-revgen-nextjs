@@ -37,11 +37,11 @@ For each section:
 ### Draft Clause (Service Agreement)
 "30-Day Proof-of-Life Guarantee: If Client does not receive at least five (5) Qualified Lead Engagements within the applicable proof window, Client is eligible for a refund of the first month service fee.
 
-90-Day Revenue Recovery Guarantee: If, by the end of the applicable recovery window, Client cannot identify at least one (1) Attributed Project Opportunity materially advanced by the Service, Client is eligible for a refund of the most recent monthly service fee, and may request export of captured lead and conversation records.
+90-Day Revenue Recovery Guarantee: If, by the end of the applicable recovery window, neither of the following Attributed Results has occurred, Client is eligible for a refund of the most recent monthly service fee, and may request export of captured lead and conversation records.
 
 Qualified Lead Engagement means: (a) inbound lead source, (b) first system response timestamped in platform logs, and (c) at least one recipient reply after system response.
 
-Attributed Project Opportunity means: (a) lead received a system response or follow-up action, (b) subsequent recorded engagement occurred (reply, booking, or resumed conversation), and (c) Client confirms meaningful contribution by the Service to opportunity progression."
+Attributed Result means either: (a) at least one (1) estimate appointment booked through the Service from a lead that was previously unresponsive, visible in the Client&apos;s calendar with full conversation log; or (b) five thousand dollars ($5,000) or more in probable pipeline value from leads the Service engaged, calculated automatically from appointments booked and quotes re-engaged, visible in the Client&apos;s dashboard and bi-weekly reports. If platform logs are inconclusive, ConversionSurgery will honor the refund."
 
 ### Counsel Decision Needed
 - Are these definitions sufficiently objective and enforceable?

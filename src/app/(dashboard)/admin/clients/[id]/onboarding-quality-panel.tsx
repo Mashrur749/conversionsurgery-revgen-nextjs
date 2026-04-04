@@ -57,9 +57,9 @@ interface Props {
 }
 
 function impactBadgeClass(impact: ActionItem['impact']) {
-  if (impact === 'high') return 'bg-red-100 text-red-800 border-red-200';
-  if (impact === 'medium') return 'bg-amber-100 text-amber-800 border-amber-200';
-  return 'bg-slate-100 text-slate-700 border-slate-200';
+  if (impact === 'high') return 'bg-[#FDEAE4] text-[#C15B2E] border-[#C15B2E]/20';
+  if (impact === 'medium') return 'bg-[#FFF3E0] text-[#C15B2E] border-[#C15B2E]/20';
+  return 'bg-muted text-muted-foreground border-border';
 }
 
 export function OnboardingQualityPanel({ clientId, currentAiMode }: Props) {
@@ -125,7 +125,7 @@ export function OnboardingQualityPanel({ clientId, currentAiMode }: Props) {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-md border border-[#C15B2E]/20 bg-[#FDEAE4] px-3 py-2 text-sm text-[#C15B2E]">
             {error}
           </div>
         )}
@@ -139,11 +139,11 @@ export function OnboardingQualityPanel({ clientId, currentAiMode }: Props) {
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">Score {data.evaluation.totalScore}/{data.evaluation.maxScore}</Badge>
               <Badge variant="outline">Mode {data.decision.mode}</Badge>
-              <Badge className={data.evaluation.passedCritical ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-red-100 text-red-800 border-red-200'}>
+              <Badge className={data.evaluation.passedCritical ? 'bg-[#E8F5E9] text-[#3D7A50] border-[#3D7A50]/20' : 'bg-[#FDEAE4] text-[#C15B2E] border-[#C15B2E]/20'}>
                 {data.evaluation.passedCritical ? 'Critical Gates Pass' : 'Critical Gates Failing'}
               </Badge>
               {currentAiMode === 'autonomous' && (
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                <Badge className="bg-[#E3E9E1] text-[#1B2F26] border-[#1B2F26]/20">
                   AI Mode: Autonomous
                 </Badge>
               )}

@@ -22,6 +22,9 @@ ConversionSurgery is a managed revenue recovery service. You run the system for 
 | **Appointment booking** | AI books estimates into Google Calendar. Sends reminders. Follows up on no-shows. | No double-bookings. No forgotten appointments. |
 | **Payment collection** | Automated deposit and invoice reminders with one-click payment links | Gets contractors paid faster without awkward conversations. |
 | **Review generation** | After every completed job, automated review request with direct Google link | More reviews = more referrals. Most contractors have 8-15 reviews; competitors have 50+. |
+| **Jobber sync** | When the system books an appointment, it syncs to Jobber automatically. When a job is marked complete in Jobber, the system triggers the review request. | No double-entry. Works with the tools they already use. |
+| **Voice AI** | When a lead calls and the contractor can&apos;t answer, Voice AI picks up, qualifies the project, and captures details | No missed calls. No voicemail. Leads are captured even when the contractor is on a ladder. |
+| **Weekly pipeline SMS** | Every Monday morning, a text on the contractor&apos;s phone showing leads captured, appointments booked, pipeline value in dollars, and leads needing attention | Value is visible every week without logging in. No dashboard required. |
 | **System Activity dashboard card** | Auto-tracks leads responded to, missed calls caught, dead quotes re-engaged, appointments booked, estimates in follow-up, avg response time, and probable pipeline value | Proves ROI without the contractor doing anything. Shows up on their dashboard from Day 1 — no wins need to be manually confirmed for the numbers to appear. |
 | **Bi-weekly performance report** | Shows exactly what the system did, revenue impact, &ldquo;Without Us&rdquo; comparison, and pipeline proof metrics | Proof of value every 2 weeks. The contractor sees ROI, not activity. |
 
@@ -41,6 +44,7 @@ ConversionSurgery is a managed revenue recovery service. You run the system for 
 
 | Task | Time | When |
 |------|:----:|------|
+| Pre-sale Revenue Leak Audit | 15-20 min | Before outreach per prospect |
 | Onboarding call + KB setup | 45 min | Day 1 per client |
 | Revenue Leak Audit | 30-45 min | Day 1-2 per client |
 | Daily triage (escalations, KB gaps, AI quality) | 5-10 min/client | Daily |
@@ -65,7 +69,7 @@ At 5 clients, your weekly time is ~5-7 hours. At 10 clients, ~10-14 hours.
 
 **Layer 1 &mdash; 30-Day Proof of Life:** If 5 leads don&apos;t engage in the free month, they walk away owing nothing. They keep every lead captured.
 
-**Layer 2 &mdash; 90-Day Revenue Recovery:** If no attributed project in 90 days, most recent month refunded. They keep all data.
+**Layer 2 &mdash; 90-Day Revenue Recovery:** If no 1 booked estimate appointment from a cold lead OR $5,000 in probable pipeline within 90 days, most recent month refunded. They keep all data.
 
 Attribution is verified from platform logs only &mdash; no subjective judgment, no arguing.
 
@@ -87,13 +91,19 @@ A contractor with 20 dead quotes at $40K average has $800K sitting in their phon
 
 ### Who Will NOT Get ROI (Do Not Sign Them)
 
-- Fewer than 5 leads/month with no dead quote backlog
+**Hard NOs &mdash; never sign these profiles:**
+- **Commercial-only contractors** &mdash; the system is built for homeowner lead recovery, not procurement contacts or B2B sales cycles
+- **Below $200K annual revenue** &mdash; $12K/year is 6%+ of their revenue; the math doesn&apos;t work and they&apos;ll churn with a bad story
+- **Fewer than 10 leads/month with no dead quote backlog** &mdash; not enough volume for the system to demonstrate value within the guarantee window
+- **Tech-savvy DIY builders** who enjoy configuring their own tools &mdash; they&apos;ll resent paying $1,000 for what they perceive as a GHL setup they could do for $300
+
+**Also avoid:**
 - Average project under $10K
 - 100% word-of-mouth, zero inbound, zero estimates sent
 - Already has staff handling all follow-ups systematically
 - In active financial distress
 
-**The rule:** If you wouldn&apos;t feel good explaining to their spouse why they should pay $1,000/month, don&apos;t sign them.
+**The rule:** If you wouldn&apos;t feel good explaining to their spouse why they should pay $1,000/month, don&apos;t sign them. A bad-fit client who churns in a referral-dense Alberta contractor network does more damage than the revenue was worth.
 
 ---
 
@@ -158,11 +168,33 @@ This is the highest-ROI feature. Most contractors never follow up on estimates. 
 | &ldquo;It does my marketing&rdquo; | No lead generation. It converts leads you already get. | &ldquo;We handle what happens after someone reaches out.&rdquo; |
 | &ldquo;AI knows everything about my business&rdquo; | AI knows what&apos;s in the KB. Week 1 will have gaps. | &ldquo;Gets smarter every week. By Week 3 it handles 90%+ of questions.&rdquo; |
 | &ldquo;I never have to do anything&rdquo; | Flag estimates, mark wins, respond to escalations. Under 15 min/week. | &ldquo;You do 4 things: flag quotes, mark wins, respond to escalations, approve reviews.&rdquo; |
-| &ldquo;Guaranteed results&rdquo; | First month free + 90-day guarantee. Both log-verified. | &ldquo;First month is free. If it doesn&apos;t work in 90 days, you get your last month back.&rdquo; |
+| &ldquo;Guaranteed results&rdquo; | First month free + 90-day guarantee. Both log-verified. | &ldquo;First month is free. If we don&apos;t deliver 1 booked estimate from a cold lead or $5,000 in probable pipeline within 90 days, you get your last month back.&rdquo; |
 
 ---
 
 ## Part 4: How to Sell (20 minutes)
+
+### Language That Works (Read This First)
+
+Contractors are tradespeople, not marketers. The wrong words trigger the wrong associations.
+
+| Never say | Say instead | Why |
+|-----------|-------------|-----|
+| &ldquo;Automated follow-up&rdquo; | &ldquo;Your leads get followed up on even when you&apos;re mid-job&rdquo; | &ldquo;Automated&rdquo; sounds like a chatbot they&apos;ve been burned by |
+| &ldquo;AI platform&rdquo; | &ldquo;The system&rdquo; or &ldquo;your response team&rdquo; | &ldquo;AI&rdquo; triggers skepticism. Lead with outcomes, not mechanism. |
+| &ldquo;You need to fix your follow-up&rdquo; | &ldquo;You can&apos;t be texting leads from a roof &mdash; that&apos;s a capacity problem, not a you problem&rdquo; | Never imply they&apos;re doing something wrong. Frame it as a constraint they can&apos;t control. |
+| &ldquo;Our automation handles it&rdquo; | &ldquo;We handle it&rdquo; | They&apos;re buying a service, not software. Keep &ldquo;we&rdquo; in the picture. |
+
+**The one line that stops contractors cold (from ICP research):**
+
+&gt; &ldquo;You built the estimate. You shouldn&apos;t have to beg for the job.&rdquo;
+
+This names the dignity issue directly. Contractors don&apos;t follow up because chasing feels beneath them as craftsmen. The system removes them from the follow-up emotionally &mdash; it wasn&apos;t them asking.
+
+**What SELLS vs. what RETAINS:**
+- Missed calls sell (&ldquo;do you lose jobs when you can&apos;t answer on site?&rdquo;)
+- Dead quote recovery retains (the $40K kitchen that walked back through the door)
+- Lead with missed calls on the cold call. Pivot to dead quotes to close.
 
 ### The Demo That Closes Deals
 
@@ -293,6 +325,6 @@ You now know enough to sell and deliver. These docs are your ongoing references:
 | Prepare for a sales call | `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` |
 | Check your daily ops checklist | `docs/operations/01-OPERATIONS-GUIDE.md` |
 | Deliver the Revenue Leak Audit | `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md` |
-| Do ROI math on a sales call | `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` |
+| Do ROI math on a sales call | `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` or run live numbers via `POST /api/public/roi-calculator` |
 | Send the service agreement | `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` |
 | Check legal rules | `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` |

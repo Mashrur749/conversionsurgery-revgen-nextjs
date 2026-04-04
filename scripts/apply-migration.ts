@@ -101,12 +101,13 @@ async function applyMigration() {
     console.log('');
 
     process.exit(0);
-  } catch (error: any) {
-    if (error.message?.includes('already exists')) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage?.includes('already exists')) {
       console.log('✓ Tables already exist - migration already applied\n');
       process.exit(0);
     }
-    console.error('❌ Migration failed:', error.message);
+    console.error('❌ Migration failed:', errorMessage);
     process.exit(1);
   }
 }

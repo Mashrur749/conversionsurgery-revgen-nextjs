@@ -1,8 +1,12 @@
-import { getDb, clients, dailyStats, escalationClaims, clientMemberships, people } from '@/db';
-import { eq, and, gte, sql } from 'drizzle-orm';
+import { getDb, clients, dailyStats, escalationClaims, clientMemberships, people, leads } from '@/db';
+import { eq, and, gte, sql, count } from 'drizzle-orm';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendEmail } from '@/lib/services/resend';
 import { createMagicLink } from '@/lib/services/magic-link';
+import {
+  calculateProbablePipelineValueCents,
+  calculateConfirmedRevenueCents,
+} from '@/lib/services/pipeline-value';
 
 interface WeeklyStats {
   leadsCapture: number;
@@ -11,6 +15,9 @@ interface WeeklyStats {
   escalationsClaimed: number;
   topTeamMember: string | null;
   topTeamMemberClaims: number;
+  probablePipelineValue: number; // dollars
+  confirmedRevenue: number; // dollars
+  needsAttentionCount: number; // unresolved escalations + action-required leads
 }
 
 /**
@@ -20,6 +27,7 @@ interface WeeklyStats {
  */
 export async function getWeeklyStats(clientId: string): Promise<WeeklyStats> {
   const db = getDb();
+  const now = new Date();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -54,6 +62,40 @@ export async function getWeeklyStats(clientId: string): Promise<WeeklyStats> {
 
   const topMember = escalationStats[0];
 
+  // Count action-required leads for this client
+  const [actionRequiredRow] = await db
+    .select({ total: count(leads.id) })
+    .from(leads)
+    .where(and(
+      eq(leads.clientId, clientId),
+      eq(leads.actionRequired, true)
+    ));
+  const actionRequiredCount = actionRequiredRow?.total ?? 0;
+
+  // Count unresolved escalations (pending or claimed but not resolved)
+  const [unresolvedEscalationsRow] = await db
+    .select({ total: sql<number>`COUNT(*)` })
+    .from(escalationClaims)
+    .where(and(
+      eq(escalationClaims.clientId, clientId),
+      sql`${escalationClaims.status} IN ('pending', 'claimed')`
+    ));
+  const unresolvedEscalationsCount = Number(unresolvedEscalationsRow?.total ?? 0);
+
+  const needsAttentionCount = actionRequiredCount + unresolvedEscalationsCount;
+
+  // Pipeline values for the last 7 days (cents → dollars)
+  const probablePipelineValueCents = await calculateProbablePipelineValueCents(
+    clientId,
+    sevenDaysAgo,
+    now
+  );
+  const confirmedRevenueCents = await calculateConfirmedRevenueCents(
+    clientId,
+    sevenDaysAgo,
+    now
+  );
+
   return {
     leadsCapture: Number(stats?.leadsCapture || 0),
     messagesSent: Number(stats?.messagesSent || 0),
@@ -61,11 +103,26 @@ export async function getWeeklyStats(clientId: string): Promise<WeeklyStats> {
     escalationsClaimed: Number(topMember?.claims || 0),
     topTeamMember: topMember?.teamMemberName || null,
     topTeamMemberClaims: Number(topMember?.claims || 0),
+    probablePipelineValue: Math.round(probablePipelineValueCents / 100),
+    confirmedRevenue: Math.round(confirmedRevenueCents / 100),
+    needsAttentionCount,
   };
 }
 
 /**
+ * Formats a dollar value as a compact string: $XK (rounded to 1 decimal) or $X if < $1000.
+ */
+function formatDollarsCompact(dollars: number): string {
+  if (dollars < 1000) {
+    return `$${dollars}`;
+  }
+  const k = Math.round((dollars / 1000) * 10) / 10;
+  return `$${k}K`;
+}
+
+/**
  * Formats weekly statistics into an SMS message for clients.
+ * Stays under 320 characters.
  * @param businessName - The client's business name
  * @param stats - Weekly statistics to include in the message
  * @param dashboardLink - Magic link URL to the dashboard
@@ -77,15 +134,15 @@ export function formatWeeklySMS(
   dashboardLink: string
 ): string {
   let message = `Weekly Recap for ${businessName}\n\n`;
-  message += `${stats.leadsCapture} leads captured\n`;
-  message += `${stats.messagesSent} messages sent\n`;
+  message += `${stats.leadsCapture} leads captured | ${stats.appointmentsBooked} appointments\n`;
 
-  if (stats.appointmentsBooked > 0) {
-    message += `${stats.appointmentsBooked} appointments\n`;
+  const hasPipelineData = stats.probablePipelineValue > 0 || stats.confirmedRevenue > 0;
+  if (hasPipelineData) {
+    message += `Pipeline: ${formatDollarsCompact(stats.probablePipelineValue)} probable | ${formatDollarsCompact(stats.confirmedRevenue)} confirmed\n`;
   }
 
-  if (stats.topTeamMember) {
-    message += `\nTop: ${stats.topTeamMember} (${stats.topTeamMemberClaims} claims)\n`;
+  if (stats.needsAttentionCount > 0) {
+    message += `${stats.needsAttentionCount} leads need attention\n`;
   }
 
   message += `\nFull stats: ${dashboardLink}`;
@@ -109,11 +166,36 @@ export function formatWeeklyEmail(
 ): { subject: string; html: string } {
   const subject = `Your Week with ConversionSurgery - ${stats.leadsCapture} Leads Captured`;
 
+  const hasPipelineData = stats.probablePipelineValue > 0 || stats.confirmedRevenue > 0;
+
+  const pipelineSection = hasPipelineData ? `
+        <h3>PIPELINE VALUE</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0;">
+              <span style="color: #6b6762; font-size: 13px;">PROBABLE</span><br />
+              <span style="font-size: 22px; font-weight: bold;">${formatDollarsCompact(stats.probablePipelineValue)}</span>
+            </td>
+            <td style="padding: 8px 0;">
+              <span style="color: #6b6762; font-size: 13px;">CONFIRMED</span><br />
+              <span style="font-size: 22px; font-weight: bold;">${formatDollarsCompact(stats.confirmedRevenue)}</span>
+            </td>
+          </tr>
+        </table>
+  ` : '';
+
+  const attentionSection = stats.needsAttentionCount > 0 ? `
+      <div style="background: #FFF3E0; border-left: 4px solid #C15B2E; padding: 12px 16px; border-radius: 4px; margin: 16px 0;">
+        <strong>${stats.needsAttentionCount} lead${stats.needsAttentionCount === 1 ? '' : 's'} need${stats.needsAttentionCount === 1 ? 's' : ''} attention</strong> &mdash;
+        <a href="${dashboardLink}" style="color: #C15B2E;">Review now</a>
+      </div>
+  ` : '';
+
   const html = `
     <div style="font-family: 'Inter', sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Hi ${ownerName},</h2>
 
-      <p>Here's what happened at <strong>${businessName}</strong> this week:</p>
+      <p>Here&apos;s what happened at <strong>${businessName}</strong> this week:</p>
 
       <div style="background: #F8F9FA; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <h3 style="margin-top: 0;">LEADS CAPTURED</h3>
@@ -126,7 +208,11 @@ export function formatWeeklyEmail(
           <h3>APPOINTMENTS</h3>
           <p style="font-size: 24px; font-weight: bold; margin: 0;">${stats.appointmentsBooked}</p>
         ` : ''}
+
+        ${pipelineSection}
       </div>
+
+      ${attentionSection}
 
       ${stats.topTeamMember ? `
         <p><strong>Top performer:</strong> ${stats.topTeamMember} claimed ${stats.topTeamMemberClaims} leads</p>

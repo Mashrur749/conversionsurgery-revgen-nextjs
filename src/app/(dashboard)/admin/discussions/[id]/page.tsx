@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation';
 import { getDb, supportMessages, supportReplies } from '@/db';
 import { eq, asc } from 'drizzle-orm';
 import { AdminDiscussionThread } from './admin-discussion-thread';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 /** Admin detail view for a single support discussion thread with reply management. */
 export default async function AdminDiscussionDetailPage({
@@ -43,7 +44,11 @@ export default async function AdminDiscussionDetailPage({
   }));
 
   return (
-    <div>
+    <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Discussions', href: '/admin/discussions' },
+        { label: 'Thread' },
+      ]} />
       <AdminDiscussionThread
         message={serializedMessage}
         initialReplies={serializedReplies}

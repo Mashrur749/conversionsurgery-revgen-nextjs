@@ -1,8 +1,10 @@
 # ConversionSurgery — Grand Slam Offer Architecture
 
-Version 2.1 (All Gaps Resolved)
-Date: February 23, 2026
-Status: Launch-Ready (pending legal review — see Part 10)
+Version 3.0
+Date: April 4, 2026
+Status: Launch-Ready (pending legal review &mdash; see Part 10)
+
+> **NOTE:** The client-facing approved copy lives in `docs/business-intel/OFFER-CLIENT-FACING.md` (v1.7). If this internal doc and the client-facing doc conflict, the **client-facing doc is the source of truth** for anything a contractor might see. This doc provides internal rationale and strategy context.
 
 This document is the single source of truth for what ConversionSurgery sells, how every component is structured, and the operational definitions behind every promise. All sales scripts, outreach templates, landing pages, and client-facing materials should be built FROM this document.
 
@@ -63,8 +65,8 @@ Every component serves one of four functions:
 | Capability                                  | What actually happens                                                                                                                                                                                                                                                                                       |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Near-Instant Lead Response                  | Every inquiry — call, text, form — gets a near-instant response during permitted hours. The system monitors around the clock and responds within seconds during compliant windows. (CRTC quiet hours: outbound messages queued 9 PM – 10 AM; see Interim Language Policy for pending inbound-reply review.) |
-| AI Conversation Agent                       | Not canned auto-replies. An AI trained on YOUR business that has real conversations, answers questions about your services, qualifies the project, and books the estimate appointment into your calendar.                                                                                                   |
-| Estimate Follow-Up Machine                  | When you send an estimate, we trigger a 6-8 touch follow-up sequence over 6 weeks. Personalized. Not pushy. Designed for the 2-6 month decision cycle that renovation projects actually take. Multiple low-friction trigger options (see Estimate Trigger Methods below).                                   |
+| AI Conversation Agent                       | Not canned auto-replies. An AI configured with YOUR business information that has real conversations, answers questions about your services, qualifies the project, and books estimate appointments into your Google Calendar. Syncs with Google Calendar to prevent double-bookings. |
+| Estimate Follow-Up Machine                  | When you flag an estimate as sent, we trigger a 4-touch follow-up sequence over 14 days. Personalized, not pushy. Designed for the decision cycle renovation projects actually take. Multiple low-friction trigger options (see Estimate Trigger Methods below).  |
 | Appointment Confirmation & No-Show Recovery | Reminders before every appointment. If they miss it, AI follows up same day and rebooks.                                                                                                                                                                                                                    |
 | Payment Collection                          | Automated deposit and invoice reminders with one-click payment links. No more awkward "just following up on that invoice" conversations.                                                                                                                                                                    |
 | Review Generation                           | After every completed job, an automated review request at the moment of peak satisfaction. Direct link to Google.                                                                                                                                                                                           |
@@ -107,8 +109,10 @@ This gives them separation between personal and business, a complete history of 
 - Additional phone numbers: $15/month each
 - Additional team members: $20/month each
 
-**Voice AI (Optional Add-On):**
-Voice AI capabilities are available as a separate, clearly communicated add-on at $0.15/minute (pass-through cost). This is NOT part of the "unlimited messaging" promise — it is a distinct, opt-in feature with transparent per-minute billing. Clients who do not enable voice AI will never see a voice charge. This should be presented as "optional voice upgrade" in all materials, positioned separately from the core unlimited SMS offer to avoid any perception of hidden fees.
+**Voice AI &mdash; Included (v3.0 update):**
+Voice AI is included in the base price for all clients &mdash; `voiceEnabled` defaults to `true` on signup. No per-minute charges. No extra fees. No opt-in step required. The contractor gets a fully answering business line from Day 1: when they miss a call, Voice AI picks up, qualifies the lead, and books the estimate. This is the core value proposition &mdash; not an upsell.
+
+**Internal cost note:** Twilio voice minutes are a pass-through cost to the operator (~$0.01-0.02/min for standard calls). At typical contractor volumes (15-20 calls/month, ~5 handled by Voice AI, avg 3 min each), the monthly cost per client is $0.75-$3.00. This is absorbed into the $1,000/mo price, not passed to the contractor.
 
 **Hormozi lever:** Dream Outcome + Effort Minimizer — one place for everything, zero management required.
 
@@ -195,7 +199,9 @@ The AI's conversation quality depends entirely on the knowledge base, and a sing
 
 #### Layer 1: The 30-Day Proof-of-Life Guarantee
 
-> "If you don't see at least 5 Qualified Lead Engagements in your first 30 days, we refund your first month. Full stop."
+> "Your first month is free. If the system doesn&apos;t deliver at least 5 Qualified Lead Engagements in those 30 days, you owe nothing and we part as friends."
+
+**Pricing change (v3.0):** Restructured from "pay first, refund if fails" to "first month free, billing starts Day 31." This removes all financial risk from trying. Card is captured on the onboarding call with a 30-day Stripe trial. If Layer 1 fails, the contractor simply cancels before Day 31 &mdash; no refund process needed.
 
 **"Qualified Lead Engagement" is defined as:**
 
@@ -208,13 +214,22 @@ This is concrete, measurable, and almost impossible to fail if the contractor ha
 
 #### Layer 2: The 90-Day Revenue Recovery Guarantee
 
-> "If after 90 days, you can't point to at least one project that ConversionSurgery helped you win, we'll refund your most recent month AND give you a full export of every lead and conversation we captured. You keep everything."
+> "If after 90 days, the system hasn&apos;t booked at least one estimate appointment from a lead that had previously gone cold &mdash; or generated at least $5,000 in probable pipeline value from system-engaged leads &mdash; we refund your most recent month&apos;s payment. You keep a full export of every lead and conversation we captured. You leave with everything."
 
-**"Attributed Project Opportunity" is defined as:**
+**Language change (v3.0):** Tightened from subjective "one project you can point to" to objective, contractor-verifiable outcomes: "1 booked estimate from a cold lead OR $5K probable pipeline." Attribution is now defined as "Attributed Result" &mdash; purely log-based, no subjective confirmation needed.
+
+**The guarantee passes if EITHER of the following is true:**
+
+1. **1 Attributed Result** — Lead received automated response or follow-up from the system, with logged engagement after system action (reply, booked appointment, resumed conversation). Attribution is log-based; no subjective contractor confirmation required.
+2. **$5,000+ in Probable Pipeline Value** — The platform's automatically calculated `probablePipelineValue` (appointments booked + reactivated quotes × average project value) reaches $5,000 or more within the 90-day window, even if no job has been explicitly won yet.
+
+The pipeline floor (criterion 2) gives contractors with longer renovation sales cycles a concrete, measurable standard — $5,000 in tracked pipeline is visible in the platform and unambiguous. Criterion 1 remains available for contractors who close faster.
+
+**"Attributed Result" (Criterion 1) defined as:**
 
 - Lead received automated response or follow-up from the system
 - Logged engagement after system action (reply, booked appointment, resumed conversation)
-- Client confirms the system meaningfully contributed to progression of the opportunity
+- Attribution confirmed by platform logs (no subjective contractor confirmation required)
 
 **Evidence and Dispute Resolution:**
 
@@ -261,7 +276,7 @@ This formula eliminates ad hoc judgment calls during guarantee disputes. Both pa
 
 - "$1,000 is a lot — what if it doesn't work?" — Then you get your money back AND keep everything we built. What's the risk?
 - "I need to think about it." — The guarantee means if it doesn't produce results, you pay nothing. The only risk is waiting another month and losing more leads.
-- "Can I try it free?" — This IS a trial — a paid one where you get full service from day one. If it doesn't work, you get refunded. A free trial would mean a watered-down setup. This gives you the real thing.
+- "Can I try it free?" &mdash; Your first month IS free. Full service from Day 1. Card goes on file so billing starts automatically on Day 31 if you keep it. Cancel anytime before then, zero charge.
 
 ---
 
@@ -338,6 +353,7 @@ The report shouldn't just show metrics. It should answer one question: **"How mu
 | Estimates followed up     | Which estimates are in sequence, which responded          | Shows the invisible follow-up happening                                 |
 | Revenue impact            | Won jobs attributed to the system, pipeline value         | The money number                                                        |
 | **The "Without Us" line** | What would have happened without ConversionSurgery        | This is the retention line. It makes the cost of cancellation concrete. |
+| **Weekly pipeline SMS**   | Monday morning SMS with dollar pipeline values ($XK probable, $XK confirmed) + needs-attention count | Keeps the contractor informed between bi-weekly reports |
 
 **"Without Us" Methodology (Standardized):**
 
@@ -457,13 +473,15 @@ Here's what you get when you start with ConversionSurgery:
 
 **Complete Done-For-You Service** — We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week.
 
-**90-Day Revenue Recovery Guarantee** — If after 90 days you can't point to at least one project this system helped you win, we refund your last month and you keep every lead and conversation we captured. Plus a 30-day proof-of-life guarantee: 5 leads engaged in 30 days or your first month is free.
+**First Month Free + 90-Day Guarantee** &mdash; Your first month costs nothing. The system runs for 30 days before you pay a dollar. If after 90 days the system hasn&apos;t booked at least one estimate from a cold lead or generated $5,000 in probable pipeline, we refund your last month and you keep every lead and conversation we captured. If your lead volume runs below 15/month, guarantee windows extend proportionally &mdash; you&apos;re never penalized for a slow period.
+
+**Weekly Pipeline Update** &mdash; Every Monday, a text on your phone showing your pipeline in dollars. No login required.
 
 **Month-to-month, no contract, no setup fee, no message limits, no overage charges.** We earn your business every single month.
 
-**$1,000/month.**
+**First month free. Then $1,000/month.**
 
-One recovered kitchen project pays for the entire year. Most clients see that in the first month.
+One recovered kitchen project pays for the entire year. Most clients see results before they ever pay.
 
 ---
 
@@ -736,6 +754,60 @@ Items 4, 5, and 7 should be reviewed before scaling but can be addressed in the 
 
 ---
 
-_ConversionSurgery Grand Slam Offer Architecture v2.1_
-_Consolidated from v1.0 (strategic architecture), v1.1 (operational refinements), Unlimited Messaging Update, and Gap Resolution (estimate triggers, quiet hours, smart assist, KB quality, voice AI, customer list extraction, claims boundary, unlimited qualifier, guarantee formula)_
-_February 2026_
+---
+
+## PART 11: SPEC-DRIVEN UPDATES (April 2026)
+
+The following capability and policy updates were shipped as part of SPEC-07 through SPEC-12 and are reflected in this document:
+
+### Pre-Sale ROI Calculator (SPEC-11)
+
+A public API endpoint (`POST /api/public/roi-calculator`) accepts contractor inputs (monthly lead volume, average project value, estimated follow-up gap, quote-to-win rate) and returns a personalized revenue-at-risk estimate. Use this during the sales call instead of doing the math on paper.
+
+Sales flow: pull up the calculator during Objection 8 ("$1,000 is expensive") or Objection 3 (referral-heavy contractor). Enter their numbers. Show the output on screen. The conversation shifts from "is $1,000 expensive?" to "I'm leaving $X on the table every month."
+
+Inputs accepted: monthly lead volume, average project value, current follow-up rate (%), estimated conversion lift.
+Output: annual revenue at risk, monthly recovery potential, months-to-break-even.
+
+Template for manual calculation if API is unavailable: `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`.
+
+### Pre-Sale Revenue Leak Audit (SPEC-07)
+
+Before any sales call, run a 15-20 minute lightweight audit using publicly available data. This changes the call opener from a pitch to a discovery conversation: "I already did some research on your business — can I share what I found?"
+
+Audit process and template: `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`
+Spec reference: `docs/specs/SPEC-07.md`
+
+### Jobber Integration (SPEC-12)
+
+Basic webhook integration is live:
+- **Outbound (CS → Jobber):** CS fires an `appointment_booked` event to a configured Jobber webhook URL when an appointment is created
+- **Inbound (Jobber → CS):** Jobber sends `job_completed` events to `POST /api/webhooks/jobber/job-completed`, which triggers review generation for the associated lead
+
+This integration is optional (off by default, enabled per client). It resolves the "I use Jobber — won't this overlap?" objection by making CS the front-end of the Jobber pipeline. See Objection 7 in the Sales Objection Playbook for updated script.
+
+The integration architecture uses a generic `integration_webhooks` table, so future providers (HubSpot, ServiceTitan, Housecall Pro) follow the same pattern.
+
+### Voice AI Included by Default (SPEC-09)
+
+Voice AI is no longer an opt-in add-on for new clients. `voiceEnabled` defaults to `true` on client creation. Per-minute usage ($0.15/min pass-through) is invoiced as a transparent line item, but no setup step is required. See Component 2 update above.
+
+---
+
+## PENDING: CLIENT-FACING DOC REVIEW REQUIRED
+
+The following changes affect client-facing promises and have NOT yet been updated in `docs/business-intel/OFFER-CLIENT-FACING.md` (which is approved sales copy and must not be edited without review):
+
+| Change | What needs updating in OFFER-CLIENT-FACING.md |
+|--------|-----------------------------------------------|
+| Voice AI included by default | Section describing Voice AI as "optional add-on" should be updated |
+| Guarantee pipeline floor ($5,000 probable pipeline OR 1 opportunity) | Section 3 guarantee language needs the pipeline floor criterion added |
+| ROI Calculator available for pre-sale | Can be added as a pre-sale tool reference |
+
+**Action required:** Review these three items with the founder and update OFFER-CLIENT-FACING.md with approved copy before using the updated scripts in live sales calls.
+
+---
+
+_ConversionSurgery Grand Slam Offer Architecture v2.2_
+_Consolidated from v1.0 (strategic architecture), v1.1 (operational refinements), Unlimited Messaging Update, Gap Resolution (estimate triggers, quiet hours, smart assist, KB quality, voice AI, customer list extraction, claims boundary, unlimited qualifier, guarantee formula), and SPEC-07–12 updates (ROI calculator, pre-sale audit, Jobber integration, voice default-on, weekly pipeline SMS, guarantee pipeline floor)_
+_Last updated: April 2026_

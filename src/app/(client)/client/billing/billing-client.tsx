@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { SubscriptionCard } from '@/components/billing/SubscriptionCard';
 import { PaymentMethodCard } from '@/components/billing/PaymentMethodCard';
 import { InvoiceList } from '@/components/billing/InvoiceList';
 import { UsageDisplay } from '@/components/billing/UsageDisplay';
 import { GuaranteeStatusCard, type GuaranteeSummary } from '@/components/billing/GuaranteeStatusCard';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   pauseSubscription,
   resumeSubscription,
@@ -17,6 +19,7 @@ import {
 
 interface BillingPageClientProps {
   clientId: string;
+  serviceModel?: string;
   data: {
     subscription: {
       id: string;
@@ -96,9 +99,10 @@ interface BillingPageClientProps {
   };
 }
 
-export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
+export function BillingPageClient({ clientId, serviceModel = 'managed', data }: BillingPageClientProps) {
   const router = useRouter();
   const { subscription, paymentMethods, invoices, usage } = data;
+  const isManaged = serviceModel === 'managed';
   const [guarantee, setGuarantee] = useState<GuaranteeSummary | null>(null);
   const [guaranteeLoading, setGuaranteeLoading] = useState(true);
 
@@ -143,7 +147,7 @@ export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
             <SubscriptionCard
               subscription={subscription}
               usage={usage ? { leads: usage.leads.used, messages: 0 } : undefined}
-              onUpgrade={() => router.push('/client/billing/upgrade')}
+              onUpgrade={isManaged ? undefined : () => router.push('/client/billing/upgrade')}
               onStartCancellation={() => router.push('/client/cancel')}
               onPauseSubscription={async (resumeDate) => {
                 await pauseSubscription(clientId, resumeDate);
@@ -162,12 +166,14 @@ export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
               <p className="text-muted-foreground mt-1">
                 Choose a plan to get started with ConversionSurgery.
               </p>
-              <button
-                onClick={() => router.push('/client/billing/upgrade')}
-                className="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                View Plans
-              </button>
+              {!isManaged && (
+                <button
+                  onClick={() => router.push('/client/billing/upgrade')}
+                  className="mt-4 inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  View Plans
+                </button>
+              )}
             </div>
           )}
 
@@ -200,19 +206,40 @@ export function BillingPageClient({ clientId, data }: BillingPageClientProps) {
         </div>
       </div>
 
-      {!guaranteeLoading && guarantee && <GuaranteeStatusCard guarantee={guarantee} />}
+      {guaranteeLoading ? (
+        <div className="rounded-lg border p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-5 w-24 rounded-full" />
+          </div>
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-2 w-full rounded-full" />
+          <div className="grid gap-2 md:grid-cols-3">
+            <Skeleton className="h-12 rounded-md" />
+            <Skeleton className="h-12 rounded-md" />
+            <Skeleton className="h-12 rounded-md" />
+          </div>
+        </div>
+      ) : guarantee ? (
+        <GuaranteeStatusCard guarantee={guarantee} />
+      ) : null}
 
       <InvoiceList
         invoices={invoices}
         onRetryPayment={async (invoiceId) => {
-          const res = await fetch(`/api/client/billing/invoices/${invoiceId}/retry`, {
-            method: 'POST',
-          });
-          if (!res.ok) {
-            const data = (await res.json()) as { error?: string };
-            throw new Error(data.error || 'Retry failed');
+          try {
+            const res = await fetch(`/api/client/billing/invoices/${invoiceId}/retry`, {
+              method: 'POST',
+            });
+            if (!res.ok) {
+              const data = (await res.json()) as { error?: string };
+              throw new Error(data.error || 'Retry failed');
+            }
+            toast.success('Payment retry initiated');
+            router.refresh();
+          } catch {
+            toast.error('Payment retry failed. Please check your card details or contact support.');
           }
-          router.refresh();
         }}
       />
     </div>

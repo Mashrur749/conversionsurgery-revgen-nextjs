@@ -44,9 +44,10 @@ export function TestActions({ testId, status, winner }: Props) {
 
       router.refresh();
       setIsLoading(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Action error:', err);
-      setError(err.message || 'Failed to update test');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update test';
+      setError(errorMessage);
       setIsLoading(false);
     }
   };

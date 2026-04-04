@@ -61,30 +61,30 @@ function stateBadge(row: OpsRow): { label: string; className: string } {
   if (row.isTerminal) {
     return {
       label: 'terminal',
-      className: 'bg-red-100 text-red-800 border-red-200',
+      className: 'bg-[#FDEAE4] text-[#C15B2E] border-[#C15B2E]/20',
     };
   }
   if (row.state === 'sent') {
     return {
       label: 'sent',
-      className: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      className: 'bg-[#E8F5E9] text-[#3D7A50] border-[#3D7A50]/20',
     };
   }
   if (row.retryReason === 'backoff_pending') {
     return {
       label: 'backoff',
-      className: 'bg-amber-100 text-amber-800 border-amber-200',
+      className: 'bg-[#FFF3E0] text-[#C15B2E] border-[#C15B2E]/20',
     };
   }
   if (row.state === 'failed') {
     return {
       label: 'failed',
-      className: 'bg-red-100 text-red-800 border-red-200',
+      className: 'bg-[#FDEAE4] text-[#C15B2E] border-[#C15B2E]/20',
     };
   }
   return {
     label: row.state,
-    className: 'bg-slate-100 text-slate-700 border-slate-200',
+    className: 'bg-muted text-muted-foreground border-muted',
   };
 }
 
@@ -213,7 +213,7 @@ export default function ReportDeliveryOpsPanel() {
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md border border-[#C15B2E]/20 bg-[#FDEAE4] px-3 py-2 text-sm text-[#C15B2E]">
           {error}
         </div>
       )}

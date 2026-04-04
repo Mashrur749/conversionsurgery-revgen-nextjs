@@ -19,6 +19,19 @@ Each objection follows this structure:
 
 Tier 1 objections (10/10 and 7/10 agent consensus) will come up in almost every conversation. Know them cold. Tier 2 (5/10) are common. Tier 3 are likely with specific contractor profiles.
 
+### Words to Avoid in All Sales Conversations
+
+| Never say | Say instead | Why |
+|-----------|-------------|-----|
+| &ldquo;Automated follow-up&rdquo; | &ldquo;Your leads get followed up on even when you&apos;re mid-job&rdquo; | &ldquo;Automated&rdquo; sounds like a chatbot they&apos;ve been burned by |
+| &ldquo;AI platform&rdquo; or &ldquo;AI tool&rdquo; | &ldquo;The system&rdquo; or &ldquo;your response team&rdquo; | &ldquo;AI&rdquo; triggers skepticism. Lead with outcomes. |
+| &ldquo;You need to fix your follow-up&rdquo; | &ldquo;You can&apos;t be texting leads from a roof &mdash; that&apos;s a capacity problem, not a you problem&rdquo; | Never imply they&apos;re doing something wrong |
+| &ldquo;Our automation handles it&rdquo; | &ldquo;We handle it&rdquo; | They&apos;re buying a service, not software |
+
+**The line that stops contractors cold:** &ldquo;You built the estimate. You shouldn&apos;t have to beg for the job.&rdquo;
+
+**Guarantee before price, every time.** State the guarantee and month-to-month terms before you say $1,000. Always.
+
 ---
 
 ## TIER 1 — HANDLE THESE EVERY TIME
@@ -176,17 +189,17 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 
 **Why they say it:** They've invested in a tool and don't want to feel like they wasted money or add another login. They're worried about duplicate data and extra overhead.
 
-**The wrong response:** "We integrate with everything." — Overpromise. The integration roadmap is real but limited right now.
+**The wrong response:** "We integrate with everything." — Overpromise. The integration is real but specific — know what it does before making claims.
 
 **The right response:**
 
 > "Jobber is great for job management — scheduling, invoicing, crew coordination. This system sits in front of that. When a new lead comes in, texts the business number, or submits a form, that's where we work. We qualify them, book the estimate, follow up until they're ready. Once they're a confirmed job, they go into Jobber.
 >
-> Think of it as the front end of your pipeline. Jobber handles the work. We handle getting you the work.
+> And we do actually connect to Jobber now. When the system books an appointment, it fires that event to Jobber automatically so your jobs stay in sync. And when you mark a job complete in Jobber, we send the review request — so your review process is automatic, not manual.
 >
-> You'll have one extra dashboard to check — but the goal is that your Jobber job list gets longer, not that you have more admin."
+> Think of it as the front end of your pipeline. Jobber handles the work. We handle getting you the work — and close the loop on reviews after."
 
-**Proof point:** Walk through the lead pipeline stages on the dashboard. Show how a lead moves from new inquiry to estimate booked — the part that happens before any job management tool gets involved.
+**Proof point:** Walk through the lead pipeline stages on the dashboard. Show how a lead moves from new inquiry to estimate booked — the part that happens before any job management tool gets involved. Mention the `appointment_booked` event sync and the Jobber `job_completed` → review trigger as the specific integration points.
 
 ---
 
@@ -206,7 +219,7 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 >
 > On the risk side: there's no contract. Month-to-month, cancel with 30 days' notice. And the guarantee: if you don't see 5 real leads engage in the first 30 days, you get that first month back. The risk on your side is one month."
 
-**Proof point:** Pull up the ROI worksheet (`docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`) and do the math live with the prospect's numbers. Take their outstanding quote count and average project value — at even a 10% reactivation rate, one recovered project covers the entire year.
+**Proof point:** Run the ROI calculator live with the prospect's numbers. Ask: "How many leads do you get a month? What's your average project value? What percentage of quotes go quiet without a follow-up?" Then hit `POST /api/public/roi-calculator` with those numbers and show the output — annual revenue at risk and months to break even. If you're not at a computer, use the worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` and do it manually. At a 10% reactivation rate, one recovered project typically covers the entire year.
 
 ---
 
@@ -319,11 +332,15 @@ Get the CRTC inbound-reply exemption legal opinion before the second client conv
 
 ## Section 12: Outreach Scripts
 
-Use these angles for cold outreach (SMS, email, LinkedIn DM). Pick the angle that matches the prospect's profile from pre-qualification research.
+**Before using any angle below:** Run the Pre-Sale Revenue Leak Audit for the prospect first (`docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`). It takes 15-20 minutes using public data (Google Business Profile, website, competitor review counts) and gives you a specific data point — their review gap, their visible response time, their estimated dead-quote count — that makes every outreach angle more specific and harder to dismiss.
 
-### Angle A — Quote Reactivation (Default)
+Use these angles for cold outreach (SMS, email, LinkedIn DM). Pick the angle that matches the prospect&apos;s profile from pre-qualification research.
 
-**Best for:** Any contractor with an established business (3+ years). Lowest objection surface.
+**Pain hierarchy for angle selection:** Missed calls OPEN conversations (visceral, every contractor has THE story). Dead quotes CLOSE deals (concrete ROI, found money). Lead with missed calls on cold calls and texts. Pivot to quote reactivation once you&apos;re in a conversation. Use quote reactivation as the default for email/LinkedIn where you need a longer-form value prop.
+
+### Angle A — Quote Reactivation (Default for email/LinkedIn)
+
+**Best for:** Any contractor with an established business (3+ years). Lowest objection surface. Best for written outreach where you have space to make the ROI case.
 
 > **Cold SMS/LinkedIn opener:**
 > "Hey [Name] — quick question. How many quotes from the last 6 months are sitting in your phone with no response? Most renovation contractors I talk to have 15-30 dead quotes. We built a system that texts those people back automatically with personalized follow-up — and typically 20-30% respond. Would it be worth a 15-minute call to see if it makes sense for [Business Name]?"
@@ -369,13 +386,17 @@ Spec for the calculator is at `active/consensus/roi-stress-test.md` (Lead Leak S
 
 ### Pre-Call Qualification (run before every sales call)
 
+**Step 0 — Run the Pre-Sale Revenue Leak Audit (15-20 min, before you reach out):**
+Using publicly available data only (Google Business Profile, website, Google Maps competitor check), complete the lightweight audit at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`. This gives you a personalized opener: &ldquo;I did some research before reaching out — you have 47 Google reviews and your top competitor has 214. I can tell you what that gap is costing you.&rdquo; It also pre-qualifies the prospect (low review count, no quick response, many unresponded estimates visible on GBP = high fit).
+
 Before the call, gather:
 1. **Lead volume**: &ldquo;How many inbound inquiries do you get per month?&rdquo; (target: 10+)
 2. **Outstanding quotes**: &ldquo;How many estimates are sitting with no response?&rdquo; (target: 5+)
-3. **Google reviews**: Check their Google Business Profile review count vs. top 3 competitors
+3. **Google reviews**: Check their Google Business Profile review count vs. top 3 competitors (already done in pre-sale audit)
 4. **Current tools**: &ldquo;Do you use Jobber, ServiceTitan, or anything for lead management?&rdquo;
 5. **Guarantee window**: If below 15 leads/month, calculate the adjusted guarantee window and state it explicitly during the call: &ldquo;Your guarantee window would be X days, not 30, based on your lead volume.&rdquo;
 6. **Loss ceiling**: State it plainly: &ldquo;Your maximum risk is $1,000. One month. If 5 leads don&apos;t engage in 30 days, you get it back. One project covers 3-5 years of the service.&rdquo;
+7. **ROI Calculator**: Have the calculator ready at `POST /api/public/roi-calculator` or the ROI worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`. Enter their numbers live during the call if price comes up.
 
 ---
 

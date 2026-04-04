@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ReviewDashboard } from '@/components/reviews/review-dashboard';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { ReviewSourceConfig } from './review-source-config';
 import { GoogleConnectionCard } from './google-connection';
 
@@ -34,6 +35,10 @@ export default async function ClientReviewsPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Clients', href: '/admin/clients' },
+        { label: 'Reviews' },
+      ]} />
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold">

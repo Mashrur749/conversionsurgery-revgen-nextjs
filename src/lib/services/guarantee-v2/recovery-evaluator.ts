@@ -1,6 +1,7 @@
 import type { GuaranteeV2Status } from '@/lib/services/guarantee-v2/state-machine';
 
 export const REQUIRED_RECOVERY_ATTRIBUTED_OPPORTUNITIES = 1;
+export const RECOVERY_PIPELINE_FLOOR_CENTS = 500_000; // $5,000
 
 export type RecoveryEvaluationAction =
   | 'none'
@@ -11,6 +12,7 @@ export type RecoveryEvaluationAction =
 interface EvaluateRecoveryWindowInput {
   status: GuaranteeV2Status;
   attributedOpportunities: number;
+  probablePipelineValueCents?: number;
   now: Date;
   recoveryWindowEnd: Date;
 }
@@ -18,6 +20,7 @@ interface EvaluateRecoveryWindowInput {
 export function evaluateRecoveryWindowStatus({
   status,
   attributedOpportunities,
+  probablePipelineValueCents = 0,
   now,
   recoveryWindowEnd,
 }: EvaluateRecoveryWindowInput): RecoveryEvaluationAction {
@@ -25,7 +28,11 @@ export function evaluateRecoveryWindowStatus({
     return 'none';
   }
 
-  if (attributedOpportunities >= REQUIRED_RECOVERY_ATTRIBUTED_OPPORTUNITIES) {
+  const meetsOpportunityThreshold =
+    attributedOpportunities >= REQUIRED_RECOVERY_ATTRIBUTED_OPPORTUNITIES;
+  const meetsPipelineFloor = probablePipelineValueCents >= RECOVERY_PIPELINE_FLOOR_CENTS;
+
+  if (meetsOpportunityThreshold || meetsPipelineFloor) {
     return 'recovery_pass';
   }
 

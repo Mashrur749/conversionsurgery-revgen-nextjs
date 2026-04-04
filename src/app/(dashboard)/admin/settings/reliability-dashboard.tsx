@@ -98,7 +98,7 @@ export function ReliabilityDashboard() {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-md border border-[#C15B2E]/20 bg-[#FDEAE4] px-3 py-2 text-sm text-[#C15B2E]">
             {error}
           </div>
         )}
@@ -148,7 +148,7 @@ export function ReliabilityDashboard() {
                         <p className="text-muted-foreground">backlog: {job.backlogCount}</p>
                         <p className="text-muted-foreground">last error: {formatDateTime(job.lastErrorAt)}</p>
                         {job.lastErrorMessage && (
-                          <p className="text-red-600 mt-1">{job.lastErrorMessage}</p>
+                          <p className="text-[#C15B2E] mt-1">{job.lastErrorMessage}</p>
                         )}
                       </div>
                     ))}
@@ -179,7 +179,7 @@ export function ReliabilityDashboard() {
                 <p>pending: {summary.openEscalations.pending}</p>
                 <p>assigned: {summary.openEscalations.assigned}</p>
                 <p>in_progress: {summary.openEscalations.inProgress}</p>
-                <p className="text-red-600">sla_breaches: {summary.openEscalations.slaBreaches}</p>
+                <p className="text-[#C15B2E]">sla_breaches: {summary.openEscalations.slaBreaches}</p>
               </div>
               <div className="rounded-md border p-3">
                 <p className="font-medium mb-1">Report Delivery Detail</p>

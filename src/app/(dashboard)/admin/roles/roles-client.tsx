@@ -462,7 +462,7 @@ export function RolesClient({ templates, userPermissions }: RolesClientProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-[#C15B2E] hover:text-[#C15B2E] hover:bg-[#FDEAE4]"
                         onClick={() => setDeleteTemplate(template)}
                       >
                         <Trash2 className="size-4" />
@@ -573,7 +573,7 @@ export function RolesClient({ templates, userPermissions }: RolesClientProps) {
           </DialogHeader>
           <div className="space-y-4">
             {editTemplate && editTemplate.usageCount > 0 && (
-              <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
+              <p className="text-sm text-[#C15B2E] bg-[#FFF3E0] p-3 rounded-md">
                 {editTemplate.usageCount} member{editTemplate.usageCount !== 1 ? 's' : ''} use
                 this role. Changes will take effect immediately and they will be logged out.
               </p>
@@ -647,7 +647,7 @@ export function RolesClient({ templates, userPermissions }: RolesClientProps) {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-[#C15B2E] hover:bg-[#C15B2E] text-white"
               disabled={loading}
             >
               {loading ? 'Deleting...' : 'Delete'}

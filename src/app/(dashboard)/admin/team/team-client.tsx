@@ -397,7 +397,7 @@ export function AgencyTeamClient({ members, agencyRoles, allClients }: AgencyTea
                           {isOwner && (
                             <Tooltip>
                               <TooltipTrigger>
-                                <Crown className="size-4 text-amber-500" />
+                                <Crown className="size-4 text-terracotta" />
                               </TooltipTrigger>
                               <TooltipContent>Agency Owner</TooltipContent>
                             </Tooltip>
@@ -432,8 +432,8 @@ export function AgencyTeamClient({ members, agencyRoles, allClients }: AgencyTea
                           variant={member.isActive ? 'default' : 'secondary'}
                           className={
                             member.isActive
-                              ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-100'
+                              ? 'bg-[#E8F5E9] text-[#3D7A50] hover:bg-[#E8F5E9]'
+                              : 'bg-muted text-muted-foreground hover:bg-muted'
                           }
                         >
                           {member.isActive ? 'Active' : 'Inactive'}
@@ -454,7 +454,7 @@ export function AgencyTeamClient({ members, agencyRoles, allClients }: AgencyTea
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-[#C15B2E] hover:text-[#C15B2E] hover:bg-[#FDEAE4]"
                               onClick={() => setRemoveMember(member)}
                             >
                               Remove
@@ -499,7 +499,7 @@ export function AgencyTeamClient({ members, agencyRoles, allClients }: AgencyTea
                   </SelectContent>
                 </Select>
                 {editRoleId !== editMember?.roleTemplateId && (
-                  <p className="text-sm text-amber-600 mt-1">
+                  <p className="text-sm text-[#C15B2E] mt-1">
                     Changing {editMember?.name}&apos;s role will update their permissions and log them out.
                   </p>
                 )}
@@ -574,7 +574,7 @@ export function AgencyTeamClient({ members, agencyRoles, allClients }: AgencyTea
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleRemove}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-[#C15B2E] hover:bg-[#B84A1F]"
                 disabled={loading}
               >
                 {loading ? 'Removing...' : 'Remove'}

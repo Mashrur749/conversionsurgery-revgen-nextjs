@@ -122,7 +122,8 @@ export function SignupForm() {
             <Label htmlFor="timezone">Timezone</Label>
             <select
               id="timezone"
-              className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+              aria-label="Timezone"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
               value={form.timezone}
               onChange={(e) => setForm((prev) => ({ ...prev, timezone: e.target.value }))}
             >
@@ -135,7 +136,7 @@ export function SignupForm() {
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
-          {success && <p className="text-sm text-green-700">{success}</p>}
+          {success && <p className="text-sm text-[#3D7A50]">{success}</p>}
 
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'Creating Workspace...' : 'Create Workspace'}

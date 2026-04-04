@@ -28,6 +28,7 @@ export const clients = pgTable(
     googleBusinessAccountId: varchar('google_business_account_id', { length: 100 }),
     googleLocationId: varchar('google_location_id', { length: 100 }),
     timezone: varchar('timezone', { length: 50 }).default('America/Edmonton'),
+    serviceModel: varchar('service_model', { length: 20 }).default('managed').notNull(), // 'managed' | 'self_serve'
 
     // ============================================
     // FEATURE FLAGS
@@ -97,7 +98,7 @@ export const clients = pgTable(
     lastWeeklySummaryAt: timestamp('last_weekly_summary_at'),
     isTest: boolean('is_test').default(false),
     // Voice AI
-    voiceEnabled: boolean('voice_enabled').default(false),
+    voiceEnabled: boolean('voice_enabled').default(true),
     voiceMode: varchar('voice_mode', { length: 20 }).default('after_hours'), // always, after_hours, overflow
     voiceGreeting: text('voice_greeting'),
     voiceVoiceId: varchar('voice_voice_id', { length: 100 }), // ElevenLabs voice ID

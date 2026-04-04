@@ -142,7 +142,7 @@ export function CronCatchupManager() {
         </div>
 
         {error && (
-          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="rounded-md border border-[#C15B2E]/20 bg-[#FDEAE4] px-3 py-2 text-sm text-[#C15B2E]">
             {error}
           </div>
         )}
@@ -167,10 +167,10 @@ export function CronCatchupManager() {
               <tbody>
                 {rows.map((row) => {
                   const badgeClass = row.status === 'failed'
-                    ? 'bg-red-100 text-red-700 border-red-200'
+                    ? 'bg-[#FDEAE4] text-[#C15B2E] border-[#C15B2E]/20'
                     : row.status === 'running'
-                      ? 'bg-amber-100 text-amber-700 border-amber-200'
-                      : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                      ? 'bg-[#FFF3E0] text-[#C15B2E] border-[#C15B2E]/20'
+                      : 'bg-[#E8F5E9] text-[#3D7A50] border-[#3D7A50]/20';
 
                   return (
                     <tr key={row.jobKey} className="border-b hover:bg-[#F8F9FA]">
@@ -183,13 +183,13 @@ export function CronCatchupManager() {
                           {row.status}
                         </span>
                         {row.lastErrorMessage && (
-                          <p className="text-xs text-red-600 mt-1">{row.lastErrorMessage}</p>
+                          <p className="text-xs text-[#C15B2E] mt-1">{row.lastErrorMessage}</p>
                         )}
                       </td>
                       <td className="px-3 py-3 align-top">
                         <p className="font-medium">{row.backlogCount}</p>
                         {row.oldestPendingPeriodKey && (
-                          <p className={`text-xs ${row.staleBacklog ? 'text-red-600' : 'text-muted-foreground'}`}>
+                          <p className={`text-xs ${row.staleBacklog ? 'text-[#C15B2E]' : 'text-muted-foreground'}`}>
                             oldest {row.oldestPendingPeriodKey}
                             {row.oldestPendingAgeHours !== null
                               ? ` (${row.oldestPendingAgeHours}h)`

@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { getDb } from '@/db';
 import { reports, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -74,6 +75,10 @@ export default async function ReportDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
+      <Breadcrumbs items={[
+        { label: 'Reports', href: '/admin/reports' },
+        { label: 'Report Details' },
+      ]} />
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold">{report.title}</h1>

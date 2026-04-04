@@ -338,6 +338,67 @@ export default function ClientTeamPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Mobile card layout */}
+            <div className="sm:hidden space-y-3">
+              {activeMembers.map((member) => {
+                const isYou = member.personId === personId;
+                return (
+                  <div key={member.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium">
+                          {member.personName}
+                          {isYou && (
+                            <span className="ml-1.5 text-xs text-muted-foreground">(you)</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {member.personEmail || member.personPhone || 'No contact info'}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-[#3D7A50] border-[#3D7A50] bg-[#E8F5E9] shrink-0">
+                        Active
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Badge variant={member.isOwner ? 'default' : 'secondary'}>
+                        {member.roleName}
+                      </Badge>
+                      {canManage && !member.isOwner && !isYou && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                              <Trash2 className="size-4 mr-1" />
+                              Remove
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to remove {member.personName} from this portal?
+                                They will lose access immediately.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleRemoveMember(member.id)}
+                                variant="destructive"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Desktop table layout */}
+            <div className="hidden sm:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -371,7 +432,7 @@ export default function ClientTeamPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+                        <Badge variant="outline" className="text-[#3D7A50] border-[#3D7A50] bg-[#E8F5E9]">
                           Active
                         </Badge>
                       </TableCell>
@@ -412,6 +473,7 @@ export default function ClientTeamPage() {
                 })}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -425,6 +487,27 @@ export default function ClientTeamPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Mobile card layout */}
+            <div className="sm:hidden space-y-3">
+              {inactiveMembers.map((member) => (
+                <div key={member.id} className="border rounded-lg p-4 space-y-2 opacity-60">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium">{member.personName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {member.personEmail || member.personPhone || 'No contact info'}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-muted-foreground shrink-0">
+                      Inactive
+                    </Badge>
+                  </div>
+                  <Badge variant="secondary">{member.roleName}</Badge>
+                </div>
+              ))}
+            </div>
+            {/* Desktop table layout */}
+            <div className="hidden sm:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -448,7 +531,7 @@ export default function ClientTeamPage() {
                       <Badge variant="secondary">{member.roleName}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-gray-500 border-gray-300">
+                      <Badge variant="outline" className="text-muted-foreground">
                         Inactive
                       </Badge>
                     </TableCell>
@@ -456,6 +539,7 @@ export default function ClientTeamPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       )}

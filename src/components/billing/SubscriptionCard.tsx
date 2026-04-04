@@ -31,7 +31,7 @@ interface SubscriptionCardProps {
     leads: number;
     messages: number;
   };
-  onUpgrade: () => void;
+  onUpgrade?: () => void;
   onStartCancellation: () => void;
   onPauseSubscription: (resumeDate: Date) => Promise<void>;
   onResumeSubscription: () => Promise<void>;
@@ -169,9 +169,11 @@ export function SubscriptionCard({
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            <Button onClick={onUpgrade}>
-              Upgrade Plan
-            </Button>
+            {onUpgrade && (
+              <Button onClick={onUpgrade}>
+                Upgrade Plan
+              </Button>
+            )}
 
             {subscription.status === 'paused' ? (
               <Button variant="outline" onClick={onResumeSubscription}>

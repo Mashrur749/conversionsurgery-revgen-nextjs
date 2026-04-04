@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu } from 'lucide-react';
@@ -20,6 +20,7 @@ interface NavItem {
   href: string;
   label: string;
   permission?: string;
+  selfServeOnly?: boolean; // hidden when serviceModel='managed'
 }
 
 /**
@@ -31,7 +32,7 @@ const navItems: NavItem[] = [
   { href: '/client/conversations', label: 'Conversations', permission: PORTAL_PERMISSIONS.CONVERSATIONS_VIEW },
   { href: '/client/revenue', label: 'Revenue', permission: PORTAL_PERMISSIONS.REVENUE_VIEW },
   { href: '/client/knowledge', label: 'Knowledge Base', permission: PORTAL_PERMISSIONS.KNOWLEDGE_VIEW },
-  { href: '/client/flows', label: 'Flows' },
+  { href: '/client/flows', label: 'Flows', selfServeOnly: true },
   { href: '/client/team', label: 'Team', permission: PORTAL_PERMISSIONS.TEAM_VIEW },
   { href: '/client/billing', label: 'Billing' },
   { href: '/client/settings', label: 'Settings', permission: PORTAL_PERMISSIONS.SETTINGS_VIEW },
@@ -50,6 +51,7 @@ interface ClientNavProps {
   showSwitcher?: boolean;
   businesses?: Business[];
   currentClientId?: string;
+  serviceModel?: string; // 'managed' | 'self_serve'
 }
 
 export function ClientNav({
@@ -58,22 +60,54 @@ export function ClientNav({
   showSwitcher = false,
   businesses,
   currentClientId,
+  serviceModel = 'managed',
 }: ClientNavProps) {
   const [open, setOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    interface MessageSummary {
+      id: string;
+      lastReplyAt: string | null;
+      replyCount: number;
+    }
+
+    async function checkUnread() {
+      try {
+        const res = await fetch('/api/support-messages');
+        if (!res.ok) return;
+        const data = await res.json() as { messages: MessageSummary[] };
+        const read = JSON.parse(localStorage.getItem('cs_discussions_read') ?? '{}') as Record<string, string>;
+        const unread = data.messages.some((m) => {
+          if (!m.lastReplyAt || m.replyCount === 0) return false;
+          const lastRead = read[m.id];
+          if (!lastRead) return true;
+          return new Date(m.lastReplyAt) > new Date(lastRead);
+        });
+        setHasUnread(unread);
+      } catch {
+        // Silently ignore errors
+      }
+    }
+
+    checkUnread();
+    const interval = setInterval(checkUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isActive = (href: string) => {
     if (href === '/client') return pathname === '/client';
     return pathname.startsWith(href);
   };
 
-  // Filter nav items by permission
+  // Filter nav items by permission and service model
   const visibleItems = navItems.filter((item) => {
     // If no permissions array provided (legacy), show all items
     if (permissions.length === 0) return true;
-    // Items without a permission requirement are always visible
-    if (!item.permission) return true;
-    return permissions.includes(item.permission);
+    if (item.permission && !permissions.includes(item.permission)) return false;
+    if (item.selfServeOnly && serviceModel === 'managed') return false;
+    return true;
   });
 
   return (
@@ -100,13 +134,16 @@ export function ClientNav({
                       href={item.href}
                       onClick={() => setOpen(false)}
                       className={cn(
-                        'block px-3 py-2.5 text-sm rounded-md transition-colors',
+                        'flex items-center px-3 py-2.5 text-sm rounded-md transition-colors',
                         isActive(item.href)
                           ? 'bg-accent text-foreground font-medium'
                           : 'text-muted-foreground hover:text-foreground hover:bg-accent'
                       )}
                     >
                       {item.label}
+                      {item.href === '/client/discussions' && hasUnread && (
+                        <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-[#D4754A] flex-shrink-0" />
+                      )}
                     </Link>
                   ))}
                 </nav>
@@ -134,13 +171,16 @@ export function ClientNav({
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'px-3 py-2 text-sm rounded-md transition-colors',
+                  'flex items-center px-3 py-2 text-sm rounded-md transition-colors',
                   isActive(item.href)
                     ? 'bg-forest-light text-white font-medium'
                     : 'text-white/70 hover:text-white hover:bg-forest-light'
                 )}
               >
                 {item.label}
+                {item.href === '/client/discussions' && hasUnread && (
+                  <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-[#D4754A] flex-shrink-0" />
+                )}
               </Link>
             ))}
           </nav>

@@ -105,6 +105,15 @@ export default async function ClientLayout({
 
   const showSwitcher = businesses.length > 1;
 
+  // Fetch serviceModel for nav filtering
+  const db = getDb();
+  const [clientRow] = await db
+    .select({ serviceModel: clients.serviceModel })
+    .from(clients)
+    .where(eq(clients.id, session.clientId))
+    .limit(1);
+  const serviceModel = clientRow?.serviceModel ?? 'managed';
+
   return (
     <PermissionProvider
       permissions={permissions}
@@ -119,6 +128,7 @@ export default async function ClientLayout({
           showSwitcher={showSwitcher}
           businesses={showSwitcher ? businesses : undefined}
           currentClientId={session.clientId}
+          serviceModel={serviceModel}
         />
         <main className="max-w-3xl mx-auto px-4 py-6">
           {children}

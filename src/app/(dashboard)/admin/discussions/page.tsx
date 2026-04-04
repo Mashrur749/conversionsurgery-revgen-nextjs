@@ -5,6 +5,7 @@ import { desc, sql, count, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare } from 'lucide-react';
+import { NewThreadDialog } from './new-thread-dialog';
 
 /** Admin view listing all support discussion threads with status filtering. */
 export default async function AdminDiscussionsPage({
@@ -48,20 +49,23 @@ export default async function AdminDiscussionsPage({
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Support Discussions</h1>
-        <div className="flex gap-1">
-          {['all', 'open', 'resolved'].map((f) => (
-            <Link
-              key={f}
-              href={f === 'all' ? '/admin/discussions' : `/admin/discussions?status=${f}`}
-              className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                currentFilter === f
-                  ? 'bg-forest text-white'
-                  : 'bg-muted text-foreground hover:bg-muted'
-              }`}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </Link>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="flex gap-1">
+            {['all', 'open', 'resolved'].map((f) => (
+              <Link
+                key={f}
+                href={f === 'all' ? '/admin/discussions' : `/admin/discussions?status=${f}`}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  currentFilter === f
+                    ? 'bg-forest text-white'
+                    : 'bg-muted text-foreground hover:bg-muted'
+                }`}
+              >
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </Link>
+            ))}
+          </div>
+          <NewThreadDialog />
         </div>
       </div>
 

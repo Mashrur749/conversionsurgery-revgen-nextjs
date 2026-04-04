@@ -246,7 +246,7 @@ export function AiEffectivenessDashboard() {
                   <div className="w-28 text-sm font-medium capitalize">{band.band}</div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="flex-1 h-6 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full"
                           style={{

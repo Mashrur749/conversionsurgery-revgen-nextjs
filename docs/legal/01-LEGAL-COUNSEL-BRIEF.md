@@ -28,7 +28,7 @@ Obtain written legal guidance from a licensed Canadian lawyer on four must-have 
 - Question: Are the 30-Day Proof-of-Life and 90-Day Revenue Recovery guarantees enforceable as drafted?
 - Definitions to validate:
   - Qualified Lead Engagement
-  - Attributed Project Opportunity
+  - Attributed Result (replaced "Attributed Project Opportunity" &mdash; now defined as: 1 booked estimate from a cold lead OR $5,000 probable pipeline)
 - Needed output: enforceability edits and exact contract-safe wording.
 
 3. Low-volume extension formula enforceability

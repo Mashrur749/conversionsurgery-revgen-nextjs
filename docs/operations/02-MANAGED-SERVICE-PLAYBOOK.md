@@ -105,13 +105,21 @@ Month 1 is free. The guarantee cron checks daily. At day 30:
    - Before letting them go, investigate: Did they have any lead volume? If zero inbound in 30 days, the issue is their marketing. Have an honest conversation.
    - If they had leads but the system didn&apos;t engage them, that&apos;s a real failure. Apologize and fix the root cause. Offer to extend the free period.
 
-### Layer 2: 90-Day Revenue Recovery (1 Attributed Project Opportunity)
+### Layer 2: 90-Day Revenue Recovery (1 Attributed Opportunity OR $5K Pipeline)
 
-At day 90:
+At day 90, the guarantee passes if **either** of the following is true:
 
-1. Check if at least 1 lead progressed to an opportunity (appointment booked, quote requested, or job won) where the system contributed.
-2. **If yes:** Guarantee passed. Use this in your retention pitch: &quot;In 90 days, we helped you win [project].&quot;
-3. **If no:** Refund most recent month. Provide full data export. Have an exit conversation &mdash; either fix and re-engage, or part professionally.
+**Criterion A — Attributed opportunity:** At least 1 lead progressed to an opportunity (appointment booked, quote requested, or job won) where the system contributed. Attribution is log-based — platform logs must show system-initiated engagement before the opportunity progressed.
+
+**Criterion B — Pipeline floor:** The auto-calculated `probablePipelineValue` (appointments booked + reactivated quotes × avg project value) reached $5,000 or more during the 90-day window, even if no job was formally won.
+
+**Evaluation process:**
+
+1. Check the client&apos;s guarantee status card at `/admin/clients/[id]` &rarr; Guarantee section.
+2. Check Criterion A: is there a logged attributed opportunity?
+3. If not, check Criterion B: did `probablePipelineValue` reach $5,000? (visible in the client dashboard pipeline summary and bi-weekly reports)
+4. **If either passes:** Guarantee met. Use in retention pitch: &quot;In 90 days, the system built $X in your pipeline.&quot;
+5. **If neither passes:** Refund most recent month. Provide full data export. Have an exit conversation — either fix and re-engage, or part professionally.
 
 ---
 
@@ -181,25 +189,162 @@ At day 90:
 
 ---
 
-## 10. Onboarding Call Script (30 Minutes)
+## 10. Onboarding Call Script (30-45 Minutes)
 
 **When:** Day 0-1, immediately after signing.
 
-**Agenda:**
+**The psychology:** Each step resolves a specific pain in the order the contractor feels them. Missed calls are the visceral, daily pain (this SELLS). Dead quotes are the chronic, demoralizing pain (this RETAINS). Resolve Pain 1 first, then Pain 2. Payment capture happens at the emotional peak &mdash; right after the wow moment, before setup.
 
-1. **Business basics (5 min):** Confirm business name, services offered, service area, team size. You already have this from signup &mdash; just verify.
-2. **Services deep-dive (10 min):** &quot;Walk me through your most common job types. What do you typically charge for each? What&apos;s your warranty? What DON&apos;T you do?&quot; Enter into KB as you go.
-3. **Lead handling preferences (5 min):** &quot;When a lead asks for a price, what do you want the AI to say?&quot; (Most contractors: &quot;Don&apos;t quote prices, get them to book an estimate.&quot;) &quot;What&apos;s your booking availability?&quot; Configure AI settings.
-4. **Old quotes (5 min):** &quot;Can you send me a list of everyone you quoted in the last 90 days who never got back to you?&quot; Get commitment to send within 24 hours.
-5. **Call-your-own-number moment (2 min):** Have them call the business line, watch the missed-call text come back instantly. This is the &quot;wow&quot; moment.
-6. **Expectations (3 min):** &quot;Week 1: missed call text-back is live, I&apos;ll import your old quotes. Week 2: the AI starts responding to web form leads with a 5-minute review window. Week 3: fully autonomous. I&apos;ll check in every 2 weeks with a report.&quot;
+---
 
-**After the call:**
-- Enter all KB entries (or encourage the contractor to use the self-serve KB wizard at `/client/onboarding` — it covers the same 12 fields in 4 guided steps and takes about 10 minutes without operator involvement).
+**Minute 0-3: Anchor in Their Pain**
+
+&gt; &quot;You mentioned you lose jobs when you can&apos;t pick up the phone on site. Let&apos;s make sure that stops today &mdash; before we hang up.&quot;
+
+Do NOT start with a product tour or a features walkthrough. Start with the pain they told you about on the sales call. This sets the frame: we&apos;re solving YOUR problem, not demoing software.
+
+---
+
+**Minute 3-8: PAIN 1 &mdash; Missed Call Text-Back + Voice AI (LIVE DEMO)**
+
+**Phone setup (2 min):** Set up conditional call forwarding from their business number (XYZ) to the Twilio number (ABC). This means their phone still rings first &mdash; if they answer, it&apos;s a normal call. If they don&apos;t answer, it forwards to the system.
+
+1. **Determine their phone type first:**
+   - &quot;Is your business number a cell phone, a home landline, or through a phone service like RingCentral?&quot;
+   - **Cell phone (most common):** Dial `*61*[Twilio number]*11*20#` for conditional forward after 20 seconds (3 rings). If that doesn&apos;t work on their carrier, fall back to `*61*[Twilio number]#` or `*72[Twilio number]` (unconditional).
+   - **Landline:** Same `*61` codes, but confirm with a test call.
+   - **VoIP/PBX (RingCentral, Ooma, Bell Fibe):** Walk through their admin portal to set forwarding. This takes 5-10 min &mdash; consider doing it post-call if time is tight.
+   - **Google Voice:** Cannot forward. Use the Twilio number directly for everything.
+
+2. **Disable carrier voicemail (critical):** Carrier voicemail competes with the forward &mdash; whichever has a shorter timeout wins. If voicemail answers before the forward triggers, the system never sees the call. Have them dial their carrier&apos;s voicemail disable code (Rogers/Telus/Bell: usually `##004#` or call carrier support). This is the #1 setup failure point &mdash; test it before moving on.
+
+3. **Test it live:** Have them call their own business number from another phone (spouse&apos;s phone, your phone). Their phone rings 3 times. They don&apos;t answer. Two things happen:
+   - **Voice AI picks up:** &quot;Hi, thanks for calling [Business Name]. I&apos;m the scheduling assistant &mdash; how can I help?&quot;
+   - **5-second text-back fires** on the caller&apos;s phone.
+
+4. **The wow moment:** Say nothing for 4 seconds after the text arrives. Let them sit with it. Then:
+
+&gt; &quot;That&apos;s what happened to the call you missed last Tuesday while you were on the roof. Except now, the AI picked up AND the homeowner got a text. Two safety nets instead of voicemail.&quot;
+
+5. **Voice AI demo (second beat):** &quot;Call again and stay on the line this time.&quot; They hear the Voice AI qualify the lead, ask about the project, and offer to book an estimate. Point out: &quot;Your customers get a professional greeting and an appointment booked &mdash; even at 9pm on a Sunday.&quot;
+
+**What the contractor needs to understand:**
+- &quot;Your phone still rings first. You answer when you can. When you can&apos;t &mdash; and we both know that&apos;s half the day on a job site &mdash; the AI picks up, qualifies the lead, and books the estimate. Nothing falls through the cracks.&quot;
+- Family/personal calls: &quot;If your wife or someone personal calls, your phone rings first and you answer normally. If you miss it, the AI will take a message and text you &mdash; it won&apos;t try to sell them a renovation.&quot;
+
+**Time to first value: 8 minutes into the call.**
+
+### Progressive Phone Strategy (Day 14+)
+
+The conditional forward (*61) is Phase 1. After the contractor trusts the system (Day 14 check-in), show them the data:
+
+&gt; &quot;You answered 11 calls this week. The AI caught 4 you missed &mdash; 2 of those booked estimates. But 1-2 callers hung up during the ring before the AI could pick up. Those leads are gone. Want to tighten the window so the AI catches them faster?&quot;
+
+**Phase 2 options (Day 14-30, contractor chooses):**
+- **Shorter ring window:** Reduce from 20 seconds to 10 seconds (2 rings). AI catches more, contractor still gets first crack.
+- **AI-first with ring-through (Option D):** All calls go to Twilio first &rarr; Twilio rings the contractor&apos;s cell for 15 seconds &rarr; if no answer, Voice AI picks up. Benefit: every call is logged, zero hang-up loss. The contractor still answers when available.
+- **Full AI receptionist (for the right contractor):** Voice AI answers every call, qualifies, and either books an estimate or offers a live transfer to the contractor. The contractor only talks to qualified leads. &quot;Like having a receptionist who answers on the first ring.&quot;
+
+Do not push Phase 2 on Day 0. Let the data make the argument.
+
+---
+
+**Minute 8-12: PAYMENT CAPTURE (Emotional Peak)**
+
+Capture the card NOW &mdash; while the contractor is seeing the system work. Do not wait until the end of the call.
+
+&gt; &quot;Let me get the billing out of the way so we can focus on the fun stuff. I&apos;m texting you a link right now &mdash; first month completely free. Card is just so billing starts automatically on [exact date] if you decide to keep it. Cancel anytime before then, zero charge.&quot;
+
+Stay on the line. Confirm in Stripe. See Payment Capture section below for hesitation/refusal scripts.
+
+**Do not proceed to KB setup before payment is captured or explicitly declined.**
+
+---
+
+**Minute 12-15: Exclusion List + Old Quotes Setup**
+
+4. **Exclusion list (1 min, mandatory):** &quot;Before we fire anything &mdash; are there any contacts you want us to skip? Family, close friends, anyone you have a personal relationship with? We&apos;ll keep them off all automated messages.&quot; Record the names. Frame it as protecting their relationships, not a product limitation.
+
+5. **Old quotes (3 min):** &quot;Now &mdash; those old quotes you never heard back from. How many from the last 6 months?&quot; Get the list on the call &mdash; don&apos;t assign it as homework. Have them scroll through their phone contacts or Jobber and read off names while you type. Build the first reactivation message live:
+
+   &gt; &quot;Hey [Name], it&apos;s [Contractor] &mdash; you got a quote from us a few months back. Still thinking about the project? Happy to revisit if the timing works.&quot;
+
+   Schedule reactivation to go out that afternoon. Tell them: &quot;You&apos;re going to see replies within 24 hours, probably sooner.&quot;
+
+---
+
+**Minute 15-25: KB + Services Setup**
+
+6. **Business basics + KB (10 min):** Confirm business name, services, service area, team size (you already have this from signup &mdash; just verify). Then deep-dive:
+   - &quot;Walk me through your most common job types. What do you typically charge for each?&quot;
+   - &quot;What&apos;s your warranty?&quot;
+   - &quot;What DON&apos;T you do?&quot;
+   - &quot;When a lead asks for a price, what do you want the system to say?&quot; (Most contractors: &quot;Don&apos;t quote prices, get them to book an estimate.&quot;)
+   - &quot;What makes you different from the next contractor?&quot;
+
+   Enter into KB as they talk. Read back the AI persona summary and get verbal approval: &quot;This is how your system will talk to homeowners. Sound like you?&quot;
+
+   **Critical:** The messages must sound like THEM. This is identity protection, not a feature request.
+
+7. **Jobber setup (optional, 2 min):** If the client uses Jobber, ask for their Jobber webhook URL. Configure in admin under &quot;Integrations.&quot; Two-way sync: CS fires appointment bookings to Jobber, Jobber&apos;s job_completed triggers CS review requests.
+
+---
+
+**Minute 25-30: Expectations + Day 7 Booking**
+
+8. **Expectations (2 min):**
+
+   &gt; &quot;Week 1: missed call text-back is live, your old quotes are getting followed up. Week 2: the system starts responding to new web form leads with a 5-minute review window &mdash; you see every message before it sends. Week 3: fully autonomous. After every completed job, it asks for a Google review with a direct link. I check in every 2 weeks with a report showing exactly what happened.&quot;
+
+9. **Book Day 7 check-in BEFORE hanging up:**
+
+   &gt; &quot;Let&apos;s lock in a quick check-in for [day, 7 days out]. 10 minutes. I&apos;ll show you what the system did in the first week and we can tune anything that needs it. [Tuesday or Wednesday] work?&quot;
+
+   Put it in your calendar. This is mandatory, not optional.
+
+---
+
+**Minute 30-33: Trust Neutralizer (Closing)**
+
+&gt; &quot;Last thing &mdash; I know you&apos;ve probably tried something like this before and it didn&apos;t work out. This is month-to-month. No contract. You can cancel by texting me. The only reason you&apos;d stay is because it&apos;s working. Every two weeks you get a report your accountant can look at. If the math doesn&apos;t work, we stop. Fair?&quot;
+
+This addresses the agency trauma directly, at the end, after they&apos;ve already seen the system work. It&apos;s not a sales tactic &mdash; it&apos;s honest reassurance after proof.
+
+### Payment Capture (During Onboarding Call)
+
+**Why now:** Getting the card during the onboarding call &mdash; while the contractor is excited and engaged &mdash; is standard managed-service practice. Trial-to-paid conversion is 60-80% with card upfront vs. 20-30% when you invoice later. You also avoid a second awkward &quot;time to pay&quot; conversation on Day 31.
+
+**The script (after the &quot;wow moment&quot;, before expectations):**
+
+&gt; &quot;Alright, everything&apos;s looking great. Let me get the billing piece out of the way so we can focus on results. I&apos;m going to send you a quick link right now &mdash; your first month is completely free. The card is just so billing starts automatically on [exact date, 30 days out] if you decide to keep it. You can cancel anytime before then and you&apos;ll never be charged.&quot;
+
+**How to do it:**
+
+1. While on the call, go to the contractor&apos;s client detail page in admin.
+2. Click **&ldquo;Send Payment Link&rdquo;** &mdash; select the plan, click Send. The system creates a Stripe Checkout Session with the 30-day free trial and texts + emails the link to the contractor instantly. No portal login needed &mdash; they tap the link, enter their card on Stripe&apos;s page, done. Takes 30 seconds.
+3. Confirm you see the subscription created: &quot;Perfect, I can see that went through. Your free month starts today, and if everything&apos;s working like we planned, billing kicks in on [date]. Sound good?&quot;
+
+**If they hesitate:**
+
+&gt; &quot;Totally understand. Think of it like a gym membership with a 30-day money-back guarantee &mdash; except you keep everything we set up. The card is just a placeholder. If you don&apos;t see results in 30 days, cancel from your dashboard or just text me and I&apos;ll cancel it for you. Zero charge.&quot;
+
+**If they refuse to put a card down:**
+
+Don&apos;t force it. Say:
+
+&gt; &quot;No problem at all. Let&apos;s get everything set up and I&apos;ll send you the link after. You can do it when you&apos;re ready.&quot;
+
+Then follow up in 24-48 hours with the link. Most contractors who refuse on the call will convert after seeing the system work for a day. If they still don&apos;t add a card by Day 7, they&apos;re unlikely to convert &mdash; don&apos;t invest heavy ops time.
+
+**After the call (operator, same day, 30 min max):**
+- Complete all KB entries from call notes (or encourage the self-serve KB wizard at `/client/onboarding`).
 - Set AI tone based on their communication style.
 - Configure business hours from the call.
-- Send a recap text: &quot;Great call. Your number is live. Send me those old quotes when you get a chance and I&apos;ll get them working this week. You can also fill in your business info at [portal link] — the AI will use it immediately.&quot;
-- Note: the onboarding checklist now has actionable links to each setup step &mdash; the contractor can self-serve some configuration (phone setup, business hours, team members, KB wizard) directly from their dashboard without waiting for you.
+- **Fire the outbound quote reactivation batch** &mdash; send the messages to the dead quotes collected on the call. This is the highest-ROI action on Day 0. Do it before anything else.
+- Verify call forwarding with a test call to XYZ &mdash; confirm it rings 3 times then forwards to Twilio.
+- Verify subscription was created in Stripe Dashboard (trial active, card on file).
+- Add exclusion list contacts to the DNC/skip list in admin.
+- Send a recap text: &quot;You&apos;re live. Missed-call text-back is on, and I just sent follow-ups to [X] of your old quotes. You&apos;ll start seeing replies by tomorrow. Portal login: [link].&quot;
 
 **Revenue Leak Audit (48-hour deliverable):**
 Within 48 business hours of the onboarding call, complete and send the Revenue Leak Audit. This is the first tangible proof the managed service is real &mdash; do not skip it.
@@ -213,6 +358,22 @@ Send the completed audit via plain-text email or PDF with the subject line: &quo
 &gt; &quot;System update for [Business Name]: [X] leads captured, missed-call text-back fired [Y] times since Monday. We&apos;re building your AI knowledge base this week &mdash; full Smart Assist goes live [day]. Any questions before then?&quot;
 
 Purpose: Manages contractor expectations during the 3-week ramp, creates a natural touchpoint before the first bi-weekly report, and prevents &quot;is anything happening?&quot; anxiety.
+
+**Day 7-14 Referral Ask (at the first visible win):**
+
+Do NOT ask for referrals during onboarding. Ask at the moment of a visible win &mdash; when the contractor sees a recovered lead, a booked appointment from a dormant quote, or a specific dollar amount in their pipeline SMS. That emotional peak is when the referral story writes itself.
+
+When a contractor texts you something like &quot;that old quote just replied!&quot; or you see a recovered appointment in their data, respond:
+
+&gt; &quot;That&apos;s the kind of result that gets people talking. Know any other contractors who&apos;d want to see this? I&apos;m taking one or two more in [city] right now.&quot;
+
+Why this timing works:
+- They have a specific story with a dollar amount (&quot;a $40K kitchen I&apos;d given up on came back&quot;)
+- They feel like an early adopter, not a late follower
+- The capacity signal (&quot;one or two more&quot;) creates urgency without pressure
+- Telling the story to a peer makes them look like a savvy business operator
+
+Do not offer a referral incentive yet. At this stage the social currency (&quot;I found this thing that works&quot;) is more motivating than a discount. Add a formal referral credit structure after you have 5+ clients and can measure referral conversion.
 
 ---
 
@@ -237,6 +398,40 @@ Purpose: Manages contractor expectations during the 3-week ramp, creates a natur
 ## 12. Sales Conversation Guide
 
 **When:** Before and during a sales call with a prospective contractor.
+
+### The Pain Hierarchy (Memorize This)
+
+| Pain | Intensity | Role | How to use it |
+|------|:---------:|------|---------------|
+| **Missed calls on job sites** | 10/10 | **SELLS** (closes the deal) | Lead with this on cold calls. Every contractor has a specific memory of THE call they missed. &quot;Do you ever lose jobs because you can&apos;t answer your phone on a job site?&quot; |
+| **Dead quotes going silent** | 8/10 | **RETAINS** (keeps them paying) | Pivot to this after opening. The $40K kitchen that walked back through the door is what makes them a believer and a referrer. |
+| **Burned by agencies before** | 9/10 | **Trust wound** (not sellable) | Don&apos;t sell against this. Neutralize it: month-to-month early, guarantee before price, show results before asking for trust. |
+
+**The flow:** Lead with missed calls to OPEN. Pivot to dead quotes to CLOSE. The guarantee neutralizes the trust wound.
+
+### Language Rules
+
+| Never say | Say instead |
+|-----------|-------------|
+| &ldquo;Automated follow-up&rdquo; | &ldquo;Your leads get followed up on even when you&apos;re mid-job&rdquo; |
+| &ldquo;AI platform&rdquo; | &ldquo;The system&rdquo; or &ldquo;your response team&rdquo; |
+| &ldquo;You need to fix your follow-up&rdquo; | &ldquo;You can&apos;t be texting leads from a roof &mdash; that&apos;s a capacity problem, not a you problem&rdquo; |
+| &ldquo;Our automation handles it&rdquo; | &ldquo;We handle it&rdquo; |
+
+---
+
+### Pre-Sale Preparation (Before Every Sales Call)
+
+**Run the Pre-Sale Revenue Leak Audit first.** Using publicly available data only, complete the lightweight audit template at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`. It takes 15-20 minutes and gives you specific numbers to open with.
+
+What you&apos;re looking for:
+- Google review count vs. top 3 competitors in their area
+- Website response mechanism (do they have a form? What happens when you submit it?)
+- Any visible signals of missed calls or slow follow-up (GBP Q&amp;A with unanswered questions, low review recency, etc.)
+
+Call opener when you have audit data: &ldquo;I did some research before reaching out &mdash; you have [X] Google reviews and the top contractor in [City] has [Y]. I can show you what that review gap is probably costing you, and what it would take to close it.&rdquo;
+
+**Have the ROI Calculator ready.** During the call, when price comes up (and it will), use `POST /api/public/roi-calculator` with their numbers. If you&apos;re not at a computer, use the worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`. The goal is to shift the conversation from &ldquo;$1,000/month is expensive&rdquo; to &ldquo;I&apos;m leaving $X/month on the table.&rdquo;
 
 ---
 
@@ -266,7 +461,7 @@ Be honest with these prospects. Signing them wastes their money and your time, a
 | **Average project under $10K** (handyman, small repairs) | Break-even requires 1.2 projects/year at $10K &mdash; achievable but the margin is too thin to feel like a win. | &ldquo;At your project size, the math is tight. This service is built for contractors doing $25K+ jobs where one recovery covers the year.&rdquo; |
 | **100% word-of-mouth, zero inbound, zero estimates sent** | No digital lead flow = no SMS conversations = AI has nothing to do. | &ldquo;Your business runs on relationships, which is great. This system works on leads that come through your phone or website. If you ever start getting inbound inquiries, we&apos;d be a great fit.&rdquo; |
 | **Already has a receptionist or office manager handling all follow-ups** | Incremental value is low if follow-up is already systematic. Speed advantage is the only differentiator. | &ldquo;It sounds like you&apos;ve already solved the follow-up problem. The main value for you would be the after-hours speed advantage and review automation. Worth discussing, but only if those gaps are real for you.&rdquo; |
-| **Contractor who doesn&apos;t use a smartphone or text** | The system communicates via SMS. A contractor who only uses phone calls has no interaction path. | &ldquo;The system works through text messaging. If your customers primarily reach you by phone call, our Voice AI add-on might fit &mdash; but the core service relies on SMS.&rdquo; |
+| **Contractor who doesn&apos;t use a smartphone or text** | The system communicates via SMS. A contractor who only uses phone calls has no interaction path. | &ldquo;The system works through text messaging. Voice AI is included and handles calls too, but the follow-up and conversation engine runs on SMS. If your customers only use phone calls and never text, the system still catches missed calls via Voice AI.&rdquo; |
 | **Contractor in active financial distress** | $1,000/month when they can&apos;t make payroll is irresponsible to sell. | &ldquo;I&apos;d rather wait until your cash flow stabilizes. This service pays for itself, but not if the $1,000 is money you need for materials this week.&rdquo; |
 
 **The rule:** If you wouldn&apos;t feel good explaining to their spouse why they should pay $1,000/month, don&apos;t sign them.
@@ -342,25 +537,54 @@ Full scripts are in `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`. This is t
 
 ---
 
-### Post-Call Follow-Up Template
+### Post-Call Follow-Up Templates
 
-Send within two hours of the call. Keep it short.
+**If card was captured on the sales/onboarding call (preferred path):**
 
-> Subject: ConversionSurgery — what we covered
+Send within two hours. Confirm next steps &mdash; no payment ask needed.
+
+> Subject: ConversionSurgery &mdash; you&apos;re all set
 >
 > [Name],
 >
-> Good talking today. Here&apos;s a quick summary of what we discussed:
+> Good talking today. Quick recap:
 >
-> - [One sentence on what resonated most — estimate follow-up, reactivation, or response speed based on their profile]
-> - The guarantee: 5 qualified lead engagements in 30 days, or your first month is refunded. Month-to-month, no contract.
-> - Next step: a 30-minute onboarding call. Your number is live within 24 business hours of that call.
+> - Your number is live &mdash; missed call text-back is already working.
+> - [One sentence on what resonated most &mdash; estimate follow-up, reactivation, or response speed based on their profile]
+> - Your free month runs through [date]. I&apos;ll check in every two weeks with a report showing exactly what the system is doing.
+> - Next from you: send me those old quotes when you get a chance. I&apos;ll get them working this week.
 >
-> To get started, [payment/signup link].
+> Questions anytime &mdash; reply here or text [your number].
+>
+> [Your name]
+
+**If card was NOT captured (follow-up needed):**
+
+Send within two hours of the sales call. Include the payment link.
+
+> Subject: ConversionSurgery &mdash; what we covered
+>
+> [Name],
+>
+> Good talking today. Here&apos;s a quick summary:
+>
+> - [One sentence on what resonated most &mdash; estimate follow-up, reactivation, or response speed based on their profile]
+> - First month is completely free. Month-to-month after that, cancel anytime.
+> - Next step: [payment link] &mdash; takes 60 seconds. Once that&apos;s done, I&apos;ll schedule your 30-minute onboarding call and your number goes live within 24 hours.
 >
 > If you have questions, reply here or text [your number].
 >
 > [Your name]
+
+**Text follow-up if no card after 24 hours:**
+
+&gt; Hey [Name] &mdash; just checking in from yesterday. Here&apos;s the link to get started whenever you&apos;re ready: [payment link]. First month is free, and I&apos;ll have your number live within 24 hours of setup. No rush.
+
+**Final follow-up at Day 3 (if still no card):**
+
+&gt; Last nudge from me on this &mdash; the link is here if you want to get started: [payment link]. If the timing isn&apos;t right, totally understand. Just let me know either way.
+
+Do not send more than 2 follow-ups for payment. If they don&apos;t convert by Day 7, move them to a &quot;warm nurture&quot; list and check back in 30 days.
 
 Adjust the middle bullet to the specific objection they raised. If they were skeptical about AI quality, link to the sample conversation in the playbook and paste it into the email. If they were referral-heavy, lean into the estimate follow-up line.
 
@@ -399,6 +623,12 @@ Adjust the middle bullet to the specific objection they raised. If they were ske
 | AI mode advances to Smart Assist or Autonomous without operator action | System (automatic) | AI auto-progression cron — contractor receives SMS notification |
 | Contractor gets email instead of SMS for booking | You explain | Email fallback (Section 18) |
 | Lead or contractor asks about STOP vs. permanent block | You handle | DNC vs opt-out (Section 19) |
+| Homeowner calls contractor&apos;s number, contractor answers | Contractor (normal) | System never sees it. Contractor handles directly. |
+| Homeowner calls contractor&apos;s number, contractor misses | System (automatic) | Call forwards to Twilio. Voice AI answers + text-back fires (Section 23) |
+| Contractor&apos;s call forwarding breaks silently | System alerts operator | Zero-activity alert fires after 48hr of no calls (Section 23) |
+| Contractor asks &ldquo;can the AI just answer everything?&rdquo; | You offer Phase 3 | Progressive phone strategy (Section 23) |
+| Contractor wants to port their number | You initiate | Number porting process (Section 23, Day 30+) |
+| Family member calls business number, contractor misses | Voice AI handles | AI takes a message, texts contractor: &ldquo;Personal call, not a lead&rdquo; (Section 23) |
 
 ---
 
@@ -605,9 +835,191 @@ Know these so you never overpromise in a sales conversation.
 | What contractors might expect | What actually happens | How to frame it |
 |-------------------------------|----------------------|-----------------|
 | &ldquo;24/7 instant response&rdquo; | Messages queue during quiet hours (9 PM - 10 AM). Response at 10 AM. | &ldquo;Monitors 24/7, responds during compliant hours. Your lead gets a response before any competitor &mdash; first thing in the morning.&rdquo; |
-| &ldquo;It replaces my receptionist&rdquo; | Handles SMS/forms. Does not answer live phone calls unless Voice AI add-on is enabled. | &ldquo;It handles text-based inquiries. For calls, we offer Voice AI as an add-on &mdash; or missed calls get an instant text-back.&rdquo; |
+| &ldquo;It replaces my receptionist&rdquo; | Handles SMS/forms AND answers missed calls via Voice AI (included by default). Does not replace a full-time receptionist for all call types. | &ldquo;It handles text inquiries and answers calls you miss with a professional greeting. Think of it as a receptionist who only covers when you can&apos;t pick up.&rdquo; |
 | &ldquo;It does my marketing&rdquo; | No lead generation. No Google Ads, SEO, social media. It converts leads you already get. | &ldquo;We handle what happens after someone reaches out. Getting them to reach out is your marketing &mdash; that&apos;s a different service.&rdquo; |
 | &ldquo;AI will know everything about my business&rdquo; | AI knows what&apos;s in the KB. Week 1 will have gaps. | &ldquo;The AI starts with what you tell it on the onboarding call. It gets smarter every week as we fill gaps. By Week 3 it handles 90%+ of questions.&rdquo; |
 | &ldquo;I never have to do anything&rdquo; | Contractor must: flag estimates, mark wins/losses, respond to escalations, approve review responses occasionally. Under 15 min/week. | &ldquo;You do 4 things: flag when you send a quote (one text), mark when you win or lose a job (one tap), respond when the AI escalates something to you, and approve review responses. Total: under 15 minutes a week.&rdquo; |
 | &ldquo;It integrates with Jobber&rdquo; | Webhook fires on lead status change. Contractor can connect via Zapier. No native integration. | &ldquo;We fire a webhook when leads change status. If you use Zapier, you can connect it to Jobber in 5 minutes. We don&apos;t have a native Jobber plugin yet.&rdquo; |
 | &ldquo;Guaranteed results&rdquo; | Guarantee is 5 engagements in 30 days (Layer 1) and 1 attributed project in 90 days (Layer 2). Both are platform-verified, not subjective. | &ldquo;The guarantee is specific: 5 real lead conversations in 30 days, or your first month is free. One project the system helped you win in 90 days, or your most recent month is refunded. Both are verified from our logs, not my opinion.&rdquo; |
+
+---
+
+## 23. Phone Number Handling
+
+### How It Works
+
+The contractor keeps their existing business number (XYZ). A local Twilio number (ABC, same 403/780 area code) is provisioned before the onboarding call. Conditional call forwarding routes missed calls from XYZ to ABC.
+
+```
+Homeowner calls XYZ (contractor&apos;s number on Google/truck/cards)
+        |
+Contractor&apos;s phone rings (3 rings, ~15-20 sec)
+        |
+   +----+----+
+   |         |
+ANSWERED   NOT ANSWERED
+   |              |
+Normal call.   Forwards to Twilio (ABC)
+System never        |
+sees it.       +----+----+
+               |         |
+         Voice AI    5-sec text-back
+         picks up    fires to homeowner
+               |         |
+         Qualifies    &quot;Hi, this is [Business]
+         lead, books  - you just called us at
+         appointment  [XYZ]. What project are
+               |      you looking at?&quot;
+         Contractor
+         gets summary
+         text
+```
+
+### What the Contractor Experiences
+
+- **Their phone rings normally.** If they answer, it&apos;s a regular call &mdash; the system is invisible.
+- **If they miss a call:** They see a missed call notification AND a text from the platform: &quot;New lead from [number] &mdash; Voice AI handled it. Estimate booked for Thursday.&quot;
+- **Family/personal calls:** Their phone rings first. They answer. The AI only activates on missed calls. If a family member does reach the AI, it takes a message and texts the contractor: &quot;Personal call from [number] &mdash; not a lead.&quot;
+
+### What the Homeowner Experiences
+
+- They call the contractor&apos;s number from Google. It rings 3 times.
+- If answered: normal conversation with the contractor.
+- If not answered: Voice AI picks up with a professional greeting using the contractor&apos;s business name. Qualifies the project, answers questions from the KB, books an estimate.
+- AND: they get a text-back from a local number within 5 seconds, referencing the number they called.
+
+### Carrier-Specific Setup
+
+All major Alberta carriers use the same codes:
+
+| Carrier | Conditional Forward | Unconditional | Cancel |
+|---------|-------------------|---------------|--------|
+| Rogers/Fido | `*61*[number]*11*20#` | `*72[number]` | `*73` |
+| Telus/Koodo | `*61*[number]*11*20#` | `*72[number]` | `*73` |
+| Bell/Virgin | `*61*[number]*11*20#` | `*72[number]` | `*73` |
+| Shaw/Freedom | `*61*[number]*11*20#` | `*72[number]` | `*73` |
+
+If `*61` syntax fails on their carrier, fall back to `*72` (unconditional &mdash; all calls go to Twilio, phone never rings). Some carriers require calling support to enable conditional forwarding.
+
+### VoIP / PBX Decision Tree
+
+```
+&quot;Is your business number a cell phone, landline, or office system?&quot;
+  Cell        -> *61 setup (standard)
+  Landline    -> *61 with confirmation tones
+  VoIP/PBX    -> Admin portal forwarding (need login)
+  Google Voice -> Cannot forward. Use Twilio number directly.
+```
+
+### Voicemail Conflict (Critical)
+
+Carrier voicemail and conditional forwarding race each other &mdash; whichever has a shorter timeout wins. If voicemail answers before the forward triggers, the system never sees the call.
+
+**Fix:** Disable carrier voicemail during onboarding. Common codes: `##004#` (deactivates all conditional forwards + voicemail on most GSM carriers) then re-enable just the forward. Or call carrier support. Test with a real call before considering setup complete.
+
+### SMS Gap
+
+SMS to XYZ does NOT forward &mdash; this is a structural telecom limitation. Texts sent to the contractor&apos;s existing number go to their personal phone, not the system. Acknowledge this openly:
+
+&gt; &quot;Texts to your old number still go to your phone. The system handles calls and sends follow-ups from its own local number. Most leads call first anyway &mdash; and once they&apos;re in the system, everything is on the platform.&quot;
+
+### Progressive Strategy (Phase 1 &rarr; 2 &rarr; 3)
+
+| Phase | When | What Changes | Why |
+|:-----:|------|-------------|-----|
+| 1 | Day 0 | Conditional forward (*61). Phone rings first, AI catches misses. | Lowest friction. Contractor stays in control. Trust is earned. |
+| 2 | Day 14+ | Shorter ring window (10 sec / 2 rings) OR Twilio-first ring-through (all calls logged). | Data from Phase 1 shows hang-up losses. Contractor is ready to tighten. |
+| 3 | Day 30+ (optional) | Full AI receptionist. Voice AI answers all calls. Live transfer for qualified leads. | For contractors who want to focus on building, not answering phones. &quot;Like hiring a receptionist.&quot; |
+
+Phase 2 and 3 are offered, never pushed. Let the Day 14 data make the argument.
+
+### Optional: Number Porting (Day 30+)
+
+If the contractor wants XYZ itself to be the Twilio number (full voice + SMS, no forwarding dependency):
+
+1. Collect: carrier name, account number, PIN, billing address
+2. Sign LOA (digital signature OK)
+3. Submit port via Twilio (5-12 business days in Canada)
+4. **Warn about carrier confirmation SMS:** &quot;You&apos;ll get a text from your carrier in a few days. Reply YES within 90 minutes or the port fails and we restart.&quot;
+5. During port: conditional forward stays active as bridge
+6. After port: XYZ is Twilio. Cancel *61/*72. Update Google listing if needed.
+
+**Do NOT port for clients 1-5** unless they specifically request it. The risk of a port failure damaging trust outweighs the benefit.
+
+**Cancellation safeguard:** Service agreement includes: &quot;Upon cancellation, we will port your number back to any carrier you specify within 10 business days, at no charge.&quot;
+
+### Monitoring
+
+Build a zero-activity alert: if a client with prior call activity shows zero inbound for 48+ hours, send the operator an SMS alert. This catches silent forwarding failures before the contractor notices.
+
+---
+
+## 24. ICP Psychology &amp; Sales Language
+
+### Pain Hierarchy (Use This Order in Every Conversation)
+
+| Rank | Pain | Role | Intensity |
+|:----:|------|------|:---------:|
+| 1 | **Missed calls on job sites** | This SELLS. Open with it. | 10/10 |
+| 2 | **Dead quotes going silent** | This RETAINS. Deliver it Day 0-1. | 8/10 |
+| 3 | **Burned by agencies before** | Not sellable &mdash; it&apos;s a trust filter. Neutralize, don&apos;t pitch against. | 9/10 |
+| 4 | **No Google reviews** | Value stacking for Week 2-3. | 6/10 |
+| 5 | **No visibility into business** | Spouse buy-in via bi-weekly reports. | 4/10 |
+
+### Words to AVOID (Hard Rule)
+
+Never say these to a contractor. They trigger agency trauma, tech anxiety, or identity threat.
+
+| Never Say | Why | Say Instead |
+|-----------|-----|-------------|
+| &quot;AI&quot; | They think ChatGPT hallucinations. | &quot;The system&quot; or &quot;your assistant&quot; |
+| &quot;Automation&quot; | Sounds like a tool they have to manage. | &quot;It runs in the background&quot; |
+| &quot;Platform&quot; | Sounds like SaaS. They hate SaaS. | &quot;The service&quot; or just describe what it does |
+| &quot;Algorithm&quot; | Means nothing to them. | Skip entirely |
+| &quot;Automated follow-up&quot; | Sounds like spam. | &quot;Your leads get followed up on&quot; |
+| &quot;Twilio&quot; | Vendor name they don&apos;t know. | &quot;Your dedicated business line&quot; |
+| &quot;Bot&quot; | Sounds cheap and unreliable. | &quot;Your scheduling assistant&quot; |
+
+### Words to USE
+
+| Say This | Why It Works |
+|----------|-------------|
+| &quot;Your leads get followed up on even when you&apos;re mid-job&quot; | Paints the picture. No jargon. |
+| &quot;Texts back missed calls in 5 seconds&quot; | Specific, tangible, measurable |
+| &quot;Month-to-month, cancel anytime&quot; | Neutralizes agency trauma immediately |
+| &quot;Runs in the background&quot; | No management burden implied |
+| &quot;You built the estimate. You shouldn&apos;t have to beg for the job.&quot; | Names the dignity issue of follow-up |
+| &quot;Like having a receptionist who answers on the first ring&quot; | Mental model they understand |
+
+### Framing Rules
+
+- **Additive, not corrective:** &quot;This doesn&apos;t replace what you&apos;re doing. It catches what falls through the cracks.&quot; Never imply they&apos;re doing something wrong.
+- **Guarantee before price, every time:** State the guarantee first, then the cost. &quot;If we don&apos;t recover at least 5 real leads in 30 days, you don&apos;t pay. The service is $1,000/month after the free first month.&quot;
+- **Loss frame for urgency, gain frame for aspiration:** &quot;You left $20K on the table last month from missed calls&quot; (loss) &rarr; &quot;What would a full calendar through winter look like?&quot; (gain).
+- **Externalize the problem:** &quot;The follow-up gap isn&apos;t a contractor problem &mdash; it&apos;s a capacity problem. You can&apos;t text leads from a roof.&quot; Preserve their identity as a competent tradesman.
+
+### The Contractor&apos;s 5 Questions (Answer All Before They Ask)
+
+Every contractor is running these through their head during the pitch:
+
+1. &quot;Is this person going to waste my time and money like the last agency?&quot; &rarr; Month-to-month, cancel anytime. Guarantee.
+2. &quot;Does this person actually understand my business?&quot; &rarr; Mention their trade, city, and a specific detail from their Google listing.
+3. &quot;Is this going to make me look more professional or less?&quot; &rarr; Show the message copy. &quot;Sound like you?&quot;
+4. &quot;Is this going to require me to manage another thing?&quot; &rarr; &quot;You do nothing different. 15 minutes a week, max.&quot;
+5. &quot;Can I get out if it doesn&apos;t work?&quot; &rarr; &quot;Text me and I cancel it. That&apos;s it.&quot;
+
+### The Referral Story (What Spreads)
+
+&gt; &quot;I was on a job, missed a call, and 5 seconds later the system texted the homeowner. But the crazy part &mdash; he also found 12 old quotes in my phone. Three replied. One&apos;s a $40K kitchen. I paid five grand to a marketing company last year for nothing. This costs a thousand and it&apos;s already paid for itself twice over.&quot;
+
+**Why this spreads:** Specific dollar amount, zero-effort narrative, competitor contrast, no jargon, ends with a referral action.
+
+### Value Stacking Timeline (Set These Expectations)
+
+| Time | What Happens | Contractor Feels |
+|------|-------------|-----------------|
+| **8 min** (on the call) | Live text-back demo, Voice AI demo | &quot;OK, this actually does something&quot; |
+| **24-48 hours** | First replies from dead quote reactivation | &quot;That guy from March just texted back!&quot; |
+| **3-5 days** | Estimate follow-up sequence firing on new quotes | &quot;It just... does it for me?&quot; |
+| **7-14 days** | First automated review request, new Google review | &quot;My wife is going to love this&quot; |
+| **14 days** | First bi-weekly report with pipeline value | &quot;This is paying for itself&quot; |

@@ -89,11 +89,11 @@ function toLocalDateTimeValue(value: string | null): string {
 }
 
 function statusBadgeClass(status: GapStatus): string {
-  if (status === 'verified') return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-  if (status === 'resolved') return 'bg-blue-100 text-blue-800 border-blue-200';
-  if (status === 'blocked') return 'bg-red-100 text-red-800 border-red-200';
-  if (status === 'in_progress') return 'bg-amber-100 text-amber-800 border-amber-200';
-  return 'bg-slate-100 text-slate-700 border-slate-200';
+  if (status === 'verified') return 'bg-[#E8F5E9] text-[#3D7A50] border-[#3D7A50]/20';
+  if (status === 'resolved') return 'bg-[#E3E9E1] text-[#1B2F26] border-[#1B2F26]/20';
+  if (status === 'blocked') return 'bg-[#FDEAE4] text-[#C15B2E] border-[#C15B2E]/20';
+  if (status === 'in_progress') return 'bg-[#FFF3E0] text-[#C15B2E] border-[#C15B2E]/20';
+  return 'bg-muted text-muted-foreground border-border';
 }
 
 function formatDate(value: string | null): string {
@@ -327,7 +327,7 @@ export default function KnowledgeGapQueue({ clientId, entries }: Props) {
             </div>
           )}
 
-          {error && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
+          {error && <div className="rounded-md border border-[#C15B2E]/20 bg-[#FDEAE4] px-3 py-2 text-sm text-[#C15B2E]">{error}</div>}
 
           {loading ? (
             <p className="text-sm text-muted-foreground py-8">Loading knowledge gaps...</p>
@@ -365,18 +365,18 @@ export default function KnowledgeGapQueue({ clientId, entries }: Props) {
                       <td className="px-3 py-3 align-top">
                         <Badge className={statusBadgeClass(row.status)}>{row.status}</Badge>
                         {row.reviewRequired && (
-                          <p className="text-xs text-amber-700 mt-1">review required</p>
+                          <p className="text-xs text-[#C15B2E] mt-1">review required</p>
                         )}
                       </td>
                       <td className="px-3 py-3 align-top">{row.ownerName ?? 'Unassigned'}</td>
                       <td className="px-3 py-3 align-top">
-                        <span className={row.priorityScore >= 8 ? 'font-semibold text-red-700' : ''}>
+                        <span className={row.priorityScore >= 8 ? 'font-semibold text-[#C15B2E]' : ''}>
                           {row.priorityScore}/10
                         </span>
                       </td>
                       <td className="px-3 py-3 align-top">
                         <p>{formatDate(row.dueAt)}</p>
-                        {row.isStale && <p className="text-xs text-red-700">stale</p>}
+                        {row.isStale && <p className="text-xs text-[#C15B2E]">stale</p>}
                       </td>
                       <td className="px-3 py-3 align-top text-right">
                         <div className="flex justify-end gap-2">

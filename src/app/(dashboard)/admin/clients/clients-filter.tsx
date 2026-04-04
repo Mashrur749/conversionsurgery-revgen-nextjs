@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import Link from 'next/link';
+import type { Client } from '@/db/schema';
 
 interface Props {
-  allClients: any[];
+  allClients: Client[];
 }
 
 type FilterStatus = 'all' | 'active' | 'pending' | 'cancelled';

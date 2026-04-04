@@ -1,7 +1,7 @@
 # ConversionSurgery — Client-Facing Approved Copy
 
-Version 1.6
-Date: April 2, 2026
+Version 1.8
+Date: April 4, 2026
 Status: Approved for use in proposals, agreements, emails, leave-behinds, and website copy
 
 ---
@@ -49,12 +49,12 @@ The following lines are approved for live sales conversations, landing page head
 > **The Revenue Recovery Engine**
 >
 > - **Near-Instant Lead Response** — Every inquiry (call, text, or web form) gets a near-instant response during permitted hours. The system monitors around the clock and responds within seconds during compliant windows.
-> - **AI Conversation Agent** — Not canned auto-replies. An AI configured with your business information that has real conversations, answers questions about your services, qualifies the project, and books estimate appointments into your calendar. Syncs with Google Calendar so your schedule stays up to date and double-bookings are prevented automatically.
-> - **Estimate Follow-Up** — When you flag an estimate as sent, we trigger a multi-touch follow-up sequence over several weeks. Personalized, not pushy. Designed for the long decision cycles renovation projects actually take.
-> - **Appointment Confirmation & No-Show Recovery** — Reminders before every appointment. If they miss it, the AI follows up same day and attempts to rebook.
+> - **Intelligent Conversation Agent** — Not canned auto-replies. A system configured with your business information that has real conversations, answers questions about your services, qualifies the project, and books estimate appointments into your calendar. Syncs with Google Calendar so your schedule stays up to date and double-bookings are prevented automatically.
+> - **Estimate Follow-Up** — When you flag an estimate as sent, we trigger a 4-touch follow-up sequence over 14 days. Personalized, not pushy. Designed for the decision cycles renovation projects actually take.
+> - **Appointment Confirmation & No-Show Recovery** — Reminders before every appointment. If they miss it, the system follows up same day and attempts to rebook.
 > - **Payment Collection** — Automated deposit and invoice reminders with one-click payment links.
 > - **Review Generation** — After every completed job, an automated review request with a direct link to Google.
-> - **Dormant Lead Reactivation** — Past inquiries and old estimates that went cold get re-engaged automatically with AI-personalized follow-up.
+> - **Dormant Lead Reactivation** — Past inquiries and old estimates that went cold get re-engaged with personalized follow-up.
 >
 > **Unlimited Conversations and Messaging**
 > No message caps. No overage charges. No surprise bills. The system handles as many leads and conversations as your business generates.
@@ -65,7 +65,7 @@ The following lines are approved for live sales conversations, landing page head
 >
 > Includes up to 3 dedicated phone numbers and up to 5 team members. Additional numbers: $15/month each. Additional team members: $20/month each.
 >
-> **Voice AI (Optional Add-On):** Available at $0.15/minute. This is a separate, opt-in feature — it will never appear on your bill unless you explicitly enable it.
+> **Voice — Included:** When a lead calls and you can&apos;t answer, the system picks up, takes the inquiry, qualifies the project, and captures their details. No per-minute charges. No extra fees. Included in your plan.
 
 ### Day-One Activation
 
@@ -74,7 +74,7 @@ The following lines are approved for live sales conversations, landing page head
 > - **Missed Call Text-Back** — Every missed call gets an automatic text during permitted hours, capturing leads that would otherwise disappear.
 > - **Revenue Leak Audit** — Within 48 business hours, we deliver a personalized one-page assessment of where leads are falling through in your business. Your numbers, not generic stats.
 >
-> By the end of Week 1, the AI is configured with your business information and handling web form responses. By Week 2, the AI is in smart assist mode — it generates responses and auto-sends after a 5-minute window so you can review if you're available, but speed is never sacrificed. By Week 3, the system runs fully on autopilot.
+> By the end of Week 1, the system is configured with your business information and handling web form responses. By Week 2, smart assist mode is active — the system generates responses and auto-sends after a 5-minute window so you can review if you&apos;re available, but speed is never sacrificed. By Week 3, the system runs fully on autopilot.
 
 ### Quarterly Growth Blitz
 
@@ -92,6 +92,9 @@ The following lines are approved for live sales conversations, landing page head
 > Every two weeks, you receive a performance report showing exactly what the system did: leads captured, response times, conversations handled, estimates followed up, appointments booked, and revenue impact. Each report includes auto-tracked pipeline activity — leads the system responded to, missed calls caught, appointments booked, dead quotes re-engaged, and a probable pipeline value — all calculated without any input from you. Each report also includes an estimate of what would have happened without the system — so the value of the service is always visible.
 >
 > Note on every report: "Actual outcomes vary by market, close process, and lead quality."
+>
+> **Weekly Pipeline Update**
+> Every Monday morning, you receive a text message on your phone showing exactly where your pipeline stands: leads captured, appointments booked, probable pipeline value in dollars, confirmed revenue, and how many leads need your attention. No login required. The value shows up on your phone every week.
 
 ### Works for Referral-Driven Contractors Too
 
@@ -100,20 +103,20 @@ The following lines are approved for live sales conversations, landing page head
 ### Managed Service — What We Handle vs. What You Do
 
 > **We handle:**
-> AI setup and configuration, follow-up sequence configuration, performance monitoring, message optimization, compliance (CASL/CRTC), technical maintenance, bi-weekly reporting, and quarterly strategic campaigns.
+> System setup and configuration, follow-up sequence configuration, performance monitoring, message optimization, compliance (CASL/CRTC), technical maintenance, bi-weekly reporting, and quarterly strategic campaigns.
 >
 > **Your only responsibilities:**
 >
 > | What you do                                                                                          | Time required             |
 > | ---------------------------------------------------------------------------------------------------- | ------------------------- |
 > | One onboarding call                                                                                  | 30 minutes, once          |
-> | Review AI responses during Week 2 (optional — auto-sends after 5 min if you don't)                   | 10-15 min/day for ~5 days |
+> | Review responses during Week 2 (optional — auto-sends after 5 min if you don&apos;t)                     | 10-15 min/day for ~5 days |
 > | Flag estimates as sent (reply to a notification text, send a keyword SMS, or click in the dashboard) | 10 seconds each           |
 > | Mark jobs as won or lost                                                                             | 30 seconds each           |
-> | Respond when the AI escalates to you (complex questions or high-value opportunities)                 | As needed                 |
+> | Respond when the system escalates to you (complex questions or high-value opportunities)             | As needed                 |
 > | Read your bi-weekly report                                                                           | 5 minutes                 |
 >
-> **Total ongoing time: under 15 minutes per week once the system is calibrated (typically by Week 3).** During the first two weeks, expect 30-45 minutes per week as we fine-tune the AI to your business.
+> **Total ongoing time: under 15 minutes per week once the system is calibrated (typically by Week 3).** During the first two weeks, expect 30-45 minutes per week as we fine-tune the system to your business.
 
 ---
 
@@ -127,11 +130,11 @@ The following lines are approved for live sales conversations, landing page head
 >
 > - **Month 1 (free):** We set everything up, import your old quotes, and run the system. You see results before you pay. Billing starts on Day 31.
 > - **30-Day Proof of Life:** If the system doesn&apos;t deliver at least 5 Qualified Lead Engagements in your free month, you owe nothing and we part as friends.
-> - **90-Day Revenue Recovery Guarantee:** If after 90 days (counting from signup), you can&apos;t point to at least one project the system helped you win, we refund your most recent month&apos;s payment. You keep a full export of every lead and conversation we captured. You leave with everything.
+> - **90-Day Revenue Recovery Guarantee:** If after 90 days (counting from signup), the system hasn&apos;t booked at least one estimate appointment from a lead that had previously gone cold &mdash; or generated at least $5,000 in probable pipeline value from system-engaged leads &mdash; we refund your most recent month&apos;s payment. You keep a full export of every lead and conversation we captured. You leave with everything.
 >
 > A Qualified Lead Engagement means: an inbound inquiry (call, form, or text) that received an automated response from our system, where the lead replied at least once. All engagements are visible in your dashboard with timestamps and full conversation logs.
 >
-> An Attributed Project Opportunity means: a lead that received automated response or follow-up from the system and showed engagement after that system action (replied, booked, or resumed conversation), where our platform logs show the system engaged the lead through automated response or follow-up before the opportunity progressed.
+> An Attributed Result means either: (a) an estimate appointment booked through the system from a lead that was previously unresponsive &mdash; visible in your calendar with full conversation log, or (b) $5,000 or more in probable pipeline value from leads the system engaged &mdash; calculated automatically from appointments booked and quotes re-engaged, visible in your dashboard and bi-weekly reports.
 >
 > **Volume Condition**
 >
@@ -207,10 +210,10 @@ The following must appear in the service agreement:
 > - Consent is tracked for every lead — we never message anyone without proper authorization
 > - Opt-outs are honored instantly — when someone texts STOP, all messaging stops immediately
 > - Quiet hours are enforced — no messages during restricted windows
-> - Your business is identified in every AI conversation
+> - Your business is identified in every conversation
 > - A full audit trail is maintained for every message sent and every compliance decision made
 >
-> Your reputation is protected. The AI has strict guardrails: it will never make pricing promises, never guess at things it doesn't know, never be pushy. If a conversation gets complex or the AI isn't confident, it escalates to you or your team immediately.
+> Your reputation is protected. The system has strict guardrails: it will never make pricing promises, never guess at things it doesn&apos;t know, never be pushy. If a conversation gets complex or the system isn&apos;t confident, it escalates to you or your team immediately.
 
 ---
 
@@ -227,7 +230,7 @@ Use this when scope questions come up. Present as a straightforward boundary, no
 > - SEO services
 > - Project management or accounting software
 > - Custom workflow builds beyond the standard automation suite
-> - 24/7 live human support (the AI monitors around the clock; human escalation is available during business hours)
+> - 24/7 live human support (the system monitors around the clock; human escalation is available during business hours)
 
 ---
 
@@ -237,19 +240,21 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 
 > **Here's what you get when you start with ConversionSurgery:**
 >
-> **The Revenue Recovery Engine** — Every lead gets a near-instant response during permitted hours. AI configured with your business information that has real conversations, books appointments into your Google Calendar, and follows up on every estimate for weeks. Payment collection, review generation, dormant lead reactivation. Unlimited conversations and messaging. All managed by us.
+> **The Revenue Recovery Engine** — Every lead gets a near-instant response during permitted hours. A system configured with your business information that has real conversations, books appointments into your Google Calendar, and follows up on every estimate with a 4-touch sequence over 14 days. When leads call and you can&apos;t answer, the system picks up and captures the inquiry. Payment collection, review generation, dormant lead reactivation. Unlimited conversations and messaging. All managed by us.
 >
 > **Your Own Dedicated Business Number + Lead CRM** — Everything in one place. Every conversation, every lead, every status. Separate from your personal phone.
 >
-> **Day-One Activation** — Your number is live and catching missed calls within 24 hours. Before the full AI is even configured, you're already capturing leads you'd have lost. Plus a personalized Revenue Leak Audit showing exactly where money is falling through your business.
+> **Day-One Activation** — Your number is live and catching missed calls within 24 hours. Before the full system is even configured, you&apos;re already capturing leads you&apos;d have lost. Plus a personalized Revenue Leak Audit showing exactly where money is falling through your business.
 >
 > **Quarterly Growth Blitz** — Every 90 days, a new strategic campaign: dormant client reactivation, review acceleration, pipeline building for busy season, annual strategy review. This isn't static — it gets more valuable every quarter.
 >
 > **Bi-Weekly Performance Scoreboard** — Every two weeks, a report showing what the system did, how much revenue it impacted, and what would have happened without it. Full transparency.
 >
+> **Weekly Pipeline Update** &mdash; Every Monday, a text on your phone showing your pipeline in dollars. No login required.
+>
 > **Complete Done-For-You Service** — We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week once calibrated.
 >
-> **First Month Free + 90-Day Guarantee** &mdash; Your first month costs nothing. The system runs for 30 days before you pay a dollar. If after 90 days you can&apos;t point to at least one project this system helped you win, we refund your last month and you keep every lead and conversation we captured. If your lead volume runs below 15/month, guarantee windows extend proportionally &mdash; you&apos;re never penalized for a slow period.
+> **First Month Free + 90-Day Guarantee** &mdash; Your first month costs nothing. The system runs for 30 days before you pay a dollar. If after 90 days the system hasn&apos;t booked at least one estimate from a cold lead or generated $5,000 in probable pipeline, we refund your last month and you keep every lead and conversation we captured. If your lead volume runs below 15/month, guarantee windows extend proportionally &mdash; you&apos;re never penalized for a slow period.
 >
 > **Month-to-month, no contract, no setup fee, no message limits, no overage charges.** We earn your business every single month.
 >
@@ -263,8 +268,8 @@ Use this as the complete offer summary in proposals, pitch decks, or leave-behin
 
 The following are approved written answers for the questions prospects ask most frequently. Use these verbatim in email follow-ups, proposal appendices, and FAQ sections.
 
-> **What if the AI says something wrong to a customer?**
-> The system runs in a supervised review mode for the first two weeks — it generates responses and sends them after a five-minute window, giving you time to review. When the AI encounters a question it cannot answer confidently, it tells the lead it will follow up rather than guessing. Inaccuracies are flagged immediately and corrected in the AI&apos;s knowledge base.
+> **What if the system says something wrong to a customer?**
+> The system runs in a supervised review mode for the first two weeks &mdash; it generates responses and sends them after a five-minute window, giving you time to review. When the system encounters a question it cannot answer confidently, it tells the lead it will follow up rather than guessing. Inaccuracies are flagged immediately and corrected in the knowledge base.
 
 > **I tried a similar service before and it didn&apos;t work. How is this different?**
 > ConversionSurgery is a managed service, not software. We set it up, run it, monitor it, and fix it when something&apos;s off. You don&apos;t manage anything. Your first month is free &mdash; you see proof before you pay a dollar.
@@ -276,7 +281,10 @@ The following are approved written answers for the questions prospects ask most 
 > No lead is ignored. The system monitors around the clock and queues responses for delivery at the next compliant window (10 AM). Evening form fills and missed calls receive a response first thing the following morning — typically before any competitor has responded.
 
 > **Can I cancel if it&apos;s not working?**
-> Yes. Month-to-month service, cancel with 30 days&apos; written notice, no penalties. You also receive a full export of every lead and conversation we captured. The 90-day guarantee provides an additional safety net — if after 90 days you cannot identify a project the system helped you win, your most recent month is refunded.
+> Yes. Month-to-month service, cancel with 30 days&apos; written notice, no penalties. You also receive a full export of every lead and conversation we captured. The 90-day guarantee provides an additional safety net &mdash; if after 90 days the system hasn&apos;t booked at least one estimate appointment from a cold lead or generated $5,000 in probable pipeline, your most recent month is refunded.
+
+> **How many contractors do you work with in my area?**
+> We limit the number of contractors we work with per trade per city &mdash; typically one to three &mdash; to avoid conflicts and to give each client the best possible results. If your trade and area are available, we&apos;ll confirm that during the initial conversation.
 
 ---
 
@@ -291,9 +299,11 @@ The following are approved written answers for the questions prospects ask most 
 | 1.4     | April 1, 2026     | GAP-01: Added Section 10 (Common Questions) with approved written answers for the top 5 prospect objections. Added referral contractor positioning paragraph to Section 2. |
 | 1.5     | April 2, 2026     | First month free: restructured from "pay first, refund if fails" to "free Month 1, billing starts Day 31." Guarantee language rewritten. Section 3, 4, 9, and FAQ updated. |
 | 1.6     | April 2, 2026     | Section 2 (Bi-Weekly Performance Scoreboard): updated to describe auto-tracked pipeline proof metrics in the report (leads responded to, missed calls caught, appointments booked, probable pipeline value). Additive factual change — no guarantee, pricing, or compliance language changed. |
+| 1.7     | April 4, 2026     | Four changes from competitive offer analysis: (1) Voice AI changed from optional add-on to included in base price. (2) 90-day guarantee tightened: now triggers on "1 booked estimate from a cold lead OR $5,000 probable pipeline" instead of vague "project you can point to." Attribution definition updated to "Attributed Result." (3) Weekly Pipeline Update added to Section 2 and Section 9 — Monday SMS with dollar pipeline values. (4) Capacity/exclusivity FAQ added: "one to three contractors per trade per city." Section 9 full offer updated to reflect voice + guarantee + weekly SMS. |
+| 1.8     | April 4, 2026     | Language alignment: replaced "AI" with "the system" throughout all client-facing copy per ICP psychology research (7/10 agents: contractors associate "AI" with chatbots they&apos;ve been burned by). "AI Conversation Agent" → "Intelligent Conversation Agent." "Voice AI" → "Voice." All action descriptions now use "the system" instead of "the AI." FAQ question reframed from "What if the AI says something wrong" to "What if the system says something wrong." Estimate follow-up in Section 9 now specifies "4-touch sequence over 14 days." |
 
 ---
 
-_ConversionSurgery — Client-Facing Approved Copy v1.6_
+_ConversionSurgery — Client-Facing Approved Copy v1.8_
 _Source: Grand Slam Offer Architecture v2.1 + Quality Review_
 _April 2026_

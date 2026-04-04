@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PhoneNumberManager } from './phone-number-manager';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -32,6 +33,10 @@ export default async function PhoneNumberPage({ params }: Props) {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Clients', href: '/admin/clients' },
+        { label: 'Phone Management' },
+      ]} />
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Phone Number</h1>

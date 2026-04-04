@@ -1345,9 +1345,8 @@ help_articles               nps_surveys
 | --------------------------------------------- | ---------------------------------- |
 | `/api/webhooks/twilio/sms`                    | Inbound SMS handling               |
 | `/api/webhooks/twilio/voice`                  | Inbound call routing               |
-| `/api/webhooks/twilio/voice/ai`               | AI voice agent                     |
-| `/api/webhooks/twilio/voice/ai/gather`        | DTMF input capture                 |
-| `/api/webhooks/twilio/voice/ai/transfer`      | Call transfer                      |
+| `/api/webhooks/twilio/voice/ai`               | AI voice agent (ConversationRelay) |
+| `/api/webhooks/twilio/voice/ai/session-end`   | Post-call actions + transfer       |
 | `/api/webhooks/twilio/voice/ai/dial-complete` | Dial completion status             |
 | `/api/webhooks/twilio/ring-connect`           | Ring group notification            |
 | `/api/webhooks/twilio/ring-result`            | Ring group result                  |

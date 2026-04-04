@@ -1,0 +1,1 @@
+ALTER TABLE "clients" ALTER COLUMN "voice_enabled" SET DEFAULT true;

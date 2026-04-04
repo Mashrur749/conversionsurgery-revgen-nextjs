@@ -5,6 +5,7 @@ import { flowTemplates, flowTemplateSteps } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { TemplateEditor } from '@/components/flows/template-editor';
 import { VersionHistory, PublishButton } from './version-history';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -40,6 +41,10 @@ export default async function TemplateEditorPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Flow Templates', href: '/admin/flow-templates' },
+        { label: 'Template' },
+      ]} />
       <TemplateEditor template={template} steps={steps} isNew={isNew} />
       {!isNew && template && (
         <>

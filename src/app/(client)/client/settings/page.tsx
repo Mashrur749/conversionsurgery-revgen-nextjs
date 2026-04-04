@@ -9,6 +9,7 @@ import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 
 import { SettingsTabs } from './settings-tabs';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SummarySettings } from './summary-settings';
 import { NotificationSettingsForm } from './notifications/notification-settings-form';
 import { AiSettingsForm } from './ai/ai-settings-form';
@@ -28,6 +29,7 @@ export default async function ClientSettingsPage() {
       .select({
         twilioNumber: clients.twilioNumber,
         businessName: clients.businessName,
+        serviceModel: clients.serviceModel,
       })
       .from(clients)
       .where(eq(clients.id, session.clientId))
@@ -73,9 +75,13 @@ export default async function ClientSettingsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Dashboard', href: '/client' },
+        { label: 'Settings' },
+      ]} />
       <h1 className="text-2xl font-bold">Settings</h1>
 
-      <SettingsTabs>
+      <SettingsTabs serviceModel={clientData?.serviceModel ?? 'managed'}>
         {{
           general: (
             <div className="space-y-6">

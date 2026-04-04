@@ -128,27 +128,37 @@ export function KbWizard() {
 
   if (result) {
     return (
-      <Card className="border-[#3D7A50]/30 bg-[#E8F5E9] max-w-3xl mx-auto">
-        <CardContent className="py-10 flex flex-col items-center gap-4 text-center">
-          <CheckCircle className="h-10 w-10 text-[#3D7A50]" />
-          <div>
-            <p className="text-lg font-semibold text-[#3D7A50]">
-              Your AI is ready to go
+      <div className="max-w-3xl mx-auto">
+        <Card className="border-[#3D7A50]/30">
+          <CardContent className="py-12 flex flex-col items-center text-center">
+            <div className="h-16 w-16 rounded-full bg-[#E8F5E9] flex items-center justify-center mb-4">
+              <CheckCircle className="h-8 w-8 text-[#3D7A50]" />
+            </div>
+            <h2 className="text-xl font-semibold mb-2">Your AI is ready</h2>
+            <p className="text-muted-foreground max-w-sm mb-1">
+              We&apos;ve configured your AI with your business information. It will use this
+              knowledge to answer homeowner questions accurately.
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {result.created} knowledge base {result.created === 1 ? 'entry' : 'entries'} created. The AI can now answer questions about your business.
+            <p className="text-sm text-muted-foreground mb-6">
+              {result.created} knowledge base{' '}
+              {result.created === 1 ? 'entry' : 'entries'} created.
             </p>
-          </div>
-          <div className="flex gap-3 flex-wrap justify-center">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/client/knowledge">View Knowledge Base</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href="/client">Back to Dashboard</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="flex gap-3 flex-wrap justify-center">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/client/knowledge">View Knowledge Base</Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                style={{ backgroundColor: '#1B2F26' }}
+                className="text-white"
+              >
+                <Link href="/client">Return to Dashboard</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 

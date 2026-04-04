@@ -318,11 +318,34 @@ npm run cf:dev
 
 Visit `http://localhost:8787`.
 
-### Step 5: Deploy
+### Step 5: Deploy Main App
 
 ```bash
 npm run cf:deploy
 ```
+
+### Step 5b: Deploy Voice Agent Worker
+
+The Voice AI uses a separate Cloudflare Worker with Durable Objects (`packages/voice-agent/`).
+
+```bash
+# Set secrets (one-time)
+cd packages/voice-agent
+wrangler secret put ANTHROPIC_API_KEY
+wrangler secret put DATABASE_URL   # Neon connection string
+
+# Deploy
+wrangler deploy
+```
+
+After deployment, note the Worker URL (e.g., `https://voice-agent.your-account.workers.dev`). Set this as the `VOICE_WS_URL` environment variable on the main app:
+
+```bash
+# In the main app's Cloudflare dashboard or .dev.vars
+VOICE_WS_URL=https://voice-agent.your-account.workers.dev
+```
+
+For production, point a custom domain (e.g., `voice-ws.yourdomain.com`) at the Worker via a Cloudflare Workers Route or CNAME.
 
 ### Step 6: Configure External Webhooks
 

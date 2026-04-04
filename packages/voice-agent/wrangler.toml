@@ -1,0 +1,21 @@
+name = "voice-agent"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[durable_objects]
+bindings = [
+  { name = "VOICE_SESSION", class_name = "VoiceSession" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["VoiceSession"]
+
+[vars]
+# Non-secret config
+ENVIRONMENT = "development"
+
+# Secrets (set via `wrangler secret put`):
+# ANTHROPIC_API_KEY
+# DATABASE_URL (Neon connection string)

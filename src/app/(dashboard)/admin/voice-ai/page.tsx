@@ -1,11 +1,12 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
-import { clients } from '@/db/schema';
+import { clients, systemSettings, clientAgentSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { VoiceSettings } from '@/components/settings/voice-settings';
 import { CallHistory } from '@/components/voice/call-history';
 import { VoicePicker } from './voice-picker';
+import { VoiceKillSwitch } from './voice-kill-switch';
 import { ChevronDown } from 'lucide-react';
 
 export default async function VoiceAIPage() {
@@ -16,6 +17,14 @@ export default async function VoiceAIPage() {
   }
 
   const db = getDb();
+
+  const [killSwitchRow] = await db
+    .select({ value: systemSettings.value })
+    .from(systemSettings)
+    .where(eq(systemSettings.key, 'ops.kill_switch.voice_ai'))
+    .limit(1);
+  const isKilled = killSwitchRow?.value === 'true';
+
   const allClients = await db
     .select({
       id: clients.id,
@@ -24,10 +33,20 @@ export default async function VoiceAIPage() {
       voiceMode: clients.voiceMode,
       voiceGreeting: clients.voiceGreeting,
       voiceVoiceId: clients.voiceVoiceId,
+      voiceMaxDuration: clients.voiceMaxDuration,
     })
     .from(clients)
     .where(eq(clients.status, 'active'))
     .orderBy(clients.businessName);
+
+  const agentSettingsRows = await db
+    .select({
+      clientId: clientAgentSettings.clientId,
+      agentTone: clientAgentSettings.agentTone,
+      canDiscussPricing: clientAgentSettings.canDiscussPricing,
+    })
+    .from(clientAgentSettings);
+  const agentSettingsMap = new Map(agentSettingsRows.map(r => [r.clientId, r]));
 
   return (
     <div className="space-y-8">
@@ -37,6 +56,8 @@ export default async function VoiceAIPage() {
           Configure AI-powered voice answering for client phone lines
         </p>
       </div>
+
+      <VoiceKillSwitch isKilled={isKilled} />
 
       {allClients.length === 0 ? (
         <p className="text-muted-foreground">No active clients found.</p>
@@ -50,6 +71,11 @@ export default async function VoiceAIPage() {
                   {client.voiceEnabled && (
                     <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-[#E8F5E9] text-[#3D7A50]">Enabled</span>
                   )}
+                  {agentSettingsMap.get(client.id)?.agentTone && (
+                    <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      {agentSettingsMap.get(client.id)?.agentTone}
+                    </span>
+                  )}
                 </span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
               </summary>
@@ -61,6 +87,9 @@ export default async function VoiceAIPage() {
                       voiceEnabled: client.voiceEnabled ?? false,
                       voiceMode: client.voiceMode ?? 'after_hours',
                       voiceGreeting: client.voiceGreeting ?? '',
+                      voiceMaxDuration: client.voiceMaxDuration ?? 300,
+                      canDiscussPricing:
+                        agentSettingsMap.get(client.id)?.canDiscussPricing ?? false,
                     }}
                   />
                   <VoicePicker

@@ -159,19 +159,54 @@ export async function POST(request: NextRequest) {
       clientId: client.id,
     });
 
-    // Start AI conversation
+    // Start ConversationRelay AI conversation
     const greeting = client.voiceGreeting ||
       `Hi! Thanks for calling ${client.businessName}. How can I help you today?`;
 
-    const appUrlForTwiml = getWebhookBaseUrl(request);
-    const gatherAction = `${appUrlForTwiml}/api/webhooks/twilio/voice/ai/gather`;
-    const transferAction = `${appUrlForTwiml}/api/webhooks/twilio/voice/ai/transfer`;
+    const appUrl = getWebhookBaseUrl(request);
+    const sessionEndAction = `${appUrl}/api/webhooks/twilio/voice/ai/session-end`;
+    const voiceWsUrl = process.env.VOICE_WS_URL;
+
+    if (!voiceWsUrl) {
+      console.error('[Voice AI] VOICE_WS_URL not configured — falling back to direct dial');
+      const forwardTo = client.phone;
+      if (forwardTo) {
+        return twimlResponse(`<Dial timeout="30"><Number>${forwardTo}</Number></Dial>`);
+      }
+      return twimlResponse('<Say>Sorry, no one is available right now.</Say><Hangup/>');
+    }
+
+    // Build ElevenLabs voice string or fall back to Amazon Polly
+    let ttsProvider = 'ElevenLabs';
+    let voiceAttr = 'ZF6FPAbjXT4488VcRRnw-flash_v2_5-1.0_0.7_0.8'; // Default ElevenLabs voice
+    if (client.voiceVoiceId) {
+      voiceAttr = `${client.voiceVoiceId}-flash_v2_5-1.0_0.7_0.8`;
+    } else {
+      // No ElevenLabs voice selected — use Amazon Polly as fallback
+      ttsProvider = 'Amazon';
+      voiceAttr = 'Matthew-Neural';
+    }
+
+    // Build transcription hints from business name + common service terms
+    const hints = escapeXml(client.businessName || '');
 
     return twimlResponse(
-      `<Say voice="Polly.Matthew">${escapeXml(greeting)}</Say>` +
-      `<Gather input="speech" speechTimeout="auto" speechModel="phone_call" enhanced="true" action="${gatherAction}" method="POST"/>` +
-      `<Say>I didn't catch that. Let me connect you with someone.</Say>` +
-      `<Redirect>${transferAction}</Redirect>`
+      `<Connect action="${xmlAttr(sessionEndAction)}">` +
+        `<ConversationRelay ` +
+          `url="${xmlAttr(voiceWsUrl + '/ws')}" ` +
+          `welcomeGreeting="${escapeXml(greeting)}" ` +
+          `ttsProvider="${ttsProvider}" ` +
+          `voice="${voiceAttr}" ` +
+          `transcriptionProvider="Deepgram" ` +
+          `interruptSensitivity="medium" ` +
+          `dtmfDetection="true" ` +
+          `${ttsProvider === 'ElevenLabs' ? 'elevenlabsTextNormalization="on" ' : ''}` +
+          `hints="${hints}">` +
+          `<Parameter name="clientId" value="${client.id}" />` +
+          `<Parameter name="leadId" value="${leadId}" />` +
+          `<Parameter name="callSid" value="${callSid}" />` +
+        `</ConversationRelay>` +
+      `</Connect>`
     );
   } catch (error) {
     void logInternalError({

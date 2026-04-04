@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   evaluateRecoveryWindowStatus,
   REQUIRED_RECOVERY_ATTRIBUTED_OPPORTUNITIES,
+  RECOVERY_PIPELINE_FLOOR_CENTS,
 } from './recovery-evaluator';
 
 describe('evaluateRecoveryWindowStatus', () => {
@@ -50,5 +51,41 @@ describe('evaluateRecoveryWindowStatus', () => {
     });
 
     expect(action).toBe('none');
+  });
+
+  it('passes recovery when attributedOpportunities = 0 but pipeline >= $5,000', () => {
+    const action = evaluateRecoveryWindowStatus({
+      status: 'recovery_pending',
+      attributedOpportunities: 0,
+      probablePipelineValueCents: RECOVERY_PIPELINE_FLOOR_CENTS,
+      now,
+      recoveryWindowEnd: new Date('2026-05-10T00:00:00.000Z'),
+    });
+
+    expect(action).toBe('recovery_pass');
+  });
+
+  it('passes recovery when attributedOpportunities >= 1 and pipeline = $0', () => {
+    const action = evaluateRecoveryWindowStatus({
+      status: 'recovery_pending',
+      attributedOpportunities: REQUIRED_RECOVERY_ATTRIBUTED_OPPORTUNITIES,
+      probablePipelineValueCents: 0,
+      now,
+      recoveryWindowEnd: new Date('2026-05-10T00:00:00.000Z'),
+    });
+
+    expect(action).toBe('recovery_pass');
+  });
+
+  it('fails recovery when both opportunity threshold and pipeline floor are unmet and window has expired', () => {
+    const action = evaluateRecoveryWindowStatus({
+      status: 'recovery_pending',
+      attributedOpportunities: 0,
+      probablePipelineValueCents: RECOVERY_PIPELINE_FLOOR_CENTS - 1,
+      now,
+      recoveryWindowEnd: new Date('2026-04-10T00:00:00.000Z'),
+    });
+
+    expect(action).toBe('recovery_fail_refund_review');
   });
 });

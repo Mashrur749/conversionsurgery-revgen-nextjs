@@ -30,13 +30,27 @@ export default async function LeadDetailPage({ params }: Props) {
   const session = await auth();
 
   if (!session?.user?.email) {
-    return <div>Not authenticated</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">Not Authenticated</h2>
+        <p className="text-muted-foreground">
+          Please log in to view this page.
+        </p>
+      </div>
+    );
   }
 
   const clientId = await getClientId();
 
   if (!clientId) {
-    return <div>No client linked to your account. Please contact your administrator.</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">No Client Linked</h2>
+        <p className="text-muted-foreground">
+          Your account is not linked to a client. Please contact your administrator.
+        </p>
+      </div>
+    );
   }
 
   const db = getDb();

@@ -187,44 +187,94 @@ Follow-on stage after standard win-back for leads that have been dormant 6+ mont
 
 ## 3. Voice AI
 
-Optional add-on ($0.15/minute). Answers inbound calls with a conversational AI.
+Included by default for all new clients — `voiceEnabled` defaults to `true` on client creation. Voice AI is part of the base $1,000/month price; there are no per-minute charges for new clients. Usage is measured internally for cost monitoring but is not invoiced separately. Existing clients who had voice AI disabled before April 2026 are unchanged — they can opt in from portal Settings or the admin client detail page.
+
+Voice AI answers inbound calls with a natural-sounding conversational AI powered by Twilio ConversationRelay.
+
+### Architecture
+
+Built on **Twilio ConversationRelay** with a Cloudflare Durable Object backend:
+
+| Component | Provider | Purpose |
+|-----------|----------|---------|
+| **Speech-to-Text** | Deepgram (via ConversationRelay) | Real-time caller transcription |
+| **Text-to-Speech** | ElevenLabs (via ConversationRelay) | Natural voice synthesis from streamed tokens |
+| **LLM** | Anthropic Claude Haiku | Conversation intelligence, tool use |
+| **WebSocket Server** | Cloudflare Durable Objects | Stateful session per call |
+| **Call Routing** | Twilio Programmable Voice | TwiML, transfer, dial-complete |
+
+Persistent WebSocket connection for the entire call duration. Claude responses stream token-by-token to ElevenLabs TTS &mdash; first audio plays within ~1 second of the caller finishing their sentence.
 
 ### Call Flow
 
 1. Caller dials the business line
-2. AI answers with custom greeting (per-client configurable)
-3. **Two-step flow:** filler phrase ("One moment please...") plays immediately while AI processes, then response plays — caller never hears dead silence
-4. Multi-turn conversation: AI answers questions, qualifies the project, books appointments
-5. Transfer to human: if caller requests or AI detects it should escalate, warm transfer to team member
+2. Twilio hits `/api/webhooks/twilio/voice/ai` &mdash; client lookup, business hours check, lead creation
+3. TwiML returns `<Connect><ConversationRelay>` pointing at the Durable Object WebSocket
+4. ConversationRelay plays `welcomeGreeting` in the configured ElevenLabs voice
+5. Multi-turn conversation: caller speaks &rarr; Deepgram transcribes &rarr; DO streams to Claude &rarr; Claude tokens stream to ElevenLabs TTS &rarr; caller hears response
+6. **Natural interruptions:** caller can speak mid-response; ConversationRelay stops TTS and sends the new utterance
+7. **Tool use:** Claude can check calendar availability, book appointments, capture project details, or initiate transfer &mdash; all mid-conversation
+8. Transfer to human: Claude sends `end` message with handoff data &rarr; action URL returns `<Dial>` TwiML
 
 ### Capabilities
 
+- **Streaming responses:** token-by-token Claude &rarr; ElevenLabs TTS (~1s to first audio, vs 2-5s with legacy Gather/Say)
+- **Interruption handling:** built-in via ConversationRelay; conversation history truncated to what caller actually heard
 - **Intent detection:** quote, schedule, question, complaint, transfer, other
-- **Sentiment analysis:** positive, neutral, negative
-- **Knowledge-grounded responses:** uses client knowledge base, service catalog, and conversation history
-- **Guardrails:** won&apos;t make pricing promises, won&apos;t guess unknowns, escalates when unsure
+- **Knowledge-grounded responses:** uses client knowledge base, service catalog, and SMS conversation history
+- **Appointment booking:** Claude tool_use checks Google Calendar availability and books estimate appointments mid-call
+- **Project capture:** Claude tool_use saves caller name, project type, address, and notes to the lead record
+- **Callback scheduling:** when transfer fails or owner unavailable, schedules callback and notifies contractor
+- **Guardrails:** won&apos;t make pricing promises (unless `canDiscussPricing` enabled), won&apos;t guess unknowns, escalates when unsure
 - **Three activation modes:** always on, after-hours only, overflow (when owner doesn&apos;t answer)
-- **Voice selection:** ElevenLabs voice personas with admin preview
-- **Kill switch:** global disable that falls back to direct owner forwarding
+- **Voice selection:** ElevenLabs voice personas with admin preview &mdash; selected voice is used in live calls via ConversationRelay `voice` attribute
+- **Fallback:** Amazon Polly (Matthew-Neural) when no ElevenLabs voice is configured
+- **Kill switch:** prominent global toggle on the admin Voice AI page &mdash; one click to pause all voice AI across all clients, one click to resume. Per-client `voiceEnabled` toggle also available. Both fall back to direct owner forwarding.
+- **Pricing discussion control:** `canDiscussPricing` toggle on admin voice settings per client &mdash; when off (default), AI deflects pricing questions to the owner; when on, AI shares knowledge-base price ranges
+- **Max call duration:** configurable per client (2&ndash;15 minutes, default 5) &mdash; AI wraps up gracefully at the limit
+- **Business hours visibility:** admin voice settings show configured business hours inline when mode is &ldquo;after hours&rdquo; so the operator sees exactly what schedule the AI follows
+- **Operator visibility into contractor settings:** `agentTone` badge shown on admin voice page per client so the operator can see what the contractor configured without switching context
+
+### Contractor Portal &mdash; Voice AI Visibility
+
+Contractors see a read-only Voice AI status card on their portal dashboard:
+
+- Status badge: Active / Off
+- Current mode: &ldquo;Answering after hours&rdquo; / &ldquo;Always answering&rdquo; / &ldquo;Answering when you can&apos;t&rdquo;
+- Phone number the AI covers
+- This week&apos;s call stats: calls handled, appointments booked, transfers completed
+- No configuration controls &mdash; the operator manages voice settings as part of the managed service
+
+API: `GET /api/client/voice-status` (portal permission: `DASHBOARD`)
 
 ### Missed Transfer Recovery
 
 When a hot transfer fails (busy, no-answer, failed, or canceled status from Twilio):
 
-1. **Homeowner SMS:** the platform sends the homeowner an SMS via the compliance gateway: "[Business] tried to connect you with a team member but they&apos;re currently unavailable. Someone will call you back shortly."
+1. **Homeowner SMS:** the platform sends the homeowner an SMS via the compliance gateway: &ldquo;[Business] tried to connect you with a team member but they&apos;re currently unavailable. Someone will call you back shortly.&rdquo;
 2. **P1 escalation:** a critical-priority escalation entry is created and surfaces immediately in the triage dashboard.
-3. **Team notification:** a `sendAlert` SMS is sent to the team member who was dialled: "Missed transfer: [Lead Name] called and was transferred to you but the call was not answered. Please call them back at [phone]."
+3. **Team notification:** a `sendAlert` SMS is sent to the team member who was dialled: &ldquo;Missed transfer: [Lead Name] called and was transferred to you but the call was not answered. Please call them back at [phone].&rdquo;
 
-All three side effects run in the background (fire-and-forget) — the TwiML response is never delayed.
+All three side effects run in the background (fire-and-forget) &mdash; the TwiML response is never delayed.
 
 File: `src/app/api/webhooks/twilio/voice/ai/dial-complete/route.ts`
 
 ### Post-Call
 
-- Call transcript and AI summary stored
+- Full transcript stored from the Durable Object session via HandoffData
+- AI summary generated (via `generateCallSummary`)
+- Contractor notified via SMS with call summary, duration, intent, and callback flag
 - Outcome tracked: qualified, scheduled, transferred, voicemail, dropped
-- Callback requests flagged for follow-up
-- Voice usage aggregated for billing (per-minute)
+- Voice usage aggregated for billing (per-minute via `voice-usage-rollup` cron)
+
+### Deployment
+
+The voice WebSocket server is a separate Cloudflare Worker (`packages/voice-agent/`):
+
+- `wrangler deploy` from `packages/voice-agent/`
+- Secrets: `ANTHROPIC_API_KEY`, `DATABASE_URL` (Neon connection string)
+- Worker URL configured as `VOICE_WS_URL` env var in the Next.js app
+- Each active call creates one Durable Object instance (auto-cleaned on disconnect)
 
 ---
 
@@ -292,13 +342,33 @@ Takeover/handback is per-lead and tracked with timestamps.
 
 ## 5. Client Portal
 
-The business owner&apos;s view — everything they need, nothing they don&apos;t.
+The business owner&apos;s view &mdash; everything they need, nothing they don&apos;t.
+
+### Service Model
+
+Each client has a `serviceModel` field (`managed` or `self_serve`) that controls what the portal shows:
+
+| Feature | Managed | Self-Serve |
+|---------|:-------:|:----------:|
+| Dashboard, Conversations, Revenue, KB, Team, Help, Discussions, Reviews | Yes | Yes |
+| Flows (automation management) | Hidden | Shown |
+| Settings &gt; Features tab (AI toggles, smart assist config) | Hidden | Shown |
+| Billing &gt; Plan picker / Upgrade | Hidden | Shown |
+| Payment setup | Operator sends link | Self-serve checkout |
+
+**Managed clients** see a scoreboard + inbox. The operator configures all automation settings via the admin panel.
+
+**Self-serve clients** see the full control panel and manage everything themselves.
+
+Default: `managed`. Operator can change per client from the admin detail page.
+
+**Operator payment link (managed only):** Admin client detail page has a &ldquo;Send Payment Link&rdquo; button that creates a Stripe Checkout Session with the plan pre-selected, sends the link via SMS + email. Contractor clicks &rarr; Stripe page &rarr; enters card &rarr; done. No portal navigation or plan comparison needed.
 
 ### Pages
 
 | Page | What it shows |
 |------|--------------|
-| **Dashboard** | Lead summary, recent activity, help articles. **System Activity card** (auto-tracked pipeline proof — see below) positioned above the **Revenue Recovered card** (confirmed revenue, &ldquo;Confirmed by you&rdquo; subtitle — shows $0 nudge when no wins recorded). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **Since Your Last Visit card** (see below). **&ldquo;Set up your AI&rdquo; CTA** when KB has fewer than 5 entries — links to the onboarding wizard. |
+| **Dashboard** | Lead summary, recent activity, help articles. **Voice AI Status card** (read-only: ON/OFF status, mode, phone number, this week&apos;s call stats &mdash; see Section 3). **Since Your Last Visit card** (see below). **System Activity card** (auto-tracked pipeline proof &mdash; see below) positioned above the **Revenue Recovered card** (confirmed revenue, &ldquo;Confirmed by you&rdquo; subtitle &mdash; shows $0 nudge when no wins recorded). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **&ldquo;Set up your AI&rdquo; CTA** when KB has fewer than 5 entries &mdash; links to the onboarding wizard. |
 | **Conversations** | All leads with message history, mode badges, action-required highlights |
 | **Revenue** | 30-day stats, pipeline value, speed-to-lead metrics, service breakdown |
 | **Knowledge Base** | Business info the AI uses — editable by owner |
@@ -408,7 +478,7 @@ Dispatch is non-blocking: webhook failures do not affect the lead status update.
 ### Navigation and Orientation
 
 - **Breadcrumbs** on deep portal pages (billing, revenue, knowledge base, team, help, discussions) showing &quot;Dashboard &gt; Page Name&quot; with clickable links
-- **Inline help tooltips** on settings fields (Quiet Hours, Smart Assist Auto-Send, AI Tone, Auto-send delay) via info icons
+- **Inline help tooltips** on settings fields (Quiet Hours, Review Before Sending, AI Tone, AI Lead Response, Auto-send delay) via info icons
 - **Unsaved changes warning** on settings forms (notification, AI, feature toggles) &mdash; browser prompts before navigating away with unsaved edits
 - **Command palette** &mdash; Cmd+K (Mac) / Ctrl+K (Windows/Linux) opens a command palette for quick navigation. Client portal includes 10 page items. Uses search-as-you-type filtering.
 - **Discussions CTA** &mdash; empty state on the discussions page includes a &quot;Start a Conversation&quot; button
@@ -480,12 +550,24 @@ Auto-generated and delivered to clients every 2 weeks:
 - **Pipeline Proof (`pipelineProof` in `roiSummary`):** 6 auto-tracked metrics added to every report — leads responded to, estimates in follow-up, missed calls caught, dead quotes re-engaged, appointments booked, and average response time. `probablePipelineValue` is calculated automatically as (appointments booked + reactivated quotes) &times; avg project value ($40K default). These metrics require zero contractor action and prove system value even before any wins are confirmed.
 - Versioned output — shows `ready` or `insufficient_data` (never fabricates)
 
+### Weekly Pipeline SMS
+
+Every Monday morning, the system automatically sends the contractor a pipeline summary via SMS. This keeps them informed between bi-weekly reports and surfaces issues before they become churn risks.
+
+**Message includes:**
+- Dollar pipeline values: &ldquo;Probable pipeline: $XK | Confirmed: $XK&rdquo;
+- Needs-attention count: number of leads flagged `action_required` that haven&apos;t been resolved
+- Brief summary of week-over-week change
+
+Sent via the agency number (not the business line). Runs as part of the weekly digest cron.
+
 ### Delivery Infrastructure
 
 - Report delivery lifecycle: generated &rarr; queued &rarr; sent &rarr; failed
 - Retry cron with exponential backoff
 - Terminal failure alerts to admin
 - **Auto-follow-up SMS:** after report delivery, the system auto-sends an SMS to the contractor via the agency number: &quot;[Business Name] &mdash; your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.&quot; Fire-and-forget; does not affect delivery state.
+- **Weekly pipeline SMS:** Monday morning digest with dollar pipeline values and needs-attention count (see above).
 - Client portal download link
 
 ### Funnel Tracking
@@ -523,7 +605,8 @@ Every funnel event is automatically linked to the agent decision that contribute
 
 - Month-to-month, no contract, no setup fee
 - Configurable plan tiers with included quotas (leads, SMS, team members, phone numbers)
-- Trial system with configurable days (waived for returning clients)
+- Free first month (30-day trial); billing starts day 31. Configurable trial days, waived for returning clients.
+- **Trial reminder emails:** automated cron sends at days 7, 14, 25, 28, and 30. Days 28 and 30 also send an SMS alert via the agency communication channel.
 - Pause/resume capability
 - Coupon system (percentage/fixed, one-time/recurring, plan restrictions)
 
@@ -533,7 +616,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 |--------|---------|----------|
 | Extra team members | $20/month each (above included) | Per-seat ledger event |
 | Extra phone numbers | $15/month each (above included) | Per-number ledger event |
-| Voice AI minutes | $0.15/minute | Usage rollup cron |
+| Voice AI minutes | $0.15/minute (usage billed when voice is active — included by default for new clients) | Usage rollup cron |
 
 - Immutable billing event ledger with idempotency keys
 - Add-on charges visible on client billing page with CSV export
@@ -543,7 +626,8 @@ Every funnel event is automatically linked to the agent decision that contribute
 ### Stripe Integration
 
 - **Subscription checkout:** Stripe Checkout redirect for new subscriptions (handles 3D Secure, all card types, SCA compliance)
-- **Plan changes:** In-app plan upgrade/downgrade for existing subscribers with proration
+- **Operator payment link (managed service):** admin client detail page has a &ldquo;Send Payment Link&rdquo; button that creates a Stripe Checkout Session with the plan and trial pre-configured, sends the link via SMS + email. Contractor clicks &rarr; Stripe page &rarr; enters card &rarr; done. API: `POST /api/admin/clients/[id]/payment-link`.
+- **Plan changes:** In-app plan upgrade/downgrade for existing subscribers with proration (self-serve only &mdash; hidden for managed clients)
 - Payment methods on file with add/remove/default management
 - One-time payment links for lead invoices (deposits, progress payments, final)
 - Webhook handler with dedup protection
@@ -555,12 +639,14 @@ Every funnel event is automatically linked to the agent decision that contribute
 | Phase | Window | Threshold | Outcome if not met |
 |-------|--------|-----------|-------------------|
 | **30-Day Proof** | First 30 days | 5 qualified lead engagements | Refund first month |
-| **90-Day Recovery** | Next 90 days | 1 attributed project opportunity | Refund most recent month |
+| **90-Day Recovery** | Next 90 days | 1 attributed project opportunity OR $5,000+ probable pipeline value | Refund most recent month |
 
+- **Layer 2 has two passing criteria (OR logic):** the guarantee passes if EITHER (1) 1 attributed project opportunity is confirmed via platform logs, OR (2) the auto-calculated `probablePipelineValue` reaches $5,000 or more within the window. The pipeline floor gives contractors with longer renovation sales cycles a concrete, measurable standard even before a job is formally won.
 - **Layer 2 attribution is fully log-based:** attribution requires platform logs showing the system engaged the lead through automated response or follow-up before the opportunity progressed. No subjective contractor confirmation is required.
 - Volume condition: if &lt;15 leads/month, windows extend proportionally
 - State machine with automatic daily evaluation via cron
-- Metrics tracked: qualified engagements, attributed opportunities
+- Metrics tracked: qualified engagements, attributed opportunities, probable pipeline value
+- **Contractor-facing guarantee card:** billing page shows plain-English status per phase (e.g., &ldquo;We need to see 5 leads engage with your AI. You have 3/5 so far.&rdquo;), progress bars for proof (X/5 engagements) and recovery (X/1 opportunities or $/pipeline), a 3-column timeline strip (Free Month / Proof Window / Recovery Window) with extension notices, and a loading skeleton during fetch
 
 ### Cancellation
 
@@ -568,10 +654,19 @@ Every funnel event is automatically linked to the agent decision that contribute
 - Data export within 5 business days (CSV: leads, conversations, pipeline jobs)
 - Export download with time-limited token
 - Retention call scheduling option
+- **Automated grace-period reminders:** daily cron sends email reminders at 20 days left, 7 days left, and 3 days left — each fired at most once per client, deduplicated via audit_log
+- **Post-cancellation win-back:** single email sent 7 days after grace period ends with re-signup link, deduplicated via audit_log
 
 ---
 
 ## 9. Onboarding &amp; Day-One Activation
+
+### Pre-Sale: Revenue Leak Audit + ROI Calculator
+
+Before the sales call, the operator runs a lightweight pre-sale audit using publicly available data (Google Business Profile, website, competitor review counts). This produces a personalized opener and pre-qualifies the prospect.
+
+- **Pre-Sale Revenue Leak Audit:** 15-20 minute research process. Template at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`. Spec: `docs/specs/SPEC-07.md`.
+- **ROI Calculator:** Public endpoint `POST /api/public/roi-calculator` accepts contractor inputs (lead volume, avg project value, follow-up gap) and returns annual revenue at risk, monthly recovery potential, and months-to-break-even. Used live during the sales call to replace manual math.
 
 ### Day-One Milestones
 
@@ -587,7 +682,9 @@ Every funnel event is automatically linked to the agent decision that contribute
 - Activity trail logs all events (draft, delivery, completion)
 - Revenue Leak Audit: structured findings with priority, impact ranges, and artifact URLs
 - **Self-serve phone provisioning:** clients can search and purchase a local number from `/client/settings/phone` — no admin intervention required. Milestones auto-complete on purchase.
-- **Auto-login after signup:** public signup flow establishes a portal session automatically — contractor lands on the client dashboard with setup guidance, no separate login step required.
+- **Auto-login after signup:** public signup flow establishes a portal session automatically &mdash; contractor lands on the client dashboard with setup guidance, no separate login step required.
+- **Welcome communications:** signup triggers a fire-and-forget welcome email (using `onboardingWelcomeEmail` template) and welcome SMS with login link. Contractor receives both within seconds of signing up.
+- **Phone setup prompt:** if the `number_live` milestone goes overdue (Day 1-2), the day-one SLA check cron sends the contractor an SMS reminder with a direct link to `/client/settings/phone`.
 - **Subscription-gated phone purchase:** phone provisioning requires an active subscription. Clear prompt to choose a plan if attempted without one.
 
 ### Onboarding Checklist
@@ -622,14 +719,28 @@ The platform advances contractors through AI modes automatically based on time a
 | **Day 7** | Quality gates pass | Advance from `off` &rarr; `assist` (Smart Assist enabled) |
 | **Day 14** | No AI flags in the last 7 days | Advance from `assist` &rarr; `autonomous` |
 
-- Never downgrades — manual overrides are preserved and not overwritten
-- Each advancement sends an SMS notification to the contractor explaining the new mode
+- Never downgrades &mdash; manual overrides are preserved and not overwritten
+- Each advancement sends an SMS notification to the contractor with specific, actionable context: assist mode explains the 5-minute review window and links to `/client/conversations`; autonomous mode explains instant responses and how to take over conversations
 - All transitions are logged to audit_log
 - Cron: `/api/cron/ai-mode-progression` runs daily at 10am UTC
 
 ### Self-Serve KB Onboarding Wizard
 
 New contractors are guided through a 4-step KB wizard at `/client/onboarding` that pre-populates the AI with business information before the first lead arrives. See Section 5 (Client Portal) for details.
+
+On completion, a celebration screen shows a green checkmark with &ldquo;Your AI is ready&rdquo; heading, an explanation that the AI will use the submitted knowledge to answer homeowner questions, and a &ldquo;Return to Dashboard&rdquo; CTA.
+
+### Contractor Portal Feature Toggle Clarity
+
+The Settings &gt; Features page uses clear, contractor-friendly labels:
+
+| Toggle | Label | Description |
+|--------|-------|-------------|
+| Missed call text-back | &ldquo;Missed Call Text-Back&rdquo; | Automatically text back when you miss a call |
+| AI responses | &ldquo;AI Lead Response&rdquo; | AI responds to incoming leads on your behalf (tooltip warns about disabling) |
+| Smart assist | &ldquo;Review Before Sending&rdquo; | Preview AI responses before they send (inverted framing for clarity) |
+
+When &ldquo;Review Before Sending&rdquo; is enabled, a &ldquo;How it works&rdquo; explanation card appears above the delay selector describing the draft &rarr; review window &rarr; auto-send flow.
 
 ---
 
@@ -699,8 +810,8 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 | Switch | Effect |
 |--------|--------|
 | **Outbound automations** | Blocks all automated outbound messages |
-| **Smart Assist auto-send** | Forces manual approval on all drafts |
-| **Voice AI** | Bypasses AI, forwards calls to owner |
+| **Smart Assist auto-send** | Forces manual approval on all drafts (portal label: &ldquo;Review Before Sending&rdquo;) |
+| **Voice AI** | Bypasses AI, forwards calls to owner. Prominent toggle on `/admin/voice-ai` page + per-client toggle in voice settings. |
 
 ### Observability
 
@@ -789,6 +900,40 @@ Beyond the review *request* automation (Section 2), the platform monitors and re
 - Auto-post to Google Business Profile via OAuth (with token refresh)
 - Admin approval required before posting (admin dashboard)
 - **Contractor portal approval:** Contractors can view pending AI-drafted responses at `/client/reviews`, edit the draft inline, and approve — posts to Google without operator involvement. See Section 5 for portal detail.
+
+---
+
+## 13. External Integrations
+
+### Jobber Webhook Integration (SPEC-12)
+
+Basic bidirectional webhook integration with Jobber for clients who use it for job management.
+
+| Direction | Trigger | What happens |
+|-----------|---------|-------------|
+| **CS &rarr; Jobber (outbound)** | Appointment booked in CS | CS fires `appointment_booked` event to the client&apos;s configured Jobber webhook URL |
+| **Jobber &rarr; CS (inbound)** | Job marked complete in Jobber | Jobber sends `job_completed` event to `POST /api/webhooks/jobber/job-completed`; CS triggers review generation for the associated lead |
+
+- Integration is off by default; enabled per client via admin settings (requires `webhookUrl` configuration)
+- Architecture: generic `integration_webhooks` table supports future providers (HubSpot, ServiceTitan, Housecall Pro) with the same pattern
+- Non-blocking: integration failures do not affect core platform operations
+
+**Sales positioning:** CS is the front end of the contractor&apos;s pipeline. Jobber handles job management; CS handles getting the work and closing the loop on reviews. The Jobber integration makes this concrete — no duplicate data entry, no manual review requests.
+
+### ROI Calculator (SPEC-11)
+
+Public API endpoint for pre-sale conversations:
+
+- **Endpoint:** `POST /api/public/roi-calculator`
+- **Inputs:** monthly lead volume, average project value, estimated follow-up gap (%), quote-to-win rate
+- **Output:** annual revenue at risk, monthly recovery potential, months-to-break-even
+- **Auth:** public (no auth required — intended for use during sales calls or embedded in marketing)
+
+Use during sales calls to replace manual ROI math. Enter the prospect&apos;s numbers live; show the output on screen. Converts the price objection from &ldquo;$1,000 is expensive&rdquo; to &ldquo;I&apos;m leaving $X per month on the table.&rdquo;
+
+### Existing: Zapier / Webhook Export
+
+Clients can configure a webhook URL to receive `lead.status_changed` events when a lead is marked won or lost. See Section 5 (Client Portal) for details.
 
 ---
 

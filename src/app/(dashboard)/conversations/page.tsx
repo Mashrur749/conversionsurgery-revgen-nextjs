@@ -27,7 +27,14 @@ export default async function ConversationsPage() {
   }
 
   if (!clientId) {
-    return <div>No client linked</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <h2 className="text-xl font-semibold mb-2">No Client Linked</h2>
+        <p className="text-muted-foreground">
+          Your account is not linked to a client. Please contact your administrator.
+        </p>
+      </div>
+    );
   }
 
   const db = getDb();

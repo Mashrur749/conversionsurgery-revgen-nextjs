@@ -179,7 +179,7 @@ export function ReviewDashboard({ clientId }: ReviewDashboardProps) {
                   key={review.id}
                   className={`p-4 rounded-lg border ${
                     review.rating <= 2
-                      ? 'border-destructive/30 bg-[#FDEAE4] dark:bg-red-950/20'
+                      ? 'border-[#C15B2E]/20 bg-[#FDEAE4]'
                       : 'border-border'
                   }`}
                 >

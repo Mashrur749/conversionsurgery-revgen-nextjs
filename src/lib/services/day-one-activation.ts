@@ -15,6 +15,11 @@ import {
   listDayOneMilestoneDefinitions,
 } from './day-one-policy';
 
+// Milestone keys that warrant a contractor SMS nudge when overdue
+const CONTRACTOR_SMS_NUDGE_MILESTONES = new Set<string>([
+  DAY_ONE_MILESTONE_KEYS.NUMBER_LIVE,
+]);
+
 export {
   DAY_ONE_MILESTONE_KEYS,
   DAY_ONE_SLA_POLICY,
@@ -635,6 +640,23 @@ export async function runDayOneActivationSlaCheck(): Promise<{
         content: `${milestone.businessName}: "${milestone.title}" is overdue (target was ${milestone.targetAt.toISOString()}).`,
         delivered: false,
       });
+
+      // Nudge the contractor via SMS for milestones they need to action themselves
+      if (CONTRACTOR_SMS_NUDGE_MILESTONES.has(milestone.milestoneKey)) {
+        const appUrl =
+          process.env.NEXT_PUBLIC_APP_URL || 'https://app.conversionsurgery.com';
+        void (async () => {
+          try {
+            const { sendAlert } = await import('./agency-communication');
+            await sendAlert({
+              clientId: milestone.clientId,
+              message: `Quick reminder: your dedicated business phone number has not been set up yet. It takes about 2 minutes to activate. Go here to get started: ${appUrl}/client/settings/phone`,
+            });
+          } catch {
+            // Non-fatal — operator SLA alert is already created
+          }
+        })();
+      }
 
       alertsCreated++;
     }

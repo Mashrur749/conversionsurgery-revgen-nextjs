@@ -25,6 +25,7 @@ interface Template {
 export default function EmailTemplatesPage() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ slug: '', name: '', subject: '', htmlBody: '', variables: '' });
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -33,32 +34,50 @@ export default function EmailTemplatesPage() {
   useEffect(() => { fetchTemplates(); }, []);
 
   async function fetchTemplates() {
-    const res = await fetch('/api/admin/email-templates');
-    setTemplates((await res.json()) as Template[]);
-    setLoading(false);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/email-templates');
+      if (!res.ok) throw new Error('Failed to load');
+      setTemplates((await res.json()) as Template[]);
+    } catch {
+      setError('Unable to load email templates. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleCreate() {
-    const res = await fetch('/api/admin/email-templates', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        variables: form.variables ? form.variables.split(',').map((v) => v.trim()) : [],
-      }),
-    });
-    if (res.ok) {
+    setError('');
+    try {
+      const res = await fetch('/api/admin/email-templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          variables: form.variables ? form.variables.split(',').map((v) => v.trim()) : [],
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to create');
       setShowCreate(false);
       setForm({ slug: '', name: '', subject: '', htmlBody: '', variables: '' });
-      fetchTemplates();
+      void fetchTemplates();
+    } catch {
+      setError('Failed to create template. Please try again.');
     }
   }
 
   async function handleDelete() {
     if (!deleteId) return;
-    await fetch(`/api/admin/email-templates/${deleteId}`, { method: 'DELETE' });
-    setDeleteId(null);
-    fetchTemplates();
+    setError('');
+    try {
+      const res = await fetch(`/api/admin/email-templates/${deleteId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      setDeleteId(null);
+      void fetchTemplates();
+    } catch {
+      setError('Failed to delete template. Please try again.');
+      setDeleteId(null);
+    }
   }
 
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading email templates...</div>;
@@ -101,6 +120,15 @@ export default function EmailTemplatesPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {error && (
+        <div className="rounded-md border border-[#FDEAE4] bg-[#FDEAE4] px-4 py-3 flex items-center justify-between gap-4">
+          <p className="text-sm text-[#C15B2E]">{error}</p>
+          <Button variant="ghost" size="sm" className="text-[#C15B2E] hover:text-[#C15B2E]" onClick={() => void fetchTemplates()}>
+            Retry
+          </Button>
+        </div>
       )}
 
       <div className="space-y-2">

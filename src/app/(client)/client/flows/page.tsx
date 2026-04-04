@@ -1,15 +1,27 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
-import { flows } from '@/db/schema';
+import { clients, flows } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { FlowManagement } from './flow-management';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 export default async function ClientFlowsPage() {
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
 
   const db = getDb();
+
+  const [clientRow] = await db
+    .select({ serviceModel: clients.serviceModel })
+    .from(clients)
+    .where(eq(clients.id, session.clientId))
+    .limit(1);
+
+  if (clientRow?.serviceModel === 'managed') {
+    redirect('/client');
+  }
+
   const clientFlows = await db
     .select({
       id: flows.id,
@@ -25,6 +37,10 @@ export default async function ClientFlowsPage() {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Dashboard', href: '/client' },
+        { label: 'Flows' },
+      ]} />
       <div>
         <h1 className="text-2xl font-bold">Automation Flows</h1>
         <p className="text-sm text-muted-foreground">

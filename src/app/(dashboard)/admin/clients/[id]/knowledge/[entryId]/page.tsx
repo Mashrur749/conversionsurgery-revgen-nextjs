@@ -4,6 +4,7 @@ import { getDb, knowledgeBase } from '@/db';
 import { eq } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { KnowledgeEntryForm } from '../knowledge-entry-form';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string; entryId: string }>;
@@ -24,7 +25,12 @@ export default async function EditKnowledgeEntryPage({ params }: Props) {
   if (!entry) notFound();
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Clients', href: '/admin/clients' },
+        { label: 'Knowledge Base', href: `/admin/clients/${id}/knowledge` },
+        { label: 'Entry' },
+      ]} />
       <Card>
         <CardHeader>
           <CardTitle>Edit Knowledge Entry</CardTitle>

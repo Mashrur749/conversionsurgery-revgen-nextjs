@@ -38,23 +38,23 @@ export function LeadScoreBadge({
   const config = {
     hot: {
       icon: Flame,
-      bg: "bg-[#FDEAE4] dark:bg-red-900/30",
-      text: "text-sienna dark:text-destructive",
-      border: "border-destructive/30 dark:border-red-800",
+      bg: "bg-[#FDEAE4] dark:bg-[#C15B2E]/30",
+      text: "text-sienna dark:text-[#C15B2E]",
+      border: "border-[#C15B2E]/30 dark:border-[#C15B2E]/80",
       label: "Hot",
     },
     warm: {
       icon: Thermometer,
-      bg: "bg-[#FFF3E0] dark:bg-yellow-900/30",
-      text: "text-sienna dark:text-terracotta",
-      border: "border-sienna/30 dark:border-yellow-800",
+      bg: "bg-[#FFF3E0] dark:bg-[#C15B2E]/30",
+      text: "text-sienna dark:text-[#D4754A]",
+      border: "border-sienna/30 dark:border-[#C15B2E]/80",
       label: "Warm",
     },
     cold: {
       icon: Snowflake,
-      bg: "bg-sage-light dark:bg-blue-900/30",
-      text: "text-forest dark:text-forest-light",
-      border: "border-forest-light/30 dark:border-blue-800",
+      bg: "bg-sage-light dark:bg-[#1B2F26]/30",
+      text: "text-forest dark:text-[#1B2F26]",
+      border: "border-[#1B2F26]/30 dark:border-[#1B2F26]/80",
       label: "Cold",
     },
   };

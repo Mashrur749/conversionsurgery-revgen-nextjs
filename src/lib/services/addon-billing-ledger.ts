@@ -37,6 +37,10 @@ interface AddonLedgerEventInput {
 const DEFAULT_INCLUDED_TEAM_MEMBERS = 5;
 const DEFAULT_INCLUDED_PHONE_NUMBERS = 3;
 
+// Voice AI is included in the base price for clients created on or after this date.
+// Pre-existing clients are billed per-minute as an add-on.
+const VOICE_INCLUDED_CUTOFF_DATE = new Date('2026-04-03T00:00:00Z');
+
 export function buildAddonBillingIdempotencyKey(parts: string[]): string {
   return parts.join(':');
 }
@@ -245,18 +249,27 @@ export async function rollupVoiceUsageAddonEvents(now: Date = new Date()): Promi
 }> {
   const db = getDb();
   const activeClients = await db
-    .select({ clientId: subscriptions.clientId })
+    .select({
+      clientId: subscriptions.clientId,
+      clientCreatedAt: clients.createdAt,
+    })
     .from(subscriptions)
+    .innerJoin(clients, eq(subscriptions.clientId, clients.id))
     .where(and(
       gte(subscriptions.currentPeriodEnd, now),
       eq(subscriptions.status, 'active')
     ))
-    .groupBy(subscriptions.clientId);
+    .groupBy(subscriptions.clientId, clients.createdAt);
 
   let eventsUpserted = 0;
 
   for (const row of activeClients) {
     const clientId = row.clientId;
+
+    // Voice is included in the base price for clients created on or after the cutoff date.
+    if (row.clientCreatedAt >= VOICE_INCLUDED_CUTOFF_DATE) {
+      continue;
+    }
     const period = await getClientBillingPeriod(clientId, now);
     const [voiceStats, pricing] = await Promise.all([
       db

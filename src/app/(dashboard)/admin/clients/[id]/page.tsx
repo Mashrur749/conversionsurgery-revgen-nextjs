@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getDb, clients, leads, appointments, dailyStats } from '@/db';
-import { knowledgeBase } from '@/db/schema';
+import { knowledgeBase, plans, subscriptions } from '@/db/schema';
 import { eq, and, gte, sql, count as countFn } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,9 @@ import { EmbedWidgetCard } from './embed-widget-card';
 import { CalendarIntegrationCard } from './calendar-integration-card';
 import { KbQuestionnaire } from './kb-questionnaire';
 import { AiPreviewPanel } from './ai-preview-panel';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { SendPaymentLink } from './send-payment-link';
+import { cn } from '@/lib/utils';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -55,6 +58,14 @@ export default async function ClientDetailPage({ params }: Props) {
   if (!client) {
     notFound();
   }
+
+  // Load available plans and check for existing subscription (for payment link UI)
+  const [availablePlans, existingSubscription] = await Promise.all([
+    db.select({ id: plans.id, name: plans.name }).from(plans).where(eq(plans.isActive, true)),
+    db.select({ id: subscriptions.id }).from(subscriptions).where(eq(subscriptions.clientId, id)).limit(1),
+  ]);
+  const hasSubscription = existingSubscription.length > 0;
+  const showPaymentLink = client.serviceModel === 'managed' && !hasSubscription;
 
   const { getTeamMembers } = await import('@/lib/services/team-bridge');
   const [membersResult, quarterlyCampaignsResult, dayOneSummaryResult] = await Promise.allSettled([
@@ -236,6 +247,10 @@ export default async function ClientDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs items={[
+        { label: 'Clients', href: '/admin/clients' },
+        { label: 'Client Details' },
+      ]} />
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center gap-3">
@@ -243,6 +258,14 @@ export default async function ClientDetailPage({ params }: Props) {
             <Badge className={statusColors[client.status || 'pending']}>
               {client.status}
             </Badge>
+            <span className={cn(
+              'text-xs px-2 py-0.5 rounded-full font-normal',
+              client.serviceModel === 'managed'
+                ? 'bg-[#E3E9E1] text-[#1B2F26]'
+                : 'bg-[#E8F5E9] text-[#3D7A50]'
+            )}>
+              {client.serviceModel === 'managed' ? 'Managed' : 'Self-Serve'}
+            </span>
           </div>
           <p className="text-muted-foreground">
             Created {format(new Date(client.createdAt!), 'MMM d, yyyy')}
@@ -436,6 +459,13 @@ export default async function ClientDetailPage({ params }: Props) {
                   Reputation Monitoring
                 </Link>
               </Button>
+              {showPaymentLink && availablePlans.length > 0 && (
+                <SendPaymentLink
+                  clientId={client.id}
+                  clientName={client.businessName}
+                  plans={availablePlans}
+                />
+              )}
             </CardContent>
           </Card>
         }

@@ -159,7 +159,7 @@ export default async function WelcomePage() {
           <ul className="space-y-3">
             {accessibleFeatures.map((feature) => (
               <li key={feature.permission} className="flex items-start gap-3">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700 text-xs font-medium">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[#E8F5E9] text-[#3D7A50] text-xs font-medium">
                   &#x2713;
                 </span>
                 <div>
