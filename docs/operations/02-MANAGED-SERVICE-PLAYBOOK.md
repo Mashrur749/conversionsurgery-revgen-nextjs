@@ -193,7 +193,7 @@ The guarantee cron checks daily. At day 30:
    - If consent is questionable: opt the lead out manually and add a note.
 3. If the complaint escalates (regulatory inquiry, legal threat):
    - The audit trail has full consent records. Export from the lead detail page.
-   - See `docs/legal/COUNSEL-BRIEF.md` for compliance framework.
+   - See `docs/legal/01-LEGAL-COUNSEL-BRIEF.md` for compliance framework.
    - Never argue with the lead. Opt out immediately and document.
 
 ---
