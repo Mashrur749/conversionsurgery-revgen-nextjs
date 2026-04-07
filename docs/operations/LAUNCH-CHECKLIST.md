@@ -19,157 +19,531 @@ Follow it end to end. When done:
 
 ## Phase 2: Test Everything Locally
 
-**Reference:** `docs/engineering/01-TESTING-GUIDE.md` &mdash; Section 0 has Twilio setup details. If any test below fails or you need more detail on expected behavior, the testing guide has expanded multi-step instructions for every feature (use the &ldquo;Full System Test Path&rdquo; at the top to find the right section).
+Work through these sections in order. Each test tells you exactly what to click, what to type, and what you should see. If something breaks, fix it before moving on.
 
-Tests are quick pass/fail. Fix anything that breaks before moving on.
+> **Deeper reference:** `docs/engineering/01-TESTING-GUIDE.md` has expanded multi-step instructions if you need more detail on any feature. Use the &ldquo;Full System Test Path&rdquo; table at the top to find the right section.
 
-- [ ] **Missed call text-back:** Call business number (#1) from Dev Phone #2. Text arrives within 5 seconds.
-- [ ] **AI conversation:** Text #1 from Dev Phone #2: &ldquo;I need a quote for a kitchen renovation.&rdquo; AI responds in 2-8 seconds.
-- [ ] **CSV import:** Admin &rarr; `/leads` &rarr; Import CSV with `status=estimate_sent`. Check CASL box. Follow-up scheduled.
-- [ ] **Portal lead actions:** Log in as contractor. System Activity card visible. Mark a lead Won. Revenue card updates.
-- [ ] **Report:** Trigger cron: `curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"`. Report generated at `/admin/reports`.
-- [ ] **AI Preview:** `/admin/clients/[id]` &rarr; AI Preview &rarr; ask a question. Reasonable response.
-- [ ] **AI Safety:** `npm run test:ai` &mdash; all Safety tests pass.
-- [ ] **DNC/Exclusion List:** Navigate to a client&apos;s Configuration tab. Add a test phone number via the Exclusion List card. Verify it appears. Remove it.
-- [ ] **Smart Assist Admin Drafts:** Set the client to Smart Assist mode. Trigger a draft (text the business number). Verify the draft appears in the Activity tab &rarr; Pending Drafts card. Approve from the dashboard.
-- [ ] **Integrations Card:** Navigate to Configuration tab. Add a test Jobber webhook. Verify it saves. Delete it.
-- [ ] **Google Calendar:** Connect OAuth, create appointment, verify in Google Calendar. *(Skip if not yet configured.)*
-- [ ] **Voice AI (ConversationRelay):** Call the business number, let it ring. Voice AI answers with ElevenLabs voice, streams responses in ~1 second, handles interruptions. Verify call transcript + summary appear in admin. Test transfer intent: &ldquo;I want to speak to someone.&rdquo;
-- [ ] **Voice AI Admin Config:** `/admin/voice-ai` &mdash; verify kill switch banner, canDiscussPricing toggle, maxDuration selector, business hours inline display, agentTone badge per client.
-- [ ] **Voice AI Playground:** Expand a client &rarr; QA Checklist shows auto-checks. Run: Greeting Preview (hear it in selected voice), Simulator (type a question, get AI response), KB Test (10 questions, check coverage), Guardrail Test (8 adversarial inputs, all pass). QA Checklist all-green &rarr; click &ldquo;Go Live.&rdquo;
-- [ ] **Weekly Pipeline SMS:** Trigger the weekly-summary cron. Verify SMS includes dollar pipeline values and needs-attention count.
-- [ ] **Payment Link (managed):** Admin &rarr; client detail &rarr; &ldquo;Send Payment Link.&rdquo; Verify SMS + email arrive with Stripe checkout link. Complete checkout with test card `4242 4242 4242 4242`. Verify 30-day trial starts.
-- [ ] **Self-Serve Checkout:** Contractor portal &rarr; Billing &rarr; Subscribe with test card. Verify 30-day trial starts. *(Only for self-serve clients.)*
-- [ ] **Service Model:** Create a managed client (default). Verify: Flows nav item hidden, Settings &gt; Features tab hidden, Billing has no &ldquo;Change Plan&rdquo; button. Switch to self-serve in admin &mdash; verify all three reappear.
-- [ ] **Contractor Portal Voice Card:** Log in as contractor. Voice AI status card on dashboard shows: Active badge, mode, phone number, call stats (or &ldquo;No voice calls this week yet&rdquo;).
-- [ ] **Discussions:** From contractor portal, click &ldquo;Stuck? Text me&rdquo; &rarr; send a message. Check admin `/admin/discussions` &mdash; thread appears. Reply as admin. Check contractor portal &mdash; reply appears (15s polling). Test admin &ldquo;New Thread&rdquo; button &mdash; contractor receives email.
-- [ ] **Welcome Comms:** Create a new client via `/signup`. Verify welcome email arrives + welcome SMS with login link.
+### 2.1 Create Your First Test Client
+
+1. Go to `/admin/clients/new/wizard`
+2. Fill in:
+   - Business name: &ldquo;Summit Renovations&rdquo; (or anything)
+   - Owner name, email, phone: use your Dev Phone #3 (Owner) number for the phone
+   - Twilio number: select Dev Phone #1 (Business Line)
+3. Complete the wizard. Click through each step.
+4. Go to `/admin/clients` &mdash; your new client should appear.
+
+- [ ] Client shows in the list with status &ldquo;active&rdquo;
+
+### 2.2 Test the Core Loop: Lead Texts In, AI Responds
+
+This is the product&apos;s core value. A homeowner texts, the AI replies.
+
+1. Open Dev Phone #2 (Lead) in your browser (port 3001)
+2. Send a text to the Business Line (#1): &ldquo;Hi, I need a quote for a kitchen renovation&rdquo;
+3. Watch your terminal &mdash; you should see webhook logs
+4. Within 2-8 seconds, Dev Phone #2 receives an AI response
+5. Go to `/conversations` in the admin dashboard (select your test client first)
+6. You should see the conversation thread with the lead&apos;s message and the AI&apos;s response
+
+- [ ] AI responded within 10 seconds
+- [ ] Conversation visible in admin dashboard
+
+### 2.3 Test Missed Call Text-Back
+
+1. From Dev Phone #2 (Lead), **call** the Business Line (#1)
+2. Let it ring &mdash; don&apos;t answer
+3. Within 5 seconds, Dev Phone #2 should receive a text: something like &ldquo;Sorry we missed your call...&rdquo;
+4. Check `/conversations` &mdash; a new conversation should appear for this caller
+
+- [ ] Text-back arrived within 5 seconds of the missed call
+
+### 2.4 Test Voice AI
+
+> Skip this section if `ELEVENLABS_API_KEY` is not set or Voice AI is not enabled for your test client.
+
+1. From Dev Phone #2, **call** the Business Line (#1) and let it ring until Voice AI picks up
+2. You should hear a voice greeting (ElevenLabs voice)
+3. Say: &ldquo;I need help with a bathroom renovation&rdquo; &mdash; AI should respond conversationally
+4. Say: &ldquo;I want to speak to someone&rdquo; &mdash; this should trigger a transfer attempt
+5. Hang up. Go to `/admin/clients/[your-client-id]` &rarr; look for call transcript + AI summary
+
+- [ ] Voice AI answered with a natural greeting
+- [ ] Transcript and summary appear in admin after the call
+
+### 2.5 Smart Assist Mode (AI with human review)
+
+This is the safety net for new clients &mdash; AI drafts a response, you approve it before it sends.
+
+1. Go to `/admin/clients/[your-client-id]` &rarr; find the AI mode setting
+2. Change it to **Smart Assist** (also called &ldquo;assist&rdquo; mode)
+3. From Dev Phone #2, text the Business Line: &ldquo;Do you do emergency plumbing?&rdquo;
+4. This time the AI should NOT auto-reply. Instead:
+5. Go to the client&apos;s **Activity tab** &rarr; look for **Pending Drafts** card
+6. You should see the AI&apos;s draft response waiting for approval
+7. Click **Approve** to send it
+8. Dev Phone #2 should receive the response
+
+- [ ] Draft appeared in Pending Drafts (not auto-sent)
+- [ ] After approval, response arrived on Dev Phone #2
+
+> Set the client back to **Autonomous** mode when done.
+
+### 2.6 Lead Lifecycle: Estimate Sent &rarr; Won &rarr; Job Complete
+
+Walk through the full lead journey as the contractor would see it.
+
+1. Go to `/leads` (admin, with your test client selected)
+2. Click on the lead you created in 2.2
+3. In the status dropdown (top right), change to **Estimate Sent**
+   - This starts the 4-touch, 14-day follow-up automation
+4. Go to `/scheduled` &mdash; you should see follow-up messages queued
+5. Go back to the lead. Change status to **Won**
+   - Enter a confirmed revenue amount (e.g., $4,500)
+   - Dev Phone #3 (Owner) should receive a &ldquo;recovered lead&rdquo; SMS notification
+6. Change status to **Completed**
+   - This triggers the review request automation (SMS sent next day at 10am)
+7. Go to `/scheduled` &mdash; you should see a review request message queued
+
+- [ ] Follow-up messages scheduled after Estimate Sent
+- [ ] Owner notification SMS after Won
+- [ ] Review request scheduled after Completed
+
+### 2.7 CSV Lead Import
+
+1. Create a CSV file with columns: `name,phone,email,status`
+2. Add 3-5 rows with test data. Set status to `estimate_sent` for at least one.
+3. Go to `/leads` &rarr; click **Import**
+4. Upload the CSV. Check the **CASL consent** box.
+5. Verify leads appear in the list. Leads with `estimate_sent` should have follow-ups scheduled.
+
+- [ ] Leads imported and visible
+- [ ] Follow-ups auto-scheduled for estimate_sent leads
+
+### 2.8 Exclusion List (Do Not Contact)
+
+1. Go to `/admin/clients/[your-client-id]` &rarr; **Configuration** tab
+2. Find the **Exclusion List** card
+3. Add a phone number (any test number)
+4. Verify it appears in the list
+5. Remove it
+
+- [ ] Number added and removed without errors
+
+### 2.9 Reports
+
+1. In your terminal, trigger the report cron:
+   ```bash
+   curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"
+   ```
+   Replace `YOUR_CRON_SECRET` with the value from your `.env.local`.
+2. Go to `/admin/reports`
+3. A report should appear for your test client (may be empty data, that&apos;s fine)
+
+- [ ] Report generated without errors
+
+### 2.10 AI Safety Gate
+
+Run the automated AI safety tests:
+
+```bash
+npm run test:ai
+```
+
+This runs 29 tests covering safety, quality, and adversarial scenarios. All safety tests must pass before launch.
+
+- [ ] All Safety tests pass (quality tests may have some variance &mdash; that&apos;s OK)
+
+### 2.11 AI Preview
+
+1. Go to `/admin/clients/[your-client-id]`
+2. Find the **AI Preview** panel
+3. Type a question a homeowner might ask: &ldquo;How much does a roof replacement cost?&rdquo;
+4. AI should respond based on the client&apos;s knowledge base
+
+- [ ] AI gives a reasonable response (or says it doesn&apos;t have that info &mdash; both are correct)
+
+### 2.12 Voice AI Admin Config
+
+1. Go to `/admin/voice-ai`
+2. Check that you see:
+   - Kill switch banner at top (should show enabled/disabled)
+   - Per-client cards with: pricing toggle, max duration, business hours, agent tone badge
+
+- [ ] Voice AI admin page loads with client cards
+
+### 2.13 Voice AI Playground
+
+1. On `/admin/voice-ai`, expand your test client
+2. Run each tool:
+   - **Greeting Preview:** click play &mdash; hear the greeting in the selected voice
+   - **Simulator:** type &ldquo;I need an estimate for deck building&rdquo; &mdash; see AI response
+   - **KB Test:** runs 10 questions against the knowledge base &mdash; check coverage percentage
+   - **Guardrail Test:** runs 8 adversarial inputs &mdash; all should pass
+3. Check the **QA Checklist** &mdash; aim for all green
+
+- [ ] QA Checklist all green (or you know why something is yellow/red)
+
+### 2.14 Contractor Portal Experience
+
+Log in as the contractor to see what they see.
+
+1. Go to `/client-login`
+2. Enter the owner email you used when creating the test client
+3. Enter the OTP code (check email or terminal logs)
+4. You should land on the contractor dashboard showing:
+   - Voice AI status card
+   - System Activity card
+   - Revenue Recovered card (may be empty)
+5. Go to **Conversations** &mdash; you should see the test conversations from earlier
+6. Find a lead in &ldquo;Won&rdquo; status &mdash; click **Mark Job Complete** button
+7. Click **Discussions** &rarr; **Stuck? Text me** &rarr; send a message
+8. Switch back to admin: go to `/admin/discussions` &mdash; the thread should appear
+
+- [ ] Contractor dashboard loads with cards
+- [ ] Mark Job Complete button works
+- [ ] Discussion thread visible in both portal and admin
+
+### 2.15 Payment and Billing
+
+> Skip if `STRIPE_SECRET_KEY` is not set.
+
+1. Go to `/admin/clients/[your-client-id]`
+2. Click **Send Payment Link**
+3. Dev Phone #3 (Owner) should receive SMS with a Stripe checkout link
+4. Open the link. Use test card: `4242 4242 4242 4242`, any future expiry, any CVC
+5. Complete checkout. Verify 30-day trial starts.
+6. Check contractor portal &rarr; **Billing** &mdash; plan and trial countdown should show
+
+- [ ] Payment link SMS received
+- [ ] Checkout completed with test card
+- [ ] Trial active in contractor billing page
+
+### 2.16 Welcome Communications
+
+1. Go to `/signup` and create a new client (use a different email)
+2. Check that email inbox &mdash; welcome email should arrive
+3. Check Dev Phone (if you used a real number) &mdash; welcome SMS with login link
+
+- [ ] Welcome email received
+- [ ] Welcome SMS received
+
+### 2.17 Google Calendar *(skip if not configured)*
+
+1. Go to contractor portal &rarr; **Settings** &rarr; **Calendar**
+2. Click **Connect Google Calendar** &rarr; complete OAuth
+3. Create an appointment in the platform
+4. Check Google Calendar &mdash; appointment should appear
+
+- [ ] OAuth connected
+- [ ] Appointment synced to Google Calendar
+
+### 2.18 Weekly Pipeline SMS
+
+1. Trigger the weekly summary cron:
+   ```bash
+   curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"
+   ```
+2. Dev Phone #3 (Owner) should receive a Monday pipeline SMS with dollar values
+
+- [ ] Pipeline SMS received with revenue numbers
+
+### Phase 2 done?
+
+You should now understand:
+- What happens when a homeowner texts or calls
+- How the AI responds (autonomous vs. Smart Assist)
+- The lead lifecycle: new &rarr; estimate sent &rarr; won &rarr; completed &rarr; review request
+- What the contractor sees in their portal
+- How billing works
+- How Voice AI sounds and how to QA it
+
+If everything passed, move to Phase 3.
 
 ---
 
-## Phase 3: Operate a Simulated Client End-to-End
+## Phase 3: Simulate a Real Client Delivery
 
-**Open:** `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10 (Onboarding Call Script)
+You already know the features work (Phase 2). Now practice delivering the service end-to-end &mdash; exactly as you would for a real contractor. Play both roles: operator and contractor. This is where you build the confidence to sell.
 
-Create a fake client (&ldquo;Summit Renovations&rdquo;) and walk through the entire lifecycle as if it were real. Play both roles &mdash; operator and contractor.
+> **Have open while working through this:** `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` &mdash; Section 10 is the onboarding call script you&apos;ll practice.
 
-### Day 0: Signing
-- [ ] Create client via admin wizard (service model: managed). Assign phone number.
-- [ ] **Open:** `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; walk through it as if sending to Summit Renovations.
-- [ ] Send Payment Link from admin client detail page. Complete checkout with test card. Verify 30-day trial starts.
-- [ ] Verify welcome email + SMS arrived after signup.
+### 3.1 Day 0: Sign the Client
 
-### Day 1: Onboarding Call (practice out loud)
-- [ ] **Read:** Playbook Section 10 &mdash; the call script.
-- [ ] Practice the script out loud. Fill the KB questionnaire while speaking.
-- [ ] Practice the exclusion list step: &ldquo;Before we run anything &mdash; anyone you want us to skip? Family, close friends, personal relationships?&rdquo; This is mandatory for every real client. Practice adding the numbers in the admin dashboard: Configuration tab &rarr; Exclusion List card &rarr; Add Number.
-- [ ] If testing Jobber, configure the webhook from the admin dashboard: Configuration tab &rarr; Integrations card &rarr; Add Integration &rarr; select Jobber.
-- [ ] Before calling: use the Voice AI Playground to preview the greeting and run KB Test + Guardrail Test. QA Checklist all-green before the real call.
-- [ ] Call the business number from your phone &mdash; experience the &ldquo;wow moment&rdquo; yourself.
-- [ ] Import 10-15 test leads as `estimate_sent`. Verify follow-up scheduled.
-- [ ] Try the contractor&apos;s portal KB wizard at `/client/onboarding`.
-- [ ] Practice the expectations script out loud: &ldquo;Week 1: missed call text-back is live...&rdquo;
+You&apos;re simulating the moment a contractor says &ldquo;yes.&rdquo;
 
-### Day 1-2: Revenue Leak Audit
-- [ ] **Open:** `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md`
-- [ ] Fill it out for a real contractor&apos;s Google Business Profile (pick one from Google Maps). This is practice for the real deliverable.
-- [ ] Also practice the **Pre-Sale** Revenue Leak Audit: pick a real contractor from Google Maps and fill out the pre-sale template (`docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`) using only public data. This is the version you run BEFORE outreach &mdash; no contractor participation needed.
+1. Go to `/admin/clients/new/wizard`
+2. Create &ldquo;Summit Renovations&rdquo; (managed service model)
+   - Owner phone: Dev Phone #3
+   - Twilio number: Dev Phone #1
+3. Open `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` and read through it as if you&apos;re about to send it to Summit Renovations. You need to be comfortable explaining every section on a call.
+4. Go to `/admin/clients/[summit-id]` &rarr; click **Send Payment Link**
+5. On Dev Phone #3, open the Stripe link. Pay with test card `4242 4242 4242 4242`.
+6. Check: welcome email arrived? Welcome SMS with login link?
 
-### Week 1-2 Simulation
-- [ ] Text the business number as different &ldquo;homeowners&rdquo; with various questions. Watch the AI respond.
-- [ ] Check `/admin/ai-quality` for flagged messages. Fix a KB gap from the queue.
-- [ ] Set AI to Smart Assist mode. Verify 5-min review window works.
-- [ ] Text something the AI can&apos;t handle: &ldquo;I want to speak to someone about a complaint.&rdquo; Check `/escalations`. Resolve it.
-- [ ] Text: &ldquo;Can I book an estimate for next Tuesday?&rdquo; Verify appointment booking flow.
-- [ ] Generate a report. Review it at `/admin/reports`.
-- [ ] Check the contractor dashboard &mdash; Voice AI card, System Activity card, Revenue Recovered card.
-- [ ] Log in as the contractor. Verify managed portal: no Flows nav, no Features settings tab, no &ldquo;Change Plan&rdquo; button on billing. Discussions, Help, Reviews all accessible.
-- [ ] **Billing portal check:** Contractor sees current plan (read-only), invoices, payment method, guarantee status card with progress bar. No &ldquo;Change Plan&rdquo; button for managed clients.
-- [ ] **Guarantee visibility:** Admin client detail &rarr; Overview tab shows guarantee phase, QLE count, pipeline value, days remaining.
-- [ ] Verify Monday pipeline SMS arrived with dollar values (probable pipeline, confirmed revenue, needs-attention count).
-- [ ] If testing Jobber integration: configure a test webhook and verify appointment sync + job completion triggers review request.
+- [ ] Service agreement reviewed &mdash; I can explain every section
+- [ ] Payment captured via Send Payment Link
+- [ ] Welcome email + SMS received
 
-### Scenario Drills (practice handling real situations)
+### 3.2 Day 1: Practice the Onboarding Call
 
-These are things that WILL happen once you have real clients. Practice each one now so you&apos;re not figuring it out live.
+Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10 (the call script). Then practice it **out loud** &mdash; not silently. You need to hear yourself say these words.
 
-**Ref:** `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` has the detailed playbook for each scenario.
+**Step 1: KB Questionnaire**
 
-- [ ] **Lead opts out (Playbook Section 8):** Text STOP to the business number from a test phone. Verify: all messaging stops, opt-out logged, no further automation fires. Text START to re-subscribe. Understand: you cannot override an opt-out.
-- [ ] **Wrong number / misrouted lead (Section 9):** What do you do when a lead texts &ldquo;wrong number&rdquo;? Practice: mark as opt-out, update lead notes, check if the number was imported incorrectly.
-- [ ] **Contractor wants to pause (Section 6):** Navigate to admin client detail &rarr; pause the subscription. Verify: automations stop, contractor sees paused state, you know the difference between pause and cancel.
-- [ ] **Review monitoring (Section 13):** Check `/admin/reputation`. If reviews exist, verify: AI draft generated, contractor can approve/edit in portal at `/client/reviews`. Understand the approval flow before a real negative review arrives.
-- [ ] **Probable wins nudge (Section 17):** Trigger the `probable-wins-nudge` cron. Understand: the system asks the contractor about leads with appointments 14+ days ago that aren&apos;t marked won/lost. Practice replying YES/NO to the nudge SMS.
-- [ ] **DNC vs opt-out (Section 19):** Understand the difference: opt-out = lead texted STOP (legal, irreversible until they re-subscribe). DNC = operator added the number to the exclusion list (operational, reversible). Practice both in the admin panel.
+1. Open the call script (Playbook Section 10)
+2. Say the intro out loud: &ldquo;Thanks for signing up, let me walk you through...&rdquo;
+3. Go to `/admin/clients/[summit-id]/knowledge`
+4. Fill in the knowledge base while &ldquo;asking&rdquo; Summit Renovations:
+   - What services do you offer?
+   - What&apos;s your service area?
+   - What are your hours?
+   - What&apos;s your pricing range? (or &ldquo;we provide custom quotes&rdquo;)
+   - Any current promotions?
 
-### Week 3+ Simulation (AI progression + billing lifecycle)
-- [ ] **AI mode progression:** Verify the simulated client auto-advanced from `assist` to `autonomous` (check `aiAgentMode` in admin client detail). If client is too new, manually set mode to `autonomous` and verify AI sends responses immediately (no review window).
-- [ ] **Trial reminders:** Trigger the trial-reminders cron. Verify email sends for the appropriate day milestone (Day 7/14/25/28/30). Verify SMS fires on Day 28+.
-- [ ] **Cancellation flow:** From contractor portal, go to `/client/cancel`. Select a reason. Click &ldquo;Cancel Anyway.&rdquo; Verify 30-day grace period is set. Check admin &mdash; cancellation shows in client status. *(Re-create the subscription after testing.)*
-- [ ] **Invoice check:** After the trial period ends (or manually create a test invoice in Stripe), verify: invoice appears on contractor billing page, PDF download works, status badge is correct.
+- [ ] KB has at least 5 entries covering the basics
 
-### After Phase 3, you should know
-- [ ] What the contractor sees on Day 1 (managed portal: scoreboard + inbox, no configuration)
-- [ ] What the operator does daily and how long it takes
-- [ ] What happens when the AI doesn&apos;t know something
-- [ ] What the escalation flow feels like from both sides
-- [ ] What the bi-weekly report looks like
-- [ ] How Voice AI QA works (Playground: greeting preview, simulator, KB test, guardrails, checklist)
-- [ ] How to capture payment during the onboarding call (Send Payment Link)
-- [ ] How the AI progresses from off &rarr; assist &rarr; autonomous
-- [ ] What the contractor sees on their billing page (guarantee progress, invoices, plan)
-- [ ] What happens when a client cancels (grace period, data export, reminders)
-- [ ] What to do when a lead opts out (STOP &rarr; all messaging stops, irreversible until re-subscribe)
-- [ ] The difference between DNC (operator-controlled exclusion) and opt-out (lead-initiated, legal)
-- [ ] How to handle a contractor who wants to pause (pause subscription, automations stop)
-- [ ] How review monitoring and approval works (AI draft &rarr; contractor approves in portal)
+**Step 2: Exclusion List**
+
+Practice this exact phrase out loud: &ldquo;Before we turn anything on &mdash; anyone you want us to skip? Family, close friends, personal numbers that might be in your contacts?&rdquo;
+
+1. Go to `/admin/clients/[summit-id]` &rarr; **Configuration** tab
+2. Find **Exclusion List** card &rarr; add 2-3 fake numbers
+
+This is mandatory for every real client. Skipping it means the AI could text a contractor&apos;s wife or best friend.
+
+- [ ] Exclusion list practiced &mdash; I know the script and where to add numbers
+
+**Step 3: Voice AI QA**
+
+Before any real client goes live, you QA their voice AI.
+
+1. Go to `/admin/voice-ai` &rarr; expand Summit Renovations
+2. **Greeting Preview:** click play &mdash; listen to the greeting. Does it sound right for a renovation company?
+3. **KB Test:** run it &mdash; check coverage percentage. If below 70%, add more KB entries.
+4. **Guardrail Test:** run 8 adversarial inputs. All should pass.
+5. **QA Checklist:** all green?
+6. Now call the business number (#1) from your real phone. Experience the &ldquo;wow moment&rdquo; yourself. This is exactly what you&apos;ll demo on a sales call.
+
+- [ ] Voice AI QA all-green
+- [ ] Called the number myself and heard the AI answer
+
+**Step 4: Import Leads + Set Expectations**
+
+1. Create a CSV with 10-15 fake leads (names, phone numbers, `status=estimate_sent`)
+2. Go to `/leads` &rarr; **Import** &rarr; upload &rarr; check CASL consent box
+3. Go to `/scheduled` &mdash; follow-up messages should be queued
+4. Practice the expectations script out loud: &ldquo;Week 1: missed call text-back goes live immediately. The AI will handle initial conversations. By week 2, you&apos;ll start seeing the first follow-ups convert.&rdquo;
+
+- [ ] Leads imported, follow-ups scheduled
+- [ ] Expectations script practiced out loud
+
+**Step 5: Contractor Portal Onboarding**
+
+1. Log in as the contractor at `/client-login` (use Summit&apos;s owner email)
+2. Go to `/client/onboarding` &mdash; try the KB wizard from the contractor&apos;s perspective
+3. Notice: managed clients see a simpler portal (no Flows nav, no Features settings, no Change Plan button)
+
+- [ ] I understand what the contractor sees on their first login
+
+### 3.3 Day 1-2: Revenue Leak Audit
+
+This is the deliverable you give every client within 48 hours. Practice on a real business.
+
+1. Open Google Maps. Search for a real renovation contractor in your area.
+2. Open `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md`
+3. Fill it out using what you find: their Google reviews, response time, website, and online presence
+4. Also practice the **Pre-Sale** version: open `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` and fill it for a different contractor using only public data. This is what you run BEFORE outreach &mdash; no contractor participation needed.
+
+- [ ] Revenue Leak Audit completed for a real business
+- [ ] Pre-Sale audit completed for a second business
+
+### 3.4 Week 1-2: Daily Operations
+
+Simulate what your daily routine looks like with an active client.
+
+**Simulate homeowner conversations (10 min):**
+
+1. From Dev Phone #2, text the business number as different &ldquo;homeowners&rdquo;:
+   - &ldquo;Hi, do you do bathroom renovations?&rdquo;
+   - &ldquo;What&apos;s your availability next week?&rdquo;
+   - &ldquo;How much for a deck?&rdquo;
+   - &ldquo;Can I book an estimate for next Tuesday?&rdquo; (tests appointment booking)
+   - &ldquo;I want to speak to someone about a complaint.&rdquo; (tests escalation)
+2. Watch the AI respond to each. Note which responses are good and which need KB improvement.
+
+**Check your daily operator dashboard (5 min):**
+
+3. Go to `/admin/triage` &mdash; does Summit Renovations show as needing attention?
+4. Go to `/escalations` &mdash; the &ldquo;complaint&rdquo; text should have created an escalation. Click it. Read the AI&apos;s notes. Click **Resolve** with a note.
+5. Go to `/admin/ai-quality` &mdash; any flagged messages? If so, review them.
+6. Go to `/admin/clients/[summit-id]/knowledge?tab=queue` &mdash; any KB gaps? If the AI couldn&apos;t answer something, there should be a gap entry. Add the answer.
+
+**Generate a report:**
+
+7. Trigger the cron:
+   ```bash
+   curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"
+   ```
+8. Go to `/admin/reports` &mdash; open the report. Even with fake data, understand the layout: recovered revenue, lead pipeline, AI effectiveness.
+
+**Check the contractor&apos;s view:**
+
+9. Log in as Summit&apos;s contractor at `/client-login`
+10. Check: Voice AI card, System Activity card, Revenue Recovered card
+11. Go to **Billing** &mdash; you should see: current plan (read-only), trial countdown, guarantee status card with progress bar. No &ldquo;Change Plan&rdquo; button (managed client).
+12. Switch to admin view &rarr; `/admin/clients/[summit-id]` &rarr; Overview tab &mdash; check guarantee phase, pipeline value, days remaining.
+
+- [ ] I know what the daily operator routine feels like
+- [ ] Escalation resolved
+- [ ] KB gap filled
+- [ ] Report reviewed
+- [ ] Contractor portal makes sense from their perspective
+
+### 3.5 Scenario Drills
+
+These WILL happen with real clients. Practice now so you&apos;re not figuring it out live.
+
+> For full playbook detail on each scenario, see `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (section numbers below).
+
+**Lead opts out (Playbook Section 8):**
+
+1. From Dev Phone #2, text **STOP** to the business number
+2. Verify: Dev Phone #2 gets a confirmation. The system will never text this number again.
+3. Go to `/leads` and check the lead &mdash; status should be `opted_out`
+4. Try texting START to re-subscribe
+5. **Key learning:** you cannot override an opt-out. This is legally binding. If a contractor says &ldquo;that&apos;s my customer, text them anyway&rdquo; &mdash; the answer is no.
+
+- [ ] I understand opt-out is permanent until the lead re-subscribes
+
+**Contractor wants to pause (Section 6):**
+
+1. Go to `/admin/clients/[summit-id]` &rarr; pause the subscription
+2. Verify: automations stop. Check `/scheduled` &mdash; pending messages should not send.
+3. Log in as contractor &mdash; they should see the paused state
+4. **Key learning:** pause = temporary, automations stop, data stays. Cancel = 30-day grace, then data export.
+
+- [ ] I know the difference between pause and cancel
+
+**DNC vs opt-out (Section 19):**
+
+- **Opt-out:** the lead texted STOP. Legal. Irreversible until they text START. System-enforced.
+- **DNC (Exclusion List):** the operator added this number. Operational. Reversible anytime. Prevents the AI from texting someone the contractor doesn&apos;t want contacted (family, friends).
+
+- [ ] I can explain this difference to a contractor
+
+**Review monitoring (Section 13):**
+
+1. Go to `/admin/reputation`
+2. If Google reviews exist, verify: AI drafts a response, contractor can approve/edit at `/client/reviews`
+3. If no reviews yet, understand the flow: negative review &rarr; operator gets SMS alert &rarr; AI generates draft response &rarr; contractor approves in portal &rarr; posted to Google
+
+- [ ] I understand the review approval flow
+
+### 3.6 Billing Lifecycle
+
+**Trial reminders:**
+
+1. Trigger the trial-reminders cron. Email sends at Day 7/14/25/28/30 milestones. SMS fires on Day 28+.
+
+**Cancellation flow:**
+
+1. Log in as contractor &rarr; `/client/cancel`
+2. Select a reason. Click &ldquo;Cancel Anyway.&rdquo;
+3. Verify: 30-day grace period is set. Admin shows cancellation status.
+4. **Key learning:** the system sends reminders at 20/7/3 days. Data export within 5 business days of grace end. Win-back email 7 days after grace ends.
+5. Re-create the subscription after testing (you need Summit active for Phase 4).
+
+- [ ] I understand the full cancellation timeline
+
+### Phase 3 done?
+
+You should now be able to:
+- [ ] Walk a contractor through onboarding on a call (KB, exclusion list, Voice QA, expectations)
+- [ ] Handle daily operations in 5-10 minutes per client
+- [ ] Resolve an escalation
+- [ ] Fill a KB gap when the AI can&apos;t answer something
+- [ ] Explain what the report shows
+- [ ] Handle opt-outs, pauses, and cancellations confidently
+- [ ] Deliver a Revenue Leak Audit
+- [ ] Capture payment during an onboarding call
+- [ ] Explain the difference between DNC and opt-out
+
+If you can check all of those, you&apos;re ready to learn the sales pitch. Move to Phase 4.
 
 ---
 
 ## Phase 4: Understand the Value + Sales
 
-### 4.1 Read (in this order)
+Phase 3 taught you the product. Phase 4 teaches you to explain and sell it.
 
-| Order | Doc | Time | What you learn |
-|:-----:|-----|:----:|----------------|
-| 1 | `docs/operations/00-OPERATOR-GUIDE.md` | 60 min | Big picture &mdash; what the contractor gets, what you do, how the system works |
-| 2 | `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (all 22 sections) | 60 min | How to deliver &mdash; every client scenario, onboarding script, payment capture |
-| 3 | `docs/operations/01-OPERATIONS-GUIDE.md` | 30 min | Daily ops &mdash; what to check, what to fix, cron health, compliance |
-| 4 | `docs/business-intel/OFFER-APPROVED-COPY.md` | 20 min | **Approved sales copy** &mdash; proposals, emails, agreements, website pull from HERE |
-| 5 | `docs/operations/COLD-START-PLAYBOOK.md` | 30 min | Getting first clients &mdash; day-by-day schedule, scripts for every channel |
-| 6 | `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` | 30 min | Handling pushback &mdash; &ldquo;too expensive,&rdquo; &ldquo;tried something similar,&rdquo; &ldquo;I get referrals&rdquo; |
-| 7 | `docs/business-intel/COMPETITIVE-COMPARISON.md` | 10 min | Positioning vs. answering services, CRMs, DIY tools |
-| 8 | `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` | 10 min | Known risks acknowledged before first client |
-| 9 | `docs/business-intel/VOICE.md` | 10 min | Brand voice &mdash; how to write and speak as ConversionSurgery |
+### 4.1 Read These Docs (in order)
 
-**Total reading: ~4.5 hours.** Split across two evenings or one focused day.
+Do this in two evenings or one focused day (~4.5 hours total).
 
-Reference (skim after you&apos;re live &mdash; detailed feature inventory for engineers and product):
-- [ ] `docs/product/PLATFORM-CAPABILITIES.md` &mdash; complete technical inventory of every feature. Useful when a contractor asks &ldquo;can it do X?&rdquo; and you need the precise answer.
+**Evening 1 &mdash; How to deliver the service (2.5 hours):**
 
-Save for sales calls (keep these bookmarked):
-- [ ] `docs/business-intel/OFFER-APPROVED-COPY.md` (exact language for proposals and emails)
-- [ ] `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`
-- [ ] Fill in YOUR details: `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md`
-- [ ] `docs/business-intel/COMPETITIVE-COMPARISON.md` (comparison table for objection handling)
-- [ ] `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` (run before every outreach)
-- [ ] `docs/product/ROI-CALCULATOR-GUIDE.md` (how to use the ROI calculator during calls)
+1. `docs/operations/00-OPERATOR-GUIDE.md` (60 min) &mdash; big picture: what the contractor gets, what you do, how the system works
+2. `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (60 min) &mdash; all 22 sections: every client scenario, onboarding script, payment capture
+3. `docs/operations/01-OPERATIONS-GUIDE.md` (30 min) &mdash; daily ops: what to check, what to fix, cron health
+
+After Evening 1 you should be able to describe the full service delivery without looking at notes.
+
+**Evening 2 &mdash; How to sell it (2 hours):**
+
+4. `docs/business-intel/OFFER-APPROVED-COPY.md` (20 min) &mdash; **approved sales copy**: proposals, emails, website language all come from HERE
+5. `docs/operations/COLD-START-PLAYBOOK.md` (30 min) &mdash; day-by-day schedule for getting first clients, word-for-word scripts
+6. `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (30 min) &mdash; &ldquo;too expensive,&rdquo; &ldquo;tried something similar,&rdquo; &ldquo;I get referrals&rdquo;
+7. `docs/business-intel/COMPETITIVE-COMPARISON.md` (10 min) &mdash; positioning vs answering services, CRMs, DIY tools
+8. `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` (10 min) &mdash; known risks acknowledged before first client
+9. `docs/business-intel/VOICE.md` (10 min) &mdash; brand voice: how to write and speak as ConversionSurgery
+
+After Evening 2 you should be able to pitch the service and handle the top 5 objections.
+
+**Bookmark these for sales calls (don&apos;t memorize &mdash; just know where they are):**
+
+- `docs/business-intel/OFFER-APPROVED-COPY.md` &mdash; exact language for proposals and emails
+- `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` &mdash; ROI calculation for calls
+- `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill in YOUR details before first client
+- `docs/business-intel/COMPETITIVE-COMPARISON.md` &mdash; comparison table for objection handling
+- `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; run before every outreach
+- `docs/product/ROI-CALCULATOR-GUIDE.md` &mdash; how to use the calculator during calls
+- `docs/product/PLATFORM-CAPABILITIES.md` &mdash; when a contractor asks &ldquo;can it do X?&rdquo;
+
+- [ ] Evening 1 reading done
+- [ ] Evening 2 reading done
+- [ ] Service agreement filled in with my details
 
 ### 4.2 Practice Sales Out Loud
 
-**Open:** `docs/operations/COLD-START-PLAYBOOK.md` (scripts section)
+Don&apos;t skip this. Reading scripts silently is not the same as saying them. Open `docs/operations/COLD-START-PLAYBOOK.md`.
 
-- [ ] Say the cold call opener 3 times until it feels natural
-- [ ] Practice the &ldquo;I&apos;m busy&rdquo; and voicemail responses
-- [ ] Walk through the demo on your local environment as if a prospect is watching
-- [ ] Practice using the Voice AI Simulator during a screen-share &mdash; type homeowner questions, show AI responses in real time. This replaces the need for a live Twilio call during demos.
-- [ ] Practice the Revenue Leak Audit flow: call a real contractor&apos;s number after hours, test their web form, pull competitor reviews, fill out the one-page audit template
-- [ ] Run the ROI calculator with 3 different contractor profiles (15 leads/$50K avg, 30 leads/$35K avg, 8 leads/$80K avg). Verify the numbers feel credible.
-- [ ] Practice the demo with Voice AI: &ldquo;Call this number right now&rdquo; &mdash; the text-back fires in 5 seconds, AND if they let it ring, Voice AI answers
-- [ ] **Pre-Outreach prep:** For each prospect on your list, run the Pre-Sale Revenue Leak Audit (`docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`) before reaching out. Budget 15-20 min per prospect. Have specific numbers ready before every outreach.
-- [ ] **ROI Calculator:** Verify `POST /api/public/roi-calculator` returns a valid response. Have it bookmarked or ready to run during sales calls. Fallback: `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` for offline use.
-- [ ] Practice the close: &ldquo;First month is free. I set everything up. You pay nothing until you see results.&rdquo;
-- [ ] Have someone ask you the top 3 objections &mdash; respond without notes
+**The pitch (15 min):**
+
+1. Say the cold call opener 3 times until it feels natural
+2. Practice the &ldquo;I&apos;m busy&rdquo; response and voicemail script
+3. Practice the close: &ldquo;First month is free. I set everything up. You pay nothing until you see results.&rdquo;
+4. Have someone ask you the top 3 objections &mdash; respond without notes
+
+- [ ] I can deliver the opener without reading it
+
+**The demo (20 min):**
+
+5. Open your local environment. Walk through a demo as if a prospect is screen-sharing with you.
+6. The &ldquo;wow moment&rdquo;: call the business number. Text-back fires in 5 seconds. If they let it ring, Voice AI answers. Practice saying: &ldquo;Call this number right now.&rdquo;
+7. Practice using the Voice AI Simulator during screen-share &mdash; type homeowner questions, show AI responses in real time. This works even without a live Twilio call.
+
+- [ ] I can walk through a live demo confidently
+
+**Pre-outreach prep (30 min):**
+
+8. Pick 3 real contractors from Google Maps
+9. For each one, fill out `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` using only public data (15-20 min each)
+10. Run the ROI calculator with 3 profiles: 15 leads/$50K avg, 30 leads/$35K avg, 8 leads/$80K avg. Check that numbers feel credible.
+11. Verify `POST /api/public/roi-calculator` returns a valid response (bookmark this for calls)
+
+- [ ] 3 Pre-Sale Revenue Leak Audits completed
+- [ ] ROI calculator tested and bookmarked
 
 ### 4.3 Self-Test (answer ALL without looking)
 
@@ -205,99 +579,149 @@ Save for sales calls (keep these bookmarked):
 
 ## Phase 5: Deploy to Production
 
-### 5.1 External Services
+You&apos;ve tested locally and practiced the delivery. Now set up the real environment.
 
-**Stripe (30 min) &mdash; Required before selling:**
-1. Create product: &ldquo;ConversionSurgery Managed Service&rdquo;, $1,000/month with 30-day free trial
-2. Create webhook endpoint: `https://yourdomain.com/api/webhooks/stripe`
-3. Events: `checkout.session.completed`, `customer.subscription.created/.updated/.deleted`, `invoice.paid/.payment_failed/.payment_action_required`, `charge.refunded/.dispute.created/.dispute.closed`, `customer.subscription.paused/.resumed/.trial_will_end`, `payment_method.attached`
-4. *(Optional backup)* Create a Stripe Payment Link: same product, 30-day trial. The primary flow is the admin &ldquo;Send Payment Link&rdquo; button which creates checkout sessions automatically.
-- [ ] Price ID, API keys, webhook secret set in production env
-- [ ] Admin &ldquo;Send Payment Link&rdquo; tested with test card `4242 4242 4242 4242`
+### 5.1 External Services (1 hour total)
 
-**Email (10 min):** Resend API key + domain verification.
+Work through each service. Don&apos;t skip &mdash; each one powers a specific part of the product.
+
+**Stripe (30 min) &mdash; this is how you get paid:**
+
+1. Go to [Stripe Dashboard](https://dashboard.stripe.com)
+2. Create a product: &ldquo;ConversionSurgery Managed Service&rdquo;, $1,000/month, 30-day free trial
+3. Copy the Price ID (starts with `price_`)
+4. Go to Developers &rarr; Webhooks &rarr; Add endpoint: `https://yourdomain.com/api/webhooks/stripe`
+5. Select these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`, `customer.subscription.paused`, `customer.subscription.resumed`, `customer.subscription.trial_will_end`, `payment_method.attached`
+6. Copy the webhook signing secret (starts with `whsec_`)
+
+- [ ] `STRIPE_SECRET_KEY`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_WEBHOOK_SECRET` set in production env
+
+**Email (10 min):**
+
+1. Go to [Resend](https://resend.com) &rarr; API Keys &rarr; create one
+2. Verify your sending domain
+
 - [ ] `RESEND_API_KEY` and `EMAIL_FROM` set
 
-**Google Calendar (10 min):** Google Cloud Console &rarr; Calendar API &rarr; OAuth credentials. Redirect: `https://yourdomain.com/api/auth/callback/google-calendar`
+**Google Calendar (10 min):**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) &rarr; enable Calendar API
+2. Create OAuth credentials. Set redirect to: `https://yourdomain.com/api/auth/callback/google-calendar`
+
 - [ ] `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` set
 
-**ElevenLabs (5 min):** API key for voice preview and Voice AI Playground.
+**ElevenLabs (5 min):**
+
+1. Go to [ElevenLabs](https://elevenlabs.io) &rarr; Profile &rarr; API key
+
 - [ ] `ELEVENLABS_API_KEY` set in production env
 
 ### 5.2 Production Database
 
-**Reference:** `docs/engineering/03-NEON-BRANCH-SETUP.md`
+1. Point to your Neon production branch (see `docs/engineering/03-NEON-BRANCH-SETUP.md` if needed)
+2. Run in your terminal:
+   ```bash
+   DATABASE_URL=your_production_string npm run db:migrate
+   DATABASE_URL=your_production_string npm run db:seed -- --lean
+   ```
 
-**Important:** If this is a fresh deploy with the latest schema, run migrations first to include the `service_model` column and any other recent additions.
+- [ ] Migrations applied
+- [ ] Seed data loaded (plans, role templates, help articles)
 
-```bash
-DATABASE_URL=your_production_string npm run db:migrate
-DATABASE_URL=your_production_string npm run db:seed -- --lean
-DATABASE_URL=your_production_string npm run db:seed -- --demo
-```
+### 5.3 Deploy the App
 
-- [ ] Pro plan exists with correct Stripe price ID
-- [ ] 12 help center articles seeded
+1. Deploy main app to Cloudflare via OpenNext
+2. Deploy Voice Agent Worker:
+   ```bash
+   cd packages/voice-agent
+   wrangler secret put ANTHROPIC_API_KEY
+   wrangler secret put DATABASE_URL
+   wrangler deploy
+   ```
+3. Set `VOICE_WS_URL` env var on main app (the Worker URL from step 2)
+4. Verify ConversationRelay is enabled: Twilio Console &rarr; Voice &rarr; Settings
+5. Set up the cron trigger: every 5 minutes, `POST /api/cron` with `Authorization: Bearer CRON_SECRET`
 
-### 5.3 Deploy + Configure
+- [ ] App deployed &mdash; `/login`, `/signup`, `/client-login` all load
+- [ ] Voice Agent Worker deployed
+- [ ] Cron running every 5 minutes
 
-- [ ] Deploy main app to Cloudflare via OpenNext
-- [ ] Deploy Voice Agent Worker: `cd packages/voice-agent && wrangler secret put ANTHROPIC_API_KEY && wrangler secret put DATABASE_URL && wrangler deploy`
-- [ ] Set `VOICE_WS_URL` env var on main app (Worker URL, e.g., `https://voice-agent.your-account.workers.dev`)
-- [ ] Verify ConversationRelay enabled on Twilio account (check Console &rarr; Voice &rarr; Settings)
-- [ ] Pages load: `/login`, `/signup`, `/client-login`
-- [ ] Cron trigger: every 5 min, `POST /api/cron`, `Authorization: Bearer CRON_SECRET`
-- [ ] Agency number (#5) webhooks pointed at production
-- [ ] `operator_phone` and `operator_name` set at `/admin/agency`
+### 5.4 Configure
 
-### 5.4 GST/Tax
+1. Log in as admin at `/login`
+2. Go to `/admin/agency` (Settings &rarr; Agency Settings) &mdash; set:
+   - Agency Twilio number (#5) + SID
+   - Your operator phone (real phone for alerts)
+   - Your operator name
+3. Point agency number (#5) SMS + Voice webhooks at production URL
 
-- [ ] Under $30K? Small supplier exemption. Revisit at $30K.
+- [ ] Agency settings configured
+- [ ] Webhooks pointed at production
 
-### 5.5 Smoke Test
+### 5.5 Tax
 
-- [ ] Assign real Alberta number (403/780) to demo client
-- [ ] Call it. Text-back in 5 seconds?
-- [ ] Text it. AI responds in 10 seconds?
-- [ ] Voice AI answers when call goes unanswered? Test with a real call.
+- [ ] Under $30K annual revenue? Small supplier GST exemption applies. Revisit at $30K.
+
+### 5.6 Smoke Test (5 min &mdash; do this right now)
+
+1. Buy a real Alberta number (403 or 780 area code) in Twilio
+2. Assign it to a demo client in the admin
+3. **Call it from your real phone.** Text-back in 5 seconds?
+4. **Text it from your real phone.** AI responds in 10 seconds?
+5. **Let it ring.** Voice AI answers?
+
+- [ ] Text-back works
+- [ ] AI responds
+- [ ] Voice AI answers
 - [ ] **All pass? Production is live.**
 
 ---
 
 ## Phase 6: Start Selling
 
-**Open:** `docs/operations/COLD-START-PLAYBOOK.md` (you read this in Phase 4 &mdash; now execute it)
+Everything before this was preparation. Now you execute.
+
+### 6.1 Final Pre-Outreach Checklist
+
+Before you contact anyone:
+
+- [ ] Service agreement filled with your details &mdash; saved as PDF
+- [ ] Demo number tested today (call it, text it, confirm it works)
+- [ ] Voice AI Playground QA passed for demo client
+- [ ] Prospect list built (80+ contacts &mdash; see Cold Start Playbook)
+- [ ] Pre-Sale Revenue Leak Audit completed for first 3 prospects
+- [ ] Top 3 objection responses memorized (from `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`)
+- [ ] Competitive comparison reviewed (`docs/business-intel/COMPETITIVE-COMPARISON.md`)
+
+### 6.2 Start Outreach
+
+**Open:** `docs/operations/COLD-START-PLAYBOOK.md` &mdash; follow the day-by-day schedule.
 
 Also reference: `docs/operations/ACQUISITION-PLAYBOOK-0-TO-5.md` for the broader strategy of landing your first 5 clients.
 
-Both have: day-by-day schedules (designed for a 9-5 job), word-for-word scripts for every channel, follow-up sequences, and objection handling.
+Both docs have: day-by-day schedules (designed around a 9-5 job), word-for-word scripts for every channel, follow-up sequences, and objection handling.
 
-### Before first outreach
-
-- [ ] Service agreement filled &mdash; ready as PDF
-- [ ] ROI worksheet saved for calls
-- [ ] Demo number tested today
-- [ ] Voice AI Playground QA passed for demo client &mdash; greeting previewed, KB test green, guardrails passing
-- [ ] Prospect list built (80+ contacts)
-- [ ] Joined 5 Alberta contractor Facebook Groups
-- [ ] Top 3 objection responses memorized
-- [ ] Pre-Sale Revenue Leak Audit completed for first 3 prospects
-- [ ] Competitive comparison doc reviewed (`docs/business-intel/COMPETITIVE-COMPARISON.md`)
-- [ ] Capacity positioning decided: how many contractors per trade per city? (Recommended: 1&ndash;3)
-
-### After they say yes
+### 6.3 When They Say Yes
 
 **Open:** `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10
 
-**Payment capture (on the call):** After the demo &ldquo;wow moment,&rdquo; click &ldquo;Send Payment Link&rdquo; from the client&apos;s admin detail page. Contractor receives SMS + email with Stripe checkout link. Stay on the line while they enter their card. Script and fallback process in Playbook Section 10, &ldquo;Payment Capture.&rdquo;
+On the call, after the &ldquo;wow moment&rdquo; (they hear the AI answer their phone):
 
-Day 0 &rarr; Day 1 &rarr; Week 2 &rarr; Week 3. Onboarding calls on Saturday mornings.
+1. Click **Send Payment Link** from the client&apos;s admin detail page
+2. Contractor receives SMS + email with Stripe checkout link
+3. Stay on the line while they enter their card
+4. Once paid: walk them through onboarding (you practiced this in Phase 3)
 
-### Daily routine (per client)
+Timeline: Day 0 (signing) &rarr; Day 1 (onboarding call + KB + Voice QA) &rarr; Week 2 (first report) &rarr; Week 3 (check-in). Saturday mornings work well for onboarding calls.
 
-1. `/admin/triage` &mdash; who needs attention?
-2. `/escalations` &mdash; hot leads?
-3. Knowledge gap queue &mdash; AI gaps to fill?
-4. `/admin/ai-quality` &mdash; flagged messages?
-5. New clients (Week 1): check Voice AI Playground &mdash; any KB gaps from real calls? Run KB Test again after adding answers.
-6. Done. 5-10 min/client.
+### 6.4 Daily Routine (5-10 min per client)
+
+This is your entire daily workload per client once they&apos;re onboarded:
+
+1. `/admin/triage` &mdash; who needs attention? (red = act now, yellow = check soon)
+2. `/escalations` &mdash; any hot leads the AI couldn&apos;t handle?
+3. Knowledge gap queue &mdash; any questions the AI couldn&apos;t answer? Add the answer.
+4. `/admin/ai-quality` &mdash; any flagged messages? Review and dismiss or fix.
+5. New clients only (Week 1): run Voice AI KB Test again after adding answers from real calls.
+
+That&apos;s it. The system handles everything else.
