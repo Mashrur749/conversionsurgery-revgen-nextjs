@@ -25,13 +25,13 @@ Work through these sections in order. Each test tells you exactly what to click,
 
 ### 2.1 Create Your First Test Client
 
-1. Go to `/admin/clients/new/wizard`
+1. In the admin nav, click **Clients** &rarr; **Clients** &rarr; then click the **+ New Client** button (or use the wizard link)
 2. Fill in:
    - Business name: &ldquo;Summit Renovations&rdquo; (or anything)
    - Owner name, email, phone: use your Dev Phone #3 (Owner) number for the phone
    - Twilio number: select Dev Phone #1 (Business Line)
 3. Complete the wizard. Click through each step.
-4. Go to `/admin/clients` &mdash; your new client should appear.
+4. Click **Clients** &rarr; **Clients** in the nav &mdash; your new client should appear.
 
 - [ ] Client shows in the list with status &ldquo;active&rdquo;
 
@@ -43,7 +43,7 @@ This is the product&apos;s core value. A homeowner texts, the AI replies.
 2. Send a text to the Business Line (#1): &ldquo;Hi, I need a quote for a kitchen renovation&rdquo;
 3. Watch your terminal &mdash; you should see webhook logs
 4. Within 2-8 seconds, Dev Phone #2 receives an AI response
-5. Go to `/conversations` in the admin dashboard (select your test client first)
+5. In the admin nav, click **Client View** &rarr; **Conversations** (make sure your test client is selected in the client dropdown)
 6. You should see the conversation thread with the lead&apos;s message and the AI&apos;s response
 
 - [ ] AI responded within 10 seconds
@@ -54,7 +54,7 @@ This is the product&apos;s core value. A homeowner texts, the AI replies.
 1. From Dev Phone #2 (Lead), **call** the Business Line (#1)
 2. Let it ring &mdash; don&apos;t answer
 3. Within 5 seconds, Dev Phone #2 should receive a text: something like &ldquo;Sorry we missed your call...&rdquo;
-4. Check `/conversations` &mdash; a new conversation should appear for this caller
+4. Check **Client View** &rarr; **Conversations** &mdash; a new conversation should appear for this caller
 
 - [ ] Text-back arrived within 5 seconds of the missed call
 
@@ -66,7 +66,7 @@ This is the product&apos;s core value. A homeowner texts, the AI replies.
 2. You should hear a voice greeting (ElevenLabs voice)
 3. Say: &ldquo;I need help with a bathroom renovation&rdquo; &mdash; AI should respond conversationally
 4. Say: &ldquo;I want to speak to someone&rdquo; &mdash; this should trigger a transfer attempt
-5. Hang up. Go to `/admin/clients/[your-client-id]` &rarr; look for call transcript + AI summary
+5. Hang up. Go to **Clients** &rarr; **Clients** &rarr; click your test client &rarr; look for call transcript + AI summary
 
 - [ ] Voice AI answered with a natural greeting
 - [ ] Transcript and summary appear in admin after the call
@@ -75,7 +75,7 @@ This is the product&apos;s core value. A homeowner texts, the AI replies.
 
 This is the safety net for new clients &mdash; AI drafts a response, you approve it before it sends.
 
-1. Go to `/admin/clients/[your-client-id]` &rarr; find the AI mode setting
+1. Go to **Clients** &rarr; **Clients** &rarr; click your test client &rarr; find the AI mode setting
 2. Change it to **Smart Assist** (also called &ldquo;assist&rdquo; mode)
 3. From Dev Phone #2, text the Business Line: &ldquo;Do you do emergency plumbing?&rdquo;
 4. This time the AI should NOT auto-reply. Instead:
@@ -93,17 +93,17 @@ This is the safety net for new clients &mdash; AI drafts a response, you approve
 
 Walk through the full lead journey as the contractor would see it.
 
-1. Go to `/leads` (admin, with your test client selected)
+1. Click **Client View** &rarr; **Leads** (make sure your test client is selected)
 2. Click on the lead you created in 2.2
 3. In the status dropdown (top right), change to **Estimate Sent**
    - This starts the 4-touch, 14-day follow-up automation
-4. Go to `/scheduled` &mdash; you should see follow-up messages queued
+4. Click **Client View** &rarr; **Scheduled** &mdash; you should see follow-up messages queued
 5. Go back to the lead. Change status to **Won**
    - Enter a confirmed revenue amount (e.g., $4,500)
    - Dev Phone #3 (Owner) should receive a &ldquo;recovered lead&rdquo; SMS notification
 6. Change status to **Completed**
    - This triggers the review request automation (SMS sent next day at 10am)
-7. Go to `/scheduled` &mdash; you should see a review request message queued
+7. Click **Client View** &rarr; **Scheduled** &mdash; you should see a review request message queued
 
 - [ ] Follow-up messages scheduled after Estimate Sent
 - [ ] Owner notification SMS after Won
@@ -113,7 +113,7 @@ Walk through the full lead journey as the contractor would see it.
 
 1. Create a CSV file with columns: `name,phone,email,status`
 2. Add 3-5 rows with test data. Set status to `estimate_sent` for at least one.
-3. Go to `/leads` &rarr; click **Import**
+3. Click **Client View** &rarr; **Leads** &rarr; click **Import**
 4. Upload the CSV. Check the **CASL consent** box.
 5. Verify leads appear in the list. Leads with `estimate_sent` should have follow-ups scheduled.
 
@@ -122,7 +122,7 @@ Walk through the full lead journey as the contractor would see it.
 
 ### 2.8 Exclusion List (Do Not Contact)
 
-1. Go to `/admin/clients/[your-client-id]` &rarr; **Configuration** tab
+1. Go to **Clients** &rarr; **Clients** &rarr; click your test client &rarr; **Configuration** tab
 2. Find the **Exclusion List** card
 3. Add a phone number (any test number)
 4. Verify it appears in the list
@@ -137,7 +137,7 @@ Walk through the full lead journey as the contractor would see it.
    curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"
    ```
    Replace `YOUR_CRON_SECRET` with the value from your `.env.local`.
-2. Go to `/admin/reports`
+2. Click **Reporting** &rarr; **Reports** in the admin nav
 3. A report should appear for your test client (may be empty data, that&apos;s fine)
 
 - [ ] Report generated without errors
@@ -156,7 +156,7 @@ This runs 29 tests covering safety, quality, and adversarial scenarios. All safe
 
 ### 2.11 AI Preview
 
-1. Go to `/admin/clients/[your-client-id]`
+1. Go to **Clients** &rarr; **Clients** &rarr; click your test client
 2. Find the **AI Preview** panel
 3. Type a question a homeowner might ask: &ldquo;How much does a roof replacement cost?&rdquo;
 4. AI should respond based on the client&apos;s knowledge base
@@ -165,7 +165,7 @@ This runs 29 tests covering safety, quality, and adversarial scenarios. All safe
 
 ### 2.12 Voice AI Admin Config
 
-1. Go to `/admin/voice-ai`
+1. Click **Settings** &rarr; **Voice AI** in the admin nav
 2. Check that you see:
    - Kill switch banner at top (should show enabled/disabled)
    - Per-client cards with: pricing toggle, max duration, business hours, agent tone badge
@@ -174,7 +174,7 @@ This runs 29 tests covering safety, quality, and adversarial scenarios. All safe
 
 ### 2.13 Voice AI Playground
 
-1. On `/admin/voice-ai`, expand your test client
+1. On the Voice AI page (**Settings** &rarr; **Voice AI**), expand your test client
 2. Run each tool:
    - **Greeting Preview:** click play &mdash; hear the greeting in the selected voice
    - **Simulator:** type &ldquo;I need an estimate for deck building&rdquo; &mdash; see AI response
@@ -188,7 +188,7 @@ This runs 29 tests covering safety, quality, and adversarial scenarios. All safe
 
 Log in as the contractor to see what they see.
 
-1. Go to `/client-login`
+1. Open http://localhost:3000/client-login in a new browser tab (or incognito window)
 2. Enter the owner email you used when creating the test client
 3. Enter the OTP code (check email or terminal logs)
 4. You should land on the contractor dashboard showing:
@@ -198,7 +198,7 @@ Log in as the contractor to see what they see.
 5. Go to **Conversations** &mdash; you should see the test conversations from earlier
 6. Find a lead in &ldquo;Won&rdquo; status &mdash; click **Mark Job Complete** button
 7. Click **Discussions** &rarr; **Stuck? Text me** &rarr; send a message
-8. Switch back to admin: go to `/admin/discussions` &mdash; the thread should appear
+8. Switch back to admin: click **Clients** &rarr; **Discussions** &mdash; the thread should appear
 
 - [ ] Contractor dashboard loads with cards
 - [ ] Mark Job Complete button works
@@ -208,7 +208,7 @@ Log in as the contractor to see what they see.
 
 > Skip if `STRIPE_SECRET_KEY` is not set.
 
-1. Go to `/admin/clients/[your-client-id]`
+1. Go to **Clients** &rarr; **Clients** &rarr; click your test client
 2. Click **Send Payment Link**
 3. Dev Phone #3 (Owner) should receive SMS with a Stripe checkout link
 4. Open the link. Use test card: `4242 4242 4242 4242`, any future expiry, any CVC
@@ -221,7 +221,7 @@ Log in as the contractor to see what they see.
 
 ### 2.16 Welcome Communications
 
-1. Go to `/signup` and create a new client (use a different email)
+1. Open http://localhost:3000/signup in a new browser tab and create a new client (use a different email)
 2. Check that email inbox &mdash; welcome email should arrive
 3. Check Dev Phone (if you used a real number) &mdash; welcome SMS with login link
 
@@ -272,12 +272,12 @@ You already know the features work (Phase 2). Now practice delivering the servic
 
 You&apos;re simulating the moment a contractor says &ldquo;yes.&rdquo;
 
-1. Go to `/admin/clients/new/wizard`
+1. Click **Clients** &rarr; **Clients** &rarr; **+ New Client** (use the wizard)
 2. Create &ldquo;Summit Renovations&rdquo; (managed service model)
    - Owner phone: Dev Phone #3
    - Twilio number: Dev Phone #1
 3. Open `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` and read through it as if you&apos;re about to send it to Summit Renovations. You need to be comfortable explaining every section on a call.
-4. Go to `/admin/clients/[summit-id]` &rarr; click **Send Payment Link**
+4. Click **Clients** &rarr; **Clients** &rarr; click Summit Renovations &rarr; click **Send Payment Link**
 5. On Dev Phone #3, open the Stripe link. Pay with test card `4242 4242 4242 4242`.
 6. Check: welcome email arrived? Welcome SMS with login link?
 
@@ -293,7 +293,7 @@ Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10 (the call scrip
 
 1. Open the call script (Playbook Section 10)
 2. Say the intro out loud: &ldquo;Thanks for signing up, let me walk you through...&rdquo;
-3. Go to `/admin/clients/[summit-id]/knowledge`
+3. Click **Clients** &rarr; **Clients** &rarr; click Summit Renovations &rarr; **Knowledge** tab
 4. Fill in the knowledge base while &ldquo;asking&rdquo; Summit Renovations:
    - What services do you offer?
    - What&apos;s your service area?
@@ -307,7 +307,7 @@ Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10 (the call scrip
 
 Practice this exact phrase out loud: &ldquo;Before we turn anything on &mdash; anyone you want us to skip? Family, close friends, personal numbers that might be in your contacts?&rdquo;
 
-1. Go to `/admin/clients/[summit-id]` &rarr; **Configuration** tab
+1. Click **Clients** &rarr; **Clients** &rarr; click Summit Renovations &rarr; **Configuration** tab
 2. Find **Exclusion List** card &rarr; add 2-3 fake numbers
 
 This is mandatory for every real client. Skipping it means the AI could text a contractor&apos;s wife or best friend.
@@ -318,7 +318,7 @@ This is mandatory for every real client. Skipping it means the AI could text a c
 
 Before any real client goes live, you QA their voice AI.
 
-1. Go to `/admin/voice-ai` &rarr; expand Summit Renovations
+1. Click **Settings** &rarr; **Voice AI** &rarr; expand Summit Renovations
 2. **Greeting Preview:** click play &mdash; listen to the greeting. Does it sound right for a renovation company?
 3. **KB Test:** run it &mdash; check coverage percentage. If below 70%, add more KB entries.
 4. **Guardrail Test:** run 8 adversarial inputs. All should pass.
@@ -331,8 +331,8 @@ Before any real client goes live, you QA their voice AI.
 **Step 4: Import Leads + Set Expectations**
 
 1. Create a CSV with 10-15 fake leads (names, phone numbers, `status=estimate_sent`)
-2. Go to `/leads` &rarr; **Import** &rarr; upload &rarr; check CASL consent box
-3. Go to `/scheduled` &mdash; follow-up messages should be queued
+2. Click **Client View** &rarr; **Leads** &rarr; **Import** &rarr; upload &rarr; check CASL consent box
+3. Click **Client View** &rarr; **Scheduled** &mdash; follow-up messages should be queued
 4. Practice the expectations script out loud: &ldquo;Week 1: missed call text-back goes live immediately. The AI will handle initial conversations. By week 2, you&apos;ll start seeing the first follow-ups convert.&rdquo;
 
 - [ ] Leads imported, follow-ups scheduled
@@ -340,8 +340,8 @@ Before any real client goes live, you QA their voice AI.
 
 **Step 5: Contractor Portal Onboarding**
 
-1. Log in as the contractor at `/client-login` (use Summit&apos;s owner email)
-2. Go to `/client/onboarding` &mdash; try the KB wizard from the contractor&apos;s perspective
+1. Open http://localhost:3000/client-login in an incognito window (use Summit&apos;s owner email)
+2. In the contractor portal, look for the onboarding wizard &mdash; try the KB questionnaire from the contractor&apos;s perspective
 3. Notice: managed clients see a simpler portal (no Flows nav, no Features settings, no Change Plan button)
 
 - [ ] I understand what the contractor sees on their first login
@@ -374,10 +374,10 @@ Simulate what your daily routine looks like with an active client.
 
 **Check your daily operator dashboard (5 min):**
 
-3. Go to `/admin/triage` &mdash; does Summit Renovations show as needing attention?
-4. Go to `/escalations` &mdash; the &ldquo;complaint&rdquo; text should have created an escalation. Click it. Read the AI&apos;s notes. Click **Resolve** with a note.
-5. Go to `/admin/ai-quality` &mdash; any flagged messages? If so, review them.
-6. Go to `/admin/clients/[summit-id]/knowledge?tab=queue` &mdash; any KB gaps? If the AI couldn&apos;t answer something, there should be a gap entry. Add the answer.
+3. Click **Clients** &rarr; **Triage** &mdash; does Summit Renovations show as needing attention?
+4. Click **Client View** &rarr; **Escalations** &mdash; the &ldquo;complaint&rdquo; text should have created an escalation. Click it. Read the AI&apos;s notes. Click **Resolve** with a note.
+5. Click **Optimization** &rarr; **AI Quality** &mdash; any flagged messages? If so, review them.
+6. Click **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; **Knowledge** tab &rarr; **Queue** sub-tab &mdash; any KB gaps? Add the answer.
 
 **Generate a report:**
 
@@ -385,14 +385,14 @@ Simulate what your daily routine looks like with an active client.
    ```bash
    curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"
    ```
-8. Go to `/admin/reports` &mdash; open the report. Even with fake data, understand the layout: recovered revenue, lead pipeline, AI effectiveness.
+8. Click **Reporting** &rarr; **Reports** &mdash; open the report. Even with fake data, understand the layout: recovered revenue, lead pipeline, AI effectiveness.
 
 **Check the contractor&apos;s view:**
 
-9. Log in as Summit&apos;s contractor at `/client-login`
+9. Log in as Summit&apos;s contractor (http://localhost:3000/client-login in incognito)
 10. Check: Voice AI card, System Activity card, Revenue Recovered card
 11. Go to **Billing** &mdash; you should see: current plan (read-only), trial countdown, guarantee status card with progress bar. No &ldquo;Change Plan&rdquo; button (managed client).
-12. Switch to admin view &rarr; `/admin/clients/[summit-id]` &rarr; Overview tab &mdash; check guarantee phase, pipeline value, days remaining.
+12. Switch to admin view &rarr; **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; Overview tab &mdash; check guarantee phase, pipeline value, days remaining.
 
 - [ ] I know what the daily operator routine feels like
 - [ ] Escalation resolved
@@ -410,7 +410,7 @@ These WILL happen with real clients. Practice now so you&apos;re not figuring it
 
 1. From Dev Phone #2, text **STOP** to the business number
 2. Verify: Dev Phone #2 gets a confirmation. The system will never text this number again.
-3. Go to `/leads` and check the lead &mdash; status should be `opted_out`
+3. Click **Client View** &rarr; **Leads** and check the lead &mdash; status should be `opted_out`
 4. Try texting START to re-subscribe
 5. **Key learning:** you cannot override an opt-out. This is legally binding. If a contractor says &ldquo;that&apos;s my customer, text them anyway&rdquo; &mdash; the answer is no.
 
@@ -418,8 +418,8 @@ These WILL happen with real clients. Practice now so you&apos;re not figuring it
 
 **Contractor wants to pause (Section 6):**
 
-1. Go to `/admin/clients/[summit-id]` &rarr; pause the subscription
-2. Verify: automations stop. Check `/scheduled` &mdash; pending messages should not send.
+1. Click **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; pause the subscription
+2. Verify: automations stop. Check **Client View** &rarr; **Scheduled** &mdash; pending messages should not send.
 3. Log in as contractor &mdash; they should see the paused state
 4. **Key learning:** pause = temporary, automations stop, data stays. Cancel = 30-day grace, then data export.
 
@@ -434,8 +434,8 @@ These WILL happen with real clients. Practice now so you&apos;re not figuring it
 
 **Review monitoring (Section 13):**
 
-1. Go to `/admin/reputation`
-2. If Google reviews exist, verify: AI drafts a response, contractor can approve/edit at `/client/reviews`
+1. Click **Optimization** &rarr; **Reputation**
+2. If Google reviews exist, verify: AI drafts a response, contractor can approve/edit in the contractor portal under **Reviews**
 3. If no reviews yet, understand the flow: negative review &rarr; operator gets SMS alert &rarr; AI generates draft response &rarr; contractor approves in portal &rarr; posted to Google
 
 - [ ] I understand the review approval flow
