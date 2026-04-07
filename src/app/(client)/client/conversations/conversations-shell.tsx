@@ -630,14 +630,45 @@ export function ConversationsShell({
     setStatusActionLoading(false);
   }
 
+  async function handleMarkCompleted() {
+    if (!selectedLeadId || statusActionLoading) return;
+    setStatusActionLoading(true);
+    setStatusActionMessage(null);
+    try {
+      const res = await fetch(`/api/client/leads/${selectedLeadId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { lead: { id: string; status: string } };
+        setLead((prev) => (prev ? { ...prev, status: data.lead.status } : prev));
+        setConversations((prev) =>
+          prev.map((c) => (c.id === selectedLeadId ? { ...c, status: data.lead.status } : c))
+        );
+        setStatusActionMessage('Job marked complete — review request scheduled');
+        setTimeout(() => setStatusActionMessage(null), 4000);
+      } else {
+        setStatusActionMessage('Failed to update status. Please try again.');
+        setTimeout(() => setStatusActionMessage(null), 4000);
+      }
+    } catch {
+      setStatusActionMessage('Network error. Please try again.');
+      setTimeout(() => setStatusActionMessage(null), 4000);
+    }
+    setStatusActionLoading(false);
+  }
+
   // ----- Derived: which action buttons to show -----
   const leadStatus = lead?.status ?? null;
   const isTerminalStatus =
     leadStatus === 'estimate_sent' ||
     leadStatus === 'won' ||
+    leadStatus === 'completed' ||
     leadStatus === 'lost';
   const showEstimateButton = !isTerminalStatus;
-  const showWonLostButtons = leadStatus !== 'won' && leadStatus !== 'lost';
+  const showWonLostButtons = leadStatus !== 'won' && leadStatus !== 'completed' && leadStatus !== 'lost';
+  const showCompleteButton = leadStatus === 'won';
 
   // =========================================================================
   // Render
@@ -819,8 +850,19 @@ export function ConversationsShell({
                 </div>
 
                 {/* Row 2: lead status action buttons */}
-                {(showEstimateButton || showWonLostButtons) && (
+                {(showEstimateButton || showWonLostButtons || showCompleteButton) && (
                   <div className="flex items-center gap-1.5 px-3 pb-2 flex-wrap">
+                    {showCompleteButton && (
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs bg-[#3D7A50] hover:bg-[#3D7A50]/90 text-white"
+                        disabled={statusActionLoading}
+                        onClick={handleMarkCompleted}
+                      >
+                        Mark Job Complete
+                      </Button>
+                    )}
+
                     {showEstimateButton && (
                       <Button
                         size="sm"

@@ -1,7 +1,8 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
-import { agencyMessages, clients, systemSettings } from '@/db/schema';
+import { agencyMessages, clients } from '@/db/schema';
+import { getAgency } from '@/lib/services/agency-settings';
 import { eq, sql, and } from 'drizzle-orm';
 import { AgencyDashboard } from './_components/agency-dashboard';
 
@@ -50,11 +51,7 @@ export default async function AgencyPage() {
       .from(clients)
       .where(eq(clients.status, 'active'))
       .then((r) => Number(r[0]?.count ?? 0)),
-    db
-      .select({ value: systemSettings.value })
-      .from(systemSettings)
-      .where(eq(systemSettings.key, 'agency_twilio_number'))
-      .then((r) => r[0]?.value ?? null),
+    getAgency().then((a) => a.twilioNumber ?? null),
     db
       .select({
         id: clients.id,

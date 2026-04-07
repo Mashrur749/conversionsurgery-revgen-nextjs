@@ -5,6 +5,7 @@ export const LEAD_STATUSES = [
   { value: 'appointment_scheduled', label: 'Appointment' },
   { value: 'action_required', label: 'Action Required' },
   { value: 'won', label: 'Won' },
+  { value: 'completed', label: 'Completed' },
   { value: 'lost', label: 'Lost' },
   { value: 'opted_out', label: 'Opted Out' },
 ] as const;
@@ -30,6 +31,7 @@ export const STATUS_COLORS: Record<string, string> = {
   appointment_scheduled: 'bg-[#E8F0E8] text-forest',
   action_required: 'bg-[#FDEAE4] text-sienna',
   won: 'bg-[#E8F5E9] text-[#3D7A50]',
+  completed: 'bg-[#E8F5E9] text-[#3D7A50]',
   lost: 'bg-muted text-muted-foreground',
   opted_out: 'bg-muted text-muted-foreground',
 };
@@ -42,7 +44,7 @@ export const TEMPERATURE_COLORS: Record<string, string> = {
 
 /** Bulk update targets — statuses that make sense for bulk operations. */
 export const BULK_UPDATE_STATUSES = [
-  'contacted', 'estimate_sent', 'appointment_scheduled', 'won', 'lost',
+  'contacted', 'estimate_sent', 'appointment_scheduled', 'won', 'completed', 'lost',
 ] as const;
 
 /** Quick reply templates for the lead detail reply form. */

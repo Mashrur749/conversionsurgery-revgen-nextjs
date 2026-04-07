@@ -1,7 +1,8 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb, clients, leads, dailyStats } from '@/db';
-import { jobs, systemSettings } from '@/db/schema';
+import { jobs } from '@/db/schema';
+import { getAgency } from '@/lib/services/agency-settings';
 import { eq, gte, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -61,12 +62,8 @@ export default async function AdminPage() {
     .from(jobs)
     .where(gte(jobs.createdAt, thirtyDaysAgo));
 
-  const operatorPhoneSetting = await db
-    .select()
-    .from(systemSettings)
-    .where(eq(systemSettings.key, 'operator_phone'))
-    .limit(1);
-  const operatorPhoneConfigured = operatorPhoneSetting.length > 0 && !!operatorPhoneSetting[0].value;
+  const agency = await getAgency();
+  const operatorPhoneConfigured = !!agency.operatorPhone;
 
   const statusColors: Record<string, string> = {
     active: 'bg-[#E8F5E9] text-[#3D7A50]',

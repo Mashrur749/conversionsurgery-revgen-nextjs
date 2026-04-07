@@ -1,8 +1,8 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { getDb, leads, dailyStats, appointments, flowExecutions, flows } from '@/db';
-import { clients, subscriptions, systemSettings, knowledgeBase } from '@/db/schema';
-import { eq, and, gte, sql, desc, inArray, ne } from 'drizzle-orm';
+import { clients, subscriptions, knowledgeBase } from '@/db/schema';
+import { eq, and, gte, sql, desc, ne } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -104,12 +104,10 @@ export default async function ClientDashboardPage() {
     : (() => { console.error('[ClientDashboard] Failed to load report delivery:', latestReportDeliveryResult.reason); return null; })();
 
   // Operator contact info for Account Manager card
-  const operatorRows = await db
-    .select({ key: systemSettings.key, value: systemSettings.value })
-    .from(systemSettings)
-    .where(inArray(systemSettings.key, ['operator_phone', 'operator_name']));
-  const operatorPhone = operatorRows.find((r) => r.key === 'operator_phone')?.value ?? null;
-  const operatorName = operatorRows.find((r) => r.key === 'operator_name')?.value ?? 'ConversionSurgery Team';
+  const { getAgency } = await import('@/lib/services/agency-settings');
+  const agencyRow = await getAgency();
+  const operatorPhone = agencyRow.operatorPhone ?? null;
+  const operatorName = agencyRow.operatorName ?? 'ConversionSurgery Team';
 
   // Setup status checks
   const [client] = await db

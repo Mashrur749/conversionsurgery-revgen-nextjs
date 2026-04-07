@@ -1,8 +1,6 @@
 import twilio from 'twilio';
-import { getDb } from '@/db';
-import { systemSettings } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { getAgencyField } from '@/lib/services/agency-settings';
 
 // ---------------------------------------------------------------------------
 // Deduplication — in-memory, per process
@@ -26,23 +24,11 @@ function markSent(subject: string): void {
 // ---------------------------------------------------------------------------
 
 async function getOperatorPhone(): Promise<string | null> {
-  const db = getDb();
-  const [row] = await db
-    .select()
-    .from(systemSettings)
-    .where(eq(systemSettings.key, 'operator_phone'))
-    .limit(1);
-  return row?.value ?? null;
+  return await getAgencyField('operatorPhone') ?? null;
 }
 
 async function getAgencyTwilioNumber(): Promise<string | null> {
-  const db = getDb();
-  const [row] = await db
-    .select()
-    .from(systemSettings)
-    .where(eq(systemSettings.key, 'agency_twilio_number'))
-    .limit(1);
-  return row?.value ?? null;
+  return await getAgencyField('twilioNumber') ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -52,7 +38,7 @@ async function getAgencyTwilioNumber(): Promise<string | null> {
 /**
  * Send an SMS alert to the operator's personal phone.
  *
- * - Reads `operator_phone` from system_settings — skips silently if not set.
+ * - Reads `operator_phone` from agencies table — skips silently if not set.
  * - Reads agency Twilio number as the sender (same pattern as agency-communication.ts).
  * - Deduplicates by subject: at most one alert per subject per hour.
  */
@@ -64,13 +50,13 @@ export async function alertOperator(subject: string, detail: string): Promise<vo
 
   const operatorPhone = await getOperatorPhone();
   if (!operatorPhone) {
-    console.warn('[OperatorAlert] operator_phone not configured in system_settings — skipping alert');
+    console.warn('[OperatorAlert] operator_phone not configured — skipping alert');
     return;
   }
 
   const agencyNumber = await getAgencyTwilioNumber();
   if (!agencyNumber) {
-    console.warn('[OperatorAlert] agency_twilio_number not configured in system_settings — skipping alert');
+    console.warn('[OperatorAlert] agency twilio number not configured — skipping alert');
     return;
   }
 

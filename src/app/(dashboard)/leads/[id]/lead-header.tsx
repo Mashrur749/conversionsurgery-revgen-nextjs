@@ -162,9 +162,9 @@ export function LeadHeader({ lead }: LeadHeaderProps) {
               updateField('confirmedRevenue', val);
             }}
             placeholder="$0"
-            className={`h-8 mt-1${lead.status === 'won' ? ' border-[#3D7A50] ring-1 ring-[#3D7A50]/30' : ''}`}
+            className={`h-8 mt-1${lead.status === 'won' || lead.status === 'completed' ? ' border-[#3D7A50] ring-1 ring-[#3D7A50]/30' : ''}`}
           />
-          {lead.status === 'won' && (
+          {(lead.status === 'won' || lead.status === 'completed') && (
             <p className="text-xs text-[#3D7A50] mt-0.5">Actual job value (dollars)</p>
           )}
         </div>

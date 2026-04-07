@@ -1,4 +1,4 @@
-import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats, clientAgentSettings, systemSettings } from '@/db';
+import { getDb, clients, leads, conversations, blockedNumbers, scheduledMessages, dailyStats, clientAgentSettings } from '@/db';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
@@ -69,14 +69,9 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   }
 
   // 1b. Check for flow approval responses from client owner or operator
-  const operatorPhoneRow = await db
-    .select({ value: systemSettings.value })
-    .from(systemSettings)
-    .where(eq(systemSettings.key, 'operator_phone'))
-    .limit(1);
-  const operatorPhone = operatorPhoneRow[0]?.value
-    ? normalizePhoneNumber(operatorPhoneRow[0].value)
-    : null;
+  const { getAgencyField } = await import('@/lib/services/agency-settings');
+  const rawOpPhone = await getAgencyField('operatorPhone');
+  const operatorPhone = rawOpPhone ? normalizePhoneNumber(rawOpPhone) : null;
   const isOwnerOrOperator =
     normalizePhoneNumber(client.phone) === senderPhone ||
     (operatorPhone !== null && operatorPhone === senderPhone);

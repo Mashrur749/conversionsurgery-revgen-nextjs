@@ -1,6 +1,6 @@
 import twilio from "twilio";
 import { getDb } from "@/db";
-import { clients, systemSettings, clientPhoneNumbers, conversations } from "@/db/schema";
+import { clients, clientPhoneNumbers, conversations } from "@/db/schema";
 import { eq, and, isNotNull, gte, sql } from "drizzle-orm";
 import { sendOnboardingNotification } from "@/lib/services/agency-communication";
 import { syncDayOneSystemMilestones } from "@/lib/services/day-one-activation";
@@ -210,14 +210,25 @@ export async function purchaseNumber(
 
     // Also insert into junction table for multi-number support
     try {
-      await db.insert(clientPhoneNumbers).values({
-        clientId,
-        phoneNumber,
-        friendlyName: `Purchased: ${phoneNumber}`,
-        isPrimary: true,
-        capabilities: { sms: true, voice: true, mms: true },
-        purchasedAt: new Date(),
-      });
+      await db
+        .insert(clientPhoneNumbers)
+        .values({
+          clientId,
+          phoneNumber,
+          friendlyName: `Purchased: ${phoneNumber}`,
+          isPrimary: true,
+          capabilities: { sms: true, voice: true, mms: true },
+          purchasedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [clientPhoneNumbers.clientId, clientPhoneNumbers.phoneNumber],
+          set: {
+            isActive: true,
+            isPrimary: true,
+            capabilities: { sms: true, voice: true, mms: true },
+            updatedAt: new Date(),
+          },
+        });
     } catch (err) {
       console.error("[Twilio] Failed to insert into junction table:", err);
     }
@@ -340,13 +351,10 @@ export async function listUnassignedNumbers(): Promise<OwnedNumber[]> {
     );
 
     // Also exclude the agency number
-    const [agencySetting] = await db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.key, "agency_twilio_number"))
-      .limit(1);
-    if (agencySetting?.value) {
-      assignedSet.add(agencySetting.value);
+    const { getAgencyField } = await import('@/lib/services/agency-settings');
+    const agencyTwilioNumber = await getAgencyField('twilioNumber');
+    if (agencyTwilioNumber) {
+      assignedSet.add(agencyTwilioNumber);
     }
 
     return ownedNumbers.filter((n) => !assignedSet.has(n.phoneNumber));

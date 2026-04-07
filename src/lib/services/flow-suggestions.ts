@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { flows, suggestedActions, clients, leads, systemSettings } from '@/db/schema';
+import { flows, suggestedActions, clients, leads } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { detectSignals, mapSignalsToFlows, type DetectedSignals } from './signal-detection';
 import { sendSMS } from './twilio';
@@ -122,12 +122,9 @@ async function sendApprovalSMS(
   if (!client?.twilioNumber) return;
 
   // Route flow suggestions to operator first, fall back to contractor
-  const [operatorRow] = await db
-    .select({ value: systemSettings.value })
-    .from(systemSettings)
-    .where(eq(systemSettings.key, 'operator_phone'))
-    .limit(1);
-  const operatorPhone = operatorRow?.value ? normalizePhoneNumber(operatorRow.value) : null;
+  const { getAgencyField } = await import('@/lib/services/agency-settings');
+  const rawOpPhone = await getAgencyField('operatorPhone');
+  const operatorPhone = rawOpPhone ? normalizePhoneNumber(rawOpPhone) : null;
   const notifyPhone = operatorPhone ?? client.phone;
   if (!notifyPhone) return;
 

@@ -146,7 +146,7 @@ Stripe webhook confirms payment &rarr; cancels remaining reminders &rarr; sends 
 
 ### Review Generation
 
-Triggered via `POST /api/sequences/review` when job is marked complete.
+Triggered when lead status changes to `completed` (contractor marks the job done in the portal). This fires the review + referral sequence automatically — no manual trigger required.
 
 | Touch | Timing | Message |
 |-------|--------|---------|
@@ -267,6 +267,23 @@ File: `src/app/api/webhooks/twilio/voice/ai/dial-complete/route.ts`
 - Outcome tracked: qualified, scheduled, transferred, voicemail, dropped
 - Voice usage aggregated for billing (per-minute via `voice-usage-rollup` cron)
 
+### Voice AI Playground (Admin QA &amp; Demo)
+
+Built into the admin `/admin/voice-ai` page per client. Lets operators test, QA, and demo voice AI without making a real Twilio call.
+
+| Feature | What it does | Cost |
+|---------|-------------|------|
+| **QA Checklist** | 5 auto-checks (greeting, voice, KB, hours, tone) + 3 manual checks. Gates &ldquo;Go Live&rdquo; behind all-green. | Free |
+| **Greeting Preview** | Synthesizes the actual greeting in the selected ElevenLabs voice. One button next to the greeting textarea. | ~$0.01 per play |
+| **Voice A/B Comparison** | Same text in 2-3 voices side-by-side. &ldquo;Compare All&rdquo; for sequential playback. | ~$0.03 per comparison |
+| **Text Simulator** | Chat UI &mdash; operator types as homeowner, AI responds using real KB + guardrails + tone. Multi-turn. Sample prompt pills for common questions. | LLM tokens only |
+| **KB Gap Test** | 10 canned homeowner questions. Shows answered / deferred / gap per question. &ldquo;Add to KB&rdquo; link for gaps. | LLM tokens only |
+| **Guardrail Stress Test** | 8 adversarial inputs (pricing, competitor, AI disclosure, opt-out, etc.). Pass/fail per guardrail. Failures shown inline. | LLM tokens only |
+
+Per-response &ldquo;Play&rdquo; button on simulator messages synthesizes audio on demand (opt-in, not auto-play).
+
+API: `POST /api/admin/clients/[id]/voice-simulate` (multi-turn, uses `buildVoiceSystemPrompt` from `src/lib/services/voice-prompt-builder.ts`).
+
 ### Deployment
 
 The voice WebSocket server is a separate Cloudflare Worker (`packages/voice-agent/`):
@@ -284,7 +301,7 @@ Replaces text threads, sticky notes, and memory with one unified system.
 
 ### Lead Pipeline
 
-Stages: `new` &rarr; `contacted` &rarr; `estimate_sent` &rarr; `appointment_scheduled` &rarr; `won` / `lost`
+Stages: `new` &rarr; `contacted` &rarr; `estimate_sent` &rarr; `appointment_scheduled` &rarr; `won` &rarr; `completed` / `lost`
 
 Special states: `action_required` (needs human attention), `opted_out`, `dormant`
 
@@ -545,7 +562,7 @@ Auto-generated and delivered to clients every 2 weeks:
 - Leads captured, response times, conversations handled
 - Estimates followed up, appointments booked
 - Revenue impact estimate
-- **"Without Us" model:** low/base/high directional estimate of what would have happened without the system (with disclaimer)
+- **"Leads at Risk" model:** Conservative/Likely/Optimistic directional estimate of leads that would have waited 40+ minutes for a response (with disclaimer)
 - **Confirmed Won revenue:** reports show &quot;Confirmed Won: $X&quot; alongside pipeline estimates, based on contractor-entered actual job values when marking leads &quot;won&quot;
 - **Pipeline Proof (`pipelineProof` in `roiSummary`):** 6 auto-tracked metrics added to every report — leads responded to, estimates in follow-up, missed calls caught, dead quotes re-engaged, appointments booked, and average response time. `probablePipelineValue` is calculated automatically as (appointments booked + reactivated quotes) &times; avg project value ($40K default). These metrics require zero contractor action and prove system value even before any wins are confirmed.
 - Versioned output — shows `ready` or `insufficient_data` (never fabricates)
@@ -605,6 +622,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 
 - Month-to-month, no contract, no setup fee
 - Configurable plan tiers with included quotas (leads, SMS, team members, phone numbers)
+- **Pre-subscription usage:** usage limits (team members, phone numbers, leads) are not enforced until a plan is assigned. This allows the admin setup wizard to configure team members, provision numbers, etc. before billing is active. Limits take effect once a subscription is created.
 - Free first month (30-day trial); billing starts day 31. Configurable trial days, waived for returning clients.
 - **Trial reminder emails:** automated cron sends at days 7, 14, 25, 28, and 30. Days 28 and 30 also send an SMS alert via the agency communication channel.
 - Pause/resume capability
@@ -765,9 +783,9 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 
 ### Operator Alerting
 
-- **Cron failure SMS:** when any cron job fails, the operator receives an SMS alert to the phone number configured in `operator_phone` (system_settings). Alerts are sent from the agency number.
+- **Cron failure SMS:** when any cron job fails, the operator receives an SMS alert to the phone number configured in `operator_phone` (stored in the `agencies` table). Alerts are sent from the agency number.
 - **Deduplication:** at most 1 alert per subject per hour to prevent alert storms.
-- **Setup:** set `operator_phone` in system_settings via `/admin/settings`.
+- **Setup:** configure `operator_phone`, `operator_name`, and `twilio_number` in the `agencies` table via `/admin/agency` (Agency Settings in the Settings nav group).
 
 ### Agency Voice Webhook
 
@@ -864,12 +882,12 @@ Articles appear in the contractor portal Help section and reduce first-week supp
 
 ### Operator Triage Dashboard
 
-Unified cross-client triage view at `/admin/triage` (Optimization group in admin nav).
+Unified cross-client triage view at `/admin/triage` (Clients group in admin nav).
 
 - Surfaces the highest-priority action items across all clients in a single prioritized list: open escalations (P1 first), knowledge gaps past due, onboarding SLA breaches, stale guarantee states, failed report deliveries
 - Designed as a daily starting point for the solo operator — open this before the full daily checklist
 - Replaces the need to open each client separately to find what needs attention
-- Accessible via admin nav: Optimization &rarr; Triage
+- Accessible via admin nav: Clients &rarr; Triage
 
 ### Engagement Health Monitoring
 
@@ -879,6 +897,35 @@ Automated detection of per-client engagement decay before it becomes visible chu
 - Flags clients where engagement has declined for 3+ consecutive weeks — operator receives an alert with the specific health signal
 - Feeds into the Triage dashboard so declining clients surface automatically
 - `dormant-reengagement` cron (Wednesdays) re-contacts leads eligible for 6-month follow-up (see Section 2: Dormant Re-Engagement)
+- **Per-client engagement health badge:** server component on the admin client detail page (Overview tab) shows `at_risk` or `disengaged` status with signal bullets (days since last estimate flag, days since last won/lost update). Surfaces the per-client decay signal without opening the Triage dashboard.
+
+### DNC/Exclusion List Management
+
+- Per-client Do Not Contact list manageable directly from the admin client detail page (Configuration tab). Operator adds excluded phone numbers during onboarding — compliance gateway blocks all outbound to those numbers automatically.
+- API: `GET /POST /DELETE /api/admin/clients/[id]/dnc`
+- Distinct from the global DNC: per-client exclusions protect personal relationships (family, friends); global DNC covers permanent legal/harassment blocks.
+
+### Smart Assist Pending Drafts Admin View
+
+- Pending AI drafts visible in the admin dashboard (Activity tab on the client detail page) with 15-second polling. Operator can approve, edit, or cancel drafts directly from the browser during Week 2 instead of relying solely on SMS commands.
+- API: `GET /api/admin/clients/[id]/smart-assist`, `POST /api/admin/clients/[id]/smart-assist/[messageId]` (approve/edit/cancel actions)
+- Complements the existing SMS-based `SEND/EDIT/CANCEL` workflow — both methods are valid.
+
+### Guarantee Status Dashboard
+
+- Server component on the admin client detail page (Overview tab). Displays the current guarantee phase (`proof_pending` / `recovery_pending`), QLE count vs. target, pipeline value vs. $5K floor, days remaining in the window, and an on-track/at-risk/failing status badge (green/yellow/red).
+- No new API — loads server-side from existing guarantee data.
+- Replaces the need to navigate to a separate guarantee section; visible at a glance on the client overview.
+
+### Integration Webhook Config UI
+
+- Per-client webhook configuration in the admin dashboard (Configuration tab). Operator configures Jobber, ServiceTitan, Housecall Pro, Zapier, and generic provider webhooks with provider type, direction, event type, URL, and secret key. Card shows last triggered time and failure count; integrations auto-disable after 10 consecutive failures.
+- API: CRUD at `GET /POST /api/admin/clients/[id]/integrations` and `PATCH /DELETE /api/admin/clients/[id]/integrations/[webhookId]`
+
+### Admin Data Export Trigger
+
+- Admin-triggered data export from the client detail page Actions card, with AlertDialog confirmation. Generates a CSV bundle (leads, conversations, pipeline) for compliance or cancellation delivery.
+- API: `POST /api/admin/clients/[id]/export`
 
 ---
 

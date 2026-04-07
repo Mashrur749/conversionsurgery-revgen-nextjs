@@ -5,10 +5,11 @@ import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
 import { startEstimateFollowup } from '@/lib/automations/estimate-followup';
+import { startReviewRequest } from '@/lib/automations/review-request';
 
 const statusUpdateSchema = z
   .object({
-    status: z.enum(['estimate_sent', 'won', 'lost']),
+    status: z.enum(['estimate_sent', 'won', 'lost', 'completed']),
     /** Confirmed revenue in whole dollars; stored as cents in the DB. */
     confirmedRevenue: z.coerce.number().min(0).optional(),
   })
@@ -67,6 +68,24 @@ export const PATCH = portalRoute<{ id: string }>(
         .from(leads)
         .where(eq(leads.id, leadId))
         .limit(1);
+
+      return NextResponse.json({ lead: updated });
+    }
+
+    // completed — mark job done and trigger review request
+    if (status === 'completed') {
+      const [updated] = await db
+        .update(leads)
+        .set({ status: 'completed', updatedAt: new Date() })
+        .where(and(eq(leads.id, leadId), eq(leads.clientId, clientId)))
+        .returning({ id: leads.id, status: leads.status });
+
+      if (!updated) {
+        return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+      }
+
+      // Trigger review request now that the work is done
+      await startReviewRequest({ leadId, clientId });
 
       return NextResponse.json({ lead: updated });
     }

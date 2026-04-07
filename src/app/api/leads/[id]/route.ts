@@ -117,8 +117,18 @@ export async function PATCH(
       }
     }
 
-    // Webhook dispatch: fire on status change to won or lost (Zapier/Jobber integration)
-    if (parsed.data.status === 'won' || parsed.data.status === 'lost') {
+    // Completed → trigger review request (job is done)
+    if (parsed.data.status === 'completed') {
+      try {
+        const { startReviewRequest } = await import('@/lib/automations/review-request');
+        await startReviewRequest({ leadId: updatedLead.id, clientId });
+      } catch (reviewError) {
+        console.error('[LeadManagement] Review request trigger failed:', reviewError);
+      }
+    }
+
+    // Webhook dispatch: fire on status change to won, completed, or lost (Zapier/Jobber integration)
+    if (parsed.data.status === 'won' || parsed.data.status === 'completed' || parsed.data.status === 'lost') {
       try {
         const { dispatchWebhook } = await import('@/lib/services/webhook-dispatch');
         await dispatchWebhook(clientId, 'lead.status_changed', {

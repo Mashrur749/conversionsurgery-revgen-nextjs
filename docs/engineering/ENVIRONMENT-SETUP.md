@@ -88,8 +88,7 @@ twilio dev-phone --port 3003       # Terminal 5 — Team
 
 - [ ] Go to http://localhost:3000/login
 - [ ] Enter your admin email &mdash; check inbox for magic link
-- [ ] After login: `/admin/settings` &rarr; set `operator_phone` (your real phone) and `operator_name`
-- [ ] `/admin/agency` &rarr; set the agency Twilio number to #5
+- [ ] After login: `/admin/agency` &rarr; click Settings &rarr; set agency Twilio number (#5), operator phone (your real phone), and operator name
 
 ## Done
 

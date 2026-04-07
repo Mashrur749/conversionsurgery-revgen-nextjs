@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { voiceCalls, clients, systemSettings } from '@/db/schema';
+import { voiceCalls, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getTrackedAI } from '@/lib/ai';
 import { sendSMS } from './twilio';
@@ -67,12 +67,9 @@ export async function notifyClientOfCall(callId: string): Promise<void> {
   if (!client?.phone) return;
 
   // Route voice call notifications to operator first, fall back to contractor
-  const [operatorRow] = await db
-    .select({ value: systemSettings.value })
-    .from(systemSettings)
-    .where(eq(systemSettings.key, 'operator_phone'))
-    .limit(1);
-  const operatorPhone = operatorRow?.value ? normalizePhoneNumber(operatorRow.value) : null;
+  const { getAgencyField } = await import('@/lib/services/agency-settings');
+  const rawOperatorPhone = await getAgencyField('operatorPhone');
+  const operatorPhone = rawOperatorPhone ? normalizePhoneNumber(rawOperatorPhone) : null;
   const notifyPhone = operatorPhone ?? client.phone;
 
   const summary = call.aiSummary || (await generateCallSummary(callId));

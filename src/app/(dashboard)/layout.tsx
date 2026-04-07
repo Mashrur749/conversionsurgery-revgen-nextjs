@@ -26,28 +26,21 @@ const navItems = [
   { href: '/discussions', label: 'Discussions' },
 ];
 
-const adminNavItems = [
+const getAdminNavItems = (hasClients: boolean) => [
   { group: 'Clients', items: [
     { href: '/admin', label: 'Dashboard' },
     { href: '/admin/clients', label: 'Clients' },
-    { href: '/admin/users', label: 'Users' },
-    { href: '/admin/agency', label: 'Communications' },
+    { href: '/admin/triage', label: 'Triage', disabled: !hasClients },
     { href: '/admin/discussions', label: 'Discussions' },
   ]},
-  { group: 'Team & Access', items: [
-    { href: '/admin/team', label: 'Team' },
-    { href: '/admin/roles', label: 'Roles' },
-    { href: '/admin/audit-log', label: 'Audit Log' },
-  ]},
   { group: 'Optimization', items: [
-    { href: '/admin/triage', label: 'Client Triage' },
     { href: '/admin/flow-templates', label: 'Flow Templates' },
-    { href: '/admin/analytics', label: 'Flow Analytics' },
-    { href: '/admin/template-performance', label: 'Variant Results' },
-    { href: '/admin/ab-tests', label: 'A/B Tests' },
-    { href: '/admin/reputation', label: 'Reputation' },
-    { href: '/admin/ai-effectiveness', label: 'AI Effectiveness' },
-    { href: '/admin/ai-quality', label: 'AI Quality' },
+    { href: '/admin/analytics', label: 'Flow Analytics', disabled: !hasClients },
+    { href: '/admin/template-performance', label: 'Variant Results', disabled: !hasClients },
+    { href: '/admin/ab-tests', label: 'A/B Tests', disabled: !hasClients },
+    { href: '/admin/reputation', label: 'Reputation', disabled: !hasClients },
+    { href: '/admin/ai-effectiveness', label: 'AI Effectiveness', disabled: !hasClients },
+    { href: '/admin/ai-quality', label: 'AI Quality', disabled: !hasClients },
   ]},
   { group: 'Reporting', items: [
     { href: '/admin/billing', label: 'Billing' },
@@ -57,7 +50,14 @@ const adminNavItems = [
     { href: '/admin/platform-analytics', label: 'Platform Health' },
     { href: '/admin/usage', label: 'Costs & Usage' },
   ]},
+  { group: 'Team & Access', items: [
+    { href: '/admin/team', label: 'Team' },
+    { href: '/admin/roles', label: 'Roles' },
+    { href: '/admin/users', label: 'Users' },
+    { href: '/admin/audit-log', label: 'Audit Log' },
+  ]},
   { group: 'Settings', items: [
+    { href: '/admin/agency', label: 'Agency Settings' },
     { href: '/admin/phone-numbers', label: 'Phone Numbers' },
     { href: '/admin/twilio', label: 'Twilio Account' },
     { href: '/admin/voice-ai', label: 'Voice AI' },
@@ -118,7 +118,7 @@ export default async function DashboardLayout({
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center h-14 lg:h-16">
               <div className="flex items-center gap-2 lg:gap-8">
-                <MobileNav navItems={navItems} adminGroups={isAgency ? adminNavItems : undefined} isAgency={isAgency} />
+                <MobileNav navItems={navItems} adminGroups={isAgency ? getAdminNavItems(allClients.length > 0) : undefined} isAgency={isAgency} hasClients={allClients.length > 0} />
                 <Link href="/dashboard" className="font-semibold text-base lg:text-lg text-white">
                   ConversionSurgery
                 </Link>
@@ -127,8 +127,8 @@ export default async function DashboardLayout({
                     <>
                       <ClientSelector clients={allClients} />
                       <AdminNav groups={[
-                        { group: 'Client View', items: navItems },
-                        ...adminNavItems,
+                        { group: 'Client View', items: navItems.map(item => ({ ...item, disabled: allClients.length === 0 })) },
+                        ...getAdminNavItems(allClients.length > 0),
                       ]} />
                     </>
                   ) : (

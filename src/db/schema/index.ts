@@ -108,6 +108,9 @@ export * from './client-phone-numbers';
 // Auth tables (NextAuth)
 export * from './auth';
 
+// Agency
+export * from './agencies';
+
 // Access Management
 export * from './people';
 export * from './role-templates';

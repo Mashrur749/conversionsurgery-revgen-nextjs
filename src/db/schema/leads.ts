@@ -9,6 +9,7 @@ import {
   timestamp,
   index,
   unique,
+  check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { clients } from './clients';
@@ -27,7 +28,7 @@ export const leads = pgTable(
     projectType: varchar('project_type', { length: 255 }),
     notes: text('notes'),
     source: varchar('source', { length: 50 }), // missed_call, form, manual
-    status: varchar('status', { length: 50 }).default('new'), // new, contacted, estimate_sent, won, lost, opted_out
+    status: varchar('status', { length: 50 }).default('new'), // new, contacted, estimate_sent, won, completed, lost, opted_out
     actionRequired: boolean('action_required').default(false),
     actionRequiredReason: varchar('action_required_reason', { length: 255 }),
     conversationMode: varchar('conversation_mode', { length: 10 }).default('ai'), // ai, human, paused
@@ -60,6 +61,9 @@ export const leads = pgTable(
     index('idx_leads_action_required').on(table.actionRequired).where(
       sql`${table.actionRequired} = true`
     ),
+    index('idx_leads_conversation_mode').on(table.conversationMode),
+    check('leads_score_range', sql`${table.score} >= 0 AND ${table.score} <= 100`),
+    check('leads_confirmed_revenue_non_negative', sql`${table.confirmedRevenue} IS NULL OR ${table.confirmedRevenue} >= 0`),
   ]
 );
 

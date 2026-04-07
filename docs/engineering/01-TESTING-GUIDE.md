@@ -1,9 +1,175 @@
 # Testing Guide
 
-Last updated: 2026-04-01
+Last updated: 2026-04-06
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
-Last verified commit: `docs: Wave 4 consensus fixes (2026-04-01)`
+
+> **First time here?** This guide is a comprehensive verification reference, not a learning path. If you are setting up the system for the first time, start with [`docs/operations/LAUNCH-CHECKLIST.md`](../operations/LAUNCH-CHECKLIST.md) instead — it walks you through setup, testing, learning the value, deploying, and selling in the right order. Come back to this guide when you need to verify a specific feature or run a full release check.
+
+---
+
+## Full System Test Path
+
+Follow this sequence to test the entire platform end-to-end. Steps are grouped by domain and ordered to match the managed-service delivery journey. Each entry references the detailed step below.
+
+### Phase A: Environment + Fast Gate
+| # | What | Steps |
+|:-:|------|:-----:|
+| A1 | Preflight (env vars, Twilio, admin login) | Section 0 |
+| A2 | Automated quality gate (`npm run quality:no-regressions`) | Section 1 |
+
+### Phase B: Client Setup + Onboarding
+| # | What | Steps |
+|:-:|------|:-----:|
+| B1 | Create test client via admin wizard | 1 |
+| B2 | Day-one activation (milestones, phone, SLA) | 2 |
+| B3 | Knowledge base + business hours + quality gates | 3, 57b |
+| B4 | Help center articles seeded | 66c |
+| B5 | Team setup + add-on pricing | 4 |
+| B6 | KB onboarding wizard (contractor self-serve) | 65a |
+| B7 | DNC / exclusion list | 62a-d, 68a |
+
+### Phase C: AI Agent
+| # | What | Steps |
+|:-:|------|:-----:|
+| C1 | Smart Assist &rarr; Autonomous progression | 5, 65b |
+| C2 | AI graceful handling without Twilio number | 28 |
+| C3 | Decision confidence &rarr; model routing | 32 |
+| C4 | Pre-launch conversation scenario tests | 33 |
+| C5 | AI criteria tests (safety quality gate) | 34 |
+| C6 | AI message flagging (operator feedback) | 31 |
+| C7 | AI quality review page | 37 |
+| C8 | AI effectiveness dashboard | 35 |
+| C9 | Per-client automation pause | 36 |
+| C10 | Smart Assist admin drafts view | 68b |
+
+### Phase D: Voice AI
+| # | What | Steps |
+|:-:|------|:-----:|
+| D1 | Kill switch + ConversationRelay call test | 16a |
+| D2 | Voice AI admin config (pricing, duration, hours, tone) | 16a-2 |
+| D3 | Voice AI Playground (simulator, KB test, guardrails, QA checklist) | 16a-3 |
+| D4 | Contractor portal voice status card | 16a-4 |
+| D5 | Voice activation modes (always, after-hours, overflow) | 61a-c |
+| D6 | ElevenLabs voice persona selection | 61d |
+| D7 | Post-call transcript + summary storage | 61e |
+| D8 | Missed transfer recovery (SMS + escalation + team alert) | 58d |
+| D9 | AI preview / sandbox | 58e |
+| D10 | Voice AI default-on for new clients | 67d |
+
+### Phase E: Lead Lifecycle + Conversations
+| # | What | Steps |
+|:-:|------|:-----:|
+| E1 | Inbound lead, AI response, escalation | 7 |
+| E2 | Reminder routing (configurable chain) | 6 |
+| E3 | Lead action buttons (estimate sent, won, lost) | 66d |
+| E4 | AI attribution (decision &rarr; outcome link) | 29 |
+| E5 | Flow reply-rate tracking | 59 |
+
+### Phase F: Revenue Automations
+| # | What | Steps |
+|:-:|------|:-----:|
+| F1 | Estimate follow-up + appointment reminders | 8 |
+| F2 | Payment reminder + payment link delivery | 22 |
+| F3 | Review request after job completion | 23, 60a-e |
+| F4 | No-show recovery | 24 |
+| F5 | Win-back automation (dormant reactivation) | 25, 57d |
+| F6 | Probable wins nudge | 58a |
+
+### Phase G: Compliance
+| # | What | Steps |
+|:-:|------|:-----:|
+| G1 | Quiet-hours compliance | 9 |
+| G2 | HELP keyword + compliance audit logging | 16b |
+| G3 | CASL attestation (admin + portal import) | 66a-b |
+
+### Phase H: Calendar + Scheduling
+| # | What | Steps |
+|:-:|------|:-----:|
+| H1 | Google Calendar OAuth connect/disconnect | 56a-b, 56f |
+| H2 | Calendar sync cron | 56c |
+| H3 | Calendar event blocks booking slot | 56d |
+| H4 | Platform appointment pushes to Google Calendar | 56e |
+| H5 | Calendar sync status (portal) | 58f |
+
+### Phase I: Billing + Subscriptions
+| # | What | Steps |
+|:-:|------|:-----:|
+| I1 | Add-on billing ledger + voice rollup | 13a |
+| I2 | Add-on invoice itemization + CSV export | 13b |
+| I3 | Add-on dispute / provenance workflow | 13c |
+| I4 | Stripe Checkout subscription flow | 26 |
+| I5 | Trial creation, countdown, expiry | 64a-b |
+| I6 | Plan upgrade + reconciliation | 64c-d |
+| I7 | Payment confirmation SMS | 64e |
+| I8 | Guarantee workflow (30-day proof + 90-day recovery) | 10 |
+| I9 | Guarantee status card (admin) | 68c |
+| I10 | Cancellation + data export | 14 |
+
+### Phase J: Reporting + Analytics
+| # | What | Steps |
+|:-:|------|:-----:|
+| J1 | Bi-weekly reports + Leads at Risk model | 11 |
+| J2 | Quarterly Growth Blitz | 12 |
+| J3 | System Activity card + pipeline proof in reports | 58g |
+| J4 | Weekly Pipeline SMS | 67a |
+| J5 | ROI Calculator endpoint | 67b |
+| J6 | Since Your Last Visit card | 58b |
+| J7 | Revenue Recovered card (portal) | 57e |
+
+### Phase K: Portal Self-Serve Features
+| # | What | Steps |
+|:-:|------|:-----:|
+| K1 | Self-serve phone provisioning | 30 |
+| K2 | CSV lead import + quote reactivation | 27a-c |
+| K3 | Portal quote import | 65c |
+| K4 | Review response approval (portal) | 65d |
+| K5 | KB empty nudge (48-hour) | 65e |
+| K6 | Day 3 check-in SMS | 65f |
+| K7 | KB gap auto-notify + deep link | 65g, 66e |
+| K8 | Webhook export on lead status change | 58c |
+| K9 | Jobber webhook integration | 67c |
+
+### Phase L: Admin Tools + Infrastructure
+| # | What | Steps |
+|:-:|------|:-----:|
+| L1 | Access + tenant isolation | 15 |
+| L2 | Cron reliability controls | 16c |
+| L3 | Cron security | 17 |
+| L4 | Monthly policy cycle + queue replay | 18 |
+| L5 | Error telemetry + redaction | 19 |
+| L6 | Solo reliability dashboard | 20 |
+| L7 | Deterministic replay + export drill | 21 |
+| L8 | Feature toggles inventory (18 toggles) | 63a-b |
+| L9 | Operator triage dashboard | 57a |
+| L10 | Engagement health badge | 68d |
+| L11 | Integration webhook config UI | 68e |
+| L12 | Admin data export trigger | 68f |
+
+### Phase M: UX Polish + Final Smoke
+| # | What | Steps |
+|:-:|------|:-----:|
+| M1 | Tier 3 UX polish (breadcrumbs, tooltips, skeletons, empty states) | 53 |
+| M2 | Wave 1-2 operational fixes | 54 |
+| M3 | Wave 4 consensus fixes | 55 |
+| M4 | Final end-to-end smoke | 38 |
+
+### Quick Reference: Test by What You Changed
+
+| If you changed... | Run phases |
+|-------------------|-----------|
+| AI agent / guardrails / orchestrator | C |
+| Voice AI / ConversationRelay | D |
+| Billing / Stripe / subscriptions | I |
+| Automations (estimate, payment, review, win-back) | F |
+| Compliance / quiet hours / DNC | G |
+| Calendar / appointments | H |
+| Client portal UI | E, J, K |
+| Admin UI / triage / settings | L |
+| Onboarding / KB / self-serve | B, K |
+| Full pre-launch release | A through M (all) |
+
+---
 
 ## 0. Preflight (Run First)
 
@@ -69,7 +235,7 @@ For SMS/voice tests to work end-to-end, you need real Twilio numbers, a tunnel, 
 
 > **#1 vs #5 — why two outbound numbers?** #1 (Business Line) sends lead-facing messages — AI responses, follow-ups, appointment reminders. #5 (Agency Line) sends owner/team-facing notifications — draft approvals, escalation alerts, digests. Keeping them separate lets the owner distinguish "a lead texted my business" from "the platform needs my attention."
 
-**Configure the Agency Line (#5):** After the app is running and you have logged in as admin, go to `/admin/agency` and set the agency Twilio number to #5. This stores it in `system_settings` under the key `agency_twilio_number`. If this is not configured, all owner/team notifications via SMS will silently fail.
+**Configure the Agency Line (#5):** After the app is running and you have logged in as admin, go to `/admin/agency` and set the agency Twilio number to #5. This stores it in the `agencies` table under the key `agency_twilio_number`. While there, also set `operator_phone` (the number that receives cron-failure SMS alerts) and `operator_name` (used in notification copy). If the agency line is not configured, all owner/team notifications via SMS will silently fail.
 
 **Install tooling** (one-time):
 
@@ -449,7 +615,7 @@ Expected:
 - Eligible subscriptions progress through guarantee-v2 states (`proof_pending`/`recovery_pending`) then to `fulfilled` or `refund_review_required`.
 - Billing events logged for transition states.
 
-### Step 11: Bi-weekly reports + Without Us model
+### Step 11: Bi-weekly reports + Leads at Risk model
 
 1. Generate bi-weekly report (or run cron in-window):
 
@@ -458,9 +624,9 @@ curl -i http://localhost:3000/api/cron/biweekly-reports -H "Authorization: Beare
 ```
 
 2. Open latest report detail in `/admin/reports/<id>`.
-3. Verify "Without Us (Directional Model)" section behavior:
+3. Verify "Leads at Risk — Based on your response times and lead volume" section behavior:
 
-- If sufficient data: low/base/high ranges, inputs, and disclaimer are visible.
+- If sufficient data: Conservative/Likely/Optimistic ranges, inputs, and disclaimer are visible.
 - If insufficient data: explicit missing-input state is shown (no fabricated values).
 
 Expected:
@@ -636,7 +802,17 @@ Expected:
 5. Toggle `canDiscussPricing` ON, save. Place a test voice call and ask about pricing &mdash; AI should share knowledge-base ranges.
 6. Change `voiceMaxDuration` to 2 minutes, save. Place a test call longer than 2 minutes &mdash; AI should wrap up gracefully.
 
-#### 16a-3: Contractor Portal Voice Status Card
+#### 16a-3: Voice AI Playground
+
+1. Expand a client on `/admin/voice-ai`. **QA Checklist** should appear at top with auto-checks (greeting, voice, KB, hours, tone).
+2. **Greeting Preview:** Click &ldquo;Preview Greeting&rdquo; next to the greeting textarea. Audio plays in the selected ElevenLabs voice.
+3. **Voice A/B:** Below the voice picker, select 2 voices, type a sentence, click &ldquo;Compare All.&rdquo; Both play sequentially.
+4. **Simulator tab:** Type &ldquo;How much does a kitchen renovation cost?&rdquo; &mdash; AI responds using the client&apos;s KB and guardrails. Click &ldquo;Play&rdquo; on the response to hear it synthesized.
+5. **KB Test tab:** Click &ldquo;Run KB Test.&rdquo; 10 questions run. Verify results show answered/deferred/gap with correct classification.
+6. **Guardrail Test tab:** Click &ldquo;Run Guardrail Test.&rdquo; 8 adversarial inputs. All should pass (AI deflects pricing, identifies as AI, respects opt-out, stays in lane).
+7. Complete all 3 manual QA checks. &ldquo;Go Live&rdquo; button should turn green. Click it &mdash; voice AI enables for the client.
+
+#### 16a-4: Contractor Portal Voice Status Card
 
 1. Log into the client portal. Verify the **Voice AI status card** appears on the dashboard.
 2. Card shows: Active/Off badge, current mode, phone number, and this week&apos;s call stats (calls handled, appointments booked, transfers).
@@ -1307,7 +1483,7 @@ Combined verification for Wave 1 (OPS-01, OPS-02, resilience fixes) and Wave 2 (
 
 1. **Agency voice webhook (OPS-01):** Call the agency number (#5) via a real phone or Dev Phone. Verify the call is answered with a TwiML message: &quot;This number is for text messages only.&quot; The call should end after the message plays. Requires voice webhook configured in Twilio Console for #5 pointing to `https://<domain>/api/webhooks/twilio/agency-voice`.
 
-2. **Operator alerting (OPS-02):** Set `operator_phone` in `system_settings` (via `/admin/settings` or direct DB insert). Trigger a cron failure (e.g., POST to a nonexistent cron endpoint via the orchestrator). Verify the operator phone receives an SMS alert from the agency number. Verify deduplication: trigger the same failure again within 1 hour &mdash; no duplicate SMS should arrive.
+2. **Operator alerting (OPS-02):** Set `operator_phone` in the `agencies` table (via `/admin/agency`). Trigger a cron failure (e.g., POST to a nonexistent cron endpoint via the orchestrator). Verify the operator phone receives an SMS alert from the agency number. Verify deduplication: trigger the same failure again within 1 hour &mdash; no duplicate SMS should arrive.
 
 3. **Command palette (UX-4.1):** In the admin dashboard, press Cmd+K (Mac) or Ctrl+K (Windows/Linux). Verify the command palette opens. Type a client name &mdash; verify search results appear. Press Enter on a result &mdash; verify navigation to that page. Close and repeat in the client portal &mdash; verify portal-specific items appear (10 page items). Verify Escape closes the palette.
 
@@ -2353,6 +2529,109 @@ Expected:
 - An existing client that previously had `voiceEnabled = false` is NOT automatically changed.
 
 3. Verify the Voice AI answers an inbound call to the new client&apos;s business line (if Twilio is configured and the new client has a phone number assigned).
+
+---
+
+### Step 68: Admin UI Tools (GAP-1 through GAP-6)
+
+#### 68a: DNC/Exclusion List (per-client)
+
+1. Navigate to admin client detail page &rarr; Configuration tab &rarr; Exclusion List card.
+2. POST a phone number via the card UI or API:
+
+```bash
+curl -i -X POST "http://localhost:3000/api/admin/clients/<client-id>/dnc" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <admin-session-cookie>" \
+  -d '{"phoneNumber": "+15550001234"}'
+```
+
+3. Verify the number appears in `GET /api/admin/clients/<client-id>/dnc`.
+4. Send an outbound message to that number (trigger an automation). Verify compliance gateway blocks it.
+5. DELETE the number and verify it no longer appears in the GET response.
+
+Expected:
+- Number is blocked by `sendCompliantMessage()` with reason `dnc_client`.
+- Number is removed from the list and outbound resumes after DELETE.
+
+#### 68b: Smart Assist Pending Drafts Admin View
+
+1. Set the test client to Smart Assist mode.
+2. Text the business number from Dev Phone #2 to trigger an AI draft.
+3. Verify the draft appears in `GET /api/admin/clients/<client-id>/smart-assist`.
+4. Approve via the API or Activity tab UI:
+
+```bash
+curl -i -X POST "http://localhost:3000/api/admin/clients/<client-id>/smart-assist/<message-id>" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <admin-session-cookie>" \
+  -d '{"action": "approve"}'
+```
+
+5. Verify the message sends to Dev Phone #2.
+6. Trigger another draft. Cancel it via `{ "action": "cancel" }`. Verify nothing sends.
+7. Verify the Activity tab polls every 15 seconds and updates without a page refresh.
+
+Expected:
+- Approved draft sends successfully.
+- Cancelled draft is killed with no outbound SMS.
+
+#### 68c: Guarantee Status Card
+
+1. Navigate to admin client detail page &rarr; Overview tab for a client with an active subscription.
+2. Verify the Guarantee Status card is visible and shows: current phase (`proof_pending` or `recovery_pending`), QLE count vs. target, pipeline value vs. $5K floor, days remaining, and a status badge (green/yellow/red).
+3. For a client past Day 30 in proof phase with 5+ QLEs, verify the badge shows on-track (green).
+
+Expected:
+- Card is visible without any API call (server-side render).
+- Phase and progress values match the underlying guarantee subscription record.
+
+#### 68d: Engagement Health Badge
+
+1. Navigate to admin client detail page &rarr; Overview tab for a client with no estimate flags in 25+ days or no won/lost updates in 30+ days.
+2. Verify the engagement health badge shows `at_risk` or `disengaged` with signal bullets (days since last estimate flag, days since last won/lost update).
+3. For a client with recent activity, verify no badge or a healthy status is shown.
+
+Expected:
+- Badge renders for clients where `checkEngagementHealth()` returns a non-healthy status.
+- Signal bullets accurately reflect the underlying data.
+
+#### 68e: Integration Webhook Config UI
+
+1. Navigate to admin client detail page &rarr; Configuration tab &rarr; Integrations card.
+2. POST a new webhook via the card UI or API:
+
+```bash
+curl -i -X POST "http://localhost:3000/api/admin/clients/<client-id>/integrations" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: <admin-session-cookie>" \
+  -d '{"provider": "jobber", "direction": "outbound", "eventType": "appointment_booked", "url": "https://example.com/webhook", "secretKey": "test-secret"}'
+```
+
+3. Verify the webhook appears in `GET /api/admin/clients/<client-id>/integrations`.
+4. PATCH to disable it: `{ "enabled": false }`. Verify disabled state is reflected.
+5. DELETE the webhook and verify it no longer appears in the GET response.
+
+Expected:
+- Webhook CRUD operations work without error.
+- Disabled integrations do not fire events.
+- Failure count and last triggered time display correctly once events have fired.
+
+#### 68f: Admin Data Export Trigger
+
+1. Navigate to admin client detail page &rarr; Actions card.
+2. Click &ldquo;Export Data.&rdquo; Confirm the AlertDialog prompt.
+3. Verify via API:
+
+```bash
+curl -i -X POST "http://localhost:3000/api/admin/clients/<client-id>/export" \
+  -H "Cookie: <admin-session-cookie>"
+```
+
+Expected:
+- Response contains a success status.
+- Export job is created (visible in the data export SLA queue at admin billing if applicable).
+- No confirmation dialog is bypassable — the AlertDialog must be confirmed before the POST fires.
 
 ---
 

@@ -9,8 +9,9 @@ interface ReviewPayload {
 }
 
 /**
- * Start a review/referral request sequence — marks lead as won,
- * cancels existing sequences, and schedules review + referral messages
+ * Start a review/referral request sequence — marks lead as completed,
+ * cancels existing sequences, and schedules review + referral messages.
+ * Triggered when a job is finished (contractor marks complete, or Jobber webhook).
  */
 export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
   const db = getDb();
@@ -26,10 +27,10 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
   const client = clientResult[0];
   const lead = leadResult[0];
 
-  // 2. Update lead status to won
+  // 2. Update lead status to completed (job is done)
   await db
     .update(leads)
-    .set({ status: 'won', updatedAt: new Date() })
+    .set({ status: 'completed', updatedAt: new Date() })
     .where(eq(leads.id, leadId));
 
   // Track review request funnel event with AI attribution

@@ -4,7 +4,6 @@ import {
   agencyMessages,
   clients,
   leads,
-  systemSettings,
   dailyStats,
   notificationPreferences,
 } from "@/db/schema";
@@ -25,15 +24,10 @@ const twilioClient = twilio(
 // Agency number helper
 // ---------------------------------------------------------------------------
 
-/** Read the agency Twilio number from systemSettings. */
+/** Read the agency Twilio number from the agencies table. */
 export async function getAgencyNumber(): Promise<string | null> {
-  const db = getDb();
-  const [row] = await db
-    .select()
-    .from(systemSettings)
-    .where(eq(systemSettings.key, "agency_twilio_number"))
-    .limit(1);
-  return row?.value ?? null;
+  const { getAgencyField } = await import('@/lib/services/agency-settings');
+  return await getAgencyField('twilioNumber') ?? null;
 }
 
 // ---------------------------------------------------------------------------

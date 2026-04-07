@@ -22,6 +22,8 @@ export function SettingsDialog({
 }) {
   const [agencyNumber, setAgencyNumber] = useState('');
   const [agencyNumberSid, setAgencyNumberSid] = useState('');
+  const [operatorPhone, setOperatorPhone] = useState('');
+  const [operatorName, setOperatorName] = useState('');
   const [configureWebhooks, setConfigureWebhooks] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,9 +36,11 @@ export function SettingsDialog({
       try {
         const res = await fetch('/api/admin/agency/settings');
         if (!res.ok) throw new Error('Failed to load settings');
-        const data = await res.json() as { agencyNumber?: string; agencyNumberSid?: string };
+        const data = await res.json() as { agencyNumber?: string; agencyNumberSid?: string; operatorPhone?: string; operatorName?: string };
         setAgencyNumber(data.agencyNumber || '');
         setAgencyNumberSid(data.agencyNumberSid || '');
+        setOperatorPhone(data.operatorPhone || '');
+        setOperatorName(data.operatorName || '');
       } catch {
         // leave defaults
       } finally {
@@ -60,6 +64,8 @@ export function SettingsDialog({
         body: JSON.stringify({
           agencyNumber: agencyNumber.trim(),
           agencyNumberSid: agencyNumberSid.trim(),
+          operatorPhone: operatorPhone.trim(),
+          operatorName: operatorName.trim(),
           configureWebhooks,
         }),
       });
@@ -135,6 +141,46 @@ export function SettingsDialog({
                   <p className="mt-1 text-xs text-muted-foreground">
                     Twilio Phone Number SID (starts with PN)
                   </p>
+                </div>
+
+                <div className="border-t pt-4">
+                  <p className="mb-3 text-sm font-medium text-muted-foreground">
+                    Operator Contact
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">
+                        Operator Name
+                      </label>
+                      <input
+                        type="text"
+                        value={operatorName}
+                        onChange={(e) => setOperatorName(e.target.value)}
+                        placeholder="Jane Smith"
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Shown to clients as their account manager
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium">
+                        Operator Phone
+                      </label>
+                      <input
+                        type="tel"
+                        value={operatorPhone}
+                        onChange={(e) => setOperatorPhone(e.target.value)}
+                        placeholder="+1XXXXXXXXXX"
+                        className="w-full rounded-md border px-3 py-2 text-sm"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Your personal phone for receiving alerts and escalations
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <label className="flex items-center gap-2 text-sm">
