@@ -24,7 +24,7 @@ export const knowledgeGaps = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
       .notNull()
-      .references(() => clients.id),
+      .references(() => clients.id, { onDelete: 'cascade' }),
 
     /** The customer question or topic that triggered low confidence */
     question: text('question').notNull(),

@@ -242,4 +242,4 @@ See `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` for the f
 - **Post-Sale Diagnostics:** Deeper analysis (requires contractor system access, lead data) in separate spec
 - **ROI Calculator API:** `POST /api/public/roi-calculator` — called during Step 4
 - **Sales Conversation Flow:** Documented in `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (Section 5: Sales Conversation)
-- **Billing & ROI:** Revenue projections tie to contract pricing and guarantee terms (documented in `docs/business-intel/OFFER-CLIENT-FACING.md`)
+- **Billing & ROI:** Revenue projections tie to contract pricing and guarantee terms (documented in `docs/business-intel/OFFER-APPROVED-COPY.md`)

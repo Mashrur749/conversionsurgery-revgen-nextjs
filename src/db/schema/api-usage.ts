@@ -55,12 +55,16 @@ export const apiUsage = pgTable(
     metadata: jsonb('metadata').$type<Record<string, unknown>>(),
 
     createdAt: timestamp('created_at').notNull().defaultNow(),
+
+    // Archival
+    archivedAt: timestamp('archived_at'),
   },
   (table) => [
     index('api_usage_client_idx').on(table.clientId),
     index('api_usage_service_idx').on(table.service),
     index('api_usage_created_at_idx').on(table.createdAt),
     index('api_usage_client_date_idx').on(table.clientId, table.createdAt),
+    index('idx_api_usage_archived_at').on(table.archivedAt),
   ]
 );
 

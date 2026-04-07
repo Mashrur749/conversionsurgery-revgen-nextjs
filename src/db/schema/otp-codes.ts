@@ -5,7 +5,9 @@ import {
   integer,
   timestamp,
   index,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { people } from './people';
 
@@ -33,6 +35,7 @@ export const otpCodes = pgTable(
     index('idx_otp_codes_email_expires').on(table.email, table.expiresAt),
     index('idx_otp_codes_client_id').on(table.clientId),
     index('idx_otp_codes_person_id').on(table.personId),
+    check('otp_at_least_one_contact', sql`${table.phone} IS NOT NULL OR ${table.email} IS NOT NULL`),
   ]
 );
 

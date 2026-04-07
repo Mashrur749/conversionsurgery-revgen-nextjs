@@ -35,6 +35,14 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SendPaymentLink } from './send-payment-link';
 import { DataExportButton } from './data-export-button';
 import { cn } from '@/lib/utils';
+import { DncCard } from './dnc-card';
+import { SmartAssistCard } from './smart-assist-card';
+import { GuaranteeStatusCard } from './guarantee-status-card';
+import { EngagementHealthBadge } from './engagement-health-badge';
+import { IntegrationsCard } from './integrations-card';
+import { checkEngagementHealth } from '@/lib/services/engagement-health';
+import { countQualifiedLeadEngagements } from '@/lib/services/guarantee-v2/metrics';
+import { calculateProbablePipelineValueCents } from '@/lib/services/pipeline-value';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -69,10 +77,27 @@ export default async function ClientDetailPage({ params }: Props) {
   const showPaymentLink = client.serviceModel === 'managed' && !hasSubscription;
 
   const { getTeamMembers } = await import('@/lib/services/team-bridge');
-  const [membersResult, quarterlyCampaignsResult, dayOneSummaryResult] = await Promise.allSettled([
+  const [membersResult, quarterlyCampaignsResult, dayOneSummaryResult, engagementHealthResult, guaranteeSubResult] = await Promise.allSettled([
     getTeamMembers(client.id),
     listClientQuarterlyCampaigns(client.id),
     getDayOneActivationSummary(client.id),
+    checkEngagementHealth(client.id),
+    db
+      .select({
+        id: subscriptions.id,
+        clientId: subscriptions.clientId,
+        guaranteeStatus: subscriptions.guaranteeStatus,
+        guaranteeProofStartAt: subscriptions.guaranteeProofStartAt,
+        guaranteeProofEndsAt: subscriptions.guaranteeProofEndsAt,
+        guaranteeAdjustedProofEndsAt: subscriptions.guaranteeAdjustedProofEndsAt,
+        guaranteeRecoveryStartAt: subscriptions.guaranteeRecoveryStartAt,
+        guaranteeRecoveryEndsAt: subscriptions.guaranteeRecoveryEndsAt,
+        guaranteeAdjustedRecoveryEndsAt: subscriptions.guaranteeAdjustedRecoveryEndsAt,
+        guaranteeRecoveryAttributedOpportunities: subscriptions.guaranteeRecoveryAttributedOpportunities,
+      })
+      .from(subscriptions)
+      .where(eq(subscriptions.clientId, client.id))
+      .limit(1),
   ]);
   const members = membersResult.status === 'fulfilled'
     ? membersResult.value
@@ -83,6 +108,97 @@ export default async function ClientDetailPage({ params }: Props) {
   const dayOneSummary = dayOneSummaryResult.status === 'fulfilled'
     ? dayOneSummaryResult.value
     : (() => { console.error(`[AdminClientPage] Failed to load day-one summary for client ${client.id}:`, dayOneSummaryResult.reason); return null; })();
+  const engagementHealth = engagementHealthResult.status === 'fulfilled'
+    ? engagementHealthResult.value
+    : (() => { console.error(`[AdminClientPage] Failed to load engagement health for client ${client.id}:`, engagementHealthResult.reason); return null; })();
+  const guaranteeSub = guaranteeSubResult.status === 'fulfilled'
+    ? (guaranteeSubResult.value[0] ?? null)
+    : (() => { console.error(`[AdminClientPage] Failed to load guarantee subscription for client ${client.id}:`, guaranteeSubResult.reason); return null; })();
+
+  // Compute guarantee card props (requires QLE count + pipeline value for active windows)
+  type GuaranteePhase =
+    | 'proof_pending'
+    | 'recovery_pending'
+    | 'proof_passed'
+    | 'recovery_passed'
+    | 'proof_failed_refund_review'
+    | 'recovery_failed_refund_review'
+    | 'completed';
+
+  interface GuaranteeCardProps {
+    phase: GuaranteePhase | null;
+    qleCount: number;
+    qleTarget: number;
+    pipelineValueCents: number;
+    pipelineTargetCents: number;
+    daysRemaining: number;
+    windowEndDate: string | null;
+    attributedOpportunities: number;
+  }
+
+  let guaranteeCardProps: GuaranteeCardProps | null = null;
+  if (guaranteeSub?.guaranteeStatus) {
+    const now = new Date();
+    const phase = guaranteeSub.guaranteeStatus as GuaranteePhase;
+    const isActiveProof = phase === 'proof_pending';
+    const isActiveRecovery = phase === 'recovery_pending';
+    const needsMetrics = isActiveProof || isActiveRecovery;
+
+    let qleCount = 0;
+    let pipelineValueCents = 0;
+    let windowEndDate: string | null = null;
+    let daysRemaining = 0;
+
+    if (needsMetrics) {
+      const proofStart = guaranteeSub.guaranteeProofStartAt ?? guaranteeSub.guaranteeAdjustedProofEndsAt;
+      const proofEnd = guaranteeSub.guaranteeAdjustedProofEndsAt ?? guaranteeSub.guaranteeProofEndsAt;
+      const recoveryStart = guaranteeSub.guaranteeRecoveryStartAt;
+      const recoveryEnd = guaranteeSub.guaranteeAdjustedRecoveryEndsAt ?? guaranteeSub.guaranteeRecoveryEndsAt;
+
+      if (isActiveProof && proofStart && proofEnd) {
+        const [qleResult] = await Promise.allSettled([
+          countQualifiedLeadEngagements(client.id, proofStart, proofEnd),
+        ]);
+        if (qleResult.status === 'fulfilled') {
+          qleCount = qleResult.value.count;
+        }
+        windowEndDate = proofEnd.toISOString();
+        daysRemaining = Math.max(0, Math.ceil((proofEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      }
+
+      if (isActiveRecovery && recoveryStart && recoveryEnd) {
+        const [pipelineResult] = await Promise.allSettled([
+          calculateProbablePipelineValueCents(client.id, recoveryStart, recoveryEnd),
+        ]);
+        if (pipelineResult.status === 'fulfilled') {
+          pipelineValueCents = pipelineResult.value;
+        }
+        windowEndDate = recoveryEnd.toISOString();
+        daysRemaining = Math.max(0, Math.ceil((recoveryEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      }
+    } else {
+      // For non-active phases, use the relevant end date for display
+      const endDate = guaranteeSub.guaranteeAdjustedRecoveryEndsAt
+        ?? guaranteeSub.guaranteeRecoveryEndsAt
+        ?? guaranteeSub.guaranteeAdjustedProofEndsAt
+        ?? guaranteeSub.guaranteeProofEndsAt;
+      if (endDate) {
+        windowEndDate = endDate.toISOString();
+        daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      }
+    }
+
+    guaranteeCardProps = {
+      phase,
+      qleCount,
+      qleTarget: 3,
+      pipelineValueCents,
+      pipelineTargetCents: 4_000_000, // $40,000 default target
+      daysRemaining,
+      windowEndDate,
+      attributedOpportunities: guaranteeSub.guaranteeRecoveryAttributedOpportunities ?? 0,
+    };
+  }
 
   // Fetch ROI metrics in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -376,13 +492,16 @@ export default async function ClientDetailPage({ params }: Props) {
         phoneNumberCard={
           <Card>
             <CardHeader>
-              <CardTitle>Phone Number</CardTitle>
+              <CardTitle>AI Business Line</CardTitle>
             </CardHeader>
             <CardContent>
               {client.twilioNumber ? (
                 <div className="space-y-3">
                   <p className="text-2xl font-mono">
                     {formatPhoneNumber(client.twilioNumber)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Leads text and call this number
                   </p>
                   <div className="flex gap-2">
                     <Badge variant="outline" className="bg-[#E8F5E9] text-[#3D7A50]">Voice</Badge>
@@ -397,7 +516,7 @@ export default async function ClientDetailPage({ params }: Props) {
               ) : (
                 <div className="text-center py-4">
                   <p className="text-muted-foreground mb-3">
-                    No phone number assigned
+                    No AI business line assigned
                   </p>
                   <Button asChild>
                     <Link href={`/admin/clients/${client.id}/phone`}>
@@ -439,6 +558,36 @@ export default async function ClientDetailPage({ params }: Props) {
           </>
         }
         addonProvenanceCard={<AddonProvenanceCard clientId={client.id} />}
+        dncCard={<DncCard clientId={client.id} />}
+        integrationsCard={<IntegrationsCard clientId={client.id} />}
+        smartAssistCard={<SmartAssistCard clientId={client.id} />}
+        guaranteeStatusCard={
+          guaranteeCardProps ? (
+            <GuaranteeStatusCard
+              phase={guaranteeCardProps.phase}
+              qleCount={guaranteeCardProps.qleCount}
+              qleTarget={guaranteeCardProps.qleTarget}
+              pipelineValueCents={guaranteeCardProps.pipelineValueCents}
+              pipelineTargetCents={guaranteeCardProps.pipelineTargetCents}
+              daysRemaining={guaranteeCardProps.daysRemaining}
+              windowEndDate={guaranteeCardProps.windowEndDate}
+              attributedOpportunities={guaranteeCardProps.attributedOpportunities}
+            />
+          ) : null
+        }
+        engagementHealthBadge={
+          engagementHealth ? (
+            <EngagementHealthBadge
+              status={engagementHealth.status}
+              signals={{
+                daysSinceLastEstimateFlag: engagementHealth.signals.daysSinceLastEstimateFlag,
+                daysSinceLastWonLost: engagementHealth.signals.daysSinceLastWonLost,
+                openKbGaps: 0,
+              }}
+              recommendations={engagementHealth.recommendations}
+            />
+          ) : null
+        }
         actionsCard={
           <Card>
             <CardHeader>

@@ -4,6 +4,7 @@ import { getEscalationQueue } from '@/lib/services/escalation';
 import { getDb, escalationQueue } from '@/db';
 import { eq, and, or, sql } from 'drizzle-orm';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
+import type { EscalationQueueStatus } from '@/db/schema/agent-enums';
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const queue = await getEscalationQueue(clientId, {
-      status: status || undefined,
+      status: (status || undefined) as EscalationQueueStatus | undefined,
       assignedTo: assignedTo || undefined,
     });
 

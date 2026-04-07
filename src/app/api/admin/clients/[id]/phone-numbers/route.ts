@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
-import { getNumbers, addNumber } from '@/lib/services/client-phone-management';
+import { getNumbers, addNumber, ensurePrimaryNumberSynced } from '@/lib/services/client-phone-management';
 import { z } from 'zod';
 
 export const GET = adminClientRoute<{ id: string }>(
   { permission: AGENCY_PERMISSIONS.PHONES_MANAGE, clientIdFrom: (p) => p.id },
   async ({ clientId }) => {
+    // Backfill: if client has a twilioNumber but no junction table rows, create one
+    await ensurePrimaryNumberSynced(clientId);
     const numbers = await getNumbers(clientId);
     return NextResponse.json(numbers);
   }

@@ -7,7 +7,9 @@ import {
   jsonb,
   timestamp,
   uniqueIndex,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const coupons = pgTable(
   'coupons',
@@ -47,6 +49,7 @@ export const coupons = pgTable(
   },
   (table) => [
     uniqueIndex('coupons_code_idx').on(table.code),
+    check('coupons_valid_date_range', sql`${table.validUntil} IS NULL OR ${table.validFrom} IS NULL OR ${table.validUntil} >= ${table.validFrom}`),
   ]
 );
 

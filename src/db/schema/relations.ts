@@ -48,6 +48,49 @@ import { clientMemberships } from './client-memberships';
 import { agencyMemberships } from './agency-memberships';
 import { agencyClientAssignments } from './agency-client-assignments';
 import { auditLog } from './audit-log';
+import { errorLog } from './error-log';
+import { webhookLog } from './webhook-log';
+import { activeCalls } from './active-calls';
+import { abTests, abTestMetrics } from './ab-tests';
+import { templateVariants } from './template-variants';
+import { templatePerformanceMetrics } from './template-performance-metrics';
+import { apiUsage } from './api-usage';
+import { apiUsageDaily } from './api-usage-daily';
+import { apiUsageMonthly } from './api-usage-monthly';
+import { usageAlerts } from './usage-alerts';
+import { otpCodes } from './otp-codes';
+import { templateMetricsDaily } from './template-metrics-daily';
+import { templateStepMetrics } from './template-step-metrics';
+import { clientFlowOutcomes } from './client-flow-outcomes';
+import { knowledgeGaps } from './knowledge-gaps';
+import { onboardingQualitySnapshots, onboardingQualityOverrides } from './onboarding-quality';
+import { reviews } from './reviews';
+import { reviewSources } from './review-sources';
+import { reviewMetrics } from './review-metrics';
+import { responseTemplates } from './response-templates';
+import { reviewResponses } from './review-responses';
+import { calendarIntegrations } from './calendar-integrations';
+import { calendarEvents } from './calendar-events';
+import { voiceCalls } from './voice-calls';
+import { plans } from './plans';
+import { subscriptions } from './subscriptions';
+import { billingPaymentMethods } from './billing-payment-methods';
+import { subscriptionInvoices } from './subscription-invoices';
+import { usageRecords } from './usage-records';
+import { billingEvents } from './billing-events';
+import { addonBillingEvents } from './addon-billing-events';
+import { analyticsDaily } from './analytics-daily';
+import { analyticsWeekly } from './analytics-weekly';
+import { analyticsMonthly } from './analytics-monthly';
+import { funnelEvents } from './funnel-events';
+import { clientCohorts } from './client-cohorts';
+import { supportMessages } from './support-messages';
+import { supportReplies } from './support-replies';
+import { npsSurveys } from './nps-surveys';
+import { apiKeys } from './api-keys';
+import { clientPhoneNumbers } from './client-phone-numbers';
+import { integrationWebhooks } from './integration-webhooks';
+import { agencyMessages } from './agency-messages';
 
 /**
  * Define relationships between tables for type-safe queries
@@ -703,5 +746,492 @@ export const auditLogRelations = relations(auditLog, ({ one }) => ({
   client: one(clients, {
     fields: [auditLog.clientId],
     references: [clients.id],
+  }),
+}));
+
+// Error & Webhook Logs
+export const errorLogRelations = relations(errorLog, ({ one }) => ({
+  client: one(clients, {
+    fields: [errorLog.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const webhookLogRelations = relations(webhookLog, ({ one }) => ({
+  client: one(clients, {
+    fields: [webhookLog.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Active Calls
+export const activeCallsRelations = relations(activeCalls, ({ one }) => ({
+  client: one(clients, {
+    fields: [activeCalls.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// A/B Tests
+export const abTestsRelations = relations(abTests, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [abTests.clientId],
+    references: [clients.id],
+  }),
+  metrics: many(abTestMetrics),
+}));
+
+export const abTestMetricsRelations = relations(abTestMetrics, ({ one }) => ({
+  test: one(abTests, {
+    fields: [abTestMetrics.testId],
+    references: [abTests.id],
+  }),
+}));
+
+// Template Performance Metrics
+export const templateVariantsRelations = relations(templateVariants, ({ many }) => ({
+  performanceMetrics: many(templatePerformanceMetrics),
+}));
+
+export const templatePerformanceMetricsRelations = relations(
+  templatePerformanceMetrics,
+  ({ one }) => ({
+    templateVariant: one(templateVariants, {
+      fields: [templatePerformanceMetrics.templateVariantId],
+      references: [templateVariants.id],
+    }),
+  })
+);
+
+// API Usage
+export const apiUsageRelations = relations(apiUsage, ({ one }) => ({
+  client: one(clients, {
+    fields: [apiUsage.clientId],
+    references: [clients.id],
+  }),
+  lead: one(leads, {
+    fields: [apiUsage.leadId],
+    references: [leads.id],
+  }),
+}));
+
+export const apiUsageDailyRelations = relations(apiUsageDaily, ({ one }) => ({
+  client: one(clients, {
+    fields: [apiUsageDaily.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const apiUsageMonthlyRelations = relations(apiUsageMonthly, ({ one }) => ({
+  client: one(clients, {
+    fields: [apiUsageMonthly.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const usageAlertsRelations = relations(usageAlerts, ({ one }) => ({
+  client: one(clients, {
+    fields: [usageAlerts.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// OTP Codes
+export const otpCodesRelations = relations(otpCodes, ({ one }) => ({
+  client: one(clients, {
+    fields: [otpCodes.clientId],
+    references: [clients.id],
+  }),
+  person: one(people, {
+    fields: [otpCodes.personId],
+    references: [people.id],
+  }),
+}));
+
+// Template Metrics
+export const templateMetricsDailyRelations = relations(templateMetricsDaily, ({ one }) => ({
+  template: one(flowTemplates, {
+    fields: [templateMetricsDaily.templateId],
+    references: [flowTemplates.id],
+  }),
+}));
+
+export const templateStepMetricsRelations = relations(templateStepMetrics, ({ one }) => ({
+  template: one(flowTemplates, {
+    fields: [templateStepMetrics.templateId],
+    references: [flowTemplates.id],
+  }),
+}));
+
+// Client Flow Outcomes
+export const clientFlowOutcomesRelations = relations(clientFlowOutcomes, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientFlowOutcomes.clientId],
+    references: [clients.id],
+  }),
+  flow: one(flows, {
+    fields: [clientFlowOutcomes.flowId],
+    references: [flows.id],
+  }),
+}));
+
+// Knowledge Gaps
+export const knowledgeGapsRelations = relations(knowledgeGaps, ({ one }) => ({
+  client: one(clients, {
+    fields: [knowledgeGaps.clientId],
+    references: [clients.id],
+  }),
+  owner: one(people, {
+    fields: [knowledgeGaps.ownerPersonId],
+    references: [people.id],
+    relationName: 'knowledgeGapOwner',
+  }),
+  kbEntry: one(knowledgeBase, {
+    fields: [knowledgeGaps.kbEntryId],
+    references: [knowledgeBase.id],
+  }),
+  resolvedByPerson: one(people, {
+    fields: [knowledgeGaps.resolvedByPersonId],
+    references: [people.id],
+    relationName: 'knowledgeGapResolvedBy',
+  }),
+  verifiedByPerson: one(people, {
+    fields: [knowledgeGaps.verifiedByPersonId],
+    references: [people.id],
+    relationName: 'knowledgeGapVerifiedBy',
+  }),
+}));
+
+// Onboarding Quality
+export const onboardingQualitySnapshotsRelations = relations(
+  onboardingQualitySnapshots,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [onboardingQualitySnapshots.clientId],
+      references: [clients.id],
+    }),
+    evaluatedByPerson: one(people, {
+      fields: [onboardingQualitySnapshots.evaluatedByPersonId],
+      references: [people.id],
+    }),
+  })
+);
+
+export const onboardingQualityOverridesRelations = relations(
+  onboardingQualityOverrides,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [onboardingQualityOverrides.clientId],
+      references: [clients.id],
+    }),
+    approvedByPerson: one(people, {
+      fields: [onboardingQualityOverrides.approvedByPersonId],
+      references: [people.id],
+    }),
+  })
+);
+
+// Reviews
+export const reviewsRelations = relations(reviews, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [reviews.clientId],
+    references: [clients.id],
+  }),
+  matchedLead: one(leads, {
+    fields: [reviews.matchedLeadId],
+    references: [leads.id],
+  }),
+  responses: many(reviewResponses),
+}));
+
+export const reviewSourcesRelations = relations(reviewSources, ({ one }) => ({
+  client: one(clients, {
+    fields: [reviewSources.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const reviewMetricsRelations = relations(reviewMetrics, ({ one }) => ({
+  client: one(clients, {
+    fields: [reviewMetrics.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const responseTemplatesRelations = relations(responseTemplates, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [responseTemplates.clientId],
+    references: [clients.id],
+  }),
+  reviewResponses: many(reviewResponses),
+}));
+
+export const reviewResponsesRelations = relations(reviewResponses, ({ one }) => ({
+  review: one(reviews, {
+    fields: [reviewResponses.reviewId],
+    references: [reviews.id],
+  }),
+  client: one(clients, {
+    fields: [reviewResponses.clientId],
+    references: [clients.id],
+  }),
+  template: one(responseTemplates, {
+    fields: [reviewResponses.templateId],
+    references: [responseTemplates.id],
+  }),
+  submittedByPerson: one(people, {
+    fields: [reviewResponses.submittedBy],
+    references: [people.id],
+    relationName: 'reviewResponseSubmittedBy',
+  }),
+  approvedByPerson: one(people, {
+    fields: [reviewResponses.approvedBy],
+    references: [people.id],
+    relationName: 'reviewResponseApprovedBy',
+  }),
+}));
+
+// Calendar
+export const calendarIntegrationsRelations = relations(calendarIntegrations, ({ one }) => ({
+  client: one(clients, {
+    fields: [calendarIntegrations.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const calendarEventsRelations = relations(calendarEvents, ({ one }) => ({
+  client: one(clients, {
+    fields: [calendarEvents.clientId],
+    references: [clients.id],
+  }),
+  lead: one(leads, {
+    fields: [calendarEvents.leadId],
+    references: [leads.id],
+  }),
+  assignedTeamMember: one(clientMemberships, {
+    fields: [calendarEvents.assignedTeamMemberId],
+    references: [clientMemberships.id],
+  }),
+  job: one(jobs, {
+    fields: [calendarEvents.jobId],
+    references: [jobs.id],
+  }),
+}));
+
+// Voice Calls
+export const voiceCallsRelations = relations(voiceCalls, ({ one }) => ({
+  client: one(clients, {
+    fields: [voiceCalls.clientId],
+    references: [clients.id],
+  }),
+  lead: one(leads, {
+    fields: [voiceCalls.leadId],
+    references: [leads.id],
+  }),
+}));
+
+// Billing & Subscriptions
+export const plansRelations = relations(plans, ({ many }) => ({
+  subscriptions: many(subscriptions),
+}));
+
+export const subscriptionsRelations = relations(subscriptions, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [subscriptions.clientId],
+    references: [clients.id],
+  }),
+  plan: one(plans, {
+    fields: [subscriptions.planId],
+    references: [plans.id],
+  }),
+  invoices: many(subscriptionInvoices),
+  usageRecords: many(usageRecords),
+  billingEvents: many(billingEvents),
+}));
+
+export const billingPaymentMethodsRelations = relations(billingPaymentMethods, ({ one, many }) => ({
+  client: one(clients, {
+    fields: [billingPaymentMethods.clientId],
+    references: [clients.id],
+  }),
+  invoices: many(subscriptionInvoices),
+  billingEvents: many(billingEvents),
+}));
+
+export const subscriptionInvoicesRelations = relations(
+  subscriptionInvoices,
+  ({ one, many }) => ({
+    client: one(clients, {
+      fields: [subscriptionInvoices.clientId],
+      references: [clients.id],
+    }),
+    subscription: one(subscriptions, {
+      fields: [subscriptionInvoices.subscriptionId],
+      references: [subscriptions.id],
+    }),
+    paymentMethod: one(billingPaymentMethods, {
+      fields: [subscriptionInvoices.paymentMethodId],
+      references: [billingPaymentMethods.id],
+    }),
+    usageRecords: many(usageRecords),
+    addonBillingEvents: many(addonBillingEvents),
+  })
+);
+
+export const usageRecordsRelations = relations(usageRecords, ({ one }) => ({
+  client: one(clients, {
+    fields: [usageRecords.clientId],
+    references: [clients.id],
+  }),
+  subscription: one(subscriptions, {
+    fields: [usageRecords.subscriptionId],
+    references: [subscriptions.id],
+  }),
+  billedOnInvoice: one(subscriptionInvoices, {
+    fields: [usageRecords.billedOnInvoiceId],
+    references: [subscriptionInvoices.id],
+  }),
+}));
+
+export const billingEventsRelations = relations(billingEvents, ({ one }) => ({
+  client: one(clients, {
+    fields: [billingEvents.clientId],
+    references: [clients.id],
+  }),
+  subscription: one(subscriptions, {
+    fields: [billingEvents.subscriptionId],
+    references: [subscriptions.id],
+  }),
+  invoice: one(subscriptionInvoices, {
+    fields: [billingEvents.invoiceId],
+    references: [subscriptionInvoices.id],
+  }),
+  paymentMethod: one(billingPaymentMethods, {
+    fields: [billingEvents.paymentMethodId],
+    references: [billingPaymentMethods.id],
+  }),
+}));
+
+export const addonBillingEventsRelations = relations(addonBillingEvents, ({ one }) => ({
+  client: one(clients, {
+    fields: [addonBillingEvents.clientId],
+    references: [clients.id],
+  }),
+  invoice: one(subscriptionInvoices, {
+    fields: [addonBillingEvents.invoiceId],
+    references: [subscriptionInvoices.id],
+  }),
+}));
+
+// Analytics
+export const analyticsDailyRelations = relations(analyticsDaily, ({ one }) => ({
+  client: one(clients, {
+    fields: [analyticsDaily.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const analyticsWeeklyRelations = relations(analyticsWeekly, ({ one }) => ({
+  client: one(clients, {
+    fields: [analyticsWeekly.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const analyticsMonthlyRelations = relations(analyticsMonthly, ({ one }) => ({
+  client: one(clients, {
+    fields: [analyticsMonthly.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const funnelEventsRelations = relations(funnelEvents, ({ one }) => ({
+  client: one(clients, {
+    fields: [funnelEvents.clientId],
+    references: [clients.id],
+  }),
+  lead: one(leads, {
+    fields: [funnelEvents.leadId],
+    references: [leads.id],
+  }),
+  agentDecision: one(agentDecisions, {
+    fields: [funnelEvents.agentDecisionId],
+    references: [agentDecisions.id],
+  }),
+}));
+
+export const clientCohortsRelations = relations(clientCohorts, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientCohorts.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Support
+export const supportMessagesRelations = relations(supportMessages, ({ one, many }) => ({
+  user: one(users, {
+    fields: [supportMessages.userId],
+    references: [users.id],
+  }),
+  replies: many(supportReplies),
+}));
+
+export const supportRepliesRelations = relations(supportReplies, ({ one }) => ({
+  supportMessage: one(supportMessages, {
+    fields: [supportReplies.supportMessageId],
+    references: [supportMessages.id],
+  }),
+}));
+
+// NPS Surveys
+export const npsSurveysRelations = relations(npsSurveys, ({ one }) => ({
+  client: one(clients, {
+    fields: [npsSurveys.clientId],
+    references: [clients.id],
+  }),
+  lead: one(leads, {
+    fields: [npsSurveys.leadId],
+    references: [leads.id],
+  }),
+  appointment: one(appointments, {
+    fields: [npsSurveys.appointmentId],
+    references: [appointments.id],
+  }),
+}));
+
+// API Keys
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+  client: one(clients, {
+    fields: [apiKeys.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Client Phone Numbers
+export const clientPhoneNumbersRelations = relations(clientPhoneNumbers, ({ one }) => ({
+  client: one(clients, {
+    fields: [clientPhoneNumbers.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Integration Webhooks
+export const integrationWebhooksRelations = relations(integrationWebhooks, ({ one }) => ({
+  client: one(clients, {
+    fields: [integrationWebhooks.clientId],
+    references: [clients.id],
+  }),
+}));
+
+// Agency Messages
+export const agencyMessagesRelations = relations(agencyMessages, ({ one }) => ({
+  client: one(clients, {
+    fields: [agencyMessages.clientId],
+    references: [clients.id],
+  }),
+  inReplyToMessage: one(agencyMessages, {
+    fields: [agencyMessages.inReplyTo],
+    references: [agencyMessages.id],
+    relationName: 'agencyMessageReplies',
   }),
 }));

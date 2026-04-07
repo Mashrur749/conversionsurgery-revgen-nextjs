@@ -7,6 +7,7 @@ import {
   jsonb,
   timestamp,
   index,
+  unique,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 import { leads } from './leads';
@@ -53,33 +54,45 @@ export const flowExecutions = pgTable(
   ]
 );
 
-export const flowStepExecutions = pgTable('flow_step_executions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  flowExecutionId: uuid('flow_execution_id').references(() => flowExecutions.id, {
-    onDelete: 'cascade',
-  }),
-  flowStepId: uuid('flow_step_id').references(() => flowSteps.id, { onDelete: 'set null' }),
+export const flowStepExecutions = pgTable(
+  'flow_step_executions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    flowExecutionId: uuid('flow_execution_id').references(() => flowExecutions.id, {
+      onDelete: 'cascade',
+    }),
+    flowStepId: uuid('flow_step_id').references(() => flowSteps.id, { onDelete: 'set null' }),
 
-  stepNumber: integer('step_number').notNull(),
+    stepNumber: integer('step_number').notNull(),
 
-  // Status: pending, scheduled, sent, skipped, failed
-  status: varchar('status', { length: 20 }).default('pending'),
+    // Status: pending, scheduled, sent, skipped, failed
+    status: varchar('status', { length: 20 }).default('pending'),
 
-  // Timing
-  scheduledAt: timestamp('scheduled_at'),
-  executedAt: timestamp('executed_at'),
+    // Timing
+    scheduledAt: timestamp('scheduled_at'),
+    executedAt: timestamp('executed_at'),
 
-  // Message sent
-  messageContent: text('message_content'),
-  messageSid: varchar('message_sid', { length: 50 }),
+    // Message sent
+    messageContent: text('message_content'),
+    messageSid: varchar('message_sid', { length: 50 }),
 
-  // Skip reason if skipped
-  skipReason: varchar('skip_reason', { length: 100 }),
+    // Skip reason if skipped
+    skipReason: varchar('skip_reason', { length: 100 }),
 
-  // Error if failed
-  error: text('error'),
-  retryCount: integer('retry_count').default(0),
-});
+    // Error if failed
+    error: text('error'),
+    retryCount: integer('retry_count').default(0),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('uq_flow_step_executions_execution_step').on(
+      table.flowExecutionId,
+      table.stepNumber
+    ),
+  ]
+);
 
 export const suggestedActions = pgTable(
   'suggested_actions',

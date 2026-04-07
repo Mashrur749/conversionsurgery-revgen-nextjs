@@ -6,6 +6,7 @@ import {
   jsonb,
   timestamp,
   index,
+  unique,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { clients } from './clients';
@@ -36,5 +37,6 @@ export const clientPhoneNumbers = pgTable(
   (table) => [
     index('cpn_client_id_idx').on(table.clientId),
     index('cpn_phone_number_idx').on(table.phoneNumber),
+    unique('cpn_client_phone_unique').on(table.clientId, table.phoneNumber),
   ]
 );

@@ -6,6 +6,7 @@ export const quarterlyCampaignTypeEnum = pgEnum('quarterly_campaign_type', [
   'pipeline_builder',
   'year_end_strategy',
 ]);
+export type QuarterlyCampaignType = (typeof quarterlyCampaignTypeEnum.enumValues)[number];
 
 export const quarterlyCampaignStatusEnum = pgEnum('quarterly_campaign_status', [
   'planned',
@@ -13,3 +14,4 @@ export const quarterlyCampaignStatusEnum = pgEnum('quarterly_campaign_status', [
   'launched',
   'completed',
 ]);
+export type QuarterlyCampaignStatus = (typeof quarterlyCampaignStatusEnum.enumValues)[number];

@@ -36,7 +36,7 @@ const updateClientSchema = z.object({
   phone: z.string().min(10).optional(),
   timezone: z.string().optional(),
   googleBusinessUrl: z.string().url().optional().or(z.literal('')).or(z.null()),
-  twilioNumber: z.string().optional().or(z.null()),
+  // twilioNumber removed — changes go through /api/admin/clients/[id]/phone-numbers
   notificationEmail: z.boolean().optional(),
   notificationSms: z.boolean().optional(),
   monthlyMessageLimit: z.number().min(0).optional(),

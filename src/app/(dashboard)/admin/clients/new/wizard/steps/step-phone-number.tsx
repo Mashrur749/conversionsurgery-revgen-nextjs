@@ -282,7 +282,7 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
     return (
       <div className="space-y-4">
         <div className="p-6 border rounded-lg text-center">
-          <p className="text-sm text-muted-foreground mb-2">Assigned Number</p>
+          <p className="text-sm text-muted-foreground mb-2">AI Business Line</p>
           <p className="text-3xl font-mono font-bold">
             {formatPhoneNumber(data.twilioNumber)}
           </p>
@@ -290,6 +290,9 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
             <Badge variant="outline">Voice</Badge>
             <Badge variant="outline">SMS</Badge>
           </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Leads will text and call this number. The AI handles responses automatically.
+          </p>
         </div>
 
         <div className="flex justify-between pt-4">
@@ -311,6 +314,10 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
           {error}
         </div>
       )}
+
+      <p className="text-sm text-muted-foreground">
+        This is the dedicated business number that leads will see and contact. The AI answers texts and calls on this line &mdash; it&apos;s separate from the owner&apos;s personal phone.
+      </p>
 
       <Tabs defaultValue="existing">
         <TabsList className="w-full">

@@ -192,48 +192,48 @@ export default async function ReportDetailPage({ params }: Props) {
       </ReportDetailCard>
 
       {withoutUsModel && (
-        <ReportDetailCard title='Without Us (Directional Model)'>
+        <ReportDetailCard title='Leads at Risk &mdash; Based on your response times and lead volume'>
           {withoutUsModel.status === 'ready' ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="rounded-md border p-3">
-                  <p className="text-sm text-muted-foreground">Low</p>
+                  <p className="text-sm text-muted-foreground">Conservative</p>
                   <p className="text-xl font-semibold mt-1">
                     {formatCad(withoutUsModel.ranges.low.estimatedRevenueRisk)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {withoutUsModel.ranges.low.atRiskLeads.toFixed(1)} modeled at-risk leads
+                    {withoutUsModel.ranges.low.atRiskLeads.toFixed(1)} leads that would have waited 40+ min
                   </p>
                 </div>
                 <div className="rounded-md border p-3">
-                  <p className="text-sm text-muted-foreground">Base</p>
+                  <p className="text-sm text-muted-foreground">Likely</p>
                   <p className="text-xl font-semibold mt-1">
                     {formatCad(withoutUsModel.ranges.base.estimatedRevenueRisk)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {withoutUsModel.ranges.base.atRiskLeads.toFixed(1)} modeled at-risk leads
+                    {withoutUsModel.ranges.base.atRiskLeads.toFixed(1)} leads that would have waited 40+ min
                   </p>
                 </div>
                 <div className="rounded-md border p-3">
-                  <p className="text-sm text-muted-foreground">High</p>
+                  <p className="text-sm text-muted-foreground">Optimistic</p>
                   <p className="text-xl font-semibold mt-1">
                     {formatCad(withoutUsModel.ranges.high.estimatedRevenueRisk)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {withoutUsModel.ranges.high.atRiskLeads.toFixed(1)} modeled at-risk leads
+                    {withoutUsModel.ranges.high.atRiskLeads.toFixed(1)} leads that would have waited 40+ min
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="rounded-md bg-[#F8F9FA] p-3">
-                  <p className="text-muted-foreground">After-hours leads</p>
+                  <p className="text-muted-foreground">Leads that came in after hours</p>
                   <p className="font-semibold mt-1">
                     {withoutUsModel.inputs.afterHoursLeadCount}
                   </p>
                 </div>
                 <div className="rounded-md bg-[#F8F9FA] p-3">
-                  <p className="text-muted-foreground">Observed avg first response</p>
+                  <p className="text-muted-foreground">Your avg first response time</p>
                   <p className="font-semibold mt-1">
                     {withoutUsModel.inputs.averageObservedResponseMinutes !== null
                       ? `${withoutUsModel.inputs.averageObservedResponseMinutes.toFixed(2)} min`
@@ -241,7 +241,7 @@ export default async function ReportDetailPage({ params }: Props) {
                   </p>
                 </div>
                 <div className="rounded-md bg-[#F8F9FA] p-3">
-                  <p className="text-muted-foreground">Delayed follow-up count</p>
+                  <p className="text-muted-foreground">Estimates with no follow-up</p>
                   <p className="font-semibold mt-1">
                     {withoutUsModel.inputs.delayedFollowupCount}
                   </p>
@@ -255,8 +255,7 @@ export default async function ReportDetailPage({ params }: Props) {
           ) : (
             <div className="space-y-2">
               <p className="text-sm">
-                Insufficient data for this period to compute a directional "Without Us"
-                range.
+                Not enough data this period to estimate leads at risk.
               </p>
               <p className="text-xs text-muted-foreground">
                 Missing inputs: {withoutUsModel.missingInputs.join(', ')}

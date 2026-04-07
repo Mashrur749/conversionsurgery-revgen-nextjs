@@ -73,6 +73,9 @@ export const agentDecisions = pgTable(
     // Timing
     processingTimeMs: integer('processing_time_ms'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+
+    // Archival
+    archivedAt: timestamp('archived_at'),
   },
   (table) => [
     index('agent_decisions_lead_idx').on(table.leadId),
@@ -83,6 +86,7 @@ export const agentDecisions = pgTable(
     index('agent_decisions_client_created_idx').on(table.clientId, table.createdAt),
     index('agent_decisions_client_action_created_idx').on(table.clientId, table.action, table.createdAt),
     index('agent_decisions_outcome_idx').on(table.outcome),
+    index('idx_agent_decisions_archived_at').on(table.archivedAt),
   ]
 );
 

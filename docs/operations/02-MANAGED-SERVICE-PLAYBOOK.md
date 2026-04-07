@@ -55,6 +55,8 @@ This is the moment they realize the service works. Protect it.
 
 ## 3. AI Quality Monitoring + Smart Assist Operations
 
+> For the high-level overview, see `docs/operations/01-OPERATIONS-GUIDE.md` Part 3.
+
 **When:** Daily during Week 2 (Smart Assist mode), then 2-3 times/week once autonomous.
 
 ### Smart Assist — Operator-First Review (Week 2)
@@ -71,6 +73,8 @@ During Smart Assist mode, **you** (the operator) review AI drafts, not the contr
    - Reply `EDIT ABC123: [corrected message]` &mdash; sends your version immediately
    - Reply `CANCEL ABC123` &mdash; kills the draft, nothing sent
 4. If you need the contractor&apos;s input: text them directly: &ldquo;Quick one &mdash; a lead asked about [topic]. What should I tell them?&rdquo; Then either edit the draft with their answer or add a KB entry.
+
+**Browser-based alternative:** You can also review and manage pending drafts from the admin dashboard: client detail page &rarr; Activity tab &rarr; Pending Drafts card. The card polls every 15 seconds and provides approve, edit, and cancel actions without leaving the browser. Use this when you&apos;re at your desk; SMS commands are useful when you&apos;re on mobile.
 
 **What the contractor experiences during Week 2:** Nothing changes for them. They don&apos;t receive draft notifications. They don&apos;t approve messages. From their perspective, the system just works. If you need their input, they get a normal text from you &mdash; not a system notification.
 
@@ -117,9 +121,11 @@ These sit in `pending_manual` until explicitly approved. You must reply `SEND [r
 
 **When:** Day 30 (Layer 1) and Day 90 (Layer 2).
 
-### Layer 1: 30-Day Proof-of-Life (5 Qualified Lead Engagements)
+**Guarantee terms:** 30-Day Proof (5 qualified lead engagements) and 90-Day Recovery (1 booked estimate from cold lead OR $5,000 probable pipeline). Full terms, volume conditions, and extension formula: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 3.
 
-Month 1 is free. The guarantee cron checks daily. At day 30:
+### Layer 1: 30-Day Check
+
+The guarantee cron checks daily. At day 30:
 
 1. Open the client&apos;s guarantee status at `/admin/clients/[id]` &rarr; Guarantee section.
 2. Check: did 5+ leads have a two-way interaction (lead replied at least once after system response)?
@@ -128,17 +134,11 @@ Month 1 is free. The guarantee cron checks daily. At day 30:
    - Before letting them go, investigate: Did they have any lead volume? If zero inbound in 30 days, the issue is their marketing. Have an honest conversation.
    - If they had leads but the system didn&apos;t engage them, that&apos;s a real failure. Apologize and fix the root cause. Offer to extend the free period.
 
-### Layer 2: 90-Day Revenue Recovery (1 Attributed Opportunity OR $5K Pipeline)
-
-At day 90, the guarantee passes if **either** of the following is true:
-
-**Criterion A — Attributed opportunity:** At least 1 lead progressed to an opportunity (appointment booked, quote requested, or job won) where the system contributed. Attribution is log-based — platform logs must show system-initiated engagement before the opportunity progressed.
-
-**Criterion B — Pipeline floor:** The auto-calculated `probablePipelineValue` (appointments booked + reactivated quotes × avg project value) reached $5,000 or more during the 90-day window, even if no job was formally won.
+### Layer 2: 90-Day Check
 
 **Evaluation process:**
 
-1. Check the client&apos;s guarantee status card at `/admin/clients/[id]` &rarr; Guarantee section.
+1. Check the client&apos;s guarantee progress in the admin dashboard: client detail page &rarr; Overview tab &rarr; Guarantee Status card. It shows the current phase (`proof_pending` / `recovery_pending`), progress against thresholds (QLE count and pipeline value), days remaining, and an on-track/at-risk/failing status badge. Use this daily to catch at-risk clients before the window closes.
 2. Check Criterion A: is there a logged attributed opportunity?
 3. If not, check Criterion B: did `probablePipelineValue` reach $5,000? (visible in the client dashboard pipeline summary and bi-weekly reports)
 4. **If either passes:** Guarantee met. Use in retention pitch: &quot;In 90 days, the system built $X in your pipeline.&quot;
@@ -286,7 +286,7 @@ Stay on the line. Confirm in Stripe. See Payment Capture section below for hesit
 
 **Minute 12-15: Exclusion List + Old Quotes Setup**
 
-4. **Exclusion list (1 min, mandatory):** &quot;Before we fire anything &mdash; are there any contacts you want us to skip? Family, close friends, anyone you have a personal relationship with? We&apos;ll keep them off all automated messages.&quot; Record the names. Frame it as protecting their relationships, not a product limitation.
+4. **Exclusion list (1 min, mandatory):** &quot;Before we fire anything &mdash; are there any contacts you want us to skip? Family, close friends, anyone you have a personal relationship with? We&apos;ll keep them off all automated messages.&quot; Record the names. Frame it as protecting their relationships, not a product limitation. Add each excluded number in the admin dashboard: client detail page &rarr; Configuration tab &rarr; Exclusion List card &rarr; Add Number.
 
 5. **Old quotes (3 min):** &quot;Now &mdash; those old quotes you never heard back from. How many from the last 6 months?&quot; Get the list on the call &mdash; don&apos;t assign it as homework. Have them scroll through their phone contacts or Jobber and read off names while you type. Build the first reactivation message live:
 
@@ -309,7 +309,7 @@ Stay on the line. Confirm in Stripe. See Payment Capture section below for hesit
 
    **Critical:** The messages must sound like THEM. This is identity protection, not a feature request.
 
-7. **Jobber setup (optional, 2 min):** If the client uses Jobber, ask for their Jobber webhook URL. Configure in admin under &quot;Integrations.&quot; Two-way sync: CS fires appointment bookings to Jobber, Jobber&apos;s job_completed triggers CS review requests.
+7. **Jobber setup (optional, 2 min):** If the client uses Jobber, ask for their Jobber webhook URL. Configure in the admin dashboard: client detail page &rarr; Configuration tab &rarr; Integrations card &rarr; Add Integration &rarr; select Jobber. Two-way sync: CS fires appointment bookings to Jobber, Jobber&apos;s job_completed triggers CS review requests.
 
 ---
 
@@ -364,6 +364,7 @@ Then follow up in 24-48 hours with the link. Most contractors who refuse on the 
 - Set AI tone based on their communication style.
 - Configure business hours from the call.
 - **Fire the outbound quote reactivation batch** &mdash; send the messages to the dead quotes collected on the call. This is the highest-ROI action on Day 0. Do it before anything else.
+- **Run Voice AI Playground QA:** Open `/admin/voice-ai`, expand the client. Preview the greeting (hear it in their voice). Run the KB Test (all 10 questions should be answered or deferred, not gapped). Run the Guardrail Test (all 8 should pass). Complete QA Checklist &rarr; click &ldquo;Go Live.&rdquo;
 - Verify call forwarding with a test call to XYZ &mdash; confirm it rings 3 times then forwards to Twilio.
 - Verify subscription was created in Stripe Dashboard (trial active, card on file).
 - Add exclusion list contacts to the DNC/skip list in admin.
@@ -820,7 +821,7 @@ The AI encounters questions it can&apos;t answer. They get SMS nudges: &ldquo;A 
 The AI handles conversations end to end. The contractor&apos;s phone buzzes only when: (a) a lead needs human attention (escalation), (b) a job needs to be marked won/lost (weekly nudge), or (c) a Google review needs their approval. Time commitment drops to under 15 min/week.
 
 **Bi-weekly &mdash; Performance report:**
-Every 2 weeks they get an email report showing: leads captured, response times, estimates followed up, revenue impact. The &ldquo;Without Us&rdquo; model shows what they would have lost. An auto-SMS follows up.
+Every 2 weeks they get an email report showing: leads captured, response times, estimates followed up, revenue impact. The &ldquo;Leads at Risk&rdquo; estimate shows the estimated pipeline at stake based on their response times and lead volume. An auto-SMS follows up.
 
 **Quarterly &mdash; Growth Blitz:**
 You launch a proactive campaign: dormant lead reactivation (Q1), review push (Q2), pipeline builder (Q3), strategy review (Q4). Results reported within 2 weeks.

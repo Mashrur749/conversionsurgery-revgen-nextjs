@@ -8,6 +8,7 @@ import {
   jsonb,
   timestamp,
   index,
+  unique,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 import { flowTemplates, flowTemplateSteps } from './flow-templates';
@@ -58,38 +59,44 @@ export const flows = pgTable(
   ]
 );
 
-export const flowSteps = pgTable('flow_steps', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'cascade' }),
+export const flowSteps = pgTable(
+  'flow_steps',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    flowId: uuid('flow_id').references(() => flows.id, { onDelete: 'cascade' }),
 
-  // Template linking
-  templateStepId: uuid('template_step_id').references(() => flowTemplateSteps.id, {
-    onDelete: 'set null',
-  }),
+    // Template linking
+    templateStepId: uuid('template_step_id').references(() => flowTemplateSteps.id, {
+      onDelete: 'set null',
+    }),
 
-  // Step config
-  stepNumber: integer('step_number').notNull(),
-  name: varchar('name', { length: 100 }),
+    // Step config
+    stepNumber: integer('step_number').notNull(),
+    name: varchar('name', { length: 100 }),
 
-  // Delay - use custom or fall back to template
-  useTemplateDelay: boolean('use_template_delay').default(true),
-  customDelayMinutes: integer('custom_delay_minutes'),
+    // Delay - use custom or fall back to template
+    useTemplateDelay: boolean('use_template_delay').default(true),
+    customDelayMinutes: integer('custom_delay_minutes'),
 
-  // Message - use custom or fall back to template
-  useTemplateMessage: boolean('use_template_message').default(true),
-  customMessage: text('custom_message'),
+    // Message - use custom or fall back to template
+    useTemplateMessage: boolean('use_template_message').default(true),
+    customMessage: text('custom_message'),
 
-  // Conditions
-  skipConditions: jsonb('skip_conditions').$type<{
-    ifReplied?: boolean;
-    ifScheduled?: boolean;
-    ifPaid?: boolean;
-    custom?: string;
-  }>(),
+    // Conditions
+    skipConditions: jsonb('skip_conditions').$type<{
+      ifReplied?: boolean;
+      ifScheduled?: boolean;
+      ifPaid?: boolean;
+      custom?: string;
+    }>(),
 
-  isActive: boolean('is_active').default(true),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+    isActive: boolean('is_active').default(true),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('uq_flow_steps_flow_step_number').on(table.flowId, table.stepNumber),
+  ]
+);
 
 export type Flow = typeof flows.$inferSelect;
 export type NewFlow = typeof flows.$inferInsert;

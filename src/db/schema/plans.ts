@@ -8,7 +8,9 @@ import {
   jsonb,
   timestamp,
   index,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const plans = pgTable(
   'plans',
@@ -65,6 +67,7 @@ export const plans = pgTable(
   (table) => [
     index('idx_plans_slug').on(table.slug),
     index('idx_plans_display_order').on(table.displayOrder),
+    check('plans_price_monthly_non_negative', sql`${table.priceMonthly} >= 0`),
   ]
 );
 

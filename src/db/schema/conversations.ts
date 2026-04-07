@@ -54,6 +54,8 @@ export const conversations = pgTable(
     index('idx_conversations_flagged').on(table.flagged).where(
       sql`flagged = true`
     ),
+    index('idx_conversations_message_type').on(table.messageType),
+    index('idx_conversations_delivery_status').on(table.deliveryStatus),
   ]
 );
 

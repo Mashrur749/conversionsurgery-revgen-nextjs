@@ -26,7 +26,7 @@ ConversionSurgery is a managed revenue recovery service. You run the system for 
 | **Voice AI** | When a lead calls and the contractor can&apos;t answer, Voice AI picks up, qualifies the project, and captures details | No missed calls. No voicemail. Leads are captured even when the contractor is on a ladder. |
 | **Weekly pipeline SMS** | Every Monday morning, a text on the contractor&apos;s phone showing leads captured, appointments booked, pipeline value in dollars, and leads needing attention | Value is visible every week without logging in. No dashboard required. |
 | **System Activity dashboard card** | Auto-tracks leads responded to, missed calls caught, dead quotes re-engaged, appointments booked, estimates in follow-up, avg response time, and probable pipeline value | Proves ROI without the contractor doing anything. Shows up on their dashboard from Day 1 — no wins need to be manually confirmed for the numbers to appear. |
-| **Bi-weekly performance report** | Shows exactly what the system did, revenue impact, &ldquo;Without Us&rdquo; comparison, and pipeline proof metrics | Proof of value every 2 weeks. The contractor sees ROI, not activity. |
+| **Bi-weekly performance report** | Shows exactly what the system did, revenue impact, &ldquo;Leads at Risk&rdquo; estimate, and pipeline proof metrics | Proof of value every 2 weeks. The contractor sees ROI, not activity. |
 
 ### What the Contractor Does
 
@@ -39,6 +39,8 @@ ConversionSurgery is a managed revenue recovery service. You run the system for 
 | Review AI-drafted Google responses | Occasional | Approve or edit before it posts. Nothing auto-posts. |
 
 **Total ongoing time: under 15 minutes per week** once the system is calibrated (Week 3+).
+
+Source of truth for contractor responsibilities: `docs/business-intel/OFFER-APPROVED-COPY.md` Section 2.
 
 ### What You (the Operator) Do
 
@@ -59,19 +61,20 @@ At 5 clients, your weekly time is ~5-7 hours. At 10 clients, ~10-14 hours.
 
 ### Pricing
 
-**First month free. Then $1,000/month.**
+**First month free. Then $1,000/month.** Month-to-month. No contract. No setup fee. No message limits. Billing starts Day 31.
 
-- Month-to-month. No contract. Cancel with 30 days notice.
-- No setup fee. No message limits. No overage charges.
-- Billing starts Day 31. They pay with recovered revenue, not out of pocket.
+Full pricing details and approved comparison language: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 4.
 
 ### Guarantee
 
-**Layer 1 &mdash; 30-Day Proof of Life:** If 5 leads don&apos;t engage in the free month, they walk away owing nothing. They keep every lead captured.
+**The Guarantee (two layers):**
 
-**Layer 2 &mdash; 90-Day Revenue Recovery:** If no 1 booked estimate appointment from a cold lead OR $5,000 in probable pipeline within 90 days, most recent month refunded. They keep all data.
+- **Layer 1 (30-Day Proof):** 5 qualified lead engagements in the first month, or full refund.
+- **Layer 2 (90-Day Recovery):** 1 booked estimate from a cold lead OR $5,000 in probable pipeline, or refund of last month.
 
 Attribution is verified from platform logs only &mdash; no subjective judgment, no arguing.
+
+Full guarantee terms, volume conditions, and attribution rules: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 3.
 
 ### The ROI Math (Memorize This)
 
@@ -137,6 +140,22 @@ The system auto-advances through these modes based on quality gates. You don&apo
 
 **Smart Assist notifications go to `operator_phone` (configured in admin settings), not to the contractor.** This is how the &ldquo;you don&apos;t manage anything&rdquo; promise works in practice. The contractor is shielded from all draft review. If you need their input on a specific response, text them directly. Estimate follow-up and payment messages never auto-send &mdash; you must explicitly approve those.
 
+**Browser-based Smart Assist review:** The admin client detail page (Activity tab) shows all pending drafts with approve, edit, and cancel actions. Useful when you&apos;re at your desk. The SMS commands are available when you&apos;re on mobile.
+
+### Admin Client Detail Page &mdash; Overview at a Glance
+
+The admin client detail page now surfaces five operational tools you will use daily:
+
+| Tab | Card | What it shows |
+|-----|------|--------------|
+| Overview | Guarantee Status | Phase, QLE count vs. target, pipeline vs. $5K floor, days remaining, on-track/at-risk/failing badge |
+| Overview | Engagement Health | `at_risk` / `disengaged` status with signal bullets (days since last estimate flag, days since last won/lost) |
+| Activity | Pending Drafts | AI drafts awaiting approval (15-second polling), with approve/edit/cancel actions |
+| Configuration | Exclusion List | Per-client DNC numbers — add during onboarding to protect personal relationships |
+| Configuration | Integrations | Jobber, ServiceTitan, Housecall Pro, Zapier webhooks — configure provider, direction, URL, secret key |
+
+Actions card on the client detail page also includes a **Export Data** button (with confirmation) for compliance or cancellation data delivery.
+
 ### The 4-Touch Estimate Follow-Up
 
 When the contractor flags an estimate as sent:
@@ -166,7 +185,7 @@ This is the highest-ROI feature. Most contractors never follow up on estimates. 
 | What they might expect | What actually happens | How to frame it |
 |------------------------|----------------------|-----------------|
 | &ldquo;24/7 instant response&rdquo; | Messages queue during quiet hours (9 PM - 10 AM) | &ldquo;Monitors 24/7, responds during compliant hours. First in their inbox every morning.&rdquo; |
-| &ldquo;It replaces my receptionist&rdquo; | Handles SMS/forms. Not live phone calls (unless Voice AI add-on). | &ldquo;Handles text-based inquiries. Missed calls get an instant text-back.&rdquo; |
+| &ldquo;It replaces my receptionist&rdquo; | Handles SMS, forms, and voice calls. Voice AI is included by default &mdash; answers calls with a natural ElevenLabs voice, qualifies leads, books appointments. | &ldquo;Handles all inquiries &mdash; text, forms, and calls. Missed calls get an instant text-back. Voice AI answers when you can&apos;t.&rdquo; |
 | &ldquo;It does my marketing&rdquo; | No lead generation. It converts leads you already get. | &ldquo;We handle what happens after someone reaches out.&rdquo; |
 | &ldquo;AI knows everything about my business&rdquo; | AI knows what&apos;s in the KB. Week 1 will have gaps. | &ldquo;Gets smarter every week. By Week 3 it handles 90%+ of questions.&rdquo; |
 | &ldquo;I never have to do anything&rdquo; | Flag estimates, mark wins, respond to escalations. Under 15 min/week. | &ldquo;You do 4 things: flag quotes, mark wins, respond to escalations, approve reviews.&rdquo; |
@@ -220,18 +239,15 @@ This single moment converts more skeptics than any feature list or ROI calculati
 ### The 3 Objections You Will Hear Every Time
 
 **Objection 1: &ldquo;What if the AI says something wrong to my customer?&rdquo;**
-
-> &ldquo;For the first two weeks, every AI response sits in a review queue. You get a text with the draft. You can edit, cancel, or let it send after 5 minutes. Nothing goes out until you&apos;ve had a chance to review it. After that, the AI only handles questions it&apos;s confident about &mdash; anything complex, it says &apos;let me have [your name] get back to you&apos; and alerts you. You stay in control.&rdquo;
+Week 1-2: every response goes through Smart Assist review before sending. After that, the AI only handles what it&apos;s confident about &mdash; anything else escalates to you.
 
 **Objection 2: &ldquo;I tried something like this before and got burned.&rdquo;**
-
-> &ldquo;What was it? What specifically went wrong?&rdquo; Then: &ldquo;This is a managed service, not software. I set it up, I run it, I fix it when something&apos;s off. You don&apos;t manage anything. Your first month is free &mdash; you see proof before you pay a dollar.&rdquo;
+This is a managed service, not software. You run it, you fix it. First month is free &mdash; they see proof before they pay.
 
 **Objection 3: &ldquo;$1,000/month is expensive.&rdquo;**
+Do the dead-quote math live: [their dead quotes] &times; [avg project value] &times; 10% = recoverable pipeline. One recovery pays for the year. First month is free.
 
-> &ldquo;How many estimates are sitting in your phone right now with no response? [Get the number.] At your average project value, that&apos;s $[X] in dead pipeline. Even recovering one of those covers the full year. And your first month is free &mdash; the risk is zero.&rdquo;
-
-For all 10 objections with full scripts, see `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`.
+Full scripts for all 10 objections: see `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`.
 
 ### The 4 Outreach Angles
 

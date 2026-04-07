@@ -34,6 +34,7 @@ export const escalationClaims = pgTable(
     resolvedAt: timestamp('resolved_at'),
     reNotifiedAt: timestamp('re_notified_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     index('idx_escalation_claims_lead_id').on(table.leadId),

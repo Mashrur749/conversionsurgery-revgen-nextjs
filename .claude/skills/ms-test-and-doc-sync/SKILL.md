@@ -24,7 +24,7 @@ Scan the CLAUDE.md Change-to-Doc mapping table. Update every doc that matches yo
 | How to verify it works | `docs/engineering/01-TESTING-GUIDE.md` |
 | How operator delivers the service | `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` |
 | Operator daily workflow | `docs/operations/01-OPERATIONS-GUIDE.md` |
-| Client-facing claims or promises | Flag to user — `docs/business-intel/OFFER-CLIENT-FACING.md` |
+| Client-facing claims or promises | Flag to user — `docs/business-intel/OFFER-APPROVED-COPY.md` |
 | Onboarding or first-client delivery | `docs/operations/LAUNCH-CHECKLIST.md` |
 | Offer parity gaps | `docs/product/02-OFFER-PARITY-GAPS.md` |
 | UX audit tracked items | `docs/specs/UX-AUDIT-FULL.md` (mark Done in Already Fixed table) |

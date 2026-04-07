@@ -8,9 +8,17 @@ import {
   jsonb,
   timestamp,
   index,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 import { leads } from './leads';
+
+export const reviewSentimentEnum = pgEnum('review_sentiment', [
+  'positive',
+  'neutral',
+  'negative',
+  'mixed',
+]);
 
 export const reviews = pgTable(
   'reviews',
@@ -37,7 +45,7 @@ export const reviews = pgTable(
     responseDate: timestamp('response_date'),
 
     // AI analysis
-    sentiment: varchar('sentiment', { length: 20 }), // positive, neutral, negative
+    sentiment: reviewSentimentEnum('sentiment'),
     aiSuggestedResponse: text('ai_suggested_response'),
     keyTopics: jsonb('key_topics').$type<string[]>(),
 

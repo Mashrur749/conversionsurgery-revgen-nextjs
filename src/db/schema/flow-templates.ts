@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   timestamp,
+  index,
 } from 'drizzle-orm/pg-core';
 import { flowCategoryEnum, flowTriggerEnum, flowApprovalEnum } from './flow-enums';
 
@@ -36,48 +37,60 @@ export const flowTemplates = pgTable('flow_templates', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-export const flowTemplateSteps = pgTable('flow_template_steps', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  templateId: uuid('template_id').references(() => flowTemplates.id, { onDelete: 'cascade' }),
+export const flowTemplateSteps = pgTable(
+  'flow_template_steps',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    templateId: uuid('template_id').references(() => flowTemplates.id, { onDelete: 'cascade' }),
 
-  // Step config
-  stepNumber: integer('step_number').notNull(),
-  name: varchar('name', { length: 100 }),
-  delayMinutes: integer('delay_minutes').default(0),
+    // Step config
+    stepNumber: integer('step_number').notNull(),
+    name: varchar('name', { length: 100 }),
+    delayMinutes: integer('delay_minutes').default(0),
 
-  // Message
-  messageTemplate: text('message_template').notNull(),
+    // Message
+    messageTemplate: text('message_template').notNull(),
 
-  // Conditions (optional)
-  skipConditions: jsonb('skip_conditions').$type<{
-    ifReplied?: boolean;
-    ifScheduled?: boolean;
-    ifPaid?: boolean;
-    custom?: string;
-  }>(),
+    // Conditions (optional)
+    skipConditions: jsonb('skip_conditions').$type<{
+      ifReplied?: boolean;
+      ifScheduled?: boolean;
+      ifPaid?: boolean;
+      custom?: string;
+    }>(),
 
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('idx_flow_template_steps_template').on(table.templateId),
+  ]
+);
 
-export const flowTemplateVersions = pgTable('flow_template_versions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  templateId: uuid('template_id').references(() => flowTemplates.id, { onDelete: 'cascade' }),
-  version: integer('version').notNull(),
+export const flowTemplateVersions = pgTable(
+  'flow_template_versions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    templateId: uuid('template_id').notNull().references(() => flowTemplates.id, { onDelete: 'cascade' }),
+    version: integer('version').notNull(),
 
-  // Snapshot of template at this version
-  snapshot: jsonb('snapshot').$type<{
-    name: string;
-    steps: Array<{
-      stepNumber: number;
-      delayMinutes: number;
-      messageTemplate: string;
-    }>;
-  }>(),
+    // Snapshot of template at this version
+    snapshot: jsonb('snapshot').$type<{
+      name: string;
+      steps: Array<{
+        stepNumber: number;
+        delayMinutes: number;
+        messageTemplate: string;
+      }>;
+    }>(),
 
-  changeNotes: text('change_notes'),
-  publishedAt: timestamp('published_at').defaultNow().notNull(),
-  publishedBy: uuid('published_by'),
-});
+    changeNotes: text('change_notes'),
+    publishedAt: timestamp('published_at').defaultNow().notNull(),
+    publishedBy: uuid('published_by'),
+  },
+  (table) => [
+    index('idx_flow_template_versions_template').on(table.templateId),
+  ]
+);
 
 export type FlowTemplate = typeof flowTemplates.$inferSelect;
 export type NewFlowTemplate = typeof flowTemplates.$inferInsert;

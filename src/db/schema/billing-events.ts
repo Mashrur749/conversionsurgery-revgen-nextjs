@@ -19,7 +19,7 @@ export const billingEvents = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
-      .references(() => clients.id, { onDelete: 'cascade' })
+      .references(() => clients.id, { onDelete: 'restrict' })
       .notNull(),
 
     eventType: varchar('event_type', { length: 50 }).notNull(),
@@ -48,6 +48,7 @@ export const billingEvents = pgTable(
     uniqueIndex('billing_events_stripe_idx').on(table.stripeEventId),
     uniqueIndex('billing_events_idempotency_idx').on(table.idempotencyKey),
     index('billing_events_created_idx').on(table.createdAt),
+    index('billing_events_client_type_created_idx').on(table.clientId, table.eventType, table.createdAt),
   ]
 );
 

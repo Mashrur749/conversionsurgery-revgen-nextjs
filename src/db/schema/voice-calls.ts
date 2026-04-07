@@ -7,9 +7,27 @@ import {
   boolean,
   timestamp,
   index,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 import { leads } from './leads';
+
+export const callerIntentEnum = pgEnum('caller_intent', [
+  'booking',
+  'inquiry',
+  'complaint',
+  'follow_up',
+  'emergency',
+  'unknown',
+]);
+
+export const callerSentimentEnum = pgEnum('caller_sentiment', [
+  'positive',
+  'neutral',
+  'negative',
+  'frustrated',
+  'unknown',
+]);
 
 export const voiceCalls = pgTable(
   'voice_calls',
@@ -33,8 +51,8 @@ export const voiceCalls = pgTable(
     // AI interaction
     transcript: text('transcript'),
     aiSummary: text('ai_summary'),
-    callerIntent: varchar('caller_intent', { length: 50 }), // quote, schedule, question, complaint, other
-    callerSentiment: varchar('caller_sentiment', { length: 20 }), // positive, neutral, negative
+    callerIntent: callerIntentEnum('caller_intent'),
+    callerSentiment: callerSentimentEnum('caller_sentiment'),
 
     // Outcome
     outcome: varchar('outcome', { length: 30 }), // qualified, scheduled, transferred, voicemail, dropped

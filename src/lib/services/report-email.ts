@@ -7,12 +7,12 @@ const CAD_FORMATTER = new Intl.NumberFormat('en-CA', {
   maximumFractionDigits: 0,
 });
 
-function buildWithoutUsEmailSummary(withoutUsModel: WithoutUsModelResult | null): string {
+function buildLeadsAtRiskEmailSummary(withoutUsModel: WithoutUsModelResult | null): string {
   if (!withoutUsModel) return '';
 
   if (withoutUsModel.status === 'insufficient_data') {
     return `
-      <p><strong>Without Us (directional model):</strong> unavailable this period due to insufficient input data.</p>
+      <p><strong>Leads at Risk:</strong> not enough data this period to estimate.</p>
       <p style="color: #6b7280; font-size: 12px;">${withoutUsModel.message}</p>
     `;
   }
@@ -22,7 +22,7 @@ function buildWithoutUsEmailSummary(withoutUsModel: WithoutUsModelResult | null)
   const high = CAD_FORMATTER.format(withoutUsModel.ranges.high.estimatedRevenueRisk);
 
   return `
-    <p><strong>Without Us (directional model):</strong> estimated period risk range ${low} to ${high} (base: ${base}).</p>
+    <p><strong>Leads at Risk:</strong> Based on your response times and lead volume this period, estimated pipeline at stake ranges from ${low} to ${high} (likely: ${base}).</p>
     <p style="color: #6b7280; font-size: 12px;">${withoutUsModel.assumptions.disclaimer}</p>
   `;
 }
@@ -37,7 +37,7 @@ interface SendBiWeeklyReportEmailInput {
 }
 
 export async function sendBiWeeklyReportEmail(input: SendBiWeeklyReportEmailInput) {
-  const withoutUsSummary = buildWithoutUsEmailSummary(input.withoutUsModel ?? null);
+  const withoutUsSummary = buildLeadsAtRiskEmailSummary(input.withoutUsModel ?? null);
 
   return sendEmail({
     to: input.to,

@@ -8,17 +8,19 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { plans } from './plans';
-import { subscriptionStatusEnum, planIntervalEnum } from './billing-enums';
+import { subscriptionStatusEnum, planIntervalEnum, guaranteeStatusEnum } from './billing-enums';
 
 export const subscriptions = pgTable(
   'subscriptions',
   {
     id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
-      .references(() => clients.id, { onDelete: 'cascade' })
+      .references(() => clients.id, { onDelete: 'restrict' })
       .notNull()
       .unique(),
     planId: uuid('plan_id')
@@ -61,7 +63,7 @@ export const subscriptions = pgTable(
     // 30-day performance guarantee lifecycle
     guaranteeStartAt: timestamp('guarantee_start_at'),
     guaranteeEndsAt: timestamp('guarantee_ends_at'),
-    guaranteeStatus: varchar('guarantee_status', { length: 40 }).default('proof_pending'),
+    guaranteeStatus: guaranteeStatusEnum('guarantee_status').default('proof_pending'),
     guaranteeProofStartAt: timestamp('guarantee_proof_start_at'),
     guaranteeProofEndsAt: timestamp('guarantee_proof_ends_at'),
     guaranteeRecoveryStartAt: timestamp('guarantee_recovery_start_at'),
@@ -89,6 +91,7 @@ export const subscriptions = pgTable(
     uniqueIndex('subscriptions_client_idx').on(table.clientId),
     index('subscriptions_stripe_sub_idx').on(table.stripeSubscriptionId),
     index('subscriptions_status_idx').on(table.status),
+    check('subscriptions_discount_percent_range', sql`${table.discountPercent} IS NULL OR (${table.discountPercent} >= 0 AND ${table.discountPercent} <= 100)`),
   ]
 );
 

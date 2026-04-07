@@ -1,9 +1,10 @@
 import twilio from "twilio";
 import { getDb } from "@/db";
-import { clients, clientPhoneNumbers, conversations } from "@/db/schema";
+import { clients, conversations } from "@/db/schema";
 import { eq, and, isNotNull, gte, sql } from "drizzle-orm";
 import { sendOnboardingNotification } from "@/lib/services/agency-communication";
 import { syncDayOneSystemMilestones } from "@/lib/services/day-one-activation";
+import { addNumber, removeNumberByPhone } from "@/lib/services/client-phone-management";
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
@@ -181,14 +182,17 @@ export async function purchaseNumber(
       purchasedSid = `mock-${phoneNumber.replace(/\D/g, "").slice(-6)}`;
     }
 
+    // Write through the phone management service (handles both junction table + clients.twilioNumber sync)
+    await addNumber(clientId, phoneNumber, {
+      isPrimary: true,
+      friendlyName: `Purchased: ${phoneNumber}`,
+    });
+
+    // Set status to active (separate concern from phone assignment)
     const db = getDb();
     await db
       .update(clients)
-      .set({
-        twilioNumber: phoneNumber,
-        status: "active",
-        updatedAt: new Date(),
-      })
+      .set({ status: "active", updatedAt: new Date() })
       .where(eq(clients.id, clientId));
 
     const [clientForMilestones] = await db
@@ -206,31 +210,6 @@ export async function purchaseNumber(
       await syncDayOneSystemMilestones(clientForMilestones).catch((error) => {
         console.error("[Twilio] Failed to sync day-one milestones:", error);
       });
-    }
-
-    // Also insert into junction table for multi-number support
-    try {
-      await db
-        .insert(clientPhoneNumbers)
-        .values({
-          clientId,
-          phoneNumber,
-          friendlyName: `Purchased: ${phoneNumber}`,
-          isPrimary: true,
-          capabilities: { sms: true, voice: true, mms: true },
-          purchasedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: [clientPhoneNumbers.clientId, clientPhoneNumbers.phoneNumber],
-          set: {
-            isActive: true,
-            isPrimary: true,
-            capabilities: { sms: true, voice: true, mms: true },
-            updatedAt: new Date(),
-          },
-        });
-    } catch (err) {
-      console.error("[Twilio] Failed to insert into junction table:", err);
     }
 
     console.log(
@@ -280,14 +259,17 @@ export async function assignExistingNumber(
     // Configure webhooks on the number
     await configureWebhooks(numbers[0].sid, clientId);
 
+    // Write through the phone management service (handles both junction table + clients.twilioNumber sync)
+    await addNumber(clientId, phoneNumber, {
+      isPrimary: true,
+      friendlyName: `Assigned: ${phoneNumber}`,
+    });
+
+    // Set status to active (separate concern from phone assignment)
     const db = getDb();
     await db
       .update(clients)
-      .set({
-        twilioNumber: phoneNumber,
-        status: "active",
-        updatedAt: new Date(),
-      })
+      .set({ status: "active", updatedAt: new Date() })
       .where(eq(clients.id, clientId));
 
     const [clientForMilestones] = await db
@@ -421,14 +403,13 @@ export async function releaseNumber(
       });
     }
 
-    // Clear from client
+    // Remove from phone management service (clears junction table + clients.twilioNumber)
+    await removeNumberByPhone(clientId, client.twilioNumber);
+
+    // Set status to paused (separate concern from phone removal)
     await db
       .update(clients)
-      .set({
-        twilioNumber: null,
-        status: "paused",
-        updatedAt: new Date(),
-      })
+      .set({ status: "paused", updatedAt: new Date() })
       .where(eq(clients.id, clientId));
 
     console.log(

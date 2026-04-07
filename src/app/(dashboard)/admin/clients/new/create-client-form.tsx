@@ -107,7 +107,7 @@ export function CreateClientForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone *</Label>
+          <Label htmlFor="phone">Owner&apos;s Phone *</Label>
           <Input
             id="phone"
             type="tel"
@@ -116,6 +116,9 @@ export function CreateClientForm() {
             placeholder="403-555-1234"
             required
           />
+          <p className="text-xs text-muted-foreground">
+            For escalation alerts and account notifications &mdash; not shared with leads.
+          </p>
         </div>
       </div>
 

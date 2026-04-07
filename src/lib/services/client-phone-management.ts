@@ -48,6 +48,16 @@ export async function addNumber(
       capabilities: options?.capabilities || { sms: true, voice: true, mms: true },
       purchasedAt: new Date(),
     })
+    .onConflictDoUpdate({
+      target: [clientPhoneNumbers.clientId, clientPhoneNumbers.phoneNumber],
+      set: {
+        isActive: true,
+        isPrimary,
+        friendlyName: options?.friendlyName || null,
+        capabilities: options?.capabilities || { sms: true, voice: true, mms: true },
+        updatedAt: new Date(),
+      },
+    })
     .returning();
 
   // Sync primary to clients.twilioNumber
@@ -138,6 +148,73 @@ export async function setPrimary(id: string) {
     .where(eq(clients.id, record.clientId));
 
   return record;
+}
+
+/**
+ * Remove (deactivate) a phone number by client ID and phone number string.
+ * Used by release/reassign flows that don't have the junction table row ID.
+ */
+export async function removeNumberByPhone(clientId: string, phoneNumber: string) {
+  const db = getDb();
+  const [record] = await db
+    .select({ id: clientPhoneNumbers.id })
+    .from(clientPhoneNumbers)
+    .where(
+      and(
+        eq(clientPhoneNumbers.clientId, clientId),
+        eq(clientPhoneNumbers.phoneNumber, phoneNumber),
+        eq(clientPhoneNumbers.isActive, true)
+      )
+    )
+    .limit(1);
+
+  if (record) {
+    return removeNumber(record.id);
+  }
+
+  // No junction table row — just clear the column directly (legacy data)
+  await db
+    .update(clients)
+    .set({ twilioNumber: null, updatedAt: new Date() })
+    .where(eq(clients.id, clientId));
+
+  return null;
+}
+
+/**
+ * Ensure the junction table is in sync with clients.twilioNumber.
+ * If the client has a twilioNumber but no active row in client_phone_numbers,
+ * backfill a row. Idempotent — safe to call on every read.
+ */
+export async function ensurePrimaryNumberSynced(clientId: string) {
+  const db = getDb();
+
+  const activeNumbers = await db
+    .select({ id: clientPhoneNumbers.id })
+    .from(clientPhoneNumbers)
+    .where(
+      and(
+        eq(clientPhoneNumbers.clientId, clientId),
+        eq(clientPhoneNumbers.isActive, true)
+      )
+    )
+    .limit(1);
+
+  if (activeNumbers.length > 0) return; // Already synced
+
+  // Check if client has a twilioNumber that needs backfilling
+  const [client] = await db
+    .select({ twilioNumber: clients.twilioNumber })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+
+  if (!client?.twilioNumber) return; // No number to backfill
+
+  await addNumber(clientId, client.twilioNumber, {
+    isPrimary: true,
+    friendlyName: `Backfilled: ${client.twilioNumber}`,
+  });
 }
 
 /**

@@ -22,6 +22,34 @@
       "when": 1775265454424,
       "tag": "0002_narrow_the_fallen",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775415608374,
+      "tag": "0003_elite_jigsaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1775511271847,
+      "tag": "0004_outstanding_morbius",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775513942811,
+      "tag": "0005_brainy_harrier",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1775572454788,
+      "tag": "0006_perpetual_photon",
+      "breakpoints": true
     }
   ]
 }

@@ -13,7 +13,7 @@ import { leads } from './leads';
 import { clients } from './clients';
 import { conversations } from './conversations';
 import { clientMemberships } from './client-memberships';
-import { escalationReasonEnum } from './agent-enums';
+import { escalationReasonEnum, escalationQueueStatusEnum, escalationQueueResolutionEnum } from './agent-enums';
 
 /**
  * Escalation Queue — human handoff queue for leads that need personal attention
@@ -45,14 +45,14 @@ export const escalationQueue = pgTable(
     keyPoints: jsonb('key_points').$type<string[]>().default([]),
 
     // Assignment
-    status: varchar('status', { length: 20 }).default('pending').notNull(), // pending, assigned, in_progress, resolved, dismissed
+    status: escalationQueueStatusEnum('status').default('pending').notNull(),
     assignedTo: uuid('assigned_to').references(() => clientMemberships.id),
     assignedAt: timestamp('assigned_at'),
 
     // Resolution
     resolvedAt: timestamp('resolved_at'),
     resolvedBy: uuid('resolved_by').references(() => clientMemberships.id),
-    resolution: varchar('resolution', { length: 30 }), // 'handled', 'returned_to_ai', 'no_action', 'converted', 'lost'
+    resolution: escalationQueueResolutionEnum('resolution'),
     resolutionNotes: text('resolution_notes'),
 
     // Should AI resume after human handles?
@@ -74,6 +74,7 @@ export const escalationQueue = pgTable(
     index('escalation_queue_status_idx').on(table.status),
     index('escalation_queue_priority_idx').on(table.priority),
     index('escalation_queue_assigned_idx').on(table.assignedTo),
+    index('escalation_queue_triage_idx').on(table.status, table.priority, table.createdAt),
   ]
 );
 

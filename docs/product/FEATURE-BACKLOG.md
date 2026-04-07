@@ -101,6 +101,48 @@ ConversionSurgery is currently single-agency: the platform owner is also the onl
 
 ---
 
+## FB-03: Google Business Auto-Resolve via Places API
+
+**Priority:** Medium (becomes High when self-serve signup launches)
+**Area:** Onboarding / Review Monitoring
+
+### Context
+
+The onboarding wizard and edit client form ask for the Google Review URL (`g.page/r/.../review`). Most contractors don't know where to find it. Currently the field has helper text with step-by-step instructions — adequate for managed-service onboarding where the operator fills the form, but a friction point for self-serve.
+
+### Current behavior
+
+- Text input with placeholder showing expected format (`g.page/r/XXXXX/review`)
+- Helper text links to business.google.com with instructions to find the review share link
+- Operator (admin) fills this in during managed-service onboarding
+
+### Desired behavior
+
+1. **Typeahead search** using Google Places Autocomplete API. Contractor types their business name, UI shows matching businesses in a dropdown.
+2. On selection, auto-populate: Google place ID, review URL, current rating, review count.
+3. Pre-populates everything needed for the review monitoring lifecycle (request &rarr; sync &rarr; alert &rarr; auto-respond &rarr; report) in one click.
+4. Fallback: manual URL entry still available if the business isn't found.
+
+### Key files
+
+- `src/app/(dashboard)/admin/clients/new/wizard/steps/step-business-info.tsx` — wizard field
+- `src/app/(dashboard)/admin/clients/[id]/edit-client-form.tsx` — edit client field
+- `src/lib/services/google-places.ts` — existing Places API service
+- `src/db/schema/clients.ts` — `googleBusinessUrl` column
+
+### Prerequisites
+
+- Google Places API key provisioned and billing enabled
+- Self-serve signup flow built (Phase 3) — this is when the ROI of auto-resolve justifies the API cost
+
+### Notes
+
+- `google-places.ts` already exists — check what's implemented before building
+- API cost: Places Autocomplete is ~$2.83/1000 requests (session-based pricing). Negligible at current scale.
+- Referenced in PRODUCT-STRATEGY.md Section 3 (Agency Onboarding Gaps)
+
+---
+
 ## Recently Implemented (SPEC-07 through SPEC-12, April 2026)
 
 These items were shipped and are no longer backlog. Documented here for traceability.
@@ -113,5 +155,18 @@ These items were shipped and are no longer backlog. Documented here for traceabi
 | SPEC-10 | Revenue Floor Guarantee — 90-day guarantee now passes with $5,000+ probable pipeline OR 1 attributed opportunity | **Implemented** |
 | SPEC-11 | ROI Calculator API — `POST /api/public/roi-calculator` for pre-sale revenue-at-risk calculations | **Implemented** |
 | SPEC-12 | Jobber Integration — basic webhook: outbound `appointment_booked` events + inbound `job_completed` triggers review generation | **Implemented** |
+
+## Recently Implemented (GAP-1 through GAP-6, April 2026)
+
+Six admin UI tools shipped as part of the operator tooling gap closure. All are on the admin client detail page.
+
+| GAP | Feature | Status |
+|-----|---------|--------|
+| GAP-1 | DNC/Exclusion List Management — per-client excluded numbers on Configuration tab; API: GET/POST/DELETE `/api/admin/clients/[id]/dnc` | **Implemented** |
+| GAP-2 | Smart Assist Pending Drafts Admin View — Activity tab with 15-second polling, approve/edit/cancel; API: GET `/api/admin/clients/[id]/smart-assist`, POST `.../smart-assist/[messageId]` | **Implemented** |
+| GAP-3 | Guarantee Status Dashboard — server component on Overview tab showing phase, QLE progress, pipeline value, days remaining, status badge | **Implemented** |
+| GAP-4 | Engagement Health Badge — server component on Overview tab showing `at_risk`/`disengaged` status with signal bullets | **Implemented** |
+| GAP-5 | Integration Webhook Config UI — Configuration tab for Jobber/ServiceTitan/Housecall Pro/Zapier/generic webhooks with CRUD; API: `/api/admin/clients/[id]/integrations` | **Implemented** |
+| GAP-6 | Admin Data Export Trigger — Export Data button on Actions card with AlertDialog confirmation; API: POST `/api/admin/clients/[id]/export` | **Implemented** |
 
 Note: The Jobber/FSM auto-detect integration referenced in COMPONENT 1 of the offer doc (auto-detect when estimate is created in Jobber) remains a future enhancement. SPEC-12 covers review and appointment sync; estimate auto-detection is still a roadmap item.

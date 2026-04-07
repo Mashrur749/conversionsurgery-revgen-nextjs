@@ -1,12 +1,15 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
-import { clients, systemSettings, clientAgentSettings } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { clients, systemSettings, clientAgentSettings, knowledgeBase, businessHours } from '@/db/schema';
+import { eq, count } from 'drizzle-orm';
 import { VoiceSettings } from '@/components/settings/voice-settings';
 import { CallHistory } from '@/components/voice/call-history';
 import { VoicePicker } from './voice-picker';
 import { VoiceKillSwitch } from './voice-kill-switch';
+import { VoiceComparison } from './voice-comparison';
+import { VoiceQaChecklist } from './voice-qa-checklist';
+import { VoicePlayground } from './voice-playground';
 import { ChevronDown } from 'lucide-react';
 
 export default async function VoiceAIPage() {
@@ -48,6 +51,22 @@ export default async function VoiceAIPage() {
     .from(clientAgentSettings);
   const agentSettingsMap = new Map(agentSettingsRows.map(r => [r.clientId, r]));
 
+  // KB entry counts per client
+  const kbCounts = await db
+    .select({
+      clientId: knowledgeBase.clientId,
+      count: count(knowledgeBase.id),
+    })
+    .from(knowledgeBase)
+    .groupBy(knowledgeBase.clientId);
+  const kbCountMap = new Map(kbCounts.map(r => [r.clientId, Number(r.count)]));
+
+  // Business hours existence per client
+  const hoursClients = await db
+    .selectDistinct({ clientId: businessHours.clientId })
+    .from(businessHours);
+  const hoursSet = new Set(hoursClients.map(r => r.clientId));
+
   return (
     <div className="space-y-8">
       <div>
@@ -79,6 +98,19 @@ export default async function VoiceAIPage() {
                 </span>
                 <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
               </summary>
+              <div className="px-6 pb-2 pt-0">
+                <VoiceQaChecklist
+                  clientId={client.id}
+                  voiceEnabled={client.voiceEnabled ?? false}
+                  checks={{
+                    greetingSet: !!(client.voiceGreeting && client.voiceGreeting.trim().length > 0),
+                    voiceSelected: !!client.voiceVoiceId,
+                    kbPopulated: (kbCountMap.get(client.id) ?? 0) >= 3,
+                    businessHoursSet: hoursSet.has(client.id),
+                    agentToneSet: !!(agentSettingsMap.get(client.id)?.agentTone),
+                  }}
+                />
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-6 pb-6">
                 <div className="space-y-4">
                   <VoiceSettings
@@ -91,13 +123,21 @@ export default async function VoiceAIPage() {
                       canDiscussPricing:
                         agentSettingsMap.get(client.id)?.canDiscussPricing ?? false,
                     }}
+                    voiceVoiceId={client.voiceVoiceId ?? null}
                   />
                   <VoicePicker
                     clientId={client.id}
                     currentVoiceId={client.voiceVoiceId ?? null}
                   />
+                  <VoiceComparison
+                    clientId={client.id}
+                    defaultText={client.voiceGreeting || `Hi! Thanks for calling ${client.businessName}. How can I help you today?`}
+                  />
                 </div>
                 <CallHistory clientId={client.id} />
+              </div>
+              <div className="px-6 pb-6">
+                <VoicePlayground clientId={client.id} voiceVoiceId={client.voiceVoiceId ?? null} />
               </div>
             </details>
           ))}

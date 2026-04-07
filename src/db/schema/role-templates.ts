@@ -6,7 +6,9 @@ import {
   boolean,
   timestamp,
   index,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * Reusable permission bundles. Built-in templates are seeded;
@@ -31,6 +33,7 @@ export const roleTemplates = pgTable(
   },
   (table) => [
     index('idx_role_templates_scope').on(table.scope),
+    check('role_templates_scope_valid', sql`${table.scope} IN ('agency', 'client')`),
   ]
 );
 

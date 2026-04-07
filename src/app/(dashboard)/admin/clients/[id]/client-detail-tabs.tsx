@@ -16,6 +16,8 @@ interface ClientDetailTabsProps {
   roiDashboard: ReactNode;
   usageCard: ReactNode;
   dayOneActivationCard: ReactNode;
+  guaranteeStatusCard?: ReactNode;
+  engagementHealthBadge?: ReactNode;
   /* Tab 2: Configuration */
   featureToggles: ReactNode;
   featureStatusList: ReactNode;
@@ -24,6 +26,8 @@ interface ClientDetailTabsProps {
   embedWidgetCard: ReactNode;
   calendarIntegrationCard: ReactNode;
   aiPreviewPanel: ReactNode;
+  dncCard?: ReactNode;
+  integrationsCard?: ReactNode;
   /* Tab 3: Team & Billing */
   clientInfoCard: ReactNode;
   phoneNumberCard: ReactNode;
@@ -33,6 +37,7 @@ interface ClientDetailTabsProps {
   actionsCard: ReactNode;
   quarterlyCampaignsCard: ReactNode;
   dangerZone: ReactNode;
+  smartAssistCard?: ReactNode;
 }
 
 function isValidTab(value: string | null): value is TabValue {
@@ -46,6 +51,8 @@ export function ClientDetailTabs({
   roiDashboard,
   usageCard,
   dayOneActivationCard,
+  guaranteeStatusCard,
+  engagementHealthBadge,
   featureToggles,
   featureStatusList,
   onboardingQualityPanel,
@@ -53,6 +60,8 @@ export function ClientDetailTabs({
   embedWidgetCard,
   calendarIntegrationCard,
   aiPreviewPanel,
+  dncCard,
+  integrationsCard,
   clientInfoCard,
   phoneNumberCard,
   teamMembersCard,
@@ -60,6 +69,7 @@ export function ClientDetailTabs({
   actionsCard,
   quarterlyCampaignsCard,
   dangerZone,
+  smartAssistCard,
 }: ClientDetailTabsProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -101,6 +111,8 @@ export function ClientDetailTabs({
       <TabsContent value="overview" className="space-y-6 mt-4">
         {onboardingChecklist}
         {kbQuestionnaire}
+        {engagementHealthBadge}
+        {guaranteeStatusCard}
         {roiDashboard}
         {usageCard}
         {dayOneActivationCard}
@@ -114,6 +126,8 @@ export function ClientDetailTabs({
         {reminderRoutingPanel}
         {embedWidgetCard}
         {calendarIntegrationCard}
+        {integrationsCard}
+        {dncCard}
       </TabsContent>
 
       <TabsContent value="team-billing" className="space-y-6 mt-4">
@@ -124,6 +138,7 @@ export function ClientDetailTabs({
       </TabsContent>
 
       <TabsContent value="activity" className="space-y-6 mt-4">
+        {smartAssistCard}
         {actionsCard}
         {quarterlyCampaignsCard}
         {dangerZone}

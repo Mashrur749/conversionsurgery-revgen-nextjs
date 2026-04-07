@@ -8,7 +8,9 @@ import {
   timestamp,
   index,
   uniqueIndex,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { leads } from './leads';
 import { clients } from './clients';
 import { clientServices } from './client-services';
@@ -120,6 +122,10 @@ export const leadContext = pgTable(
     index('lead_context_client_idx').on(table.clientId),
     index('lead_context_stage_idx').on(table.stage),
     index('lead_context_intent_idx').on(table.intentScore),
+    index('lead_context_matched_service_idx').on(table.matchedServiceId),
+    check('lead_context_urgency_score_range', sql`${table.urgencyScore} >= 0 AND ${table.urgencyScore} <= 100`),
+    check('lead_context_budget_score_range', sql`${table.budgetScore} >= 0 AND ${table.budgetScore} <= 100`),
+    check('lead_context_intent_score_range', sql`${table.intentScore} >= 0 AND ${table.intentScore} <= 100`),
   ]
 );
 

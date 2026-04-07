@@ -7,6 +7,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
+import { people } from './people';
 import { reviews } from './reviews';
 import { responseTemplates } from './response-templates';
 
@@ -31,9 +32,9 @@ export const reviewResponses = pgTable(
 
     // Approval workflow
     submittedAt: timestamp('submitted_at'),
-    submittedBy: uuid('submitted_by'),
+    submittedBy: uuid('submitted_by').references(() => people.id, { onDelete: 'set null' }),
     approvedAt: timestamp('approved_at'),
-    approvedBy: uuid('approved_by'),
+    approvedBy: uuid('approved_by').references(() => people.id, { onDelete: 'set null' }),
     rejectionReason: text('rejection_reason'),
 
     // Posting

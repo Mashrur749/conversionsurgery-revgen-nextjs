@@ -44,7 +44,7 @@ export const calendarEvents = pgTable(
     syncStatus: varchar('sync_status', { length: 20 }).notNull().default('pending'), // pending, synced, error
 
     // Assignment
-    assignedTeamMemberId: uuid('assigned_team_member_id').references(() => clientMemberships.id),
+    assignedTeamMemberId: uuid('assigned_team_member_id').references(() => clientMemberships.id, { onDelete: 'set null' }),
 
     // Metadata
     eventType: varchar('event_type', { length: 50 }), // estimate, job, follow_up, consultation

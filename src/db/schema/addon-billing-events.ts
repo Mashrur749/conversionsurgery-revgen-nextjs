@@ -17,7 +17,7 @@ export const addonBillingEvents = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
-      .references(() => clients.id, { onDelete: 'cascade' })
+      .references(() => clients.id, { onDelete: 'restrict' })
       .notNull(),
     addonType: varchar('addon_type', { length: 40 }).notNull(),
     sourceType: varchar('source_type', { length: 40 }).notNull(),

@@ -42,6 +42,7 @@ export const payments = pgTable(
     // Metadata
     metadata: jsonb('metadata'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_payments_client').on(table.clientId),
@@ -49,6 +50,7 @@ export const payments = pgTable(
     index('idx_payments_invoice').on(table.invoiceId),
     index('idx_payments_status').on(table.status),
     index('idx_payments_stripe_link').on(table.stripePaymentLinkId),
+    index('idx_payments_paid_at').on(table.paidAt),
   ]
 );
 

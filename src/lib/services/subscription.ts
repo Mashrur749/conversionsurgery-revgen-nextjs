@@ -156,7 +156,9 @@ export async function createSubscription(
         trialStart,
         trialEnd,
         couponCode: couponCode?.toUpperCase(),
-        discountPercent: validatedDiscount?.discountValue,
+        discountPercent: validatedDiscount?.discountValue != null
+          ? Math.max(0, Math.min(100, validatedDiscount.discountValue))
+          : undefined,
         discountEndsAt: validatedDiscount?.duration === 'repeating' && validatedDiscount.durationMonths
           ? new Date(Date.now() + validatedDiscount.durationMonths * 30 * 24 * 60 * 60 * 1000)
           : undefined,
@@ -589,7 +591,9 @@ export async function checkUsageLimit(
 ): Promise<{ allowed: boolean; limit: number | null; current: number }> {
   const result = await getSubscriptionWithPlan(clientId);
   if (!result) {
-    return { allowed: false, limit: 0, current: currentCount };
+    // No subscription yet (e.g. during onboarding wizard setup by admin).
+    // Allow usage — limits are enforced once a plan is assigned.
+    return { allowed: true, limit: null, current: currentCount };
   }
 
   const features = result.plan.features as PlanFeatures;

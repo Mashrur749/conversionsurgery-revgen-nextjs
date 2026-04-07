@@ -8,6 +8,7 @@
 import { getDb } from '@/db';
 import { clientServices, leadContext } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { assertSameClient } from '@/lib/utils/client-ownership';
 
 export interface ClassifiedService {
   serviceId: string;
@@ -90,6 +91,17 @@ export async function updateLeadServiceMatch(
   classified: ClassifiedService
 ): Promise<void> {
   const db = getDb();
+
+  // Verify the service belongs to the same client as the lead context
+  const [ctx] = await db
+    .select({ clientId: leadContext.clientId })
+    .from(leadContext)
+    .where(eq(leadContext.id, leadContextId))
+    .limit(1);
+
+  if (ctx) {
+    await assertSameClient(db, 'client_services', classified.serviceId, ctx.clientId, 'service');
+  }
 
   const updates: Record<string, unknown> = {
     matchedServiceId: classified.serviceId,

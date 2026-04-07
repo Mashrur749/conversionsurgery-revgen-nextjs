@@ -16,7 +16,7 @@ export const billingPaymentMethods = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
-      .references(() => clients.id, { onDelete: 'cascade' })
+      .references(() => clients.id, { onDelete: 'restrict' })
       .notNull(),
 
     // Stripe IDs

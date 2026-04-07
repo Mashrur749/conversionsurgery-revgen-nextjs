@@ -7,6 +7,7 @@ import {
   jsonb,
   timestamp,
   index,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 
@@ -25,7 +26,7 @@ export const agencyMessages = pgTable(
     promptType: varchar('prompt_type', { length: 30 }), // 'start_sequences' | 'schedule_callback' | 'confirm_action'
     actionPayload: jsonb('action_payload'), // { leadIds: [...], sequenceType: '...' }
     actionStatus: varchar('action_status', { length: 20 }), // 'pending' | 'replied' | 'executed' | 'expired'
-    inReplyTo: uuid('in_reply_to'), // self-ref to original prompt
+    inReplyTo: uuid('in_reply_to').references((): AnyPgColumn => agencyMessages.id, { onDelete: 'set null' }), // self-ref to original prompt
     clientReply: text('client_reply'), // raw reply text
     twilioSid: varchar('twilio_sid', { length: 50 }),
     delivered: boolean('delivered').default(false),

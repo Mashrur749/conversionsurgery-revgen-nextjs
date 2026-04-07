@@ -13,6 +13,7 @@ import {
   leadContext,
   subscriptions,
   plans,
+  reviews,
 } from '@/db/schema';
 import { eq, and, gte, lte, sql, count, sum, avg, inArray } from 'drizzle-orm';
 
@@ -114,6 +115,20 @@ export async function calculateDailyAnalytics(
     stageCounts.map((s) => [s.stage, Number(s.count)])
   );
 
+  // Calculate average review rating for the day
+  const [reviewRating] = await db
+    .select({
+      avgRating: avg(reviews.rating),
+    })
+    .from(reviews)
+    .where(
+      and(
+        eq(reviews.clientId, clientId),
+        gte(reviews.createdAt, startOfDay),
+        lte(reviews.createdAt, endOfDay)
+      )
+    );
+
   // Calculate average response time
   const avgResponseTime = await calculateAvgResponseTime(
     clientId,
@@ -149,6 +164,7 @@ export async function calculateDailyAnalytics(
     paymentsCollectedCents: eventMap['payment_received']?.value || 0,
     reviewRequestsSent: eventMap['review_requested']?.count || 0,
     reviewsReceived: eventMap['review_received']?.count || 0,
+    avgRating: reviewRating?.avgRating ? parseFloat(String(reviewRating.avgRating)) : null,
     leadsNew: stageMap['new'] || 0,
     leadsQualifying: stageMap['qualifying'] || 0,
     leadsNurturing: stageMap['nurturing'] || 0,
@@ -360,6 +376,34 @@ export async function calculateMonthlyAnalytics(
       )
     );
 
+  // Count qualified leads from funnel events for the month
+  const [qualifiedCount] = await db
+    .select({ count: count() })
+    .from(funnelEvents)
+    .where(
+      and(
+        eq(funnelEvents.clientId, clientId),
+        eq(funnelEvents.eventType, 'qualified'),
+        gte(funnelEvents.createdAt, new Date(`${startDate}T00:00:00Z`)),
+        lte(funnelEvents.createdAt, new Date(`${endDate}T23:59:59Z`))
+      )
+    );
+
+  // Calculate average review rating for the month
+  const [monthlyReviewRating] = await db
+    .select({
+      avgRating: avg(reviews.rating),
+      fiveStars: sql<number>`count(*) filter (where ${reviews.rating} = 5)`,
+    })
+    .from(reviews)
+    .where(
+      and(
+        eq(reviews.clientId, clientId),
+        gte(reviews.createdAt, new Date(`${startDate}T00:00:00Z`)),
+        lte(reviews.createdAt, new Date(`${endDate}T23:59:59Z`))
+      )
+    );
+
   const newLeads = Number(aggregated?.newLeads) || 0;
   const jobsWon = Number(aggregated?.jobsWon) || 0;
   const revenue = Number(aggregated?.revenueAttributedCents) || 0;
@@ -428,7 +472,7 @@ export async function calculateMonthlyAnalytics(
     clientId,
     month,
     newLeads,
-    qualifiedLeads: 0, // Would need separate query
+    qualifiedLeads: Number(qualifiedCount?.count) || 0,
     appointmentsBooked: Number(aggregated?.appointmentsBooked) || 0,
     quotesGenerated: Number(aggregated?.quotesSent) || 0,
     jobsWon,
@@ -440,6 +484,10 @@ export async function calculateMonthlyAnalytics(
     aiHandledPercent,
     escalationRate,
     reviewsReceived: Number(aggregated?.reviewsReceived) || 0,
+    avgRating: monthlyReviewRating?.avgRating
+      ? parseFloat(String(monthlyReviewRating.avgRating))
+      : null,
+    fiveStarReviews: Number(monthlyReviewRating?.fiveStars) || 0,
     leadToJobRate,
     platformCostCents: platformCost,
     roiMultiple,

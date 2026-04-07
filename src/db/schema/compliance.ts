@@ -9,7 +9,9 @@ import {
   varchar,
   index,
   pgEnum,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 
@@ -180,6 +182,7 @@ export const doNotContactList = pgTable(
 
     // Metadata
     metadata: jsonb('metadata'),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (table) => [
     index('idx_dnc_phone_hash').on(table.phoneNumberHash),
@@ -193,34 +196,43 @@ export const doNotContactList = pgTable(
 // QUIET HOURS CONFIGURATION
 // ============================================
 /** Per-client quiet hours settings to prevent sending during off-hours */
-export const quietHoursConfig = pgTable('quiet_hours_config', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  clientId: uuid('client_id')
-    .notNull()
-    .references(() => clients.id)
-    .unique(),
+export const quietHoursConfig = pgTable(
+  'quiet_hours_config',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id)
+      .unique(),
 
-  // Standard quiet hours (recipient's local time)
-  quietStartHour: integer('quiet_start_hour').notNull().default(21),
-  quietEndHour: integer('quiet_end_hour').notNull().default(10), // CRTC requires 9:30am, we use 10am for safety
+    // Standard quiet hours (recipient's local time)
+    quietStartHour: integer('quiet_start_hour').notNull().default(21),
+    quietEndHour: integer('quiet_end_hour').notNull().default(10), // CRTC requires 9:30am, we use 10am for safety
 
-  // Day-specific overrides (0 = Sunday, 6 = Saturday)
-  weekendQuietStartHour: integer('weekend_quiet_start_hour'),
-  weekendQuietEndHour: integer('weekend_quiet_end_hour'),
+    // Day-specific overrides (0 = Sunday, 6 = Saturday)
+    weekendQuietStartHour: integer('weekend_quiet_start_hour'),
+    weekendQuietEndHour: integer('weekend_quiet_end_hour'),
 
-  // Holiday handling
-  respectFederalHolidays: boolean('respect_federal_holidays').notNull().default(true),
-  holidayQuietAllDay: boolean('holiday_quiet_all_day').notNull().default(false),
+    // Holiday handling
+    respectFederalHolidays: boolean('respect_federal_holidays').notNull().default(true),
+    holidayQuietAllDay: boolean('holiday_quiet_all_day').notNull().default(false),
 
-  // Enforcement
-  enforceQuietHours: boolean('enforce_quiet_hours').notNull().default(true),
-  queueDuringQuietHours: boolean('queue_during_quiet_hours').notNull().default(true),
-  policyModeOverride: varchar('policy_mode_override', { length: 40 }),
+    // Enforcement
+    enforceQuietHours: boolean('enforce_quiet_hours').notNull().default(true),
+    queueDuringQuietHours: boolean('queue_during_quiet_hours').notNull().default(true),
+    policyModeOverride: varchar('policy_mode_override', { length: 40 }),
 
-  // Metadata
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+    // Metadata
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    check('chk_quiet_start_hour_range', sql`${table.quietStartHour} >= 0 AND ${table.quietStartHour} <= 23`),
+    check('chk_quiet_end_hour_range', sql`${table.quietEndHour} >= 0 AND ${table.quietEndHour} <= 23`),
+    check('chk_weekend_quiet_start_hour_range', sql`${table.weekendQuietStartHour} IS NULL OR (${table.weekendQuietStartHour} >= 0 AND ${table.weekendQuietStartHour} <= 23)`),
+    check('chk_weekend_quiet_end_hour_range', sql`${table.weekendQuietEndHour} IS NULL OR (${table.weekendQuietEndHour} >= 0 AND ${table.weekendQuietEndHour} <= 23)`),
+  ]
+);
 
 // ============================================
 // COMPLIANCE AUDIT LOG

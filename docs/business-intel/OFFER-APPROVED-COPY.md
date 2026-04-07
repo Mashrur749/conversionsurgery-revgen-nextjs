@@ -1,4 +1,4 @@
-# ConversionSurgery — Client-Facing Approved Copy
+# ConversionSurgery — Approved Copy Bank
 
 Version 1.8
 Date: April 4, 2026
@@ -89,7 +89,7 @@ The following lines are approved for live sales conversations, landing page head
 
 ### Bi-Weekly Performance Scoreboard
 
-> Every two weeks, you receive a performance report showing exactly what the system did: leads captured, response times, conversations handled, estimates followed up, appointments booked, and revenue impact. Each report includes auto-tracked pipeline activity — leads the system responded to, missed calls caught, appointments booked, dead quotes re-engaged, and a probable pipeline value — all calculated without any input from you. Each report also includes an estimate of what would have happened without the system — so the value of the service is always visible.
+> Every two weeks, you receive a performance report showing exactly what the system did: leads captured, response times, conversations handled, estimates followed up, appointments booked, and revenue impact. Each report includes auto-tracked pipeline activity — leads the system responded to, missed calls caught, appointments booked, dead quotes re-engaged, and a probable pipeline value — all calculated without any input from you. Each report also includes a Leads at Risk estimate — leads that would have waited 40+ minutes for a response based on your response times and lead volume — so the estimated pipeline at stake is always visible.
 >
 > Note on every report: "Actual outcomes vary by market, close process, and lead quality."
 >

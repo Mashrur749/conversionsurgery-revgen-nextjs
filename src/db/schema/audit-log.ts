@@ -6,7 +6,9 @@ import {
   jsonb,
   timestamp,
   index,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { people } from './people';
 import { clients } from './clients';
 
@@ -42,6 +44,7 @@ export const auditLog = pgTable(
     index('idx_audit_log_action').on(table.action),
     index('idx_audit_log_created_at').on(table.createdAt),
     index('idx_audit_log_resource').on(table.resourceType, table.resourceId),
+    check('audit_resource_pair', sql`(${table.resourceType} IS NOT NULL AND ${table.resourceId} IS NOT NULL) OR (${table.resourceType} IS NULL AND ${table.resourceId} IS NULL)`),
   ]
 );
 

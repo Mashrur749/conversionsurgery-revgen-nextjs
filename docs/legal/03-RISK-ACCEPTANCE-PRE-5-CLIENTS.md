@@ -20,15 +20,15 @@ Proceed with selling to the first 5 clients WITHOUT formal legal counsel review 
 
 **Risk**: Unknown whether inbound replies can be sent during 9 PM - 10 AM.
 **Mitigation**: Keep `STRICT` mode active. Do NOT enable `INBOUND_REPLY_ALLOWED`. All outbound messages are queued during quiet hours, no exceptions. This is the most conservative possible position.
-**In sales conversations**: Use ONLY the interim language from OFFER-CLIENT-FACING.md Section 6. Never promise or imply evening response capability. Frame the 10 AM delivery as "first in their inbox before any competitor."
-**Documented in**: OFFER-CLIENT-FACING.md Section 6 (interim version only), SALES-OBJECTION-PLAYBOOK.md (quiet hours positioning).
+**In sales conversations**: Use ONLY the interim language from OFFER-APPROVED-COPY.md Section 6. Never promise or imply evening response capability. Frame the 10 AM delivery as "first in their inbox before any competitor."
+**Documented in**: OFFER-APPROVED-COPY.md Section 6 (interim version only), SALES-OBJECTION-PLAYBOOK.md (quiet hours positioning).
 
 ### Item 2: Guarantee Enforceability
 
 **Risk**: Guarantee terms may not be enforceable as drafted.
 **Mitigation**: For clients 1-5, treat the guarantee as a goodwill commitment, not a legal obligation. The guarantee is designed to be generous (refund the month, keep all data), so disputes are unlikely. If a client triggers the guarantee, honor it immediately without argument.
 **Operational rule**: If ANY ambiguity exists in attribution, default to refunding. The cost of one month's refund ($1,000) is far less than the cost of a dispute or negative word-of-mouth.
-**Documented in**: OFFER-CLIENT-FACING.md Section 3 (attribution language is already log-based and objective).
+**Documented in**: OFFER-APPROVED-COPY.md Section 3 (attribution language is already log-based and objective).
 
 ### Item 3: Low-Volume Extension Formula
 
@@ -40,7 +40,7 @@ Proceed with selling to the first 5 clients WITHOUT formal legal counsel review 
 ### Item 4: "Unlimited Messaging" Claim
 
 **Risk**: "Unlimited" may be considered misleading if the contract has scope exclusions.
-**Mitigation**: The contract clause in OFFER-CLIENT-FACING.md Section 5 already excludes mass broadcasting, personal messaging, and out-of-scope use. This is standard SaaS language. For clients 1-5, the operator manages all messaging directly — there is no scenario where a contractor could inadvertently trigger the exclusion.
+**Mitigation**: The contract clause in OFFER-APPROVED-COPY.md Section 5 already excludes mass broadcasting, personal messaging, and out-of-scope use. This is standard SaaS language. For clients 1-5, the operator manages all messaging directly — there is no scenario where a contractor could inadvertently trigger the exclusion.
 **Operational rule**: If a contractor asks about blast messaging or cold outreach lists, explain that the system handles follow-up on their existing leads and inquiries, not cold outreach. Frame it as a CASL compliance benefit, not a limitation.
 
 ---
@@ -64,7 +64,7 @@ Proceed with selling to the first 5 clients WITHOUT formal legal counsel review 
 3. **Never promise evening or overnight response** in writing, proposals, or emails
 4. **Never argue a guarantee dispute** — if ambiguous, refund immediately
 5. **Never send mass broadcasts** or allow contractors to use the system for cold outreach
-6. **Always use the interim-safe language** marked in OFFER-CLIENT-FACING.md
+6. **Always use the interim-safe language** marked in OFFER-APPROVED-COPY.md
 7. **Always verbally disclose** the adjusted guarantee window for sub-15 lead volume prospects
 
 ---

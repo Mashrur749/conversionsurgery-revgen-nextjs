@@ -19,7 +19,7 @@ This is said in their own words across multiple independent sources. The platfor
 
 ## 2. Pitch Reframe (Immediate)
 
-The current offer docs (OFFER-INTERNAL-DOC.md, OFFER-CLIENT-FACING.md) already lean toward "stop losing leads" but still carry "get more leads" framing in places. The research says this distinction matters for objection surface.
+The current offer docs (OFFER-STRATEGY.md, OFFER-APPROVED-COPY.md) already lean toward "stop losing leads" but still carry "get more leads" framing in places. The research says this distinction matters for objection surface.
 
 | Current framing | Research-backed reframe |
 |----------------|----------------------|
@@ -28,7 +28,7 @@ The current offer docs (OFFER-INTERNAL-DOC.md, OFFER-CLIENT-FACING.md) already l
 | "Lead recovery service" | "Your quotes stop dying in your inbox" |
 | "$1,497/month managed service" | "30 cold quotes reactivated in your first week" |
 
-**Action:** Update outreach templates and verbal scripts. Do NOT update OFFER-CLIENT-FACING.md yet — test the reframe in live outreach first and measure response rate vs. current framing. If the reframe performs, update the approved copy in a batch.
+**Action:** Update outreach templates and verbal scripts. Do NOT update OFFER-APPROVED-COPY.md yet — test the reframe in live outreach first and measure response rate vs. current framing. If the reframe performs, update the approved copy in a batch.
 
 **Note on pricing:** The research references $1,497/month (from the internal offer doc). Current launch pricing is $1,000/month managed service. The reframe applies regardless of price point. The "$1,497 objection handling" in the research still works at $1,000 — the ROI math is even stronger.
 
@@ -80,7 +80,7 @@ The research surfaces four distinct angles not currently in active outreach rota
 
 ## 4. Objection Handling Updates
 
-The research provides specific rebuttals with contractor-language evidence. These supplement the existing objection handling in OFFER-INTERNAL-DOC.md Part 7.
+The research provides specific rebuttals with contractor-language evidence. These supplement the existing objection handling in OFFER-STRATEGY.md Part 7.
 
 | Objection | Research-backed response |
 |-----------|------------------------|
@@ -89,7 +89,7 @@ The research provides specific rebuttals with contractor-language evidence. Thes
 | "$1,000/month is expensive" | "If we recover one job you would have otherwise lost, do the math. How much is your average project worth?" (At $15k average, one recovered job covers 15 months of fees.) |
 | "I don&apos;t lose leads" | "Can I show you something? How many quotes in your phone right now have had no response for more than 2 weeks?" |
 
-**Action:** Incorporate into outreach scripts immediately. These are conversational — not for written proposals (which must use OFFER-CLIENT-FACING.md language).
+**Action:** Incorporate into outreach scripts immediately. These are conversational — not for written proposals (which must use OFFER-APPROVED-COPY.md language).
 
 ---
 
@@ -113,7 +113,7 @@ The research documents a clear seasonal pattern from ContractorTalk data:
 
 ## 6. Day-One Delivery Adjustment
 
-The current Day-One activation (OFFER-INTERNAL-DOC.md Part 3) is:
+The current Day-One activation (OFFER-STRATEGY.md Part 3) is:
 1. Phone number live (24h)
 2. Missed call text-back active (24h)
 3. Call-your-own-number proof (Day 1-2)
@@ -198,7 +198,7 @@ Track results here. Update after each outreach batch.
 
 | Date | Decision | Rationale |
 |------|---------|-----------|
-| 2026-03-28 | Do NOT update OFFER-CLIENT-FACING.md with reframe yet | Test in live outreach first; approved copy changes require validation |
+| 2026-03-28 | Do NOT update OFFER-APPROVED-COPY.md with reframe yet | Test in live outreach first; approved copy changes require validation |
 | 2026-03-28 | Quote reactivation angle is #1 priority for first-client delivery | Research identifies it as fastest ROI proof; validates platform and retains client |
 | 2026-03-28 | Two platform gaps identified (import status + estimate_sent automation) | Must fix before first client delivery to execute quote reactivation |
 | 2026-03-28 | Spring window is 3-4 weeks — outreach volume is urgent | Seasonal data confirms Mar-Apr is prime; Jun-Aug is dead for outreach |

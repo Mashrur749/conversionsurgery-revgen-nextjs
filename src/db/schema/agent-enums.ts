@@ -48,3 +48,27 @@ export const agentActionEnum = pgEnum('agent_action', [
   'close_won',        // Mark as booked/won
   'close_lost',       // Mark as lost
 ]);
+
+// ============================================
+// ESCALATION QUEUE ENUMS
+// ============================================
+
+export const escalationQueueStatusEnum = pgEnum('escalation_queue_status', [
+  'pending',     // Waiting for assignment
+  'assigned',    // Assigned to a team member
+  'in_progress', // Team member is actively handling
+  'resolved',    // Fully resolved
+  'dismissed',   // Dismissed without resolution
+]);
+
+export type EscalationQueueStatus = (typeof escalationQueueStatusEnum.enumValues)[number];
+
+export const escalationQueueResolutionEnum = pgEnum('escalation_queue_resolution', [
+  'handled',        // Handled directly by team member
+  'returned_to_ai', // Handed back to AI to continue conversation
+  'no_action',      // No action taken
+  'converted',      // Lead converted/booked
+  'lost',           // Lead lost
+]);
+
+export type EscalationQueueResolution = (typeof escalationQueueResolutionEnum.enumValues)[number];

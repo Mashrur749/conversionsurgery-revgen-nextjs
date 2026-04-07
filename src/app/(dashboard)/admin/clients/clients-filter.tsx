@@ -101,7 +101,7 @@ export function ClientsFilter({ allClients }: Props) {
 
                     <div className="flex gap-2 ml-4">
                       <Button asChild size="sm">
-                        <Link href={`/admin/clients/${client.id}/phone`}>Phone</Link>
+                        <Link href={`/admin/clients/${client.id}/phone`}>AI Line</Link>
                       </Button>
                     </div>
                   </div>

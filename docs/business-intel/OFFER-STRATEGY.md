@@ -4,7 +4,7 @@ Version 3.0
 Date: April 4, 2026
 Status: Launch-Ready (pending legal review &mdash; see Part 10)
 
-> **NOTE:** The client-facing approved copy lives in `docs/business-intel/OFFER-CLIENT-FACING.md` (v1.7). If this internal doc and the client-facing doc conflict, the **client-facing doc is the source of truth** for anything a contractor might see. This doc provides internal rationale and strategy context.
+> **NOTE:** The approved copy bank lives in `docs/business-intel/OFFER-APPROVED-COPY.md` (v1.8). The client-facing presentation is `docs/business-intel/offer-page.html`. If this strategy doc and the approved copy conflict, the **approved copy is the source of truth** for anything a contractor might see. This doc provides internal rationale and strategy context.
 
 This document is the single source of truth for what ConversionSurgery sells, how every component is structured, and the operational definitions behind every promise. All sales scripts, outreach templates, landing pages, and client-facing materials should be built FROM this document.
 
@@ -337,25 +337,25 @@ The rotation repeats annually, adapted to what the client needs most.
 
 ---
 
-### COMPONENT 6: The Bi-Weekly Scoreboard with "Without Us" Line (RETENTION ANCHOR)
+### COMPONENT 6: The Bi-Weekly Scoreboard with "Leads at Risk" Line (RETENTION ANCHOR)
 
 **What it is:** Every two weeks, a performance report showing exactly what the system did.
 
-The report shouldn't just show metrics. It should answer one question: **"How much money would you have lost without us?"**
+The report shouldn't just show metrics. It should answer one question: **"How many leads would have waited 40+ minutes for a response — and what was the estimated pipeline at stake?"**
 
 **Report Structure:**
 
-| Section                   | What it shows                                             | Why it matters                                                          |
-| ------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Leads captured            | Total inquiries handled, after-hours vs. business hours   | Shows volume they'd have missed                                         |
-| Response time             | Average response: X seconds vs. industry 42 minutes       | Makes speed tangible                                                    |
-| Conversations had         | AI conversations, questions answered, appointments booked | Shows the AI doing real work                                            |
-| Estimates followed up     | Which estimates are in sequence, which responded          | Shows the invisible follow-up happening                                 |
-| Revenue impact            | Won jobs attributed to the system, pipeline value         | The money number                                                        |
-| **The "Without Us" line** | What would have happened without ConversionSurgery        | This is the retention line. It makes the cost of cancellation concrete. |
-| **Weekly pipeline SMS**   | Monday morning SMS with dollar pipeline values ($XK probable, $XK confirmed) + needs-attention count | Keeps the contractor informed between bi-weekly reports |
+| Section                        | What it shows                                             | Why it matters                                                          |
+| ------------------------------ | --------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Leads captured                 | Total inquiries handled, after-hours vs. business hours   | Shows volume they'd have missed                                         |
+| Response time                  | Average response: X seconds vs. industry 42 minutes       | Makes speed tangible                                                    |
+| Conversations had              | AI conversations, questions answered, appointments booked | Shows the AI doing real work                                            |
+| Estimates followed up          | Which estimates are in sequence, which responded          | Shows the invisible follow-up happening                                 |
+| Revenue impact                 | Won jobs attributed to the system, pipeline value         | The money number                                                        |
+| **The "Leads at Risk" line**   | Leads that would have waited 40+ minutes — Based on your response times and lead volume | This is the retention line. It makes the cost of cancellation concrete. |
+| **Weekly pipeline SMS**        | Monday morning SMS with dollar pipeline values ($XK probable, $XK confirmed) + needs-attention count | Keeps the contractor informed between bi-weekly reports |
 
-**"Without Us" Methodology (Standardized):**
+**"Leads at Risk" Methodology — Based on your response times and lead volume (Standardized):**
 
 This is a directional model, not guaranteed revenue. Each report lists inputs and assumptions explicitly.
 
@@ -369,11 +369,11 @@ Assumption framework:
 
 - Scenario benchmark for delayed human response (industry baseline: 42-minute average, data from Invoca/HouseCall Pro studies)
 - Scenario benchmark for follow-up impact on conversion (published first-responder win rate data)
-- Conservative, base-case, and high-estimate ranges
+- Conservative, Likely, and Optimistic estimate ranges
 
 Reporting rules:
 
-- Show low/base/high estimated risk ranges
+- Show Conservative/Likely/Optimistic estimated pipeline at stake ranges
 - Label all benchmark-driven components as assumptions
 - Include note on every report: "Actual outcomes vary by market, close process, and lead quality"
 
@@ -500,7 +500,7 @@ One recovered kitchen project pays for the entire year. Most clients see results
 - 30-Day Proof-of-Life Guarantee for early confidence
 - Day-One Activation so they see it working in hours, not weeks
 - Revenue Leak Audit with THEIR numbers, not generic industry claims
-- Bi-Weekly Scoreboard with "Without Us" line making value concrete and visible
+- Bi-Weekly Scoreboard with "Leads at Risk" line making value concrete and visible
 - Month-to-month removes the "what if I'm stuck" fear entirely
 - Unlimited messaging removes the "what if I run out" anxiety
 - Full data export at cancellation removes vendor lock-in fear
@@ -632,7 +632,7 @@ The compliance nuance: CRTC quiet hours restrict unsolicited commercial messages
 | **Inbound reply** (response to lead's action) | First response to missed call, form submission reply, reply to inbound SMS                                  | Send immediately — this is conversational, not commercial |
 | **Proactive outreach** (system-initiated)     | Estimate follow-up sequences, win-back messages, reactivation campaigns, review requests, payment reminders | Queue for next available window — these are commercial    |
 
-**This classification requires legal confirmation before implementation.** If legal counsel confirms inbound replies are exempt from quiet hours, update the compliance gateway to distinguish message categories. If not, update all marketing to say "30-second response during permitted hours" and adjust the "Without Us" methodology to reflect the actual response window.
+**This classification requires legal confirmation before implementation.** If legal counsel confirms inbound replies are exempt from quiet hours, update the compliance gateway to distinguish message categories. If not, update all marketing to say "30-second response during permitted hours" and adjust the "Leads at Risk" methodology to reflect the actual response window.
 
 **This is flagged as a high-priority legal review item because it directly affects the core value proposition.**
 
@@ -702,7 +702,7 @@ If building this offer in phases, here's the sequence:
 | 5        | **Revenue Leak Audit** (personalized pre-onboarding research)                                                | High impact on both sales and onboarding trust          | Create template + define 30-45 min research process                                |
 | 6        | **Unlimited messaging** (remove caps from plan configuration and all materials)                              | Removes hidden objection + strengthens pricing          | Remove limits from active plan config; keep overage capability dormant in codebase |
 | 7        | **Quarterly Growth Blitz** (starting with Q1 Dormant Client Reactivation + customer list extraction process) | Biggest impact on retention and seasonality             | Plan campaign cadence + build reactivation sequence + onboarding list extraction   |
-| 8        | **Bi-Weekly Scoreboard upgrade** (add "Without Us" line with standardized methodology)                       | Moderate impact on retention                            | Update report template + define calculation methodology                            |
+| 8        | **Bi-Weekly Scoreboard upgrade** (add "Leads at Risk" line with standardized methodology)                    | Moderate impact on retention                            | Update report template + define calculation methodology                            |
 | 9        | **Quiet hours response classification** (legal review → compliance gateway update)                           | Directly affects core "24/7" promise                    | Legal review first, then gateway logic change if approved                          |
 | 10       | **KB quality assurance process** (pre-call questionnaire, industry presets, assist-mode KB sprint)           | Prevents thin AI conversations that erode trust         | Template creation + process documentation                                          |
 
@@ -796,15 +796,15 @@ Voice AI is no longer an opt-in add-on for new clients. `voiceEnabled` defaults 
 
 ## PENDING: CLIENT-FACING DOC REVIEW REQUIRED
 
-The following changes affect client-facing promises and have NOT yet been updated in `docs/business-intel/OFFER-CLIENT-FACING.md` (which is approved sales copy and must not be edited without review):
+The following changes affect client-facing promises and have NOT yet been updated in `docs/business-intel/OFFER-APPROVED-COPY.md` (which is approved sales copy and must not be edited without review):
 
-| Change | What needs updating in OFFER-CLIENT-FACING.md |
+| Change | What needs updating in OFFER-APPROVED-COPY.md |
 |--------|-----------------------------------------------|
 | Voice AI included by default | Section describing Voice AI as "optional add-on" should be updated |
 | Guarantee pipeline floor ($5,000 probable pipeline OR 1 opportunity) | Section 3 guarantee language needs the pipeline floor criterion added |
 | ROI Calculator available for pre-sale | Can be added as a pre-sale tool reference |
 
-**Action required:** Review these three items with the founder and update OFFER-CLIENT-FACING.md with approved copy before using the updated scripts in live sales calls.
+**Action required:** Review these three items with the founder and update OFFER-APPROVED-COPY.md with approved copy before using the updated scripts in live sales calls.
 
 ---
 

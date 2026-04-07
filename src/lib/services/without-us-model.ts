@@ -89,7 +89,7 @@ export const DEFAULT_WITHOUT_US_ASSUMPTIONS: WithoutUsModelAssumptions = {
     },
   },
   disclaimer:
-    'Directional model only. Based on observed response speed, after-hours lead volume, and delayed estimate follow-up counts. Actual outcomes vary by market, lead quality, and close process.',
+    'Estimated from your response times, after-hours lead volume, and follow-up activity this period. Actual outcomes vary by market, lead quality, and close process.',
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -213,7 +213,7 @@ export function calculateWithoutUsModel(
       inputs: input,
       assumptions,
       message:
-        'Insufficient data to compute a directional "Without Us" model for this period.',
+        'Not enough data this period to estimate leads at risk.',
     };
   }
 

@@ -810,7 +810,7 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 - 18 per-client feature toggles
 - AI settings: mode, tone, guardrails, smart assist delay, send policy
 - Team management with role-based access
-- Phone number provisioning and webhook configuration (admin and self-serve client portal)
+- Phone number provisioning and webhook configuration (admin and self-serve client portal). All number writes (purchase, assign, release, reassign) go through the `client-phone-management` service, which keeps `clients.twilioNumber` and the `client_phone_numbers` table in sync. UI labels distinguish &ldquo;Owner&apos;s Phone&rdquo; (private, for escalation alerts) from &ldquo;AI Business Line&rdquo; (lead-facing Twilio number).
 
 ### AI Preview / Sandbox
 

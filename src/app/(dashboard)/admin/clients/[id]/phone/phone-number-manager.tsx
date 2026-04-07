@@ -93,7 +93,7 @@ export function PhoneNumberManager({ clientId }: { clientId: string }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">Phone Numbers</CardTitle>
+        <CardTitle className="text-base">AI Business Lines</CardTitle>
         <Button size="sm" variant="outline" onClick={() => setShowAdd(!showAdd)}>
           <Plus className="h-4 w-4 mr-1" /> Add Number
         </Button>
@@ -119,7 +119,7 @@ export function PhoneNumberManager({ clientId }: { clientId: string }) {
         )}
 
         {numbers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No phone numbers assigned.</p>
+          <p className="text-sm text-muted-foreground">No business lines assigned.</p>
         ) : (
           <div className="space-y-2">
             {numbers.map((n) => (
@@ -159,7 +159,7 @@ export function PhoneNumberManager({ clientId }: { clientId: string }) {
       <AlertDialog open={!!removeId} onOpenChange={() => setRemoveId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Phone Number</AlertDialogTitle>
+            <AlertDialogTitle>Remove Business Line</AlertDialogTitle>
             <AlertDialogDescription>
               This will remove this phone number from the client. Any active automations using it will be affected.
             </AlertDialogDescription>

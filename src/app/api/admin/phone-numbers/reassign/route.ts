@@ -4,6 +4,11 @@ import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import {
+  addNumber,
+  removeNumberByPhone,
+  findClientByPhoneNumber,
+} from '@/lib/services/client-phone-management';
 
 const reassignSchema = z.object({
   phoneNumber: z.string().min(1, 'Phone number is required'),
@@ -52,20 +57,22 @@ export const PATCH = adminRoute(
       );
     }
 
-    // Release current assignment (if any)
-    await db
-      .update(clients)
-      .set({ twilioNumber: null, updatedAt: new Date() })
-      .where(eq(clients.twilioNumber, phoneNumber));
+    // Release current assignment (if any) via the phone management service
+    const currentOwnerId = await findClientByPhoneNumber(phoneNumber);
+    if (currentOwnerId) {
+      await removeNumberByPhone(currentOwnerId, phoneNumber);
+    }
 
-    // Assign to new client
+    // Assign to new client via the phone management service
+    await addNumber(targetClientId, phoneNumber, {
+      isPrimary: true,
+      friendlyName: `Reassigned: ${phoneNumber}`,
+    });
+
+    // Set status to active
     await db
       .update(clients)
-      .set({
-        twilioNumber: phoneNumber,
-        status: 'active',
-        updatedAt: new Date(),
-      })
+      .set({ status: 'active', updatedAt: new Date() })
       .where(eq(clients.id, targetClientId));
 
     console.log(`[Twilio] Reassigned ${phoneNumber} to client ${targetClient.businessName} (${targetClientId})`);

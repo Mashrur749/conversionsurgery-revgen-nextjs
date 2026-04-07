@@ -20,7 +20,7 @@ export const apiKeys = pgTable(
     keyHash: varchar('key_hash', { length: 255 }).notNull(),
     keyPrefix: varchar('key_prefix', { length: 8 }).notNull(),
     scopes: jsonb('scopes').$type<string[]>().default([]),
-    isActive: boolean('is_active').default(true),
+    isActive: boolean('is_active').notNull().default(true),
     lastUsedAt: timestamp('last_used_at'),
     expiresAt: timestamp('expires_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),

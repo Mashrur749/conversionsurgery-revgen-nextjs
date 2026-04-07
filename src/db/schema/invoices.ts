@@ -8,7 +8,9 @@ import {
   numeric,
   timestamp,
   index,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { clients } from './clients';
 import { leads } from './leads';
 import { jobs } from './jobs';
@@ -47,6 +49,10 @@ export const invoices = pgTable(
     index('idx_invoices_client').on(table.clientId),
     index('idx_invoices_lead').on(table.leadId),
     index('idx_invoices_status').on(table.status),
+    check('invoice_amounts_consistent', sql`${table.totalAmount} IS NULL OR ${table.paidAmount} IS NULL OR ${table.remainingAmount} IS NULL OR (${table.paidAmount} + ${table.remainingAmount} = ${table.totalAmount})`),
+    check('invoice_total_non_negative', sql`${table.totalAmount} IS NULL OR ${table.totalAmount} >= 0`),
+    check('invoice_paid_non_negative', sql`${table.paidAmount} IS NULL OR ${table.paidAmount} >= 0`),
+    check('invoice_remaining_non_negative', sql`${table.remainingAmount} IS NULL OR ${table.remainingAmount} >= 0`),
   ]
 );
 

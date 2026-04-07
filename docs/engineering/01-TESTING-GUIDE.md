@@ -348,13 +348,15 @@ For managed-service testing, use the admin wizard. For self-serve signup testing
 
 1. Open `/admin/clients/new/wizard` (or `/admin/clients/new` for the quick form).
 2. Complete the wizard: business name, owner email, plan selection.
-   - **Owner phone:** Enter the Owner number (#3 from preflight). This is how the system identifies the business owner on inbound SMS.
-   - **Twilio number:** Assign the Business Line (#1 from preflight). This is the number leads will text/call.
+   - **Owner&apos;s Phone:** Enter the Owner number (#3 from preflight). This is for escalation alerts and account notifications &mdash; not shared with leads.
+   - **AI Business Line:** Assign the Business Line (#1 from preflight). This is the number leads will text/call.
 3. Confirm the client appears in `/admin/clients`.
+4. Navigate to the client detail page &rarr; click &ldquo;Manage Number&rdquo; on the AI Business Line card. Verify the assigned number appears in the phone manager (not &ldquo;No business lines assigned&rdquo;).
 
 Expected:
 
 - Client record created with `clientId`.
+- Phone number visible in both the client detail card and the phone manager page.
 - No `Owner role template is missing` errors.
 
 If blocked:
@@ -1495,7 +1497,7 @@ Combined verification for Wave 1 (OPS-01, OPS-02, resilience fixes) and Wave 2 (
 
 7. **Billing skeleton match (UX-4.2):** Navigate to `/client/billing` on a slow connection (or throttle via DevTools). Verify the loading skeleton shows 4 card placeholders matching the actual content layout.
 
-8. **Wizard mobile labels (UX-4.4):** Open `/admin/clients/new/wizard` on a mobile viewport (375px). Verify step circles show abbreviated titles: Info, Phone, Team, Hours, Review.
+8. **Wizard mobile labels (UX-4.4):** Open `/admin/clients/new/wizard` on a mobile viewport (375px). Verify step circles show abbreviated titles: Info, AI Line, Team, Hours, Review.
 
 9. **Discussions CTA (UX-4.6):** Navigate to `/client/discussions` with no existing discussions. Verify the empty state includes a &quot;Start a Conversation&quot; button.
 

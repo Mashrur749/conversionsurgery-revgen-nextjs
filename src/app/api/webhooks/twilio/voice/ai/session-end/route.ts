@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { voiceCalls } from '@/db/schema';
+import { voiceCalls, callerIntentEnum } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { validateAndParseTwilioWebhook } from '@/lib/services/twilio';
 import { logInternalError, logSanitizedConsoleError } from '@/lib/services/internal-error-log';
@@ -20,6 +20,14 @@ interface HandoffData {
 }
 
 const MISSED_STATUSES = new Set(['no-answer', 'busy', 'failed', 'canceled']);
+
+type CallerIntent = (typeof callerIntentEnum.enumValues)[number];
+const VALID_CALLER_INTENTS = new Set<string>(callerIntentEnum.enumValues);
+
+function toCallerIntent(value: string | null | undefined): CallerIntent | null {
+  if (value && VALID_CALLER_INTENTS.has(value)) return value as CallerIntent;
+  return null;
+}
 
 function twimlResponse(twiml: string) {
   return new NextResponse(
@@ -81,7 +89,7 @@ export async function POST(request: NextRequest) {
           status: 'completed',
           duration: sessionDuration,
           transcript: handoff?.transcript || call.transcript,
-          callerIntent: handoff?.callerIntent || call.callerIntent,
+          callerIntent: toCallerIntent(handoff?.callerIntent) ?? call.callerIntent,
           callbackRequested: handoff?.callbackRequested || call.callbackRequested,
           outcome: handoff?.reasonCode === 'live-agent-handoff'
             ? 'transferred'

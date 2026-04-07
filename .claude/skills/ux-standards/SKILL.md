@@ -255,7 +255,7 @@ Follow this for every UI/UX change:
 | How to verify it works | `docs/engineering/01-TESTING-GUIDE.md` (add/update test step) |
 | How operator delivers the service | `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` |
 | Operator daily workflow | `docs/operations/01-OPERATIONS-GUIDE.md` |
-| Client-facing claims or promises | Flag to user — `docs/business-intel/OFFER-CLIENT-FACING.md` is approved copy |
+| Client-facing claims or promises | Flag to user — `docs/business-intel/OFFER-APPROVED-COPY.md` is approved copy |
 | Onboarding or first-client delivery | `docs/operations/LAUNCH-CHECKLIST.md` |
 
 10. Run `npm run quality:no-regressions` — never mark done with a red gate

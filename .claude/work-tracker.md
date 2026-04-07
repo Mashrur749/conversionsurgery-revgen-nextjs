@@ -60,11 +60,11 @@ Agents MUST NOT modify files owned by another in-progress item. The orchestrator
 | CON-02 | Shorten estimate fallback nudge from 5 days to 48 hours | High | done | `src/lib/automations/estimate-nudge.ts` or cron config | None | haiku |
 | CON-03 | Confirmed revenue field when marking lead "won" + headline in reports | High | done | `src/app/api/leads/[id]/route.ts`, `src/lib/services/report-generation.ts` | None | sonnet |
 | CON-04 | Win notification SMS when lead marked won | High | done | `src/app/api/leads/[id]/route.ts` | None | — |
-| CON-05 | Make Layer 2 guarantee attribution objective (log-based, remove "you confirm") | High | done | `docs/business-intel/OFFER-CLIENT-FACING.md` (language), guarantee service | None | haiku |
+| CON-05 | Make Layer 2 guarantee attribution objective (log-based, remove "you confirm") | High | done | `docs/business-intel/OFFER-APPROVED-COPY.md` (language), guarantee service | None | haiku |
 | CON-06 | "Your Account Manager" card in client portal | High | done | `src/app/(client)/client/page.tsx` | None | — |
 | CON-07 | Auto-trigger estimate follow-up on CSV import (72h not 25-day) | High | done | `src/app/api/leads/import/route.ts`, `src/lib/services/estimate-triggers.ts` | None | — |
 | CON-08 | Backup operator protocol + published escalation SLA | Medium | done | Docs only: ops guide, playbook, offer doc | None | — |
-| CON-09 | Offer doc language fixes (7 items: 15min, trained, calendar, dormant, A/B, guarantee) | High | done | `docs/business-intel/OFFER-CLIENT-FACING.md` v1.1 | None | — |
+| CON-09 | Offer doc language fixes (7 items: 15min, trained, calendar, dormant, A/B, guarantee) | High | done | `docs/business-intel/OFFER-APPROVED-COPY.md` v1.1 | None | — |
 | CON-10 | Bi-weekly report auto-follow-up SMS (automate the retention touchpoint) | Medium | done | `src/lib/services/report-generation.ts` or delivery service | None | sonnet |
 | CON-11 | KB gap "ask contractor" button (auto-SMS question, pre-populate KB draft) | Medium | done | `src/components/escalations/` or knowledge gap UI | None | sonnet |
 
@@ -72,7 +72,7 @@ Agents MUST NOT modify files owned by another in-progress item. The orchestrator
 
 | ID | Issue | Priority | Status | Files Touched | Depends On | Assigned Agent | Model Tier |
 |----|-------|----------|--------|---------------|------------|----------------|------------|
-| GAP-01 | Sales objection playbook + offer doc restructure + referral pitch variant + quiet hours doc | High | done | `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (new), `OFFER-CLIENT-FACING.md`, `02-MANAGED-SERVICE-PLAYBOOK.md` | None | Agent A | sonnet |
+| GAP-01 | Sales objection playbook + offer doc restructure + referral pitch variant + quiet hours doc | High | done | `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (new), `OFFER-APPROVED-COPY.md`, `02-MANAGED-SERVICE-PLAYBOOK.md` | None | Agent A | sonnet |
 | GAP-02 | "Jobs We Helped Win" running total in client portal dashboard | High | done | `src/app/(client)/client/page.tsx`, new API route | None | Agent B | sonnet |
 | GAP-03 | Engagement decay alerts + 6-month dormant re-engagement cron | Medium | done | `src/lib/services/engagement-health.ts` (new), `src/lib/automations/dormant-reengagement.ts` (new), cron route | None | Agent C | sonnet |
 | GAP-04 | KB intake questionnaire + Operator triage dashboard | Medium | done | Admin client page (new component), new admin page | None | Agent D | sonnet |

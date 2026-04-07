@@ -169,10 +169,10 @@ When you change code, check whether the affected docs need updating. This is man
 | Lead pipeline stages, scoring, or context fields | `docs/product/PLATFORM-CAPABILITIES.md` (Section 4: Communication Hub) |
 | Client portal pages, permissions, or nav | `docs/product/PLATFORM-CAPABILITIES.md` (Section 5: Client Portal) |
 | Compliance rules, consent types, quiet hours, or gateway logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 6: Compliance) |
-| Compliance behavior | `docs/business-intel/OFFER-CLIENT-FACING.md` (Sections 6-7: Quiet Hours + Compliance) |
+| Compliance behavior | `docs/business-intel/OFFER-APPROVED-COPY.md` (Sections 6-7: Quiet Hours + Compliance) |
 | Reporting metrics, Without Us model, or delivery | `docs/product/PLATFORM-CAPABILITIES.md` (Section 7: Reporting) |
 | Billing, plans, add-ons, guarantee, or cancellation | `docs/product/PLATFORM-CAPABILITIES.md` (Section 8: Billing) |
-| Billing terms or pricing | `docs/business-intel/OFFER-CLIENT-FACING.md` (Sections 4-5: Pricing + Terms) |
+| Billing terms or pricing | `docs/business-intel/OFFER-APPROVED-COPY.md` (Sections 4-5: Pricing + Terms) |
 | Onboarding milestones, quality gates, or progressive activation | `docs/product/PLATFORM-CAPABILITIES.md` (Section 9: Onboarding) |
 | Quarterly campaign types or planner logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 10: Quarterly Growth Blitz) |
 | AI agent behavior, guardrails, model routing, or decision pipeline | `docs/product/PLATFORM-CAPABILITIES.md` (Section 1: AI Conversation Agent + Section 11: Observability) |
@@ -190,7 +190,7 @@ When you change code, check whether the affected docs need updating. This is man
 | Client portal page layout, nav, or UX change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 5: Client Portal), `docs/specs/UX-AUDIT-FULL.md` (mark item Done if tracked) |
 | Admin dashboard layout, nav, or UX change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 11: Agency Operations), `docs/specs/UX-AUDIT-FULL.md` (mark item Done if tracked) |
 | New UI component used across pages (breadcrumbs, notification bell, etc.) | `docs/product/PLATFORM-CAPABILITIES.md` (relevant section) |
-| SMS/notification copy or tone change | `docs/product/PLATFORM-CAPABILITIES.md` (relevant automation section), review `docs/business-intel/OFFER-CLIENT-FACING.md` for consistency |
+| SMS/notification copy or tone change | `docs/product/PLATFORM-CAPABILITIES.md` (relevant automation section), review `docs/business-intel/OFFER-APPROVED-COPY.md` for consistency |
 | Onboarding wizard, self-serve signup, or day-one flow change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 9: Onboarding), `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (Section 10: Onboarding Call) |
 | Change that affects how operator delivers managed service | `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (relevant section), `docs/operations/01-OPERATIONS-GUIDE.md` |
 | Change that affects how contractor uses the portal day-to-day | `docs/operations/LAUNCH-CHECKLIST.md` (Phase 3: First Client Delivery — if onboarding steps change) |
@@ -200,7 +200,7 @@ When you change code, check whether the affected docs need updating. This is man
 | Doc | Purpose | When it gets stale |
 |-----|---------|-------------------|
 | `docs/product/PLATFORM-CAPABILITIES.md` | **What the platform does** — complete feature inventory | Any feature add/change/remove |
-| `docs/business-intel/OFFER-CLIENT-FACING.md` | **What we promise clients** — approved sales language | Pricing, compliance, or capability changes that affect claims |
+| `docs/business-intel/OFFER-APPROVED-COPY.md` | **What we promise clients** — approved sales language | Pricing, compliance, or capability changes that affect claims |
 | `docs/engineering/01-TESTING-GUIDE.md` | **How to verify it works** — manual + automated test steps | New features, changed flows, new crons |
 | `docs/product/02-OFFER-PARITY-GAPS.md` | **What's promised vs built** — gap register | Features shipped or descoped |
 | `docs/product/FEATURE-BACKLOG.md` | **What's planned** — future work with context | Backlog items implemented or deprioritized |
@@ -213,7 +213,7 @@ When you change code, check whether the affected docs need updating. This is man
 ### Rules
 
 1. **Check before marking done.** After completing a coding task, scan the table above. If your change maps to a doc, update it in the same commit or immediately after.
-2. **Don't update offer docs without asking.** `OFFER-CLIENT-FACING.md` is approved sales copy — flag the discrepancy to the user rather than editing directly.
+2. **Don't update offer docs without asking.** `OFFER-APPROVED-COPY.md` is approved sales copy — flag the discrepancy to the user rather than editing directly.
 3. **Capabilities doc is ground truth.** `PLATFORM-CAPABILITIES.md` reflects what's *built*, not what's *planned*. Only add features that are implemented and passing tests.
 4. **Testing guide stays runnable.** Every test step must be executable as written. If you change a flow, update the step so someone following the guide doesn't hit a wall.
 

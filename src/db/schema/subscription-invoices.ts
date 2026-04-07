@@ -18,9 +18,9 @@ export const subscriptionInvoices = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     clientId: uuid('client_id')
-      .references(() => clients.id, { onDelete: 'cascade' })
+      .references(() => clients.id, { onDelete: 'restrict' })
       .notNull(),
-    subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
+    subscriptionId: uuid('subscription_id').references(() => subscriptions.id, { onDelete: 'set null' }),
 
     // Stripe IDs
     stripeInvoiceId: varchar('stripe_invoice_id', { length: 100 }),

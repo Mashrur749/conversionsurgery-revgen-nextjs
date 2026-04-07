@@ -42,6 +42,9 @@ export const funnelEvents = pgTable(
     ),
 
     createdAt: timestamp('created_at').defaultNow().notNull(),
+
+    // Archival
+    archivedAt: timestamp('archived_at'),
   },
   (table) => [
     index('funnel_events_client_idx').on(table.clientId),
@@ -49,6 +52,8 @@ export const funnelEvents = pgTable(
     index('funnel_events_type_idx').on(table.eventType),
     index('funnel_events_created_idx').on(table.createdAt),
     index('funnel_events_decision_idx').on(table.agentDecisionId),
+    index('funnel_events_client_type_created_idx').on(table.clientId, table.eventType, table.createdAt),
+    index('idx_funnel_events_archived_at').on(table.archivedAt),
   ]
 );
 

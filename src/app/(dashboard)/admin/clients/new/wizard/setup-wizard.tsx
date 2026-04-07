@@ -59,10 +59,10 @@ const INITIAL_DATA: WizardData = {
 };
 
 const STEPS = [
-  { id: 'business', title: 'Business Info', shortTitle: 'Info', description: 'Basic business details' },
-  { id: 'phone', title: 'Phone Number', shortTitle: 'Phone', description: 'Assign a Twilio number' },
-  { id: 'team', title: 'Team Members', shortTitle: 'Team', description: 'Who receives notifications' },
-  { id: 'hours', title: 'Business Hours', shortTitle: 'Hours', description: 'When to connect calls' },
+  { id: 'business', title: 'Business Info', shortTitle: 'Info', description: 'Owner details and business profile' },
+  { id: 'phone', title: 'AI Business Line', shortTitle: 'AI Line', description: 'The number leads will text and call' },
+  { id: 'team', title: 'Team Members', shortTitle: 'Team', description: 'Who receives escalation alerts' },
+  { id: 'hours', title: 'Business Hours', shortTitle: 'Hours', description: 'When to route live calls' },
   { id: 'review', title: 'Review & Launch', shortTitle: 'Review', description: 'Confirm and activate' },
 ];
 

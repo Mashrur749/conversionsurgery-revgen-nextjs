@@ -136,13 +136,16 @@ export function EditClientForm({ client }: { client: Client }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone</Label>
+          <Label htmlFor="phone">Owner&apos;s Phone</Label>
           <Input
             id="phone"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             required
           />
+          <p className="text-xs text-muted-foreground">
+            For escalation alerts and account notifications &mdash; not shared with leads.
+          </p>
         </div>
       </div>
 
@@ -187,13 +190,27 @@ export function EditClientForm({ client }: { client: Client }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="googleBusinessUrl">Google Business URL</Label>
+        <Label htmlFor="googleBusinessUrl">Google Review URL</Label>
         <Input
           id="googleBusinessUrl"
           type="url"
           value={formData.googleBusinessUrl}
           onChange={(e) => setFormData({ ...formData, googleBusinessUrl: e.target.value })}
+          placeholder="https://g.page/r/XXXXX/review"
         />
+        <p className="text-xs text-muted-foreground">
+          Go to{' '}
+          <a
+            href="https://business.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-[#D4754A] hover:text-[#C15B2E]"
+          >
+            business.google.com
+          </a>
+          {' '}&rarr; Home &rarr; &quot;Get more reviews&quot; &rarr; copy the share link.
+          It should look like <span className="font-mono">g.page/r/.../review</span>
+        </p>
       </div>
 
       <div className="space-y-2">

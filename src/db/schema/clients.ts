@@ -112,6 +112,8 @@ export const clients = pgTable(
   },
   (table) => [
     index('idx_clients_status').on(table.status),
+    index('idx_clients_stripe_customer').on(table.stripeCustomerId),
+    index('idx_clients_stripe_subscription').on(table.stripeSubscriptionId),
   ]
 );
 

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ConversionSurgery &mdash; What You Get</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --surface: #FFFFFF;
+    --text: #1A1A18;
+    --text-secondary: #5C5C58;
+    --accent: #1B4332;
+    --accent-light: #2D6A4F;
+    --accent-bg: #F0F5F1;
+    --border: #E8E8E4;
+    --border-light: #F0F0EC;
+    --highlight: #D4A843;
+    --highlight-bg: #FDF8EC;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  /* -- Header -- */
+  .header {
+    margin-bottom: 56px;
+  }
+
+  .logo-mark {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 28px;
+  }
+
+  .headline {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .subheadline {
+    font-size: 17px;
+    color: var(--text-secondary);
+    max-width: 520px;
+    line-height: 1.65;
+  }
+
+  /* -- Divider -- */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+
+  .divider--thick {
+    height: 2px;
+    background: var(--accent);
+    width: 48px;
+    margin: 48px 0;
+  }
+
+  /* -- Section -- */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+
+  /* -- Offer Items -- */
+  .offer-item {
+    margin-bottom: 36px;
+  }
+
+  .offer-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .offer-item__title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .offer-item__desc {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .offer-item__desc strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* -- What You Do -- */
+  .your-part {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px 28px 24px;
+  }
+
+  .your-part__title {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .your-part__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 14px;
+  }
+
+  .your-part__row:last-child {
+    border-bottom: none;
+  }
+
+  .your-part__task {
+    color: var(--text-secondary);
+    flex: 1;
+  }
+
+  .your-part__time {
+    color: var(--text);
+    font-weight: 500;
+    text-align: right;
+    white-space: nowrap;
+    margin-left: 16px;
+  }
+
+  .your-part__total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 14px;
+    margin-top: 6px;
+    border-top: 2px solid var(--accent);
+    font-size: 14px;
+  }
+
+  .your-part__total-label {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .your-part__total-value {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 15px;
+  }
+
+  /* -- Guarantee -- */
+  .guarantee {
+    background: var(--accent-bg);
+    border-radius: 8px;
+    padding: 28px;
+  }
+
+  .guarantee__title {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .guarantee__text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .guarantee__text strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* -- Price -- */
+  .price-block {
+    text-align: center;
+    padding: 48px 0 8px;
+  }
+
+  .price-block__context {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+
+  .price-block__amount {
+    font-family: 'DM Serif Display', serif;
+    font-size: 52px;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .price-block__period {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+  }
+
+  .price-block__terms {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* -- Anchor -- */
+  .anchor-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px 28px;
+  }
+
+  .anchor-block__title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .anchor-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 14px;
+  }
+
+  .anchor-row:last-child {
+    border-bottom: none;
+  }
+
+  .anchor-row__label {
+    color: var(--text-secondary);
+  }
+
+  .anchor-row__cost {
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+  }
+
+  .anchor-row--highlight {
+    border-bottom: none;
+    padding-top: 14px;
+    margin-top: 4px;
+    border-top: 2px solid var(--accent);
+  }
+
+  .anchor-row--highlight .anchor-row__label {
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .anchor-row--highlight .anchor-row__cost {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  /* -- Close -- */
+  .close-line {
+    text-align: center;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    padding: 16px 0;
+  }
+
+  .close-line strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* -- Footer -- */
+  .footer {
+    text-align: center;
+    padding-top: 48px;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  .footer__cta {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .footer__sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  /* -- Mobile -- */
+  @media (max-width: 520px) {
+    .page { padding: 40px 20px 60px; }
+    .headline { font-size: 28px; }
+    .price-block__amount { font-size: 42px; }
+    .your-part, .anchor-block, .guarantee { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-mark">ConversionSurgery</div>
+    <h1 class="headline">Here&apos;s what you get.</h1>
+    <p class="subheadline">A managed revenue recovery service for your renovation business. We run everything. You keep building.</p>
+  </div>
+
+  <!-- Core Engine -->
+  <div class="section-label">The Revenue Recovery Engine</div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Near-Instant Lead Response</div>
+    <div class="offer-item__desc">Every inquiry &mdash; call, text, or web form &mdash; gets a response within seconds during permitted hours. The system monitors around the clock. When leads call and you can&apos;t answer, it picks up, qualifies the inquiry, and captures the lead.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Intelligent Conversations</div>
+    <div class="offer-item__desc">Not canned auto-replies. A system configured with <strong>your</strong> business information that has real conversations, answers questions about your services, qualifies the project, and books estimate appointments directly into your Google Calendar.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Estimate Follow-Up</div>
+    <div class="offer-item__desc">When you flag an estimate as sent &mdash; one text, 10 seconds &mdash; we trigger a 4-touch follow-up sequence over 14 days. Personalized, not pushy. Designed for how homeowners actually make renovation decisions.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Dormant Lead Reactivation</div>
+    <div class="offer-item__desc">Quotes that went cold get a personalized follow-up automatically. Past leads that have gone quiet for months get a fresh re-engagement. These are projects already in your pipeline &mdash; the system brings them back.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Review Generation</div>
+    <div class="offer-item__desc">After every completed job, the system sends an automated review request with a direct link to your Google Business Profile. No awkward asks. Your review count grows on autopilot.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Payment Collection</div>
+    <div class="offer-item__desc">Automated reminders with one-click payment links. Deposits and final payments collected without the uncomfortable phone call.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Unlimited Conversations &amp; Messaging</div>
+    <div class="offer-item__desc">No message caps. No lead limits. No overage charges. Flat rate, no matter how busy you get.</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Infrastructure -->
+  <div class="section-label">Your Infrastructure</div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Dedicated Business Number + Lead CRM</div>
+    <div class="offer-item__desc">A local Alberta phone number separate from your personal cell. Every lead, every conversation, every status &mdash; in one place. Your &ldquo;CRM&rdquo; stops being a pile of text threads and sticky notes.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Day-One Activation</div>
+    <div class="offer-item__desc">Your number is live and catching missed calls within 24 hours. Before the full system is even configured, you&apos;re already capturing leads you&apos;d have lost. Plus a personalized <strong>Revenue Leak Audit</strong> showing exactly where money is falling through your business &mdash; your numbers, not generic stats.</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Ongoing -->
+  <div class="section-label">Ongoing Value</div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Quarterly Growth Blitz</div>
+    <div class="offer-item__desc">Every 90 days, a proactive campaign beyond the normal automation: dormant lead reactivation, review acceleration, pipeline building for busy season, or a year-end strategy review. This isn&apos;t static &mdash; it gets more valuable every quarter.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Bi-Weekly Performance Scoreboard</div>
+    <div class="offer-item__desc">Every two weeks, a report showing exactly what the system did: leads captured, response times, conversations handled, appointments booked, and revenue impact. Each report includes what would have happened <strong>without</strong> the system &mdash; so the value is always visible.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Weekly Pipeline Update</div>
+    <div class="offer-item__desc">Every Monday morning, a text on your phone showing your pipeline in dollars &mdash; leads captured, appointments booked, probable revenue, and what needs your attention. No login required.</div>
+  </div>
+
+  <div class="offer-item">
+    <div class="offer-item__title">Complete Done-For-You Service</div>
+    <div class="offer-item__desc">We set it up, run it, optimize it, handle compliance, and send you the reports. Setup, training, A/B testing, CASL/CRTC compliance, technical maintenance &mdash; all handled.</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Your Part -->
+  <div class="section-label">What You Do</div>
+
+  <div class="your-part">
+    <div class="your-part__title">Your only responsibilities</div>
+    <div class="your-part__row">
+      <span class="your-part__task">One onboarding call</span>
+      <span class="your-part__time">30 min, once</span>
+    </div>
+    <div class="your-part__row">
+      <span class="your-part__task">Flag estimates as sent</span>
+      <span class="your-part__time">10 sec each</span>
+    </div>
+    <div class="your-part__row">
+      <span class="your-part__task">Mark jobs as won or lost</span>
+      <span class="your-part__time">30 sec each</span>
+    </div>
+    <div class="your-part__row">
+      <span class="your-part__task">Respond when the system escalates to you</span>
+      <span class="your-part__time">As needed</span>
+    </div>
+    <div class="your-part__row">
+      <span class="your-part__task">Read your bi-weekly report</span>
+      <span class="your-part__time">5 min</span>
+    </div>
+    <div class="your-part__total">
+      <span class="your-part__total-label">Total ongoing time (typically by Week 3)</span>
+      <span class="your-part__total-value">Under 15 min/week</span>
+    </div>
+  </div>
+
+  <div class="divider--thick"></div>
+
+  <!-- Guarantee -->
+  <div class="guarantee">
+    <div class="guarantee__title">The Guarantee</div>
+    <div class="guarantee__text">
+      <strong>Your first month is free.</strong> The system runs for 30 days before you pay a dollar. If the system doesn&apos;t deliver at least 5 qualified lead engagements in that first month &mdash; meaning inbound inquiries that received a response and where the lead replied at least once &mdash; you owe nothing and we part as friends.
+      <br><br>
+      <strong>90-Day Revenue Recovery Guarantee.</strong> If after 90 days the system hasn&apos;t booked at least one estimate from a lead that had previously gone cold &mdash; or generated at least $5,000 in probable pipeline from system-engaged leads &mdash; we refund your most recent month. You keep every lead and conversation we captured. You leave with everything.
+      <br><br>
+      <span style="font-size: 13px;">Both guarantees assume a minimum of 15 inbound inquiries per month. Lower volume extends the window proportionally &mdash; you&apos;re never penalized for a slow period.</span>
+    </div>
+  </div>
+
+  <div class="divider--thick"></div>
+
+  <!-- Price -->
+  <div class="price-block">
+    <div class="price-block__context">First month free. Then &mdash;</div>
+    <div class="price-block__amount">$1,000</div>
+    <div class="price-block__period">per month</div>
+    <div class="price-block__terms">Month-to-month. No contract. No setup fee.<br>No message limits. No overage charges. Cancel anytime.</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Anchors -->
+  <div class="anchor-block">
+    <div class="anchor-block__title">For Context</div>
+    <div class="anchor-row">
+      <span class="anchor-row__label">Full-time office employee</span>
+      <span class="anchor-row__cost">$4,000&ndash;5,000/mo</span>
+    </div>
+    <div class="anchor-row">
+      <span class="anchor-row__label">Part-time hire</span>
+      <span class="anchor-row__cost">$1,500&ndash;2,500/mo</span>
+    </div>
+    <div class="anchor-row">
+      <span class="anchor-row__label">Answering service</span>
+      <span class="anchor-row__cost">$500&ndash;1,500/mo</span>
+    </div>
+    <div class="anchor-row">
+      <span class="anchor-row__label">One recovered kitchen project</span>
+      <span class="anchor-row__cost">$35,000&ndash;65,000</span>
+    </div>
+    <div class="anchor-row anchor-row--highlight">
+      <span class="anchor-row__label">ConversionSurgery</span>
+      <span class="anchor-row__cost">$1,000/mo</span>
+    </div>
+  </div>
+
+  <div style="height: 32px;"></div>
+
+  <p class="close-line">One recovered project pays for the entire year.<br><strong>Most clients see results before they ever pay.</strong></p>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer__cta">Worth a 15-minute call?</div>
+    <p class="footer__sub">If it&apos;s a fit, we&apos;ll move forward. If it&apos;s not, I&apos;ll tell you directly<br>and give you the clearest next step for your situation.</p>
+  </div>
+
+</div>
+
+</body>
+</html>

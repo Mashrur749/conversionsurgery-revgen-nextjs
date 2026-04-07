@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Phone, Clock, MessageSquare, Timer, DollarSign } from 'lucide-react';
+import { Phone, Clock, MessageSquare, Timer, DollarSign, Volume2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BusinessHoursSummary } from './business-hours-summary';
 
@@ -26,11 +26,40 @@ interface VoiceSettingsProps {
     voiceMaxDuration: number;
     canDiscussPricing: boolean;
   };
+  voiceVoiceId?: string | null;
 }
 
-export function VoiceSettings({ clientId, settings }: VoiceSettingsProps) {
+export function VoiceSettings({ clientId, settings, voiceVoiceId }: VoiceSettingsProps) {
   const [form, setForm] = useState(settings);
   const [saving, setSaving] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  async function previewGreeting() {
+    if (!form.voiceGreeting.trim()) return;
+    setPreviewing(true);
+    try {
+      const res = await fetch('/api/admin/voice/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voiceId: voiceVoiceId || 'default',
+          text: form.voiceGreeting,
+        }),
+      });
+      if (!res.ok) throw new Error('Preview failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (audioRef.current) {
+        audioRef.current.src = url;
+        audioRef.current.play();
+      }
+    } catch {
+      toast.error('Failed to preview greeting. Check your voice selection.');
+    } finally {
+      setPreviewing(false);
+    }
+  }
 
   const save = async () => {
     setSaving(true);
@@ -135,6 +164,27 @@ export function VoiceSettings({ clientId, settings }: VoiceSettingsProps) {
               <p className="text-xs text-muted-foreground">
                 This is what callers hear first when AI answers
               </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={previewGreeting}
+                  disabled={previewing || !form.voiceGreeting.trim()}
+                  className="text-[#6B7E54] border-[#6B7E54]/30 hover:bg-[#E3E9E1]"
+                >
+                  {previewing ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  ) : (
+                    <Volume2 className="h-4 w-4 mr-1" />
+                  )}
+                  {previewing ? 'Generating...' : 'Preview Greeting'}
+                </Button>
+                {!voiceVoiceId && (
+                  <span className="text-xs text-muted-foreground">(Using default voice)</span>
+                )}
+              </div>
+              <audio ref={audioRef} className="hidden" />
             </div>
 
             {/* Max call duration */}
