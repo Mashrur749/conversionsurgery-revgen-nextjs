@@ -2,6 +2,7 @@ import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/db';
 import { knowledgeBase } from '@/db/schema/knowledge-base';
+import { clients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { KnowledgeList } from './knowledge-list';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
@@ -18,6 +19,17 @@ export default async function KnowledgeBasePage({ searchParams }: KnowledgeBaseP
   await requirePortalPagePermission(PORTAL_PERMISSIONS.KNOWLEDGE_VIEW);
   const session = await getClientSession();
   if (!session) redirect('/link-expired');
+
+  // Managed-service clients: KB is operator-owned, redirect to dashboard
+  const db0 = getDb();
+  const [clientRow] = await db0
+    .select({ serviceModel: clients.serviceModel })
+    .from(clients)
+    .where(eq(clients.id, session.clientId))
+    .limit(1);
+  if (clientRow?.serviceModel === 'managed') {
+    redirect('/client');
+  }
 
   const { add: prefillQuestion } = await searchParams;
 

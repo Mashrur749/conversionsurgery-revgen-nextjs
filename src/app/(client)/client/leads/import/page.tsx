@@ -1,3 +1,8 @@
+import { redirect } from 'next/navigation';
+import { getClientSession } from '@/lib/client-auth';
+import { getDb } from '@/db';
+import { clients } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -7,6 +12,20 @@ export const dynamic = 'force-dynamic';
 
 export default async function LeadsImportPage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.LEADS_EDIT);
+
+  // Managed-service clients: operator imports leads, redirect to dashboard
+  const session = await getClientSession();
+  if (session) {
+    const db = getDb();
+    const [clientRow] = await db
+      .select({ serviceModel: clients.serviceModel })
+      .from(clients)
+      .where(eq(clients.id, session.clientId))
+      .limit(1);
+    if (clientRow?.serviceModel === 'managed') {
+      redirect('/client');
+    }
+  }
 
   const templateCsv =
     'data:text/csv;charset=utf-8,name,phone,email,projectType,status\n' +

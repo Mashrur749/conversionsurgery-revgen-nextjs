@@ -27,7 +27,7 @@ function SettingsTabsInner({ children, serviceModel }: SettingsTabsProps) {
   const rawTab = searchParams.get('tab');
 
   const visibleTabs: TabId[] = serviceModel === 'managed'
-    ? (TAB_IDS as readonly TabId[]).filter(id => id !== 'features')
+    ? (TAB_IDS as readonly TabId[]).filter(id => !['ai', 'phone', 'features'].includes(id))
     : [...TAB_IDS];
 
   const activeTab: TabId = rawTab && TAB_IDS.includes(rawTab as TabId) && visibleTabs.includes(rawTab as TabId)
