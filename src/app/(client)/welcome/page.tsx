@@ -1,12 +1,10 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getDb } from '@/db';
-import { people, clientMemberships, roleTemplates } from '@/db/schema';
+import { people, clientMemberships } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { getClientSession } from '@/lib/client-auth';
-import { resolvePermissions } from '@/lib/permissions/resolve';
-import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
-import type { PermissionOverrides } from '@/lib/permissions/resolve';
+import { CheckCircle } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -15,58 +13,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-/**
- * Feature descriptions mapped to permissions.
- * Shown on the welcome page to help new users understand their access.
- */
-const FEATURE_MAP: { permission: string; label: string; description: string }[] = [
-  {
-    permission: PORTAL_PERMISSIONS.DASHBOARD,
-    label: 'Dashboard',
-    description: 'Overview of your business performance and key metrics',
-  },
-  {
-    permission: PORTAL_PERMISSIONS.LEADS_VIEW,
-    label: 'Leads',
-    description: 'View and track incoming leads',
-  },
-  {
-    permission: PORTAL_PERMISSIONS.CONVERSATIONS_VIEW,
-    label: 'Conversations',
-    description: 'Read customer conversations and messages',
-  },
-  {
-    permission: PORTAL_PERMISSIONS.REVENUE_VIEW,
-    label: 'Revenue',
-    description: 'Track revenue and financial metrics',
-  },
-  {
-    permission: PORTAL_PERMISSIONS.ANALYTICS_VIEW,
-    label: 'Analytics',
-    description: 'View detailed analytics and reporting',
-  },
-  {
-    permission: PORTAL_PERMISSIONS.REVIEWS_VIEW,
-    label: 'Reviews',
-    description: 'Monitor and manage customer reviews',
-  },
-  {
-    permission: PORTAL_PERMISSIONS.KNOWLEDGE_VIEW,
-    label: 'Knowledge Base',
-    description: 'Access and manage business knowledge articles',
-  },
-  {
-    permission: PORTAL_PERMISSIONS.TEAM_VIEW,
-    label: 'Team',
-    description: 'View team members who have portal access',
-  },
-  {
-    permission: PORTAL_PERMISSIONS.SETTINGS_VIEW,
-    label: 'Settings',
-    description: 'View and manage portal settings',
-  },
-];
 
 export default async function WelcomePage() {
   const session = await getClientSession();
@@ -93,13 +39,9 @@ export default async function WelcomePage() {
     redirect('/client');
   }
 
-  // Load membership and role info
+  // Load membership to verify active access
   const [membership] = await db
-    .select({
-      roleTemplateId: clientMemberships.roleTemplateId,
-      permissionOverrides: clientMemberships.permissionOverrides,
-      isOwner: clientMemberships.isOwner,
-    })
+    .select({ id: clientMemberships.id })
     .from(clientMemberships)
     .where(
       and(
@@ -114,26 +56,9 @@ export default async function WelcomePage() {
     redirect('/client-login');
   }
 
-  const [template] = await db
-    .select({
-      name: roleTemplates.name,
-      permissions: roleTemplates.permissions,
-    })
-    .from(roleTemplates)
-    .where(eq(roleTemplates.id, membership.roleTemplateId))
-    .limit(1);
-
-  if (!template) {
-    redirect('/client');
-  }
-
-  const overrides = membership.permissionOverrides as PermissionOverrides | null;
-  const resolved = resolvePermissions(template.permissions, overrides);
-  const permissionsList = Array.from(resolved);
-
-  const accessibleFeatures = FEATURE_MAP.filter((f) =>
-    permissionsList.includes(f.permission)
-  );
+  // Fetch operator contact info
+  const { getAgency } = await import('@/lib/services/agency-settings');
+  const agency = await getAgency();
 
   // Update lastLoginAt so welcome is not shown again
   await db
@@ -141,38 +66,93 @@ export default async function WelcomePage() {
     .set({ lastLoginAt: new Date(), updatedAt: new Date() })
     .where(eq(people.id, session.personId));
 
+  const operatorName = agency.operatorName ?? 'your account manager';
+  const operatorPhone = agency.operatorPhone ?? null;
+
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="flex items-center justify-center min-h-[60vh] px-4">
       <Card className="max-w-lg w-full">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-2xl font-bold text-[#1B2F26]">
             Welcome to {session.client.businessName}
           </CardTitle>
-          <p className="text-muted-foreground mt-1">
-            You&apos;ve been added as <span className="font-medium text-foreground">{template.name}</span>.
+          <p className="text-muted-foreground mt-1 text-sm">
+            Your AI assistant is set up and ready to help you win more jobs.
           </p>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Here&apos;s what you can access:
-          </p>
-          <ul className="space-y-3">
-            {accessibleFeatures.map((feature) => (
-              <li key={feature.permission} className="flex items-start gap-3">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[#E8F5E9] text-[#3D7A50] text-xs font-medium">
-                  &#x2713;
-                </span>
+
+        <CardContent className="space-y-6">
+          {/* What's already happening */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              What&apos;s already happening
+            </p>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3">
+                <CheckCircle className="mt-0.5 size-5 shrink-0 text-[#3D7A50]" />
                 <div>
-                  <p className="text-sm font-medium">{feature.label}</p>
-                  <p className="text-xs text-muted-foreground">{feature.description}</p>
+                  <p className="text-sm font-medium text-[#1B2F26]">Missed calls get an instant text-back</p>
+                  <p className="text-xs text-muted-foreground">Your business number is monitored around the clock</p>
                 </div>
               </li>
-            ))}
-          </ul>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="mt-0.5 size-5 shrink-0 text-[#3D7A50]" />
+                <div>
+                  <p className="text-sm font-medium text-[#1B2F26]">Every lead gets a response in under 5 seconds</p>
+                  <p className="text-xs text-muted-foreground">Faster than any competitor</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="mt-0.5 size-5 shrink-0 text-[#3D7A50]" />
+                <div>
+                  <p className="text-sm font-medium text-[#1B2F26]">Old quotes are being followed up</p>
+                  <p className="text-xs text-muted-foreground">If imported, the AI is reaching out to past leads</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          {/* Your first week */}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              Your first week
+            </p>
+            <ol className="space-y-3">
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[#1B2F26] text-white text-xs font-semibold">
+                  1
+                </span>
+                <p className="text-sm text-[#1B2F26]">
+                  Check your <span className="font-medium">Dashboard</span> daily to see leads coming in
+                </p>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[#1B2F26] text-white text-xs font-semibold">
+                  2
+                </span>
+                <p className="text-sm text-[#1B2F26]">
+                  Mark jobs as <span className="font-medium">Won</span> or <span className="font-medium">Complete</span> in Conversations to track your revenue
+                </p>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-[#1B2F26] text-white text-xs font-semibold">
+                  3
+                </span>
+                <p className="text-sm text-[#1B2F26]">
+                  <span className="font-medium">{operatorName}</span> is available
+                  {operatorPhone ? (
+                    <> at <span className="font-medium">{operatorPhone}</span></>
+                  ) : null}{' '}
+                  for any questions
+                </p>
+              </li>
+            </ol>
+          </div>
         </CardContent>
+
         <CardFooter>
           <Button asChild className="w-full" size="lg">
-            <Link href="/client">Get Started</Link>
+            <Link href="/client">Go to Dashboard</Link>
           </Button>
         </CardFooter>
       </Card>

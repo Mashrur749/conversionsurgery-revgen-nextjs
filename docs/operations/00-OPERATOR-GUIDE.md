@@ -140,21 +140,25 @@ The system auto-advances through these modes based on quality gates. You don&apo
 
 **Smart Assist notifications go to `operator_phone` (configured in admin settings), not to the contractor.** This is how the &ldquo;you don&apos;t manage anything&rdquo; promise works in practice. The contractor is shielded from all draft review. If you need their input on a specific response, text them directly. Estimate follow-up and payment messages never auto-send &mdash; you must explicitly approve those.
 
-**Browser-based Smart Assist review:** The admin client detail page (Activity tab) shows all pending drafts with approve, edit, and cancel actions. Useful when you&apos;re at your desk. The SMS commands are available when you&apos;re on mobile.
+**Browser-based Smart Assist review:** The admin client detail page (Campaigns tab) shows all pending drafts with approve, edit, and cancel actions. Useful when you&apos;re at your desk. The SMS commands are available when you&apos;re on mobile.
 
 ### Admin Client Detail Page &mdash; Overview at a Glance
 
 The admin client detail page now surfaces five operational tools you will use daily:
 
+The client detail page has 5 tabs: Overview, Knowledge, Configuration, Team &amp; Billing, and Campaigns.
+
 | Tab | Card | What it shows |
 |-----|------|--------------|
-| Overview | Guarantee Status | Phase, QLE count vs. target, pipeline vs. $5K floor, days remaining, on-track/at-risk/failing badge |
+| Overview | Onboarding Quality Gates | Gate status before switching to autonomous mode |
 | Overview | Engagement Health | `at_risk` / `disengaged` status with signal bullets (days since last estimate flag, days since last won/lost) |
-| Activity | Pending Drafts | AI drafts awaiting approval (15-second polling), with approve/edit/cancel actions |
+| Overview | Guarantee Status | Phase, QLE count vs. target, pipeline vs. $5K floor, days remaining, on-track/at-risk/failing badge |
 | Configuration | Exclusion List | Per-client DNC numbers — add during onboarding to protect personal relationships |
 | Configuration | Integrations | Jobber, ServiceTitan, Housecall Pro, Zapier webhooks — configure provider, direction, URL, secret key |
+| Campaigns | Pending Drafts | AI drafts awaiting approval (15-second polling), with approve/edit/cancel actions |
+| Campaigns | Quarterly Campaigns | Campaign lifecycle and recommendations |
 
-Actions card on the client detail page also includes a **Export Data** button (with confirmation) for compliance or cancellation data delivery.
+The client detail page header has a **Payment Link** button and an **Export Data** button (with confirmation) for compliance or cancellation data delivery. The separate Actions card has been removed.
 
 ### The 4-Touch Estimate Follow-Up
 
@@ -178,7 +182,7 @@ This is the highest-ROI feature. Most contractors never follow up on estimates. 
 | Double-booking | Low | Calendar sync checks both systems. If sync token expires, reconnect. | Medium &mdash; embarrassing but recoverable |
 | Message during quiet hours | Very low | STRICT mode prevents this. Will not happen. | N/A &mdash; system blocks it |
 | Contractor never flags estimates | High | Follow-up never fires. 48-hour nudge and portal button help. | Medium &mdash; depends on habit |
-| Contractor never marks jobs won | High | Revenue Recovered shows $0 — but System Activity card auto-tracks pipeline proof with no contractor action. Probable wins nudge (weekly YES/NO SMS) recovers some wins. | Low &mdash; mitigated by pipeline proof card |
+| Contractor never marks jobs won | High | Jobs We Helped Win shows $0 — but System Activity card auto-tracks pipeline proof with no contractor action. Probable wins nudge (weekly YES/NO SMS) recovers some wins. The Revenue page ROI card still shows net return from confirmed wins. | Low &mdash; mitigated by pipeline proof card |
 
 ### What This System Does NOT Do (Know This Cold)
 

@@ -1,6 +1,6 @@
 # Managed Service Delivery Playbook
 
-Last updated: 2026-04-01
+Last updated: 2026-04-08
 Audience: Solo operator delivering ConversionSurgery at $1,000/mo
 Purpose: Every business scenario a contractor generates, and exactly how you handle it.
 
@@ -10,11 +10,11 @@ Purpose: Every business scenario a contractor generates, and exactly how you han
 
 **What triggers it:** AI encounters a frustrated customer, legal threat, pricing negotiation, complex technical question, or explicit request to speak to someone. Lead gets flagged `action_required` and enters the escalation queue.
 
-**How you know:** Escalation queue at `/escalations` shows unresolved items sorted by priority. SLA clock starts ticking (priority 1 = respond same day, priority 2 = next business day).
+**How you know:** Your daily triage starts at `/admin/escalations` — the cross-client escalation queue that surfaces unresolved items across all clients, sorted by priority. SLA clock starts ticking (priority 1 = respond same day, priority 2 = next business day). When you are already viewing a specific client, the per-client `/escalations` view shows only that client&apos;s queue.
 
 **Process:**
 
-1. Open `/escalations`. Review the conversation history for the flagged lead.
+1. Open `/admin/escalations` (morning triage) or the per-client escalations view when working inside a specific client. Review the conversation history for the flagged lead.
 2. Determine if this needs the contractor or if you can handle it:
    - **You handle:** Lead is asking about scheduling, general process, follow-up timing. Draft a response in the conversation view, send it.
    - **Contractor handles:** Lead has a technical question about their specific property, wants to negotiate price, or is threatening legal action. If this is a knowledge gap (AI couldn&apos;t answer), use the &quot;Ask Contractor&quot; button on the gap card in the knowledge gap queue &mdash; it sends a formatted SMS and tracks the gap lifecycle automatically. Otherwise, text the contractor: &quot;[Lead name] is asking about [topic] &mdash; how do you want me to respond?&quot; Enter their answer as a response.
@@ -74,7 +74,7 @@ During Smart Assist mode, **you** (the operator) review AI drafts, not the contr
    - Reply `CANCEL ABC123` &mdash; kills the draft, nothing sent
 4. If you need the contractor&apos;s input: text them directly: &ldquo;Quick one &mdash; a lead asked about [topic]. What should I tell them?&rdquo; Then either edit the draft with their answer or add a KB entry.
 
-**Browser-based alternative:** You can also review and manage pending drafts from the admin dashboard: client detail page &rarr; Activity tab &rarr; Pending Drafts card. The card polls every 15 seconds and provides approve, edit, and cancel actions without leaving the browser. Use this when you&apos;re at your desk; SMS commands are useful when you&apos;re on mobile.
+**Browser-based alternative:** You can also review and manage pending drafts from the admin dashboard: client detail page &rarr; Campaigns tab &rarr; Pending Drafts card. The card polls every 15 seconds and provides approve, edit, and cancel actions without leaving the browser. Use this when you&apos;re at your desk; SMS commands are useful when you&apos;re on mobile.
 
 **What the contractor experiences during Week 2:** Nothing changes for them. They don&apos;t receive draft notifications. They don&apos;t approve messages. From their perspective, the system just works. If you need their input, they get a normal text from you &mdash; not a system notification.
 
@@ -107,11 +107,13 @@ These sit in `pending_manual` until explicitly approved. You must reply `SEND [r
 1. Reports are auto-generated and queued for delivery.
 2. Before the report sends, review it at `/admin/reports` for the client:
    - Are the numbers accurate? (Cross-check against the client dashboard.)
-   - Is &quot;Revenue Recovered&quot; showing real value, or still $0? (If $0 after 2 weeks, the quote reactivation didn&apos;t work &mdash; investigate. Note: Revenue Recovered reflects confirmed wins only. The `pipelineProof` section always shows auto-tracked activity even when Revenue Recovered is $0.)
+   - Is &quot;Jobs We Helped Win&quot; showing real value, or still $0? (If $0 after 2 weeks, the quote reactivation didn&apos;t work &mdash; investigate. This figure reflects confirmed wins only. The `pipelineProof` section always shows auto-tracked activity even when no wins are confirmed. The Revenue page shows a 4-column ROI summary card with Investment, Revenue Recovered, Net Return, and ROI.)
    - Does the `pipelineProof` section show meaningful numbers? (Leads responded to, missed calls caught, appointments booked — these populate automatically without contractor action. If all are 0, the system may not be receiving inbound traffic yet.)
    - Does the speed-to-lead metric look good? (Should be well under 5 minutes.)
 3. If the report looks thin (new client, few leads), add a personal note in the report delivery: &quot;Your system is ramping up. Here&apos;s what&apos;s active so far.&quot;
 4. The report sends automatically via email. A follow-up SMS is now sent automatically to the contractor via the agency number: &quot;[Business Name] &mdash; your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.&quot; You no longer need to manually send this text.
+
+**Note:** Contractors can also view all past reports directly from their portal at `/client/reports` — the Reports link is in the main contractor nav. This means they don&apos;t need to dig through their email inbox to find historical data.
 
 **This is your retention touchpoint.** The auto-SMS handles the nudge, but you should still proactively engage if the report is thin or you notice declining metrics. Even if the report is short.
 
@@ -344,7 +346,7 @@ This addresses the agency trauma directly, at the end, after they&apos;ve alread
 **How to do it:**
 
 1. While on the call, go to the contractor&apos;s client detail page in admin.
-2. Click **&ldquo;Send Payment Link&rdquo;** &mdash; select the plan, click Send. The system creates a Stripe Checkout Session with the 30-day free trial and texts + emails the link to the contractor instantly. No portal login needed &mdash; they tap the link, enter their card on Stripe&apos;s page, done. Takes 30 seconds.
+2. Click **&ldquo;Send Payment Link&rdquo;** in the page header &mdash; select the plan, click Send. The system creates a Stripe Checkout Session with the 30-day free trial and texts + emails the link to the contractor instantly. No portal login needed &mdash; they tap the link, enter their card on Stripe&apos;s page, done. Takes 30 seconds.
 3. Confirm you see the subscription created: &quot;Perfect, I can see that went through. Your free month starts today, and if everything&apos;s working like we planned, billing kicks in on [date]. Sound good?&quot;
 
 **If they hesitate:**
@@ -360,7 +362,7 @@ Don&apos;t force it. Say:
 Then follow up in 24-48 hours with the link. Most contractors who refuse on the call will convert after seeing the system work for a day. If they still don&apos;t add a card by Day 7, they&apos;re unlikely to convert &mdash; don&apos;t invest heavy ops time.
 
 **After the call (operator, same day, 30 min max):**
-- Complete all KB entries from call notes (or encourage the self-serve KB wizard at `/client/onboarding`).
+- Complete all KB entries from call notes (or encourage the self-serve KB wizard at `/client/onboarding`). Note: the admin onboarding wizard also prompts for KB setup on completion &mdash; if you ran onboarding setup from the admin side, the KB wizard link appears automatically when you finish.
 - Set AI tone based on their communication style.
 - Configure business hours from the call.
 - **Fire the outbound quote reactivation batch** &mdash; send the messages to the dead quotes collected on the call. This is the highest-ROI action on Day 0. Do it before anything else.
@@ -691,7 +693,7 @@ If the contractor asks whether the response auto-posts: clarify that every respo
 
 **Operator steps:**
 
-1. Check the quarterly campaign recommendation in the admin dashboard (Campaign Planner section).
+1. Check the quarterly campaign recommendation in the admin dashboard: client detail page &rarr; Campaigns tab &rarr; Quarterly Campaigns card. The contractor also sees a conditional campaign card on their own dashboard when a campaign is scheduled or launched (not during the &ldquo;planned&rdquo; state).
 2. Review the suggested copy. Customize if the tone or offer needs adjustment for this contractor.
 3. Launch the campaign and note the send date.
 4. After 2 weeks, report results to the contractor: engagements, replies, appointments booked.
@@ -704,7 +706,7 @@ If the contractor prefers a different campaign type than the recommendation, acc
 
 ## 15. Voice AI Delivery
 
-**Add-on:** $0.15/minute. Typically enabled at Week 3 or later once the KB is solid and the client is in Autonomous mode.
+**Included by default.** Voice AI is part of every plan — there are no per-minute charges to the contractor. It is typically activated at Week 3 or later once the KB is solid and the client is in Autonomous mode.
 
 **Activation modes:**
 
@@ -827,7 +829,7 @@ Every 2 weeks they get an email report showing: leads captured, response times, 
 You launch a proactive campaign: dormant lead reactivation (Q1), review push (Q2), pipeline builder (Q3), strategy review (Q4). Results reported within 2 weeks.
 
 **Ongoing &mdash; What they see daily:**
-Their portal dashboard shows: Revenue Recovered card, Since Last Visit activity summary, action-required count. When everything is working, the dashboard shows green: &ldquo;All caught up.&rdquo; When something needs attention, it shows a count with a clear CTA.
+Their portal dashboard shows: Since Last Visit activity summary, Voice AI status card, System Activity (auto-tracked pipeline proof: leads responded to, missed calls caught, dead quotes re-engaged, appointments booked &mdash; no contractor input needed), and Jobs We Helped Win (the single confirmed-revenue card; shows $0 nudge when no wins recorded). A conditional Quarterly Growth Blitz card appears when a campaign is active. When everything is working the dashboard is quiet; when something needs attention a clear CTA surfaces it. The Help page shows an Account Manager card with the operator&apos;s name and phone when configured.
 
 ---
 
@@ -842,7 +844,7 @@ Know these before you sell. Each risk has a built-in mitigation, but you must un
 | **Double-booking an appointment** | Low | AI books into a time slot the contractor blocked on Google Calendar | Calendar sync checks both appointments + Google Calendar events. If sync token expired (>60 days), sync fails silently. Monitor `consecutiveErrors`. | Medium &mdash; embarrassing but recoverable. Reconnect calendar. |
 | **Sending a message during quiet hours** | Very Low | Lead gets an SMS between 9 PM - 10 AM | STRICT mode prevents this. Messages queue until 10 AM. The system will NOT send during quiet hours unless the INBOUND_REPLY_ALLOWED mode is enabled (it is not). | Very Low &mdash; system prevents it |
 | **Contractor never flags estimates** | High | Estimate follow-up never fires, the highest-value automation is silent | 48-hour nudge fires automatically. Probable wins nudge catches outcomes. Portal has &ldquo;Mark Estimate Sent&rdquo; button. Explain the mechanism during onboarding. | Medium &mdash; automation depends on this habit. Nudges help but don&apos;t guarantee it. |
-| **Contractor never marks jobs won** | High | Revenue Recovered shows $0 — but System Activity card and `pipelineProof` in reports auto-track pipeline activity without contractor input | Probable wins nudge (weekly YES/NO SMS). Portal has &ldquo;Mark Won&rdquo; button. System Activity card shows auto-tracked proof independently of confirmed wins. | Low &mdash; mitigated by pipeline proof. Churn risk is substantially reduced. |
+| **Contractor never marks jobs won** | High | Jobs We Helped Win shows $0 — but System Activity card and `pipelineProof` in reports auto-track pipeline activity without contractor input | Probable wins nudge (weekly YES/NO SMS). Portal has &ldquo;Mark Won&rdquo; button. System Activity card shows auto-tracked proof independently of confirmed wins. Revenue page ROI card still shows investment vs pipeline even with no confirmed wins. | Low &mdash; mitigated by pipeline proof. Churn risk is substantially reduced. |
 | **Lead volume is very low (&lt;8/month)** | Depends on client | System works but results are thin. Guarantee windows extend. | Disclose adjusted windows during sales. Lead with dormant reactivation, not speed-to-lead. | Low &mdash; the system works, just slower |
 | **Twilio webhook goes down** | Very Low | Inbound SMS stops processing, leads go unanswered | Operator gets SMS alert from reliability cron. Check `/admin/reliability`. Redeploy or fix webhook URL. | High if undetected &mdash; but alerting is built |
 | **Anthropic API goes down** | Very Low | AI can&apos;t generate responses, conversations stall | AI kill switch in admin. Missed-call text-back still fires (template-based, no AI). Resume when API recovers. | Medium &mdash; temporary, manual handling needed |
@@ -859,7 +861,7 @@ Know these so you never overpromise in a sales conversation.
 | What contractors might expect | What actually happens | How to frame it |
 |-------------------------------|----------------------|-----------------|
 | &ldquo;24/7 instant response&rdquo; | Messages queue during quiet hours (9 PM - 10 AM). Response at 10 AM. | &ldquo;Monitors 24/7, responds during compliant hours. Your lead gets a response before any competitor &mdash; first thing in the morning.&rdquo; |
-| &ldquo;It replaces my receptionist&rdquo; | Handles SMS/forms AND answers missed calls via Voice AI (included by default). Does not replace a full-time receptionist for all call types. | &ldquo;It handles text inquiries and answers calls you miss with a professional greeting. Think of it as a receptionist who only covers when you can&apos;t pick up.&rdquo; |
+| &ldquo;It replaces my receptionist&rdquo; | Handles text inquiries AND answers missed calls via Voice AI (included by default). Covers the hours and moments a full-time receptionist wouldn&apos;t. Does not replace a person for every possible interaction. | &ldquo;It handles text inquiries and answers calls you miss &mdash; with a professional greeting, qualification, and appointment booking. It&apos;s a receptionist who&apos;s always on when you can&apos;t be.&rdquo; |
 | &ldquo;It does my marketing&rdquo; | No lead generation. No Google Ads, SEO, social media. It converts leads you already get. | &ldquo;We handle what happens after someone reaches out. Getting them to reach out is your marketing &mdash; that&apos;s a different service.&rdquo; |
 | &ldquo;AI will know everything about my business&rdquo; | AI knows what&apos;s in the KB. Week 1 will have gaps. | &ldquo;The AI starts with what you tell it on the onboarding call. It gets smarter every week as we fill gaps. By Week 3 it handles 90%+ of questions.&rdquo; |
 | &ldquo;I never have to do anything&rdquo; | Contractor must: flag estimates, mark wins/losses, respond to escalations, approve review responses occasionally. Under 15 min/week. | &ldquo;You do 4 things: flag when you send a quote (one text), mark when you win or lose a job (one tap), respond when the AI escalates something to you, and approve review responses. Total: under 15 minutes a week.&rdquo; |

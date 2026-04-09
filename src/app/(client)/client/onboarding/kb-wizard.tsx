@@ -84,12 +84,19 @@ export function KbWizard() {
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ created: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showStep1Errors, setShowStep1Errors] = useState(false);
+
+  const step1Valid = values.mainServices.trim() !== '' && values.serviceArea.trim() !== '';
 
   function handleChange(field: keyof FormValues, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }));
   }
 
   function handleNext() {
+    if (step === 0 && !step1Valid) {
+      setShowStep1Errors(true);
+      return;
+    }
     if (step < TOTAL_STEPS - 1) {
       setStep((s) => s + 1);
     }
@@ -102,6 +109,11 @@ export function KbWizard() {
   }
 
   async function handleSubmit() {
+    if (!step1Valid) {
+      setShowStep1Errors(true);
+      setError('Please complete the required fields in Step 1 before submitting.');
+      return;
+    }
     setSaving(true);
     setError(null);
 
@@ -189,7 +201,9 @@ export function KbWizard() {
           {step === 0 && (
             <>
               <div className="space-y-1.5">
-                <Label htmlFor="q-mainServices">What are your main services?</Label>
+                <Label htmlFor="q-mainServices">
+                  What are your main services? <span className="text-[#C15B2E]">*</span>
+                </Label>
                 <Textarea
                   id="q-mainServices"
                   placeholder="e.g., Kitchen renovations, bathroom remodels, basement finishing"
@@ -197,6 +211,11 @@ export function KbWizard() {
                   onChange={(e) => handleChange('mainServices', e.target.value)}
                   rows={3}
                 />
+                {showStep1Errors && !values.mainServices.trim() && (
+                  <p className="text-xs text-[#C15B2E]" role="alert">
+                    Please describe your main services.
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="q-servicesNotOffered">What services do you NOT offer?</Label>
@@ -219,7 +238,9 @@ export function KbWizard() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="q-serviceArea">What is your service area?</Label>
+                <Label htmlFor="q-serviceArea">
+                  What is your service area? <span className="text-[#C15B2E]">*</span>
+                </Label>
                 <input
                   id="q-serviceArea"
                   type="text"
@@ -228,6 +249,11 @@ export function KbWizard() {
                   onChange={(e) => handleChange('serviceArea', e.target.value)}
                   className={INPUT_STYLE}
                 />
+                {showStep1Errors && !values.serviceArea.trim() && (
+                  <p className="text-xs text-[#C15B2E]" role="alert">
+                    Please specify your service area.
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -388,7 +414,7 @@ export function KbWizard() {
               <Button
                 type="button"
                 onClick={handleNext}
-                disabled={saving}
+                disabled={saving || (showStep1Errors && !step1Valid && step === 0)}
                 style={{ backgroundColor: '#1B2F26' }}
                 className="text-white gap-1"
               >

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { clients, leads, escalationQueue, knowledgeGaps } from '@/db/schema';
+import { clients, leads, escalationQueue, knowledgeGaps, scheduledMessages } from '@/db/schema';
 import { eq, and, inArray, gte, lt, or, sql, count as countFn } from 'drizzle-orm';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 
@@ -14,6 +14,7 @@ export interface TriageClientRow {
   openKbGaps: number;
   daysSinceEstimate: number | null;
   daysSinceWonOrLost: number | null;
+  pendingSmartAssistDrafts: number;
   healthStatus: 'green' | 'yellow' | 'red';
   actionNeeded: string[];
 }
@@ -96,7 +97,6 @@ export const GET = adminRoute(
     const clientIds = activeClients.map((c) => c.id);
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     // Batch all queries — no N+1
     const [
@@ -105,6 +105,7 @@ export const GET = adminRoute(
       kbGapCounts,
       recentEstimates,
       recentWonLost,
+      smartAssistPendingCounts,
     ] = await Promise.all([
       // Open escalations per client (pending or in_progress)
       db
@@ -186,6 +187,23 @@ export const GET = adminRoute(
           )
         )
         .groupBy(leads.clientId),
+
+      // Smart Assist drafts awaiting operator approval per client
+      db
+        .select({
+          clientId: scheduledMessages.clientId,
+          count: countFn(),
+        })
+        .from(scheduledMessages)
+        .where(
+          and(
+            inArray(scheduledMessages.clientId, clientIds),
+            eq(scheduledMessages.assistStatus, 'pending_approval'),
+            eq(scheduledMessages.sent, false),
+            eq(scheduledMessages.cancelled, false)
+          )
+        )
+        .groupBy(scheduledMessages.clientId),
     ]);
 
     // Index all results by clientId for O(1) lookup
@@ -194,6 +212,7 @@ export const GET = adminRoute(
     const kbGapMap = new Map(kbGapCounts.map((r) => [r.clientId, Number(r.count)]));
     const estimateMap = new Map(recentEstimates.map((r) => [r.clientId, r.mostRecentAt]));
     const wonLostMap = new Map(recentWonLost.map((r) => [r.clientId, r.mostRecentAt]));
+    const smartAssistMap = new Map(smartAssistPendingCounts.map((r) => [r.clientId, Number(r.count)]));
 
     function daysSince(dateStr: string | undefined): number | null {
       if (!dateStr) return null;
@@ -212,6 +231,7 @@ export const GET = adminRoute(
         openKbGaps: kbGapMap.get(c.id) ?? 0,
         daysSinceEstimate: daysSince(estimateMap.get(c.id)),
         daysSinceWonOrLost: daysSince(wonLostMap.get(c.id)),
+        pendingSmartAssistDrafts: smartAssistMap.get(c.id) ?? 0,
       };
       const { healthStatus, actionNeeded } = computeHealth(baseRow);
       return { ...baseRow, healthStatus, actionNeeded };

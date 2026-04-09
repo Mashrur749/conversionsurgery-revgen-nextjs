@@ -5,39 +5,37 @@ import { useCallback, type ReactNode } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 
-const TAB_VALUES = ['overview', 'configuration', 'team-billing', 'activity'] as const;
+const TAB_VALUES = ['overview', 'knowledge', 'configuration', 'team-billing', 'campaigns'] as const;
 type TabValue = (typeof TAB_VALUES)[number];
 
 interface ClientDetailTabsProps {
   teamMemberCount: number;
   /* Tab 1: Overview */
   onboardingChecklist: ReactNode | null;
-  kbQuestionnaire: ReactNode | null;
   roiDashboard: ReactNode;
-  usageCard: ReactNode;
   dayOneActivationCard: ReactNode;
   guaranteeStatusCard?: ReactNode;
   engagementHealthBadge?: ReactNode;
-  /* Tab 2: Configuration */
-  featureToggles: ReactNode;
-  featureStatusList: ReactNode;
   onboardingQualityPanel: ReactNode;
+  /* Tab 2: Knowledge */
+  knowledgeContent: ReactNode;
+  /* Tab 3: Configuration */
+  featureToggles: ReactNode;
+  smartAssistCard?: ReactNode;
   reminderRoutingPanel: ReactNode;
   embedWidgetCard: ReactNode;
   calendarIntegrationCard: ReactNode;
-  aiPreviewPanel: ReactNode;
   dncCard?: ReactNode;
   integrationsCard?: ReactNode;
-  /* Tab 3: Team & Billing */
+  /* Tab 4: Team & Billing */
   clientInfoCard: ReactNode;
   phoneNumberCard: ReactNode;
   teamMembersCard: ReactNode;
   addonProvenanceCard: ReactNode;
-  /* Tab 4: Activity */
-  actionsCard: ReactNode;
+  usageCard: ReactNode;
+  /* Tab 5: Campaigns */
   quarterlyCampaignsCard: ReactNode;
   dangerZone: ReactNode;
-  smartAssistCard?: ReactNode;
 }
 
 function isValidTab(value: string | null): value is TabValue {
@@ -47,29 +45,26 @@ function isValidTab(value: string | null): value is TabValue {
 export function ClientDetailTabs({
   teamMemberCount,
   onboardingChecklist,
-  kbQuestionnaire,
   roiDashboard,
-  usageCard,
   dayOneActivationCard,
   guaranteeStatusCard,
   engagementHealthBadge,
-  featureToggles,
-  featureStatusList,
   onboardingQualityPanel,
+  knowledgeContent,
+  featureToggles,
+  smartAssistCard,
   reminderRoutingPanel,
   embedWidgetCard,
   calendarIntegrationCard,
-  aiPreviewPanel,
   dncCard,
   integrationsCard,
   clientInfoCard,
   phoneNumberCard,
   teamMembersCard,
   addonProvenanceCard,
-  actionsCard,
+  usageCard,
   quarterlyCampaignsCard,
   dangerZone,
-  smartAssistCard,
 }: ClientDetailTabsProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -94,10 +89,11 @@ export function ClientDetailTabs({
 
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange}>
-      <TabsList className="w-full grid grid-cols-4">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="configuration">Configuration</TabsTrigger>
-        <TabsTrigger value="team-billing" className="gap-1.5">
+      <TabsList className="w-full flex overflow-x-auto whitespace-nowrap sm:grid sm:grid-cols-5">
+        <TabsTrigger value="overview" className="shrink-0">Overview</TabsTrigger>
+        <TabsTrigger value="knowledge" className="shrink-0">Knowledge</TabsTrigger>
+        <TabsTrigger value="configuration" className="shrink-0">Configuration</TabsTrigger>
+        <TabsTrigger value="team-billing" className="shrink-0 gap-1.5">
           Team &amp; Billing
           {teamMemberCount > 0 && (
             <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">
@@ -105,24 +101,25 @@ export function ClientDetailTabs({
             </Badge>
           )}
         </TabsTrigger>
-        <TabsTrigger value="activity">Activity</TabsTrigger>
+        <TabsTrigger value="campaigns" className="shrink-0">Campaigns</TabsTrigger>
       </TabsList>
 
       <TabsContent value="overview" className="space-y-6 mt-4">
-        {onboardingChecklist}
-        {kbQuestionnaire}
         {engagementHealthBadge}
-        {guaranteeStatusCard}
+        {onboardingChecklist}
         {roiDashboard}
-        {usageCard}
+        {guaranteeStatusCard}
         {dayOneActivationCard}
+        {onboardingQualityPanel}
+      </TabsContent>
+
+      <TabsContent value="knowledge" className="space-y-6 mt-4">
+        {knowledgeContent}
       </TabsContent>
 
       <TabsContent value="configuration" className="space-y-6 mt-4">
         {featureToggles}
-        {featureStatusList}
-        {aiPreviewPanel}
-        {onboardingQualityPanel}
+        {smartAssistCard}
         {reminderRoutingPanel}
         {embedWidgetCard}
         {calendarIntegrationCard}
@@ -135,11 +132,10 @@ export function ClientDetailTabs({
         {phoneNumberCard}
         {teamMembersCard}
         {addonProvenanceCard}
+        {usageCard}
       </TabsContent>
 
-      <TabsContent value="activity" className="space-y-6 mt-4">
-        {smartAssistCard}
-        {actionsCard}
+      <TabsContent value="campaigns" className="space-y-6 mt-4">
         {quarterlyCampaignsCard}
         {dangerZone}
       </TabsContent>

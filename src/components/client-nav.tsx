@@ -30,14 +30,13 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/client', label: 'Dashboard', permission: PORTAL_PERMISSIONS.DASHBOARD },
   { href: '/client/conversations', label: 'Conversations', permission: PORTAL_PERMISSIONS.CONVERSATIONS_VIEW },
+  { href: '/client/reviews', label: 'Reviews', permission: PORTAL_PERMISSIONS.REVIEWS_VIEW },
   { href: '/client/revenue', label: 'Revenue', permission: PORTAL_PERMISSIONS.REVENUE_VIEW },
-  { href: '/client/knowledge', label: 'Knowledge Base', permission: PORTAL_PERMISSIONS.KNOWLEDGE_VIEW },
+  { href: '/client/reports', label: 'Reports', permission: PORTAL_PERMISSIONS.DASHBOARD },
   { href: '/client/flows', label: 'Flows', selfServeOnly: true },
   { href: '/client/team', label: 'Team', permission: PORTAL_PERMISSIONS.TEAM_VIEW },
-  { href: '/client/billing', label: 'Billing' },
   { href: '/client/settings', label: 'Settings', permission: PORTAL_PERMISSIONS.SETTINGS_VIEW },
-  { href: '/client/help', label: 'Help' },
-  { href: '/client/discussions', label: 'Discussions' },
+  { href: '/client/help', label: 'Help & Support' },
 ];
 
 interface Business {
@@ -64,6 +63,7 @@ export function ClientNav({
 }: ClientNavProps) {
   const [open, setOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [actionRequiredCount, setActionRequiredCount] = useState(0);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -93,6 +93,23 @@ export function ClientNav({
 
     checkUnread();
     const interval = setInterval(checkUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    async function checkActionRequired() {
+      try {
+        const res = await fetch('/api/client/leads/action-count');
+        if (!res.ok) return;
+        const data = await res.json() as { count: number };
+        setActionRequiredCount(data.count ?? 0);
+      } catch {
+        // Silently ignore errors
+      }
+    }
+
+    checkActionRequired();
+    const interval = setInterval(checkActionRequired, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -141,7 +158,12 @@ export function ClientNav({
                       )}
                     >
                       {item.label}
-                      {item.href === '/client/discussions' && hasUnread && (
+                      {item.href === '/client/conversations' && actionRequiredCount > 0 && (
+                        <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-sienna text-white text-xs px-1 flex-shrink-0">
+                          {actionRequiredCount}
+                        </span>
+                      )}
+                      {item.href === '/client/help' && hasUnread && (
                         <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-[#D4754A] flex-shrink-0" />
                       )}
                     </Link>
@@ -178,7 +200,12 @@ export function ClientNav({
                 )}
               >
                 {item.label}
-                {item.href === '/client/discussions' && hasUnread && (
+                {item.href === '/client/conversations' && actionRequiredCount > 0 && (
+                  <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-sienna text-white text-xs px-1 flex-shrink-0">
+                    {actionRequiredCount}
+                  </span>
+                )}
+                {item.href === '/client/help' && hasUnread && (
                   <span className="ml-1.5 inline-block h-2 w-2 rounded-full bg-[#D4754A] flex-shrink-0" />
                 )}
               </Link>

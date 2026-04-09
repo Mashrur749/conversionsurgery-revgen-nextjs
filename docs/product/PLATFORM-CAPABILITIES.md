@@ -367,7 +367,7 @@ Each client has a `serviceModel` field (`managed` or `self_serve`) that controls
 
 | Feature | Managed | Self-Serve |
 |---------|:-------:|:----------:|
-| Dashboard, Conversations, Revenue, KB, Team, Help, Discussions, Reviews | Yes | Yes |
+| Dashboard, Conversations, Reviews, Revenue, Reports, Flows, Team, Settings, Help &amp; Support | Yes | Yes |
 | Flows (automation management) | Hidden | Shown |
 | Settings &gt; Features tab (AI toggles, smart assist config) | Hidden | Shown |
 | Billing &gt; Plan picker / Upgrade | Hidden | Shown |
@@ -383,17 +383,19 @@ Default: `managed`. Operator can change per client from the admin detail page.
 
 ### Pages
 
+The contractor nav has 9 items: **Dashboard | Conversations | Reviews | Revenue | Reports | Flows | Team | Settings | Help &amp; Support**. Knowledge Base and Billing are accessible via Settings (not top-level nav). Discussions is merged into Help &amp; Support.
+
 | Page | What it shows |
 |------|--------------|
-| **Dashboard** | Lead summary, recent activity, help articles. **Voice AI Status card** (read-only: ON/OFF status, mode, phone number, this week&apos;s call stats &mdash; see Section 3). **Since Your Last Visit card** (see below). **System Activity card** (auto-tracked pipeline proof &mdash; see below) positioned above the **Revenue Recovered card** (confirmed revenue, &ldquo;Confirmed by you&rdquo; subtitle &mdash; shows $0 nudge when no wins recorded). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **&ldquo;Set up your AI&rdquo; CTA** when KB has fewer than 5 entries &mdash; links to the onboarding wizard. |
-| **Conversations** | All leads with message history, mode badges, action-required highlights |
-| **Revenue** | 30-day stats, pipeline value, speed-to-lead metrics, service breakdown |
-| **Knowledge Base** | Business info the AI uses — editable by owner |
-| **Flows** | Automation flows (estimate, payment, review, win-back) — view and manage |
-| **Billing** | Current plan, usage, add-on charges, invoice history, CSV export, payment methods |
-| **Team** | Add/remove team members, toggle escalation/hot transfer, manage permissions |
-| **Settings** | Phone number management, AI settings, notification preferences, feature toggles, business hours |
+| **Dashboard** | Lead summary, recent activity, help articles. **Voice AI Status card** (read-only: ON/OFF status, mode, phone number, this week&apos;s call stats &mdash; see Section 3). **Since Your Last Visit card** (see below). **System Activity card** (auto-tracked pipeline proof &mdash; see below). **Jobs We Helped Win card** &mdash; the single confirmed-revenue money card (contractor-confirmed wins; shows $0 nudge when no wins recorded). **Account Manager card** (when operator phone is configured — shows operator name, phone, and a single CTA). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **&ldquo;Set up your AI&rdquo; CTA** when KB has fewer than 5 entries &mdash; links to the onboarding wizard. |
+| **Conversations** | All leads with message history, mode badges, action-required highlights. Sienna numeric badge on nav item shows action-required count; polls every 30 seconds. |
 | **Reviews** | Pending AI-drafted Google review responses — inline edit and approve before posting (see below). |
+| **Revenue** | 4-column ROI summary card at top (Your Investment, Revenue Recovered, Net Return, ROI percentage), followed by 30-day stats, pipeline value, speed-to-lead metrics, and service breakdown. |
+| **Reports** | Past bi-weekly (and monthly) performance reports — list in reverse chronological order with period, type, delivery status badge, and download button. Empty state explains reports arrive within two weeks of activation. API: `GET /api/client/reports`. Download: `GET /api/client/reports/[id]/download`. |
+| **Flows** | Automation flows (estimate, payment, review, win-back) — view and manage. Shown for both managed and self-serve clients. |
+| **Team** | Add/remove team members, toggle escalation/hot transfer, manage permissions |
+| **Settings** | Phone number management, AI settings, notification preferences, feature toggles, business hours. Knowledge Base and Billing are accessible from Settings. |
+| **Help &amp; Support** | Account Manager card at top (operator name and phone when configured). Help articles organized by category. &ldquo;Need more help?&rdquo; link to Discussions for async threads. Discussions merged into Help &amp; Support — no separate nav item. |
 | **Lead Import** | Self-serve CSV lead import with drag-and-drop, header auto-detection, preview, and downloadable template (see below). |
 | **Cancel** | Cancellation request with 30-day notice + data export |
 
@@ -403,12 +405,12 @@ Contractors can populate the AI knowledge base themselves via a guided 4-step wi
 
 | Step | Fields |
 |------|--------|
-| 1. Services | Service types, service area, what the business does NOT do |
+| 1. Services | Service types *(required)*, service area *(required)*, what the business does NOT do |
 | 2. Business | Business name, years in business, warranties, competitive advantages |
 | 3. Hours &amp; Pricing | Business hours, pricing approach, typical ranges |
 | 4. Booking | Booking process, response time, how leads should get in touch |
 
-- 12 fields total across 4 steps
+- 12 fields total across 4 steps; Step 1 enforces required fields (mainServices, serviceArea) with inline validation, red asterisks, and a disabled Next button until both fields are filled
 - Submitting creates KB entries automatically via `POST /api/client/kb-questionnaire`
 - Requires `PORTAL_PERMISSIONS.KNOWLEDGE_EDIT`
 - Dashboard shows &ldquo;Set up your AI&rdquo; CTA when KB has fewer than 5 entries
@@ -446,9 +448,28 @@ Contractors review and approve AI-drafted Google review responses before they ar
 - AlertDialog confirmation on approve to prevent accidental posting
 - APIs: `GET /api/client/reviews/pending`, `POST /api/client/reviews/[responseId]/approve`
 
+### Revenue Leak Audit Card
+
+Shown on the contractor portal dashboard (`/client`) for the first 30 days after account creation. Surfaces the onboarding deliverable the operator promised at signup.
+
+- **Before delivery:** shows "Being prepared by your account manager — you'll receive it within 48 business hours."
+- **After delivery:** shows the delivery date ("Delivered on [date] by your account manager.") once the operator marks the audit as delivered via the admin day-one activation panel.
+- Automatically disappears after day 30 to keep the dashboard uncluttered.
+- Data source: `revenue_leak_audits` table (queried server-side; status `delivered` + `delivered_at`).
+
+### Guarantee Progress Indicator
+
+Shown on the contractor portal dashboard (`/client`) when the client&apos;s subscription is actively in a guarantee window (`proof_pending` or `recovery_pending`). Displays a slim one-line card linking to the Billing page for full details.
+
+- **30-Day Proof phase:** shows "30-Day Proof: X/5 qualified leads &middot; Y days remaining"
+- **90-Day Recovery phase:** shows "90-Day Recovery: $X pipeline &middot; Y days remaining" (pipeline estimated from attributed opportunities &times; average job value)
+- Disappears once the guarantee phase exits the active window (passed, failed, or completed).
+- Links to `/client/billing` for the full guarantee status breakdown.
+- Data source: `subscriptions` table fields — `guarantee_status`, `guarantee_proof_qualified_lead_engagements`, `guarantee_recovery_attributed_opportunities`, and relevant date fields.
+
 ### System Activity Card (Pipeline Proof)
 
-Shown on the contractor portal dashboard (`/client`) above the Revenue Recovered card. Displays auto-tracked metrics that require zero contractor action — proving system ROI before any wins are manually confirmed.
+Shown on the contractor portal dashboard (`/client`). Displays auto-tracked metrics that require zero contractor action — proving system ROI before any wins are manually confirmed.
 
 **6 stat tiles:**
 
@@ -463,7 +484,7 @@ Shown on the contractor portal dashboard (`/client`) above the Revenue Recovered
 
 **Probable Pipeline Value:** Calculated automatically as (appointments booked + reactivated quotes) &times; average project value. Uses the actual average confirmed win value from the client&apos;s history; falls back to $40,000 if no confirmed wins exist yet.
 
-This card solves the &ldquo;$0 on the dashboard for 60 days&rdquo; churn risk. The Revenue Recovered card remains for contractor-confirmed wins (manual input required). The System Activity card shows proof automatically, with no contractor effort.
+This card solves the &ldquo;$0 on the dashboard for 60 days&rdquo; churn risk. The Jobs We Helped Win card handles contractor-confirmed wins (manual input required). The System Activity card shows proof automatically, with no contractor effort.
 
 Data source: `GET /api/client/activity-summary` (same endpoint as the Since Your Last Visit card).
 
@@ -803,6 +824,32 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 - The escalation queue polls for updates every 30 seconds without manual page refresh.
 - &quot;Updated X ago&quot; timestamp shows data freshness.
 
+### Admin Nav Structure
+
+The admin nav has 5 groups. `/admin` redirects to `/admin/triage`.
+
+| Group | Items |
+|-------|-------|
+| **Clients** | Triage, Clients, Escalations, AI Quality, Discussions |
+| **Reporting** | Billing, Reports, Platform Health, Costs &amp; Usage |
+| **Optimization** | (AI tuning, engagement health tools) |
+| **Team &amp; Access** | Team management, role templates |
+| **Settings** | Agency settings, system settings |
+
+### Admin Client Detail Page Structure
+
+The client detail page uses 5 tabs. Smart Assist pending drafts and quarterly campaigns are on the Campaigns tab; configuration tools (DNC, integrations, Smart Assist settings) on the Configuration tab.
+
+| Tab | Key cards |
+|-----|-----------|
+| **Overview** | Onboarding Quality Gates, Engagement Health badge, Guarantee Status, KB Intake Questionnaire, AI Preview/Sandbox |
+| **Knowledge** | KB entries, gap queue |
+| **Configuration** | Smart Assist settings, Exclusion List (DNC), Integrations (Jobber etc.) |
+| **Team &amp; Billing** | Team members, subscription, usage, invoice history |
+| **Campaigns** | Smart Assist Pending Drafts (15-second polling), Quarterly Campaigns |
+
+Payment Link and Export Data buttons are in the client detail page header (not on an Actions card — that card has been removed).
+
 ### Client Management
 
 - Client creation wizard (6 steps: business info, phone, hours, team, compliance, review)
@@ -878,13 +925,14 @@ Articles appear in the contractor portal Help section and reduce first-week supp
 - **Auto-reopen:** if a resolved gap recurs (AI still can&apos;t answer), it reopens automatically
 - **&quot;Ask Contractor&quot; button:** each gap card has a button that sends an SMS to the contractor: &quot;[Business Name] &mdash; a customer asked about [question]. How should we answer this?&quot; Sets the gap to `in_progress`. API: `POST /api/admin/clients/[id]/knowledge/gaps/[gapId]/ask`.
 - Stale gap alerts via daily cron email to agency owners
-- **KB Intake Questionnaire:** structured onboarding questionnaire on the admin client detail page (Knowledge tab) that pre-populates the knowledge base at client setup — reduces cold-start AI deferrals in Weeks 1-2. Answers are converted to KB entries automatically.
+- **KB Intake Questionnaire:** structured onboarding questionnaire on the admin client detail page (Overview tab) that pre-populates the knowledge base at client setup — reduces cold-start AI deferrals in Weeks 1-2. Answers are converted to KB entries automatically.
 
 ### Operator Triage Dashboard
 
-Unified cross-client triage view at `/admin/triage` (Clients group in admin nav).
+Unified cross-client triage view at `/admin/triage` (Clients group in admin nav). `/admin` redirects here.
 
 - Surfaces the highest-priority action items across all clients in a single prioritized list: open escalations (P1 first), knowledge gaps past due, onboarding SLA breaches, stale guarantee states, failed report deliveries
+- **Pending Drafts column:** shows the Smart Assist pending draft count per client in both the table view and mobile card layout
 - Designed as a daily starting point for the solo operator — open this before the full daily checklist
 - Replaces the need to open each client separately to find what needs attention
 - Accessible via admin nav: Clients &rarr; Triage
@@ -907,7 +955,7 @@ Automated detection of per-client engagement decay before it becomes visible chu
 
 ### Smart Assist Pending Drafts Admin View
 
-- Pending AI drafts visible in the admin dashboard (Activity tab on the client detail page) with 15-second polling. Operator can approve, edit, or cancel drafts directly from the browser during Week 2 instead of relying solely on SMS commands.
+- Pending AI drafts visible in the admin dashboard (Campaigns tab on the client detail page) with 15-second polling. Operator can approve, edit, or cancel drafts directly from the browser during Week 2 instead of relying solely on SMS commands.
 - API: `GET /api/admin/clients/[id]/smart-assist`, `POST /api/admin/clients/[id]/smart-assist/[messageId]` (approve/edit/cancel actions)
 - Complements the existing SMS-based `SEND/EDIT/CANCEL` workflow — both methods are valid.
 
@@ -924,7 +972,7 @@ Automated detection of per-client engagement decay before it becomes visible chu
 
 ### Admin Data Export Trigger
 
-- Admin-triggered data export from the client detail page Actions card, with AlertDialog confirmation. Generates a CSV bundle (leads, conversations, pipeline) for compliance or cancellation delivery.
+- Admin-triggered data export from the client detail page header (Export Data button), with AlertDialog confirmation. Generates a CSV bundle (leads, conversations, pipeline) for compliance or cancellation delivery. The Actions card has been removed; Payment Link and Export Data are now in the client detail header.
 - API: `POST /api/admin/clients/[id]/export`
 
 ---

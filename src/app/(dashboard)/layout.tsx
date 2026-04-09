@@ -28,10 +28,18 @@ const navItems = [
 
 const getAdminNavItems = (hasClients: boolean) => [
   { group: 'Clients', items: [
-    { href: '/admin', label: 'Dashboard' },
-    { href: '/admin/clients', label: 'Clients' },
     { href: '/admin/triage', label: 'Triage', disabled: !hasClients },
+    { href: '/admin/clients', label: 'Clients' },
+    { href: '/admin/escalations', label: 'Escalations', disabled: !hasClients },
+    { href: '/admin/ai-quality', label: 'AI Flagged Responses', disabled: !hasClients },
     { href: '/admin/discussions', label: 'Support' },
+  ]},
+  { group: 'Reporting', items: [
+    { href: '/admin/billing', label: 'Billing' },
+    { href: '/admin/reports', label: 'Reports' },
+    { href: '/admin/platform-analytics', label: 'Platform Health' },
+    { href: '/admin/usage', label: 'Costs & Usage' },
+    { href: '/admin/compliance', label: 'TCPA Compliance', disabled: !hasClients },
   ]},
   { group: 'Optimization', items: [
     { href: '/admin/flow-templates', label: 'Flow Templates' },
@@ -39,16 +47,6 @@ const getAdminNavItems = (hasClients: boolean) => [
     { href: '/admin/ab-tests', label: 'A/B Tests', disabled: !hasClients },
     { href: '/admin/reputation', label: 'Reputation', disabled: !hasClients },
     { href: '/admin/ai-effectiveness', label: 'AI Performance', disabled: !hasClients },
-    { href: '/admin/ai-quality', label: 'AI Flagged Responses', disabled: !hasClients },
-  ]},
-  { group: 'Reporting', items: [
-    { href: '/admin/billing', label: 'Billing' },
-    { href: '/admin/billing/plans', label: 'Plans' },
-    { href: '/admin/billing/coupons', label: 'Coupons' },
-    { href: '/admin/reports', label: 'Reports' },
-    { href: '/admin/platform-analytics', label: 'Platform Health' },
-    { href: '/admin/usage', label: 'Costs & Usage' },
-    { href: '/admin/compliance', label: 'TCPA Compliance', disabled: !hasClients },
   ]},
   { group: 'Team & Access', items: [
     { href: '/admin/team', label: 'Team' },

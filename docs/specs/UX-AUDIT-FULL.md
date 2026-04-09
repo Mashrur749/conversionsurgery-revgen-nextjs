@@ -28,7 +28,7 @@ Items identified in initial UX pass, code changes shipped and verified:
 | F14 | Conversation viewport trap on mobile (1.3) | Replaced h-[calc(100vh-8rem)] with flex layout + 100dvh + min-h-0 + overflow-auto. Added pb-safe for notched devices | Done |
 | F15 | No unread/new message indicators (1.4) | localStorage-based per-lead last-read timestamps. Unread count badge on each conversation. Bold names for unread. Cleared when conversation opened | Done |
 | F16 | Admin cannot see or toggle AI/human mode (1.5) | New badge on lead header showing AI/Human/Paused mode with icons. Toggle button to take over / hand back. New API: POST /api/admin/leads/[id]/conversation-mode | Done |
-| F17 | Client detail page is 15+ scrolls deep (1.6) | 4-tab layout: Overview, Configuration, Team and Billing, Activity. Feature toggles first in Configuration tab. Tab persisted in URL ?tab= param. Client header stays above tabs | Done |
+| F17 | Client detail page is 15+ scrolls deep (1.6) | 5-tab layout: Overview, Knowledge, Configuration, Team &amp; Billing, Campaigns. Smart Assist drafts and quarterly campaigns on Campaigns tab. Smart Assist settings on Configuration tab. KB Intake questionnaire and quality gates on Overview. Tab persisted in URL ?tab= param. Client header stays above tabs with Payment Link and Export Data in header. | Done |
 | F18 | No in-app notification center (2.1) | Bell icon in both portal headers with unread badge count. Popover shows last 20 notifications derived from existing data (no new tables). Polls every 30s. Client portal: new leads, pending escalations, smart assist drafts, appointments, payments. Admin: active escalations, SLA breaches, flagged AI messages, report delivery failures, knowledge gaps, errors. | Done |
 | F19 | Billing tables unreadable on mobile (2.3) | Card-based layout on mobile (< 640px) instead of squished table columns. Each card shows invoice number, status badge, amount (large), date, due date, and action buttons. | Done |
 | F20 | Settings hub-and-spoke pattern (2.4) | Single tabbed page with 5 tabs: General, Notifications, AI Assistant, Phone, Features. Vertical tabs on desktop, horizontal on mobile. Tab persisted in URL ?tab= param. Old sub-pages redirect to main settings with correct tab. | Done |
@@ -52,6 +52,20 @@ Items identified in initial UX pass, code changes shipped and verified:
 | F38 | Wizard step titles hidden on mobile (4.4) | Step circles now show abbreviated titles on mobile (Info, Phone, Team, Hours, Review). | Done |
 | F39 | Discussion page has no CTA from empty state (4.6) | Empty state now has &quot;Start a Conversation&quot; button. | Done |
 | F40 | Escalation queue has no auto-refresh (4.7) | 30-second polling with &quot;Updated X ago&quot; timestamp. | Done |
+| F41 | Contractor has no way to see Revenue Leak Audit status in the portal | Added Revenue Leak Audit card to dashboard — shown for first 30 days. Delivered state shows date; pending state shows 48-business-hour SLA message. Auto-hides after day 30. | Done |
+| F42 | Guarantee progress only visible on Billing page (not dashboard) | Added slim guarantee progress indicator to dashboard. Shows "30-Day Proof: X/5 qualified leads &middot; Y days remaining" or "90-Day Recovery: $X pipeline &middot; Y days remaining". Only shown when actively in proof or recovery window. Links to Billing for details. | Done |
+| F43 | No portal page for past performance reports &mdash; offer promises bi-weekly reports but contractors had no self-serve access to their history | Added `/client/reports` page: reverse-chronological report cards showing period, type, delivery status badge, and download button. Empty state explains reports arrive within two weeks. Nav item added between Revenue and Knowledge Base. API: `GET /api/client/reports`. | Done |
+| F44 | KB wizard Step 1 had no required-field enforcement &mdash; contractors could skip mainServices and serviceArea, causing the AI to have no services or coverage area at cold-start | mainServices and serviceArea are now required fields on Step 1 with red asterisk labels, inline validation errors on blur, and the Next button disabled until both fields have content. | Done |
+| F45 | Contractor portal dashboard had redundant money cards (Jobs We Helped Win + Revenue Recovered + probable pipeline hero) causing confusion about which number was authoritative | Consolidated to one confirmed-revenue card: Jobs We Helped Win. Removed the separate Revenue Recovered card and the probable pipeline dollar hero from System Activity. System Activity retains its 6 stat tiles; Jobs We Helped Win is the single money card. | Done |
+| F46 | Help page had no way for contractors to reach their account manager &mdash; they had to search for a phone number in their email | Account Manager card added at the top of the Help page when the operator has configured a phone number. Shows operator name and phone. A &ldquo;Need more help?&rdquo; link at the bottom links to Discussions for async threads. | Done |
+| F47 | Contractor dashboard had Upcoming Appointments card, Recent Leads card, and Leads/Messages vanity grid cluttering the primary view | Removed Upcoming Appointments card, Recent Leads card, and the leads/messages vanity stat grid. Jobs We Helped Win is the single money card. Dashboard is now outcome-focused. | Done |
+| F48 | Revenue page had no ROI summary — contractors could not see investment vs. return at a glance | 4-column ROI summary card added at top of Revenue page: Your Investment, Revenue Recovered, Net Return, ROI percentage. Appears before the existing ROI dashboard detail. | Done |
+| F49 | Triage page had no visibility into Smart Assist pending draft backlog across clients | Pending Drafts column added to triage table and mobile card layout — shows pending draft count per client. | Done |
+| F50 | Contractor nav had no visual indicator for action-required conversations | Sienna numeric badge on Conversations nav item shows action-required count; polls every 30 seconds. | Done |
+| F51 | Contractor welcome page listed features and permissions instead of outcomes | Welcome page rewritten to be outcome-oriented: &ldquo;What&apos;s already happening&rdquo; (3 items), &ldquo;Your first week&rdquo; (3 steps), account manager contact, single CTA. No longer shows feature/permission list. | Done |
+| F52 | Admin client detail had 4 tabs with Activity tab holding both Smart Assist drafts and quarterly campaigns in a dense layout | Restructured to 5 tabs: Overview, Knowledge, Configuration, Team &amp; Billing, Campaigns. Smart Assist pending drafts are in Campaigns tab; configuration tools (DNC, integrations, Smart Assist settings) in Configuration tab. Actions card removed; Payment Link and Export Data moved to page header. | Done |
+| F53 | Admin nav had Dashboard inside Clients group and AI Quality inside Optimization — mismatched grouping | Admin nav restructured to 5 groups: Clients (Triage, Clients, Escalations, AI Quality, Discussions), Reporting (Billing, Reports, Platform Health, Costs &amp; Usage), Optimization, Team &amp; Access, Settings. /admin now redirects to /admin/triage. | Done |
+| F54 | Contractor nav had 9+ items including separate Knowledge Base, Billing, Help, and Discussions items | Contractor nav consolidated to 9 items: Dashboard, Conversations, Reviews, Revenue, Reports, Flows, Team, Settings, Help &amp; Support. Knowledge Base and Billing moved into Settings. Discussions merged into Help &amp; Support. | Done |
 
 ---
 
@@ -270,13 +284,14 @@ All Tier 1 items (1.1 through 1.6) have been implemented. See the "Already Fixed
 
 ## Summary
 
-**Total issues found: 33** (plus 11 pre-audit fixes = 44 tracked items)
+**Total issues found: 33** (plus 11 pre-audit fixes = 44 tracked items, plus 3 post-audit P0 fixes = 47 total)
 - Tier 1 (Dealbreakers): 6 &mdash; all fixed (F12-F17)
 - Tier 2 (High Friction): 10 &mdash; all fixed (F18-F20 + 3 resolved by P0, F21-F24)
 - Tier 3 (Moderate Friction): 10 &mdash; all fixed (F25-F34, including 3.3)
 - Tier 4 (Polish): 7 &mdash; all done (F35-F40 + 4.5 resolved by F21)
+- Post-audit P0 fixes: 3 &mdash; all fixed (F44-F46)
 
-**All 33 UX audit items are now done.** Total tracked items including pre-audit fixes: 40 (F1-F40). Zero open UX items remain.
+**All UX audit items are now done.** Total tracked items including pre-audit and post-audit fixes: 46 (F1-F43 + F44-F46). Zero open UX items remain.
 
 **Biggest single improvement:** Split-pane conversation view with real-time polling (1.1 + 1.2). This is the product&apos;s daily driver screen.
 

@@ -13,7 +13,7 @@ import { EditClientForm } from './edit-client-form';
 import { TeamManager } from './team-manager';
 import { DeleteButton } from './delete-button';
 import { FeatureTogglesCard } from './feature-toggles';
-import { FeatureStatusList } from './feature-status';
+import { KnowledgeTabContent } from './knowledge-tab-content';
 import { ROIDashboard } from './roi-dashboard';
 import { QuarterlyCampaignsCard } from './quarterly-campaigns-card';
 import { format } from 'date-fns';
@@ -29,8 +29,8 @@ import { ReminderRoutingPanel } from './reminder-routing-panel';
 import { ClientDetailTabs } from './client-detail-tabs';
 import { EmbedWidgetCard } from './embed-widget-card';
 import { CalendarIntegrationCard } from './calendar-integration-card';
-import { KbQuestionnaire } from './kb-questionnaire';
-import { AiPreviewPanel } from './ai-preview-panel';
+import { getClientKnowledge, initializeClientKnowledge } from '@/lib/services/knowledge-base';
+import { loadStructuredKnowledge } from '@/lib/services/structured-knowledge';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SendPaymentLink } from './send-payment-link';
 import { DataExportButton } from './data-export-button';
@@ -295,6 +295,13 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
     .select({ count: countFn() })
     .from(knowledgeBase)
     .where(eq(knowledgeBase.clientId, id));
+  // Initialize and load knowledge base data
+  await initializeClientKnowledge(id);
+  const [kbEntries, structuredKnowledge] = await Promise.all([
+    getClientKnowledge(id),
+    loadStructuredKnowledge(id),
+  ]);
+
   const hasPhone = !!client.twilioNumber;
   const hasLeads = Number(leadCount?.count ?? 0) > 0;
   const hasKnowledge = Number(kbCount?.count ?? 0) > 0;
@@ -362,8 +369,6 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
     </Card>
   ) : null;
 
-  const kbEntryCount = Number(kbCount?.count ?? 0);
-
   return (
     <div className="space-y-6">
       <Breadcrumbs items={
@@ -391,7 +396,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             Created {format(new Date(client.createdAt!), 'MMM d, yyyy')}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline">
             <Link href={from === 'triage' ? '/admin/triage' : '/admin'}>
               &larr; {from === 'triage' ? 'Back to Triage' : 'Back to Clients'}
@@ -402,17 +407,20 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
               {client.twilioNumber ? 'Manage Number' : 'Assign Number'}
             </Link>
           </Button>
+          {showPaymentLink && availablePlans.length > 0 && (
+            <SendPaymentLink
+              clientId={client.id}
+              clientName={client.businessName}
+              plans={availablePlans}
+            />
+          )}
+          <DataExportButton clientId={client.id} />
         </div>
       </div>
 
       <ClientDetailTabs
         teamMemberCount={members.length}
         onboardingChecklist={onboardingChecklist}
-        kbQuestionnaire={
-          kbEntryCount < 5 ? (
-            <KbQuestionnaire clientId={client.id} kbCount={kbEntryCount} />
-          ) : null
-        }
         roiDashboard={<ROIDashboard metrics={roiMetrics} />}
         usageCard={
           <Card>
@@ -430,21 +438,23 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
           </Card>
         }
         dayOneActivationCard={
-          dayOneSummary ? (
-            <DayOneActivationCard
-              clientId={client.id}
-              initialSummary={dayOneSummary}
-            />
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Day-One Activation</CardTitle>
-                <CardDescription>
-                  Day-One tracker is temporarily unavailable. Retry after refreshing this page.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )
+          client.status === 'active' && dayOneSummary && dayOneSummary.progress.completed === dayOneSummary.progress.total
+            ? null
+            : dayOneSummary ? (
+              <DayOneActivationCard
+                clientId={client.id}
+                initialSummary={dayOneSummary}
+              />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Day-One Activation</CardTitle>
+                  <CardDescription>
+                    Day-One tracker is temporarily unavailable. Retry after refreshing this page.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            )
         }
         featureToggles={
           <FeatureTogglesCard
@@ -472,7 +482,13 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             }}
           />
         }
-        featureStatusList={<FeatureStatusList client={client} />}
+        knowledgeContent={
+          <KnowledgeTabContent
+            clientId={client.id}
+            entries={kbEntries}
+            structuredData={structuredKnowledge}
+          />
+        }
         onboardingQualityPanel={
           client.aiAgentMode === 'autonomous' ? null : (
             <OnboardingQualityPanel
@@ -482,7 +498,6 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
           )
         }
         reminderRoutingPanel={<ReminderRoutingPanel clientId={client.id} />}
-        aiPreviewPanel={<AiPreviewPanel clientId={client.id} />}
         embedWidgetCard={<EmbedWidgetCard clientId={client.id} />}
         calendarIntegrationCard={<CalendarIntegrationCard clientId={client.id} />}
         clientInfoCard={
@@ -594,38 +609,6 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
               recommendations={engagementHealth.recommendations}
             />
           ) : null
-        }
-        actionsCard={
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button asChild variant="outline" className="w-full">
-                <Link href={`/admin/clients/${client.id}/revenue`}>
-                  Revenue Tracking
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link href={`/admin/clients/${client.id}/knowledge`}>
-                  Knowledge Base
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link href={`/admin/clients/${client.id}/reviews`}>
-                  Reputation Monitoring
-                </Link>
-              </Button>
-              {showPaymentLink && availablePlans.length > 0 && (
-                <SendPaymentLink
-                  clientId={client.id}
-                  clientName={client.businessName}
-                  plans={availablePlans}
-                />
-              )}
-              <DataExportButton clientId={client.id} />
-            </CardContent>
-          </Card>
         }
         quarterlyCampaignsCard={
           <QuarterlyCampaignsCard

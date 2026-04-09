@@ -115,7 +115,7 @@ Follow this sequence to test the entire platform end-to-end. Steps are grouped b
 | J4 | Weekly Pipeline SMS | 67a |
 | J5 | ROI Calculator endpoint | 67b |
 | J6 | Since Your Last Visit card | 58b |
-| J7 | Revenue Recovered card (portal) | 57e |
+| J7 | Jobs We Helped Win card + Revenue page ROI summary (portal; Revenue Recovered dashboard card removed) | 57e |
 
 ### Phase K: Portal Self-Serve Features
 | # | What | Steps |
@@ -336,7 +336,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Revenue Recovered card in client portal. Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify. Step 66 covers four features shipped after Step 65: CASL consent attestation on CSV import (admin and portal), help center seed articles, portal lead action buttons (Mark Estimate Sent, Mark Won, Mark Lost), and KB gap SMS deep link (auto-opens add form with question pre-filled). Step 67 covers SPEC-07 through SPEC-12 features: Weekly Pipeline SMS (dollar values + needs-attention count), ROI Calculator public endpoint, Jobber webhook integration (inbound job_completed triggers review, outbound appointment_booked fires to Jobber), and Voice AI default-on for new clients.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Jobs We Helped Win card / Revenue page ROI summary in client portal (the standalone Revenue Recovered dashboard card was removed; confirmed revenue is now in the Jobs We Helped Win card and the Revenue page 4-column ROI summary). Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify. Step 66 covers four features shipped after Step 65: CASL consent attestation on CSV import (admin and portal), help center seed articles, portal lead action buttons (Mark Estimate Sent, Mark Won, Mark Lost), and KB gap SMS deep link (auto-opens add form with question pre-filled). Step 67 covers SPEC-07 through SPEC-12 features: Weekly Pipeline SMS (dollar values + needs-attention count), ROI Calculator public endpoint, Jobber webhook integration (inbound job_completed triggers review, outbound appointment_booked fires to Jobber), and Voice AI default-on for new clients.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -1626,7 +1626,7 @@ Expected:
 
 #### 57a: Operator Triage Dashboard
 
-1. Navigate to `/admin/triage` (Optimization group in admin nav).
+1. Navigate to `/admin/triage` (Clients group in admin nav).
 2. Verify the page loads and shows a cross-client prioritized action list.
 3. Confirm P1 escalations appear at the top, followed by overdue knowledge gaps, onboarding SLA breaches, and failed report deliveries.
 4. Click a listed item — verify it links to the correct client detail page or relevant admin page.
@@ -1640,7 +1640,7 @@ Expected:
 #### 57b: KB Intake Questionnaire
 
 1. Open the admin client detail page for a new test client (one with an empty knowledge base).
-2. Navigate to the Knowledge tab — verify the intake questionnaire form is visible.
+2. Navigate to the Overview tab — verify the intake questionnaire form is visible.
 3. Fill out the questionnaire fields (services offered, service area, pricing range, warranty, financing, etc.) and submit.
 4. Navigate to the KB entries list — verify submitted answers appear as KB entries.
 
@@ -1686,17 +1686,20 @@ Expected:
 - No additional follow-up messages scheduled.
 - Re-run produces no additional sends.
 
-#### 57e: Revenue Recovered Card (Client Portal)
+#### 57e: Jobs We Helped Win Card + Revenue Page ROI Summary (Client Portal)
 
-1. Log in to the client portal for a client that has at least one lead marked &quot;won&quot; with confirmed revenue.
-2. Verify the dashboard shows a &quot;Revenue Recovered&quot; card with a dollar amount.
-3. Verify the card supports 30/60/90-day window switching.
-4. For a new client with no won leads, verify the card shows an empty state (not an error).
+The standalone &ldquo;Revenue Recovered&rdquo; dashboard card has been removed. Confirmed-revenue data is now consolidated into two places:
+
+1. **Jobs We Helped Win card** on the dashboard &mdash; the single confirmed-revenue money card. Log in to the client portal for a client with at least one lead marked &ldquo;won&rdquo; with confirmed revenue. Verify the card shows the confirmed revenue total.
+2. **Revenue page ROI summary** &mdash; 4-column card at the top of `/client/revenue`: Your Investment, Revenue Recovered, Net Return, ROI. Verify all 4 columns render for a client with wins. Verify for a new client with no wins, the card still renders (showing investment vs. $0 confirmed).
+
+For a new client with no won leads, verify the Jobs We Helped Win card shows an empty/nudge state (not an error).
 
 Expected:
 
-- Card renders with confirmed revenue total for the selected window.
-- Empty state is graceful (e.g., &quot;No confirmed wins yet&quot;).
+- Jobs We Helped Win card renders on dashboard with confirmed revenue total.
+- Revenue page ROI summary card renders with 4 columns.
+- No standalone &ldquo;Revenue Recovered&rdquo; card on the dashboard (removed).
 - API endpoint `GET /api/client/attributed-wins` returns `200` with correct data shape.
 
 ### Step 58: Post-launch additions
@@ -1829,10 +1832,10 @@ Expected:
 
 1. Log into the client portal as a test contractor on a client that has at least a few leads with automated responses.
 2. Navigate to the dashboard (`/client`).
-3. Verify the **System Activity** card appears above the Revenue Recovered card.
-4. Verify the card shows 6 stat tiles: &ldquo;Leads Responded To,&rdquo; &ldquo;Estimates in Follow-Up,&rdquo; &ldquo;Missed Calls Caught,&rdquo; &ldquo;Dead Quotes Re-Engaged,&rdquo; &ldquo;Appointments Booked,&rdquo; and &ldquo;Avg Response Time.&rdquo;
+3. Verify the **System Activity** card is visible on the dashboard. The separate Revenue Recovered card has been removed from the dashboard; confirmed revenue is now in the Jobs We Helped Win card and the Revenue page ROI summary.
+4. Verify the System Activity card shows 6 stat tiles: &ldquo;Leads Responded To,&rdquo; &ldquo;Estimates in Follow-Up,&rdquo; &ldquo;Missed Calls Caught,&rdquo; &ldquo;Dead Quotes Re-Engaged,&rdquo; &ldquo;Appointments Booked,&rdquo; and &ldquo;Avg Response Time.&rdquo;
 5. Verify a **Probable Pipeline Value** figure is shown (calculated as appointments booked + reactivated quotes, multiplied by avg project value — defaults to $40,000 if no confirmed wins exist).
-6. Verify the Revenue Recovered card shows a &ldquo;Confirmed by you&rdquo; subtitle.
+6. Verify the Jobs We Helped Win card is visible on the dashboard as the single confirmed-revenue card.
 7. Generate or view a bi-weekly report for this client:
 
 ```bash
@@ -1847,7 +1850,7 @@ Expected:
 - System Activity card renders on the client dashboard independently of whether any wins have been confirmed.
 - All 6 stat tiles populate from platform activity (no contractor input required).
 - Probable Pipeline Value is a positive number when any bookings or reactivations exist.
-- Revenue Recovered card subtitle reads &ldquo;Confirmed by you.&rdquo;
+- Jobs We Helped Win card is the single confirmed-revenue card on the dashboard (no separate Revenue Recovered card).
 - `pipelineProof` key is present in `roiSummary` of every generated report.
 
 ---
@@ -2561,7 +2564,7 @@ Expected:
 1. Set the test client to Smart Assist mode.
 2. Text the business number from Dev Phone #2 to trigger an AI draft.
 3. Verify the draft appears in `GET /api/admin/clients/<client-id>/smart-assist`.
-4. Approve via the API or Activity tab UI:
+4. Approve via the API or Campaigns tab UI:
 
 ```bash
 curl -i -X POST "http://localhost:3000/api/admin/clients/<client-id>/smart-assist/<message-id>" \
@@ -2572,7 +2575,7 @@ curl -i -X POST "http://localhost:3000/api/admin/clients/<client-id>/smart-assis
 
 5. Verify the message sends to Dev Phone #2.
 6. Trigger another draft. Cancel it via `{ "action": "cancel" }`. Verify nothing sends.
-7. Verify the Activity tab polls every 15 seconds and updates without a page refresh.
+7. Verify the Campaigns tab polls every 15 seconds and updates without a page refresh.
 
 Expected:
 - Approved draft sends successfully.
@@ -2621,7 +2624,7 @@ Expected:
 
 #### 68f: Admin Data Export Trigger
 
-1. Navigate to admin client detail page &rarr; Actions card.
+1. Navigate to admin client detail page &rarr; client header area (Actions card has been removed; Export Data is now in the page header).
 2. Click &ldquo;Export Data.&rdquo; Confirm the AlertDialog prompt.
 3. Verify via API:
 

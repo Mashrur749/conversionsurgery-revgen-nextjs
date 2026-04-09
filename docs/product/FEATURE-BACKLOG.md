@@ -163,10 +163,10 @@ Six admin UI tools shipped as part of the operator tooling gap closure. All are 
 | GAP | Feature | Status |
 |-----|---------|--------|
 | GAP-1 | DNC/Exclusion List Management — per-client excluded numbers on Configuration tab; API: GET/POST/DELETE `/api/admin/clients/[id]/dnc` | **Implemented** |
-| GAP-2 | Smart Assist Pending Drafts Admin View — Activity tab with 15-second polling, approve/edit/cancel; API: GET `/api/admin/clients/[id]/smart-assist`, POST `.../smart-assist/[messageId]` | **Implemented** |
+| GAP-2 | Smart Assist Pending Drafts Admin View — Campaigns tab with 15-second polling, approve/edit/cancel; API: GET `/api/admin/clients/[id]/smart-assist`, POST `.../smart-assist/[messageId]` | **Implemented** |
 | GAP-3 | Guarantee Status Dashboard — server component on Overview tab showing phase, QLE progress, pipeline value, days remaining, status badge | **Implemented** |
 | GAP-4 | Engagement Health Badge — server component on Overview tab showing `at_risk`/`disengaged` status with signal bullets | **Implemented** |
 | GAP-5 | Integration Webhook Config UI — Configuration tab for Jobber/ServiceTitan/Housecall Pro/Zapier/generic webhooks with CRUD; API: `/api/admin/clients/[id]/integrations` | **Implemented** |
-| GAP-6 | Admin Data Export Trigger — Export Data button on Actions card with AlertDialog confirmation; API: POST `/api/admin/clients/[id]/export` | **Implemented** |
+| GAP-6 | Admin Data Export Trigger — Export Data button in client detail page header (Actions card removed) with AlertDialog confirmation; API: POST `/api/admin/clients/[id]/export` | **Implemented** |
 
 Note: The Jobber/FSM auto-detect integration referenced in COMPONENT 1 of the offer doc (auto-detect when estimate is created in Jobber) remains a future enhancement. SPEC-12 covers review and appointment sync; estimate auto-detection is still a roadmap item.

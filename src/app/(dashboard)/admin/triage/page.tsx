@@ -34,7 +34,7 @@ const HEALTH_CONFIG = {
 async function getTriageData(): Promise<TriageClientRow[]> {
   // Server-side direct DB query mirroring the API, but called inline for RSC
   const { getDb } = await import('@/db');
-  const { clients, leads, escalationQueue, knowledgeGaps } = await import('@/db/schema');
+  const { clients, leads, escalationQueue, knowledgeGaps, scheduledMessages } = await import('@/db/schema');
   const { eq, and, inArray, gte, lt, or, sql, count: countFn } = await import('drizzle-orm');
 
   const db = getDb();
@@ -61,6 +61,7 @@ async function getTriageData(): Promise<TriageClientRow[]> {
     kbGapCounts,
     recentEstimates,
     recentWonLost,
+    smartAssistPendingCounts,
   ] = await Promise.all([
     db
       .select({ clientId: escalationQueue.clientId, count: countFn() })
@@ -125,6 +126,20 @@ async function getTriageData(): Promise<TriageClientRow[]> {
         )
       )
       .groupBy(leads.clientId),
+
+    // Smart Assist drafts awaiting operator approval per client
+    db
+      .select({ clientId: scheduledMessages.clientId, count: countFn() })
+      .from(scheduledMessages)
+      .where(
+        and(
+          inArray(scheduledMessages.clientId, clientIds),
+          eq(scheduledMessages.assistStatus, 'pending_approval'),
+          eq(scheduledMessages.sent, false),
+          eq(scheduledMessages.cancelled, false)
+        )
+      )
+      .groupBy(scheduledMessages.clientId),
   ]);
 
   const escalationMap = new Map(escalationCounts.map((r) => [r.clientId, Number(r.count)]));
@@ -132,6 +147,7 @@ async function getTriageData(): Promise<TriageClientRow[]> {
   const kbGapMap = new Map(kbGapCounts.map((r) => [r.clientId, Number(r.count)]));
   const estimateMap = new Map(recentEstimates.map((r) => [r.clientId, r.mostRecentAt]));
   const wonLostMap = new Map(recentWonLost.map((r) => [r.clientId, r.mostRecentAt]));
+  const smartAssistMap = new Map(smartAssistPendingCounts.map((r) => [r.clientId, Number(r.count)]));
 
   function daysSince(dateStr: string | undefined): number | null {
     if (!dateStr) return null;
@@ -199,6 +215,7 @@ async function getTriageData(): Promise<TriageClientRow[]> {
       openKbGaps: kbGapMap.get(c.id) ?? 0,
       daysSinceEstimate: daysSince(estimateMap.get(c.id)),
       daysSinceWonOrLost: daysSince(wonLostMap.get(c.id)),
+      pendingSmartAssistDrafts: smartAssistMap.get(c.id) ?? 0,
     };
     const { healthStatus, actionNeeded } = computeHealth(baseRow);
     return { ...baseRow, healthStatus, actionNeeded };
@@ -256,6 +273,12 @@ function TriageCard({ row }: { row: TriageClientRow }) {
             <div>
               <span className="text-muted-foreground text-xs">Days Since Win/Lost</span>
               <div className="font-medium">{row.daysSinceWonOrLost ?? '—'}</div>
+            </div>
+            <div>
+              <span className="text-muted-foreground text-xs">Pending Drafts</span>
+              <div className={`font-medium ${row.pendingSmartAssistDrafts > 0 ? 'text-sienna font-semibold' : ''}`}>
+                {row.pendingSmartAssistDrafts > 0 ? row.pendingSmartAssistDrafts : '—'}
+              </div>
             </div>
           </div>
           {row.actionNeeded.length > 0 && (
@@ -369,6 +392,9 @@ export default async function TriagePage() {
                       <th className="text-center px-4 py-3 font-medium text-muted-foreground">
                         Days Since Win/Lost
                       </th>
+                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                        Pending Drafts
+                      </th>
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">
                         Action Needed
                       </th>
@@ -430,6 +456,15 @@ export default async function TriagePage() {
                           </td>
                           <td className="px-4 py-3 text-center">
                             <MetricCell value={row.daysSinceWonOrLost} label="d" />
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {row.pendingSmartAssistDrafts > 0 ? (
+                              <span className="font-semibold text-sienna">
+                                {row.pendingSmartAssistDrafts}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             {row.actionNeeded.length === 0 ? (

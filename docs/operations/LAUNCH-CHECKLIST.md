@@ -79,7 +79,7 @@ This is the safety net for new clients &mdash; AI drafts a response, you approve
 2. Change it to **Smart Assist** (also called &ldquo;assist&rdquo; mode)
 3. From Dev Phone #2, text the Business Line: &ldquo;Do you do emergency plumbing?&rdquo;
 4. This time the AI should NOT auto-reply. Instead:
-5. Go to the client&apos;s **Activity tab** &rarr; look for **Pending Drafts** card
+5. Go to the client&apos;s **Campaigns tab** &rarr; look for **Pending Drafts** card
 6. You should see the AI&apos;s draft response waiting for approval
 7. Click **Approve** to send it
 8. Dev Phone #2 should receive the response
@@ -157,9 +157,11 @@ This runs 29 tests covering safety, quality, and adversarial scenarios. All safe
 ### 2.11 AI Preview
 
 1. Go to **Clients** &rarr; **Clients** &rarr; click your test client
-2. Find the **AI Preview** panel
+2. Click the **Configuration** tab &rarr; find the **AI Preview** panel
 3. Type a question a homeowner might ask: &ldquo;How much does a roof replacement cost?&rdquo;
 4. AI should respond based on the client&apos;s knowledge base
+
+> **Deeper test:** From the client detail page, click **Knowledge Base** (top-right link or Overview tab link) &rarr; this opens the Knowledge page with a side-by-side KB editor and test chat. Use the &ldquo;Test AI&rdquo; button at top-right for a full knowledge chat session.
 
 - [ ] AI gives a reasonable response (or says it doesn&apos;t have that info &mdash; both are correct)
 
@@ -193,11 +195,13 @@ Log in as the contractor to see what they see.
 3. Enter the OTP code (check email or terminal logs)
 4. You should land on the contractor dashboard showing:
    - Voice AI status card
-   - System Activity card
-   - Revenue Recovered card (may be empty)
+   - Setup card (if phone/billing not configured) or AI Setup card (if KB is sparse)
+   - System Activity card (always visible &mdash; shows probable pipeline, leads engaged, missed calls caught)
+   - Jobs We Helped Win card (the single confirmed-revenue card &mdash; may show $0 with no won jobs yet)
+   - Account Manager card (shows when operator phone is configured)
 5. Go to **Conversations** &mdash; you should see the test conversations from earlier
 6. Find a lead in &ldquo;Won&rdquo; status &mdash; click **Mark Job Complete** button
-7. Click **Discussions** &rarr; **Stuck? Text me** &rarr; send a message
+7. Click **Help &amp; Support** &rarr; scroll to find the Discussions link &rarr; send a message
 8. Switch back to admin: click **Clients** &rarr; **Discussions** &mdash; the thread should appear
 
 - [ ] Contractor dashboard loads with cards
@@ -213,7 +217,7 @@ Log in as the contractor to see what they see.
 3. Dev Phone #3 (Owner) should receive SMS with a Stripe checkout link
 4. Open the link. Use test card: `4242 4242 4242 4242`, any future expiry, any CVC
 5. Complete checkout. Verify 30-day trial starts.
-6. Check contractor portal &rarr; **Billing** &mdash; plan and trial countdown should show
+6. Check contractor portal &rarr; **Settings** &rarr; Billing &mdash; plan and trial countdown should show
 
 - [ ] Payment link SMS received
 - [ ] Checkout completed with test card
@@ -293,7 +297,7 @@ Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10 (the call scrip
 
 1. Open the call script (Playbook Section 10)
 2. Say the intro out loud: &ldquo;Thanks for signing up, let me walk you through...&rdquo;
-3. Click **Clients** &rarr; **Clients** &rarr; click Summit Renovations &rarr; **Knowledge** tab
+3. Click **Clients** &rarr; **Clients** &rarr; click Summit Renovations &rarr; click **Knowledge Base** (link in the top-right area of the client detail page, or via the &ldquo;Configure&rdquo; link in the onboarding checklist on the Overview tab)
 4. Fill in the knowledge base while &ldquo;asking&rdquo; Summit Renovations:
    - What services do you offer?
    - What&apos;s your service area?
@@ -375,9 +379,9 @@ Simulate what your daily routine looks like with an active client.
 **Check your daily operator dashboard (5 min):**
 
 3. Click **Clients** &rarr; **Triage** &mdash; does Summit Renovations show as needing attention?
-4. Click **Client View** &rarr; **Escalations** &mdash; the &ldquo;complaint&rdquo; text should have created an escalation. Click it. Read the AI&apos;s notes. Click **Resolve** with a note.
-5. Click **Optimization** &rarr; **AI Quality** &mdash; any flagged messages? If so, review them.
-6. Click **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; **Knowledge** tab &rarr; **Queue** sub-tab &mdash; any KB gaps? Add the answer.
+4. Click **Client View** &rarr; **Escalations** (per-client queue) &mdash; the &ldquo;complaint&rdquo; text should have created an escalation. Click it. Read the AI&apos;s notes. Click **Resolve** with a note. With multiple clients, use **Clients** &rarr; **Escalations** for the cross-client queue (same as `/escalations` in the nav).
+5. Click **Clients** &rarr; **AI Quality** &mdash; any flagged messages? If so, review them.
+6. Click **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; **Knowledge Base** (page link) &rarr; **Gap Queue** tab &mdash; any KB gaps? Add the answer.
 
 **Generate a report:**
 
@@ -390,8 +394,8 @@ Simulate what your daily routine looks like with an active client.
 **Check the contractor&apos;s view:**
 
 9. Log in as Summit&apos;s contractor (http://localhost:3000/client-login in incognito)
-10. Check: Voice AI card, System Activity card, Revenue Recovered card
-11. Go to **Billing** &mdash; you should see: current plan (read-only), trial countdown, guarantee status card with progress bar. No &ldquo;Change Plan&rdquo; button (managed client).
+10. Check: Voice AI card, System Activity card (probable pipeline), Jobs We Helped Win card (numbers may be $0 with test data)
+11. Go to **Settings** &rarr; Billing &mdash; you should see: current plan (read-only), trial countdown, guarantee status card with progress bar. No &ldquo;Change Plan&rdquo; button (managed client). Note: Billing is in Settings, not a top-level nav item for managed clients.
 12. Switch to admin view &rarr; **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; Overview tab &mdash; check guarantee phase, pipeline value, days remaining.
 
 - [ ] I know what the daily operator routine feels like
@@ -561,8 +565,11 @@ Don&apos;t skip this. Reading scripts silently is not the same as saying them. O
 - [ ] What&apos;s the max the contractor can lose?
 - [ ] What&apos;s the onboarding call script flow?
 - [ ] Where do you add excluded contacts during onboarding? (Configuration tab &rarr; Exclusion List card)
-- [ ] Where do you see the guarantee progress? (Overview tab &rarr; Guarantee Status card)
-- [ ] Where do you review pending AI drafts from the browser? (Activity tab &rarr; Pending Drafts card)
+- [ ] Where do you see the guarantee progress? (Overview tab &rarr; Guarantee Status card, and a progress indicator on the contractor dashboard when in proof or recovery window)
+- [ ] Where do you review pending AI drafts from the browser? (Campaigns tab &rarr; Pending Drafts card)
+- [ ] Where do contractors view past reports? (Contractor portal &rarr; Reports page in the nav)
+- [ ] What cards always appear on the contractor dashboard? (Voice AI status, System Activity, Jobs We Helped Win &mdash; plus conditional: Setup card, AI Setup card, Guarantee indicator, Account Manager, Revenue Leak Audit)
+- [ ] How do you access the Knowledge Base for a client? (Client detail page &rarr; Knowledge Base link, opens a separate page with Guided Interview / All Entries / Gap Queue tabs and a side-by-side AI test chat)
 - [ ] What does the Monday pipeline SMS show?
 - [ ] What is the $5,000 pipeline floor guarantee?
 - [ ] How does the Jobber integration work? (appointment sync + review trigger)
@@ -573,7 +580,7 @@ Don&apos;t skip this. Reading scripts silently is not the same as saying them. O
 - [ ] What trial reminder emails fire, and when? (Day 7, 14, 25, 28+SMS, 30+SMS)
 - [ ] What happens when a client cancels? (30-day grace, reminders at 20/7/3 days, data export within 5 business days, win-back email 7 days after grace ends)
 
-**All 25 answered? You&apos;re ready.**
+**All 28 answered? You&apos;re ready.**
 
 ---
 
@@ -719,9 +726,9 @@ Timeline: Day 0 (signing) &rarr; Day 1 (onboarding call + KB + Voice QA) &rarr; 
 This is your entire daily workload per client once they&apos;re onboarded:
 
 1. `/admin/triage` &mdash; who needs attention? (red = act now, yellow = check soon)
-2. `/escalations` &mdash; any hot leads the AI couldn&apos;t handle?
-3. Knowledge gap queue &mdash; any questions the AI couldn&apos;t answer? Add the answer.
-4. `/admin/ai-quality` &mdash; any flagged messages? Review and dismiss or fix.
+2. `/escalations` &mdash; any hot leads the AI couldn&apos;t handle? (cross-client queue; per-client is under Client View &rarr; Escalations)
+3. Knowledge gap queue &mdash; any questions the AI couldn&apos;t answer? Add the answer. (**Clients** &rarr; **Clients** &rarr; client &rarr; **Knowledge Base** &rarr; **Gap Queue** tab)
+4. `/admin/ai-quality` (**Clients** &rarr; **AI Quality**) &mdash; any flagged messages? Review and dismiss or fix.
 5. New clients only (Week 1): run Voice AI KB Test again after adding answers from real calls.
 
 That&apos;s it. The system handles everything else.

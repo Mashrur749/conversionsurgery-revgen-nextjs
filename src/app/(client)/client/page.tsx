@@ -1,14 +1,13 @@
 import { getClientSession } from '@/lib/client-auth';
 import { redirect } from 'next/navigation';
-import { getDb, leads, dailyStats, appointments, flowExecutions, flows } from '@/db';
-import { clients, subscriptions, knowledgeBase } from '@/db/schema';
-import { eq, and, gte, sql, desc, ne } from 'drizzle-orm';
+import { getDb, leads, appointments, flowExecutions } from '@/db';
+import { clients, subscriptions, knowledgeBase, revenueLeakAudits } from '@/db/schema';
+import { eq, and, sql, desc, ne } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
-import { getRevenueStats } from '@/lib/services/revenue';
-import { DollarSign, Phone, CreditCard, CheckCircle, TrendingUp, BookOpen } from 'lucide-react';
+import { formatDistanceToNow, format } from 'date-fns';
+import { Phone, CreditCard, CheckCircle, TrendingUp, BookOpen, Shield } from 'lucide-react';
 import { PORTAL_PERMISSIONS } from '@/lib/permissions/constants';
 import { requirePortalPagePermission } from '@/lib/permissions/require-portal-page-permission';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
@@ -24,27 +23,6 @@ export default async function ClientDashboardPage() {
   const { clientId } = session;
   const db = getDb();
 
-  // This month stats
-  const firstOfMonth = new Date();
-  firstOfMonth.setDate(1);
-  firstOfMonth.setHours(0, 0, 0, 0);
-
-  const monthStats = await db
-    .select({
-      leadsCapture: sql<number>`COALESCE(SUM(${dailyStats.missedCallsCaptured}) + SUM(${dailyStats.formsResponded}), 0)`,
-      messagesSent: sql<number>`COALESCE(SUM(${dailyStats.messagesSent}), 0)`,
-      appointmentsBooked: sql<number>`COALESCE(SUM(${dailyStats.appointmentsReminded}), 0)`,
-    })
-    .from(dailyStats)
-    .where(and(
-      eq(dailyStats.clientId, clientId),
-      gte(dailyStats.date, firstOfMonth.toISOString().split('T')[0])
-    ));
-
-  const stats = monthStats[0] || {};
-
-  // Revenue stats (last 30 days)
-  const revenueStats = await getRevenueStats(clientId);
   const [quarterlyCampaignResult, latestReportDeliveryResult] = await Promise.allSettled([
     getCurrentQuarterlyCampaignSummary(clientId),
     getClientLatestReportDelivery(clientId),
@@ -109,20 +87,77 @@ export default async function ClientDashboardPage() {
   const operatorPhone = agencyRow.operatorPhone ?? null;
   const operatorName = agencyRow.operatorName ?? 'ConversionSurgery Team';
 
-  // Setup status checks
+  // Setup status checks + guarantee fields
   const [client] = await db
     .select({ twilioNumber: clients.twilioNumber })
     .from(clients)
     .where(eq(clients.id, clientId))
     .limit(1);
   const [sub] = await db
-    .select({ id: subscriptions.id })
+    .select({
+      id: subscriptions.id,
+      guaranteeStatus: subscriptions.guaranteeStatus,
+      guaranteeProofEndsAt: subscriptions.guaranteeProofEndsAt,
+      guaranteeAdjustedProofEndsAt: subscriptions.guaranteeAdjustedProofEndsAt,
+      guaranteeRecoveryEndsAt: subscriptions.guaranteeRecoveryEndsAt,
+      guaranteeAdjustedRecoveryEndsAt: subscriptions.guaranteeAdjustedRecoveryEndsAt,
+      guaranteeProofQualifiedLeadEngagements: subscriptions.guaranteeProofQualifiedLeadEngagements,
+      guaranteeRecoveryAttributedOpportunities: subscriptions.guaranteeRecoveryAttributedOpportunities,
+    })
     .from(subscriptions)
     .where(eq(subscriptions.clientId, clientId))
     .limit(1);
   const hasPhone = !!client?.twilioNumber;
   const hasSubscription = !!sub;
   const needsSetup = !hasPhone || !hasSubscription;
+
+  // Revenue Leak Audit card — only show for first 30 days after signup
+  const clientAgeForAuditMs = clientForCost?.createdAt
+    ? Date.now() - new Date(clientForCost.createdAt).getTime()
+    : Infinity;
+  const showAuditCard = clientAgeForAuditMs < 30 * 24 * 60 * 60 * 1000;
+  let auditDeliveredAt: Date | null = null;
+  if (showAuditCard) {
+    const [auditRow] = await db
+      .select({ status: revenueLeakAudits.status, deliveredAt: revenueLeakAudits.deliveredAt })
+      .from(revenueLeakAudits)
+      .where(eq(revenueLeakAudits.clientId, clientId))
+      .limit(1);
+    if (auditRow?.status === 'delivered' && auditRow.deliveredAt) {
+      auditDeliveredAt = auditRow.deliveredAt;
+    }
+  }
+
+  // Guarantee indicator — only show when actively in proof or recovery window
+  const guaranteeStatus = sub?.guaranteeStatus ?? null;
+  const showGuaranteeIndicator =
+    guaranteeStatus === 'proof_pending' || guaranteeStatus === 'recovery_pending';
+  let guaranteeSummary: { label: string; detail: string } | null = null;
+  if (showGuaranteeIndicator && sub) {
+    const now = new Date();
+    if (guaranteeStatus === 'proof_pending') {
+      const proofEnd = sub.guaranteeAdjustedProofEndsAt ?? sub.guaranteeProofEndsAt;
+      const qleCount = sub.guaranteeProofQualifiedLeadEngagements ?? 0;
+      const daysRemaining = proofEnd
+        ? Math.max(0, Math.ceil((proofEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+        : 30;
+      guaranteeSummary = {
+        label: '30-Day Proof',
+        detail: `${qleCount}/5 qualified leads \u00b7 ${daysRemaining} days remaining`,
+      };
+    } else if (guaranteeStatus === 'recovery_pending') {
+      const recoveryEnd = sub.guaranteeAdjustedRecoveryEndsAt ?? sub.guaranteeRecoveryEndsAt;
+      const daysRemaining = recoveryEnd
+        ? Math.max(0, Math.ceil((recoveryEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+        : 90;
+      const attributed = sub.guaranteeRecoveryAttributedOpportunities ?? 0;
+      const pipelineDollars = Math.round(attributed * 4500);
+      guaranteeSummary = {
+        label: '90-Day Recovery',
+        detail: `$${pipelineDollars.toLocaleString()} pipeline \u00b7 ${daysRemaining} days remaining`,
+      };
+    }
+  }
 
   // KB count — show AI setup card when KB is sparse
   const [kbCountRow] = await db
@@ -162,36 +197,6 @@ export default async function ClientDashboardPage() {
   const missedCallsCaught = Number(pipelineProof?.missedCallsCaught ?? 0);
   const appointmentsBookedTotal = Number(apptCountRow?.count ?? 0);
   const estimatesInFollowUp = Number(flowCountRow?.count ?? 0);
-
-  const AVG_PROJECT_VALUE = 40000; // default; in dollars
-  const probablePipeline = (appointmentsBookedTotal + reactivatedResponses) * AVG_PROJECT_VALUE;
-
-  // Recent activity
-  const recentLeads = await db
-    .select()
-    .from(leads)
-    .where(eq(leads.clientId, clientId))
-    .orderBy(desc(leads.createdAt))
-    .limit(5);
-
-  // Pending appointments
-  const upcomingAppointments = await db
-    .select({
-      id: appointments.id,
-      date: appointments.appointmentDate,
-      time: appointments.appointmentTime,
-      leadName: leads.name,
-      leadPhone: leads.phone,
-    })
-    .from(appointments)
-    .leftJoin(leads, eq(appointments.leadId, leads.id))
-    .where(and(
-      eq(appointments.clientId, clientId),
-      eq(appointments.status, 'scheduled'),
-      gte(appointments.appointmentDate, new Date().toISOString().split('T')[0])
-    ))
-    .orderBy(appointments.appointmentDate)
-    .limit(5);
 
   return (
     <div className="space-y-6">
@@ -265,6 +270,47 @@ export default async function ClientDashboardPage() {
         </Card>
       )}
 
+      {/* Revenue Leak Audit — onboarding deliverable, shown for first 30 days */}
+      {showAuditCard && (
+        <Card className="border-[#6B7E54]/30">
+          <CardContent className="py-4">
+            <p className="font-medium text-sm text-[#1B2F26] mb-0.5">Revenue Leak Audit</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              A personalized breakdown of where revenue is falling through in your business.
+            </p>
+            {auditDeliveredAt ? (
+              <p className="text-xs text-[#3D7A50]">
+                Delivered on {format(auditDeliveredAt, 'MMMM d, yyyy')} by your account manager.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Being prepared by your account manager &mdash; you&apos;ll receive it within 48 business hours.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Guarantee progress indicator — only when actively in proof or recovery window */}
+      {showGuaranteeIndicator && guaranteeSummary && (
+        <Link href="/client/billing" className="block">
+          <Card className="border-[#6B7E54]/40 bg-[#E3E9E1] hover:bg-[#D8E4DC] transition-colors cursor-pointer">
+            <CardContent className="py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Shield className="h-4 w-4 text-[#3D7A50] shrink-0" />
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-[#1B2F26]">{guaranteeSummary.label}:</span>
+                    <span className="text-sm text-muted-foreground ml-1.5">{guaranteeSummary.detail}</span>
+                  </div>
+                </div>
+                <span className="text-xs text-[#6B7E54] shrink-0">Details &rarr;</span>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
       {/* System Activity — auto-tracked pipeline proof */}
       <Card className="border-[#6B7E54]/30 bg-[#F8F9FA]">
         <CardHeader className="pb-3">
@@ -274,18 +320,6 @@ export default async function ClientDashboardPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Hero: probable pipeline */}
-          <div>
-            <div className="text-3xl font-bold text-[#1B2F26]">
-              ${probablePipeline.toLocaleString()}
-            </div>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Probable pipeline &mdash; {appointmentsBookedTotal} {appointmentsBookedTotal === 1 ? 'appointment' : 'appointments'} booked
-              {reactivatedResponses > 0 && ` + ${reactivatedResponses} reactivated ${reactivatedResponses === 1 ? 'quote' : 'quotes'}`}
-              {' '}&times; ${AVG_PROJECT_VALUE.toLocaleString()} avg project
-            </p>
-          </div>
-
           {/* 3x2 stat grid */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="rounded-md border border-[#C8D4CC] bg-white p-3">
@@ -406,78 +440,30 @@ export default async function ClientDashboardPage() {
         </Card>
       )}
 
-      {/* Revenue Hero */}
-      <Card className="bg-[#E8F5E9] border-[#3D7A50]/30">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <div>
-            <CardTitle className="text-sm font-medium text-[#3D7A50]">Revenue Recovered</CardTitle>
-            <p className="text-xs text-[#3D7A50]/70 mt-0.5">Confirmed by you</p>
-          </div>
-          <DollarSign className="h-5 w-5 text-[#3D7A50]" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-[#3D7A50]">
-            ${(revenueStats.totalWonValue / 100).toLocaleString()}
-          </div>
-          <p className="text-xs text-[#3D7A50]">
-            ${(revenueStats.totalPaid / 100).toLocaleString()} collected &bull; {revenueStats.totalWon} jobs won
-          </p>
-          {revenueStats.totalWon === 0 && (
-            <p className="text-xs text-[#3D7A50]/70 mt-2">
-              Mark jobs as Won in Conversations to see confirmed revenue here.
-            </p>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Activity Summary */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Leads This Month</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Number(stats.leadsCapture) || 0}</div>
-            <p className="text-xs text-muted-foreground">{revenueStats.conversionRate}% conversion rate</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Messages Sent</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{Number(stats.messagesSent) || 0}</div>
-            <p className="text-xs text-muted-foreground">Automated responses</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Quarterly Growth Blitz Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!quarterlyCampaign ? (
-            <p className="text-sm text-muted-foreground">
-              Quarterly campaign is being planned by your account team.
-            </p>
-          ) : (
-            <div className="space-y-1">
-              <p className="font-medium">{quarterlyCampaign.campaignTypeLabel}</p>
-              <p className="text-sm text-muted-foreground">
-                {quarterlyCampaign.quarterKey} • {quarterlyCampaign.statusLabel}
-              </p>
+      {/* Quarterly Growth Blitz — only when a campaign is scheduled/launched/completed (not planned) */}
+      {quarterlyCampaign && quarterlyCampaign.status !== 'planned' && (
+        <Card className="border-[#6B7E54]/30">
+          <CardContent className="flex items-start gap-3 pt-4 pb-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-sm font-medium text-[#1B2F26]">
+                  {quarterlyCampaign.campaignTypeLabel}
+                </span>
+                <span className="text-xs text-muted-foreground">{quarterlyCampaign.quarterKey}</span>
+                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-[#E3E9E1] text-[#1B2F26]">
+                  {quarterlyCampaign.statusLabel}
+                </span>
+              </div>
               {quarterlyCampaign.missingAssetLabels.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  Waiting on assets: {quarterlyCampaign.missingAssetLabels.join(', ')}
+                <p className="text-xs text-[#C15B2E] mt-1">
+                  Needed: {quarterlyCampaign.missingAssetLabels.join(', ')}
                 </p>
               )}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="pb-2">
@@ -519,62 +505,6 @@ export default async function ClientDashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Upcoming Appointments */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Upcoming Appointments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {upcomingAppointments.length === 0 ? (
-            <div className="py-4 text-center">
-              <p className="text-muted-foreground mb-1">No upcoming appointments</p>
-              <p className="text-sm text-muted-foreground">Appointments will be scheduled automatically through lead follow-up sequences.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {upcomingAppointments.map((apt) => (
-                <div key={apt.id} className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{apt.leadName || apt.leadPhone}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {apt.date} at {apt.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Recent Leads */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Recent Leads</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentLeads.length === 0 ? (
-            <div className="py-4 text-center">
-              <p className="text-muted-foreground mb-1">No leads yet</p>
-              <p className="text-sm text-muted-foreground">Leads will appear here when someone calls or submits a form.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {recentLeads.map((lead) => (
-                <Link key={lead.id} href={`/client/conversations/${lead.id}`} className="flex justify-between items-center hover:bg-[#F8F9FA] transition-colors rounded-md px-2 py-1 -mx-2">
-                  <div>
-                    <p className="font-medium">{lead.name || lead.phone}</p>
-                    <p className="text-sm text-muted-foreground">{lead.source}</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(lead.createdAt!), { addSuffix: true })}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
