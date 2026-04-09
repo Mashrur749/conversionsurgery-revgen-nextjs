@@ -240,7 +240,7 @@ Dashboard, Conversations, Leads, Revenue, Reports, Flows, Knowledge, Reviews, Te
 | Mobile card fallback | Yes | Tables use `hidden sm:block` / `sm:hidden` pattern |
 | Color coding | Yes | Brand palette used consistently |
 | Loading states | Partial | Wizard lacks loading overlay during API calls |
-| Back navigation | No | Client detail "Back" always goes to client list, not referrer |
+| Back navigation | Yes | Client detail uses `?from=triage` for triage-aware back navigation (fixed 2026-04-09) |
 
 ### Mobile Readiness
 
@@ -275,10 +275,10 @@ Dashboard, Conversations, Leads, Revenue, Reports, Flows, Knowledge, Reviews, Te
 
 | Spec | Phase | Scope | Status |
 |------|-------|-------|--------|
-| [SPEC-UX-01](SPEC-UX-01-QUICK-WINS.md) | Phase 1 | Template merge, renames, Compliance move, wizard fixes, reports queue, Twilio badge | Approved |
-| [SPEC-UX-02](SPEC-UX-02-NAV-CLEANUP.md) | Phase 2 | Team sub-tabs, Platform Analytics dedup, triage-aware back nav, Voice AI reorganize | Approved |
-| [SPEC-UX-03](SPEC-UX-03-CLIENT-DETAIL-LIFECYCLE.md) | Phase 3 | Client detail lifecycle-aware layout, System Settings collapse diagnostics | Approved (pending verification) |
-| [SPEC-UX-04](SPEC-UX-04-SERVICE-MODEL-GATING.md) | Phase 4 | serviceModel schema, portal gating, review approval modes, nav filtering | Approved |
+| [SPEC-UX-01](SPEC-UX-01-QUICK-WINS.md) | Phase 1 | Template merge, renames, Compliance move, wizard fixes, reports queue, Twilio badge | **Complete** (2026-04-09) |
+| [SPEC-UX-02](SPEC-UX-02-NAV-CLEANUP.md) | Phase 2 | Team sub-tabs, Platform Analytics dedup, triage-aware back nav, Voice AI reorganize | **Complete** (2026-04-09) |
+| [SPEC-UX-03](SPEC-UX-03-CLIENT-DETAIL-LIFECYCLE.md) | Phase 3 | Client detail lifecycle-aware layout, System Settings collapse diagnostics | **Complete** (2026-04-09) &mdash; 3 of 4 panels were already conditional; only onboardingQualityPanel needed fixing |
+| [SPEC-UX-04](SPEC-UX-04-SERVICE-MODEL-GATING.md) | Phase 4 | serviceModel schema, portal gating, review approval modes, nav filtering | **Partial** &mdash; portal gating + admin toggle done; review approval mode is a follow-up |
 
 ### Execution Order
 

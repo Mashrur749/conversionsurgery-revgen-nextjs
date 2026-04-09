@@ -350,6 +350,8 @@ For managed-service testing, use the admin wizard. For self-serve signup testing
 2. Complete the wizard: business name, owner email, plan selection.
    - **Owner&apos;s Phone:** Enter the Owner number (#3 from preflight). This is for escalation alerts and account notifications &mdash; not shared with leads.
    - **AI Business Line:** Assign the Business Line (#1 from preflight). This is the number leads will text/call.
+   - **Phone skip warning:** If you click &ldquo;Skip for now&rdquo; on the phone step, verify the inline warning appears: &ldquo;SMS alerts and voice calls won&apos;t work until a business line is assigned.&rdquo;
+   - **Team member phone validation:** Add a team member with an invalid phone (e.g., &ldquo;555&rdquo;). Verify inline error &ldquo;Enter a 10-digit phone number including area code&rdquo; appears on blur.
 3. Confirm the client appears in `/admin/clients`.
 4. Navigate to the client detail page &rarr; click &ldquo;Manage Number&rdquo; on the AI Business Line card. Verify the assigned number appears in the phone manager (not &ldquo;No business lines assigned&rdquo;).
 

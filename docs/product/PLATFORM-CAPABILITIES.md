@@ -367,10 +367,12 @@ Each client has a `serviceModel` field (`managed` or `self_serve`) that controls
 
 | Feature | Managed | Self-Serve |
 |---------|:-------:|:----------:|
-| Dashboard, Conversations, Reviews, Revenue, Reports, Flows, Team, Settings, Help &amp; Support | Yes | Yes |
-| Flows (automation management) | Hidden | Shown |
-| Settings &gt; Features tab (AI toggles, smart assist config) | Hidden | Shown |
-| Billing &gt; Plan picker / Upgrade | Hidden | Shown |
+| Dashboard, Conversations, Reviews, Revenue, Reports, Team, Settings (General + Notifications), Help &amp; Support | Yes | Yes |
+| Flows (automation management) | Hidden (redirect) | Shown |
+| Knowledge Base (KB management) | Hidden (redirect) | Shown |
+| Leads Import (CSV upload) | Hidden (redirect) | Shown |
+| Settings &gt; AI, Phone, Features tabs | Hidden | Shown |
+| Billing &gt; Plan picker / Upgrade | Hidden (redirect) | Shown |
 | Payment setup | Operator sends link | Self-serve checkout |
 
 **Managed clients** see a scoreboard + inbox. The operator configures all automation settings via the admin panel.
@@ -826,29 +828,31 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 
 ### Admin Nav Structure
 
-The admin nav has 5 groups. `/admin` redirects to `/admin/triage`.
+The admin nav has 5 groups. `/admin` redirects to `/admin/triage`. Updated 2026-04-09 per UX platform audit.
 
 | Group | Items |
 |-------|-------|
-| **Clients** | Triage, Clients, Escalations, AI Quality, Discussions |
-| **Reporting** | Billing, Reports, Platform Health, Costs &amp; Usage |
-| **Optimization** | (AI tuning, engagement health tools) |
-| **Team &amp; Access** | Team management, role templates |
-| **Settings** | Agency settings, system settings |
+| **Clients** | Triage, Clients, Escalations, AI Flagged Responses, Support |
+| **Reporting** | Billing, Reports, Platform Health, Costs &amp; Usage, TCPA Compliance |
+| **Optimization** | Flow Templates, Flow Analytics (with All Variants toggle), A/B Tests, Reputation, AI Performance |
+| **Team &amp; Access** | Team (with Members/Roles/Portal Users sub-tabs), Audit Log |
+| **Settings** | Agency Settings, Phone Numbers (with Twilio balance badge), Twilio Account, Voice AI (client selector + Settings/Testing tabs), Webhook Logs, Email Templates, API Keys, System Settings (diagnostics collapsed by default) |
+
+**Key changes (2026-04-09):** Template Performance merged into Flow Analytics. Compliance moved from Settings to Reporting. Roles/Users collapsed into Team sub-tabs. Discussions renamed to Support. AI Quality renamed to AI Flagged Responses. AI Effectiveness renamed to AI Performance. Platform Analytics no longer duplicates MRR/churn from Billing. Voice AI uses client selector instead of per-client accordion.
 
 ### Admin Client Detail Page Structure
 
-The client detail page uses 5 tabs. Smart Assist pending drafts and quarterly campaigns are on the Campaigns tab; configuration tools (DNC, integrations, Smart Assist settings) on the Configuration tab.
+The client detail page uses 5 tabs. The Overview tab is lifecycle-aware: onboarding panels (quality gates, day-one activation) auto-hide for established clients in autonomous mode, so ROI dashboard is visible above the fold. Triage-aware back navigation: when navigating from the triage page, breadcrumb and back button link to `/admin/triage` instead of the client list.
 
 | Tab | Key cards |
 |-----|-----------|
-| **Overview** | Onboarding Quality Gates, Engagement Health badge, Guarantee Status, KB Intake Questionnaire, AI Preview/Sandbox |
+| **Overview** | Engagement Health badge, Onboarding checklist (conditional), ROI Dashboard, Guarantee Status (conditional), Day-One Activation (conditional), Onboarding Quality (conditional &mdash; hidden when autonomous mode) |
 | **Knowledge** | KB entries, gap queue |
 | **Configuration** | Smart Assist settings, Exclusion List (DNC), Integrations (Jobber etc.) |
 | **Team &amp; Billing** | Team members, subscription, usage, invoice history |
 | **Campaigns** | Smart Assist Pending Drafts (15-second polling), Quarterly Campaigns |
 
-Payment Link and Export Data buttons are in the client detail page header (not on an Actions card — that card has been removed).
+The service model badge (Managed/Self-Serve) in the client header is clickable &mdash; operator can toggle the service model per client. Payment Link and Export Data buttons are in the header.
 
 ### Client Management
 

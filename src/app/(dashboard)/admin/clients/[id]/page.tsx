@@ -34,12 +34,12 @@ import { loadStructuredKnowledge } from '@/lib/services/structured-knowledge';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { SendPaymentLink } from './send-payment-link';
 import { DataExportButton } from './data-export-button';
-import { cn } from '@/lib/utils';
 import { DncCard } from './dnc-card';
 import { SmartAssistCard } from './smart-assist-card';
 import { GuaranteeStatusCard } from './guarantee-status-card';
 import { EngagementHealthBadge } from './engagement-health-badge';
 import { IntegrationsCard } from './integrations-card';
+import { ServiceModelToggle } from './service-model-toggle';
 import { checkEngagementHealth } from '@/lib/services/engagement-health';
 import { countQualifiedLeadEngagements } from '@/lib/services/guarantee-v2/metrics';
 import { calculateProbablePipelineValueCents } from '@/lib/services/pipeline-value';
@@ -383,14 +383,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             <Badge className={statusColors[client.status || 'pending']}>
               {client.status}
             </Badge>
-            <span className={cn(
-              'text-xs px-2 py-0.5 rounded-full font-normal',
-              client.serviceModel === 'managed'
-                ? 'bg-[#E3E9E1] text-[#1B2F26]'
-                : 'bg-[#E8F5E9] text-[#3D7A50]'
-            )}>
-              {client.serviceModel === 'managed' ? 'Managed' : 'Self-Serve'}
-            </span>
+            <ServiceModelToggle clientId={client.id} initialModel={client.serviceModel} />
           </div>
           <p className="text-muted-foreground">
             Created {format(new Date(client.createdAt!), 'MMM d, yyyy')}
