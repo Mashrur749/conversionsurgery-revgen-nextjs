@@ -31,6 +31,7 @@ import {
 } from "@/lib/permissions/constants";
 import { eq, and } from "drizzle-orm";
 import { seedHelpArticles } from "@/db/seeds/help-articles";
+import { agencies } from "@/db/schema";
 
 const db = getDb();
 
@@ -40,87 +41,38 @@ const db = getDb();
 
 const PLANS = [
   {
-    name: "Starter",
-    slug: "starter",
-    description: "For contractors just getting started with automation",
-    priceMonthly: 49700, // $497 in cents
-    priceYearly: 497000, // $4,970 (2 months free)
+    name: "Managed Service",
+    slug: "managed",
+    description: "Full revenue recovery managed service — we handle everything",
+    priceMonthly: 100000, // $1,000 in cents
+    priceYearly: 1000000, // $10,000 (2 months free)
     stripePriceIdMonthly:
-      process.env.STRIPE_PRICE_STARTER_MONTHLY || "price_starter_monthly",
+      process.env.STRIPE_PRICE_MANAGED_MONTHLY || "price_managed_monthly",
     stripePriceIdYearly:
-      process.env.STRIPE_PRICE_STARTER_YEARLY || "price_starter_yearly",
-    stripeProductId: process.env.STRIPE_PRODUCT_STARTER || "prod_starter",
-    includedLeads: 100,
-    includedMessages: 1000,
-    includedTeamMembers: 2,
-    includedPhoneNumbers: 1,
-    features: [
-      "Missed call text-back",
-      "Basic AI responses",
-      "Lead management CRM",
-      "Email notifications",
-    ],
-    sortOrder: 1,
-    isPublic: true,
-  },
-  {
-    name: "Professional",
-    slug: "professional",
-    description: "Full-featured revenue recovery for growing contractors",
-    priceMonthly: 99700, // $997 in cents
-    priceYearly: 997000, // $9,970 (2 months free)
-    stripePriceIdMonthly:
-      process.env.STRIPE_PRICE_PRO_MONTHLY || "price_pro_monthly",
-    stripePriceIdYearly:
-      process.env.STRIPE_PRICE_PRO_YEARLY || "price_pro_yearly",
-    stripeProductId: process.env.STRIPE_PRODUCT_PRO || "prod_pro",
-    includedLeads: null,
-    includedMessages: null,
+      process.env.STRIPE_PRICE_MANAGED_YEARLY || "price_managed_yearly",
+    stripeProductId: process.env.STRIPE_PRODUCT_MANAGED || "prod_managed",
+    includedLeads: null, // unlimited
+    includedMessages: null, // unlimited
     includedTeamMembers: 5,
     includedPhoneNumbers: 3,
     features: [
-      "Everything in Starter",
+      "Near-instant lead response",
       "AI conversation agent",
-      "Automated follow-up flows",
-      "Invoice & payment recovery",
-      "Calendar integration",
-      "Team management",
-      "Lead scoring",
-      "Basic analytics",
+      "Voice AI call handling",
+      "Automated follow-up flows (estimate, payment, review, win-back, no-show)",
+      "Appointment booking + calendar sync",
+      "Payment collection with one-click links",
+      "Review generation + auto-response",
+      "Dormant client reactivation",
+      "Quarterly growth blitz campaigns",
+      "Bi-weekly performance reports",
+      "Dedicated business phone number (up to 3)",
+      "Team management (up to 5 members)",
       "Unlimited conversations and messaging",
     ],
-    sortOrder: 2,
+    sortOrder: 1,
     isPublic: true,
     isPopular: true,
-  },
-  {
-    name: "Enterprise",
-    slug: "enterprise",
-    description: "For high-volume contractors and franchises",
-    priceMonthly: 199700, // $1,997 in cents
-    priceYearly: 1997000, // $19,970 (2 months free)
-    stripePriceIdMonthly:
-      process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY || "price_enterprise_monthly",
-    stripePriceIdYearly:
-      process.env.STRIPE_PRICE_ENTERPRISE_YEARLY || "price_enterprise_yearly",
-    stripeProductId: process.env.STRIPE_PRODUCT_ENTERPRISE || "prod_enterprise",
-    includedLeads: 2000,
-    includedMessages: 20000,
-    includedTeamMembers: 20,
-    includedPhoneNumbers: 10,
-    features: [
-      "Everything in Professional",
-      "Voice AI call handling",
-      "Hot transfer",
-      "Reputation monitoring",
-      "Auto review responses",
-      "Multi-language support",
-      "Advanced analytics",
-      "Priority support",
-      "Custom integrations",
-    ],
-    sortOrder: 3,
-    isPublic: true,
   },
 ];
 
@@ -155,49 +107,22 @@ async function seedSubscriptionPlans() {
 
 const BILLING_PLANS = [
   {
-    name: "Starter",
-    slug: "billing-starter",
-    description: "Basic SMS automation",
-    priceMonthly: 49700,
-    priceYearly: 497000,
+    name: "Managed Service",
+    slug: "billing-managed",
+    description: "Full revenue recovery managed service",
+    priceMonthly: 100000, // $1,000
+    priceYearly: 1000000,
     stripePriceIdMonthly:
-      process.env.STRIPE_PRICE_STARTER_MONTHLY || "price_starter_monthly",
+      process.env.STRIPE_PRICE_MANAGED_MONTHLY || "price_managed_monthly",
     stripePriceIdYearly:
-      process.env.STRIPE_PRICE_STARTER_YEARLY || "price_starter_yearly",
-    stripeProductId: process.env.STRIPE_PRODUCT_STARTER || "prod_starter",
+      process.env.STRIPE_PRICE_MANAGED_YEARLY || "price_managed_yearly",
+    stripeProductId: process.env.STRIPE_PRODUCT_MANAGED || "prod_managed",
     features: {
-      maxLeadsPerMonth: 100,
-      maxMessagesPerMonth: 1000,
-      maxTeamMembers: 2,
-      maxPhoneNumbers: 1,
-      includesVoiceAi: false,
-      includesCalendarSync: false,
-      includesAdvancedAnalytics: false,
-      includesWhiteLabel: false,
-      supportLevel: "email" as const,
-      apiAccess: false,
-    },
-    trialDays: 14,
-    displayOrder: 1,
-    isActive: true,
-  },
-  {
-    name: "Professional",
-    slug: "billing-professional",
-    description: "Full revenue recovery suite",
-    priceMonthly: 99700,
-    priceYearly: 997000,
-    stripePriceIdMonthly:
-      process.env.STRIPE_PRICE_PRO_MONTHLY || "price_pro_monthly",
-    stripePriceIdYearly:
-      process.env.STRIPE_PRICE_PRO_YEARLY || "price_pro_yearly",
-    stripeProductId: process.env.STRIPE_PRODUCT_PRO || "prod_pro",
-    features: {
-      maxLeadsPerMonth: null,
-      maxMessagesPerMonth: null,
+      maxLeadsPerMonth: null, // unlimited
+      maxMessagesPerMonth: null, // unlimited
       maxTeamMembers: 5,
       maxPhoneNumbers: 3,
-      includesVoiceAi: false,
+      includesVoiceAi: true,
       includesCalendarSync: true,
       includesAdvancedAnalytics: true,
       includesWhiteLabel: false,
@@ -208,36 +133,9 @@ const BILLING_PLANS = [
       isUnlimitedLeads: true,
       chargesOverage: false,
     },
-    trialDays: 14,
+    trialDays: 30, // 30-Day Proof-of-Life: first month free, billing starts Day 31
     isPopular: true,
-    displayOrder: 2,
-    isActive: true,
-  },
-  {
-    name: "Enterprise",
-    slug: "billing-enterprise",
-    description: "Full suite with voice AI and white label",
-    priceMonthly: 199700,
-    priceYearly: 1997000,
-    stripePriceIdMonthly:
-      process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY || "price_enterprise_monthly",
-    stripePriceIdYearly:
-      process.env.STRIPE_PRICE_ENTERPRISE_YEARLY || "price_enterprise_yearly",
-    stripeProductId: process.env.STRIPE_PRODUCT_ENTERPRISE || "prod_enterprise",
-    features: {
-      maxLeadsPerMonth: null, // unlimited
-      maxMessagesPerMonth: 20000,
-      maxTeamMembers: null, // unlimited
-      maxPhoneNumbers: 10,
-      includesVoiceAi: true,
-      includesCalendarSync: true,
-      includesAdvancedAnalytics: true,
-      includesWhiteLabel: true,
-      supportLevel: "dedicated" as const,
-      apiAccess: true,
-    },
-    trialDays: 14,
-    displayOrder: 3,
+    displayOrder: 1,
     isActive: true,
   },
 ];
@@ -764,8 +662,8 @@ const SYSTEM_SETTINGS = [
   },
   {
     key: "sms.quiet_hours_end",
-    value: "08:00",
-    description: "Default quiet hours end (8 AM)",
+    value: "10:00",
+    description: "Default quiet hours end (10 AM) — CRTC: 9 PM to 10 AM",
   },
   {
     key: "sms.rate_limit_per_minute",
@@ -784,8 +682,8 @@ const SYSTEM_SETTINGS = [
   },
   {
     key: "billing.trial_days",
-    value: "14",
-    description: "Free trial period in days",
+    value: "30",
+    description: "30-Day Proof-of-Life: first month free, billing starts Day 31",
   },
   {
     key: "billing.grace_period_days",
@@ -834,7 +732,7 @@ const TEMPLATE_VARIANTS = [
     templateType: "missed_call",
     name: "Urgent",
     content:
-      "Hey {name}! {ownerName} from {businessName} here — saw I missed your call. I have a few openings this week. What do you need help with? 🔨",
+      "Hey {name}! {ownerName} from {businessName} here — saw I missed your call. I have a few openings this week. What do you need help with?",
     isActive: true,
     notes: "More urgent/personal tone with emoji, mentions availability",
   },
@@ -859,7 +757,7 @@ const TEMPLATE_VARIANTS = [
     templateType: "form_response",
     name: "Enthusiastic",
     content:
-      "Hey {name}! 🎉 Thanks for contacting {businessName}! We love new projects. {ownerName} will personally review your request and reach out ASAP. Anything urgent you need right now?",
+      "Hey {name}! Thanks for contacting {businessName}! We love new projects. {ownerName} will personally review your request and reach out ASAP. Anything urgent you need right now?",
     isActive: true,
     notes: "High energy, personal, asks for immediate needs",
   },
@@ -910,7 +808,7 @@ const TEMPLATE_VARIANTS = [
     templateType: "review_request",
     name: "Personal",
     content:
-      "Hi {name}, {ownerName} here from {businessName}. It was great working on your project! Your feedback means the world to our small team — would you mind leaving a quick review? {googleReviewLink} 🙏",
+      "Hi {name}, {ownerName} here from {businessName}. It was great working on your project! Your feedback means the world to our small team — would you mind leaving a quick review? {googleReviewLink}",
     isActive: true,
     notes: "Personal tone from owner, emotional appeal",
   },
@@ -963,12 +861,23 @@ const DEMO_CLIENTS = [
     twilioNumber: "+14035550101",
     timezone: "America/Edmonton",
     status: "active",
+    serviceModel: "managed",
+    reviewApprovalMode: "operator_managed",
+    // Core features — all enabled for managed service
     missedCallSmsEnabled: true,
     aiResponseEnabled: true,
     aiAgentEnabled: true,
     aiAgentMode: "autonomous",
+    voiceEnabled: true,
     flowsEnabled: true,
     leadScoringEnabled: true,
+    reputationMonitoringEnabled: true,
+    autoReviewResponseEnabled: true,
+    calendarSyncEnabled: true,
+    paymentLinksEnabled: true,
+    photoRequestsEnabled: true,
+    autoEscalationEnabled: true,
+    smartAssistEnabled: false, // autonomous mode, no smart assist
     notificationEmail: true,
     notificationSms: true,
     monthlyMessageLimit: 5000,
@@ -983,15 +892,25 @@ const DEMO_CLIENTS = [
     twilioNumber: "+17805550102",
     timezone: "America/Edmonton",
     status: "active",
+    serviceModel: "managed",
+    reviewApprovalMode: "operator_managed",
     missedCallSmsEnabled: true,
     aiResponseEnabled: true,
     aiAgentEnabled: true,
-    aiAgentMode: "assist",
+    aiAgentMode: "assist", // week 2 onboarding — smart assist mode
+    voiceEnabled: true,
     flowsEnabled: true,
     leadScoringEnabled: true,
+    reputationMonitoringEnabled: true,
+    autoReviewResponseEnabled: true,
+    calendarSyncEnabled: true,
+    paymentLinksEnabled: true,
+    autoEscalationEnabled: true,
+    smartAssistEnabled: true,
+    smartAssistDelayMinutes: 5,
     notificationEmail: true,
     notificationSms: true,
-    monthlyMessageLimit: 1000,
+    monthlyMessageLimit: 5000,
     messagesSentThisMonth: 89,
     isTest: true,
   },
@@ -1003,14 +922,24 @@ const DEMO_CLIENTS = [
     twilioNumber: "+14035550103",
     timezone: "America/Edmonton",
     status: "active",
+    serviceModel: "managed",
+    reviewApprovalMode: "operator_managed",
     missedCallSmsEnabled: true,
     aiResponseEnabled: true,
-    aiAgentEnabled: false,
+    aiAgentEnabled: true,
+    aiAgentMode: "assist",
+    voiceEnabled: true,
     flowsEnabled: true,
-    leadScoringEnabled: false,
+    leadScoringEnabled: false, // not yet enabled — early onboarding
+    reputationMonitoringEnabled: true,
+    autoReviewResponseEnabled: true,
+    calendarSyncEnabled: false, // no Google Calendar connected yet
+    autoEscalationEnabled: true,
+    smartAssistEnabled: true,
+    smartAssistDelayMinutes: 5,
     notificationEmail: true,
-    notificationSms: false,
-    monthlyMessageLimit: 1000,
+    notificationSms: true,
+    monthlyMessageLimit: 5000,
     messagesSentThisMonth: 34,
     isTest: true,
   },
@@ -1019,13 +948,17 @@ const DEMO_CLIENTS = [
     ownerName: "Dave Martinez",
     email: "dave@calgaryconcrete.ca",
     phone: "+14035551004",
-    status: "pending",
+    status: "pending", // day-one: phone not yet assigned
+    serviceModel: "managed",
+    reviewApprovalMode: "operator_managed",
     timezone: "America/Edmonton",
     missedCallSmsEnabled: true,
     aiResponseEnabled: true,
+    voiceEnabled: true,
+    autoEscalationEnabled: true,
     notificationEmail: true,
     notificationSms: true,
-    monthlyMessageLimit: 500,
+    monthlyMessageLimit: 5000,
     messagesSentThisMonth: 0,
     isTest: true,
   },
@@ -1037,12 +970,22 @@ const DEMO_CLIENTS = [
     twilioNumber: "+17805550105",
     timezone: "America/Edmonton",
     status: "active",
+    serviceModel: "self_serve", // one self-serve client for testing
+    reviewApprovalMode: "client_approves",
     missedCallSmsEnabled: true,
     aiResponseEnabled: true,
     aiAgentEnabled: true,
     aiAgentMode: "autonomous",
+    voiceEnabled: true,
     flowsEnabled: true,
     leadScoringEnabled: true,
+    reputationMonitoringEnabled: true,
+    autoReviewResponseEnabled: true,
+    calendarSyncEnabled: true,
+    paymentLinksEnabled: true,
+    photoRequestsEnabled: true,
+    autoEscalationEnabled: true,
+    smartAssistEnabled: false,
     notificationEmail: true,
     notificationSms: true,
     monthlyMessageLimit: 5000,
@@ -2826,6 +2769,37 @@ async function cleanupSalesDemo(): Promise<void> {
 // MAIN SEED FUNCTION
 // ============================================
 
+// ============================================
+// AGENCY SETTINGS
+// ============================================
+
+async function seedAgency() {
+  console.log("Seeding agency settings...");
+
+  const existing = await db.select().from(agencies).limit(1);
+
+  if (existing.length > 0) {
+    console.log("  Agency exists, updating operator info...");
+    await db
+      .update(agencies)
+      .set({
+        operatorName: process.env.OPERATOR_NAME || "Mashrur Rahman",
+        operatorPhone: process.env.OPERATOR_PHONE || undefined,
+        updatedAt: new Date(),
+      })
+      .where(eq(agencies.id, existing[0].id));
+  } else {
+    await db.insert(agencies).values({
+      name: "ConversionSurgery",
+      operatorName: process.env.OPERATOR_NAME || "Mashrur Rahman",
+      operatorPhone: process.env.OPERATOR_PHONE || undefined,
+    });
+    console.log("  Created agency: ConversionSurgery");
+  }
+
+  console.log("  ✓ Agency seeded");
+}
+
 export async function seed(options: { lean?: boolean } = {}) {
   const lean = options.lean ?? false;
 
@@ -2837,6 +2811,7 @@ export async function seed(options: { lean?: boolean } = {}) {
 
   try {
     // Reference data (always required)
+    await seedAgency();
     await seedSubscriptionPlans();
     await seedBillingPlans();
     await seedFlowTemplates();
