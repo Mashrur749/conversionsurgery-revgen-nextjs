@@ -1,6 +1,6 @@
 # Access Management
 
-Last updated: 2026-02-25
+Last updated: 2026-04-09
 Owner: Operations + Engineering
 Last verified commit: `API-wide safe error logging hardening working tree (2026-02-25)`
 
@@ -67,6 +67,17 @@ Permission templates and overrides resolve effective access at runtime.
 ## Remaining Gaps
 - No dedicated invitation lifecycle UI for role approvals/workflows.
 - No MFA policy layer yet (OTP exists, but no mandatory MFA policy engine).
+
+## Admin UI Changes (SPEC-UX-02, 2026-04-09)
+
+The Team, Roles, and Users pages have been consolidated:
+
+- `/admin/team` now has 3 sub-tabs: **Members** (agency team), **Roles** (permission templates), **Portal Users** (all user access). Tabs are URL-persisted via `?tab=members|roles|users`.
+- `/admin/roles` redirects to `/admin/team?tab=roles`.
+- `/admin/users` redirects to `/admin/team?tab=users`.
+- The "Team &amp; Access" nav group shows only: **Team** + **Audit Log** (Roles and Users removed from top-level nav).
+
+No auth surfaces changed &mdash; existing role/user permissions, escalation prevention, and session invalidation remain unchanged.
 
 ## MS-06 Continuity Note
 - Bi-weekly report "Without Us" model implementation (`MS-06`) introduced no new role surfaces or access paths.

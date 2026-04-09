@@ -660,23 +660,32 @@ Adjust the middle bullet to the specific objection they raised. If they were ske
 
 ## 13. Review Monitoring &amp; Response
 
-**What it does:** The system syncs Google reviews hourly. When a review of 2 stars or fewer comes in, it sends an instant SMS alert to the contractor and generates an AI draft response.
+**What it does:** The system syncs Google reviews hourly. AI drafts a response for each new review automatically.
 
-**Operator role:**
+**Review approval modes (SPEC-UX-05):** Each client has a `reviewApprovalMode` setting:
 
-1. Open the admin client detail &rarr; Reviews section.
-2. Review the AI-generated response draft. Edit if the tone is off or the draft misses context.
-3. Approve to post to Google Business Profile. The system posts via OAuth automatically.
-4. For sensitive reviews (legal threats, health/safety claims, specific job site incidents): do NOT approve immediately. Contact the contractor first to confirm the facts before any public response goes live.
+- **operator_managed** (default for managed-service clients): Positive reviews (3+ stars) are auto-approved and posted to Google automatically &mdash; no operator action needed. Negative reviews (1-2 stars) are held for operator review. Operator gets an SMS alert for each negative review.
+- **client_approves** (default for self-serve): All drafts go to the contractor&apos;s portal for approval.
 
-**Contractor self-serve approval:** Contractors can approve review responses directly from their portal at `/client/reviews`. Each pending draft shows the star rating, reviewer name, review text, and AI draft &mdash; they can edit inline before approving. Encourage contractors to use this for routine positive-review responses. Advise them to let you handle negative reviews so you can review the draft first.
+**Operator daily workflow (operator_managed clients):**
 
-**During onboarding:** explain the review monitoring system during the Section 10 call.
+1. Positive reviews: no action &mdash; auto-posted.
+2. Check `/admin/clients/[id]/reviews` &rarr; &ldquo;Pending Responses&rdquo; section for negative reviews.
+3. For each negative review:
+   - **Approve &amp; Post** if the AI draft is appropriate.
+   - **Edit** the draft to adjust tone or add context, then approve.
+   - **Forward to Client** if the review needs the contractor&apos;s personal input (e.g., specific job site incident). The response will appear on their portal at `/client/reviews`.
+4. Use &ldquo;Approve All Positive&rdquo; batch button if any positive reviews weren&apos;t auto-posted (edge case).
+5. For sensitive reviews (legal threats, health/safety claims): do NOT approve. Contact the contractor first.
+
+**Contractor portal (managed clients):** Contractors only see reviews that the operator explicitly forwarded. Empty state reads: &ldquo;Your account manager handles review responses.&rdquo;
+
+**During onboarding:** explain the review system during the Section 10 call.
 
 Script:
-> &quot;We monitor your Google reviews in real time. When a new review comes in &mdash; especially a negative one &mdash; you&apos;ll get a text immediately. We also draft a professional response for you to review. You can approve routine responses from your portal, or let me handle them. Nothing posts without a human approving it.&quot;
+> &quot;We monitor your Google reviews automatically. Positive reviews get a professional response posted on your behalf within hours. For negative reviews, I review the response personally before anything goes public. If a negative review needs your personal touch &mdash; I&apos;ll forward it to you for editing. You don&apos;t need to check anything unless I send it your way.&quot;
 
-If the contractor asks whether the response auto-posts: clarify that every response requires approval (from the admin dashboard or the contractor&apos;s own portal) before it reaches Google. Nothing posts without a human approving it.
+If the contractor asks about control: they can always request `client_approves` mode to review every response themselves. Toggle in admin client settings.
 
 ---
 

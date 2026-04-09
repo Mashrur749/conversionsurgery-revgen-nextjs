@@ -365,6 +365,24 @@ If blocked:
 
 - `Owner role template is missing`: run `npm run db:seed -- --lean`.
 
+### Step 1b: Service Model Gating (SPEC-UX-04)
+
+1. On the client detail page, click the service model badge (Managed/Self-Serve) to toggle.
+2. Log into the client portal as the contractor.
+3. **Managed mode:** Verify nav shows only Dashboard, Conversations, Reviews, Revenue, Reports, Help &amp; Support. Settings shows only General + Notifications tabs. `/client/knowledge` and `/client/leads/import` redirect to dashboard.
+4. **Self-serve mode:** Verify full nav (including Flows), all Settings tabs (AI, Phone, Features), Knowledge, and Leads Import are accessible.
+5. Toggle back to Managed and verify gating re-applies.
+
+### Step 1c: Review Approval Modes (SPEC-UX-05)
+
+1. Ensure client has `autoReviewResponseEnabled = true` and `reviewApprovalMode = operator_managed`.
+2. Trigger the auto-review-response cron (or manually create a draft for a 4-star review and a 1-star review).
+3. **Positive review (4-star):** Verify the draft was auto-approved and posted (status = `posted`). No pending entry on admin reviews page.
+4. **Negative review (1-star):** Verify the draft is held as `pending_approval`. Navigate to `/admin/clients/[id]/reviews` &rarr; Pending Responses section should show it.
+5. Click &ldquo;Approve &amp; Post&rdquo; &mdash; verify it posts to Google (or mock).
+6. Create another negative review draft. Click &ldquo;Forward to Client.&rdquo; Log into client portal &rarr; `/client/reviews` &mdash; verify the forwarded review appears.
+7. Switch client to `reviewApprovalMode = client_approves`. Create a new draft. Verify it stays as `draft` and appears on the client portal for contractor approval.
+
 ### Step 2: Day-One Activation (operator's first post-creation task)
 
 With the client created, the operator provisions the number and delivers day-one milestones per the offer doc (number live within 24 business hours, Revenue Leak Audit within 48 business hours).

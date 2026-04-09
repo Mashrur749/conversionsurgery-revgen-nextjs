@@ -373,6 +373,7 @@ Each client has a `serviceModel` field (`managed` or `self_serve`) that controls
 | Leads Import (CSV upload) | Hidden (redirect) | Shown |
 | Settings &gt; AI, Phone, Features tabs | Hidden | Shown |
 | Billing &gt; Plan picker / Upgrade | Hidden (redirect) | Shown |
+| Review approval | Operator manages (auto-post positive, forward negative) | Contractor approves all |
 | Payment setup | Operator sends link | Self-serve checkout |
 
 **Managed clients** see a scoreboard + inbox. The operator configures all automation settings via the admin panel.
@@ -997,8 +998,26 @@ Beyond the review *request* automation (Section 2), the platform monitors and re
 - Template matching with keyword scoring (before AI fallback)
 - Draft &rarr; approved &rarr; posted lifecycle
 - Auto-post to Google Business Profile via OAuth (with token refresh)
-- Admin approval required before posting (admin dashboard)
-- **Contractor portal approval:** Contractors can view pending AI-drafted responses at `/client/reviews`, edit the draft inline, and approve — posts to Google without operator involvement. See Section 5 for portal detail.
+
+### Review Approval Modes (SPEC-UX-05)
+
+Each client has a `reviewApprovalMode` field controlling who approves AI-drafted review responses:
+
+| Mode | Positive reviews (&ge;3 stars) | Negative reviews (&le;2 stars) | Default for |
+|------|-------------------------------|-------------------------------|-------------|
+| **operator_managed** | Auto-approved and posted to Google immediately | Held as `pending_approval`; operator notified via SMS | Managed-service clients |
+| **client_approves** | Draft stays for contractor approval at `/client/reviews` | Same &mdash; contractor reviews all drafts | Self-serve clients |
+
+**Operator workflow (operator_managed):**
+1. Positive reviews auto-post &mdash; no action needed
+2. Negative reviews appear in &ldquo;Pending Responses&rdquo; section on `/admin/clients/[id]/reviews`
+3. Operator can: **Approve &amp; Post**, **Edit** the draft then post, or **Forward to Client** for personal input
+4. &ldquo;Approve All Positive&rdquo; batch button for bulk operations
+5. Forwarded reviews appear on the contractor&apos;s `/client/reviews` page
+
+**Contractor portal (operator_managed):** Only shows reviews explicitly forwarded by the operator. Empty state: &ldquo;Your account manager handles review responses. Reviews that need your personal touch will appear here.&rdquo;
+
+**Contractor portal (client_approves):** Shows all draft/pending responses for editing and approval (legacy behavior).
 
 ---
 

@@ -278,7 +278,8 @@ Dashboard, Conversations, Leads, Revenue, Reports, Flows, Knowledge, Reviews, Te
 | [SPEC-UX-01](SPEC-UX-01-QUICK-WINS.md) | Phase 1 | Template merge, renames, Compliance move, wizard fixes, reports queue, Twilio badge | **Complete** (2026-04-09) |
 | [SPEC-UX-02](SPEC-UX-02-NAV-CLEANUP.md) | Phase 2 | Team sub-tabs, Platform Analytics dedup, triage-aware back nav, Voice AI reorganize | **Complete** (2026-04-09) |
 | [SPEC-UX-03](SPEC-UX-03-CLIENT-DETAIL-LIFECYCLE.md) | Phase 3 | Client detail lifecycle-aware layout, System Settings collapse diagnostics | **Complete** (2026-04-09) &mdash; 3 of 4 panels were already conditional; only onboardingQualityPanel needed fixing |
-| [SPEC-UX-04](SPEC-UX-04-SERVICE-MODEL-GATING.md) | Phase 4 | serviceModel schema, portal gating, review approval modes, nav filtering | **Partial** &mdash; portal gating + admin toggle done; review approval mode is a follow-up |
+| [SPEC-UX-04](SPEC-UX-04-SERVICE-MODEL-GATING.md) | Phase 4 | serviceModel schema, portal gating, review approval modes, nav filtering | **Complete** (2026-04-09) |
+| [SPEC-UX-05](SPEC-UX-05-REVIEW-APPROVAL-MODE.md) | Phase 5 | reviewApprovalMode, auto-post positive, hold negative, operator batch-approve, forward-to-client | **Complete** (2026-04-09) |
 
 ### Execution Order
 
