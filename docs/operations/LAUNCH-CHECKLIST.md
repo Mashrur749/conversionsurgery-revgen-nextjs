@@ -201,8 +201,8 @@ Log in as the contractor to see what they see.
    - Account Manager card (shows when operator phone is configured)
 5. Go to **Conversations** &mdash; you should see the test conversations from earlier
 6. Find a lead in &ldquo;Won&rdquo; status &mdash; click **Mark Job Complete** button
-7. Click **Help &amp; Support** &rarr; scroll to find the Discussions link &rarr; send a message
-8. Switch back to admin: click **Clients** &rarr; **Discussions** &mdash; the thread should appear
+7. Click **Help &amp; Support** &rarr; send a support message
+8. Switch back to admin: click **Clients** &rarr; **Support** &mdash; the thread should appear
 
 - [ ] Contractor dashboard loads with cards
 - [ ] Mark Job Complete button works
@@ -384,7 +384,7 @@ Simulate what your daily routine looks like with an active client.
 
 3. Click **Clients** &rarr; **Triage** &mdash; does Summit Renovations show as needing attention?
 4. Click **Client View** &rarr; **Escalations** (per-client queue) &mdash; the &ldquo;complaint&rdquo; text should have created an escalation. Click it. Read the AI&apos;s notes. Click **Resolve** with a note. With multiple clients, use **Clients** &rarr; **Escalations** for the cross-client queue (same as `/escalations` in the nav).
-5. Click **Clients** &rarr; **AI Quality** &mdash; any flagged messages? If so, review them.
+5. Click **Clients** &rarr; **AI Flagged Responses** &mdash; any flagged messages? If so, review them.
 6. Click **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; **Knowledge Base** (page link) &rarr; **Gap Queue** tab &mdash; any KB gaps? Add the answer.
 
 **Generate a report:**
@@ -605,7 +605,7 @@ Work through each service. Don&apos;t skip &mdash; each one powers a specific pa
 5. Select these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`, `customer.subscription.paused`, `customer.subscription.resumed`, `customer.subscription.trial_will_end`, `payment_method.attached`
 6. Copy the webhook signing secret (starts with `whsec_`)
 
-- [ ] `STRIPE_SECRET_KEY`, `STRIPE_PRICE_PRO_MONTHLY`, `STRIPE_WEBHOOK_SECRET` set in production env
+- [ ] `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MANAGED_MONTHLY`, `STRIPE_WEBHOOK_SECRET` set in production env
 
 **Email (10 min):**
 
@@ -732,7 +732,7 @@ This is your entire daily workload per client once they&apos;re onboarded:
 1. `/admin/triage` &mdash; who needs attention? (red = act now, yellow = check soon)
 2. `/escalations` &mdash; any hot leads the AI couldn&apos;t handle? (cross-client queue; per-client is under Client View &rarr; Escalations)
 3. Knowledge gap queue &mdash; any questions the AI couldn&apos;t answer? Add the answer. (**Clients** &rarr; **Clients** &rarr; client &rarr; **Knowledge Base** &rarr; **Gap Queue** tab)
-4. `/admin/ai-quality` (**Clients** &rarr; **AI Quality**) &mdash; any flagged messages? Review and dismiss or fix.
+4. `/admin/ai-quality` (**Clients** &rarr; **AI Flagged Responses**) &mdash; any flagged messages? Review and dismiss or fix.
 5. New clients only (Week 1): run Voice AI KB Test again after adding answers from real calls.
 
 That&apos;s it. The system handles everything else.
