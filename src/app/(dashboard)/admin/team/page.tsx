@@ -7,9 +7,15 @@ import {
   roleTemplates,
   agencyClientAssignments,
   clients,
+  users,
+  clientMemberships,
 } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, count, sql } from 'drizzle-orm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AgencyTeamClient } from './team-client';
+import { RolesClient } from '../roles/roles-client';
+import { UserList } from '../users/user-list';
+import { TeamTabs } from './team-tabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +28,7 @@ export default async function AgencyTeamPage() {
 
   const db = getDb();
 
-  // Load all agency members with roles
+  // ── Members tab data ──
   const members = await db
     .select({
       membershipId: agencyMemberships.id,
@@ -43,7 +49,6 @@ export default async function AgencyTeamPage() {
     .innerJoin(roleTemplates, eq(agencyMemberships.roleTemplateId, roleTemplates.id))
     .orderBy(desc(agencyMemberships.createdAt));
 
-  // Load client assignments for scoped members
   const scopedIds = members
     .filter((m) => m.clientScope === 'assigned')
     .map((m) => m.membershipId);
@@ -79,39 +84,102 @@ export default async function AgencyTeamPage() {
       : null,
   }));
 
-  // Load agency-scoped role templates for invite dialog
   const agencyRoles = await db
-    .select({
-      id: roleTemplates.id,
-      name: roleTemplates.name,
-      slug: roleTemplates.slug,
-    })
+    .select({ id: roleTemplates.id, name: roleTemplates.name, slug: roleTemplates.slug })
     .from(roleTemplates)
     .where(eq(roleTemplates.scope, 'agency'));
 
-  // Load all clients for client scope assignment
   const allClients = await db
-    .select({
-      id: clients.id,
-      businessName: clients.businessName,
-    })
+    .select({ id: clients.id, businessName: clients.businessName })
     .from(clients)
     .where(eq(clients.status, 'active'))
     .orderBy(clients.businessName);
 
+  // ── Roles tab data ──
+  const templates = await db
+    .select()
+    .from(roleTemplates)
+    .orderBy(desc(roleTemplates.isBuiltIn), roleTemplates.name);
+
+  const agencyUsage = await db
+    .select({ roleTemplateId: agencyMemberships.roleTemplateId, total: count() })
+    .from(agencyMemberships)
+    .groupBy(agencyMemberships.roleTemplateId);
+
+  const clientUsage = await db
+    .select({ roleTemplateId: clientMemberships.roleTemplateId, total: count() })
+    .from(clientMemberships)
+    .groupBy(clientMemberships.roleTemplateId);
+
+  const usageMap: Record<string, number> = {};
+  for (const u of agencyUsage) {
+    usageMap[u.roleTemplateId] = (usageMap[u.roleTemplateId] || 0) + u.total;
+  }
+  for (const u of clientUsage) {
+    usageMap[u.roleTemplateId] = (usageMap[u.roleTemplateId] || 0) + u.total;
+  }
+
+  const enrichedTemplates = templates.map((t) => ({
+    ...t,
+    usageCount: usageMap[t.id] || 0,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+  }));
+
+  const userPermissions = session.user.permissions || [];
+
+  // ── Users tab data ──
+  const allUsers = await db
+    .select({
+      id: users.id,
+      name: sql<string | null>`COALESCE(${people.name}, ${users.name})`,
+      email: sql<string>`COALESCE(${people.email}, ${users.email})`,
+      hasAgencyAccess: sql<boolean>`${agencyMemberships.id} IS NOT NULL`,
+      clientId: sql<string | null>`${clientMemberships.clientId}`,
+      clientName: sql<string | null>`${clients.businessName}`,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .leftJoin(people, eq(users.personId, people.id))
+    .leftJoin(agencyMemberships, eq(people.id, agencyMemberships.personId))
+    .leftJoin(clientMemberships, eq(people.id, clientMemberships.personId))
+    .leftJoin(clients, eq(clientMemberships.clientId, clients.id))
+    .orderBy(desc(users.createdAt));
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Agency Team</h1>
+        <h1 className="text-2xl font-bold">Team</h1>
         <p className="text-muted-foreground">
-          Manage who has access to the agency dashboard.
+          Manage team members, roles, and portal access.
         </p>
       </div>
 
-      <AgencyTeamClient
-        members={enrichedMembers}
-        agencyRoles={agencyRoles}
-        allClients={allClients}
+      <TeamTabs
+        membersContent={
+          <AgencyTeamClient
+            members={enrichedMembers}
+            agencyRoles={agencyRoles}
+            allClients={allClients}
+          />
+        }
+        rolesContent={
+          <RolesClient templates={enrichedTemplates} userPermissions={userPermissions} />
+        }
+        usersContent={
+          <Card>
+            <CardHeader>
+              <CardTitle>All Users</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <UserList
+                users={allUsers}
+                clients={allClients}
+                currentUserId={session.user!.id!}
+              />
+            </CardContent>
+          </Card>
+        }
       />
     </div>
   );

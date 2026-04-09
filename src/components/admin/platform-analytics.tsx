@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Users,
-  DollarSign,
   TrendingUp,
   TrendingDown,
   ArrowDown,
@@ -42,32 +40,13 @@ export function PlatformAnalytics() {
 
   return (
     <div className="space-y-6">
-      {/* MRR Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">MRR</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(data?.mrrCents || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">Monthly recurring revenue</p>
-          </CardContent>
-        </Card>
+      <p className="text-sm text-muted-foreground">
+        Financial metrics (MRR, churn, subscriptions) are on the{' '}
+        <a href="/admin/billing" className="text-primary hover:underline">Billing</a> page.
+      </p>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.activeClients || 0}</div>
-            <p className="text-xs text-muted-foreground">With active subscriptions</p>
-          </CardContent>
-        </Card>
-
+      {/* Client Movement */}
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">New This Month</CardTitle>
@@ -171,11 +150,9 @@ export function PlatformAnalytics() {
             </div>
             <div className="flex justify-between items-center">
               <span>Churn Rate</span>
-              <span
-                className={`font-bold ${(data?.churnRate || 0) > 5 ? 'text-destructive' : 'text-[#3D7A50]'}`}
-              >
-                {data?.churnRate?.toFixed(1) || 0}%
-              </span>
+              <a href="/admin/billing" className="font-bold text-primary hover:underline text-sm">
+                See Billing
+              </a>
             </div>
           </CardContent>
         </Card>
