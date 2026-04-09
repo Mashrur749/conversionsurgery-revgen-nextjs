@@ -591,16 +591,22 @@ Auto-generated and delivered to clients every 2 weeks:
 - **Pipeline Proof (`pipelineProof` in `roiSummary`):** 6 auto-tracked metrics added to every report — leads responded to, estimates in follow-up, missed calls caught, dead quotes re-engaged, appointments booked, and average response time. `probablePipelineValue` is calculated automatically as (appointments booked + reactivated quotes) &times; avg project value ($40K default). These metrics require zero contractor action and prove system value even before any wins are confirmed.
 - Versioned output — shows `ready` or `insufficient_data` (never fabricates)
 
-### Weekly Pipeline SMS
+### Weekly Activity Digest
 
-Every Monday morning, the system automatically sends the contractor a pipeline summary via SMS. This keeps them informed between bi-weekly reports and surfaces issues before they become churn risks.
+Every Monday morning, the system sends the contractor an SMS activity summary. Cadence adapts to activity level:
 
-**Message includes:**
-- Dollar pipeline values: &ldquo;Probable pipeline: $XK | Confirmed: $XK&rdquo;
-- Needs-attention count: number of leads flagged `action_required` that haven&apos;t been resolved
-- Brief summary of week-over-week change
+| Activity level | Cadence | Message style |
+|---|---|---|
+| Active week (new leads or appointments) | Weekly | Full digest: leads, appointments, follow-ups, won jobs, jobs to close out |
+| Quiet week (no new leads, but active follow-ups) | Biweekly | Short: &ldquo;quiet week, X estimates being followed up automatically&rdquo; |
+| Slow period (3+ weeks zero new leads) | Monthly | Reassurance: &ldquo;leads have been slow, AI is ready when volume picks up&rdquo; |
+| Zero everything + no follow-ups | Don&apos;t send | Operator investigates directly |
+| First 7 days of client | Don&apos;t send | Day-one activation updates handle this |
 
-Sent via the agency number (not the business line). Runs as part of the weekly digest cron.
+**Message format** (contractor-friendly, not operator metrics):
+&ldquo;Hey [name], your week: 2 new leads, 1 appointment booked, 3 estimates in follow-up. Won: $8,500 from 1 job. 1 job to mark complete for review requests.&rdquo;
+
+Sent from the client&apos;s business line (same thread as AI conversations). Per-client toggle: `weeklyDigestEnabled`. Cron: `/api/cron/weekly-digest` on Monday 7am UTC.
 
 ### Delivery Infrastructure
 
@@ -608,7 +614,7 @@ Sent via the agency number (not the business line). Runs as part of the weekly d
 - Retry cron with exponential backoff
 - Terminal failure alerts to admin
 - **Auto-follow-up SMS:** after report delivery, the system auto-sends an SMS to the contractor via the agency number: &quot;[Business Name] &mdash; your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.&quot; Fire-and-forget; does not affect delivery state.
-- **Weekly pipeline SMS:** Monday morning digest with dollar pipeline values and needs-attention count (see above).
+- **Weekly activity digest:** Monday SMS with activity summary, adaptive cadence (see above).
 - Client portal download link
 
 ### Funnel Tracking

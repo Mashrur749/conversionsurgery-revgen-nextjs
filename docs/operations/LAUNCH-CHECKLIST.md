@@ -242,15 +242,19 @@ Log in as the contractor to see what they see.
 - [ ] OAuth connected
 - [ ] Appointment synced to Google Calendar
 
-### 2.18 Weekly Pipeline SMS
+### 2.18 Weekly Activity Digest
 
-1. Trigger the weekly summary cron:
+1. Ensure test client is at least 7 days old (skip onboarding gate) and has `weeklyDigestEnabled = true`.
+2. Trigger the weekly digest cron:
    ```bash
-   curl -X POST http://localhost:3000/api/cron -H "Authorization: Bearer YOUR_CRON_SECRET"
+   curl http://localhost:3000/api/cron/weekly-digest -H "Authorization: Bearer YOUR_CRON_SECRET"
    ```
-2. Dev Phone #3 (Owner) should receive a Monday pipeline SMS with dollar values
+3. Dev Phone #3 (Owner) should receive an activity summary SMS.
+4. Verify message format: &ldquo;Hey [name], your week: X new leads, X appointments booked...&rdquo;
+5. If the client had zero activity, verify the digest was skipped or sent the quiet/reassurance variant.
 
-- [ ] Pipeline SMS received with revenue numbers
+- [ ] Activity digest SMS received with correct stats
+- [ ] Zero-activity client was skipped (no SMS sent)
 
 ### Phase 2 done?
 
@@ -570,7 +574,7 @@ Don&apos;t skip this. Reading scripts silently is not the same as saying them. O
 - [ ] Where do contractors view past reports? (Contractor portal &rarr; Reports page in the nav)
 - [ ] What cards always appear on the contractor dashboard? (Voice AI status, System Activity, Jobs We Helped Win &mdash; plus conditional: Setup card, AI Setup card, Guarantee indicator, Account Manager, Revenue Leak Audit)
 - [ ] How do you access the Knowledge Base for a client? (Client detail page &rarr; Knowledge Base link, opens a separate page with Guided Interview / All Entries / Gap Queue tabs and a side-by-side AI test chat)
-- [ ] What does the Monday pipeline SMS show?
+- [ ] What does the Monday activity digest show? (Activity summary: new leads, appointments, follow-ups, won jobs. Cadence adapts: weekly/biweekly/monthly based on activity level.)
 - [ ] What is the $5,000 pipeline floor guarantee?
 - [ ] How does the Jobber integration work? (appointment sync + review trigger)
 - [ ] How do you QA a client&apos;s voice AI before going live? (Voice AI Playground: greeting preview, simulator, KB test, guardrail test, QA checklist)

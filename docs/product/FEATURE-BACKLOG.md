@@ -150,7 +150,7 @@ These items were shipped and are no longer backlog. Documented here for traceabi
 | SPEC | Feature | Status |
 |------|---------|--------|
 | SPEC-07 | Pre-Sale Revenue Leak Audit — operator process + template at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` | **Implemented** |
-| SPEC-08 | Weekly Pipeline SMS — Monday morning SMS with dollar pipeline values ($XK probable, $XK confirmed) + needs-attention count | **Implemented** |
+| SPEC-08 | Weekly Activity Digest — Monday SMS with adaptive cadence (weekly/biweekly/monthly based on activity). Contractor-friendly format, not pipeline math. Includes jobs to close out for review engine. | **Implemented** (redesigned 2026-04-09) |
 | SPEC-09 | Voice AI Default-On — `voiceEnabled` defaults to `true` for new clients; per-minute billing unchanged | **Implemented** |
 | SPEC-10 | Revenue Floor Guarantee — 90-day guarantee now passes with $5,000+ probable pipeline OR 1 attributed opportunity | **Implemented** |
 | SPEC-11 | ROI Calculator API — `POST /api/public/roi-calculator` for pre-sale revenue-at-risk calculations | **Implemented** |
