@@ -128,7 +128,7 @@ export function AIQualityClient({ initialMessages }: AIQualityClientProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">AI Quality Review</h1>
+        <h1 className="text-2xl font-bold">AI Flagged Responses</h1>
         <p className="text-muted-foreground">
           Flagged AI messages across all clients. Review and fix knowledge base or prompt issues.
         </p>
