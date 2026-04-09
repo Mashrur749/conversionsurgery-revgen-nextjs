@@ -272,6 +272,7 @@ export async function POST(request: NextRequest) {
     // ── Weekly Monday 7am UTC ────────────────────────────────
     if (day === 1 && hour === 7 && minute < 10) {
       results.weeklySummary = await dispatch(baseUrl, '/api/cron/weekly-summary', cronSecret!, 'GET', failedJobs);
+      results.weeklyDigest = await dispatch(baseUrl, '/api/cron/weekly-digest', cronSecret!, 'GET', failedJobs);
       results.agencyDigest = await dispatch(baseUrl, '/api/cron/agency-digest', cronSecret!, 'GET', failedJobs);
       results.quarterlyCampaignDigest = await dispatch(
         baseUrl,

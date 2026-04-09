@@ -70,6 +70,9 @@ export const clients = pgTable(
     // ============================================
     notificationEmail: boolean('notification_email').default(true),
     notificationSms: boolean('notification_sms').default(true),
+    weeklyDigestEnabled: boolean('weekly_digest_enabled').default(true),
+    weeklyDigestLastSentAt: timestamp('weekly_digest_last_sent_at'),
+    weeklyDigestConsecutiveZeroWeeks: integer('weekly_digest_consecutive_zero_weeks').default(0),
     webhookUrl: varchar('webhook_url', { length: 500 }),
     webhookEvents: jsonb('webhook_events').default(
       sql`'["lead.created", "lead.qualified", "appointment.booked"]'`
