@@ -48,7 +48,7 @@ export default async function AdminDiscussionsPage({
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Support Discussions</h1>
+        <h1 className="text-2xl font-bold">Support</h1>
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
             {['all', 'open', 'resolved'].map((f) => (

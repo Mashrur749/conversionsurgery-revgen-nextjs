@@ -14,7 +14,7 @@ export default async function AiEffectivenessPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">AI Effectiveness</h1>
+        <h1 className="text-2xl font-bold">AI Performance</h1>
         <p className="text-muted-foreground mt-2">
           Monitor AI decision quality, model routing, and conversation outcomes
         </p>
