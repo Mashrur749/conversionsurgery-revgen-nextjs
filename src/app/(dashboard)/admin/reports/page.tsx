@@ -2,8 +2,11 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getDb } from '@/db';
 import { reports, clients } from '@/db/schema';
+import { eq, desc, sql } from 'drizzle-orm';
+import { CheckCircle, Clock } from 'lucide-react';
 import ReportDeliveryOpsPanel from './components/report-delivery-ops-panel';
 import { ReportsTableWithFilters } from './components/reports-table-with-filters';
 
@@ -22,13 +25,37 @@ export default async function ReportsPage() {
 
   const allClients = await db.select().from(clients);
 
-  const totalReports = allReports.length;
-  const biWeeklyCount = allReports.filter(
-    (r) => r.reportType === 'bi-weekly'
-  ).length;
-  const monthlyCount = allReports.filter(
-    (r) => r.reportType === 'monthly'
-  ).length;
+  // Compute reports due: for each active client, find their most recent report
+  // If last report + 14 days is within 7 days from now (or overdue), they're due
+  const activeClients = allClients.filter(c => c.status === 'active');
+  const now = new Date();
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const reportsDue: { clientId: string; businessName: string; lastReportDate: Date | null; dueDate: Date | null; overdue: boolean }[] = [];
+
+  for (const client of activeClients) {
+    const clientReports = allReports
+      .filter(r => r.clientId === client.id)
+      .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+
+    const lastReport = clientReports[0];
+    const lastReportDate = lastReport ? new Date(lastReport.createdAt!) : null;
+    const dueDate = lastReportDate
+      ? new Date(lastReportDate.getTime() + 14 * 24 * 60 * 60 * 1000)
+      : new Date(new Date(client.createdAt!).getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    if (dueDate <= sevenDaysFromNow) {
+      reportsDue.push({
+        clientId: client.id,
+        businessName: client.businessName,
+        lastReportDate,
+        dueDate,
+        overdue: dueDate < now,
+      });
+    }
+  }
+
+  reportsDue.sort((a, b) => (a.dueDate?.getTime() ?? 0) - (b.dueDate?.getTime() ?? 0));
 
   return (
     <div className="space-y-8">
@@ -44,24 +71,46 @@ export default async function ReportsPage() {
         </Link>
       </div>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg border p-4">
-          <p className="text-muted-foreground text-sm font-medium">Total Reports</p>
-          <p className="text-2xl font-bold mt-2">{totalReports}</p>
-          <p className="text-xs text-muted-foreground mt-1">All time</p>
-        </div>
-        <div className="bg-white rounded-lg border p-4">
-          <p className="text-muted-foreground text-sm font-medium">Bi-Weekly</p>
-          <p className="text-2xl font-bold mt-2">{biWeeklyCount}</p>
-          <p className="text-xs text-muted-foreground mt-1">Sent every 2 weeks</p>
-        </div>
-        <div className="bg-white rounded-lg border p-4">
-          <p className="text-muted-foreground text-sm font-medium">Monthly</p>
-          <p className="text-2xl font-bold mt-2">{monthlyCount}</p>
-          <p className="text-xs text-muted-foreground mt-1">Sent every month</p>
-        </div>
-      </div>
+      {/* Reports Due Queue */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-semibold">Reports Due</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {reportsDue.length === 0 ? (
+            <div className="flex items-center gap-2 py-2">
+              <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
+              <span className="text-sm text-muted-foreground">All reports up to date</span>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {reportsDue.map((item) => (
+                <div key={item.clientId} className="flex items-center justify-between py-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Clock className={`h-4 w-4 shrink-0 ${item.overdue ? 'text-[#C15B2E]' : 'text-muted-foreground'}`} />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{item.businessName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.lastReportDate
+                          ? `Last: ${item.lastReportDate.toLocaleDateString()}`
+                          : 'No reports yet'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`text-xs ${item.overdue ? 'text-[#C15B2E] font-medium' : 'text-muted-foreground'}`}>
+                      {item.overdue ? 'Overdue' : `Due ${item.dueDate?.toLocaleDateString()}`}
+                    </span>
+                    <Link href={`/admin/reports/new?clientId=${item.clientId}`}>
+                      <Button size="sm" variant="outline">Generate</Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Report Delivery Operations */}
       <ReportDeliveryOpsPanel />

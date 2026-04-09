@@ -486,13 +486,18 @@ export function StepPhoneNumber({ data, updateData, onNext, onBack }: Props) {
         </TabsContent>
       </Tabs>
 
-      <div className="flex justify-between pt-4">
+      <div className="flex justify-between items-start pt-4">
         <Button variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button variant="ghost" onClick={onNext}>
-          Skip for now
-        </Button>
+        <div className="text-right max-w-xs">
+          <Button variant="ghost" onClick={onNext}>
+            Skip for now
+          </Button>
+          <p className="text-xs text-[#C15B2E] mt-1 px-1">
+            SMS alerts and voice calls won&apos;t work until a business line is assigned. You can assign one later from the client detail page.
+          </p>
+        </div>
       </div>
     </div>
   );

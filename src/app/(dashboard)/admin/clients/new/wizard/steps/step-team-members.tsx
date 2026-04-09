@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import type { WizardData } from '../setup-wizard';
+import { normalizePhoneNumber } from '@/lib/utils/phone';
 
 interface Props {
   data: WizardData;
@@ -23,10 +24,30 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
     role: '',
   });
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
+  function validatePhone(phone: string): string | null {
+    if (!phone) return null;
+    try {
+      const normalized = normalizePhoneNumber(phone);
+      if (!normalized || normalized.length < 10) {
+        return 'Enter a 10-digit phone number including area code';
+      }
+      return null;
+    } catch {
+      return 'Enter a 10-digit phone number including area code';
+    }
+  }
 
   function addMember() {
     if (!newMember.name || !newMember.phone) {
       setError('Name and phone are required');
+      return;
+    }
+
+    const phoneErr = validatePhone(newMember.phone);
+    if (phoneErr) {
+      setPhoneError(phoneErr);
       return;
     }
 
@@ -37,6 +58,7 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
     setNewMember({ name: '', phone: '', email: '', role: '' });
     setShowAdd(false);
     setError('');
+    setPhoneError('');
   }
 
   function removeMember(index: number) {
@@ -137,9 +159,20 @@ export function StepTeamMembers({ data, updateData, onNext, onBack }: Props) {
               <Label>Phone *</Label>
               <Input
                 value={newMember.phone}
-                onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                onChange={(e) => {
+                  setNewMember({ ...newMember, phone: e.target.value });
+                  if (phoneError) setPhoneError('');
+                }}
+                onBlur={() => {
+                  const err = validatePhone(newMember.phone);
+                  if (err) setPhoneError(err);
+                }}
                 placeholder="403-555-1234"
+                className={phoneError ? 'border-[#C15B2E]' : ''}
               />
+              {phoneError && (
+                <p className="text-xs text-[#C15B2E]">{phoneError}</p>
+              )}
             </div>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
