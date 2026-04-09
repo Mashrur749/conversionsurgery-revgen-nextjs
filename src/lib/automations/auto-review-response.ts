@@ -4,21 +4,37 @@ import { eq, and, isNull } from 'drizzle-orm';
 import { createDraftResponse } from '@/lib/services/review-response';
 import { postResponseToGoogle } from '@/lib/services/google-business';
 
+/** Rating threshold: reviews at or above this are auto-approved for operator_managed clients. */
+const POSITIVE_RATING_THRESHOLD = 3;
+
 /**
  * Auto-generate draft review responses for clients with autoReviewResponseEnabled.
  * Finds reviews that have no response record yet and creates AI/template drafts.
+ *
+ * For operator_managed clients:
+ * - Positive reviews (rating >= 3): auto-approve and post immediately
+ * - Negative reviews (rating <= 2): hold as pending_approval for operator review
+ *
+ * For client_approves clients:
+ * - All drafts stay as 'draft' for contractor approval
  */
 export async function autoGenerateReviewDrafts(): Promise<{
   draftsCreated: number;
+  autoApproved: number;
   errors: number;
 }> {
   const db = getDb();
   let draftsCreated = 0;
+  let autoApproved = 0;
   let errors = 0;
 
   // Get clients with auto-review enabled
   const activeClients = await db
-    .select({ id: clients.id })
+    .select({
+      id: clients.id,
+      reviewApprovalMode: clients.reviewApprovalMode,
+      businessName: clients.businessName,
+    })
     .from(clients)
     .where(
       and(
@@ -44,8 +60,30 @@ export async function autoGenerateReviewDrafts(): Promise<{
 
     for (const review of unrespondedReviews) {
       try {
-        await createDraftResponse(review.id);
+        const draft = await createDraftResponse(review.id);
         draftsCreated++;
+
+        // Operator-managed: auto-approve positive, hold negative
+        if (client.reviewApprovalMode === 'operator_managed' && draft) {
+          const draftId = draft.id;
+          const rating = review.rating ?? 0;
+
+          if (rating >= POSITIVE_RATING_THRESHOLD) {
+            // Auto-approve and post positive reviews
+            await db
+              .update(reviewResponses)
+              .set({ status: 'approved', approvedAt: new Date(), updatedAt: new Date() })
+              .where(eq(reviewResponses.id, draftId));
+            autoApproved++;
+          } else {
+            // Hold negative reviews for operator review
+            await db
+              .update(reviewResponses)
+              .set({ status: 'pending_approval', updatedAt: new Date() })
+              .where(eq(reviewResponses.id, draftId));
+          }
+        }
+        // client_approves: leave as 'draft' (current behavior)
       } catch (err) {
         console.error(`[AutoReview] Failed to create draft for review ${review.id}:`, err);
         errors++;
@@ -53,8 +91,8 @@ export async function autoGenerateReviewDrafts(): Promise<{
     }
   }
 
-  console.log(`[AutoReview] Created ${draftsCreated} drafts, ${errors} errors`);
-  return { draftsCreated, errors };
+  console.log(`[AutoReview] Created ${draftsCreated} drafts, ${autoApproved} auto-approved, ${errors} errors`);
+  return { draftsCreated, autoApproved, errors };
 }
 
 /**

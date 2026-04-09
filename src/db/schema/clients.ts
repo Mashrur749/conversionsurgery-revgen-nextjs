@@ -29,6 +29,7 @@ export const clients = pgTable(
     googleLocationId: varchar('google_location_id', { length: 100 }),
     timezone: varchar('timezone', { length: 50 }).default('America/Edmonton'),
     serviceModel: varchar('service_model', { length: 20 }).default('managed').notNull(), // 'managed' | 'self_serve'
+    reviewApprovalMode: varchar('review_approval_mode', { length: 20 }).default('operator_managed').notNull(), // 'operator_managed' | 'client_approves'
 
     // ============================================
     // FEATURE FLAGS

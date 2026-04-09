@@ -1,0 +1,2 @@
+ALTER TABLE "clients" ADD COLUMN "review_approval_mode" varchar(20) DEFAULT 'operator_managed' NOT NULL;--> statement-breakpoint
+ALTER TABLE "review_responses" ADD COLUMN "forwarded_to_client" timestamp;

@@ -37,6 +37,9 @@ export const reviewResponses = pgTable(
     approvedBy: uuid('approved_by').references(() => people.id, { onDelete: 'set null' }),
     rejectionReason: text('rejection_reason'),
 
+    // Operator workflow
+    forwardedToClient: timestamp('forwarded_to_client'), // non-null = operator forwarded for client input
+
     // Posting
     postedAt: timestamp('posted_at'),
     postError: text('post_error'),

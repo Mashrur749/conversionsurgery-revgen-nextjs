@@ -71,6 +71,7 @@ const updateClientSchema = z.object({
   webhookEvents: z.array(z.string()).optional(),
   // Service model
   serviceModel: z.enum(['managed', 'self_serve']).optional(),
+  reviewApprovalMode: z.enum(['operator_managed', 'client_approves']).optional(),
 });
 
 export const PATCH = adminClientRoute<{ id: string }>(
