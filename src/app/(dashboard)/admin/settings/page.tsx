@@ -25,9 +25,16 @@ export default async function SystemSettingsPage() {
         <h1 className="text-2xl font-bold">System Settings</h1>
         <p className="text-muted-foreground">Global configuration for the platform</p>
       </div>
-      <ReliabilityDashboard />
-      <CronCatchupManager />
       <SystemSettingsManager settings={settings} />
+      <details className="mt-6">
+        <summary className="text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+          System Diagnostics (cron, reliability)
+        </summary>
+        <div className="mt-4 space-y-6">
+          <ReliabilityDashboard />
+          <CronCatchupManager />
+        </div>
+      </details>
     </div>
   );
 }

@@ -46,10 +46,12 @@ import { calculateProbablePipelineValueCents } from '@/lib/services/pipeline-val
 
 interface Props {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }
 
-export default async function ClientDetailPage({ params }: Props) {
+export default async function ClientDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const { from } = await searchParams;
   const session = await auth();
 
   if (!session?.user?.isAgency) {
@@ -364,10 +366,11 @@ export default async function ClientDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <Breadcrumbs items={[
-        { label: 'Clients', href: '/admin/clients' },
-        { label: 'Client Details' },
-      ]} />
+      <Breadcrumbs items={
+        from === 'triage'
+          ? [{ label: 'Triage', href: '/admin/triage' }, { label: client.businessName }]
+          : [{ label: 'Clients', href: '/admin/clients' }, { label: 'Client Details' }]
+      } />
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center gap-3">
@@ -390,7 +393,9 @@ export default async function ClientDetailPage({ params }: Props) {
         </div>
         <div className="flex gap-2">
           <Button asChild variant="outline">
-            <Link href="/admin">&#8592; Back to Clients</Link>
+            <Link href={from === 'triage' ? '/admin/triage' : '/admin'}>
+              &larr; {from === 'triage' ? 'Back to Triage' : 'Back to Clients'}
+            </Link>
           </Button>
           <Button asChild variant={client.twilioNumber ? 'outline' : 'default'}>
             <Link href={`/admin/clients/${client.id}/phone`}>
@@ -469,10 +474,12 @@ export default async function ClientDetailPage({ params }: Props) {
         }
         featureStatusList={<FeatureStatusList client={client} />}
         onboardingQualityPanel={
-          <OnboardingQualityPanel
-            clientId={client.id}
-            currentAiMode={(client.aiAgentMode as 'off' | 'assist' | 'autonomous') ?? 'assist'}
-          />
+          client.aiAgentMode === 'autonomous' ? null : (
+            <OnboardingQualityPanel
+              clientId={client.id}
+              currentAiMode={(client.aiAgentMode as 'off' | 'assist' | 'autonomous') ?? 'assist'}
+            />
+          )
         }
         reminderRoutingPanel={<ReminderRoutingPanel clientId={client.id} />}
         aiPreviewPanel={<AiPreviewPanel clientId={client.id} />}

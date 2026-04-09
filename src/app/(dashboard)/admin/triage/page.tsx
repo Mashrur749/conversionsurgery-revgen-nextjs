@@ -230,7 +230,7 @@ function TriageCard({ row }: { row: TriageClientRow }) {
   const config = HEALTH_CONFIG[row.healthStatus];
   const Icon = config.Icon;
   return (
-    <Link href={`/admin/clients/${row.id}`}>
+    <Link href={`/admin/clients/${row.id}?from=triage`}>
       <Card className={`hover:shadow-md transition-shadow ${config.rowClass}`}>
         <CardContent className="py-4 space-y-3">
           <div className="flex items-center justify-between">
@@ -385,7 +385,7 @@ export default async function TriagePage() {
                         >
                           <td className="px-4 py-3">
                             <Link
-                              href={`/admin/clients/${row.id}`}
+                              href={`/admin/clients/${row.id}?from=triage`}
                               className="font-medium hover:underline"
                             >
                               {row.businessName}
