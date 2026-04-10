@@ -227,8 +227,8 @@ export async function processWinBackFollowUp(
   const [lead] = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
   if (!lead) return null;
 
-  // If they replied (status changed from 'contacted'), don't send
-  if (lead.status !== 'contacted') return null;
+  // If they replied (status changed from 'contacted' or 'estimate_sent'), don't send
+  if (!['contacted', 'estimate_sent'].includes(lead.status as string)) return null;
 
   const [client] = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1);
   if (!client) return null;
