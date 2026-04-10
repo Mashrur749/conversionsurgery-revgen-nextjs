@@ -360,11 +360,14 @@ Every lead accumulates:
 
 ### Team Coordination
 
-- **Ring group:** simultaneous dial to all available team members during business hours
+- **Ring group:** simultaneous dial to available team members during business hours. Filters by `availabilityStatus = 'available'` (members set to `busy` or `off_duty` are excluded). Prefers owner-flagged members for quote calls; falls back to all if none qualify.
 - **Escalation queue:** priority-ranked (1-5) with SLA deadlines, live countdown timers (color-coded: green/sienna/red by urgency), assignment, claim tokens, and 30-second auto-refresh with &quot;Updated X ago&quot; timestamp. **3-stage re-notification:** unclaimed escalations re-notify at 15 min, 30 min, and 60 min (inferred from elapsed time, capped at 3 attempts). After 60 min unclaimed, escalates to the owner directly.
 - **Hot transfer:** Voice AI detects urgency &rarr; dials team immediately &rarr; SMS heads-up ("Hot lead calling!")
 - **Missed transfer fallback:** SMS to team ("Missed hot transfer — call back ASAP") + SMS to lead ("Sorry we missed you")
-- **Owner notification:** Smart Assist drafts with reference codes for SEND/EDIT/CANCEL approval
+- **Owner notification:** Smart Assist drafts with reference codes for SEND/EDIT/CANCEL approval. Contractor notification SMS capped at 5/hour per client to prevent notification fatigue during surge.
+- **Team member SMS commands:** any active team member can text EST [name] (trigger estimate follow-up) or NOSHOW [name] (mark appointment no-show) from their personal phone — not just the owner. Command auth checks `clientMemberships` for the sender&apos;s phone.
+- **Escalation batching:** when 3+ escalations fire within 30 minutes, team members receive a single summary SMS instead of individual notifications per lead
+- **Crew availability toggle:** `availabilityStatus` field on team memberships (available/busy/off_duty). Busy or off-duty members are automatically excluded from ring groups and escalation routing.
 
 ### Conversation Modes
 
@@ -873,8 +876,8 @@ The admin nav has 5 groups. `/admin` redirects to `/admin/triage`. Updated 2026-
 | Group | Items |
 |-------|-------|
 | **Clients** | Triage, Clients, Escalations, AI Flagged Responses, Support |
-| **Reporting** | Billing, Reports, Platform Health, Costs &amp; Usage, TCPA Compliance |
-| **Optimization** | Flow Templates, Flow Analytics (with All Variants toggle), A/B Tests, Reputation, AI Performance |
+| **Reporting** | Billing, Reports, Platform Health, Costs &amp; Usage, TCPA Compliance, **Agency Summary** (cross-client weekly stats) |
+| **Optimization** | Flow Templates, Flow Analytics (with All Variants toggle), A/B Tests, Reputation, AI Performance, **KB Gap Queue** (cross-client knowledge gaps with duplicate detection) |
 | **Team &amp; Access** | Team (with Members/Roles/Portal Users sub-tabs), Audit Log |
 | **Settings** | Agency Settings, Phone Numbers (with Twilio balance badge), Twilio Account, Voice AI (client selector + Settings/Testing tabs), Webhook Logs, Email Templates, API Keys, System Settings (diagnostics collapsed by default) |
 
@@ -976,7 +979,9 @@ Articles appear in the contractor portal Help section and reduce first-week supp
 Unified cross-client triage view at `/admin/triage` (Clients group in admin nav). `/admin` redirects here.
 
 - Surfaces the highest-priority action items across all clients in a single prioritized list: open escalations (P1 first), knowledge gaps past due, onboarding SLA breaches, stale guarantee states, failed report deliveries
+- **Trigger detail on each card:** shows the specific reason for flagging with threshold context (e.g., &ldquo;Last estimate sent: 22d ago, threshold: 21d&rdquo;) and duration at status (&ldquo;Flagged for 3 weeks&rdquo; vs &ldquo;Just flagged today&rdquo;)
 - **Pending Drafts column:** shows the Smart Assist pending draft count per client in both the table view and mobile card layout
+- **Batch escalation acknowledge:** `POST /api/admin/escalations/batch` accepts multiple escalation IDs for bulk resolve/dismiss
 - Designed as a daily starting point for the solo operator — open this before the full daily checklist
 - Replaces the need to open each client separately to find what needs attention
 - Accessible via admin nav: Clients &rarr; Triage
@@ -986,7 +991,9 @@ Unified cross-client triage view at `/admin/triage` (Clients group in admin nav)
 Automated detection of per-client engagement decay before it becomes visible churn risk.
 
 - `engagement-health-check` cron (Mondays) evaluates each active client: response rates, AI deferral frequency, escalation volume, and lead activity trends
-- Flags clients where engagement has declined for 3+ consecutive weeks — operator receives an alert with the specific health signal
+- **Root cause analysis:** when a client is flagged, the system computes: inbound call volume trend (7d vs prior 7d), AI conversation success rate, unanswered missed calls, and suggests a specific intervention (&ldquo;Check voice routing &mdash; inbound calls dropped 60%&rdquo; or &ldquo;Consider launching a Growth Blitz campaign&rdquo;)
+- Flags clients where engagement has declined for 3+ consecutive weeks — operator receives an alert with the specific health signal and suggested intervention
+- **Digest preview:** `GET /api/admin/clients/[id]/digest-preview` returns exactly what Monday&apos;s weekly digest SMS will say for a client, including stats and message type
 - Feeds into the Triage dashboard so declining clients surface automatically
 - `dormant-reengagement` cron (Wednesdays) re-contacts leads eligible for 6-month follow-up (see Section 2: Dormant Re-Engagement)
 - **Per-client engagement health badge:** server component on the admin client detail page (Overview tab) shows `at_risk` or `disengaged` status with signal bullets (days since last estimate flag, days since last won/lost update). Surfaces the per-client decay signal without opening the Triage dashboard.
