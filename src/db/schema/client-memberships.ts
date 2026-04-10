@@ -41,6 +41,7 @@ export const clientMemberships = pgTable(
     isOwner: boolean('is_owner').notNull().default(false),
     receiveEscalations: boolean('receive_escalations').notNull().default(false),
     receiveHotTransfers: boolean('receive_hot_transfers').notNull().default(false),
+    receiveWeeklyDigest: boolean('receive_weekly_digest').default(false),
     priority: integer('priority').notNull().default(1),
     isActive: boolean('is_active').notNull().default(true),
     sessionVersion: integer('session_version').notNull().default(1),

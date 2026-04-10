@@ -72,7 +72,7 @@ export const DEFAULT_REMINDER_ROUTING_POLICY: ReminderRoutingPolicy = {
   booking_notification: {
     primaryRole: 'owner',
     fallbackRoles: ['assistant', 'escalation_team'],
-    secondaryRoles: [],
+    secondaryRoles: ['assistant'],
   },
 };
 

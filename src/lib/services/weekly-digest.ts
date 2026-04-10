@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { clients, leads, appointments, flowExecutions } from '@/db/schema';
+import { clients, leads, appointments, flowExecutions, clientMemberships, people } from '@/db/schema';
 import { eq, and, gte, sql, ne, count as countFn } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getAgency } from '@/lib/services/agency-settings';
@@ -296,6 +296,41 @@ export async function sendWeeklyDigests(): Promise<{
         consentBasis: { type: 'existing_consent' },
         queueOnQuietHours: true,
       });
+
+      // Also send to opted-in team members
+      const optedInMembers = await db
+        .select({ personId: clientMemberships.personId })
+        .from(clientMemberships)
+        .where(
+          and(
+            eq(clientMemberships.clientId, client.id),
+            eq(clientMemberships.receiveWeeklyDigest, true),
+            eq(clientMemberships.isActive, true)
+          )
+        );
+
+      for (const member of optedInMembers) {
+        const [person] = await db
+          .select({ name: people.name, phone: people.phone })
+          .from(people)
+          .where(eq(people.id, member.personId));
+
+        if (!person?.phone) continue;
+        // Skip if this member's phone matches the owner's phone (avoid duplicate)
+        if (person.phone === client.phone) continue;
+
+        const { body: memberBody } = buildDigestMessage(person.name, stats, newConsecutiveZero);
+        await sendCompliantMessage({
+          clientId: client.id,
+          to: person.phone,
+          from: client.twilioNumber,
+          body: memberBody,
+          messageClassification: 'proactive_outreach',
+          messageCategory: 'transactional',
+          consentBasis: { type: 'existing_consent' },
+          queueOnQuietHours: true,
+        });
+      }
 
       // Update tracking
       await db

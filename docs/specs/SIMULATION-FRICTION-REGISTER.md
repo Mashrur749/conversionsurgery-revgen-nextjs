@@ -58,11 +58,11 @@
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| C1 | Team member notification for bookings (secondary recipients) | reminder-routing.ts | todo |
-| C2 | No-show notification to assigned crew, not just owner | no-show-recovery.ts | todo |
-| C3 | Weekly digest per-membership opt-in | weekly-digest.ts + schema | todo |
-| C4 | Escalation notifications to office manager role | team-escalation.ts | todo |
-| C5 | Pre-appointment context brief SMS to assigned estimator | New: appointment-context-brief.ts | todo |
+| C1 | Team member notification for bookings (secondary recipients) | reminder-routing.ts | done |
+| C2 | No-show notification to assigned crew, not just owner | no-show-recovery.ts | done |
+| C3 | Weekly digest per-membership opt-in | weekly-digest.ts + schema | done |
+| C4 | Escalation notifications to office manager role | team-bridge.ts (documented) | done |
+| C5 | Pre-appointment context brief SMS to assigned estimator | appointment-reminder.ts | done |
 
 ## WAVE 7 — Compliance Hardening (3 items)
 

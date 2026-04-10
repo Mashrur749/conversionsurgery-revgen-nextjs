@@ -10,8 +10,9 @@
  */
 
 import { getDb } from '@/db';
-import { appointments, leads, clients, scheduledMessages } from '@/db/schema';
+import { appointments, calendarEvents, clientMemberships, leads, clients, people, scheduledMessages } from '@/db/schema';
 import { eq, and, lte, sql, inArray } from 'drizzle-orm';
+import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getTrackedAI } from '@/lib/ai';
@@ -129,24 +130,89 @@ export async function processNoShows(): Promise<{
         const leadName = lead.name || 'Customer';
 
         // Step 1: Notify the contractor immediately so they can follow up directly.
+        // If a team member was assigned to this appointment, notify them as well as the owner.
         const contractorMsg = `No-show alert: ${leadName} missed their ${formattedDate} at ${formattedTime} appointment. We will send them a recovery SMS in 2 hours. You can reach them directly at ${lead.phone}.`;
+
+        // Look up the calendar event for this appointment to find the assigned crew member
+        let assignedMemberPhone: string | null = null;
         try {
-          await sendCompliantMessage({
-            clientId: client.id,
-            to: client.phone,
-            from: client.twilioNumber as string,
-            body: contractorMsg,
-            messageClassification: 'proactive_outreach',
-            messageCategory: 'transactional',
-            consentBasis: { type: 'existing_consent' },
-            metadata: {
-              source: 'no_show_contractor_notification',
-              appointmentId: appointment.id,
-            },
-          });
+          const [calEvent] = await db
+            .select({ assignedTeamMemberId: calendarEvents.assignedTeamMemberId })
+            .from(calendarEvents)
+            .where(eq(calendarEvents.leadId, lead.id))
+            .limit(1);
+
+          if (calEvent?.assignedTeamMemberId) {
+            const [member] = await db
+              .select({ phone: people.phone })
+              .from(clientMemberships)
+              .innerJoin(people, eq(clientMemberships.personId, people.id))
+              .where(eq(clientMemberships.id, calEvent.assignedTeamMemberId))
+              .limit(1);
+
+            if (member?.phone) {
+              try {
+                assignedMemberPhone = normalizePhoneNumber(member.phone);
+              } catch {
+                assignedMemberPhone = null;
+              }
+            }
+          }
+        } catch (err) {
+          console.error(`[NoShowRecovery] Failed to look up assigned crew member for appointment ${appointment.id}:`, err);
+        }
+
+        // Normalize owner phone for duplicate detection
+        let ownerPhone: string | null = null;
+        try {
+          ownerPhone = client.phone ? normalizePhoneNumber(client.phone) : null;
+        } catch {
+          ownerPhone = null;
+        }
+
+        // Send to owner
+        try {
+          if (ownerPhone) {
+            await sendCompliantMessage({
+              clientId: client.id,
+              to: client.phone,
+              from: client.twilioNumber as string,
+              body: contractorMsg,
+              messageClassification: 'proactive_outreach',
+              messageCategory: 'transactional',
+              consentBasis: { type: 'existing_consent' },
+              metadata: {
+                source: 'no_show_contractor_notification',
+                appointmentId: appointment.id,
+                recipient: 'owner',
+              },
+            });
+          }
         } catch (err) {
           // Non-fatal — log and continue to schedule homeowner recovery
-          console.error(`[NoShowRecovery] Contractor notification failed for appointment ${appointment.id}:`, err);
+          console.error(`[NoShowRecovery] Contractor (owner) notification failed for appointment ${appointment.id}:`, err);
+        }
+
+        // Send to assigned crew member if different from owner
+        if (assignedMemberPhone && assignedMemberPhone !== ownerPhone) {
+          try {
+            await sendCompliantMessage({
+              clientId: client.id,
+              to: assignedMemberPhone,
+              from: client.twilioNumber as string,
+              body: contractorMsg,
+              messageClassification: 'proactive_outreach',
+              messageCategory: 'transactional',
+              consentBasis: { type: 'existing_consent' },
+              metadata: {
+                source: 'no_show_contractor_notification',
+                appointmentId: appointment.id,
+                recipient: 'assigned_crew',
+              },
+            });
+          } catch (err) {
+            console.error(`[NoShowRecovery] Assigned crew notification failed for appointment ${appointment.id}:`, err);
+          }
         }
 
         // Step 2: Schedule the homeowner recovery SMS with a 2-hour delay.

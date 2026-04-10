@@ -98,6 +98,19 @@ export async function getTeamMemberById(membershipId: string): Promise<BridgedTe
 
 /**
  * Get active members who receive escalations for a client, ordered by priority.
+ *
+ * DEPENDENCY NOTE (C4): This function correctly filters on `receiveEscalations = true`.
+ * There is no separate "role" concept in the new access management schema — roles are
+ * template-based and do NOT implicitly grant escalation access.
+ *
+ * To ensure office managers / assistants receive escalation notifications:
+ *   - When adding a new team member (clientMemberships row), set `receiveEscalations = true`
+ *     for any person who should receive escalation SMS/email.
+ *   - The admin UI team-member invite flow (src/app/(dashboard)/admin/clients/[id]/team*)
+ *     should default `receiveEscalations = true` for assistant-role invites.
+ *   - Appointment reminder routing (reminder-routing.ts) uses the `assistant` pool, which
+ *     includes ALL non-owner active members regardless of this flag — so contractor reminders
+ *     already reach office managers automatically via that path.
  */
 export async function getEscalationMembers(clientId: string): Promise<BridgedTeamMember[]> {
   const db = getDb();
