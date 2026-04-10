@@ -32,6 +32,7 @@ export interface BookingConversationResult {
   responseMessage: string;
   appointmentCreated: boolean;
   appointmentId?: string;
+  needsAddress?: boolean;
 }
 
 /**
@@ -83,14 +84,15 @@ export async function handleBookingConversation(
   conversationHistory: { role: 'user' | 'assistant'; content: string }[],
   businessName: string,
   ownerName: string,
-  intent: BookingIntent
+  intent: BookingIntent,
+  leadAddress?: string | null
 ): Promise<BookingConversationResult> {
   switch (intent) {
     case 'book':
-      return handleNewBooking(clientId, leadId, leadName, message, businessName, ownerName);
+      return handleNewBooking(clientId, leadId, leadName, message, businessName, ownerName, leadAddress);
 
     case 'select_slot':
-      return handleSlotSelection(clientId, leadId, leadName, message, conversationHistory, businessName);
+      return handleSlotSelection(clientId, leadId, leadName, message, conversationHistory, businessName, leadAddress);
 
     case 'reschedule':
       return handleReschedule(clientId, leadId, leadName, message, businessName, ownerName);
@@ -123,7 +125,8 @@ async function handleNewBooking(
   leadName: string,
   message: string,
   businessName: string,
-  ownerName: string
+  ownerName: string,
+  leadAddress?: string | null
 ): Promise<BookingConversationResult> {
   // Get available slots
   const available = await getAvailableSlots(clientId);
@@ -141,13 +144,18 @@ async function handleNewBooking(
 
   if (preferredSlot) {
     // They specified a time and it's available — book directly
-    const result = await bookAppointment(clientId, leadId, preferredSlot.date, preferredSlot.time);
+    const result = await bookAppointment(clientId, leadId, preferredSlot.date, preferredSlot.time, leadAddress || undefined);
     if (result.success) {
+      const needsAddress = !leadAddress;
+      const confirmMsg = needsAddress
+        ? `${result.confirmationMessage} Also, what is the address for the visit?`
+        : result.confirmationMessage!;
       return {
         intent: 'book',
-        responseMessage: result.confirmationMessage!,
+        responseMessage: confirmMsg!,
         appointmentCreated: true,
         appointmentId: result.appointmentId,
+        needsAddress,
       };
     }
   }
@@ -174,7 +182,8 @@ async function handleSlotSelection(
   leadName: string,
   message: string,
   conversationHistory: { role: 'user' | 'assistant'; content: string }[],
-  businessName: string
+  businessName: string,
+  leadAddress?: string | null
 ): Promise<BookingConversationResult> {
   // Find the last slot suggestion message
   const lastAssistant = conversationHistory
@@ -182,7 +191,7 @@ async function handleSlotSelection(
     .slice(-1)[0];
 
   if (!lastAssistant) {
-    return handleNewBooking(clientId, leadId, leadName, message, businessName, '');
+    return handleNewBooking(clientId, leadId, leadName, message, businessName, '', leadAddress);
   }
 
   // Get available slots again (they may have changed)
@@ -206,14 +215,19 @@ async function handleSlotSelection(
   }
 
   // Book the matched slot
-  const result = await bookAppointment(clientId, leadId, matchedSlot.date, matchedSlot.time);
+  const result = await bookAppointment(clientId, leadId, matchedSlot.date, matchedSlot.time, leadAddress || undefined);
 
   if (result.success) {
+    const needsAddress = !leadAddress;
+    const confirmMsg = needsAddress
+      ? `${result.confirmationMessage} Also, what is the address for the visit?`
+      : result.confirmationMessage!;
     return {
       intent: 'select_slot',
-      responseMessage: result.confirmationMessage!,
+      responseMessage: confirmMsg!,
       appointmentCreated: true,
       appointmentId: result.appointmentId,
+      needsAddress,
     };
   }
 

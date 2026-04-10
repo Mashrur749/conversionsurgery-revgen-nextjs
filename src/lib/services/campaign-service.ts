@@ -59,15 +59,58 @@ interface CreateCampaignDraftParams {
   scheduledAt?: Date | null;
   createdBy?: string | null;
   planNotes?: string | null;
+  timezone?: string | null;
 }
 
-export function getDefaultScheduledAtForQuarter(quarterKey: string): Date {
+export function getDefaultScheduledAtForQuarter(
+  quarterKey: string,
+  timezone?: string | null,
+): Date {
   const start = getQuarterStartDate(quarterKey);
-  const scheduled = new Date(start);
-  // Target two weeks after quarter start at 10:00 UTC.
-  scheduled.setUTCDate(scheduled.getUTCDate() + 14);
-  scheduled.setUTCHours(10, 0, 0, 0);
-  return scheduled;
+  // Target two weeks after quarter start at 10:00 local time for the client.
+  const launchDate = new Date(start);
+  launchDate.setUTCDate(launchDate.getUTCDate() + 14);
+
+  const tz = timezone || 'America/New_York';
+  try {
+    // Find the UTC time that corresponds to 10:00am in the client's timezone on the target date.
+    // Build a date string for "10am on that calendar date" in the target timezone.
+    const localDateStr = launchDate.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD
+    const localAt10am = new Date(`${localDateStr}T10:00:00`);
+    // Determine the UTC offset by comparing what the timezone reports for that instant.
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    // Use a known UTC time and resolve the offset for that date in the client's timezone.
+    // We construct the target by interpreting the date as local midnight UTC and adjusting.
+    const parts = formatter.formatToParts(new Date(`${localDateStr}T00:00:00Z`));
+    const partsMap: Record<string, string> = {};
+    for (const p of parts) {
+      partsMap[p.type] = p.value;
+    }
+    // The timezone's local time at UTC midnight for that date tells us the UTC offset.
+    const localHourAtUTCMidnight = parseInt(partsMap['hour'] ?? '0', 10);
+    const localMinuteAtUTCMidnight = parseInt(partsMap['minute'] ?? '0', 10);
+    // Minutes since midnight in local time at UTC midnight
+    const localMinutesAtUTCMidnight = localHourAtUTCMidnight * 60 + localMinuteAtUTCMidnight;
+    // We want 10:00am local = 600 minutes from local midnight
+    const targetMinutesFromUTCMidnight = 600 - localMinutesAtUTCMidnight;
+    const result = new Date(`${localDateStr}T00:00:00Z`);
+    result.setUTCMinutes(result.getUTCMinutes() + targetMinutesFromUTCMidnight);
+    return result;
+  } catch {
+    // Fallback: 10:00 UTC if timezone is invalid
+    const fallback = new Date(launchDate);
+    fallback.setUTCHours(10, 0, 0, 0);
+    return fallback;
+  }
 }
 
 async function getClientCampaignMetrics(
@@ -113,7 +156,7 @@ export async function createQuarterlyCampaignDraft(
       status: "planned",
       scheduledAt:
         params.scheduledAt ||
-        getDefaultScheduledAtForQuarter(params.quarterKey),
+        getDefaultScheduledAtForQuarter(params.quarterKey, params.timezone),
       requiredAssets: CAMPAIGN_REQUIRED_ASSETS[params.campaignType],
       completedAssets: [],
       evidenceLinks: [],
@@ -135,7 +178,7 @@ export async function planQuarterlyCampaigns(
 ): Promise<CampaignPlanningResult> {
   const db = getDb();
   const activeClients = await db
-    .select({ id: clients.id })
+    .select({ id: clients.id, timezone: clients.timezone })
     .from(clients)
     .where(eq(clients.status, "active"));
 
@@ -173,6 +216,7 @@ export async function planQuarterlyCampaigns(
         clientId: client.id,
         quarterKey,
         campaignType,
+        timezone: client.timezone,
       });
       if (draft) {
         created++;

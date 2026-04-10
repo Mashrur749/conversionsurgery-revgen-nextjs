@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
         'GET',
         failedJobs
       );
+      results.voiceCallbacks = await dispatch(baseUrl, '/api/cron/voice-callbacks', cronSecret!, 'GET', failedJobs);
     }
 
     // ── Hourly (minute < 10) ─────────────────────────────────

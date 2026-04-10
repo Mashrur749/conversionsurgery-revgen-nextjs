@@ -10,6 +10,8 @@ interface CreateEventInput {
   location?: string;
   startTime: Date;
   endTime: Date;
+  /** IANA timezone for the event (e.g. 'America/New_York'). Callers should pass client.timezone. */
+  timezone?: string;
   eventType?: string;
   assignedTeamMemberId?: string;
 }
@@ -30,6 +32,7 @@ export async function createEvent(input: CreateEventInput): Promise<string> {
       location: input.location,
       startTime: input.startTime,
       endTime: input.endTime,
+      timezone: input.timezone || 'America/New_York',
       eventType: input.eventType,
       assignedTeamMemberId: input.assignedTeamMemberId,
       status: 'scheduled',

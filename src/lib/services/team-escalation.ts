@@ -356,30 +356,62 @@ export async function getPendingEscalations(clientId: string) {
 }
 
 /**
- * Re-notify team for escalation claims pending > 15 minutes.
- * Called by cron every 5 minutes. Each claim is re-notified at most once.
+ * Re-notify team for escalation claims that remain unclaimed.
+ * Called by cron every 5 minutes.
+ *
+ * Re-notification schedule (capped at 3 total):
+ *   - Stage 1 (15 min): first re-notify to all team members
+ *   - Stage 2 (30 min): second re-notify to all team members
+ *   - Stage 3 (60 min): final re-notify + escalate directly to business owner if not already notified
+ *
+ * Stage is inferred from elapsed time since notifiedAt and the reNotifiedAt timestamp:
+ *   - Stage 1: 15+ min since notifiedAt, reNotifiedAt is null
+ *   - Stage 2: 30+ min since notifiedAt, reNotifiedAt < 29 min ago (i.e. stage-1 already done)
+ *   - Stage 3: 60+ min since notifiedAt, reNotifiedAt < 59 min ago (i.e. stage-2 already done)
  */
 export async function reNotifyPendingEscalations(): Promise<{ reNotified: number }> {
   const db = getDb();
-  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+  const now = Date.now();
+  const fifteenMinutesAgo = new Date(now - 15 * 60 * 1000);
 
+  // Fetch all pending claims that have been waiting at least 15 minutes
   const staleClaims = await db
     .select()
     .from(escalationClaims)
     .where(and(
       eq(escalationClaims.status, 'pending'),
-      lt(escalationClaims.notifiedAt, fifteenMinutesAgo),
-      isNull(escalationClaims.reNotifiedAt)
+      lt(escalationClaims.notifiedAt, fifteenMinutesAgo)
     ));
 
   let reNotified = 0;
 
   for (const claim of staleClaims) {
+    const elapsedMs = now - new Date(claim.notifiedAt).getTime();
+    const elapsedMin = elapsedMs / 60_000;
+    const reNotifiedMs = claim.reNotifiedAt
+      ? now - new Date(claim.reNotifiedAt).getTime()
+      : null;
+    const reNotifiedMin = reNotifiedMs !== null ? reNotifiedMs / 60_000 : null;
+
+    // Determine which re-notification stage this claim is at:
+    // Stage 1: 15+ min elapsed, never re-notified yet
+    // Stage 2: 30+ min elapsed, stage-1 done (reNotifiedAt exists and is at least 14 min old, meaning we haven't done stage-2 yet)
+    // Stage 3: 60+ min elapsed, stage-2 done (reNotifiedAt is at least 14 min old)
+    // Cap at 3 re-notifications: if reNotifiedAt is recent (< 14 min), skip — already handled this cycle
+    const isStage1 = elapsedMin >= 15 && reNotifiedMin === null;
+    const isStage2 = elapsedMin >= 30 && reNotifiedMin !== null && reNotifiedMin >= 14 && elapsedMin < 60;
+    const isStage3 = elapsedMin >= 60 && reNotifiedMin !== null && reNotifiedMin >= 14;
+
+    if (!isStage1 && !isStage2 && !isStage3) continue;
+
     const [client] = await db
       .select({
         id: clients.id,
         businessName: clients.businessName,
         twilioNumber: clients.twilioNumber,
+        ownerPhone: clients.phone,
+        ownerEmail: clients.email,
+        ownerName: clients.ownerName,
       })
       .from(clients)
       .where(eq(clients.id, claim.clientId))
@@ -400,7 +432,6 @@ export async function reNotifyPendingEscalations(): Promise<{ reNotified: number
     }
 
     const leadDisplay = lead.name || formatPhoneNumber(lead.phone);
-
     const members = await getEscalationMembers(claim.clientId);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const claimUrl = `${appUrl}/claims?token=${claim.claimToken}`;
@@ -410,7 +441,12 @@ export async function reNotifyPendingEscalations(): Promise<{ reNotified: number
         : `"${claim.lastLeadMessage}"`
       : '';
 
-    const smsBody = `REMINDER: ${leadDisplay} still needs a response (15+ min unclaimed).\n\n${truncatedMessage}\n\nClaim: ${claimUrl}`;
+    let stageLabel: string;
+    if (isStage1) stageLabel = '15+ min';
+    else if (isStage2) stageLabel = '30+ min';
+    else stageLabel = '60+ min';
+
+    const smsBody = `REMINDER: ${leadDisplay} still needs a response (${stageLabel} unclaimed).\n\n${truncatedMessage}\n\nClaim: ${claimUrl}`;
 
     // EC-09: Track if at least one SMS was sent successfully
     let sentCount = 0;
@@ -424,6 +460,42 @@ export async function reNotifyPendingEscalations(): Promise<{ reNotified: number
       }
     }
 
+    // Stage 3 (60 min): escalate directly to business owner if no team or as additional escalation
+    if (isStage3) {
+      const ownerAlreadyInTeam = members.some(
+        (m) => formatPhoneNumber(m.phone) === formatPhoneNumber(client.ownerPhone || '')
+      );
+
+      if (!ownerAlreadyInTeam && client.ownerPhone) {
+        const ownerSmsBody = `URGENT: ${leadDisplay} has been waiting 60+ minutes for a response. No team member has claimed this lead yet.\n\n${truncatedMessage}\n\nDashboard: ${appUrl}/leads/${lead.phone}`;
+
+        try {
+          await sendSMS(client.ownerPhone, ownerSmsBody, client.twilioNumber);
+          sentCount++;
+          console.log(`[Team Escalation] Stage-3 owner escalation sent to ${client.ownerName}`);
+        } catch (error) {
+          console.error(`[Team Escalation] Stage-3 owner SMS failed:`, error);
+        }
+      }
+
+      if (!ownerAlreadyInTeam && client.ownerEmail) {
+        try {
+          const emailData = actionRequiredEmail({
+            businessName: client.businessName,
+            leadName: lead.name || undefined,
+            leadPhone: formatPhoneNumber(lead.phone),
+            reason: '60+ minutes unclaimed — no team member has responded',
+            lastMessage: claim.lastLeadMessage || '',
+            dashboardUrl: claimUrl,
+          });
+          await sendEmail({ to: client.ownerEmail, ...emailData });
+          console.log(`[Team Escalation] Stage-3 owner escalation email sent`);
+        } catch (error) {
+          console.error(`[Team Escalation] Stage-3 owner email failed:`, error);
+        }
+      }
+    }
+
     // EC-09: Only mark re-notified if at least one SMS succeeded
     if (sentCount > 0) {
       await db
@@ -432,6 +504,7 @@ export async function reNotifyPendingEscalations(): Promise<{ reNotified: number
         .where(eq(escalationClaims.id, claim.id));
 
       reNotified++;
+      console.log(`[Team Escalation] Stage-${isStage1 ? 1 : isStage2 ? 2 : 3} re-notification sent for claim ${claim.id}`);
     } else {
       console.warn(`[Team Escalation] No SMS sent for claim ${claim.id}, will retry next cycle`);
     }

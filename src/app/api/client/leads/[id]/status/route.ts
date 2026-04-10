@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
+import { scheduledMessages } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { portalRoute, PORTAL_PERMISSIONS } from '@/lib/utils/route-handler';
@@ -110,6 +111,37 @@ export const PATCH = portalRoute<{ id: string }>(
 
     if (!updated) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
+
+    // Cancel all unsent, uncancelled scheduled messages for this lead
+    await db
+      .update(scheduledMessages)
+      .set({
+        cancelled: true,
+        cancelledAt: new Date(),
+        cancelledReason: `Lead status changed to ${status}`,
+      })
+      .where(
+        and(
+          eq(scheduledMessages.leadId, leadId),
+          eq(scheduledMessages.sent, false),
+          eq(scheduledMessages.cancelled, false)
+        )
+      );
+
+    // Track job_won funnel event for AI attribution
+    if (status === 'won') {
+      try {
+        const { trackFunnelEvent } = await import('@/lib/services/funnel-tracking');
+        await trackFunnelEvent({
+          clientId,
+          leadId,
+          eventType: 'job_won',
+          valueCents: confirmedRevenueCents,
+        });
+      } catch {
+        // Non-fatal: funnel tracking failure must not block the status update
+      }
     }
 
     return NextResponse.json({ lead: updated });

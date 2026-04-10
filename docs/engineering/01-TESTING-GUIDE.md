@@ -2708,6 +2708,7 @@ curl -i http://localhost:3000/api/cron/dormant-reengagement -H "Authorization: B
 curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/weekly-digest -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/ai-mode-progression -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/voice-callbacks -H "Authorization: Bearer $CRON_SECRET"
 curl -i -X POST http://localhost:3000/api/cron/trial-reminders -H "Authorization: Bearer $CRON_SECRET"
 curl -i -X POST http://localhost:3000/api/cron/cancellation-reminders -H "Authorization: Bearer $CRON_SECRET"
 

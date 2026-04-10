@@ -58,6 +58,7 @@ export const voiceCalls = pgTable(
     outcome: varchar('outcome', { length: 30 }), // qualified, scheduled, transferred, voicemail, dropped
     callbackRequested: boolean('callback_requested').default(false),
     callbackTime: timestamp('callback_time'),
+    callbackNotifiedAt: timestamp('callback_notified_at'),
     transferredTo: varchar('transferred_to', { length: 20 }),
 
     // Recording

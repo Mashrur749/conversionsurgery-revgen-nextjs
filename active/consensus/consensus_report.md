@@ -1,193 +1,272 @@
-# Stochastic Multi-Agent Consensus Report: Hormozi Offer Assessment
+# Stochastic Multi-Agent Consensus Report — Full Platform Gap Audit
 
-**Problem**: Assess ConversionSurgery's offer using Alex Hormozi's hierarchy — Starving Crowd > Offer Strength > Persuasion
-**Agents**: 10
-**Date**: 2026-04-03
-**Framework**: $100M Offers — Value = (Dream Outcome x Perceived Likelihood) / (Time Delay x Effort & Sacrifice)
-
----
-
-## Scores Summary
-
-| Layer | Mean | Median | Range | Std Dev |
-|---|---|---|---|---|
-| **Starving Crowd** | 7.3 | 7.0 | 6-9 | 0.82 |
-| **Offer Strength** | 8.1 | 8.0 | 7.5-9 | 0.45 |
-| **Persuasion** | 5.9 | 6.0 | 5-7 | 0.74 |
-| **Overall (weighted)** | 7.1 | 7.1 | 6.5-8.1 | 0.46 |
-
-| Agent | Crowd | Offer | Persuasion | Overall | Grand Slam? |
-|---|---|---|---|---|---|
-| Neutral | 7 | 8.5 | 6.5 | 7.5 | NO |
-| Risk-averse | 6 | 8 | 5 | 6.5 | NO |
-| Growth | 7 | 8 | 5 | 6.9 | NO |
-| Contrarian | 7 | 7.5 | 6.5 | 7.0 | NO |
-| First-principles | 8 | 7.5 | 7 | 7.7 | NO |
-| User-empathy | 9 | 8 | 6 | 7.7 | YES (conditional) |
-| Resource-constrained | 7 | 8 | 5 | 6.9 | NO |
-| Long-term | 7 | 8 | 5 | 6.9 | NO |
-| Data-driven | 7 | 8 | 6 | 7.2 | NO |
-| Systems-thinker | 8 | 9 | 7 | 8.1 | YES (conditional) |
-
-**Grand Slam verdict: 8 NO, 2 conditional YES.** The offer has Grand Slam mechanics but lacks the proof layer to trigger "I'd be stupid not to try this."
+**Problem**: From the ICP (home service contractor) perspective, find real-world workflow gaps across ALL 18 service delivery domains.
+**Agents**: 10 (neutral, risk-averse, growth, contrarian, first-principles, user-empathy, resource-constrained, long-term, data-driven, systems-thinker)
+**Date**: 2026-04-09
+**Scope**: 18 domains × 10 agents = ~150 unique gap findings, aggregated below
 
 ---
 
-## Layer 1: STARVING CROWD — 7.3/10
+## TIER 1 — LAUNCH BLOCKERS (8+ agents agree, HIGH impact)
 
-### Consensus Strengths (8+ agents agreed)
+These are gaps that will cause visible failures for the first real client. Fix before any contractor goes live.
 
-**The pain is real, structural, and expensive (10/10)**
-Every agent confirmed: renovation contractors genuinely lose $35K-$80K projects to slow response. This is not manufactured pain. A contractor on a job site who misses a call at 2pm loses that lead to whoever responds first. Industry data (42-minute avg response, 78% first-responder win rate, 85% voicemail abandonment) makes the problem quantifiable and undeniable.
+### LB-01: No Appointment List in Client Portal (10/10 — previous round)
+Appointments table is populated but no portal page exists. Contractor cannot see their schedule.
+**Fix:** Add `/client/appointments` page (read from existing `appointments` table).
 
-**The ICP band ($400K-$3M, 15+ leads/month) is correctly chosen (9/10)**
-Below $400K, they can't afford $1K/month. Above $3M, they have office staff. The sweet spot is owner-operators who are simultaneously the buyer, the closer, and the person who can't answer the phone because they're on a ladder.
+### LB-02: Crew Not Assigned/Notified at Booking (10/10 — previous round)
+`calendar_events.assignedTeamMemberId` exists but is never populated. Owner gets the calendar event; estimator who visits sites gets nothing.
+**Fix:** SMS dispatch to assigned crew member with address + lead info at booking time.
 
-**Alberta concentration helps early traction (8/10)**
-Tight geography means referral networks are dense, word-of-mouth compounds locally, and CASL compliance is a real moat against US-based competitors who ignore Canadian regulations.
+### LB-03: Timezone Hardcoded Wrong (9/10 — previous round)
+`calendar_events` defaults `America/Denver`, `clients` defaults `America/Edmonton`. Slot generation, reminder scheduling, no-show detection, campaign scheduling, hot-transfer routing ALL use timezone and get it wrong for non-Mountain clients.
+**Fix:** Make `clients.timezone` the single source of truth, require during onboarding, thread through all time-sensitive code.
 
-### Consensus Gaps
+### LB-04: Estimate Follow-Up Sequences Survive Won/Lost Status (9/10)
+When contractor marks lead `won` or `lost`, active estimate follow-up scheduled messages are NOT cancelled. Homeowner who already hired the contractor gets "still thinking about your estimate?" on day 10.
+**Fix:** Cancel all pending `scheduledMessages` for a lead whenever status changes to `won`, `lost`, or `completed`.
 
-**The crowd is hungry but not yet actively searching for this solution (8/10)**
-Contractors are searching for "how to get more jobs," not "AI lead response." The pain exists but awareness of the category does not. This means every sale requires education before conversion — friction that doesn't exist for a truly starving crowd.
+### LB-05: Win-Back Fires on Leads with Active Sequences (8/10)
+Win-back (25-35 day) query doesn't check for existing unsent scheduled messages. Lead can receive both an estimate follow-up AND a win-back in the same day.
+**Fix:** Exclude leads with any unsent, uncancelled scheduled messages from win-back eligibility.
 
-**Alberta ceiling is real (9/10)**
-Estimated 500-2,000 contractors in the ICP band province-wide. Sufficient for early revenue ($1M ARR = ~83 clients) but the ceiling is visible. Geographic expansion or vertical expansion (HVAC, plumbing, roofing) is required before saturation.
+### LB-06: Voice AI Callback Requests Never Actioned (8/10)
+`voice_calls.callbackRequested = true` is stored but no cron or notification reads it. Homeowner expects a morning callback that never comes.
+**Fix:** Daily cron that alerts contractor when callbacks are due.
 
-**Most contractors have normalized their lead loss (7/10)**
-They attribute slow months to seasonality or lead quality, not to a 14-hour response time. The Revenue Leak Audit addresses this, but the prospect has to see it before the realization hits.
+### LB-07: Business Hours Not Gated Before AI Activation (8/10)
+Onboarding quality gate doesn't check if `businessHours` table has any entries. When AI activates with no business hours, `getAvailableSlots()` returns empty — every booking attempt fails silently.
+**Fix:** Add `business_hours_configured` as a critical onboarding quality gate.
 
-### Top Fix (7/10 agreed)
-**Revenue Leak Audit as the category-creation tool.** The audit doesn't just sell the service — it creates awareness that the problem exists. Lead with the diagnosis, not the product.
+### LB-08: Quiet Hours Falls Back to UTC on Timezone Failure (8/10)
+If client timezone resolution fails, compliance gateway falls back to UTC. A client in Pacific time (UTC-8) gets quiet hours inverted — messages sent at 2am, blocked at noon. TCPA/CRTC violation.
+**Fix:** Default to most restrictive window on failure, never to UTC.
 
----
+### LB-09: Reply-on-Lead Cancels ALL Sequences Indiscriminately (8/10)
+`incoming-sms.ts` line 295: any inbound reply cancels every unsent scheduled message for that lead — including payment reminders and estimate follow-ups. A homeowner texting "thanks, still thinking" kills their entire nurture sequence.
+**Fix:** Scope cancellation by sequence type. Only cancel the active sequence, not all sequences. Payment reminders should only cancel on Stripe payment confirmation.
 
-## Layer 2: OFFER STRENGTH — 8.1/10
-
-### Consensus Strengths (8+ agents agreed)
-
-**Value-to-price ratio is overwhelming (10/10)**
-$12K/year against one $50K recovered project = 4x ROI on a single win. At 90%+ gross margin, the economics work for both sides. Every agent flagged this as the strongest element in the offer. No competitor matches this math.
-
-**Guarantee structure is genuinely differentiated (10/10)**
-Dual guarantee (30-day proof-of-life + 90-day $5K pipeline floor), first month free, month-to-month, full data export on exit. No GHL agency, VA, or answering service offers an outcome-attributed guarantee. This inverts risk from buyer to seller, which is textbook Hormozi.
-
-**15 min/week is a real purchase motivator (9/10)**
-For a contractor who tried GHL and abandoned it after 3 months, "we run it, you don't touch it" is not a feature — it's the reason they buy. Time is the actual constraint for this ICP, not money.
-
-**Day-one activation compresses time-to-value (8/10)**
-Phone live in 24 hours, dormant quotes contacted in days 2-3, first visible results in week 1. This is rare in managed services where week 4 is often when someone admits nothing is working.
-
-### Consensus Gaps
-
-**The guarantee is slightly ambiguous (8/10)**
-"$5K probable pipeline" is a soft metric. Pipeline by whose definition? A contractor who receives $5K in pipeline and closes $0 still feels burned. Multiple agents recommended tightening to booked appointments or closed/invoiced revenue — something the contractor can verify independently.
-
-**No scarcity/urgency mechanism (7/10)**
-Month-to-month + first month free removes all friction, which is good, but also removes all urgency. There is no reason to say yes today vs. next month. A capacity cap ("3 contractors per city/trade") would create honest scarcity without being manipulative.
-
-**The dream outcome is expressed in pipeline dollars, not lifestyle terms (6/10)**
-Hormozi's framework says the dream outcome should be the identity shift: "I can take a weekend off without losing a job." The current framing leads with metrics ($5K pipeline floor) when it should lead with the transformation and use metrics as proof.
-
-### Divergence: Naming the mechanism (5/10 flagged)
-Half the agents said the offer needs a proprietary named mechanism ("Revenue Recovery Engine," "The 24-Second System") to prevent commodity comparison. The other half said the current naming is fine and the proof matters more than the label. Genuine judgment call.
-
-### Top Fix (8/10 agreed)
-**Tighten the guarantee to a contractor-verifiable outcome.** Replace "$5K probable pipeline" with "1 booked estimate appointment from a lead that went cold, or your last month is refunded." Binary, auditable, undeniable.
+### LB-10: Voice AI Hot-Transfer Timezone Hardcoded (8/10)
+`routeHighIntentLead()` hardcodes `timezone: 'America/Edmonton'`. An Atlanta contractor's 4:30pm call (within business hours) is evaluated as 6:30pm Mountain (outside hours), routing to SMS escalation instead of ring group.
+**Fix:** Read `client.timezone` from DB.
 
 ---
 
-## Layer 3: PERSUASION — 5.9/10
+## TIER 2 — PRE-LAUNCH (6-7 agents agree, HIGH/MEDIUM impact)
 
-### Consensus Strengths (8+ agents agreed)
+Fix these in the first sprint after launch blockers are resolved.
 
-**Revenue Leak Audit is the strongest persuasion asset (10/10)**
-Every single agent identified the pre-sale audit as the #1 persuasion tool. Showing a contractor their own 14-hour response time and their competitor's review count creates a before/after contrast that no copy can replicate. It makes the sale feel consultative, not transactional.
+### PL-01: No Job Completion Lifecycle Loop (8/10 — previous round)
+After `won`, there's no way to mark "job complete" that triggers review request at the right moment and captures final revenue.
+**Fix:** "Mark Job Complete" action in portal → sets `completed`, triggers review request.
 
-**Monday pipeline SMS is a retention + referral mechanism (9/10)**
-A weekly SMS showing dollar values makes the service visible and tangible without requiring a dashboard login. Contractors who see "$47K probable pipeline" on their phone every Monday don't cancel — and they show it to other contractors.
+### PL-02: No-Show Recovery Fires Without Contractor Verification (6/10 — previous round)
+`processNoShows()` sends recovery SMS to homeowner without checking if contractor's crew was the one who missed.
+**Fix:** SMS confirmation to contractor before firing homeowner recovery.
 
-### Consensus Gaps
+### PL-03: Address Not Captured at Booking Time (7/10)
+`appointments.address` is nullable and the AI booking flow never prompts for it. Crew shows up with no address.
+**Fix:** AI booking flow prompts "What's the address for the estimate?" before confirming.
 
-**Zero social proof (10/10 — unanimous)**
-Every agent identified this as the #1 gap in the entire offer. No case studies, no testimonials, no named results, no before/after. At $1K/month from a solo founder, the question is not "does this work" but "did it work for someone like me?" Logic closes a fraction of the deals that proof closes.
+### PL-04: Review Request Fires on Frustrated/Escalated Homeowners (7/10)
+No sentiment gate before scheduling review request. A homeowner who texted "very unhappy with the work" still gets a Google review request.
+**Fix:** Check lead sentiment signals and escalation history before firing review request.
 
-**No defined sales process (7/10)**
-The audit is the right tool but there's no documented sequence: who delivers it, when, how does it connect to the demo, when does the close happen, what's the follow-up? The persuasion layer is in the founder's head, not in a repeatable system.
+### PL-05: No "Mark Paid (Cash/Check)" in Client Portal (7/10)
+`markInvoicePaid` only reachable via Stripe webhook or admin API. Contractors who collect cash/check can't stop payment reminders.
+**Fix:** Add portal-accessible "Mark Paid" action on invoice cards.
 
-**No urgency mechanism (7/10)**
-Nothing creates forward pressure. "Start anytime" with no deadline, no cohort, no capacity signal means every qualified prospect can rationally say "I'll think about it" — and they will.
+### PL-06: "Without Us" ROI Model Uses Wrong Per-Client Baselines (7/10)
+`averageProjectValue` and `previousResponseTimeMinutes` use agency-wide defaults. A plumber ($800 avg job) gets the same model as a roofer ($15K avg).
+**Fix:** Require `averageJobValueCents` and `previousResponseTimeMinutes` during onboarding.
 
-**AI skepticism is unaddressed in the pitch (6/10)**
-Contractors have been burned by chatbots and CRM tools. The word "AI" may be a liability in the headline. The offer doesn't pre-handle "what if the AI says something wrong?" in the pitch itself — it relies on the Smart Assist explanation during the objection phase.
+### PL-07: `won` Status Never Fires `job_won` Funnel Event (7/10)
+Portal status update to `won` doesn't call `trackFunnelEvent('job_won')`. AI attribution, effectiveness dashboard, and guarantee monitor are all systematically understated.
+**Fix:** Add `trackFunnelEvent('job_won')` to both portal and admin status update routes.
 
-### Top Fix (10/10 — unanimous)
-**Get 3 case studies with specific dollar amounts.** One real contractor saying "I recovered $47K from dead quotes in 60 days" is worth more than every feature, guarantee, and comparison table combined. This is the single action that moves the entire offer score from 7 to 9.
+### PL-08: No Platform-Level DNC (Cross-Client Opt-Out) (7/10)
+Opt-outs are per-client. A homeowner who STOPs one contractor can be texted by another contractor on the same platform.
+**Fix:** Platform-level DNC table checked before per-client logic.
 
----
+### PL-09: Onboarding Quality Gate Doesn't Block AI on Empty KB (7/10)
+Client with 0 KB entries activates AI. Every AI response hits knowledge boundary guardrail, escalates. Cascade: high escalation rate → contractor ignores escalations → leads go cold → bad reports.
+**Fix:** Make KB completeness a hard block for AI activation.
 
-## OVERALL ASSESSMENT
+### PL-10: Voice AI Overflow Mode Not Implemented (7/10)
+`overflow` is selectable in UI but the voice webhook never reads the field. Setting it does nothing — same behavior as no AI.
+**Fix:** Implement the overflow dial-then-fallback-to-AI path in the voice webhook.
 
-### The Hormozi Value Equation Applied
+### PL-11: Soft Rejection Detection Missing (7/10)
+"I went with someone else" / "not interested" doesn't trigger opt-out or status change. AI fires win-back 25 days later.
+**Fix:** Detect soft rejection signals and auto-transition to `lost`, cancelling sequences.
 
-| Component | Score | Rationale |
-|---|---|---|
-| **Dream Outcome** | 8/10 | "Never lose a lead while you're on the tools" is real and vivid. Could be sharper as a lifestyle outcome vs. a metric. |
-| **Perceived Likelihood** | 6/10 | Guarantee is strong but unproven. No case studies. Pre-sale audit helps but can't fully replace peer proof. |
-| **Time Delay** | 9/10 | 24-hour activation, week-1 visible results, 15 min/week. One of the strongest elements in the offer. |
-| **Effort & Sacrifice** | 9/10 | 30-min onboarding call, 15 min/week ongoing, SMS keyword to flag estimates. Near-zero contractor effort. |
+### PL-12: Escalation Re-Notification Insufficient (7/10)
+Only one re-notify after 15 minutes. Field crews on job sites can't respond for 90+ minutes. Hot lead goes cold with no further alerts.
+**Fix:** Allow 3 re-notifications (15, 30, 60 min) before marking exhausted.
 
-**The equation bottleneck is Perceived Likelihood.** Dream Outcome, Time Delay, and Effort are all strong. The denominator (time + effort) is minimized. But the numerator's second term (perceived likelihood) is weak because there's no evidence yet that this works for someone like the prospect. The guarantee partially compensates, but a guarantee without proof is a promise, not a fact.
+### PL-13: Referral Request Fires After Negative Review (6/10)
+Review request (day 1) and referral request (day 4) are separate scheduled messages. If homeowner leaves a 1-2 star review, referral still fires.
+**Fix:** Check most recent review rating before sending referral; cancel if <= 3 stars.
 
-### The Single Biggest Bottleneck (10/10 unanimous)
-
-**Social proof.** Everything else is strong enough. The crowd is real. The offer mechanics are excellent. The value math is overwhelming. But without one case study showing a real contractor, a real dollar amount, and a real outcome — every sales conversation starts at zero trust and depends entirely on the founder's personal conviction.
-
-**The fix is not another offer tweak. The fix is 90 days with 3 clients.**
-
-### Is This a Grand Slam Offer?
-
-**NO — not yet. 8/10 agents said NO, 2 said conditional YES.**
-
-The mechanics are Grand Slam quality. The value equation scores well on 3 of 4 dimensions. But Hormozi's definition requires the prospect to feel "stupid for saying no" — and without proof, a rational contractor can still say "I'll think about it" without feeling irrational.
-
-**What converts it to YES (all 10 agents agreed):**
-1. Three case studies with real dollar amounts from real Alberta contractors
-2. Guarantee tightened to a contractor-verifiable outcome (booked appointments, not pipeline dollars)
-3. One scarcity/urgency signal (capacity cap or cohort timing)
-
-Those three changes move the overall score from 7.1 to approximately 9.0 and convert the offer from "strong" to "I'd be stupid not to try this."
-
----
-
-## Outlier Ideas Worth Considering
-
-**"Alberta Renovation Revenue Leak Report" (Risk-averse agent)**
-Publish industry-level data as a public report — not a sales tool but a category-creation asset. Shifts contractors from "I don't have this problem" to "I'm one of the 73% who are leaking revenue." Creates pull demand where none exists.
-
-**Market-area exclusivity (Neutral + First-principles)**
-"We only work with one renovation contractor per city/trade combination. Calgary has two general renovation slots left." Operationally true if enforced, costs nothing, creates real urgency, and positions CS as a preferred partner rather than a vendor.
-
-**Rename the mechanism (Growth + Contrarian)**
-"Done-For-You Revenue Recovery" or "The Pipeline Guardian" — name the dream, not the vehicle. "AI lead response" sounds like a chatbot. "Revenue Recovery Engine" sounds like money.
-
-**"How It Works in 7 Days" one-pager (User-empathy)**
-Day 1: phone live. Day 2: dormant quotes contacted. Day 3: first reply. Day 5: audit delivered. Day 7: first Monday SMS. Converts the abstract "managed service" claim into a concrete, believable timeline that handles AI skepticism, agency burn, and setup friction in one document.
-
-**Month-3 value review call (Systems-thinker)**
-Scheduled 15-minute touchpoint. Show dashboard numbers. Ask "what's working?" Prevents silent churn, generates case study material, and identifies upsell signals. Costs 15 minutes per client per quarter.
+### PL-14: Campaign Scheduling Uses UTC 10am, Not Client Local (6/10)
+`getDefaultScheduledAtForQuarter()` uses `setUTCHours(10)`. A Vancouver contractor's campaign launches at 3am local.
+**Fix:** Use client timezone for campaign scheduling.
 
 ---
 
-## Priority Actions (consensus-ranked)
+## TIER 3 — POST-LAUNCH / BACKLOG (4-5 agents agree, or MEDIUM impact)
 
-| # | Action | Agents | Impact on Score |
-|---|---|---|---|
-| 1 | **Get 3 case studies with real dollar amounts** | 10/10 | Persuasion: 5.9 → 8.5 |
-| 2 | **Tighten guarantee to contractor-verifiable outcome** | 8/10 | Offer: 8.1 → 9.0 |
-| 3 | **Add capacity/exclusivity scarcity signal** | 7/10 | Persuasion: +0.5, Offer: +0.5 |
-| 4 | **Create "7-Day Timeline" one-pager** | 6/10 | Persuasion: +0.5 |
-| 5 | **Name the mechanism** | 5/10 | Offer: +0.3 |
-| 6 | **Reframe dream outcome as lifestyle, not metrics** | 6/10 | Offer: +0.3 |
+### BL-01: No Deposit/Milestone Payment Split
+The payment system only creates one invoice per sequence. $12K jobs need 30% deposit + 70% final. `payments.type` already has `deposit|progress|final` but it's never used.
 
-**After actions 1-3, projected overall score: ~9.0/10 — Grand Slam territory.**
+### BL-02: Estimate Follow-Up Uses Static Templates (No AI Personalization)
+Win-back and no-show use AI-generated messages; estimate follow-up (the highest-volume automation) uses static `renderTemplate()` with no project type or amount reference.
+
+### BL-03: No Post-Appointment Quote Capture via SMS
+After appointment time passes, no prompt to contractor to log the outcome. Jobs don't get marked, review requests don't fire, reports show $0.
+
+### BL-04: Booking Window Fixed at 7 Days
+Contractors booked 3 weeks out can't offer further slots. No configurable `bookingLeadTimeDays` or extended window.
+
+### BL-05: No MMS/Photo-Aware AI Responses
+Homeowners send photos of damage. AI receives the media but can't reason about it. Responds with generic "tell me more."
+
+### BL-06: Appointments and Calendar Events Are Parallel Tables
+No FK between `appointments` and `calendar_events`. Reschedule in Google Calendar doesn't update `appointments`. Divergent state accumulates.
+
+### BL-07: No Returning Customer Recognition
+A homeowner who used the contractor 8 months ago is treated as a brand-new lead. No "welcome back" context.
+
+### BL-08: No Morning-Of Appointment Confirmation
+No proactive "are you still on for 2pm today?" SMS. Would prevent 60-70% of no-shows (prevention vs. recovery).
+
+### BL-09: Slot Capacity Not Modeled (Multi-Crew)
+System assumes 1 appointment per time slot. Multi-crew contractors get artificially blocked.
+
+### BL-10: Decision Node Always Uses Haiku
+`analyzeAndDecide` hardcodes `model: 'fast'` regardless of lead value. $40K lead gets escalation decision from cheapest model.
+
+### BL-11: No Lead Source Revenue Breakdown in Reports
+`leads.source` exists but reports don't break down revenue by source. Contractors can't evaluate which acquisition channel is worth investing in.
+
+### BL-12: Stripe Payment Link Expiry Not Handled
+Checkout links may expire. No re-issue mechanism. Homeowner clicks expired link, gets error, gives up.
+
+### BL-13: No Callback Scheduling from Escalation Queue
+Missed hot transfer has no "schedule callback" action. Contractor can't commit to calling back at a specific time.
+
+### BL-14: Win-Back Message Ignores Open Objections
+AI win-back uses generic re-engagement prompt even when conversation history shows an unresolved price objection.
+
+### BL-15: No Contractor Portal Walkthrough on First Login
+No tooltip sequence, no "start here" prompt. First-impression confusion is the #1 SaaS churn driver.
+
+### BL-16: Voice AI Has No SMS Conversation Memory
+Voice AI answers a call with no context from prior SMS conversation. Homeowner repeats everything.
+
+### BL-17: Invoice Dual Amount Model (Dollars vs Cents)
+`amount` (numeric, dollars) coexists with `totalAmount/paidAmount/remainingAmount` (integer, cents). No constraint forcing one. Financial data integrity risk.
+
+### BL-18: No Voice AI Emergency Escalation Path
+After-hours emergency calls (burst pipe, no heat) get standard AI handling. No immediate transfer to owner's cell.
+
+### BL-19: Compliance Cache Not Invalidated on Opt-Out
+`compliance_check_cache` can serve stale `isOptedOut = false` after STOP. Window for TCPA violation.
+
+### BL-20: `completed` Without `won` Loses Revenue Data
+Contractor skips `won` → goes directly to `completed`. `confirmedRevenue` never captured. Reports show $0.
+
+---
+
+## OUTLIER IDEAS (1-3 agents, high-creativity)
+
+### OUT-01: Day-Of Homeowner Prep Sequence (Contrarian)
+Instead of crew dispatch, send the homeowner a "day-of" SMS: who's coming, arrival window, what to prepare. Reduces owner's phone burden more than dispatch tools. **Zero schema changes — template content update only.**
+
+### OUT-02: Review Count Milestone Celebrations (Growth)
+At 10/25/50/100 reviews, send contractor a celebratory SMS: "You just hit 25 Google reviews — most competitors have fewer than 10." Creates shareable moments and word-of-mouth.
+
+### OUT-03: Competitor Review Benchmarking (Growth)
+Track competitor Google review counts via Places API. Report says "You now have more reviews than 2 of your 3 top competitors." Creates retention urgency.
+
+### OUT-04: "Biggest Opportunity This Week" in Digest (Growth)
+Add one line to weekly digest: "Your highest-value estimate: $18K bathroom reno for Sarah M — quoted 11 days ago, no response. Worth a personal call."
+
+### OUT-05: Voice AI Consent Disclosure (Compliance-forward)
+Mandatory AI + recording disclosure in voice greeting. Not optional post-2026 from a regulatory standpoint.
+
+### OUT-06: KB Answer Quality Scoring (Growth)
+Track which KB entries consistently lead to follow-up questions or escalations. Surface low-quality entries for operator improvement.
+
+### OUT-07: CASL Consent Expiry Dashboard (Risk-averse)
+Surface which leads are approaching 6-month consent expiry. Operator can prompt re-consent before messages start getting silently blocked.
+
+### OUT-08: Facebook Lead Ad Integration (Growth)
+Webhook from Facebook Lead Ads → platform. Captures the largest untapped advertising channel for home service contractors.
+
+---
+
+## CROSS-DOMAIN CASCADE CHAINS (Systems Thinker findings)
+
+The following gaps have 3+ domain cascade effects:
+
+| Root Gap | Cascade | Depth |
+|----------|---------|-------|
+| Empty KB activates AI | KB → AI quality → Escalation rate → Lead conversion → Reports → Engagement health | 6 |
+| `won` never fires funnel event | Portal → Attribution → AI Effectiveness → Reports → Guarantee | 5 |
+| Reply cancels all sequences | Lead Capture → Estimate Follow-Up → Payment → Win-Back | 4 |
+| Timezone hardcoded | Booking → Reminders → No-Show → Voice → Campaigns → Compliance | 6 |
+| No job completion loop | Portal → Reviews → Reports → Digest → Engagement health | 5 |
+
+---
+
+## PRIORITY MATRIX
+
+### Fix This Week (launch blockers — cannot ship without these)
+| ID | Gap | Effort | Impact |
+|----|-----|--------|--------|
+| LB-04 | Sequences survive won/lost | 30 min | Revenue trust |
+| LB-05 | Win-back fires on active sequences | 1 hr | Double-messaging |
+| LB-09 | Reply cancels ALL sequences | 2 hrs | Estimate follow-up coverage |
+| LB-03 | Timezone hardcoded | 1 day | Every non-Mountain client |
+| LB-10 | Voice hot-transfer timezone | 1 hr | Voice routing broken |
+| LB-08 | Quiet hours UTC fallback | 2 hrs | TCPA/CRTC compliance |
+| LB-07 | Business hours not gated | 2 hrs | Booking always fails |
+| LB-01 | No appointment list | 1-2 days | Core portal UX |
+| LB-02 | Crew not notified | 1 day | Booking value prop |
+| LB-06 | Voice callbacks not actioned | 4 hrs | Voice AI trust |
+
+### Fix Next Sprint (pre-launch quality)
+| ID | Gap | Effort |
+|----|-----|--------|
+| PL-01 | Job completion loop | 1 day |
+| PL-03 | Address at booking | 4 hrs |
+| PL-04 | Review sentiment gate | 4 hrs |
+| PL-05 | Mark Paid (cash) | 4 hrs |
+| PL-06 | Per-client ROI baselines | 1 day |
+| PL-07 | `won` funnel event | 2 hrs |
+| PL-08 | Platform DNC | 1 day |
+| PL-09 | KB activation gate | 4 hrs |
+| PL-10 | Voice overflow mode | 1 day |
+| PL-11 | Soft rejection detection | 4 hrs |
+| PL-12 | Escalation re-notify | 4 hrs |
+| PL-13 | Referral after neg review | 2 hrs |
+| PL-14 | Campaign timezone | 2 hrs |
+
+---
+
+## AGENT FRAMING CONTRIBUTIONS
+
+| Agent | Framing | Unique High-Value Finding |
+|-------|---------|--------------------------|
+| 1 — Neutral | Balanced full-domain | Booking address capture; AI response while estimate sequence active |
+| 2 — Risk-averse | Churn/trust focus | Quiet-hours missed-call promise broken; Smart Assist draft silently discarded |
+| 3 — Growth | 10x value | MMS photo AI; competitor review benchmarking; milestone celebrations |
+| 4 — Contrarian | Challenge assumptions | Day-of homeowner prep > crew dispatch; static templates are the biggest quality gap |
+| 5 — First principles | Lead-to-money pipeline | Post-appointment SMS quote capture; deposit collection timing |
+| 6 — User empathy | Both perspectives | Booking confirmation lacks crew details; conversation message type badges |
+| 7 — Resource constrained | Solo founder lens | Voice overflow mode is a no-op; Mark Paid (cash) is critical |
+| 8 — Long-term | Architecture debt | Invoice dual-amount model; compliance cache invalidation; appointments/calendar_events FK |
+| 9 — Data-driven | Industry metrics | Lead source revenue breakdown; 78% first-responder rule applied to MMS |
+| 10 — Systems thinker | Cascade chains | `won` funnel event cascade; empty KB cascade (6 domains deep) |

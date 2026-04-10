@@ -18,8 +18,8 @@ import { detectBookingIntent, handleBookingConversation } from '@/lib/services/b
 import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 import { ComplianceService } from '@/lib/compliance/compliance-service';
 import { recordLeadResponse } from '@/lib/services/flow-metrics';
-import { flowExecutions, flows } from '@/db/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { appointments, flowExecutions, flows } from '@/db/schema';
+import { eq, and, sql, desc, inArray, isNull, not } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
 import type { MediaAttachment } from '@/db/schema/media-attachments';
@@ -34,6 +34,22 @@ interface IncomingSMSPayload {
 }
 
 const STOP_WORDS = ['stop', 'unsubscribe', 'cancel', 'end', 'quit'];
+
+const SOFT_REJECTION_PHRASES = [
+  'not interested',
+  'went with someone else',
+  'found another',
+  'no longer interested',
+  'already hired',
+  'chose another',
+  'going with another',
+  'decided not to',
+  'no thanks',
+  'pass on this',
+  'we are good',
+  "we're good",
+  'already got someone',
+];
 
 export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   const db = getDb();
@@ -114,6 +130,68 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   // 2. Handle opt-out
   if (STOP_WORDS.includes(messageBody.toLowerCase())) {
     return await handleOptOut(db, client, senderPhone);
+  }
+
+  // 2a. Soft rejection detection — lead has declined the service (not opted out)
+  const lowerBody = messageBody.toLowerCase();
+  if (SOFT_REJECTION_PHRASES.some((phrase) => lowerBody.includes(phrase))) {
+    // Find lead first (may not exist yet if this is the very first message)
+    const softRejLeadResult = await db
+      .select()
+      .from(leads)
+      .where(and(eq(leads.clientId, client.id), eq(leads.phone, senderPhone)))
+      .limit(1);
+
+    if (softRejLeadResult.length) {
+      const softRejLead = softRejLeadResult[0];
+
+      // Mark lead as lost
+      await db
+        .update(leads)
+        .set({
+          status: 'lost',
+          actionRequiredReason: 'Soft rejection via SMS',
+          updatedAt: new Date(),
+        })
+        .where(eq(leads.id, softRejLead.id));
+
+      // Cancel all unsent win-back and estimate follow-up sequences
+      await db
+        .update(scheduledMessages)
+        .set({
+          cancelled: true,
+          cancelledAt: new Date(),
+          cancelledReason: 'Lead soft rejected',
+        })
+        .where(
+          and(
+            eq(scheduledMessages.leadId, softRejLead.id),
+            eq(scheduledMessages.sent, false),
+            eq(scheduledMessages.cancelled, false),
+            inArray(scheduledMessages.sequenceType, ['win_back', 'estimate_followup'])
+          )
+        );
+
+      console.log(
+        `[IncomingSMS] Soft rejection detected for lead ${softRejLead.id}. Status set to lost, sequences cancelled.`
+      );
+
+      // Send polite acknowledgment
+      await sendCompliantMessage({
+        clientId: client.id,
+        to: senderPhone,
+        from: client.twilioNumber,
+        body: "No worries at all! If you ever need anything in the future, don't hesitate to reach out.",
+        messageClassification: 'inbound_reply',
+        messageCategory: 'transactional',
+        consentBasis: { type: 'lead_reply', messageId: MessageSid },
+        leadId: softRejLead.id,
+        queueOnQuietHours: false,
+        metadata: { source: 'soft_rejection_ack' },
+      });
+    }
+
+    return { processed: true, action: 'soft_rejection', leadId: softRejLeadResult[0]?.id };
   }
 
   // 2b. Handle HELP keyword (CTIA requirement — must work even for opted-out leads)
@@ -290,7 +368,27 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     return { processed: true, action: 'human_mode_saved' };
   }
 
-  // 6. Pause active sequences
+  // 6. Cancel re-engagement sequences on reply.
+  //
+  // Only cancel sequences whose purpose is to re-engage a silent lead — once the
+  // lead replies, these sequences have served their purpose and should stop.
+  //
+  // Do NOT cancel on a generic reply:
+  //   - payment_reminder  → only cancelled by Stripe payment confirmation
+  //   - review_request    → only cancelled by explicit opt-out
+  //   - referral_request  → same as review_request
+  //   - appointment_reminder / appointment_reminder_contractor
+  //                       → only cancelled when the appointment is cancelled
+  //   - no_show_followup  → managed by appointment lifecycle
+  //   - quiet_hours_queue → compliance gateway internal
+  //   - smart_assist      → managed by its own lifecycle
+  //
+  // estimate_followup: cancelled for now on reply.
+  // TODO: Ideal behaviour is pause-and-resume — cancel the current unsent step
+  //   and reschedule the next step 3 days later so the sequence picks up where
+  //   it left off rather than being silenced entirely.
+  const RE_ENGAGEMENT_SEQUENCES: string[] = ['win_back', 'estimate_followup'];
+
   await db
     .update(scheduledMessages)
     .set({
@@ -301,14 +399,15 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     .where(and(
       eq(scheduledMessages.leadId, lead.id),
       eq(scheduledMessages.sent, false),
-      eq(scheduledMessages.cancelled, false)
+      eq(scheduledMessages.cancelled, false),
+      inArray(scheduledMessages.sequenceType, RE_ENGAGEMENT_SEQUENCES)
     ));
 
   // 6.5 Check for hot intent BEFORE AI processing
   const isHotIntent = detectHotIntent(messageBody);
 
   if (isHotIntent) {
-    const withinHours = await isWithinBusinessHours(client.id, client.timezone || 'America/Edmonton');
+    const withinHours = await isWithinBusinessHours(client.id, client.timezone || 'America/New_York');
 
     if (withinHours) {
       const ringResult = await initiateRingGroup({
@@ -390,7 +489,70 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     content: msg.content,
   }));
 
-  // 6.6a Check for booking intent (works for all clients, not just autonomous)
+  // 6.6a Check if this is an address reply for a pending appointment that has no address.
+  // The last outbound message would have asked "what is the address for the visit?"
+  const lastOutbound = conversationHistory.filter(m => m.role === 'assistant').slice(-1)[0];
+  const isAddressReply =
+    lastOutbound?.content.includes('what is the address for the visit') &&
+    messageBody.length > 0 &&
+    !messageBody.toLowerCase().startsWith('stop') &&
+    !messageBody.toLowerCase().startsWith('help');
+
+  if (isAddressReply) {
+    // Find the most recent scheduled appointment for this lead with no address
+    const [pendingAppt] = await db
+      .select()
+      .from(appointments)
+      .where(and(
+        eq(appointments.leadId, lead.id),
+        eq(appointments.clientId, client.id),
+        eq(appointments.status, 'scheduled'),
+        isNull(appointments.address)
+      ))
+      .orderBy(desc(appointments.createdAt))
+      .limit(1);
+
+    if (pendingAppt) {
+      // Store the address on the appointment and the lead
+      await db
+        .update(appointments)
+        .set({ address: messageBody, updatedAt: new Date() })
+        .where(eq(appointments.id, pendingAppt.id));
+      await db
+        .update(leads)
+        .set({ address: messageBody, updatedAt: new Date() })
+        .where(eq(leads.id, lead.id));
+
+      const ackResult = await sendCompliantMessage({
+        clientId: client.id,
+        to: senderPhone,
+        from: client.twilioNumber,
+        body: `Got it, thanks! We have your address on file for the visit.`,
+        messageClassification: 'inbound_reply',
+        messageCategory: 'transactional',
+        consentBasis: { type: 'lead_reply', messageId: MessageSid },
+        leadId: lead.id,
+        queueOnQuietHours: false,
+        metadata: { source: 'address_capture', appointmentId: pendingAppt.id },
+      });
+
+      if (ackResult.sent) {
+        await db.insert(conversations).values({
+          leadId: lead.id,
+          clientId: client.id,
+          direction: 'outbound',
+          messageType: 'ai_response',
+          content: `Got it, thanks! We have your address on file for the visit.`,
+          twilioSid: ackResult.messageSid || undefined,
+        });
+      }
+
+      return { processed: true, leadId: lead.id, action: 'address_captured' };
+    }
+    // No pending appointment found — fall through to normal processing
+  }
+
+  // 6.6b Check for booking intent (works for all clients, not just autonomous)
   const bookingIntent = await detectBookingIntent(messageBody, conversationHistory);
 
   if (bookingIntent !== 'none') {
@@ -403,7 +565,8 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         conversationHistory,
         client.businessName,
         client.ownerName,
-        bookingIntent
+        bookingIntent,
+        lead.address
       );
 
       if (bookingResult.responseMessage) {

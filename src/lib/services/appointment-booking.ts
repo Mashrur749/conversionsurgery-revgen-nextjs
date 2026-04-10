@@ -240,10 +240,25 @@ export async function bookAppointment(
   const formattedTime = format(appointmentDateTime, 'h:mm a');
   const formattedDate = format(appointmentDateTime, 'EEEE, MMM d');
 
+  // Resolve reminder routing once — used both for the immediate notification SMS
+  // and to populate assignedTeamMemberId on the calendar event so per-reminder
+  // delivery goes to the right person (LB-02).
+  const routing = await resolveReminderRecipients(clientId, 'booking_notification');
+
+  // Primary recipient becomes the assigned crew member for this appointment (owner by default for MVP).
+  const assignedRecipient = routing.primaryChain[0] ?? null;
+  const assignedMembershipId = assignedRecipient?.membershipId ?? null;
+
   // Notify contractor immediately
   if (client.twilioNumber) {
-    const contractorMsg = `New booking: ${lead.name || 'Customer'}, ${lead.projectType || 'service call'}, ${formattedDate} at ${formattedTime}${lead.address ? `, ${lead.address}` : ''}. Their #: ${lead.phone}`;
-    const routing = await resolveReminderRecipients(clientId, 'booking_notification');
+    // Include the assigned member's name when they have a named identity distinct
+    // from the generic "Business owner" fallback — makes it clear who owns the job.
+    const assignedLabel =
+      assignedRecipient && assignedRecipient.label !== 'Business owner'
+        ? ` (Assigned: ${assignedRecipient.label})`
+        : '';
+
+    const contractorMsg = `New booking: ${lead.name || 'Customer'}, ${lead.projectType || 'service call'}, ${formattedDate} at ${formattedTime}${lead.address ? `, ${lead.address}` : ''}. Their #: ${lead.phone}${assignedLabel}`;
     const attempts: Array<{
       role: string;
       phone: string;
@@ -409,7 +424,9 @@ export async function bookAppointment(
     }
   }
 
-  // Create calendar event if client has calendar integration
+  // Create calendar event if client has calendar integration.
+  // assignedTeamMemberId is populated with the primary routing recipient so
+  // subsequent reminders can be directed to the specific assigned crew member.
   try {
     await createEvent({
       clientId,
@@ -418,7 +435,9 @@ export async function bookAppointment(
       startTime: appointmentDateTime,
       endTime: addHours(appointmentDateTime, 1),
       location: lead.address || undefined,
+      timezone: client.timezone || 'America/New_York',
       eventType: 'estimate',
+      assignedTeamMemberId: assignedMembershipId ?? undefined, // undefined = no assignment; null would be treated same way
     });
   } catch {} // Don't block booking on calendar failure
 

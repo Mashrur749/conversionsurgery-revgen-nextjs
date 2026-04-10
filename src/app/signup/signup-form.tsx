@@ -25,7 +25,7 @@ export function SignupForm() {
     ownerName: '',
     email: '',
     phone: '',
-    timezone: 'America/Edmonton',
+    timezone: 'America/New_York',
   });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

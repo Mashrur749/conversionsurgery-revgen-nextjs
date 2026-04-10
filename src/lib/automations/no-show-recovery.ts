@@ -2,16 +2,60 @@
  * No-Show Recovery Automation
  *
  * Detects missed appointments and sends AI-personalized follow-ups.
- * Sequence: first message same evening (or next morning), second 2 days later.
- * Max 2 attempts, all through compliance gateway.
+ * Sequence:
+ *   1. Immediately: send contractor a notification SMS so they can follow up directly.
+ *   2. After 2-hour delay: send homeowner the recovery SMS (scheduled via scheduledMessages).
+ *   3. 2 days later: second follow-up attempt.
+ * Max 2 homeowner attempts, all through compliance gateway.
  */
 
 import { getDb } from '@/db';
-import { appointments, leads, clients, conversations, scheduledMessages } from '@/db/schema';
+import { appointments, leads, clients, scheduledMessages } from '@/db/schema';
 import { eq, and, lte, sql, inArray } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getTrackedAI } from '@/lib/ai';
+import { format, parse } from 'date-fns';
+
+/**
+ * Returns a Date representing 10:00 AM on the date that is `daysFromNow` days
+ * from now, expressed in the client's local timezone.
+ *
+ * Using `setHours(10, 0, 0, 0)` would set 10am in the *server's* timezone
+ * (UTC in production), which is wrong for clients in US timezones. Instead we:
+ * 1. Determine the local calendar date N days out using Intl.DateTimeFormat.
+ * 2. Build a UTC candidate for 10:00 on that calendar date.
+ * 3. Check what local hour that candidate falls on and shift by the difference.
+ */
+function tenAmLocalTime(daysFromNow: number, timezone: string): Date {
+  const now = new Date();
+  const futureUtc = new Date(now.getTime() + daysFromNow * 24 * 60 * 60 * 1000);
+
+  // Get the local calendar date (YYYY-MM-DD) in the client's timezone
+  const localDateStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(futureUtc);
+
+  const [year, month, day] = localDateStr.split('-').map(Number);
+
+  // Start with a UTC timestamp for 10:00 UTC on that calendar date
+  const candidateUtc = new Date(Date.UTC(year, month - 1, day, 10, 0, 0, 0));
+
+  // Determine what local hour that candidate falls on in the client's timezone
+  const localHourStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric',
+    hour12: false,
+  }).format(candidateUtc);
+  const localHour = Number(localHourStr);
+
+  // Shift to align with 10:00 local
+  const offsetMs = (10 - localHour) * 60 * 60 * 1000;
+  return new Date(candidateUtc.getTime() + offsetMs);
+}
 
 /**
  * Detects appointments that are 2+ hours past their time and still 'scheduled'.
@@ -75,65 +119,64 @@ export async function processNoShows(): Promise<{
 
     const results = await Promise.allSettled(
       batch.map(async ({ appointment, lead, client }) => {
-        const message = await generateNoShowMessage(
-          client.id,
-          lead.id,
-          lead.name || 'there',
-          appointment.appointmentDate,
-          appointment.appointmentTime,
-          client.businessName,
-          client.ownerName,
-          1
+        const apptDateTime = parse(
+          `${appointment.appointmentDate} ${appointment.appointmentTime.substring(0, 5)}`,
+          'yyyy-MM-dd HH:mm',
+          new Date()
         );
+        const formattedTime = format(apptDateTime, 'h:mm a');
+        const formattedDate = format(apptDateTime, 'EEEE, MMM d');
+        const leadName = lead.name || 'Customer';
 
-        if (!message) {
-          errors.push(`Lead ${lead.id}: AI generation failed`);
-          return;
+        // Step 1: Notify the contractor immediately so they can follow up directly.
+        const contractorMsg = `No-show alert: ${leadName} missed their ${formattedDate} at ${formattedTime} appointment. We will send them a recovery SMS in 2 hours. You can reach them directly at ${lead.phone}.`;
+        try {
+          await sendCompliantMessage({
+            clientId: client.id,
+            to: client.phone,
+            from: client.twilioNumber as string,
+            body: contractorMsg,
+            messageClassification: 'proactive_outreach',
+            messageCategory: 'transactional',
+            consentBasis: { type: 'existing_consent' },
+            metadata: {
+              source: 'no_show_contractor_notification',
+              appointmentId: appointment.id,
+            },
+          });
+        } catch (err) {
+          // Non-fatal — log and continue to schedule homeowner recovery
+          console.error(`[NoShowRecovery] Contractor notification failed for appointment ${appointment.id}:`, err);
         }
 
-        const result = await sendCompliantMessage({
-          clientId: client.id,
-          to: lead.phone,
-          from: client.twilioNumber as string,
-          body: message,
-          messageClassification: 'proactive_outreach',
-          messageCategory: 'transactional',
-          consentBasis: { type: 'existing_consent' },
+        // Step 2: Schedule the homeowner recovery SMS with a 2-hour delay.
+        // This gives the contractor time to reach out directly first.
+        const homeownerRecoveryAt = new Date();
+        homeownerRecoveryAt.setHours(homeownerRecoveryAt.getHours() + 2);
+
+        await db.insert(scheduledMessages).values({
           leadId: lead.id,
-          queueOnQuietHours: true,
-          metadata: {
-            source: 'no_show_recovery',
-            attempt: 1,
-            appointmentId: appointment.id,
-          },
+          clientId: client.id,
+          sendAt: homeownerRecoveryAt,
+          sequenceType: 'no_show_followup',
+          sequenceStep: 1,
+          content: '__AI_GENERATE__',
         });
 
-        if (result.sent || result.queued) {
-          messaged++;
+        messaged++;
 
-          if (result.sent) {
-            await db.insert(conversations).values({
-              leadId: lead.id,
-              clientId: client.id,
-              direction: 'outbound',
-              messageType: 'ai_response',
-              content: message,
-            });
-          }
+        // Step 3: Also schedule the second follow-up 2 days from now at 10am
+        // in the client's local timezone (not the server's UTC timezone).
+        const followUpDate = tenAmLocalTime(2, client.timezone || 'America/New_York');
 
-          const followUpDate = new Date();
-          followUpDate.setDate(followUpDate.getDate() + 2);
-          followUpDate.setHours(10, 0, 0, 0);
-
-          await db.insert(scheduledMessages).values({
-            leadId: lead.id,
-            clientId: client.id,
-            sendAt: followUpDate,
-            sequenceType: 'no_show_followup',
-            sequenceStep: 2,
-            content: '__AI_GENERATE__',
-          });
-        }
+        await db.insert(scheduledMessages).values({
+          leadId: lead.id,
+          clientId: client.id,
+          sendAt: followUpDate,
+          sequenceType: 'no_show_followup',
+          sequenceStep: 2,
+          content: '__AI_GENERATE__',
+        });
       })
     );
 

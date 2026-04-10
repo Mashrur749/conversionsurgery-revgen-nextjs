@@ -4,6 +4,43 @@ import { renderTemplate } from '@/lib/utils/templates';
 import { subDays, subHours, parse, format } from 'date-fns';
 import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
 
+/**
+ * Returns the UTC Date representing 10:00 AM on the day that is `daysOffset`
+ * days before `baseDate`, expressed in the given IANA timezone.
+ *
+ * Cannot use `setHours(10, 0, 0, 0)` — that adjusts wall-clock time in the
+ * *server's* local timezone (UTC in production). Clients may be in any US or
+ * Canadian timezone, so we derive the correct UTC offset using Intl.DateTimeFormat.
+ */
+function tenAmOnDayBefore(baseDate: Date, daysOffset: number, timezone: string): Date {
+  const targetDate = subDays(baseDate, daysOffset);
+
+  // Determine the local calendar date in the client's timezone
+  const localDateStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(targetDate);
+
+  const [year, month, day] = localDateStr.split('-').map(Number);
+
+  // Build a UTC candidate for 10:00 UTC on that local calendar date
+  const candidateUtc = new Date(Date.UTC(year, month - 1, day, 10, 0, 0, 0));
+
+  // Check what local hour that candidate actually falls on
+  const localHourStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric',
+    hour12: false,
+  }).format(candidateUtc);
+  const localHour = Number(localHourStr);
+
+  // Shift so the result lands at 10:00 local
+  const offsetMs = (10 - localHour) * 60 * 60 * 1000;
+  return new Date(candidateUtc.getTime() + offsetMs);
+}
+
 interface AppointmentPayload {
   leadId: string;
   clientId: string;
@@ -29,15 +66,20 @@ export interface ReminderPlanEntry {
 /**
  * Builds reminder plan entries for both homeowner and contractor.
  * Used by scheduling and regression tests.
+ *
+ * @param timezone - IANA timezone string for the client (e.g. 'America/New_York').
+ *   The day-before reminder fires at 10:00 AM in *this* timezone, not the
+ *   server's timezone. Defaults to 'America/New_York' if omitted.
  */
 export function buildAppointmentReminderPlan(
   appointmentDateTime: Date,
   now: Date = new Date(),
-  includeContractor: boolean = true
+  includeContractor: boolean = true,
+  timezone: string = 'America/New_York'
 ): ReminderPlanEntry[] {
   const entries: ReminderPlanEntry[] = [];
-  const dayBeforeSendAt = subDays(appointmentDateTime, 1);
-  dayBeforeSendAt.setHours(10, 0, 0, 0);
+  // Compute 10am local time the day before the appointment in the client's timezone
+  const dayBeforeSendAt = tenAmOnDayBefore(appointmentDateTime, 1, timezone);
   const twoHourSendAt = subHours(appointmentDateTime, 2);
 
   if (dayBeforeSendAt > now) {
@@ -119,7 +161,8 @@ export async function scheduleAppointmentReminders(payload: AppointmentPayload):
   const plan = buildAppointmentReminderPlan(
     appointmentDateTime,
     new Date(),
-    contractorRouting.primaryChain.length > 0
+    contractorRouting.primaryChain.length > 0,
+    client.timezone || 'America/New_York'
   );
 
   // 5/6. Insert reminder plan entries

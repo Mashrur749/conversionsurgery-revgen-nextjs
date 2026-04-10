@@ -91,13 +91,33 @@ export async function POST(request: NextRequest) {
     // Check business hours for after_hours mode
     const withinHours = await isWithinBusinessHours(
       client.id,
-      client.timezone || 'America/Edmonton'
+      client.timezone || 'America/New_York'
     );
+
+    // Overflow mode: always try contractor first, fall back to AI on no-answer.
+    // The ?overflow_fallback=1 param is set by dial-complete when it redirects
+    // back here after contractor no-answer — skip the dial step in that case.
+    const isOverflowFallback = request.nextUrl.searchParams.get('overflow_fallback') === '1';
+    if (client.voiceMode === 'overflow' && !isOverflowFallback) {
+      console.log('[Voice AI] Overflow mode — dialing contractor first', { clientId: client.id });
+      const appUrl = getWebhookBaseUrl(request);
+      const actionUrl = new URL('/api/webhooks/twilio/voice/ai/dial-complete', appUrl);
+      actionUrl.searchParams.set('origFrom', from);
+      actionUrl.searchParams.set('origTo', to);
+      actionUrl.searchParams.set('overflow', '1');
+
+      return twimlResponse(
+        `<Dial timeout="20" action="${xmlAttr(actionUrl.toString())}" method="POST">` +
+        `<Number>${client.phone}</Number>` +
+        `</Dial>`
+      );
+    }
 
     // Determine if AI should answer
     const shouldUseAI =
       client.voiceMode === 'always' ||
-      (client.voiceMode === 'after_hours' && !withinHours);
+      (client.voiceMode === 'after_hours' && !withinHours) ||
+      (client.voiceMode === 'overflow' && isOverflowFallback);
 
     if (!shouldUseAI) {
       // During business hours - try to connect to owner
@@ -142,17 +162,26 @@ export async function POST(request: NextRequest) {
       leadId = newLead.id;
     }
 
-    // Create voice call record
-    await db.insert(voiceCalls).values({
-      clientId: client.id,
-      leadId,
-      twilioCallSid: callSid,
-      from: normalizedFrom,
-      to: twilioNumber,
-      direction: 'inbound',
-      status: 'in-progress',
-      startedAt: new Date(),
-    });
+    // Create voice call record (skip if one already exists for this callSid —
+    // happens on overflow when the route is called a second time after redirect)
+    const existingCalls = await db
+      .select({ id: voiceCalls.id })
+      .from(voiceCalls)
+      .where(eq(voiceCalls.twilioCallSid, callSid))
+      .limit(1);
+
+    if (existingCalls.length === 0) {
+      await db.insert(voiceCalls).values({
+        clientId: client.id,
+        leadId,
+        twilioCallSid: callSid,
+        from: normalizedFrom,
+        to: twilioNumber,
+        direction: 'inbound',
+        status: 'in-progress',
+        startedAt: new Date(),
+      });
+    }
 
     console.log('[Voice AI] Starting AI conversation for call', {
       callSidSuffix: callSid ? callSid.slice(-8) : null,

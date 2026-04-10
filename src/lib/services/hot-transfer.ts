@@ -31,7 +31,7 @@ interface HotTransferResult {
  * Based on business hours and team availability
  */
 export async function routeHighIntentLead(payload: HotTransferPayload): Promise<HotTransferResult> {
-  const { leadId, clientId, twilioNumber, leadMessage, timezone = 'America/Edmonton' } = payload;
+  const { leadId, clientId, twilioNumber, leadMessage, timezone = 'America/New_York' } = payload;
 
   try {
     const db = getDb();

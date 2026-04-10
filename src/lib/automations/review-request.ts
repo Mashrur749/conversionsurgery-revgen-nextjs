@@ -1,7 +1,8 @@
 import { getDb, clients, leads, scheduledMessages } from '@/db';
-import { eq, and } from 'drizzle-orm';
+import { leadContext, escalationQueue } from '@/db/schema';
+import { eq, and, ne } from 'drizzle-orm';
 import { renderTemplate } from '@/lib/utils/templates';
-import { addDays } from 'date-fns';
+import { addDays, subDays } from 'date-fns';
 
 interface ReviewPayload {
   leadId: string;
@@ -27,7 +28,47 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
   const client = clientResult[0];
   const lead = leadResult[0];
 
-  // 2. Update lead status to completed (job is done)
+  // 2. Sentiment gate — suppress review request for frustrated/negative leads
+  // or leads with unresolved escalations (prevents asking unhappy customers for reviews)
+  const cutoff14Days = subDays(new Date(), 14);
+
+  const [leadCtx] = await db
+    .select({
+      currentSentiment: leadContext.currentSentiment,
+      updatedAt: leadContext.updatedAt,
+    })
+    .from(leadContext)
+    .where(eq(leadContext.leadId, leadId))
+    .limit(1);
+
+  const hasNegativeSentiment =
+    leadCtx !== undefined &&
+    (leadCtx.currentSentiment === 'negative' || leadCtx.currentSentiment === 'frustrated') &&
+    leadCtx.updatedAt >= cutoff14Days;
+
+  const [unresolvedEscalation] = await db
+    .select({ id: escalationQueue.id })
+    .from(escalationQueue)
+    .where(
+      and(
+        eq(escalationQueue.leadId, leadId),
+        ne(escalationQueue.status, 'resolved'),
+        ne(escalationQueue.status, 'dismissed')
+      )
+    )
+    .limit(1);
+
+  if (hasNegativeSentiment || unresolvedEscalation !== undefined) {
+    console.log(
+      `[ReviewRequest] Review request suppressed — negative sentiment or unresolved escalation (leadId=${leadId}, clientId=${clientId})`
+    );
+    return {
+      success: false,
+      reason: 'Review request suppressed — negative sentiment or unresolved escalation',
+    };
+  }
+
+  // 3. Update lead status to completed (job is done)
   await db
     .update(leads)
     .set({ status: 'completed', updatedAt: new Date() })
@@ -43,7 +84,7 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
     });
   } catch {} // Never block review flow on tracking failure
 
-  // 3. Cancel existing review/referral sequences
+  // 4. Cancel existing review/referral sequences
   await db
     .update(scheduledMessages)
     .set({
@@ -59,7 +100,7 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
 
   const scheduledIds: string[] = [];
 
-  // 4. Schedule review request (Day 1, 10am)
+  // 5. Schedule review request (Day 1, 10am)
   const reviewSendAt = addDays(new Date(), 1);
   reviewSendAt.setHours(10, 0, 0, 0);
 
@@ -82,7 +123,7 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
     .returning();
   scheduledIds.push(reviewScheduled[0].id);
 
-  // 5. Schedule referral request (Day 4, 10am)
+  // 6. Schedule referral request (Day 4, 10am)
   const referralSendAt = addDays(new Date(), 4);
   referralSendAt.setHours(10, 0, 0, 0);
 

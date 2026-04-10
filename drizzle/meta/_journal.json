@@ -64,6 +64,13 @@
       "when": 1775763241267,
       "tag": "0008_pretty_dormammu",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1775791004041,
+      "tag": "0009_red_chat",
+      "breakpoints": true
     }
   ]
 }

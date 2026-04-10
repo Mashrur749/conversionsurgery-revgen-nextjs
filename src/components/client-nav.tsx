@@ -30,6 +30,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/client', label: 'Dashboard', permission: PORTAL_PERMISSIONS.DASHBOARD },
   { href: '/client/conversations', label: 'Conversations', permission: PORTAL_PERMISSIONS.CONVERSATIONS_VIEW },
+  { href: '/client/appointments', label: 'Appointments', permission: PORTAL_PERMISSIONS.DASHBOARD },
   { href: '/client/reviews', label: 'Reviews', permission: PORTAL_PERMISSIONS.REVIEWS_VIEW },
   { href: '/client/revenue', label: 'Revenue', permission: PORTAL_PERMISSIONS.REVENUE_VIEW },
   { href: '/client/reports', label: 'Reports', permission: PORTAL_PERMISSIONS.DASHBOARD },

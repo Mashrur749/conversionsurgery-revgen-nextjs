@@ -202,7 +202,7 @@ export async function buildAIContext(params: BuildContextParams): Promise<AICont
   }
 
   // ---- Business hours + time context ----
-  const timezone = client.timezone || 'America/Edmonton';
+  const timezone = client.timezone || 'America/New_York';
   let isInBusinessHours = false;
   try {
     isInBusinessHours = await isWithinBusinessHours(clientId, timezone);

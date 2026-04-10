@@ -44,7 +44,7 @@ const INITIAL_DATA: WizardData = {
   ownerName: '',
   email: '',
   phone: '',
-  timezone: 'America/Edmonton',
+  timezone: 'America/New_York',
   googleBusinessUrl: '',
   teamMembers: [],
   businessHours: [

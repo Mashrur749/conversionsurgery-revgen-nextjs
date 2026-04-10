@@ -7,6 +7,7 @@ import { logInternalError, logSanitizedConsoleError } from '@/lib/services/inter
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { createEscalation } from '@/lib/services/escalation';
 import { sendAlert } from '@/lib/services/agency-communication';
+import { getWebhookBaseUrl, xmlAttr } from '@/lib/utils/webhook-url';
 
 const MISSED_STATUSES = new Set(['no-answer', 'busy', 'failed', 'canceled']);
 
@@ -30,10 +31,12 @@ export async function POST(request: NextRequest) {
 
     const callSid = payload.CallSid;
     const dialCallStatus = (payload.DialCallStatus || '').toLowerCase();
+    const isOverflow = new URL(request.url).searchParams.get('overflow') === '1';
 
     console.log('[Voice AI Dial Complete] Status update', {
       dialCallStatus,
       callSidSuffix: callSid ? callSid.slice(-8) : null,
+      isOverflow,
     });
 
     const db = getDb();
@@ -69,8 +72,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If the dial failed, send homeowner SMS, create escalation, notify team member
+    // If the dial failed, handle based on overflow mode
     if (MISSED_STATUSES.has(dialCallStatus)) {
+      // Overflow mode: contractor didn't answer → redirect to Voice AI.
+      // Twilio re-POSTs original call parameters (From, To, CallSid) so the AI
+      // route can find the client. We pass overflow_fallback=1 to tell the AI
+      // route to skip the contractor dial and go straight to AI.
+      if (isOverflow) {
+        console.log('[Voice AI Dial Complete] Overflow — contractor unavailable, routing to AI', {
+          callSidSuffix: callSid ? callSid.slice(-8) : null,
+          clientId: call?.clientId,
+        });
+        const appUrl = getWebhookBaseUrl(request);
+        const aiUrl = new URL('/api/webhooks/twilio/voice/ai', appUrl);
+        aiUrl.searchParams.set('overflow_fallback', '1');
+        return twimlResponse(`<Redirect method="POST">${xmlAttr(aiUrl.toString())}</Redirect>`);
+      }
+
       if (call?.leadId) {
         // Run side effects in parallel — never fail the TwiML response
         void (async () => {

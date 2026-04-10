@@ -53,7 +53,7 @@ export function EditClientForm({ client }: { client: Client }) {
     ownerName: client.ownerName,
     email: client.email,
     phone: client.phone,
-    timezone: client.timezone || 'America/Edmonton',
+    timezone: client.timezone || 'America/New_York',
     googleBusinessUrl: client.googleBusinessUrl || '',
     notificationEmail: client.notificationEmail ?? true,
     notificationSms: client.notificationSms ?? true,

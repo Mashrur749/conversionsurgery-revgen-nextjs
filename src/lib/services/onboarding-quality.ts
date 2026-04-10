@@ -1,6 +1,7 @@
 import { getDb } from '@/db';
 import {
   auditLog,
+  businessHours,
   clientMemberships,
   clientServices,
   clients,
@@ -9,7 +10,7 @@ import {
   people,
   type OnboardingQualityOverride,
 } from '@/db/schema';
-import { and, desc, eq, gt, isNull, or } from 'drizzle-orm';
+import { and, count, desc, eq, gt, isNull, or } from 'drizzle-orm';
 import { loadStructuredKnowledge } from '@/lib/services/structured-knowledge';
 import {
   getOnboardingQualityPolicy,
@@ -69,6 +70,7 @@ interface OnboardingQualityEvaluationInput {
     activeEscalationRecipients: number;
     ownersWithContact: number;
   };
+  businessHoursCount: number;
 }
 
 function hasValue(value: string | null | undefined): boolean {
@@ -260,6 +262,31 @@ export function evaluateOnboardingQualityFromInput(
     actions: escalationActions,
   });
 
+  // Gate 5: Business hours configured
+  const businessHoursScore = input.businessHoursCount > 0 ? 100 : 0;
+  const businessHoursReasons: string[] = [];
+  const businessHoursActions: OnboardingQualityAction[] = [];
+  if (input.businessHoursCount === 0) {
+    businessHoursReasons.push('No business hours configured');
+    businessHoursActions.push({
+      gateKey: 'business_hours_configured',
+      action: 'Configure business hours so the AI knows when calls and ring groups are active.',
+      impact: 'high',
+    });
+  }
+  gateResults.push({
+    key: 'business_hours_configured',
+    title: 'Business Hours Configured',
+    score: businessHoursScore,
+    maxScore: policy.gates.business_hours_configured.weight,
+    passed:
+      input.businessHoursCount > 0 &&
+      businessHoursScore >= policy.gates.business_hours_configured.minScore,
+    critical: policy.gates.business_hours_configured.critical,
+    reasons: businessHoursReasons,
+    actions: businessHoursActions,
+  });
+
   const maxScore = gateResults.reduce((sum, gate) => sum + gate.maxScore, 0);
   const totalScore = gateResults.reduce(
     (sum, gate) => sum + weightedScore(gate.score, gate.maxScore),
@@ -332,7 +359,7 @@ export async function evaluateOnboardingQualityForClient(input: {
     throw new Error('Client not found');
   }
 
-  const [services, memberships, structured] = await Promise.all([
+  const [services, memberships, structured, businessHoursRows] = await Promise.all([
     db
       .select({
         name: clientServices.name,
@@ -359,6 +386,10 @@ export async function evaluateOnboardingQualityForClient(input: {
         eq(clientMemberships.isActive, true)
       )),
     loadStructuredKnowledge(input.clientId),
+    db
+      .select({ count: count() })
+      .from(businessHours)
+      .where(eq(businessHours.clientId, input.clientId)),
   ]);
 
   const evaluation = evaluateOnboardingQualityFromInput(
@@ -381,6 +412,7 @@ export async function evaluateOnboardingQualityForClient(input: {
             (hasValue(membership.personEmail) || hasValue(membership.personPhone))
         ).length,
       },
+      businessHoursCount: businessHoursRows[0]?.count ?? 0,
     },
     policy
   );

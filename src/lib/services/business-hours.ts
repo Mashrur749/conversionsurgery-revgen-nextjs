@@ -51,12 +51,12 @@ export async function initializeBusinessHours(clientId: string) {
  * outside the open/close window, or if no hours are configured.
  *
  * @param clientId - UUID of the client to check hours for
- * @param timezone - IANA timezone string (defaults to America/Edmonton)
+ * @param timezone - IANA timezone string (defaults to America/New_York)
  * @returns `true` when the current moment is within business hours
  */
 export async function isWithinBusinessHours(
   clientId: string,
-  timezone: string = 'America/Edmonton'
+  timezone: string = 'America/New_York'
 ): Promise<boolean> {
   try {
     const db = getDb();

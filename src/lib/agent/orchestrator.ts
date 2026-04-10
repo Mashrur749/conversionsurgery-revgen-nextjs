@@ -23,6 +23,7 @@ import { detectBookingIntent, handleBookingConversation } from '@/lib/services/b
 import { selectModelTier } from '@/lib/ai/model-routing';
 import { trackKnowledgeGap } from '@/lib/agent/context-builder';
 import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
+import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality';
 
 interface ProcessMessageResult {
   action: AgentAction;
@@ -67,6 +68,30 @@ export async function processIncomingMessage(
     .from(clientAgentSettings)
     .where(eq(clientAgentSettings.clientId, client.id))
     .limit(1);
+
+  // Quality gate guard — block AI when critical onboarding gates are failing in enforce mode.
+  // This prevents the AI from responding when the KB is empty or other critical setup is missing.
+  try {
+    const { decision, evaluation } = await getOnboardingQualityReadiness({
+      clientId: client.id,
+      source: 'ai_orchestrator',
+      persistSnapshot: false,
+    });
+    if (decision.mode === 'enforce' && !decision.allowed) {
+      console.warn(
+        `[Agent] AI response blocked for client ${client.id} — critical quality gates failing: ${evaluation.criticalFailures.join(', ')}`
+      );
+      return {
+        action: 'no_action' as AgentAction,
+        responseSent: false,
+        escalated: false,
+        newStage: 'new',
+      };
+    }
+  } catch (err) {
+    // Non-fatal — if quality check fails, allow AI to proceed rather than silently drop responses
+    console.error('[Agent] Quality gate check failed, proceeding without gate enforcement:', err);
+  }
 
   // Load or create lead context
   let [context] = await db

@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-01 (Wave 7 + post-launch additions)
+Last updated: 2026-04-09 (Platform Gap Audit — Wave 1+2 fixes)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -13,7 +13,7 @@ The core promise: every inquiry gets a response in seconds, not hours.
 
 | Channel | What happens | Response time |
 |---------|-------------|---------------|
-| **SMS/MMS** | Webhook receives message, creates/updates lead, AI generates contextual response | 2-8 seconds (autonomous mode) |
+| **SMS/MMS** | Webhook receives message, creates/updates lead, AI generates contextual response. **Soft rejection detection:** messages like &ldquo;not interested&rdquo; or &ldquo;went with someone else&rdquo; auto-transition lead to `lost`, cancel active sequences, and send a polite acknowledgment. | 2-8 seconds (autonomous mode) |
 | **Missed call** | Detects unanswered call, auto-sends personalized SMS to caller | 2-3 seconds |
 | **Web form** | Receives submission, creates lead, sends template-based confirmation | 1-2 seconds |
 | **Voice call** | AI answers, converses in real-time, books appointments or transfers to human | Immediate (live call) |
@@ -93,7 +93,14 @@ Triggered when owner flags an estimate as sent (SMS keyword `EST`, dashboard act
 
 **Fallback nudge:** Cron identifies stale leads (48+ hours, no estimate sequence) and prompts the owner: "Did you send an estimate to [name]? Reply YES to start follow-up."
 
-Cancellation: new sequence auto-cancels prior unsent messages for the same lead.
+Cancellation: new sequence auto-cancels prior unsent messages for the same lead. When the lead is marked `won` or `lost`, all pending estimate follow-up messages are automatically cancelled.
+
+### Appointment Booking — Address Capture
+
+When the AI books an appointment via SMS conversation, it checks whether the lead already has an address on file (from the original form submission or a prior conversation).
+
+- **Address already on file:** booking proceeds and the address is included on the appointment record automatically.
+- **No address on file:** after confirming the time slot, the AI appends "Also, what is the address for the visit?" to the confirmation message. The next inbound message from that lead is treated as the address reply — stored on both the appointment record and the lead record — and the system sends a brief acknowledgment ("Got it, thanks!"). This reply-detection runs before normal AI processing so the address is captured cleanly without routing through the AI response pipeline.
 
 ### Appointment Reminders
 
@@ -126,10 +133,11 @@ Cron detects appointments 2+ hours past scheduled time with no completion.
 
 | Step | Timing | Action |
 |------|--------|--------|
-| 1 | Same day | AI-personalized follow-up SMS (warm, short, offers reschedule) |
-| 2 | Day +2, 10am | Second AI-personalized follow-up (shorter, gives easy out) |
+| 0 | Immediately | Contractor notified via SMS with lead name, appointment time, and direct lead phone number so they can follow up themselves |
+| 1 | +2 hours | AI-personalized homeowner recovery SMS (warm, short, offers reschedule) — delayed to give contractor time to act first |
+| 2 | Day +2, 10am local time | Second AI-personalized homeowner follow-up (shorter, gives easy out) |
 
-Hard stop at 2 attempts. Quiet hours respected. AI uses conversation history and project context for personalization.
+Hard stop at 2 homeowner SMS attempts. Contractor notification is non-fatal (logged on failure, does not block scheduled recovery messages). Quiet hours respected. AI uses conversation history and project context for personalization.
 
 ### Payment Collection
 
@@ -148,16 +156,19 @@ Stripe webhook confirms payment &rarr; cancels remaining reminders &rarr; sends 
 
 Triggered when lead status changes to `completed` (contractor marks the job done in the portal). This fires the review + referral sequence automatically — no manual trigger required.
 
+**Sentiment gate:** before scheduling, the system checks lead sentiment (last 14 days) and unresolved escalations. If the lead has negative/frustrated sentiment or an open escalation, the review request is suppressed with a log entry. This prevents asking unhappy customers for Google reviews.
+
 | Touch | Timing | Message |
 |-------|--------|---------|
 | 1 | Day 1, 10am | Review request with direct Google link |
-| 2 | Day 4, 10am | Referral request |
+| 2 | Day 4, 10am | Referral request (auto-cancelled if a negative review &le;2 stars is synced before Day 4) |
 
 ### Win-Back (Dormant Lead Reactivation)
 
 Always-on continuous automation (separate from Quarterly Growth Blitz campaigns).
 
 - Targets leads with `status=contacted` or `status=estimate_sent` and 25-35 days since last activity (last message, or creation date for imported leads with no conversations)
+- **Excludes leads with active sequences:** leads with any unsent, uncancelled scheduled messages from other automations (estimate follow-up, payment reminders, etc.) are skipped to prevent double-messaging
 - AI-personalized win-back message with project context
 - Randomized send timing (10am-2pm weekdays, avoids Monday morning/Friday afternoon)
 - Follow-up 20-30 days later
@@ -224,9 +235,9 @@ Persistent WebSocket connection for the entire call duration. Claude responses s
 - **Knowledge-grounded responses:** uses client knowledge base, service catalog, and SMS conversation history
 - **Appointment booking:** Claude tool_use checks Google Calendar availability and books estimate appointments mid-call
 - **Project capture:** Claude tool_use saves caller name, project type, address, and notes to the lead record
-- **Callback scheduling:** when transfer fails or owner unavailable, schedules callback and notifies contractor
+- **Callback scheduling:** when transfer fails or owner unavailable, schedules callback and notifies contractor. Cron (`/api/cron/voice-callbacks`) runs every 30 minutes and sends SMS to the contractor for any callbacks due or within the next 2 hours, with a tap-to-call link.
 - **Guardrails:** won&apos;t make pricing promises (unless `canDiscussPricing` enabled), won&apos;t guess unknowns, escalates when unsure
-- **Three activation modes:** always on, after-hours only, overflow (when owner doesn&apos;t answer)
+- **Three activation modes:** always on, after-hours only, overflow. Overflow dials the contractor first (20s timeout) &mdash; if no-answer/busy/failed, Twilio redirects the live call to Voice AI automatically. No homeowner ever hears &ldquo;no one available&rdquo; in overflow mode.
 - **Voice selection:** ElevenLabs voice personas with admin preview &mdash; selected voice is used in live calls via ConversationRelay `voice` attribute
 - **Fallback:** Amazon Polly (Matthew-Neural) when no ElevenLabs voice is configured
 - **Kill switch:** prominent global toggle on the admin Voice AI page &mdash; one click to pause all voice AI across all clients, one click to resume. Per-client `voiceEnabled` toggle also available. Both fall back to direct owner forwarding.
@@ -340,7 +351,7 @@ Every lead accumulates:
 ### Team Coordination
 
 - **Ring group:** simultaneous dial to all available team members during business hours
-- **Escalation queue:** priority-ranked (1-5) with SLA deadlines, live countdown timers (color-coded: green/sienna/red by urgency), assignment, claim tokens, and 30-second auto-refresh with &quot;Updated X ago&quot; timestamp
+- **Escalation queue:** priority-ranked (1-5) with SLA deadlines, live countdown timers (color-coded: green/sienna/red by urgency), assignment, claim tokens, and 30-second auto-refresh with &quot;Updated X ago&quot; timestamp. **3-stage re-notification:** unclaimed escalations re-notify at 15 min, 30 min, and 60 min (inferred from elapsed time, capped at 3 attempts). After 60 min unclaimed, escalates to the owner directly.
 - **Hot transfer:** Voice AI detects urgency &rarr; dials team immediately &rarr; SMS heads-up ("Hot lead calling!")
 - **Missed transfer fallback:** SMS to team ("Missed hot transfer — call back ASAP") + SMS to lead ("Sorry we missed you")
 - **Owner notification:** Smart Assist drafts with reference codes for SEND/EDIT/CANCEL approval
@@ -386,12 +397,13 @@ Default: `managed`. Operator can change per client from the admin detail page.
 
 ### Pages
 
-The contractor nav has 9 items: **Dashboard | Conversations | Reviews | Revenue | Reports | Flows | Team | Settings | Help &amp; Support**. Knowledge Base and Billing are accessible via Settings (not top-level nav). Discussions is merged into Help &amp; Support.
+The contractor nav has 10 items: **Dashboard | Conversations | Appointments | Reviews | Revenue | Reports | Flows | Team | Settings | Help &amp; Support**. Knowledge Base and Billing are accessible via Settings (not top-level nav). Discussions is merged into Help &amp; Support.
 
 | Page | What it shows |
 |------|--------------|
 | **Dashboard** | Lead summary, recent activity, help articles. **Voice AI Status card** (read-only: ON/OFF status, mode, phone number, this week&apos;s call stats &mdash; see Section 3). **Since Your Last Visit card** (see below). **System Activity card** (auto-tracked pipeline proof &mdash; see below). **Jobs We Helped Win card** &mdash; the single confirmed-revenue money card (contractor-confirmed wins; shows $0 nudge when no wins recorded). **Account Manager card** (when operator phone is configured — shows operator name, phone, and a single CTA). New-client setup banner (phone + plan checklist, auto-hides when complete). Sticky header keeps page title visible while scrolling. **&ldquo;Set up your AI&rdquo; CTA** when KB has fewer than 5 entries &mdash; links to the onboarding wizard. |
 | **Conversations** | All leads with message history, mode badges, action-required highlights. Sienna numeric badge on nav item shows action-required count; polls every 30 seconds. |
+| **Appointments** | Chronological list of all booked appointments with lead name, date/time, address, status badge (scheduled/confirmed/completed/no_show/cancelled). &ldquo;Mark Complete&rdquo; button on active appointments triggers review request. Mobile card layout, desktop table. |
 | **Reviews** | Pending AI-drafted Google review responses — inline edit and approve before posting (see below). |
 | **Revenue** | 4-column ROI summary card at top (Your Investment, Revenue Recovered, Net Return, ROI percentage), followed by 30-day stats, pipeline value, speed-to-lead metrics, and service breakdown. |
 | **Reports** | Past bi-weekly (and monthly) performance reports — list in reverse chronological order with period, type, delivery status badge, and download button. Empty state explains reports arrive within two weeks of activation. API: `GET /api/client/reports`. Download: `GET /api/client/reports/[id]/download`. |
@@ -435,10 +447,14 @@ Contractors can update lead status directly from the conversation detail view in
 | Button | Action | Detail |
 |--------|--------|--------|
 | **Mark Estimate Sent** | Sets lead status to `estimate_sent` | Triggers the 4-touch estimate follow-up sequence automatically |
-| **Mark Won** | Sets lead status to `won` | Opens a dialog to enter confirmed revenue (dollar value recorded for ROI reporting) |
+| **Mark Won** | Sets lead status to `won` | Opens a dialog to enter confirmed revenue (dollar value recorded for ROI reporting). Fires `job_won` funnel event for AI attribution. |
 | **Mark Lost** | Sets lead status to `lost` | AlertDialog confirmation prevents accidental dismissal |
+| **Mark Paid (Cash/Check)** | Marks an invoice as paid without Stripe | Cancels all pending payment reminder messages. Accepts optional payment method (cash, check, bank transfer, other). |
 
 - API: `PATCH /api/client/leads/[id]/status` via `portalRoute` with `PORTAL_PERMISSIONS.LEADS_EDIT`
+- Mark Paid API: `POST /api/client/invoices/[invoiceId]/mark-paid` via `portalRoute`
+- Won and Lost status changes cancel all unsent scheduled messages for the lead
+- Won status fires `job_won` funnel event for AI attribution and effectiveness tracking
 - Won and Lost status changes also fire the `lead.status_changed` webhook (if configured) for Jobber/Zapier integrations
 
 ### Review Response Approval (Contractor Portal)
@@ -544,6 +560,7 @@ CASL and CRTC compliant by default — the contractor never has to think about i
 - **HELP/INFO keywords:** auto-reply with business name, owner phone, and STOP instructions (sent even to opted-out numbers)
 - **Quiet hours:** 9pm-10am recipient local time. Two modes: strict (all outbound queued) and inbound-reply-allowed (direct replies sent, proactive outreach queued)
 - **DNC list:** global + per-client do-not-contact registry with expiry and source tracking
+- **Platform-level DNC:** if a homeowner opts out from any client on the platform, all other clients are blocked from texting them too &mdash; prevents the same number being re-contacted by a different contractor after opting out
 - **Blocked numbers:** per-client number blocking
 - **Per-client automation pause:** setting a client&apos;s status to &quot;paused&quot; blocks all outbound messages for that client only (other clients unaffected). Used for contractor vacations or temporary holds without touching the platform-wide kill switch.
 
@@ -586,7 +603,7 @@ Auto-generated and delivered to clients every 2 weeks:
 - Leads captured, response times, conversations handled
 - Estimates followed up, appointments booked
 - Revenue impact estimate
-- **"Leads at Risk" model:** Conservative/Likely/Optimistic directional estimate of leads that would have waited 40+ minutes for a response (with disclaimer)
+- **&ldquo;Leads at Risk&rdquo; model:** Conservative/Likely/Optimistic directional estimate of leads that would have waited 40+ minutes for a response (with disclaimer). The response-time baseline used for the &ldquo;without us&rdquo; comparison is per-client: if the client has a `previousResponseTimeMinutes` value set, it overrides the platform default (42 min), making the comparison accurate to what that contractor was actually doing before.
 - **Confirmed Won revenue:** reports show &quot;Confirmed Won: $X&quot; alongside pipeline estimates, based on contractor-entered actual job values when marking leads &quot;won&quot;
 - **Pipeline Proof (`pipelineProof` in `roiSummary`):** 6 auto-tracked metrics added to every report — leads responded to, estimates in follow-up, missed calls caught, dead quotes re-engaged, appointments booked, and average response time. `probablePipelineValue` is calculated automatically as (appointments booked + reactivated quotes) &times; avg project value ($40K default). These metrics require zero contractor action and prove system value even before any wins are confirmed.
 - Versioned output — shows `ready` or `insufficient_data` (never fabricates)
@@ -745,6 +762,8 @@ Before the sales call, the operator runs a lightweight pre-sale audit using publ
 ### Onboarding Quality Gates
 
 - Multi-criteria evaluation: knowledge base populated, business hours set, team configured, etc.
+- **Business hours gate (critical):** AI activation is blocked if no business hours are configured &mdash; prevents booking failures from empty slot availability
+- **KB activation gate:** when policy mode is `enforce`, the AI orchestrator checks quality gate readiness before generating responses. If critical gates fail (e.g., empty KB), AI returns `no_action` and logs which gates are failing. Degrades gracefully on check failure.
 - Critical vs. standard gates with pass/fail scoring
 - Three enforcement modes: enforce (blocks autonomous), warn (allows with notice), off
 - Override capability with audit trail (reason required, &ge;10 chars)

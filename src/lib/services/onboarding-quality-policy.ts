@@ -4,7 +4,8 @@ export type OnboardingQualityGateKey =
   | 'business_profile'
   | 'services_pricing_boundaries'
   | 'faq_objection_coverage'
-  | 'escalation_contacts';
+  | 'escalation_contacts'
+  | 'business_hours_configured';
 
 export interface OnboardingQualityGateThreshold {
   minScore: number;
@@ -29,6 +30,7 @@ export const DEFAULT_ONBOARDING_QUALITY_POLICY: Omit<OnboardingQualityPolicy, 'm
     services_pricing_boundaries: { minScore: 80, weight: 30, critical: true },
     faq_objection_coverage: { minScore: 80, weight: 30, critical: true },
     escalation_contacts: { minScore: 100, weight: 15, critical: true },
+    business_hours_configured: { minScore: 100, weight: 15, critical: true },
   },
   thresholds: {
     minServices: 2,

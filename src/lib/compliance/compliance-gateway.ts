@@ -1,7 +1,7 @@
 import { sendSMS } from '@/lib/services/twilio';
 import { ComplianceService } from './compliance-service';
 import { getClientUsagePolicy } from '@/lib/services/subscription';
-import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessages } from '@/db';
+import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessages, blockedNumbers } from '@/db';
 import { isMessageLimitReached } from '@/lib/services/usage-policy';
 import { eq, and, sql } from 'drizzle-orm';
 import { getTimezoneOffset } from 'date-fns-tz';
@@ -129,6 +129,35 @@ export async function sendCompliantMessage(
         messageClassification,
         leadId,
         killSwitch: OPS_KILL_SWITCH_KEYS.OUTBOUND_AUTOMATIONS,
+        ...metadata,
+      }
+    );
+  }
+
+  // -----------------------------------------------------------
+  // Step 0 (pre): Platform-level DNC — if this number opted out from
+  // ANY client on the platform, block the send for all clients.
+  // This prevents a homeowner from being re-contacted after opting out
+  // with a different contractor on the same platform.
+  // -----------------------------------------------------------
+  const dncDb = getDb();
+  const [platformDncRecord] = await dncDb
+    .select({ id: blockedNumbers.id, reason: blockedNumbers.reason })
+    .from(blockedNumbers)
+    .where(eq(blockedNumbers.phone, normalizedPhone))
+    .limit(1);
+
+  if (platformDncRecord) {
+    return blocked(
+      'Platform-level DNC — number opted out from another client',
+      normalizedPhone,
+      phoneHash,
+      clientId,
+      {
+        messageCategory,
+        messageClassification,
+        leadId,
+        platformDncReason: platformDncRecord.reason,
         ...metadata,
       }
     );
@@ -288,7 +317,8 @@ export async function sendCompliantMessage(
     if (quietHoursDecision.decision === 'queue') {
       let queuedSendAt: Date | null = null;
       if (leadId) {
-        queuedSendAt = await getNextAllowedSendAt(clientId, clientData.timezone || 'America/Edmonton');
+        // Fall back to Pacific (most restrictive NA timezone) when client timezone is unset
+        queuedSendAt = await getNextAllowedSendAt(clientId, clientData.timezone || 'America/Los_Angeles');
         await db.insert(scheduledMessages).values({
           clientId,
           leadId,

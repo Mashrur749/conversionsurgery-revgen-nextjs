@@ -27,7 +27,7 @@ export const clients = pgTable(
     googleTokenExpiresAt: timestamp('google_token_expires_at'),
     googleBusinessAccountId: varchar('google_business_account_id', { length: 100 }),
     googleLocationId: varchar('google_location_id', { length: 100 }),
-    timezone: varchar('timezone', { length: 50 }).default('America/Edmonton'),
+    timezone: varchar('timezone', { length: 50 }).default('America/New_York'),
     serviceModel: varchar('service_model', { length: 20 }).default('managed').notNull(), // 'managed' | 'self_serve'
     reviewApprovalMode: varchar('review_approval_mode', { length: 20 }).default('operator_managed').notNull(), // 'operator_managed' | 'client_approves'
 

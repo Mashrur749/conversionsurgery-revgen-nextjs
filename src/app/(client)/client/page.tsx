@@ -14,6 +14,7 @@ import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-serv
 import { getClientLatestReportDelivery } from '@/lib/services/client-report-delivery';
 import { SinceLastVisitCard } from './since-last-visit-card';
 import { VoiceStatusCard } from './voice-status-card';
+import { JobsToCloseOut, type JobToCloseOut } from './jobs-to-close-out';
 
 export default async function ClientDashboardPage() {
   await requirePortalPagePermission(PORTAL_PERMISSIONS.DASHBOARD);
@@ -44,6 +45,26 @@ export default async function ClientDashboardPage() {
     ))
     .orderBy(desc(leads.updatedAt))
     .limit(5);
+
+  // Jobs to close out: status = 'won' (not yet marked complete) — shown as action items
+  const jobsToCloseOut: JobToCloseOut[] = (
+    await db
+      .select({
+        id: leads.id,
+        name: leads.name,
+        projectType: leads.projectType,
+        wonAt: leads.updatedAt,
+      })
+      .from(leads)
+      .where(and(eq(leads.clientId, clientId), eq(leads.status, 'won')))
+      .orderBy(desc(leads.updatedAt))
+      .limit(20)
+  ).map((row) => ({
+    id: row.id,
+    name: row.name,
+    projectType: row.projectType,
+    wonAt: row.wonAt,
+  }));
 
   const [wonAgg] = await db
     .select({
@@ -349,6 +370,9 @@ export default async function ClientDashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Jobs to close out — action items surfaced before the win list */}
+      <JobsToCloseOut jobs={jobsToCloseOut} />
 
       {/* Jobs We Helped Win — GAP-02 */}
       <Card className="border-[#3D7A50]/30">

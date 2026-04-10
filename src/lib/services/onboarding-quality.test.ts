@@ -43,6 +43,7 @@ const completeInput = {
     activeEscalationRecipients: 1,
     ownersWithContact: 1,
   },
+  businessHoursCount: 7,
 };
 
 describe('evaluateOnboardingQualityFromInput', () => {

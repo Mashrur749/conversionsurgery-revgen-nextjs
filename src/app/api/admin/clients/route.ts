@@ -32,7 +32,7 @@ const createClientSchema = z.object({
   ownerName: z.string().min(1, 'Owner name is required'),
   email: z.string().email('Valid email is required'),
   phone: z.string().min(10, 'Phone number is required'),
-  timezone: z.string().default('America/Edmonton'),
+  timezone: z.string().default('America/New_York'),
   googleBusinessUrl: z.string().url().optional().or(z.literal('')),
 });
 

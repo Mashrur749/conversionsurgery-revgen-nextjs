@@ -7,9 +7,10 @@ import { getClientUsagePolicy } from '@/lib/services/subscription';
 import { isMessageLimitReached, type ClientUsagePolicy } from '@/lib/services/usage-policy';
 import { processDueSmartAssistDrafts } from '@/lib/services/smart-assist-lifecycle';
 import { SMART_ASSIST_SEQUENCE_TYPE } from '@/lib/services/smart-assist-state';
-import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
-import { auditLog } from '@/db/schema';
-import { eq, and, lte, gte, sql, ne, or, isNull } from 'drizzle-orm';
+import { resolveReminderRecipients, type ReminderRoutingRecipient } from '@/lib/services/reminder-routing';
+import { auditLog, calendarEvents, clientMemberships, people } from '@/db/schema';
+import { eq, and, lte, gte, sql, ne, or, isNull, gt } from 'drizzle-orm';
+import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { sendSMS, TwilioAmbiguousError } from '@/lib/services/twilio';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
@@ -174,7 +175,71 @@ export async function GET(request: NextRequest) {
             routingByClient.set(routingCacheKey, routing);
           }
 
-          if (routing.primaryChain.length === 0) {
+          // LB-02: Check if the lead's calendar event has a specific assigned team member.
+          // If so, prepend that person to the primary chain so the reminder goes directly
+          // to whoever was assigned at booking time, before falling back to general routing.
+          let effectivePrimaryChain: ReminderRoutingRecipient[] = routing.primaryChain;
+          try {
+            const [assignedEvent] = await db
+              .select({ assignedTeamMemberId: calendarEvents.assignedTeamMemberId })
+              .from(calendarEvents)
+              .where(and(
+                eq(calendarEvents.leadId, lead.id),
+                eq(calendarEvents.clientId, client.id),
+                ne(calendarEvents.status, 'cancelled'),
+                gt(calendarEvents.endTime, new Date()),
+              ))
+              .limit(1);
+
+            if (assignedEvent?.assignedTeamMemberId) {
+              const [assignedMember] = await db
+                .select({
+                  membershipId: clientMemberships.id,
+                  personId: people.id,
+                  name: people.name,
+                  phone: people.phone,
+                  isOwner: clientMemberships.isOwner,
+                })
+                .from(clientMemberships)
+                .innerJoin(people, eq(clientMemberships.personId, people.id))
+                .where(and(
+                  eq(clientMemberships.id, assignedEvent.assignedTeamMemberId),
+                  eq(clientMemberships.isActive, true),
+                ))
+                .limit(1);
+
+              if (assignedMember?.phone) {
+                let normalizedPhone: string | null = null;
+                try {
+                  normalizedPhone = normalizePhoneNumber(assignedMember.phone);
+                } catch {
+                  normalizedPhone = null;
+                }
+
+                if (normalizedPhone) {
+                  const assignedAsRecipient: ReminderRoutingRecipient = {
+                    role: assignedMember.isOwner ? 'owner' : 'assistant',
+                    phone: normalizedPhone,
+                    personId: assignedMember.personId,
+                    membershipId: assignedMember.membershipId,
+                    label: assignedMember.name || 'Assigned crew member',
+                  };
+                  // Prepend the assigned member; deduplicate if they are already first in the chain.
+                  const alreadyFirst = effectivePrimaryChain[0]?.membershipId === assignedMember.membershipId;
+                  if (!alreadyFirst) {
+                    effectivePrimaryChain = [
+                      assignedAsRecipient,
+                      ...effectivePrimaryChain.filter((r) => r.membershipId !== assignedMember.membershipId),
+                    ];
+                  }
+                }
+              }
+            }
+          } catch {
+            // Non-fatal — fall back to general routing if assignment lookup fails.
+          }
+
+          if (effectivePrimaryChain.length === 0) {
             await markCancelled(db, message.id, 'No valid reminder recipient configured');
             await db.insert(auditLog).values({
               personId: null,
@@ -201,9 +266,9 @@ export async function GET(request: NextRequest) {
             stage: 'primary_chain' | 'secondary';
             error?: string;
           }> = [];
-          let deliveredRecipient: (typeof routing.primaryChain)[number] | null = null;
+          let deliveredRecipient: ReminderRoutingRecipient | null = null;
 
-          for (const recipient of routing.primaryChain) {
+          for (const recipient of effectivePrimaryChain) {
             try {
               await sendSMS(recipient.phone, messageBody, client.twilioNumber);
               deliveredRecipient = recipient;
@@ -282,7 +347,7 @@ export async function GET(request: NextRequest) {
                 membershipId: deliveredRecipient.membershipId,
                 label: deliveredRecipient.label,
               },
-              fallbackUsed: routing.primaryChain[0]?.phone !== deliveredRecipient.phone,
+              fallbackUsed: effectivePrimaryChain[0]?.phone !== deliveredRecipient.phone,
               attempts,
             },
             createdAt: new Date(),

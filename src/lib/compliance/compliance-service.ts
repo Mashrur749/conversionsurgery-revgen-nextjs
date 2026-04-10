@@ -401,7 +401,18 @@ export class ComplianceService {
 
     // Get current hour in recipient's timezone
     const now = new Date();
-    const timezone = recipientTimezone || 'America/New_York';
+    // Fall back to Pacific (UTC-8) as the most restrictive North American window.
+    // This ensures that when timezone is unknown we enforce the widest quiet hours,
+    // protecting recipients who might be in any US/CA timezone.
+    const FALLBACK_TIMEZONE = 'America/Los_Angeles';
+    if (!recipientTimezone) {
+      await ComplianceService.logComplianceEvent(null, 'quiet_hours_timezone_fallback', {
+        reason: 'recipientTimezone is null or undefined — defaulting to most restrictive window (Pacific)',
+        fallbackTimezone: FALLBACK_TIMEZONE,
+        clientId,
+      });
+    }
+    const timezone = recipientTimezone || FALLBACK_TIMEZONE;
 
     // Calculate local hour
     const offset = getTimezoneOffset(timezone, now);

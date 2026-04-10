@@ -32,7 +32,10 @@ export const calendarEvents = pgTable(
     startTime: timestamp('start_time').notNull(),
     endTime: timestamp('end_time').notNull(),
     isAllDay: boolean('is_all_day').notNull().default(false),
-    timezone: varchar('timezone', { length: 50 }).notNull().default('America/Denver'),
+    // NOTE: Drizzle schema defaults are DB-level — they cannot dynamically derive from the
+    // client row. Callers of db.insert(calendarEvents) MUST pass the client's timezone
+    // explicitly (read from clients.timezone). The default here is a safe US fallback only.
+    timezone: varchar('timezone', { length: 50 }).notNull().default('America/New_York'),
 
     // Status
     status: varchar('status', { length: 20 }).notNull().default('scheduled'), // scheduled, confirmed, completed, cancelled, no_show

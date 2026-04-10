@@ -17,7 +17,7 @@ const signupSchema = z.object({
   ownerName: z.string().min(2).max(255),
   email: z.string().email().max(255),
   phone: z.string().min(10).max(20),
-  timezone: z.string().min(3).max(50).default('America/Edmonton'),
+  timezone: z.string().min(3).max(50).default('America/New_York'),
 });
 
 export async function POST(request: NextRequest) {

@@ -77,24 +77,44 @@ function roundMinutes(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-async function getWithoutUsAssumptions(): Promise<WithoutUsModelAssumptions> {
+async function getWithoutUsAssumptions(clientId: string): Promise<WithoutUsModelAssumptions> {
   const db = getDb();
-  const [setting] = await db
-    .select({ value: systemSettings.value })
-    .from(systemSettings)
-    .where(eq(systemSettings.key, WITHOUT_US_ASSUMPTIONS_KEY))
-    .limit(1);
 
-  if (!setting?.value) {
-    return mergeWithoutUsAssumptions(undefined);
+  // Fetch global assumptions and per-client baseline in parallel
+  const [[setting], [clientRow]] = await Promise.all([
+    db
+      .select({ value: systemSettings.value })
+      .from(systemSettings)
+      .where(eq(systemSettings.key, WITHOUT_US_ASSUMPTIONS_KEY))
+      .limit(1),
+    db
+      .select({ previousResponseTimeMinutes: clients.previousResponseTimeMinutes })
+      .from(clients)
+      .where(eq(clients.id, clientId))
+      .limit(1),
+  ]);
+
+  let globalOverrides: WithoutUsModelAssumptionOverrides | undefined;
+  if (setting?.value) {
+    try {
+      globalOverrides = JSON.parse(setting.value) as WithoutUsModelAssumptionOverrides;
+    } catch {
+      // fall through to defaults
+    }
   }
 
-  try {
-    const parsed = JSON.parse(setting.value) as WithoutUsModelAssumptionOverrides;
-    return mergeWithoutUsAssumptions(parsed);
-  } catch {
-    return mergeWithoutUsAssumptions(undefined);
+  const assumptions = mergeWithoutUsAssumptions(globalOverrides);
+
+  // Per-client baseline overrides global assumption when populated
+  if (
+    clientRow?.previousResponseTimeMinutes !== null &&
+    clientRow?.previousResponseTimeMinutes !== undefined &&
+    clientRow.previousResponseTimeMinutes > 0
+  ) {
+    assumptions.industryBaselineResponseMinutes = clientRow.previousResponseTimeMinutes;
   }
+
+  return assumptions;
 }
 
 async function collectWithoutUsModelInput(
@@ -112,7 +132,7 @@ async function collectWithoutUsModelInput(
     .where(eq(clients.id, clientId))
     .limit(1);
 
-  const timezone = client?.timezone || 'America/Edmonton';
+  const timezone = client?.timezone || 'America/New_York';
 
   const periodLeads = await db
     .select({
@@ -410,7 +430,7 @@ export async function generateClientReport(
     clientId,
     new Date(endDate)
   );
-  const withoutUsAssumptions = await getWithoutUsAssumptions();
+  const withoutUsAssumptions = await getWithoutUsAssumptions(clientId);
   const withoutUsModel = calculateWithoutUsModel(withoutUsInput, withoutUsAssumptions);
 
   // AI effectiveness summary for the report period

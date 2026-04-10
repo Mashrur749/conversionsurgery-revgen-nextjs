@@ -30,7 +30,7 @@ export function CreateClientForm() {
     ownerName: '',
     email: '',
     phone: '',
-    timezone: 'America/Edmonton',
+    timezone: 'America/New_York',
     googleBusinessUrl: '',
   });
 

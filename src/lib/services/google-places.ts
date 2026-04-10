@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { reviews, reviewSources } from '@/db/schema';
+import { reviews, reviewSources, scheduledMessages } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { ReviewSource } from '@/db/schema/review-sources';
 
@@ -184,6 +184,34 @@ export async function syncGoogleReviews(clientId: string): Promise<{
             reviewDate: new Date(review.time * 1000),
             sentiment: review.rating >= 4 ? 'positive' : review.rating === 3 ? 'neutral' : 'negative',
           });
+
+          // PL-13: Cancel pending referral requests when a negative review (<=2 stars) comes in.
+          // The referral is scheduled 4 days after job completion — if the customer leaves a bad
+          // review in that window we must not ask them to refer friends.
+          if (review.rating <= 2) {
+            const cancelled = await db
+              .update(scheduledMessages)
+              .set({
+                cancelled: true,
+                cancelledAt: new Date(),
+                cancelledReason: 'Negative review received',
+              })
+              .where(
+                and(
+                  eq(scheduledMessages.clientId, clientId),
+                  eq(scheduledMessages.sequenceType, 'referral_request'),
+                  eq(scheduledMessages.sent, false),
+                  eq(scheduledMessages.cancelled, false)
+                )
+              )
+              .returning({ id: scheduledMessages.id });
+
+            if (cancelled.length > 0) {
+              console.log(
+                `[ReviewMonitoring] Cancelled ${cancelled.length} pending referral_request message(s) for client ${clientId} due to ${review.rating}-star review`
+              );
+            }
+          }
 
           newReviewCount++;
         }

@@ -78,7 +78,8 @@ export async function processWinBacks(): Promise<{
     return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] };
   }
 
-  // Batch check: which leads already have win-back messages (eliminates N+1)
+  // Batch check: which leads already have sent win-back messages (eliminates N+1)
+  // Filter on sent=true so cancelled win-back records don't block future attempts
   const leadIds = staleLeads.map(({ lead }) => lead.id);
   const existingWinBacks = await db
     .select({ leadId: scheduledMessages.leadId })
@@ -86,12 +87,27 @@ export async function processWinBacks(): Promise<{
     .where(and(
       inArray(scheduledMessages.leadId, leadIds),
       eq(scheduledMessages.sequenceType, 'win_back'),
+      eq(scheduledMessages.sent, true),
     ));
   const alreadySentSet = new Set(existingWinBacks.map(r => r.leadId));
+
+  // Batch check: which leads have unsent, uncancelled scheduled messages from any OTHER sequence type
+  // These leads are already in an active flow and should not receive win-back
+  const activeSequenceRows = await db
+    .select({ leadId: scheduledMessages.leadId })
+    .from(scheduledMessages)
+    .where(and(
+      inArray(scheduledMessages.leadId, leadIds),
+      eq(scheduledMessages.sent, false),
+      eq(scheduledMessages.cancelled, false),
+      not(eq(scheduledMessages.sequenceType, 'win_back')),
+    ));
+  const hasActiveSequenceSet = new Set(activeSequenceRows.map(r => r.leadId));
 
   // Filter to actionable leads
   const actionableLeads = staleLeads.filter(({ lead, client }) => {
     if (alreadySentSet.has(lead.id)) return false;
+    if (hasActiveSequenceSet.has(lead.id)) return false;
     if (!client.twilioNumber) {
       errors.push(`Client ${client.id}: no Twilio number`);
       return false;

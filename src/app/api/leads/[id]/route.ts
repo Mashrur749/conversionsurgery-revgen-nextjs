@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { getDb } from '@/db';
 import { leads } from '@/db/schema/leads';
 import { clients } from '@/db/schema/clients';
+import { scheduledMessages } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
@@ -77,6 +78,47 @@ export async function PATCH(
     }
 
     const updatedLead = updated[0];
+
+    // Cancel all unsent, uncancelled scheduled messages when a lead is marked won or lost
+    if (parsed.data.status === 'won' || parsed.data.status === 'lost') {
+      try {
+        await db
+          .update(scheduledMessages)
+          .set({
+            cancelled: true,
+            cancelledAt: new Date(),
+            cancelledReason: `Lead status changed to ${parsed.data.status}`,
+          })
+          .where(
+            and(
+              eq(scheduledMessages.leadId, id),
+              eq(scheduledMessages.sent, false),
+              eq(scheduledMessages.cancelled, false)
+            )
+          );
+      } catch (cancelError) {
+        // Non-fatal: log and continue — the status update already succeeded
+        console.error('[LeadManagement] Scheduled message cancellation failed:', cancelError);
+      }
+    }
+
+    // Track job_won funnel event for AI attribution
+    if (parsed.data.status === 'won') {
+      try {
+        const { trackFunnelEvent } = await import('@/lib/services/funnel-tracking');
+        await trackFunnelEvent({
+          clientId,
+          leadId: updatedLead.id,
+          eventType: 'job_won',
+          valueCents:
+            typeof updatedLead.confirmedRevenue === 'number'
+              ? updatedLead.confirmedRevenue
+              : undefined,
+        });
+      } catch {
+        // Non-fatal: funnel tracking failure must not block the status update
+      }
+    }
 
     // Win notification: send SMS to client owner when a lead is marked as won
     if (parsed.data.status === 'won') {
