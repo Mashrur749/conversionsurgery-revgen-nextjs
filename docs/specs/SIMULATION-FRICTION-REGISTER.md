@@ -48,11 +48,11 @@
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| F1 | Stuck estimate nudge (weekly, estimate_sent > 21d) | New: stuck-estimate-nudge.ts + cron | todo |
-| F2 | Cancellation page: actual vs estimated ROI | cancellation.ts | todo |
-| F3 | Operator cancellation alert on request creation | cancellation.ts | todo |
-| F4 | Win-back email personalization with valueShown data | cancellation-reminders.ts | todo |
-| F5 | Weekly digest should call out stuck estimates | weekly-digest.ts | todo |
+| F1 | Stuck estimate nudge (weekly, estimate_sent > 21d) | New: stuck-estimate-nudge.ts + cron | done |
+| F2 | Cancellation page: actual vs estimated ROI | cancellation.ts | done |
+| F3 | Operator cancellation alert on request creation | cancellation.ts | done |
+| F4 | Win-back email personalization with valueShown data | cancellation-reminders.ts | done |
+| F5 | Weekly digest should call out stuck estimates | weekly-digest.ts | done |
 
 ## WAVE 6 — Notification Routing / Team Support (5 items)
 

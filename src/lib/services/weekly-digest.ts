@@ -15,6 +15,7 @@ interface DigestStats {
   jobsWonThisWeek: number;
   revenueWonThisWeek: number; // cents
   jobsToCloseOut: number;
+  stuckEstimates: number;
 }
 
 interface DigestResult {
@@ -30,6 +31,7 @@ interface DigestResult {
 async function getWeeklyStats(clientId: string): Promise<DigestStats> {
   const db = getDb();
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const twentyOneDaysAgo = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000);
 
   const [newLeadsRow] = await db
     .select({ count: countFn() })
@@ -71,6 +73,16 @@ async function getWeeklyStats(clientId: string): Promise<DigestStats> {
       eq(leads.status, 'won')
     ));
 
+  // Stuck estimates: status = 'estimate_sent' AND updatedAt < 21 days ago
+  const [stuckRow] = await db
+    .select({ count: countFn() })
+    .from(leads)
+    .where(and(
+      eq(leads.clientId, clientId),
+      eq(leads.status, 'estimate_sent'),
+      gte(leads.updatedAt, twentyOneDaysAgo)
+    ));
+
   return {
     newLeads: Number(newLeadsRow?.count ?? 0),
     appointmentsBooked: Number(appointmentsRow?.count ?? 0),
@@ -78,6 +90,7 @@ async function getWeeklyStats(clientId: string): Promise<DigestStats> {
     jobsWonThisWeek: Number(wonRow?.count ?? 0),
     revenueWonThisWeek: Number(wonRow?.revenue ?? 0),
     jobsToCloseOut: Number(closeOutRow?.count ?? 0),
+    stuckEstimates: Number(stuckRow?.count ?? 0),
   };
 }
 
@@ -94,16 +107,30 @@ function buildDigestMessage(
 
   // Slow period reassurance (3+ weeks zero new leads)
   if (consecutiveZeroWeeks >= SLOW_PERIOD_THRESHOLD) {
+    let body = `Hey ${firstName}, leads have been slow this month. Your AI is still responding instantly to every inquiry. When volume picks back up, you won't miss a beat.`;
+
+    // Append stuck estimates line if applicable
+    if (stats.stuckEstimates > 0) {
+      body += ` ${stats.stuckEstimates} ${stats.stuckEstimates === 1 ? 'estimate needs' : 'estimates need'} an update — mark them won or lost to keep your ROI accurate.`;
+    }
+
     return {
-      body: `Hey ${firstName}, leads have been slow this month. Your AI is still responding instantly to every inquiry. When volume picks back up, you won't miss a beat.`,
+      body,
       type: 'reassurance',
     };
   }
 
   // Quiet week (no new leads but has active follow-ups)
   if (!hasActivity && stats.estimatesInFollowUp > 0) {
+    let body = `Hey ${firstName}, quiet week for new leads — ${stats.estimatesInFollowUp} ${stats.estimatesInFollowUp === 1 ? 'estimate' : 'estimates'} still being followed up automatically. The system is ready when leads come in.`;
+
+    // Append stuck estimates line if applicable
+    if (stats.stuckEstimates > 0) {
+      body += ` ${stats.stuckEstimates} ${stats.stuckEstimates === 1 ? 'estimate needs' : 'estimates need'} an update — mark them won or lost to keep your ROI accurate.`;
+    }
+
     return {
-      body: `Hey ${firstName}, quiet week for new leads — ${stats.estimatesInFollowUp} ${stats.estimatesInFollowUp === 1 ? 'estimate' : 'estimates'} still being followed up automatically. The system is ready when leads come in.`,
+      body,
       type: 'quiet',
     };
   }
@@ -132,6 +159,11 @@ function buildDigestMessage(
   // Jobs to close out (drives review engine)
   if (stats.jobsToCloseOut > 0) {
     body += ` ${stats.jobsToCloseOut} ${stats.jobsToCloseOut === 1 ? 'job' : 'jobs'} to mark complete for review requests.`;
+  }
+
+  // Stuck estimates line (only if any)
+  if (stats.stuckEstimates > 0) {
+    body += ` ${stats.stuckEstimates} ${stats.stuckEstimates === 1 ? 'estimate needs' : 'estimates need'} an update — mark them won or lost to keep your ROI accurate.`;
   }
 
   return { body, type: 'active' };

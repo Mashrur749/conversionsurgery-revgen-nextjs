@@ -14,6 +14,7 @@ import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { alertOperator } from '@/lib/services/operator-alerts';
 import { runEngagementHealthCheck } from '@/lib/services/engagement-health';
 import { runDormantReengagement } from '@/lib/automations/dormant-reengagement';
+import { processStuckEstimateNudges } from '@/lib/automations/stuck-estimate-nudge';
 
 // Helper to dispatch a cron sub-endpoint via fetch.
 // Appends to failedJobs on non-2xx status or fetch exception so the caller
@@ -304,6 +305,16 @@ export async function POST(request: NextRequest) {
         logSanitizedConsoleError('[Cron] Dormant re-engagement error:', error);
         results.dormantReengagement = { error: 'Failed' };
         failedJobs.push('dormant-reengagement');
+      }
+
+      // F1: stuck estimate nudge — alerts contractors about estimates > 21 days old
+      try {
+        const stuckEstimateResult = await processStuckEstimateNudges();
+        results.stuckEstimateNudge = { success: true, ...stuckEstimateResult };
+      } catch (error) {
+        logSanitizedConsoleError('[Cron] Stuck estimate nudge error:', error);
+        results.stuckEstimateNudge = { error: 'Failed' };
+        failedJobs.push('stuck-estimate-nudge');
       }
     }
 

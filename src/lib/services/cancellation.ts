@@ -1,6 +1,6 @@
 import { getDb } from '@/db';
 import { cancellationRequests, clients, dailyStats, leads, jobs, subscriptions, plans } from '@/db/schema';
-import { eq, and, sql, inArray, desc } from 'drizzle-orm';
+import { eq, and, sql, inArray, desc, lt } from 'drizzle-orm';
 import { buildGuaranteeSummary } from '@/lib/services/guarantee-v2/summary';
 import { calculateEffectiveCancellationDate } from '@/lib/services/cancellation-policy';
 
@@ -9,6 +9,8 @@ export interface ValueSummary {
   totalLeads: number;
   totalMessages: number;
   estimatedRevenue: number;
+  confirmedRevenue: number;
+  stuckEstimates: number;
   monthlyCost: number;
   roi: number;
 }
@@ -152,6 +154,31 @@ export async function getValueSummary(clientId: string): Promise<ValueSummary> {
     monthlyCost = (activeSub.plan.priceMonthly ?? 99700) / 100;
   }
 
+  // Confirmed revenue: sum of confirmedRevenue on won leads (stored in cents)
+  const wonLeadsRevenue = await db
+    .select({ revenue: leads.confirmedRevenue })
+    .from(leads)
+    .where(and(eq(leads.clientId, clientId), eq(leads.status, 'won')));
+  const confirmedRevenueCents = wonLeadsRevenue.reduce(
+    (sum: number, l: { revenue: number | null }) => sum + (l.revenue ?? 0),
+    0
+  );
+  const confirmedRevenue = Math.round(confirmedRevenueCents / 100);
+
+  // Stuck estimates: leads in estimate_sent for > 14 days
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  const [stuckRow] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(leads)
+    .where(
+      and(
+        eq(leads.clientId, clientId),
+        eq(leads.status, 'estimate_sent'),
+        lt(leads.updatedAt, fourteenDaysAgo)
+      )
+    );
+  const stuckEstimates = Number(stuckRow?.count ?? 0);
+
   const estimatedRevenue = Math.round(totalLeads * conversionRate * avgJobValue);
   const totalCost = monthsActive * monthlyCost;
   const roi = totalCost > 0 ? Math.round((estimatedRevenue / totalCost) * 100) : 0;
@@ -161,6 +188,8 @@ export async function getValueSummary(clientId: string): Promise<ValueSummary> {
     totalLeads,
     totalMessages,
     estimatedRevenue,
+    confirmedRevenue,
+    stuckEstimates,
     monthlyCost,
     roi,
   };
@@ -178,6 +207,12 @@ export async function initiateCancellation(
   const valueSummary = await getValueSummary(clientId);
   const guaranteeContext = await getGuaranteeCancellationContext(clientId);
 
+  const [client] = await db
+    .select({ businessName: clients.businessName, twilioNumber: clients.twilioNumber })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+
   const [request] = await db
     .insert(cancellationRequests)
     .values({
@@ -190,6 +225,25 @@ export async function initiateCancellation(
       },
     })
     .returning();
+
+  // Alert operator immediately (non-fatal)
+  try {
+    const { getAgencyField } = await import('@/lib/services/agency-settings');
+    const { sendSMS } = await import('@/lib/services/twilio');
+    const operatorPhone = await getAgencyField('operatorPhone');
+    const agencyTwilioNumber = await getAgencyField('twilioNumber');
+    if (operatorPhone && agencyTwilioNumber) {
+      const businessName = client?.businessName ?? clientId;
+      const reasonText = reason || 'Not specified';
+      await sendSMS(
+        operatorPhone,
+        `URGENT: Cancellation request from ${businessName}. Reason: ${reasonText}. Schedule retention call.`,
+        agencyTwilioNumber
+      );
+    }
+  } catch {
+    // Non-fatal — cancellation record already saved
+  }
 
   return request.id;
 }
