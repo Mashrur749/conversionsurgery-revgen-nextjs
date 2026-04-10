@@ -11,6 +11,7 @@ import {
 import { eq, and, or, isNull, gte } from 'drizzle-orm';
 import { createHash } from 'crypto';
 import { getTimezoneOffset } from 'date-fns-tz';
+import { addMonths, addYears } from 'date-fns';
 
 // Standard opt-out keywords (case-insensitive)
 const OPT_OUT_KEYWORDS = [
@@ -303,27 +304,27 @@ export class ComplianceService {
       }
     }
 
-    // CASL consent expiry enforcement
-    const consentAge = Date.now() - consent.consentTimestamp.getTime();
-    const sixMonths = 6 * 30 * 24 * 60 * 60 * 1000;
-    const twoYears = 2 * 365 * 24 * 60 * 60 * 1000;
-
+    // CASL consent expiry enforcement — use calendar months/years, not fixed ms
     if (consent.consentType === 'implied') {
-      // CASL: Implied consent from inquiry expires after 6 months
-      // Implied consent from existing customer expires after 2 years
-      const isCustomerConsent =
-        consent.consentSource === 'existing_customer';
-      const expiryMs = isCustomerConsent ? twoYears : sixMonths;
+      // CASL: Implied consent from inquiry expires after 6 calendar months
+      // Implied consent from existing customer expires after 2 calendar years
+      const isCustomerConsent = consent.consentSource === 'existing_customer';
+      const consentDate = consent.consentTimestamp;
+      const expiryDate = isCustomerConsent
+        ? addYears(consentDate, 2)
+        : addMonths(consentDate, 6);
+      const now = new Date();
+      const isExpired = now > expiryDate;
 
-      if (consentAge > expiryMs) {
+      if (isExpired) {
         await this.logComplianceEvent(clientId, 'consent_expired', {
           phoneNumber: normalizedPhone,
           phoneHash,
           consentId: consent.id,
           consentType: consent.consentType,
           consentSource: consent.consentSource,
-          ageMs: consentAge,
-          expiryMs,
+          consentDate: consentDate.toISOString(),
+          expiryDate: expiryDate.toISOString(),
         });
 
         return {
@@ -340,8 +341,8 @@ export class ComplianceService {
       }
 
       // Warn when approaching expiry (30 days before)
-      const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-      if (consentAge > expiryMs - thirtyDays) {
+      const thirtyDaysBeforeExpiry = new Date(expiryDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+      if (now > thirtyDaysBeforeExpiry) {
         warnings.push(
           `Implied consent expiring soon (${isCustomerConsent ? '2 years' : '6 months'} CASL limit) — consider re-confirmation`
         );
@@ -349,14 +350,13 @@ export class ComplianceService {
     }
 
     // Warn if consent is over 1 year old even for express (best practice)
-    const oneYear = 365 * 24 * 60 * 60 * 1000;
-    if (
-      consent.consentType !== 'implied' &&
-      consentAge > oneYear
-    ) {
-      warnings.push(
-        'Consent is over 1 year old - consider re-confirming as best practice'
-      );
+    if (consent.consentType !== 'implied') {
+      const oneYearFromConsent = addMonths(consent.consentTimestamp, 12);
+      if (new Date() > oneYearFromConsent) {
+        warnings.push(
+          'Consent is over 1 year old - consider re-confirming as best practice'
+        );
+      }
     }
 
     // Cache the result

@@ -189,8 +189,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Start ConversationRelay AI conversation
-    const greeting = client.voiceGreeting ||
+    // Mandatory disclosure — non-configurable, always prepended (CA SB 1001 + two-party recording consent)
+    const VOICE_DISCLOSURE = 'This call may be recorded and uses AI-assisted technology. ';
+    const businessGreeting = client.voiceGreeting ||
       `Hi! Thanks for calling ${client.businessName}. How can I help you today?`;
+    const greeting = VOICE_DISCLOSURE + businessGreeting;
 
     const appUrl = getWebhookBaseUrl(request);
     const sessionEndAction = `${appUrl}/api/webhooks/twilio/voice/ai/session-end`;

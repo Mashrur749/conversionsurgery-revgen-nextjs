@@ -15,10 +15,12 @@
  */
 
 import { getDb } from '@/db';
-import { leads, clients, conversations } from '@/db/schema';
-import { eq, and, lte, gte, inArray } from 'drizzle-orm';
+import { leads, clients, conversations, consentRecords } from '@/db/schema';
+import { eq, and, lte, gte } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { addMonths } from 'date-fns';
+import { ComplianceService } from '@/lib/compliance/compliance-service';
 
 // ── Timing constants ──────────────────────────────────────────────────────────
 
@@ -154,6 +156,37 @@ export async function runDormantReengagement(): Promise<DormantReengagementResul
 
     const results = await Promise.allSettled(
       capped.map(async ({ lead, client }) => {
+        // COMP-03: Check implied consent expiry before sending.
+        // Dormant leads are 180-210 days old — exactly when CASL implied consent
+        // from a missed call or form submission expires (6 calendar months).
+        // Skip rather than send into expired consent territory.
+        if (lead.phone) {
+          const phoneHash = ComplianceService.hashPhoneNumber(lead.phone);
+          const consentRecord = await db.query.consentRecords.findFirst({
+            where: and(
+              eq(consentRecords.clientId, client.id),
+              eq(consentRecords.phoneNumberHash, phoneHash),
+              eq(consentRecords.isActive, true)
+            ),
+            orderBy: (records, { desc }) => [desc(records.consentTimestamp)],
+          });
+
+          if (consentRecord && consentRecord.consentType === 'implied') {
+            const isCustomerConsent = consentRecord.consentSource === 'existing_customer';
+            const expiryDate = isCustomerConsent
+              ? new Date(consentRecord.consentTimestamp.getTime() + 2 * 365 * 24 * 60 * 60 * 1000)
+              : addMonths(consentRecord.consentTimestamp, 6);
+
+            if (new Date() > expiryDate) {
+              console.log(
+                `[DormantReengagement] Dormant re-engagement skipped — consent expired for lead ${lead.id}`
+              );
+              skipped++;
+              return;
+            }
+          }
+        }
+
         const firstName = lead.name ? lead.name.split(' ')[0] : 'there';
 
         const body = buildReengagementMessage({

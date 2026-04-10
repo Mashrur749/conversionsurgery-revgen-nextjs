@@ -20,10 +20,10 @@
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| E1 | Quiet hours must use recipient timezone, not client timezone | compliance-gateway.ts | todo |
-| E2 | Voice AI greeting: AI disclosure + recording consent | voice/ai/route.ts | todo |
-| E3 | CASL 6-month expiry: calendar months + pre-expiry guard | compliance-service.ts, dormant-reengagement.ts | todo |
-| E4 | Platform DNC blockedNumbers not cleared on re-opt-in | incoming-sms.ts | todo |
+| E1 | Quiet hours must use recipient timezone, not client timezone | compliance-gateway.ts | done |
+| E2 | Voice AI greeting: AI disclosure + recording consent | voice/ai/route.ts | done |
+| E3 | CASL 6-month expiry: calendar months + pre-expiry guard | compliance-service.ts, dormant-reengagement.ts | done |
+| E4 | Platform DNC blockedNumbers not cleared on re-opt-in | incoming-sms.ts | done |
 
 ## WAVE 3 — Template/Content Fixes (5 items)
 

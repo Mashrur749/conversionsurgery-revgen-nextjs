@@ -259,6 +259,10 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         .where(eq(leads.id, lead.id));
       lead = { ...lead, optedOut: false };
 
+      // Clear platform DNC entry so other clients can also message this number
+      await db.delete(blockedNumbers)
+        .where(eq(blockedNumbers.phone, senderPhone));
+
       await sendSMS(
         senderPhone,
         `You've been re-subscribed to messages from ${client.businessName}. Reply STOP at any time to opt out.`,

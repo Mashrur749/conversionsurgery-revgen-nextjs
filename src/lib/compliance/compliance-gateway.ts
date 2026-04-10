@@ -36,6 +36,14 @@ export interface SendCompliantMessageParams {
   messageCategory?: MessageCategory;
   consentBasis?: ConsentBasis;
   leadId?: string;
+  /**
+   * The recipient's (homeowner's) local timezone (IANA format, e.g. "America/New_York").
+   * TCPA/CASL quiet hours must be evaluated against the CALLED PARTY's local time, not the
+   * client's (contractor's) timezone. Pass this whenever you have lead location data.
+   * Falls back to the client's timezone when omitted.
+   * // TODO: Infer recipient timezone from phone area code when recipientTimezone not provided
+   */
+  recipientTimezone?: string;
   /** If true, queue for next available window instead of failing on quiet hours */
   queueOnQuietHours?: boolean;
   /** Optional media URLs for MMS */
@@ -81,6 +89,7 @@ export async function sendCompliantMessage(
     messageCategory = 'marketing',
     consentBasis,
     leadId,
+    recipientTimezone,
     queueOnQuietHours = true,
     mediaUrl,
     metadata,
@@ -215,9 +224,13 @@ export async function sendCompliantMessage(
   // -----------------------------------------------------------
   // Step 0.5: Resolve quiet-hours policy and delivery decision
   // -----------------------------------------------------------
+  // TCPA/CASL: quiet hours must be evaluated in the RECIPIENT's (called party's) local time.
+  // Prefer the explicitly-provided recipientTimezone; fall back to the client's timezone when
+  // recipient location is unknown.
+  const effectiveTimezone = recipientTimezone || clientData.timezone || undefined;
   const quietHoursResult = await ComplianceService.isQuietHours(
     clientId,
-    clientData.timezone || undefined
+    effectiveTimezone
   );
   const quietHoursPolicy = await getQuietHoursPolicy(clientId, { trackModeChanges: true });
   const quietHoursDecision = resolveQuietHoursDecision({
@@ -260,7 +273,7 @@ export async function sendCompliantMessage(
     clientId,
     normalizedPhone,
     messageCategory,
-    clientData.timezone || undefined,
+    effectiveTimezone,
     {
       skipQuietHoursCheck:
         quietHoursResult.isQuietHours && quietHoursDecision.decision === 'send',
