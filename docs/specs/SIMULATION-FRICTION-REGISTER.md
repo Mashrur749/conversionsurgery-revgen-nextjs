@@ -39,10 +39,10 @@
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| D1 | Estimate reply pause-and-resume instead of cancel-all | incoming-sms.ts | todo |
-| D2 | Soft rejection should cancel ALL sequences | incoming-sms.ts | todo |
-| D3 | Aggregate message rate cap before review/referral | review-request.ts | todo |
-| D4 | Win-back timing adjustment for mid-sequence repliers | win-back.ts | todo |
+| D1 | Estimate reply pause-and-resume instead of cancel-all | incoming-sms.ts | done |
+| D2 | Soft rejection should cancel ALL sequences | incoming-sms.ts | done |
+| D3 | Aggregate message rate cap before review/referral | review-request.ts | done |
+| D4 | Win-back timing adjustment for mid-sequence repliers | win-back.ts | done |
 
 ## WAVE 5 — Data Integrity & Retention (5 items)
 

@@ -1,6 +1,6 @@
 import { getDb, clients, leads, scheduledMessages } from '@/db';
-import { leadContext, escalationQueue } from '@/db/schema';
-import { eq, and, ne } from 'drizzle-orm';
+import { leadContext, escalationQueue, conversations } from '@/db/schema';
+import { eq, and, ne, gte } from 'drizzle-orm';
 import { renderTemplate } from '@/lib/utils/templates';
 import { addDays, subDays } from 'date-fns';
 
@@ -65,6 +65,28 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
     return {
       success: false,
       reason: 'Review request suppressed — negative sentiment or unresolved escalation',
+    };
+  }
+
+  // 2b. Message rate cap — skip if lead received > 5 outbound messages in the past 7 days
+  const recentOutbound = await db
+    .select({ id: conversations.id })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.leadId, leadId),
+        eq(conversations.direction, 'outbound'),
+        gte(conversations.createdAt, subDays(new Date(), 7))
+      )
+    );
+
+  if (recentOutbound.length > 5) {
+    console.log(
+      `[ReviewRequest] Review request deferred — lead received ${recentOutbound.length} messages in past 7 days (leadId=${leadId}, clientId=${clientId})`
+    );
+    return {
+      success: false,
+      reason: 'Review request deferred — message rate cap',
     };
   }
 

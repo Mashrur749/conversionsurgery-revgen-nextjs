@@ -155,20 +155,20 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         })
         .where(eq(leads.id, softRejLead.id));
 
-      // Cancel all unsent win-back and estimate follow-up sequences
+      // Cancel ALL unsent sequences — when a lead says "not interested",
+      // every pending automated message should stop immediately.
       await db
         .update(scheduledMessages)
         .set({
           cancelled: true,
           cancelledAt: new Date(),
-          cancelledReason: 'Lead soft rejected',
+          cancelledReason: 'Soft rejection',
         })
         .where(
           and(
             eq(scheduledMessages.leadId, softRejLead.id),
             eq(scheduledMessages.sent, false),
-            eq(scheduledMessages.cancelled, false),
-            inArray(scheduledMessages.sequenceType, ['win_back', 'estimate_followup'])
+            eq(scheduledMessages.cancelled, false)
           )
         );
 
@@ -385,12 +385,12 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     return { processed: true, action: 'human_mode_saved' };
   }
 
-  // 6. Cancel re-engagement sequences on reply.
+  // 6. Handle re-engagement sequences on reply.
   //
-  // Only cancel sequences whose purpose is to re-engage a silent lead — once the
-  // lead replies, these sequences have served their purpose and should stop.
+  // Only touch sequences whose purpose is to re-engage a silent lead — once the
+  // lead replies, these sequences need to react.
   //
-  // Do NOT cancel on a generic reply:
+  // Do NOT touch on a generic reply:
   //   - payment_reminder  → only cancelled by Stripe payment confirmation
   //   - review_request    → only cancelled by explicit opt-out
   //   - referral_request  → same as review_request
@@ -400,12 +400,15 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   //   - quiet_hours_queue → compliance gateway internal
   //   - smart_assist      → managed by its own lifecycle
   //
-  // estimate_followup: cancelled for now on reply.
-  // TODO: Ideal behaviour is pause-and-resume — cancel the current unsent step
-  //   and reschedule the next step 3 days later so the sequence picks up where
-  //   it left off rather than being silenced entirely.
-  const RE_ENGAGEMENT_SEQUENCES: string[] = ['win_back', 'estimate_followup'];
+  // win_back: cancel entirely on reply (lead is re-engaged, sequence is done).
+  //
+  // estimate_followup: pause-and-resume behaviour —
+  //   - Cancel the NEXT unsent step (earliest sendAt) so we don't interrupt the
+  //     conversation immediately.
+  //   - Delay all remaining unsent steps by 3 days so the sequence resumes after
+  //     the lead has had time to think.
 
+  // 6a. Cancel all unsent win_back steps — lead re-engaged, no further nudging needed.
   await db
     .update(scheduledMessages)
     .set({
@@ -417,8 +420,47 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       eq(scheduledMessages.leadId, lead.id),
       eq(scheduledMessages.sent, false),
       eq(scheduledMessages.cancelled, false),
-      inArray(scheduledMessages.sequenceType, RE_ENGAGEMENT_SEQUENCES)
+      eq(scheduledMessages.sequenceType, 'win_back')
     ));
+
+  // 6b. Pause-and-resume for estimate_followup sequences.
+  //   Step 1: find all unsent steps ordered by sendAt ascending.
+  const unsentEstimateSteps = await db
+    .select({ id: scheduledMessages.id })
+    .from(scheduledMessages)
+    .where(and(
+      eq(scheduledMessages.leadId, lead.id),
+      eq(scheduledMessages.sent, false),
+      eq(scheduledMessages.cancelled, false),
+      eq(scheduledMessages.sequenceType, 'estimate_followup')
+    ))
+    .orderBy(scheduledMessages.sendAt);
+
+  if (unsentEstimateSteps.length > 0) {
+    const [nextStep, ...remainingSteps] = unsentEstimateSteps;
+
+    // Cancel the very next step — don't interrupt the active conversation.
+    await db
+      .update(scheduledMessages)
+      .set({
+        cancelled: true,
+        cancelledAt: new Date(),
+        cancelledReason: 'Lead replied — paused',
+      })
+      .where(eq(scheduledMessages.id, nextStep.id));
+
+    // Delay all remaining steps by 3 days so the sequence resumes later.
+    if (remainingSteps.length > 0) {
+      await db
+        .update(scheduledMessages)
+        .set({ sendAt: sql`${scheduledMessages.sendAt} + interval '3 days'` })
+        .where(and(
+          inArray(scheduledMessages.id, remainingSteps.map((s) => s.id)),
+          eq(scheduledMessages.sent, false),
+          eq(scheduledMessages.cancelled, false)
+        ));
+    }
+  }
 
   // 6.5 Check for hot intent BEFORE AI processing
   const isHotIntent = detectHotIntent(messageBody);

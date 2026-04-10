@@ -104,10 +104,39 @@ export async function processWinBacks(): Promise<{
     ));
   const hasActiveSequenceSet = new Set(activeSequenceRows.map(r => r.leadId));
 
+  // For estimate_sent leads, check if they have a recent inbound reply.
+  // A "still thinking" reply resets their engagement clock — give them 45 days from
+  // that reply before win-back fires (instead of the standard 25-35 day outbound-only window).
+  const estimateSentLeadIds = staleLeads
+    .filter(({ lead }) => lead.status === 'estimate_sent')
+    .map(({ lead }) => lead.id);
+
+  const recentInboundSet = new Set<string>();
+  if (estimateSentLeadIds.length > 0) {
+    const quietCutoff = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000);
+    const recentInboundRows = await db
+      .select({ leadId: conversations.leadId })
+      .from(conversations)
+      .where(
+        and(
+          inArray(conversations.leadId, estimateSentLeadIds),
+          eq(conversations.direction, 'inbound'),
+          gte(conversations.createdAt, quietCutoff)
+        )
+      )
+      .groupBy(conversations.leadId);
+    for (const row of recentInboundRows) {
+      if (row.leadId) recentInboundSet.add(row.leadId);
+    }
+  }
+
   // Filter to actionable leads
   const actionableLeads = staleLeads.filter(({ lead, client }) => {
     if (alreadySentSet.has(lead.id)) return false;
     if (hasActiveSequenceSet.has(lead.id)) return false;
+    // Skip estimate_sent leads that replied within the past 45 days —
+    // they engaged more recently than the outbound-only window shows
+    if (recentInboundSet.has(lead.id)) return false;
     if (!client.twilioNumber) {
       errors.push(`Client ${client.id}: no Twilio number`);
       return false;
