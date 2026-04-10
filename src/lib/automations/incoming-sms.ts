@@ -14,11 +14,11 @@ import { handleSmartAssistOwnerCommand, queueSmartAssistDraft } from '@/lib/serv
 import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
 import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/services/media';
 import { processIncomingMessage } from '@/lib/agent/orchestrator';
-import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
+import { detectBookingIntent, handleBookingConversation, checkAndCompletePendingBooking } from '@/lib/services/booking-conversation';
 import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 import { ComplianceService } from '@/lib/compliance/compliance-service';
 import { recordLeadResponse } from '@/lib/services/flow-metrics';
-import { appointments, flowExecutions, flows } from '@/db/schema';
+import { appointments, flowExecutions, flows, leadContext } from '@/db/schema';
 import { eq, and, sql, desc, inArray, isNull, not } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
@@ -34,6 +34,26 @@ interface IncomingSMSPayload {
 }
 
 const STOP_WORDS = ['stop', 'unsubscribe', 'cancel', 'end', 'quit'];
+
+const VENDOR_KEYWORDS = [
+  'marketing',
+  'seo',
+  'leads for your business',
+  'home warranty',
+  'advertising',
+  'we can help your business',
+  'digital marketing',
+  'google ranking',
+  'search engine',
+  'web design',
+  'insurance quote',
+  'solar panel',
+  'solar savings',
+  'business loan',
+  'merchant cash',
+  'auto warranty',
+  'extended warranty',
+];
 
 const SOFT_REJECTION_PHRASES = [
   'not interested',
@@ -294,6 +314,50 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     if (lead.optedOut) {
       console.log(`[SMS] Skipping processing for opted-out lead ${lead.id}`);
       return { processed: false, reason: 'Lead opted out' };
+    }
+  }
+
+  // 4.5 Vendor/spam screening — fires only on the first reply to a missed-call auto-response
+  // Condition: existing lead, source = missed_call, exactly 1 prior message (the outbound auto-response)
+  if (!isNewLead && lead.source === 'missed_call' && messageBody) {
+    const priorMsgCount = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(eq(conversations.leadId, lead.id))
+      .limit(2);
+
+    if (priorMsgCount.length === 1) {
+      const lowerMsg = messageBody.toLowerCase();
+      const isVendor = VENDOR_KEYWORDS.some((kw) => lowerMsg.includes(kw));
+
+      if (isVendor) {
+        console.log(`[IncomingSMS] Vendor/spam detected for lead ${lead.id} — redirecting to email`);
+
+        // Log the inbound message before responding
+        await db.insert(conversations).values({
+          leadId: lead.id,
+          clientId: client.id,
+          direction: 'inbound',
+          messageType: 'sms',
+          content: messageBody,
+          twilioSid: MessageSid,
+        });
+
+        await sendCompliantMessage({
+          clientId: client.id,
+          to: senderPhone,
+          from: client.twilioNumber,
+          body: `For business inquiries, please email ${client.email}. This line is for customers only.`,
+          messageClassification: 'inbound_reply',
+          messageCategory: 'transactional',
+          consentBasis: { type: 'lead_reply', messageId: MessageSid },
+          leadId: lead.id,
+          queueOnQuietHours: false,
+          metadata: { source: 'vendor_screen' },
+        });
+
+        return { processed: true, action: 'vendor_screened', leadId: lead.id };
+      }
     }
   }
 
@@ -609,6 +673,55 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       return { processed: true, leadId: lead.id, action: 'address_captured' };
     }
     // No pending appointment found — fall through to normal processing
+  }
+
+  // 6.6b-pre: Check if we are waiting for an address before booking a pending slot.
+  // This fires when the customer sends their address in reply to
+  // "what's the address for the estimate?" — before a slot is actually booked.
+  const pendingSlotResult = await checkAndCompletePendingBooking(
+    client.id,
+    lead.id,
+    lead.name || '',
+    messageBody,
+    client.businessName,
+    client.ownerName
+  );
+
+  if (pendingSlotResult) {
+    if (pendingSlotResult.responseMessage) {
+      const sendResult = await sendCompliantMessage({
+        clientId: client.id,
+        to: senderPhone,
+        from: client.twilioNumber,
+        body: pendingSlotResult.responseMessage,
+        messageClassification: 'inbound_reply',
+        messageCategory: 'transactional',
+        consentBasis: { type: 'lead_reply', messageId: MessageSid },
+        leadId: lead.id,
+        queueOnQuietHours: false,
+        metadata: { source: 'pending_slot_completion' },
+      });
+
+      if (sendResult.sent) {
+        await db.insert(conversations).values({
+          leadId: lead.id,
+          clientId: client.id,
+          direction: 'outbound',
+          messageType: 'ai_response',
+          content: pendingSlotResult.responseMessage,
+          twilioSid: sendResult.messageSid || undefined,
+        });
+
+        if (pendingSlotResult.appointmentCreated) {
+          await db
+            .update(leadContext)
+            .set({ stage: 'booked', updatedAt: new Date() })
+            .where(eq(leadContext.leadId, lead.id));
+        }
+      }
+    }
+
+    return { processed: true, leadId: lead.id, action: 'booking_completed' };
   }
 
   // 6.6b Check for booking intent (works for all clients, not just autonomous)

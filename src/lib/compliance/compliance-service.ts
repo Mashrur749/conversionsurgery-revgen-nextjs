@@ -388,7 +388,8 @@ export class ComplianceService {
    */
   static async isQuietHours(
     clientId: string,
-    recipientTimezone?: string
+    recipientTimezone?: string,
+    referenceTime?: Date
   ): Promise<{ isQuietHours: boolean; reason?: string }> {
     const db = getDb();
     const config = await db.query.quietHoursConfig.findFirst({
@@ -399,8 +400,10 @@ export class ComplianceService {
       return { isQuietHours: false };
     }
 
-    // Get current hour in recipient's timezone
-    const now = new Date();
+    // Use referenceTime when provided (e.g. intendedSendAt) so a message that was
+    // queued just before quiet hours is not incorrectly re-queued if processing is
+    // delayed by a few minutes into the quiet window.
+    const now = referenceTime ?? new Date();
     // Fall back to Pacific (UTC-8) as the most restrictive North American window.
     // This ensures that when timezone is unknown we enforce the widest quiet hours,
     // protecting recipients who might be in any US/CA timezone.

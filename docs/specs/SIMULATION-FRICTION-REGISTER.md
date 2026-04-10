@@ -68,19 +68,19 @@
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| E5 | Aggregate message rate cap + consent upgrade at job completion | compliance-gateway.ts, review-request.ts | todo |
-| E6 | CASL calendar month fix + pre-expiry pause (remainder) | compliance-service.ts | todo |
-| E7 | Quiet hours wall clock vs intended-send time | compliance-gateway.ts | todo |
+| E5 | Aggregate message rate cap + consent upgrade at job completion | compliance-gateway.ts, review-request.ts | done |
+| E6 | CASL calendar month fix + pre-expiry pause (remainder) | compliance-service.ts | done (verified existing) |
+| E7 | Quiet hours wall clock vs intended-send time | compliance-gateway.ts | done |
 
 ## WAVE 8 — UX & AI Behavioral Fixes (5 items)
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| J1 | Known-lead missed call gets contextual SMS | missed-call.ts | todo |
-| J2 | One-word reply confusion detection → escalate | analyze-and-decide.ts | todo |
-| J3 | Vendor/spam caller screening | missed-call.ts | todo |
-| J4 | AI callback time promises guardrail | guardrails.ts | todo |
-| J5 | Booking address required before confirmation | booking-conversation.ts | todo |
+| J1 | Known-lead missed call gets contextual SMS | missed-call.ts | done |
+| J2 | One-word reply confusion detection → escalate | guardrails.ts | done |
+| J3 | Vendor/spam caller screening | incoming-sms.ts | done |
+| J4 | AI callback time promises guardrail | guardrails.ts | done |
+| J5 | Booking address required before confirmation | booking-conversation.ts + incoming-sms.ts | done |
 
 ## WAVE 9 — Operator Tooling (6 items)
 

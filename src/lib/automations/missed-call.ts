@@ -115,12 +115,40 @@ export async function handleMissedCall(payload: MissedCallPayload) {
     lead = created[0];
   }
 
-  // 4. Render message
-  const messageContent = renderTemplate('missed_call', {
-    ownerName: clientData.ownerName,
-    businessName: clientData.businessName,
-    businessPhone: formatPhoneNumber(clientData.phone),
-  });
+  // 4. Render message — use contextual template for known leads with prior conversations
+  let messageContent: string;
+
+  if (!isNewLead) {
+    // Check if this lead has prior conversation history
+    const priorConversations = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(eq(conversations.leadId, lead.id))
+      .limit(1);
+
+    if (priorConversations.length > 0) {
+      // Known lead — use a contextual, relationship-aware message
+      const leadName = existingLead[0].name;
+      const projectType = existingLead[0].projectType;
+      const greeting = leadName ? `Hey ${leadName}` : 'Hey';
+      const projectContext = projectType ? ` — still working on your ${projectType}` : '';
+      messageContent = `${greeting}, sorry I missed you${projectContext}! Call me back at ${formatPhoneNumber(clientData.phone)} or text me here and I'll get right back to you.`;
+    } else {
+      // Existing lead but no prior conversation (edge case) — use standard template
+      messageContent = renderTemplate('missed_call', {
+        ownerName: clientData.ownerName,
+        businessName: clientData.businessName,
+        businessPhone: formatPhoneNumber(clientData.phone),
+      });
+    }
+  } else {
+    // New lead — use the standard first-contact missed call template
+    messageContent = renderTemplate('missed_call', {
+      ownerName: clientData.ownerName,
+      businessName: clientData.businessName,
+      businessPhone: formatPhoneNumber(clientData.phone),
+    });
+  }
 
   // 5. Send SMS via compliance gateway (auto-records implied consent from inbound call)
   console.log('[Missed Call Handler] Sending compliant SMS to', callerPhone, 'from', clientData.twilioNumber);

@@ -36,6 +36,67 @@ export interface BookingConversationResult {
 }
 
 /**
+ * Key used to store a pending (address-pending) slot in leadContext.keyFacts.
+ * Format: "pending_slot:<date>|<time>"
+ */
+const PENDING_SLOT_PREFIX = 'pending_slot:';
+
+function encodePendingSlot(date: string, time: string): string {
+  return `${PENDING_SLOT_PREFIX}${date}|${time}`;
+}
+
+function decodePendingSlot(encoded: string): { date: string; time: string } | null {
+  if (!encoded.startsWith(PENDING_SLOT_PREFIX)) return null;
+  const parts = encoded.slice(PENDING_SLOT_PREFIX.length).split('|');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return null;
+  return { date: parts[0], time: parts[1] };
+}
+
+async function storePendingSlot(leadId: string, date: string, time: string): Promise<void> {
+  const db = getDb();
+  const [ctx] = await db
+    .select({ keyFacts: leadContext.keyFacts })
+    .from(leadContext)
+    .where(eq(leadContext.leadId, leadId))
+    .limit(1);
+
+  const existing = (ctx?.keyFacts ?? []).filter(f => !f.startsWith(PENDING_SLOT_PREFIX));
+  await db
+    .update(leadContext)
+    .set({ keyFacts: [...existing, encodePendingSlot(date, time)], updatedAt: new Date() })
+    .where(eq(leadContext.leadId, leadId));
+}
+
+async function clearPendingSlot(leadId: string): Promise<void> {
+  const db = getDb();
+  const [ctx] = await db
+    .select({ keyFacts: leadContext.keyFacts })
+    .from(leadContext)
+    .where(eq(leadContext.leadId, leadId))
+    .limit(1);
+
+  if (!ctx) return;
+  const filtered = (ctx.keyFacts ?? []).filter(f => !f.startsWith(PENDING_SLOT_PREFIX));
+  await db
+    .update(leadContext)
+    .set({ keyFacts: filtered, updatedAt: new Date() })
+    .where(eq(leadContext.leadId, leadId));
+}
+
+async function getPendingSlot(leadId: string): Promise<{ date: string; time: string } | null> {
+  const db = getDb();
+  const [ctx] = await db
+    .select({ keyFacts: leadContext.keyFacts })
+    .from(leadContext)
+    .where(eq(leadContext.leadId, leadId))
+    .limit(1);
+
+  const entry = (ctx?.keyFacts ?? []).find(f => f.startsWith(PENDING_SLOT_PREFIX));
+  if (!entry) return null;
+  return decodePendingSlot(entry);
+}
+
+/**
  * Detects booking intent from an inbound message.
  */
 export async function detectBookingIntent(
@@ -75,6 +136,11 @@ export async function detectBookingIntent(
 /**
  * Handles the booking conversation flow.
  * Called by the orchestrator when booking intent is detected.
+ *
+ * Address gate (J5): If no address is known when a slot is selected, we do NOT book
+ * immediately. Instead we ask for the address and store the chosen slot as a pending
+ * slot in leadContext.keyFacts. On the next inbound message we detect the pending slot,
+ * use the message as the address, and complete the booking.
  */
 export async function handleBookingConversation(
   clientId: string,
@@ -87,6 +153,30 @@ export async function handleBookingConversation(
   intent: BookingIntent,
   leadAddress?: string | null
 ): Promise<BookingConversationResult> {
+  // Address gate: check if we have a pending slot awaiting an address from the customer.
+  // If so, treat this message as the address and complete the booking.
+  const pending = await getPendingSlot(leadId);
+  if (pending) {
+    // The current message is the address — complete the booking now.
+    const address = message.trim();
+    await clearPendingSlot(leadId);
+    const result = await bookAppointment(clientId, leadId, pending.date, pending.time, address);
+    if (result.success) {
+      return {
+        intent: 'book',
+        responseMessage: result.confirmationMessage!,
+        appointmentCreated: true,
+        appointmentId: result.appointmentId,
+        needsAddress: false,
+      };
+    }
+    return {
+      intent: 'book',
+      responseMessage: result.error || 'Something went wrong confirming your appointment. Let me have someone reach out.',
+      appointmentCreated: false,
+    };
+  }
+
   switch (intent) {
     case 'book':
       return handleNewBooking(clientId, leadId, leadName, message, businessName, ownerName, leadAddress);
@@ -117,6 +207,44 @@ export async function handleBookingConversation(
 }
 
 /**
+ * Checks whether there is a pending slot awaiting address confirmation for a lead.
+ * If one exists, treats the current message as the address and completes the booking.
+ * Returns null if there is no pending slot (indicating the caller should proceed normally).
+ *
+ * This is called by incoming-sms.ts BEFORE booking intent detection, so that an address-only
+ * reply (which wouldn't match booking keywords) can still complete the booking.
+ */
+export async function checkAndCompletePendingBooking(
+  clientId: string,
+  leadId: string,
+  leadName: string,
+  message: string,
+  businessName: string,
+  ownerName: string
+): Promise<BookingConversationResult | null> {
+  const pending = await getPendingSlot(leadId);
+  if (!pending) return null;
+
+  const address = message.trim();
+  await clearPendingSlot(leadId);
+  const result = await bookAppointment(clientId, leadId, pending.date, pending.time, address);
+  if (result.success) {
+    return {
+      intent: 'book',
+      responseMessage: result.confirmationMessage!,
+      appointmentCreated: true,
+      appointmentId: result.appointmentId,
+      needsAddress: false,
+    };
+  }
+  return {
+    intent: 'book',
+    responseMessage: result.error || `Something went wrong confirming the appointment. Let me have ${ownerName} reach out directly.`,
+    appointmentCreated: false,
+  };
+}
+
+/**
  * Handles initial booking request — suggests available slots.
  */
 async function handleNewBooking(
@@ -143,19 +271,25 @@ async function handleNewBooking(
   const preferredSlot = await extractTimePreference(message, available, clientId);
 
   if (preferredSlot) {
-    // They specified a time and it's available — book directly
-    const result = await bookAppointment(clientId, leadId, preferredSlot.date, preferredSlot.time, leadAddress || undefined);
-    if (result.success) {
-      const needsAddress = !leadAddress;
-      const confirmMsg = needsAddress
-        ? `${result.confirmationMessage} Also, what is the address for the visit?`
-        : result.confirmationMessage!;
+    // Address gate: if no address is known, ask for it before booking
+    if (!leadAddress) {
+      await storePendingSlot(leadId, preferredSlot.date, preferredSlot.time);
       return {
         intent: 'book',
-        responseMessage: confirmMsg!,
+        responseMessage: `Great choice! Before I confirm, what's the address for the estimate?`,
+        appointmentCreated: false,
+        needsAddress: true,
+      };
+    }
+    // Address available — book directly
+    const result = await bookAppointment(clientId, leadId, preferredSlot.date, preferredSlot.time, leadAddress);
+    if (result.success) {
+      return {
+        intent: 'book',
+        responseMessage: result.confirmationMessage!,
         appointmentCreated: true,
         appointmentId: result.appointmentId,
-        needsAddress,
+        needsAddress: false,
       };
     }
   }
@@ -214,20 +348,27 @@ async function handleSlotSelection(
     };
   }
 
-  // Book the matched slot
-  const result = await bookAppointment(clientId, leadId, matchedSlot.date, matchedSlot.time, leadAddress || undefined);
-
-  if (result.success) {
-    const needsAddress = !leadAddress;
-    const confirmMsg = needsAddress
-      ? `${result.confirmationMessage} Also, what is the address for the visit?`
-      : result.confirmationMessage!;
+  // Address gate: if no address is known, ask for it before booking
+  if (!leadAddress) {
+    await storePendingSlot(leadId, matchedSlot.date, matchedSlot.time);
     return {
       intent: 'select_slot',
-      responseMessage: confirmMsg!,
+      responseMessage: `Perfect! Before I lock that in, what's the address for the estimate?`,
+      appointmentCreated: false,
+      needsAddress: true,
+    };
+  }
+
+  // Address available — book the matched slot
+  const result = await bookAppointment(clientId, leadId, matchedSlot.date, matchedSlot.time, leadAddress);
+
+  if (result.success) {
+    return {
+      intent: 'select_slot',
+      responseMessage: result.confirmationMessage!,
       appointmentCreated: true,
       appointmentId: result.appointmentId,
-      needsAddress,
+      needsAddress: false,
     };
   }
 

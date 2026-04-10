@@ -1,6 +1,7 @@
 import { getDb, clients, leads, scheduledMessages } from '@/db';
 import { leadContext, escalationQueue, conversations } from '@/db/schema';
 import { eq, and, ne, gte } from 'drizzle-orm';
+import { ComplianceService } from '@/lib/compliance/compliance-service';
 import { renderTemplate } from '@/lib/utils/templates';
 import { addDays, subDays } from 'date-fns';
 
@@ -89,6 +90,23 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
       reason: 'Review request deferred — message rate cap',
     };
   }
+
+  // 2c. Consent upgrade — on job completion the lead becomes an existing customer,
+  // which grants 2-year implied consent scope under CASL s.10(9)(a).
+  try {
+    await ComplianceService.recordConsent(clientId, lead.phone, {
+      type: 'implied',
+      source: 'existing_customer',
+      scope: {
+        marketing: true,
+        transactional: true,
+        promotional: false,
+        reminders: true,
+      },
+      language:
+        'Implied consent from existing business relationship under CASL s.10(9)(a). Valid for 2 years from job completion.',
+    });
+  } catch {} // Non-fatal — never block the review flow on consent upgrade failure
 
   // 3. Update lead status to completed (job is done)
   await db

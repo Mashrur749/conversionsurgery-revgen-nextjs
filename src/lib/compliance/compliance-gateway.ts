@@ -5,6 +5,7 @@ import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessa
 import { isMessageLimitReached } from '@/lib/services/usage-policy';
 import { eq, and, sql } from 'drizzle-orm';
 import { getTimezoneOffset } from 'date-fns-tz';
+import { createHash } from 'crypto';
 import {
   getQuietHoursPolicy,
   resolveQuietHoursDecision,
@@ -46,6 +47,13 @@ export interface SendCompliantMessageParams {
   recipientTimezone?: string;
   /** If true, queue for next available window instead of failing on quiet hours */
   queueOnQuietHours?: boolean;
+  /**
+   * The intended wall-clock time for this send (e.g. when the automation was triggered).
+   * When provided, quiet hours are evaluated against this time instead of `new Date()`.
+   * This prevents a message queued at 8:59pm from being re-queued if it is processed
+   * a few minutes later at 9:01pm.
+   */
+  intendedSendAt?: Date;
   /** Optional media URLs for MMS */
   mediaUrl?: string[];
   /** Optional metadata for audit logging */
@@ -91,6 +99,7 @@ export async function sendCompliantMessage(
     leadId,
     recipientTimezone,
     queueOnQuietHours = true,
+    intendedSendAt,
     mediaUrl,
     metadata,
   } = params;
@@ -230,7 +239,8 @@ export async function sendCompliantMessage(
   const effectiveTimezone = recipientTimezone || clientData.timezone || undefined;
   const quietHoursResult = await ComplianceService.isQuietHours(
     clientId,
-    effectiveTimezone
+    effectiveTimezone,
+    intendedSendAt
   );
   const quietHoursPolicy = await getQuietHoursPolicy(clientId, { trackModeChanges: true });
   const quietHoursDecision = resolveQuietHoursDecision({
@@ -332,13 +342,45 @@ export async function sendCompliantMessage(
       if (leadId) {
         // Fall back to Pacific (most restrictive NA timezone) when client timezone is unset
         queuedSendAt = await getNextAllowedSendAt(clientId, clientData.timezone || 'America/Los_Angeles');
-        await db.insert(scheduledMessages).values({
-          clientId,
-          leadId,
-          sequenceType: 'quiet_hours_queue',
-          content: body,
-          sendAt: queuedSendAt,
-        });
+
+        // Duplicate guard: if a quiet_hours_queue entry already exists for this
+        // lead with the same content (same hash), skip insertion. This prevents
+        // the edge-case where intendedSendAt was just before quiet hours but
+        // processing crosses the boundary, causing a double-queue.
+        const contentHash = createHash('sha256').update(body).digest('hex');
+        const [existingQueueEntry] = await db
+          .select({ id: scheduledMessages.id })
+          .from(scheduledMessages)
+          .where(
+            and(
+              eq(scheduledMessages.leadId, leadId),
+              eq(scheduledMessages.sequenceType, 'quiet_hours_queue'),
+              eq(scheduledMessages.content, body),
+              eq(scheduledMessages.sent, false),
+              eq(scheduledMessages.cancelled, false)
+            )
+          )
+          .limit(1);
+
+        if (!existingQueueEntry) {
+          await db.insert(scheduledMessages).values({
+            clientId,
+            leadId,
+            sequenceType: 'quiet_hours_queue',
+            content: body,
+            sendAt: queuedSendAt,
+          });
+        } else {
+          // Already queued — log but don't insert a duplicate
+          await ComplianceService.logComplianceEvent(clientId, 'message_queue_duplicate_skipped', {
+            phoneNumber: normalizedPhone,
+            phoneHash,
+            leadId,
+            contentHash,
+            existingQueueId: existingQueueEntry.id,
+            reason: 'quiet_hours_queue entry already exists for this lead+content',
+          });
+        }
       }
 
       await ComplianceService.logComplianceEvent(clientId, 'message_queued', {
