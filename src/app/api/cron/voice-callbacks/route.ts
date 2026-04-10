@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, voiceCalls, clients } from '@/db';
-import { eq, and, isNull, lte } from 'drizzle-orm';
+import { eq, and, isNull, lte, or } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
@@ -47,7 +47,10 @@ export async function GET(request: NextRequest) {
         and(
           eq(voiceCalls.callbackRequested, true),
           isNull(voiceCalls.callbackNotifiedAt),
-          lte(voiceCalls.callbackTime, twoHoursFromNow)
+          or(
+            lte(voiceCalls.callbackTime, twoHoursFromNow),
+            isNull(voiceCalls.callbackTime)
+          )
         )
       );
 

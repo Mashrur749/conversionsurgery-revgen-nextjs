@@ -273,6 +273,19 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       return { processed: true, action: 'opted_in' };
     }
 
+    // Promote dormant leads back to active pipeline on inbound reply
+    if (lead.status === 'dormant') {
+      await db
+        .update(leads)
+        .set({
+          status: 'contacted',
+          updatedAt: new Date(),
+        })
+        .where(eq(leads.id, lead.id));
+      lead.status = 'contacted'; // Update local reference
+      console.log(`[SMS] Promoted dormant lead ${lead.id} back to contacted`);
+    }
+
     // Skip automated processing for opted-out leads
     if (lead.optedOut) {
       console.log(`[SMS] Skipping processing for opted-out lead ${lead.id}`);

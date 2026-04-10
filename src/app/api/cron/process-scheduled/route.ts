@@ -367,8 +367,15 @@ export async function GET(request: NextRequest) {
           });
 
           if (sendResult.blocked) {
-            // Unclaim: mark back as unsent and cancelled
-            await markCancelled(db, message.id, `Compliance: ${sendResult.blockReason}`);
+            // Mark as cancelled when blocked by compliance gateway
+            await db
+              .update(scheduledMessages)
+              .set({
+                cancelled: true,
+                cancelledAt: new Date(),
+                cancelledReason: sendResult.blockReason || 'Blocked by compliance gateway',
+              })
+              .where(eq(scheduledMessages.id, message.id));
             skipped++;
             continue;
           }
