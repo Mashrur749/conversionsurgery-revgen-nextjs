@@ -54,9 +54,9 @@ export async function routeHighIntentLead(payload: HotTransferPayload): Promise<
     }
 
     // Get available team members for ring group
-    const members = await getHotTransferMembers(clientId);
+    const allMembers = await getHotTransferMembers(clientId);
 
-    if (members.length === 0) {
+    if (allMembers.length === 0) {
       console.log('[Voice] No team members available, using escalation');
       return await notifyTeamForEscalation({
         leadId,
@@ -66,6 +66,15 @@ export async function routeHighIntentLead(payload: HotTransferPayload): Promise<
         lastMessage: leadMessage,
       });
     }
+
+    // G3: Filter to owner-flagged members first (they can give quotes).
+    // Fall back to the full receiveHotTransfers pool if no owners are configured.
+    const ownerMembers = allMembers.filter((m) => m.isOwner);
+    const members = ownerMembers.length > 0 ? ownerMembers : allMembers;
+
+    console.log(
+      `[Voice] Ring group: ${members.length} quote-capable member(s) (owner-filtered=${ownerMembers.length > 0})`
+    );
 
     // Log call attempt
     const [callAttempt] = await db

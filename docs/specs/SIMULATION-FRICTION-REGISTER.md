@@ -97,11 +97,11 @@
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| G1 | Team member SMS command authentication (EST, NOSHOW, DONE) | incoming-sms.ts, team-bridge.ts | todo |
-| G2 | Crew availability/DND toggle | Schema + API route | todo |
-| G3 | Hot transfer role filtering | hot-transfer.ts | todo |
-| G4 | Notification batching (hourly digest vs per-message) | team-escalation.ts + new service | todo |
-| H1 | Message limit raise for managed service tier | usage/subscription config | todo |
-| H2 | Booking window waitlist when all slots full | booking-conversation.ts | todo |
-| H3 | Escalation batching during surge | team-escalation.ts | todo |
-| H4 | Conversation history token-budget-aware truncation | context-builder.ts | todo |
+| G1 | Team member SMS command authentication (EST, NOSHOW, DONE) | incoming-sms.ts | done |
+| G2 | Crew availability/DND toggle | client-memberships schema + team-bridge.ts | done |
+| G3 | Hot transfer role filtering | hot-transfer.ts + team-bridge.ts | done |
+| G4 | Notification batching (hourly rate limit, 5/hr cap) | incoming-sms.ts | done |
+| H1 | Message limit raise for managed service tier (500→2000) | clients schema | done |
+| H2 | Booking window waitlist when all slots full | booking-conversation.ts | done |
+| H3 | Escalation batching during surge (3+ in 30min → summary) | team-escalation.ts | done |
+| H4 | Conversation history smart truncation (first 3 + last 15) | context-builder.ts | done |

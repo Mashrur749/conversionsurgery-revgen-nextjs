@@ -5,6 +5,7 @@ import {
   integer,
   jsonb,
   timestamp,
+  varchar,
   index,
   unique,
   uniqueIndex,
@@ -42,6 +43,12 @@ export const clientMemberships = pgTable(
     receiveEscalations: boolean('receive_escalations').notNull().default(false),
     receiveHotTransfers: boolean('receive_hot_transfers').notNull().default(false),
     receiveWeeklyDigest: boolean('receive_weekly_digest').default(false),
+    /**
+     * DND / crew availability toggle.
+     * Valid values: 'available' | 'busy' | 'off_duty'
+     * Only 'available' members are included in ring groups and escalation routing.
+     */
+    availabilityStatus: varchar('availability_status', { length: 20 }).default('available'),
     priority: integer('priority').notNull().default(1),
     isActive: boolean('is_active').notNull().default(true),
     sessionVersion: integer('session_version').notNull().default(1),

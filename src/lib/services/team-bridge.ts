@@ -24,6 +24,8 @@ export interface BridgedTeamMember {
   role: string | null;   // role from template (simplified)
   receiveEscalations: boolean;
   receiveHotTransfers: boolean;
+  availabilityStatus: string | null; // 'available' | 'busy' | 'off_duty'
+  isOwner: boolean;
   priority: number;
   isActive: boolean;
   createdAt: Date;
@@ -45,6 +47,8 @@ export async function getTeamMembers(clientId: string): Promise<BridgedTeamMembe
       email: people.email,
       receiveEscalations: clientMemberships.receiveEscalations,
       receiveHotTransfers: clientMemberships.receiveHotTransfers,
+      availabilityStatus: clientMemberships.availabilityStatus,
+      isOwner: clientMemberships.isOwner,
       priority: clientMemberships.priority,
       isActive: clientMemberships.isActive,
       createdAt: clientMemberships.createdAt,
@@ -77,6 +81,8 @@ export async function getTeamMemberById(membershipId: string): Promise<BridgedTe
       email: people.email,
       receiveEscalations: clientMemberships.receiveEscalations,
       receiveHotTransfers: clientMemberships.receiveHotTransfers,
+      availabilityStatus: clientMemberships.availabilityStatus,
+      isOwner: clientMemberships.isOwner,
       priority: clientMemberships.priority,
       isActive: clientMemberships.isActive,
       createdAt: clientMemberships.createdAt,
@@ -123,6 +129,8 @@ export async function getEscalationMembers(clientId: string): Promise<BridgedTea
       email: people.email,
       receiveEscalations: clientMemberships.receiveEscalations,
       receiveHotTransfers: clientMemberships.receiveHotTransfers,
+      availabilityStatus: clientMemberships.availabilityStatus,
+      isOwner: clientMemberships.isOwner,
       priority: clientMemberships.priority,
       isActive: clientMemberships.isActive,
       createdAt: clientMemberships.createdAt,
@@ -133,7 +141,9 @@ export async function getEscalationMembers(clientId: string): Promise<BridgedTea
     .where(and(
       eq(clientMemberships.clientId, clientId),
       eq(clientMemberships.isActive, true),
-      eq(clientMemberships.receiveEscalations, true)
+      eq(clientMemberships.receiveEscalations, true),
+      // G2: Only route to available crew — skip members who are busy or off_duty
+      eq(clientMemberships.availabilityStatus, 'available')
     ))
     .orderBy(clientMemberships.priority);
 
@@ -146,6 +156,7 @@ export async function getEscalationMembers(clientId: string): Promise<BridgedTea
 
 /**
  * Get active members who receive hot transfers for a client, ordered by priority.
+ * Includes isOwner so callers can filter to quote-capable members (G3).
  */
 export async function getHotTransferMembers(clientId: string): Promise<BridgedTeamMember[]> {
   const db = getDb();
@@ -158,6 +169,8 @@ export async function getHotTransferMembers(clientId: string): Promise<BridgedTe
       email: people.email,
       receiveEscalations: clientMemberships.receiveEscalations,
       receiveHotTransfers: clientMemberships.receiveHotTransfers,
+      availabilityStatus: clientMemberships.availabilityStatus,
+      isOwner: clientMemberships.isOwner,
       priority: clientMemberships.priority,
       isActive: clientMemberships.isActive,
       createdAt: clientMemberships.createdAt,
@@ -168,7 +181,9 @@ export async function getHotTransferMembers(clientId: string): Promise<BridgedTe
     .where(and(
       eq(clientMemberships.clientId, clientId),
       eq(clientMemberships.isActive, true),
-      eq(clientMemberships.receiveHotTransfers, true)
+      eq(clientMemberships.receiveHotTransfers, true),
+      // G2: Only route to available crew — skip members who are busy or off_duty
+      eq(clientMemberships.availabilityStatus, 'available')
     ))
     .orderBy(clientMemberships.priority);
 

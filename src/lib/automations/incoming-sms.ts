@@ -18,8 +18,8 @@ import { detectBookingIntent, handleBookingConversation, checkAndCompletePending
 import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 import { ComplianceService } from '@/lib/compliance/compliance-service';
 import { recordLeadResponse } from '@/lib/services/flow-metrics';
-import { appointments, flowExecutions, flows, leadContext } from '@/db/schema';
-import { eq, and, sql, desc, inArray, isNull, not } from 'drizzle-orm';
+import { appointments, flowExecutions, flows, leadContext, clientMemberships, people } from '@/db/schema';
+import { eq, and, sql, desc, inArray, isNull, not, ilike, gte, count } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
 import { renderTemplate } from '@/lib/utils/templates';
 import type { MediaAttachment } from '@/db/schema/media-attachments';
@@ -71,6 +71,61 @@ const SOFT_REJECTION_PHRASES = [
   'already got someone',
 ];
 
+/**
+ * Returns true if senderPhone is authorized to issue operator SMS commands
+ * (EST, NOSHOW, DONE, flow approvals) for the given client.
+ *
+ * Authorized senders:
+ *   1. The client owner phone (client.phone)
+ *   2. The agency operator phone (operatorPhone from agency settings)
+ *   3. Any active team member (clientMemberships JOIN people WHERE isActive = true)
+ */
+async function isAuthorizedCommandSender(
+  senderPhone: string,
+  clientOwnerPhone: string,
+  operatorPhone: string | null,
+  clientId: string
+): Promise<boolean> {
+  if (normalizePhoneNumber(clientOwnerPhone) === senderPhone) return true;
+  if (operatorPhone !== null && operatorPhone === senderPhone) return true;
+
+  const db = getDb();
+  const members = await db
+    .select({ phone: people.phone })
+    .from(clientMemberships)
+    .innerJoin(people, eq(clientMemberships.personId, people.id))
+    .where(
+      and(
+        eq(clientMemberships.clientId, clientId),
+        eq(clientMemberships.isActive, true)
+      )
+    );
+
+  return members.some(
+    (m) => m.phone !== null && normalizePhoneNumber(m.phone) === senderPhone
+  );
+}
+
+/**
+ * Parse a NOSHOW SMS command:
+ *   NOSHOW <lead-name|phone|lead-id>
+ *
+ * Returns the parsed target or an error indicator.
+ */
+interface ParsedNoshowCommand {
+  matched: boolean;
+  target?: string;
+  error?: 'missing_target';
+}
+
+function parseNoshowCommand(input: string): ParsedNoshowCommand {
+  const match = input.trim().match(/^NOSHOW\b[:\s]*(.*)$/i);
+  if (!match) return { matched: false };
+  const target = (match[1] || '').trim();
+  if (!target) return { matched: true, error: 'missing_target' };
+  return { matched: true, target };
+}
+
 export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   const db = getDb();
   const { To, From, Body, MessageSid, NumMedia = 0, MediaItems = [] } = payload;
@@ -104,15 +159,18 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     return { processed: true, action: 'dashboard_link_sent' };
   }
 
-  // 1b. Check for flow approval responses from client owner or operator
+  // 1b. Check for flow approval responses from client owner, operator, or any active team member
   const { getAgencyField } = await import('@/lib/services/agency-settings');
   const rawOpPhone = await getAgencyField('operatorPhone');
   const operatorPhone = rawOpPhone ? normalizePhoneNumber(rawOpPhone) : null;
-  const isOwnerOrOperator =
-    normalizePhoneNumber(client.phone) === senderPhone ||
-    (operatorPhone !== null && operatorPhone === senderPhone);
+  const isAuthorized = await isAuthorizedCommandSender(
+    senderPhone,
+    client.phone,
+    operatorPhone,
+    client.id
+  );
 
-  if (isOwnerOrOperator) {
+  if (isAuthorized) {
     const approvalCheck = await handleApprovalResponse(client.id, messageBody);
     if (approvalCheck.handled) {
       return { processed: true, action: approvalCheck.action };
@@ -131,6 +189,116 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
           : 'estimate_sequence_command_error',
         leadId: estimateCommandResult.leadId,
       };
+    }
+
+    // NOSHOW command — mark appointment as no_show so the cron recovery picks it up
+    const noshowParsed = parseNoshowCommand(messageBody);
+    if (noshowParsed.matched) {
+      if (noshowParsed.error === 'missing_target') {
+        await sendSMS(senderPhone, 'Use: NOSHOW <lead-name|phone>', client.twilioNumber);
+        return { processed: true, action: 'noshow_command_error' };
+      }
+
+      const noshowTarget = noshowParsed.target!;
+
+      // Try to find a scheduled/confirmed appointment for this client matching the target
+      // Look by lead name (partial match) or lead phone
+      const UUID_RE =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const hasLetters = /[a-z]/i.test(noshowTarget);
+      const digitCount = noshowTarget.replace(/\D/g, '').length;
+
+      let noshowLeadId: string | null = null;
+
+      if (UUID_RE.test(noshowTarget)) {
+        // target is a lead_id
+        const [row] = await db
+          .select({ id: leads.id })
+          .from(leads)
+          .where(and(eq(leads.clientId, client.id), eq(leads.id, noshowTarget)))
+          .limit(1);
+        noshowLeadId = row?.id ?? null;
+      } else if (!hasLetters && digitCount >= 7) {
+        // target looks like a phone number
+        const normalizedTarget = normalizePhoneNumber(noshowTarget);
+        const [row] = await db
+          .select({ id: leads.id })
+          .from(leads)
+          .where(and(eq(leads.clientId, client.id), eq(leads.phone, normalizedTarget)))
+          .limit(1);
+        noshowLeadId = row?.id ?? null;
+      } else {
+        // target is a lead name — try exact match first, then partial
+        const [exactRow] = await db
+          .select({ id: leads.id })
+          .from(leads)
+          .where(
+            and(
+              eq(leads.clientId, client.id),
+              sql`lower(${leads.name}) = lower(${noshowTarget})`
+            )
+          )
+          .limit(1);
+
+        if (exactRow) {
+          noshowLeadId = exactRow.id;
+        } else {
+          const [partialRow] = await db
+            .select({ id: leads.id })
+            .from(leads)
+            .where(and(eq(leads.clientId, client.id), ilike(leads.name, `%${noshowTarget}%`)))
+            .limit(1);
+          noshowLeadId = partialRow?.id ?? null;
+        }
+      }
+
+      if (!noshowLeadId) {
+        await sendSMS(
+          senderPhone,
+          'No lead found for that name/phone. Use NOSHOW <lead-name|phone>.',
+          client.twilioNumber
+        );
+        return { processed: true, action: 'noshow_command_error' };
+      }
+
+      // Find the most recent non-cancelled appointment for this lead
+      const [appt] = await db
+        .select({ id: appointments.id, status: appointments.status })
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.clientId, client.id),
+            eq(appointments.leadId, noshowLeadId),
+            not(eq(appointments.status, 'cancelled'))
+          )
+        )
+        .orderBy(desc(appointments.appointmentDate))
+        .limit(1);
+
+      if (!appt) {
+        await sendSMS(
+          senderPhone,
+          'No active appointment found for that lead.',
+          client.twilioNumber
+        );
+        return { processed: true, action: 'noshow_command_error' };
+      }
+
+      await db
+        .update(appointments)
+        .set({ status: 'no_show', updatedAt: new Date() })
+        .where(eq(appointments.id, appt.id));
+
+      console.log(
+        `[IncomingSMS] NOSHOW command: appointment ${appt.id} marked no_show for lead ${noshowLeadId}`
+      );
+
+      await sendSMS(
+        senderPhone,
+        'Appointment marked as no-show. Recovery sequence will run on next cron cycle.',
+        client.twilioNumber
+      );
+      return { processed: true, action: 'noshow_command_handled', leadId: noshowLeadId };
     }
 
     const smartAssistCommandResult = await handleSmartAssistOwnerCommand({
@@ -738,7 +906,8 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         client.businessName,
         client.ownerName,
         bookingIntent,
-        lead.address
+        lead.address,
+        client.twilioNumber
       );
 
       if (bookingResult.responseMessage) {
@@ -1067,12 +1236,39 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   checkAndSuggestFlows(lead.id, client.id, conversationHistory).catch(console.error);
 
   // 11. Notify contractor of activity
+  // G4: Rate-limit contractor notifications to max 5 per hour per client.
+  // At high volume (20+ leads/day), per-message SMS becomes noise — the contractor
+  // can check the portal for details when the threshold is exceeded.
+  // TODO: implement hourly batch digest cron for high-volume clients
   if (client.notificationSms) {
-    await sendSMS(
-      client.phone,
-      `${lead.name || formatPhoneNumber(senderPhone)}: "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}" — AI replied. ${dashboardUrl}`,
-      client.twilioNumber
-    );
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const [recentCount] = await db
+      .select({ total: count() })
+      .from(conversations)
+      .where(and(
+        eq(conversations.clientId, client.id),
+        eq(conversations.messageType, 'contractor_notify'),
+        gte(conversations.createdAt, oneHourAgo)
+      ));
+    const notifyCount = recentCount?.total ?? 0;
+
+    if (notifyCount >= 5) {
+      console.log(`[IncomingSMS] Skipping contractor notification — ${notifyCount} already sent in last hour for client ${client.id}`);
+    } else {
+      await sendSMS(
+        client.phone,
+        `${lead.name || formatPhoneNumber(senderPhone)}: "${messageBody.substring(0, 50)}${messageBody.length > 50 ? '...' : ''}" — AI replied. ${dashboardUrl}`,
+        client.twilioNumber
+      );
+      // Record this notification so the hourly count is tracked
+      await db.insert(conversations).values({
+        leadId: lead.id,
+        clientId: client.id,
+        direction: 'outbound',
+        messageType: 'contractor_notify',
+        content: `Contractor notified: AI handled message from ${lead.name || formatPhoneNumber(senderPhone)}`,
+      });
+    }
   }
 
   return {

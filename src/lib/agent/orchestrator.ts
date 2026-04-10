@@ -150,7 +150,9 @@ export async function processIncomingMessage(
       chatHistory,
       client.businessName,
       client.ownerName,
-      bookingIntent
+      bookingIntent,
+      undefined,
+      client.twilioNumber
     );
 
     if (bookingResult.responseMessage) {

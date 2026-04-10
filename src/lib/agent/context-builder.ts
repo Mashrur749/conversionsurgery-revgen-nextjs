@@ -144,7 +144,7 @@ export async function buildAIContext(params: BuildContextParams): Promise<AICont
     db.select().from(clients).where(eq(clients.id, clientId)).limit(1),
     db.select().from(clientAgentSettings).where(eq(clientAgentSettings.clientId, clientId)).limit(1),
     db.select().from(leadContext).where(eq(leadContext.leadId, leadId)).limit(1),
-    db.select().from(conversations).where(eq(conversations.leadId, leadId)).orderBy(desc(conversations.createdAt)).limit(maxHistoryMessages),
+    db.select().from(conversations).where(eq(conversations.leadId, leadId)).orderBy(desc(conversations.createdAt)).limit(50),
     db.select({ count: sql<number>`count(*)` }).from(flowExecutions).where(eq(flowExecutions.leadId, leadId)),
     db.select({ count: sql<number>`count(*)` }).from(knowledgeBase).where(and(eq(knowledgeBase.clientId, clientId), eq(knowledgeBase.isActive, true))),
   ]);
@@ -185,11 +185,37 @@ export async function buildAIContext(params: BuildContextParams): Promise<AICont
   }
 
   // ---- Conversation history ----
+  // Reverse from desc-ordered query to get chronological order
   const history = historyResult.reverse();
-  const conversationHistory = history.map(msg => ({
-    role: (msg.direction === 'inbound' ? 'user' : 'assistant') as 'user' | 'assistant',
-    content: msg.content,
-  }));
+
+  // Smart truncation: always keep first 3 + last 15, with omission marker when needed
+  const KEEP_FIRST = 3;
+  const KEEP_LAST = 15;
+  const TRUNCATION_THRESHOLD = KEEP_FIRST + KEEP_LAST; // 18
+
+  type HistoryMessage = { role: 'user' | 'assistant'; content: string };
+  let conversationHistory: HistoryMessage[];
+
+  if (history.length > TRUNCATION_THRESHOLD) {
+    const firstMessages: HistoryMessage[] = history.slice(0, KEEP_FIRST).map(msg => ({
+      role: (msg.direction === 'inbound' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: msg.content,
+    }));
+    const omissionMarker: HistoryMessage = {
+      role: 'assistant',
+      content: '[Earlier messages omitted]',
+    };
+    const lastMessages: HistoryMessage[] = history.slice(-KEEP_LAST).map(msg => ({
+      role: (msg.direction === 'inbound' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: msg.content,
+    }));
+    conversationHistory = [...firstMessages, omissionMarker, ...lastMessages];
+  } else {
+    conversationHistory = history.map(msg => ({
+      role: (msg.direction === 'inbound' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: msg.content,
+    }));
+  }
 
   // Count consecutive outbound messages at the end (messages without response)
   let messagesWithoutResponse = 0;

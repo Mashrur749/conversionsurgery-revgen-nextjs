@@ -7,7 +7,7 @@
  */
 
 import { getDb } from '@/db';
-import { leadContext, appointments } from '@/db/schema';
+import { leadContext, appointments, leads } from '@/db/schema';
 import { eq, and, not, desc } from 'drizzle-orm';
 import {
   getAvailableSlots,
@@ -18,6 +18,7 @@ import {
   type TimeSlot,
 } from './appointment-booking';
 import { getTrackedAI } from '@/lib/ai';
+import { notifyTeamForEscalation } from '@/lib/services/team-escalation';
 
 export type BookingIntent =
   | 'book'          // Wants to schedule
@@ -151,7 +152,8 @@ export async function handleBookingConversation(
   businessName: string,
   ownerName: string,
   intent: BookingIntent,
-  leadAddress?: string | null
+  leadAddress?: string | null,
+  twilioNumber?: string | null
 ): Promise<BookingConversationResult> {
   // Address gate: check if we have a pending slot awaiting an address from the customer.
   // If so, treat this message as the address and complete the booking.
@@ -179,7 +181,7 @@ export async function handleBookingConversation(
 
   switch (intent) {
     case 'book':
-      return handleNewBooking(clientId, leadId, leadName, message, businessName, ownerName, leadAddress);
+      return handleNewBooking(clientId, leadId, leadName, message, businessName, ownerName, leadAddress, twilioNumber);
 
     case 'select_slot':
       return handleSlotSelection(clientId, leadId, leadName, message, conversationHistory, businessName, leadAddress);
@@ -254,15 +256,42 @@ async function handleNewBooking(
   message: string,
   businessName: string,
   ownerName: string,
-  leadAddress?: string | null
+  leadAddress?: string | null,
+  twilioNumber?: string | null
 ): Promise<BookingConversationResult> {
   // Get available slots
   const available = await getAvailableSlots(clientId);
 
   if (available.length === 0) {
+    // H2: Graceful waitlist — capture lead and escalate instead of dead-end rejection
+    const db = getDb();
+
+    // Mark lead as contacted so it surfaces in the pipeline
+    await db
+      .update(leads)
+      .set({ status: 'contacted', updatedAt: new Date() })
+      .where(eq(leads.id, leadId));
+
+    // Create a booking_waitlist escalation so the operator sees it
+    if (twilioNumber) {
+      try {
+        await notifyTeamForEscalation({
+          leadId,
+          clientId,
+          twilioNumber,
+          reason: 'booking_waitlist',
+          lastMessage: message,
+        });
+      } catch (err) {
+        console.error('[Booking] Failed to create waitlist escalation:', err);
+      }
+    }
+
+    console.log(`[Booking] No slots available — lead ${leadId} added to waitlist`);
+
     return {
       intent: 'book',
-      responseMessage: `We're pretty booked up right now. Let me have ${ownerName} reach out to find a time that works. Sound good?`,
+      responseMessage: `We're fully booked for the next week. I'll add you to our callback list \u2014 ${ownerName} will reach out when a slot opens up. In the meantime, can I get your address and project details so we're ready to go?`,
       appointmentCreated: false,
     };
   }

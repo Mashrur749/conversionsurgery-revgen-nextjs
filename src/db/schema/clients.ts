@@ -92,7 +92,7 @@ export const clients = pgTable(
       }'::jsonb`
     ),
     messagesSentThisMonth: integer('messages_sent_this_month').default(0),
-    monthlyMessageLimit: integer('monthly_message_limit').default(500),
+    monthlyMessageLimit: integer('monthly_message_limit').default(2000),
     stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
     stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
     status: varchar('status', { length: 20 }).default('active'), // active, paused, cancelled

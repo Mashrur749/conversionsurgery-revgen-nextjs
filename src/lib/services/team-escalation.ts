@@ -2,7 +2,7 @@ import { getDb } from '@/db';
 import { escalationClaims, leads, clients } from '@/db/schema';
 import { sendSMS } from '@/lib/services/twilio';
 import { sendEmail, actionRequiredEmail } from '@/lib/services/resend';
-import { eq, and, lt, isNull } from 'drizzle-orm';
+import { eq, and, lt, isNull, gte, count } from 'drizzle-orm';
 import { generateClaimToken } from '@/lib/utils/tokens';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { getEscalationMembers, getTeamMemberById } from '@/lib/services/team-bridge';
@@ -130,8 +130,37 @@ export async function notifyTeamForEscalation(payload: EscalationPayload) {
 
     let notifiedCount = 0;
 
+    // H3: Check for escalation surge — if a member has received 3+ escalation SMS
+    // in the last 30 minutes, send a single summary instead of individual messages.
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const [recentEscalations] = await db
+      .select({ total: count() })
+      .from(escalationClaims)
+      .where(and(
+        eq(escalationClaims.clientId, clientId),
+        eq(escalationClaims.status, 'pending'),
+        gte(escalationClaims.notifiedAt, thirtyMinutesAgo)
+      ));
+    const recentEscalationCount = recentEscalations?.total ?? 0;
+    const isSurge = recentEscalationCount >= 3;
+
     for (const member of members) {
-      // Send SMS notification with retry (EC-17: single retry with 1-second delay)
+      if (isSurge) {
+        // Surge mode: send a single summary batch message instead of per-escalation SMS
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const summaryBody = `You have ${recentEscalationCount} pending leads awaiting response. Check dashboard: ${appUrl}/leads`;
+        try {
+          await sendSMS(member.phone, summaryBody, twilioNumber);
+          notifiedCount++;
+          console.log(`[Team Escalation] Surge batch SMS sent to ${member.name} (${recentEscalationCount} pending escalations)`);
+        } catch (error) {
+          console.error(`[Team Escalation] Failed to send surge batch SMS to ${member.name}:`, error);
+        }
+        // Skip individual escalation SMS and email — member already has the summary
+        continue;
+      }
+
+      // Normal volume: send individual escalation SMS with retry (EC-17: single retry with 1-second delay)
       let smsSent = false;
       try {
         await sendSMS(member.phone, smsBody, twilioNumber);
