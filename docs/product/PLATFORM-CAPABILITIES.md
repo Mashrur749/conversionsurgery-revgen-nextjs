@@ -39,7 +39,7 @@ The respond node (which generates the actual customer-facing message) dynamicall
 | **Frustrated + urgent** | Sentiment = frustrated AND urgency &ge; 60 | Quality |
 | **Standard** | None of the above | Fast |
 
-The analyze-and-decide node always runs on fast tier (structured classification task). The routing decision and reason are logged in `agent_decisions.actionDetails` for observability.
+Both the analyze-and-decide node and respond node use dynamic model routing based on lead signals. High-value leads (&ge;70 score), high-intent (&ge;80), or frustrated+urgent leads get quality-tier processing for both decision-making and response generation. The routing decision and reason are logged in `agent_decisions.actionDetails` for observability.
 
 ### Speed-to-Lead Tracking
 

@@ -59,7 +59,7 @@ All launch blockers verified against codebase on 2026-04-09. Claims confirmed ac
 | BL-07 | AI Conversation | No returning customer recognition (repeat callers treated as new) | 3 days | todo |
 | BL-08 | No-Show | No morning-of appointment confirmation (prevent vs recover) | 3 days | todo |
 | BL-09 | Booking | Slot capacity not modeled — 1 appointment per slot regardless of crew count | 3 days | todo |
-| BL-10 | AI Conversation | analyzeAndDecide node always uses Haiku regardless of lead value | 1 hr | todo |
+| BL-10 | AI Conversation | analyzeAndDecide node always uses Haiku regardless of lead value | 1 hr | done |
 | BL-11 | Reporting | No lead source revenue breakdown in reports | 3 days | todo |
 | BL-12 | Payment | Stripe payment link expiry not handled — no re-issue | 2 days | todo |
 | BL-13 | Escalation | No callback scheduling from escalation queue | 1 week | todo |
@@ -68,7 +68,7 @@ All launch blockers verified against codebase on 2026-04-09. Claims confirmed ac
 | BL-16 | Voice AI | Voice AI has no SMS conversation memory (no cross-channel context) | 3 days | todo |
 | BL-17 | Payment | Invoice dual amount model (dollars vs cents) — data integrity risk | 1 day | todo |
 | BL-18 | Voice AI | No emergency escalation path for after-hours urgent calls | 3 days | todo |
-| BL-19 | Compliance | Compliance cache not invalidated on opt-out (TCPA window) | 2 hrs | todo |
+| BL-19 | Compliance | Compliance cache not invalidated on opt-out (TCPA window) | 2 hrs | false_positive (cache IS cleared on opt-out + PL-08 adds cross-client DNC) |
 | BL-20 | Reporting | `completed` without `won` loses revenue data ($0 in reports) | 1 day | todo |
 
 ## WAVE 4 — Outlier Ideas (high-creativity, evaluate for roadmap)

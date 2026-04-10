@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ConversationStateType } from '../state';
 import type { AgentAction, EscalationReason } from '@/lib/types/agent';
 import { getAIProvider } from '@/lib/ai';
+import { selectModelTier } from '@/lib/ai/model-routing';
 
 const analyzeAndDecideSchema = z.object({
   // Analysis
@@ -152,6 +153,18 @@ export async function analyzeAndDecide(
     .replace('{lastAction}', state.lastAction || 'None')
     .replace('{conversation}', conversationText);
 
+  // Use model routing based on existing signals from prior turns.
+  // First message has no prior signals so defaults to fast.
+  // decisionConfidence set to 75 (neutral) since this node produces that value.
+  const effectiveLeadScore = Math.round(
+    (state.signals.urgency + state.signals.budget + state.signals.intent) / 3
+  );
+  const routing = selectModelTier({
+    leadScore: effectiveLeadScore,
+    signals: state.signals,
+    decisionConfidence: 75,
+  });
+
   const ai = getAIProvider();
   const { data: response } = await ai.chatStructured(
     [
@@ -161,7 +174,7 @@ export async function analyzeAndDecide(
     {
       systemPrompt: prompt,
       temperature: 0.2,
-      model: 'fast',
+      model: routing.tier,
     },
   );
 
