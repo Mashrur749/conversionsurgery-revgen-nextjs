@@ -14,7 +14,7 @@ The core promise: every inquiry gets a response in seconds, not hours.
 | Channel | What happens | Response time |
 |---------|-------------|---------------|
 | **SMS/MMS** | Webhook receives message, creates/updates lead, AI generates contextual response. **Soft rejection detection:** messages like &ldquo;not interested&rdquo; or &ldquo;went with someone else&rdquo; auto-transition lead to `lost`, cancel active sequences, and send a polite acknowledgment. | 2-8 seconds (autonomous mode) |
-| **Missed call** | Detects unanswered call, auto-sends personalized SMS to caller | 2-3 seconds |
+| **Missed call** | Detects unanswered call, auto-sends personalized SMS to caller. **Known leads** get contextual SMS referencing their name and project; new leads get the standard template. **Vendor/spam screening:** first reply with vendor keywords (marketing, SEO, home warranty, etc.) gets redirected to email &mdash; AI never engages. | 2-3 seconds |
 | **Web form** | Receives submission, creates lead, sends template-based confirmation | 1-2 seconds |
 | **Voice call** | AI answers, converses in real-time, books appointments or transfers to human | Immediate (live call) |
 
@@ -95,18 +95,23 @@ Triggered when owner flags an estimate as sent (SMS keyword `EST`, dashboard act
 
 Cancellation: new sequence auto-cancels prior unsent messages for the same lead. When the lead is marked `won` or `lost`, all pending estimate follow-up messages are automatically cancelled.
 
-### Appointment Booking — Address Capture
+**Pause-and-resume on reply:** when a homeowner replies during the sequence (e.g., &ldquo;still thinking&rdquo;), only the next unsent step is cancelled and remaining steps are delayed by 3 days &mdash; the sequence continues at a gentler pace rather than being killed permanently. Soft rejections (&ldquo;not interested&rdquo;, &ldquo;went with someone else&rdquo;) cancel ALL sequences (estimate, payment, review, referral, appointment reminders).
 
-When the AI books an appointment via SMS conversation, it checks whether the lead already has an address on file (from the original form submission or a prior conversation).
+**Stuck estimate nudge:** weekly cron (Wednesday) alerts the contractor when leads have been in `estimate_sent` for 21+ days without any status update. SMS names up to 3 leads and prompts the contractor to mark them won or lost so ROI reporting stays accurate.
 
-- **Address already on file:** booking proceeds and the address is included on the appointment record automatically.
-- **No address on file:** after confirming the time slot, the AI appends "Also, what is the address for the visit?" to the confirmation message. The next inbound message from that lead is treated as the address reply — stored on both the appointment record and the lead record — and the system sends a brief acknowledgment ("Got it, thanks!"). This reply-detection runs before normal AI processing so the address is captured cleanly without routing through the AI response pipeline.
+### Appointment Booking — Address Required
+
+The AI requires an address before confirming any booking. When no address is on file, the AI asks for it before completing the booking (not after). The chosen time slot is held in `leadContext` until the address arrives.
+
+- **Address already on file:** booking proceeds immediately with the address on the appointment record.
+- **No address on file:** AI responds &ldquo;Great choice! Before I confirm, what&apos;s the address for the estimate?&rdquo; The pending slot is stored. The next inbound reply completes the booking with the address, stored on both the appointment and lead records.
 
 ### Appointment Reminders
 
 - **Day-before reminder** to homeowner
 - **2-hour reminder** to homeowner
-- **Contractor reminder** to business owner (via reminder routing policy — configurable primary/fallback chain)
+- **Contractor reminder** to business owner AND assigned team member (via reminder routing policy — configurable primary/fallback chain). Booking notifications also CC the `assistant` role (office managers).
+- **2-hour context brief:** the contractor/estimator reminder includes project type, budget estimate, sentiment, urgency score, and AI conversation summary &mdash; the estimator walks in informed, not cold
 - Sent through compliance gateway with quiet-hours queueing
 - **Email fallback:** if compliance blocks all SMS recipients for a booking notification (e.g., quiet hours, opt-out), the system falls back to email notification so the contractor is never left uninformed
 
@@ -133,7 +138,7 @@ Cron detects appointments 2+ hours past scheduled time with no completion.
 
 | Step | Timing | Action |
 |------|--------|--------|
-| 0 | Immediately | Contractor notified via SMS with lead name, appointment time, and direct lead phone number so they can follow up themselves |
+| 0 | Immediately | Contractor AND assigned crew member notified via SMS with lead name, appointment time, and direct lead phone number. Both owner and assigned estimator receive the alert (deduped if same person). |
 | 1 | +2 hours | AI-personalized homeowner recovery SMS (warm, short, offers reschedule) — delayed to give contractor time to act first |
 | 2 | Day +2, 10am local time | Second AI-personalized homeowner follow-up (shorter, gives easy out) |
 
@@ -156,11 +161,14 @@ Stripe webhook confirms payment &rarr; cancels remaining reminders &rarr; sends 
 
 Triggered when lead status changes to `completed` (contractor marks the job done in the portal). This fires the review + referral sequence automatically — no manual trigger required.
 
-**Sentiment gate:** before scheduling, the system checks lead sentiment (last 14 days) and unresolved escalations. If the lead has negative/frustrated sentiment or an open escalation, the review request is suppressed with a log entry. This prevents asking unhappy customers for Google reviews.
+**Three safety gates before scheduling:**
+1. **Sentiment gate:** checks lead sentiment (last 14 days) and unresolved escalations. Suppressed if negative/frustrated or open escalation.
+2. **Rate cap:** deferred if the lead received &gt;5 outbound messages in the past 7 days (CTIA compliance).
+3. **Consent upgrade:** on job completion, lead consent is upgraded to `existing_customer` (2-year CASL scope).
 
 | Touch | Timing | Message |
 |-------|--------|---------|
-| 1 | Day 1, 10am | Review request with direct Google link |
+| 1 | Day 1, 10am | Review request with direct Google link, referencing specific project type |
 | 2 | Day 4, 10am | Referral request (auto-cancelled if a negative review &le;2 stars is synced before Day 4) |
 
 ### Win-Back (Dormant Lead Reactivation)
@@ -171,8 +179,9 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 - **Excludes leads with active sequences:** leads with any unsent, uncancelled scheduled messages from other automations (estimate follow-up, payment reminders, etc.) are skipped to prevent double-messaging
 - AI-personalized win-back message with project context
 - Randomized send timing (10am-2pm weekdays, avoids Monday morning/Friday afternoon)
-- Follow-up 20-30 days later
+- Follow-up 20-30 days later (skipped for `estimate_sent` leads with inbound reply in past 45 days &mdash; prevents premature re-engagement after active dialogue)
 - After 2 attempts with no response, lead transitions to `dormant`
+- **Dormant lead auto-promotion:** when a dormant lead texts back, status automatically promoted to `contacted` so they appear in the active pipeline
 
 ### Probable Wins Nudge
 
@@ -236,7 +245,8 @@ Persistent WebSocket connection for the entire call duration. Claude responses s
 - **Appointment booking:** Claude tool_use checks Google Calendar availability and books estimate appointments mid-call
 - **Project capture:** Claude tool_use saves caller name, project type, address, and notes to the lead record
 - **Callback scheduling:** when transfer fails or owner unavailable, schedules callback and notifies contractor. Cron (`/api/cron/voice-callbacks`) runs every 30 minutes and sends SMS to the contractor for any callbacks due or within the next 2 hours, with a tap-to-call link.
-- **Guardrails:** won&apos;t make pricing promises (unless `canDiscussPricing` enabled), won&apos;t guess unknowns, escalates when unsure
+- **Guardrails:** won&apos;t make pricing promises (unless `canDiscussPricing` enabled), won&apos;t guess unknowns, escalates when unsure, never promises specific callback times (rule 12), offers phone callback for confused/short replies (rule 11)
+- **Mandatory disclosure:** every voice call opens with &ldquo;This call may be recorded and uses AI-assisted technology&rdquo; &mdash; non-configurable, always prepended before the business greeting (CA SB 1001 + two-party consent states)
 - **Three activation modes:** always on, after-hours only, overflow. Overflow dials the contractor first (20s timeout) &mdash; if no-answer/busy/failed, Twilio redirects the live call to Voice AI automatically. No homeowner ever hears &ldquo;no one available&rdquo; in overflow mode.
 - **Voice selection:** ElevenLabs voice personas with admin preview &mdash; selected voice is used in live calls via ConversationRelay `voice` attribute
 - **Fallback:** Amazon Polly (Matthew-Neural) when no ElevenLabs voice is configured
@@ -623,7 +633,9 @@ Every Monday morning, the system sends the contractor an SMS activity summary. C
 **Message format** (contractor-friendly, not operator metrics):
 &ldquo;Hey [name], your week: 2 new leads, 1 appointment booked, 3 estimates in follow-up. Won: $8,500 from 1 job. 1 job to mark complete for review requests.&rdquo;
 
-Sent from the client&apos;s business line (same thread as AI conversations). Per-client toggle: `weeklyDigestEnabled`. Cron: `/api/cron/weekly-digest` on Monday 7am UTC.
+**Stuck estimate callout:** when leads have been in `estimate_sent` &gt;21 days, the digest appends: &ldquo;N estimates need an update &mdash; mark them won or lost to keep your ROI accurate.&rdquo;
+
+Sent from the client&apos;s business line (same thread as AI conversations). Per-client toggle: `weeklyDigestEnabled`. **Per-membership opt-in:** team members with `receiveWeeklyDigest = true` on their `clientMemberships` record also receive the digest SMS. Cron: `/api/cron/weekly-digest` on Monday 7am UTC.
 
 ### Delivery Infrastructure
 
@@ -716,11 +728,13 @@ Every funnel event is automatically linked to the agent decision that contribute
 ### Cancellation
 
 - 30-day notice period
+- **Cancellation value summary:** shows both confirmed revenue AND estimated revenue, plus count of stuck estimates with prompt to update. Prevents churn from misleadingly low ROI numbers.
+- **Operator cancellation alert:** URGENT SMS sent to operator immediately on cancellation request, including reason and business name. Enables proactive retention call scheduling.
 - Data export within 5 business days (CSV: leads, conversations, pipeline jobs)
 - Export download with time-limited token
 - Retention call scheduling option
 - **Automated grace-period reminders:** daily cron sends email reminders at 20 days left, 7 days left, and 3 days left — each fired at most once per client, deduplicated via audit_log
-- **Post-cancellation win-back:** single email sent 7 days after grace period ends with re-signup link, deduplicated via audit_log
+- **Post-cancellation win-back:** personalized email sent 7 days after grace period ends. Includes months active, leads captured, messages sent, and revenue tracked from the stored `valueShown` snapshot. Falls back to generic copy if data unavailable.
 
 ---
 
