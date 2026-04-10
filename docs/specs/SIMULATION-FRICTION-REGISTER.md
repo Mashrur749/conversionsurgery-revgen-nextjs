@@ -29,11 +29,11 @@
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| B1 | Add callback phone to missed-call template | templates.ts + missed-call.ts | todo |
-| B2 | Add "call to pay by phone" to payment templates | templates.ts + payment-reminder.ts | todo |
-| B3 | Add "call us when ready" to estimate follow-up templates | templates.ts + estimate-followup.ts | todo |
-| B4 | Dormant re-engagement template tone mismatch | dormant-reengagement.ts | todo |
-| B5 | Review request needs project-specific reference | templates.ts + review-request.ts | todo |
+| B1 | Add callback phone to missed-call template | templates.ts + missed-call.ts | done |
+| B2 | Add "call to pay by phone" to payment templates | templates.ts + payment-reminder.ts | done |
+| B3 | Add "call us when ready" to estimate follow-up templates | templates.ts + estimate-followup.ts | done |
+| B4 | Dormant re-engagement template tone mismatch | dormant-reengagement.ts | done |
+| B5 | Review request needs project-specific reference | templates.ts + review-request.ts | done |
 
 ## WAVE 4 — Sequence Logic Fixes (4 items)
 

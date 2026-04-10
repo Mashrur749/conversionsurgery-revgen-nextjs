@@ -3,7 +3,7 @@
  */
 export const DEFAULT_TEMPLATES: Record<string, string> = {
   // Automation 1: Missed Call
-  missed_call: 'Hey, this is {{ownerName}} from {{businessName}}. Sorry I missed your call — I\'m with a customer right now. What can I help you with? Reply STOP to opt out.',
+  missed_call: 'Hey, this is {{ownerName}} from {{businessName}}. Sorry I missed your call — I\'m with a customer right now. Call me back at {{businessPhone}} or reply and I\'ll get back to you. Reply STOP to opt out.',
 
   // Automation 2: Form Response
   form_response: 'Hey {{name}}, this is {{ownerName}} from {{businessName}}. Just got your request — thanks for reaching out! What can I help you with? Reply STOP to opt out.',
@@ -18,17 +18,17 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
   // Estimate Follow-up (Phase 4)
   estimate_day_2: 'Hi {{name}}, just checking in on the estimate I sent over. Any questions I can answer?',
   estimate_day_5: 'Hey {{name}}, wanted to make sure my estimate didn\'t get buried. I\'m booking for next month — let me know if you\'d like to get on the schedule.',
-  estimate_day_10: 'Hi {{name}}, circling back one more time. If the project is on hold, no worries — just let me know. If you\'re ready to move forward, I\'ve got availability opening up.',
-  estimate_day_14: 'Hi {{name}}, last check-in on the estimate. If you\'ve decided to go another direction, no hard feelings. If you\'re still thinking about it, I\'m here when you\'re ready.',
+  estimate_day_10: 'Hi {{name}}, circling back one more time. If the project is on hold, no worries — just let me know. If you\'re ready to move forward, I\'ve got availability opening up. Or call us at {{businessPhone}} — happy to chat.',
+  estimate_day_14: 'Hi {{name}}, last check-in on the estimate. If you\'ve decided to go another direction, no hard feelings. If you\'re still thinking about it, I\'m here when you\'re ready. Or call us at {{businessPhone}} — happy to chat.',
 
   // Payment Reminders (Phase 4)
-  payment_due: 'Hi {{name}}, friendly reminder that invoice #{{invoiceNumber}} for {{currencySymbol}}{{amount}} is due today. Here\'s a quick link to pay: {{paymentLink}}. Thanks!',
-  payment_day_3: 'Hi {{name}}, following up on invoice #{{invoiceNumber}} for {{currencySymbol}}{{amount}}, now a few days past due. Please let me know if you have any questions. Pay here: {{paymentLink}}',
-  payment_day_7: 'Hi {{name}}, just a reminder that invoice #{{invoiceNumber}} for {{currencySymbol}}{{amount}} is now 7 days past due. If there\'s an issue, let me know. Otherwise, here\'s the link: {{paymentLink}}',
-  payment_day_14: 'Hi {{name}}, final reminder on invoice #{{invoiceNumber}} for {{currencySymbol}}{{amount}}, now 14 days past due. Please reach out if we need to discuss. Pay here: {{paymentLink}}',
+  payment_due: 'Hi {{name}}, friendly reminder that invoice #{{invoiceNumber}} for {{currencySymbol}}{{amount}} is due today. Here\'s a quick link to pay: {{paymentLink}}. To pay by phone, call {{businessPhone}}. Thanks!',
+  payment_day_3: 'Hi {{name}}, following up on invoice #{{invoiceNumber}} for {{currencySymbol}}{{amount}}, now a few days past due. Please let me know if you have any questions. Pay here: {{paymentLink}} To pay by phone, call {{businessPhone}}.',
+  payment_day_7: 'Hi {{name}}, just a reminder that invoice #{{invoiceNumber}} for {{currencySymbol}}{{amount}} is now 7 days past due. If there\'s an issue, let me know. Otherwise, here\'s the link: {{paymentLink}} To pay by phone, call {{businessPhone}}.',
+  payment_day_14: 'Hi {{name}}, final reminder on invoice #{{invoiceNumber}} for {{currencySymbol}}{{amount}}, now 14 days past due. Please reach out if we need to discuss. Pay here: {{paymentLink}} To pay by phone, call {{businessPhone}}.',
 
   // Review & Referral (Phase 4)
-  review_request: 'Hi {{name}}, thanks again for choosing {{businessName}}! If you were happy with the work, a quick Google review helps us a ton: {{googleBusinessUrl}}. Thanks so much!',
+  review_request: 'Hi {{name}}, thanks for trusting us with your {{projectType}}! If you were happy with the work, a quick Google review helps us a ton: {{googleBusinessUrl}}. Thanks so much!',
   referral_request: 'Thanks so much for trusting {{businessName}}! If you know anyone else who could use our services, we\'d love to help them out too. Referrals mean the world to a small business like ours.',
 
   // System

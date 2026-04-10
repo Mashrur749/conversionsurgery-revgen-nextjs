@@ -70,6 +70,7 @@ export async function startEstimateFollowup({ leadId, clientId }: EstimatePayloa
       name: lead.name || 'there',
       ownerName: client.ownerName,
       businessName: client.businessName,
+      businessPhone: client.phone,
     });
 
     const scheduled = await db

@@ -35,19 +35,18 @@ function buildReengagementMessage(params: {
   businessName: string;
   projectType: string | null;
 }): string {
-  const { firstName, businessName, projectType } = params;
+  const { firstName, projectType } = params;
 
   if (projectType) {
     return (
-      `Hi ${firstName}, this is ${businessName}. It's been a while since we connected about ` +
-      `your ${projectType} project. If you're still thinking about it, we'd love to help. ` +
-      `No pressure — just let us know.`
+      `Hey ${firstName} — been a while since we talked about your ${projectType}. ` +
+      `If it's still on your mind, we're around. No pressure at all.`
     );
   }
 
   return (
-    `Hi ${firstName}, this is ${businessName}. It's been a while since we were last in touch. ` +
-    `If there's anything we can help you with, we'd love to reconnect. No pressure — just reach out whenever.`
+    `Hey ${firstName} — just wanted to check in. If you need anything, we're here. ` +
+    `No pressure at all.`
   );
 }
 

@@ -141,6 +141,7 @@ export async function startPaymentReminder(payload: PaymentPayload) {
       paymentLink: paymentLinkText,
       ownerName: client.ownerName,
       businessName: client.businessName,
+      businessPhone: client.phone,
     });
 
     const scheduled = await db

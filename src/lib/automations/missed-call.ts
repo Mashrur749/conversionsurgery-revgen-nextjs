@@ -119,6 +119,7 @@ export async function handleMissedCall(payload: MissedCallPayload) {
   const messageContent = renderTemplate('missed_call', {
     ownerName: clientData.ownerName,
     businessName: clientData.businessName,
+    businessPhone: formatPhoneNumber(clientData.phone),
   });
 
   // 5. Send SMS via compliance gateway (auto-records implied consent from inbound call)

@@ -108,6 +108,7 @@ export async function startReviewRequest({ leadId, clientId }: ReviewPayload) {
     name: lead.name || 'there',
     businessName: client.businessName,
     googleBusinessUrl: client.googleBusinessUrl || 'our Google page',
+    projectType: lead.projectType || 'project',
   });
 
   const reviewScheduled = await db
