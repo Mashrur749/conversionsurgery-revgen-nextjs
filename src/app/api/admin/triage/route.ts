@@ -4,6 +4,14 @@ import { clients, leads, escalationQueue, knowledgeGaps, scheduledMessages } fro
 import { eq, and, inArray, gte, lt, or, sql, count as countFn } from 'drizzle-orm';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 
+export interface TriageTrigger {
+  /** Human-readable trigger label */
+  label: string;
+  /** Detail with threshold context, e.g. "Last estimate sent: 22d ago (threshold: 21d)" */
+  detail: string;
+  severity: 'red' | 'yellow';
+}
+
 export interface TriageClientRow {
   id: string;
   businessName: string;
@@ -17,41 +25,83 @@ export interface TriageClientRow {
   pendingSmartAssistDrafts: number;
   healthStatus: 'green' | 'yellow' | 'red';
   actionNeeded: string[];
+  /** Structured trigger details for richer card display */
+  triggers: TriageTrigger[];
+  /**
+   * Approximate days this client has been at the current health status,
+   * derived from how long each breaching signal has exceeded its threshold.
+   * Null for healthy clients.
+   */
+  daysAtCurrentStatus: number | null;
 }
 
-function computeHealth(row: Omit<TriageClientRow, 'healthStatus' | 'actionNeeded'>): {
+function computeHealth(
+  row: Omit<TriageClientRow, 'healthStatus' | 'actionNeeded' | 'triggers' | 'daysAtCurrentStatus'>
+): {
   healthStatus: 'green' | 'yellow' | 'red';
   actionNeeded: string[];
+  triggers: TriageTrigger[];
+  daysAtCurrentStatus: number | null;
 } {
   const actions: string[] = [];
+  const triggers: TriageTrigger[] = [];
   let isRed = false;
   let isYellow = false;
+
+  // Track how many days beyond each threshold (proxy for "time at this status")
+  const daysOverThreshold: number[] = [];
 
   // Red conditions
   if (row.overdueEscalations > 0) {
     isRed = true;
-    actions.push(`${row.overdueEscalations} escalation${row.overdueEscalations > 1 ? 's' : ''} open 24+ hours`);
+    const label = `${row.overdueEscalations} escalation${row.overdueEscalations > 1 ? 's' : ''} open 24+ hours`;
+    actions.push(label);
+    triggers.push({
+      label: 'Overdue escalations',
+      detail: `${row.overdueEscalations} open escalation${row.overdueEscalations > 1 ? 's' : ''} waiting 24+ hours (threshold: 24h)`,
+      severity: 'red',
+    });
+    daysOverThreshold.push(1); // at least 1 day over
   }
 
-  // For clients over 60 days old, 0 estimate flags in 30+ days is red
+  // For clients over 60 days old, no estimate flags in 30+ days is red
   const clientAgeDays =
     (Date.now() - new Date(row.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+
   if (
     clientAgeDays >= 60 &&
     (row.daysSinceEstimate === null || row.daysSinceEstimate >= 30)
   ) {
     isRed = true;
-    actions.push(
-      row.daysSinceEstimate === null
-        ? 'No estimate activity recorded'
-        : `${row.daysSinceEstimate}d since last estimate sent`
-    );
+    if (row.daysSinceEstimate === null) {
+      actions.push('No estimate activity recorded');
+      triggers.push({
+        label: 'No estimate activity',
+        detail: 'No estimate ever recorded (threshold: 30d)',
+        severity: 'red',
+      });
+      daysOverThreshold.push(Math.max(0, Math.floor(clientAgeDays) - 30));
+    } else {
+      actions.push(`${row.daysSinceEstimate}d since last estimate sent`);
+      triggers.push({
+        label: 'Stale estimate activity',
+        detail: `Last estimate sent: ${row.daysSinceEstimate}d ago (threshold: 30d)`,
+        severity: 'red',
+      });
+      daysOverThreshold.push(row.daysSinceEstimate - 30);
+    }
   }
 
   // Yellow conditions (only if not already red for that signal)
   if (row.openKbGaps >= 5) {
     isYellow = true;
     actions.push(`${row.openKbGaps} open KB gaps`);
+    triggers.push({
+      label: 'Open KB gaps',
+      detail: `${row.openKbGaps} unresolved knowledge gaps (threshold: 5)`,
+      severity: 'yellow',
+    });
+    daysOverThreshold.push(0);
   }
 
   if (
@@ -63,15 +113,32 @@ function computeHealth(row: Omit<TriageClientRow, 'healthStatus' | 'actionNeeded
   ) {
     isYellow = true;
     actions.push(`${row.daysSinceEstimate}d since last estimate sent`);
+    triggers.push({
+      label: 'Estimate activity slowing',
+      detail: `Last estimate sent: ${row.daysSinceEstimate}d ago (threshold: 21d)`,
+      severity: 'yellow',
+    });
+    daysOverThreshold.push(row.daysSinceEstimate - 21);
   }
 
   if (row.daysSinceWonOrLost !== null && row.daysSinceWonOrLost >= 30) {
     isYellow = true;
     actions.push(`${row.daysSinceWonOrLost}d since last win/loss update`);
+    triggers.push({
+      label: 'No win/loss updates',
+      detail: `No won/lost in ${row.daysSinceWonOrLost}d (threshold: 30d)`,
+      severity: 'yellow',
+    });
+    daysOverThreshold.push(row.daysSinceWonOrLost - 30);
   }
 
   const healthStatus = isRed ? 'red' : isYellow ? 'yellow' : 'green';
-  return { healthStatus, actionNeeded: actions };
+
+  // daysAtCurrentStatus = max days any single signal has been over its threshold
+  const daysAtCurrentStatus =
+    daysOverThreshold.length > 0 ? Math.max(0, ...daysOverThreshold) : null;
+
+  return { healthStatus, actionNeeded: actions, triggers, daysAtCurrentStatus };
 }
 
 export const GET = adminRoute(
@@ -233,8 +300,8 @@ export const GET = adminRoute(
         daysSinceWonOrLost: daysSince(wonLostMap.get(c.id)),
         pendingSmartAssistDrafts: smartAssistMap.get(c.id) ?? 0,
       };
-      const { healthStatus, actionNeeded } = computeHealth(baseRow);
-      return { ...baseRow, healthStatus, actionNeeded };
+      const { healthStatus, actionNeeded, triggers, daysAtCurrentStatus } = computeHealth(baseRow);
+      return { ...baseRow, healthStatus, actionNeeded, triggers, daysAtCurrentStatus };
     });
 
     // Sort: red first, then yellow, then green; within tier by overdue escalations desc

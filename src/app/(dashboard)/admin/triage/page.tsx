@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import type { TriageClientRow } from '@/app/api/admin/triage/route';
+import type { TriageClientRow, TriageTrigger } from '@/app/api/admin/triage/route';
 
 // Health configuration
 const HEALTH_CONFIG = {
@@ -30,6 +30,16 @@ const HEALTH_CONFIG = {
     iconClass: 'text-[#3D7A50]',
   },
 } as const;
+
+/** Format "X days at this status" into a human label */
+function formatTrendDuration(days: number | null): string | null {
+  if (days === null) return null;
+  if (days === 0) return 'Just flagged today';
+  if (days < 7) return `${days}d at this status`;
+  const weeks = Math.floor(days / 7);
+  if (weeks === 1) return 'Flagged for 1 week';
+  return `Flagged for ${weeks} weeks`;
+}
 
 async function getTriageData(): Promise<TriageClientRow[]> {
   // Server-side direct DB query mirroring the API, but called inline for RSC
@@ -155,17 +165,30 @@ async function getTriageData(): Promise<TriageClientRow[]> {
   }
 
   function computeHealth(
-    row: Omit<TriageClientRow, 'healthStatus' | 'actionNeeded'>
-  ): { healthStatus: 'green' | 'yellow' | 'red'; actionNeeded: string[] } {
+    row: Omit<TriageClientRow, 'healthStatus' | 'actionNeeded' | 'triggers' | 'daysAtCurrentStatus'>
+  ): {
+    healthStatus: 'green' | 'yellow' | 'red';
+    actionNeeded: string[];
+    triggers: TriageTrigger[];
+    daysAtCurrentStatus: number | null;
+  } {
     const actions: string[] = [];
+    const triggers: TriageTrigger[] = [];
     let isRed = false;
     let isYellow = false;
+    const daysOverThreshold: number[] = [];
 
     if (row.overdueEscalations > 0) {
       isRed = true;
       actions.push(
         `${row.overdueEscalations} escalation${row.overdueEscalations > 1 ? 's' : ''} open 24+ hours`
       );
+      triggers.push({
+        label: 'Overdue escalations',
+        detail: `${row.overdueEscalations} open escalation${row.overdueEscalations > 1 ? 's' : ''} waiting 24+ hours (threshold: 24h)`,
+        severity: 'red',
+      });
+      daysOverThreshold.push(1);
     }
 
     const clientAgeDays =
@@ -173,16 +196,34 @@ async function getTriageData(): Promise<TriageClientRow[]> {
 
     if (clientAgeDays >= 60 && (row.daysSinceEstimate === null || row.daysSinceEstimate >= 30)) {
       isRed = true;
-      actions.push(
-        row.daysSinceEstimate === null
-          ? 'No estimate activity recorded'
-          : `${row.daysSinceEstimate}d since last estimate sent`
-      );
+      if (row.daysSinceEstimate === null) {
+        actions.push('No estimate activity recorded');
+        triggers.push({
+          label: 'No estimate activity',
+          detail: 'No estimate ever recorded (threshold: 30d)',
+          severity: 'red',
+        });
+        daysOverThreshold.push(Math.max(0, Math.floor(clientAgeDays) - 30));
+      } else {
+        actions.push(`${row.daysSinceEstimate}d since last estimate sent`);
+        triggers.push({
+          label: 'Stale estimate activity',
+          detail: `Last estimate sent: ${row.daysSinceEstimate}d ago (threshold: 30d)`,
+          severity: 'red',
+        });
+        daysOverThreshold.push(row.daysSinceEstimate - 30);
+      }
     }
 
     if (row.openKbGaps >= 5) {
       isYellow = true;
       actions.push(`${row.openKbGaps} open KB gaps`);
+      triggers.push({
+        label: 'Open KB gaps',
+        detail: `${row.openKbGaps} unresolved knowledge gaps (threshold: 5)`,
+        severity: 'yellow',
+      });
+      daysOverThreshold.push(0);
     }
 
     if (
@@ -194,14 +235,32 @@ async function getTriageData(): Promise<TriageClientRow[]> {
     ) {
       isYellow = true;
       actions.push(`${row.daysSinceEstimate}d since last estimate sent`);
+      triggers.push({
+        label: 'Estimate activity slowing',
+        detail: `Last estimate sent: ${row.daysSinceEstimate}d ago (threshold: 21d)`,
+        severity: 'yellow',
+      });
+      daysOverThreshold.push(row.daysSinceEstimate - 21);
     }
 
     if (row.daysSinceWonOrLost !== null && row.daysSinceWonOrLost >= 30) {
       isYellow = true;
       actions.push(`${row.daysSinceWonOrLost}d since last win/loss update`);
+      triggers.push({
+        label: 'No win/loss updates',
+        detail: `No won/lost in ${row.daysSinceWonOrLost}d (threshold: 30d)`,
+        severity: 'yellow',
+      });
+      daysOverThreshold.push(row.daysSinceWonOrLost - 30);
     }
 
-    return { healthStatus: isRed ? 'red' : isYellow ? 'yellow' : 'green', actionNeeded: actions };
+    return {
+      healthStatus: isRed ? 'red' : isYellow ? 'yellow' : 'green',
+      actionNeeded: actions,
+      triggers,
+      daysAtCurrentStatus:
+        daysOverThreshold.length > 0 ? Math.max(0, ...daysOverThreshold) : null,
+    };
   }
 
   const rows: TriageClientRow[] = activeClients.map((c) => {
@@ -217,8 +276,8 @@ async function getTriageData(): Promise<TriageClientRow[]> {
       daysSinceWonOrLost: daysSince(wonLostMap.get(c.id)),
       pendingSmartAssistDrafts: smartAssistMap.get(c.id) ?? 0,
     };
-    const { healthStatus, actionNeeded } = computeHealth(baseRow);
-    return { ...baseRow, healthStatus, actionNeeded };
+    const { healthStatus, actionNeeded, triggers, daysAtCurrentStatus } = computeHealth(baseRow);
+    return { ...baseRow, healthStatus, actionNeeded, triggers, daysAtCurrentStatus };
   });
 
   const tierOrder = { red: 0, yellow: 1, green: 2 };
@@ -232,13 +291,37 @@ async function getTriageData(): Promise<TriageClientRow[]> {
 
 function MetricCell({ value, label }: { value: number | null; label: string }) {
   if (value === null) {
-    return <span className="text-muted-foreground text-sm">—</span>;
+    return <span className="text-muted-foreground text-sm">&mdash;</span>;
   }
   return (
     <span className="text-sm">
       {value}
       <span className="text-xs text-muted-foreground ml-0.5">{label}</span>
     </span>
+  );
+}
+
+/** Inline trigger detail rows — used in both card and table */
+function TriggerList({
+  triggers,
+  daysAtCurrentStatus,
+}: {
+  triggers: TriageTrigger[];
+  daysAtCurrentStatus: number | null;
+}) {
+  const trendLabel = formatTrendDuration(daysAtCurrentStatus);
+  return (
+    <div className="space-y-1">
+      {triggers.map((t) => (
+        <div key={t.detail} className="text-xs leading-snug">
+          <span className="font-medium text-sienna">{t.label}:</span>{' '}
+          <span className="text-muted-foreground">{t.detail}</span>
+        </div>
+      ))}
+      {trendLabel && (
+        <div className="text-xs text-muted-foreground italic mt-0.5">{trendLabel}</div>
+      )}
+    </div>
   );
 }
 
@@ -268,28 +351,21 @@ function TriageCard({ row }: { row: TriageClientRow }) {
             </div>
             <div>
               <span className="text-muted-foreground text-xs">Days Since Estimate</span>
-              <div className="font-medium">{row.daysSinceEstimate ?? '—'}</div>
+              <div className="font-medium">{row.daysSinceEstimate ?? '&mdash;'}</div>
             </div>
             <div>
               <span className="text-muted-foreground text-xs">Days Since Win/Lost</span>
-              <div className="font-medium">{row.daysSinceWonOrLost ?? '—'}</div>
+              <div className="font-medium">{row.daysSinceWonOrLost ?? '&mdash;'}</div>
             </div>
             <div>
               <span className="text-muted-foreground text-xs">Pending Drafts</span>
               <div className={`font-medium ${row.pendingSmartAssistDrafts > 0 ? 'text-sienna font-semibold' : ''}`}>
-                {row.pendingSmartAssistDrafts > 0 ? row.pendingSmartAssistDrafts : '—'}
+                {row.pendingSmartAssistDrafts > 0 ? row.pendingSmartAssistDrafts : '&mdash;'}
               </div>
             </div>
           </div>
-          {row.actionNeeded.length > 0 && (
-            <ul className="space-y-1">
-              {row.actionNeeded.map((action) => (
-                <li key={action} className="text-xs text-sienna flex items-start gap-1">
-                  <span className="mt-0.5">&#8226;</span>
-                  {action}
-                </li>
-              ))}
-            </ul>
+          {row.triggers.length > 0 && (
+            <TriggerList triggers={row.triggers} daysAtCurrentStatus={row.daysAtCurrentStatus} />
           )}
         </CardContent>
       </Card>
@@ -396,7 +472,7 @@ export default async function TriagePage() {
                         Pending Drafts
                       </th>
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                        Action Needed
+                        Triggers
                       </th>
                     </tr>
                   </thead>
@@ -418,12 +494,19 @@ export default async function TriagePage() {
                             </Link>
                           </td>
                           <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${config.badgeClass}`}
-                            >
-                              <Icon className="h-3 w-3" />
-                              {config.label}
-                            </span>
+                            <div className="space-y-1">
+                              <span
+                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${config.badgeClass}`}
+                              >
+                                <Icon className="h-3 w-3" />
+                                {config.label}
+                              </span>
+                              {row.daysAtCurrentStatus !== null && (
+                                <div className="text-xs text-muted-foreground italic">
+                                  {formatTrendDuration(row.daysAtCurrentStatus)}
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-center">
                             <span
@@ -463,20 +546,17 @@ export default async function TriagePage() {
                                 {row.pendingSmartAssistDrafts}
                               </span>
                             ) : (
-                              <span className="text-muted-foreground">—</span>
+                              <span className="text-muted-foreground">&mdash;</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            {row.actionNeeded.length === 0 ? (
+                            {row.triggers.length === 0 ? (
                               <span className="text-muted-foreground text-xs">None</span>
                             ) : (
-                              <ul className="space-y-0.5">
-                                {row.actionNeeded.map((action) => (
-                                  <li key={action} className="text-xs text-sienna">
-                                    {action}
-                                  </li>
-                                ))}
-                              </ul>
+                              <TriggerList
+                                triggers={row.triggers}
+                                daysAtCurrentStatus={null}
+                              />
                             )}
                           </td>
                         </tr>

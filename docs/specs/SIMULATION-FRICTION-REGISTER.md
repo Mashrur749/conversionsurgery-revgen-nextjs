@@ -86,12 +86,12 @@
 
 | ID | Description | File | Status |
 |----|-------------|------|--------|
-| I1 | Batch escalation acknowledge | New: admin API route | todo |
-| I2 | Cross-client KB gap queue | New: admin page | todo |
-| I3 | Agency weekly summary dashboard | New: admin page | todo |
-| I4 | Triage card trigger detail + trend sparkline | admin/triage/page.tsx | todo |
-| I5 | Digest preview before Monday send | New: admin API route | todo |
-| I6 | Engagement health root cause analysis | engagement-health.ts | todo |
+| I1 | Batch escalation acknowledge | New: admin API route | done |
+| I2 | Cross-client KB gap queue | New: admin page + API | done |
+| I3 | Agency weekly summary dashboard | New: admin page | done |
+| I4 | Triage card trigger detail + trend sparkline | admin/triage/ | done |
+| I5 | Digest preview before Monday send | New: admin API route | done |
+| I6 | Engagement health root cause analysis | engagement-health.ts | done |
 
 ## WAVE 10 — Capacity/Scale & Multi-Person (8 items)
 

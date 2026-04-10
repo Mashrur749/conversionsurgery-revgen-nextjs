@@ -35,6 +35,7 @@ const getAdminNavItems = (hasClients: boolean) => [
     { href: '/admin/discussions', label: 'Support' },
   ]},
   { group: 'Reporting', items: [
+    { href: '/admin/agency-summary', label: 'Agency Summary', disabled: !hasClients },
     { href: '/admin/billing', label: 'Billing' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/platform-analytics', label: 'Platform Health' },
@@ -47,6 +48,7 @@ const getAdminNavItems = (hasClients: boolean) => [
     { href: '/admin/ab-tests', label: 'A/B Tests', disabled: !hasClients },
     { href: '/admin/reputation', label: 'Reputation', disabled: !hasClients },
     { href: '/admin/ai-effectiveness', label: 'AI Performance', disabled: !hasClients },
+    { href: '/admin/kb-gaps', label: 'KB Gap Queue', disabled: !hasClients },
   ]},
   { group: 'Team & Access', items: [
     { href: '/admin/team', label: 'Team' },

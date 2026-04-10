@@ -10,8 +10,8 @@
  */
 
 import { getDb } from '@/db';
-import { leads, clients } from '@/db/schema';
-import { eq, and, gte, lt, inArray, sql } from 'drizzle-orm';
+import { leads, clients, dailyStats, conversations, voiceCalls } from '@/db/schema';
+import { eq, and, gte, lt, inArray, sql, sum } from 'drizzle-orm';
 import { sendAlert } from '@/lib/services/agency-communication';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
@@ -21,6 +21,17 @@ const ESTIMATE_THRESHOLD_DAYS = 21;
 const WON_LOST_THRESHOLD_DAYS = 30;
 const MIN_CLIENT_AGE_DAYS = 60; // only check signal 2 for clients this old
 
+export interface RootCauseHints {
+  /** Inbound missed-call volume change vs prior week: positive = up, negative = down (percentage) */
+  inboundCallTrendPct: number | null;
+  /** Fraction of inbound lead conversations where AI responded (0–1), last 14 days. Null if no data. */
+  aiSuccessRate: number | null;
+  /** Count of inbound voice calls with outcome voicemail/dropped in last 7 days */
+  unansweredMissedCalls: number | null;
+  /** Suggested next action for the operator */
+  suggestedIntervention: string;
+}
+
 export interface EngagementHealth {
   clientId: string;
   status: 'healthy' | 'at_risk' | 'disengaged';
@@ -29,6 +40,8 @@ export interface EngagementHealth {
     daysSinceLastWonLost: number | null;
   };
   recommendations: string[];
+  /** Populated for at_risk / disengaged clients — null for healthy */
+  rootCause: RootCauseHints | null;
 }
 
 export interface EngagementHealthSummary {
@@ -38,6 +51,120 @@ export interface EngagementHealthSummary {
   disengaged: number;
   alertsSent: number;
   errors: string[];
+}
+
+// ── Root cause analysis ───────────────────────────────────────────────────────
+
+async function computeRootCause(clientId: string, now: Date): Promise<RootCauseHints> {
+  const db = getDb();
+
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+  // ISO date strings (YYYY-MM-DD) for the date column
+  const todayStr = now.toISOString().split('T')[0];
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+  const fourteenDaysAgoStr = fourteenDaysAgo.toISOString().split('T')[0];
+
+  // ── Signal A: inbound call volume trend (last 7d vs prior 7d) ────────────
+  const [callVolumeCurrent, callVolumePrior] = await Promise.all([
+    db
+      .select({ total: sum(dailyStats.missedCallsCaptured) })
+      .from(dailyStats)
+      .where(
+        and(
+          eq(dailyStats.clientId, clientId),
+          gte(dailyStats.date, sevenDaysAgoStr),
+          lt(dailyStats.date, todayStr)
+        )
+      ),
+    db
+      .select({ total: sum(dailyStats.missedCallsCaptured) })
+      .from(dailyStats)
+      .where(
+        and(
+          eq(dailyStats.clientId, clientId),
+          gte(dailyStats.date, fourteenDaysAgoStr),
+          lt(dailyStats.date, sevenDaysAgoStr)
+        )
+      ),
+  ]);
+
+  const currentCalls = Number(callVolumeCurrent[0]?.total ?? 0);
+  const priorCalls = Number(callVolumePrior[0]?.total ?? 0);
+
+  let inboundCallTrendPct: number | null = null;
+  if (priorCalls > 0) {
+    inboundCallTrendPct = Math.round(((currentCalls - priorCalls) / priorCalls) * 100);
+  }
+
+  // ── Signal B: AI conversation success rate (last 14d) ────────────────────
+  // Success = AI responded to a lead's inbound message (ai_response vs total inbound leads)
+  const [aiResponseResult, totalInboundResult] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(distinct ${conversations.leadId})` })
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.clientId, clientId),
+          eq(conversations.messageType, 'ai_response'),
+          gte(conversations.createdAt, fourteenDaysAgo)
+        )
+      ),
+    db
+      .select({ count: sql<number>`count(distinct ${conversations.leadId})` })
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.clientId, clientId),
+          eq(conversations.direction, 'inbound'),
+          gte(conversations.createdAt, fourteenDaysAgo)
+        )
+      ),
+  ]);
+
+  const aiResponded = Number(aiResponseResult[0]?.count ?? 0);
+  const totalLeadsWithInbound = Number(totalInboundResult[0]?.count ?? 0);
+  const aiSuccessRate =
+    totalLeadsWithInbound > 0
+      ? Math.round((aiResponded / totalLeadsWithInbound) * 100) / 100
+      : null;
+
+  // ── Signal C: unanswered missed calls (last 7d) ───────────────────────────
+  const [unansweredResult] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(voiceCalls)
+    .where(
+      and(
+        eq(voiceCalls.clientId, clientId),
+        eq(voiceCalls.direction, 'inbound'),
+        inArray(voiceCalls.outcome, ['voicemail', 'dropped']),
+        gte(voiceCalls.createdAt, sevenDaysAgo)
+      )
+    );
+
+  const unansweredMissedCalls = Number(unansweredResult?.count ?? 0);
+
+  // ── Build suggested intervention ──────────────────────────────────────────
+  let suggestedIntervention = 'Schedule a proactive check-in call with the contractor.';
+
+  if (inboundCallTrendPct !== null && inboundCallTrendPct <= -40) {
+    suggestedIntervention = `Check voice routing — inbound call volume dropped ${Math.abs(inboundCallTrendPct)}% this week.`;
+  } else if (unansweredMissedCalls >= 3) {
+    suggestedIntervention = `${unansweredMissedCalls} missed calls went unanswered — verify voice routing and callback workflow.`;
+  } else if (aiSuccessRate !== null && aiSuccessRate < 0.5 && totalLeadsWithInbound > 5) {
+    suggestedIntervention =
+      'AI response rate is low — review KB gaps and consider updating the knowledge base.';
+  } else if (inboundCallTrendPct !== null && inboundCallTrendPct <= -20) {
+    suggestedIntervention = 'Consider launching a Growth Blitz campaign to re-engage lead flow.';
+  }
+
+  return {
+    inboundCallTrendPct,
+    aiSuccessRate,
+    unansweredMissedCalls,
+    suggestedIntervention,
+  };
 }
 
 // ── Per-client check ──────────────────────────────────────────────────────────
@@ -135,6 +262,12 @@ export async function checkEngagementHealth(clientId: string): Promise<Engagemen
     recommendations.push('All engagement signals within healthy thresholds.');
   }
 
+  // ── Root cause analysis (at_risk / disengaged only) ──────────────────────
+  let rootCause: RootCauseHints | null = null;
+  if (status !== 'healthy') {
+    rootCause = await computeRootCause(clientId, now);
+  }
+
   return {
     clientId,
     status,
@@ -143,6 +276,7 @@ export async function checkEngagementHealth(clientId: string): Promise<Engagemen
       daysSinceLastWonLost,
     },
     recommendations,
+    rootCause,
   };
 }
 
@@ -193,7 +327,11 @@ export async function runEngagementHealthCheck(): Promise<EngagementHealthSummar
       if (health.signals.daysSinceLastWonLost !== null) {
         parts.push(`no won/lost updates in ${health.signals.daysSinceLastWonLost} days`);
       }
-      parts.push('Consider proactive check-in.');
+      if (health.rootCause?.suggestedIntervention) {
+        parts.push(health.rootCause.suggestedIntervention);
+      } else {
+        parts.push('Consider proactive check-in.');
+      }
 
       await sendAlert({
         clientId: client.id,

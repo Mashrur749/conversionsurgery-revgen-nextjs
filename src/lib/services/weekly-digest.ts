@@ -8,7 +8,7 @@ import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 /** How many consecutive zero-activity weeks before switching to monthly reassurance. */
 const SLOW_PERIOD_THRESHOLD = 3;
 
-interface DigestStats {
+export interface DigestStats {
   newLeads: number;
   appointmentsBooked: number;
   estimatesInFollowUp: number;
@@ -28,7 +28,7 @@ interface DigestResult {
 /**
  * Compute weekly activity stats for a client.
  */
-async function getWeeklyStats(clientId: string): Promise<DigestStats> {
+export async function getWeeklyStats(clientId: string): Promise<DigestStats> {
   const db = getDb();
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const twentyOneDaysAgo = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000);
@@ -97,7 +97,7 @@ async function getWeeklyStats(clientId: string): Promise<DigestStats> {
 /**
  * Build the SMS message based on activity level.
  */
-function buildDigestMessage(
+export function buildDigestMessage(
   ownerName: string,
   stats: DigestStats,
   consecutiveZeroWeeks: number
