@@ -396,6 +396,11 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
               &larr; {from === 'triage' ? 'Back to Triage' : 'Back to Clients'}
             </Link>
           </Button>
+          <Button asChild variant="outline">
+            <Link href={`/admin/clients/${client.id}/schedule`}>
+              Schedule
+            </Link>
+          </Button>
           <Button asChild variant={client.twilioNumber ? 'outline' : 'default'}>
             <Link href={`/admin/clients/${client.id}/phone`}>
               {client.twilioNumber ? 'Manage Number' : 'Assign Number'}
