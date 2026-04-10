@@ -12,11 +12,13 @@ import {
 import { clients } from './clients';
 import { leads } from './leads';
 import { clientServices } from './client-services';
+import { clientMemberships } from './client-memberships';
 
 export const jobStatusEnum = pgEnum('job_status', [
   'lead',
   'quoted',
   'won',
+  'in_progress',
   'lost',
   'completed',
 ]);
@@ -41,6 +43,12 @@ export const jobs = pgTable(
     address: text('address'),
     scheduledDate: date('scheduled_date'),
     completedDate: date('completed_date'),
+    startDate: date('start_date'),
+    endDate: date('end_date'),
+    assignedMembershipId: uuid('assigned_membership_id').references(
+      () => clientMemberships.id,
+      { onDelete: 'set null' }
+    ),
 
     // Metadata
     wonAt: timestamp('won_at'),

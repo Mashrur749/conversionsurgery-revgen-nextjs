@@ -10,6 +10,7 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
+import { clientMemberships } from './client-memberships';
 
 /** Supported calendar provider types */
 export const calendarProviderEnum = pgEnum('calendar_provider', [
@@ -47,6 +48,11 @@ export const calendarIntegrations = pgTable(
     lastSyncAt: timestamp('last_sync_at'),
     syncDirection: varchar('sync_direction', { length: 20 }).notNull().default('both'), // inbound, outbound, both
 
+    // Per-member calendar connection (nullable — client-level when null)
+    membershipId: uuid('membership_id').references(() => clientMemberships.id, {
+      onDelete: 'set null',
+    }),
+
     // Error tracking
     lastError: text('last_error'),
     consecutiveErrors: integer('consecutive_errors').notNull().default(0),
@@ -57,6 +63,7 @@ export const calendarIntegrations = pgTable(
   (table) => [
     index('idx_calendar_integrations_client').on(table.clientId),
     index('idx_calendar_integrations_provider').on(table.provider),
+    index('idx_calendar_integrations_membership').on(table.membershipId),
   ]
 );
 

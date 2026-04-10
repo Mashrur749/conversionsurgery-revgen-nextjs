@@ -55,6 +55,8 @@ export const clientMemberships = pgTable(
     invitedBy: uuid('invited_by').references(() => people.id, {
       onDelete: 'set null',
     }),
+    /** Per-day working hours as JSON. Nullable — falls back to client-level schedule. */
+    workSchedule: jsonb('work_schedule'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

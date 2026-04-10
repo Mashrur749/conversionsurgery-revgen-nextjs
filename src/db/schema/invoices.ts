@@ -9,6 +9,7 @@ import {
   timestamp,
   index,
   check,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { clients } from './clients';
@@ -41,6 +42,13 @@ export const invoices = pgTable(
     status: varchar('status', { length: 20 }).default('pending'), // pending, reminded, paid, partial, overdue, cancelled, refunded
     paymentLink: varchar('payment_link', { length: 500 }),
     stripeCustomerId: varchar('stripe_customer_id', { length: 100 }),
+    // Milestone invoicing
+    milestoneType: varchar('milestone_type', { length: 20 }).default('standard'), // standard, deposit, progress, final
+    parentInvoiceId: uuid('parent_invoice_id').references(
+      (): AnyPgColumn => invoices.id,
+      { onDelete: 'set null' }
+    ),
+
     notes: text('notes'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -49,6 +57,7 @@ export const invoices = pgTable(
     index('idx_invoices_client').on(table.clientId),
     index('idx_invoices_lead').on(table.leadId),
     index('idx_invoices_status').on(table.status),
+    index('idx_invoices_parent').on(table.parentInvoiceId),
     check('invoice_amounts_consistent', sql`${table.totalAmount} IS NULL OR ${table.paidAmount} IS NULL OR ${table.remainingAmount} IS NULL OR (${table.paidAmount} + ${table.remainingAmount} = ${table.totalAmount})`),
     check('invoice_total_non_negative', sql`${table.totalAmount} IS NULL OR ${table.totalAmount} >= 0`),
     check('invoice_paid_non_negative', sql`${table.paidAmount} IS NULL OR ${table.paidAmount} >= 0`),
