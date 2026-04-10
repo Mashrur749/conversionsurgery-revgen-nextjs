@@ -1,6 +1,6 @@
 import { getDb } from '@/db';
 import { clients, leads, appointments, flowExecutions, clientMemberships, people } from '@/db/schema';
-import { eq, and, gte, sql, ne, count as countFn } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, ne, count as countFn } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getAgency } from '@/lib/services/agency-settings';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
@@ -80,7 +80,7 @@ export async function getWeeklyStats(clientId: string): Promise<DigestStats> {
     .where(and(
       eq(leads.clientId, clientId),
       eq(leads.status, 'estimate_sent'),
-      gte(leads.updatedAt, twentyOneDaysAgo)
+      lte(leads.updatedAt, twentyOneDaysAgo)
     ));
 
   return {
