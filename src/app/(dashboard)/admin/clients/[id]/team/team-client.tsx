@@ -58,11 +58,50 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ChevronDown, Crown, Plus, UserPlus, Users } from 'lucide-react';
+import { ChevronDown, Crown, MessageSquare, Plus, UserPlus, Users } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 interface PermissionOverrides {
   grant?: string[];
   revoke?: string[];
+}
+
+interface WorkDay {
+  working: boolean;
+  start?: string;
+  end?: string;
+}
+
+interface WorkSchedule {
+  monday: WorkDay;
+  tuesday: WorkDay;
+  wednesday: WorkDay;
+  thursday: WorkDay;
+  friday: WorkDay;
+  saturday: WorkDay;
+  sunday: WorkDay;
+}
+
+const DAYS_OF_WEEK: Array<{ key: keyof WorkSchedule; label: string }> = [
+  { key: 'monday', label: 'Monday' },
+  { key: 'tuesday', label: 'Tuesday' },
+  { key: 'wednesday', label: 'Wednesday' },
+  { key: 'thursday', label: 'Thursday' },
+  { key: 'friday', label: 'Friday' },
+  { key: 'saturday', label: 'Saturday' },
+  { key: 'sunday', label: 'Sunday' },
+];
+
+function defaultWorkSchedule(): WorkSchedule {
+  return {
+    monday: { working: false },
+    tuesday: { working: false },
+    wednesday: { working: false },
+    thursday: { working: false },
+    friday: { working: false },
+    saturday: { working: false },
+    sunday: { working: false },
+  };
 }
 
 interface ClientMember {
@@ -83,6 +122,7 @@ interface ClientMember {
   priority: number;
   isActive: boolean;
   joinedAt: string;
+  workSchedule?: WorkSchedule | null;
 }
 
 interface RoleOption {
@@ -145,6 +185,16 @@ export function ClientTeamClient({
   const [editPriority, setEditPriority] = useState(1);
   const [editActive, setEditActive] = useState(true);
 
+  // Work schedule state (for edit dialog)
+  const [editWorkSchedule, setEditWorkSchedule] = useState<WorkSchedule>(defaultWorkSchedule());
+  const [workScheduleOpen, setWorkScheduleOpen] = useState(false);
+
+  // Message dialog state
+  const [messageMember, setMessageMember] = useState<ClientMember | null>(null);
+  const [messageText, setMessageText] = useState('');
+  const [messageSending, setMessageSending] = useState(false);
+  const [messageResult, setMessageResult] = useState<'success' | 'error' | null>(null);
+
   // Transfer ownership state
   const [transferTargetId, setTransferTargetId] = useState('');
   const [transferConfirmName, setTransferConfirmName] = useState('');
@@ -206,6 +256,7 @@ export function ClientTeamClient({
             receiveHotTransfers: editHotTransfers,
             priority: editPriority,
             isActive: editActive,
+            workSchedule: editWorkSchedule,
           }),
         }
       );
@@ -289,6 +340,45 @@ export function ClientTeamClient({
     setEditHotTransfers(member.receiveHotTransfers);
     setEditPriority(member.priority);
     setEditActive(member.isActive);
+    setEditWorkSchedule(member.workSchedule ?? defaultWorkSchedule());
+    setWorkScheduleOpen(false);
+  }
+
+  function updateWorkDay(day: keyof WorkSchedule, field: keyof WorkDay, value: boolean | string) {
+    setEditWorkSchedule((prev) => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value },
+    }));
+  }
+
+  async function handleSendMessage() {
+    if (!messageMember) return;
+    setMessageSending(true);
+    setMessageResult(null);
+    try {
+      const res = await fetch(
+        `/api/admin/clients/${clientId}/team/${messageMember.membershipId}/message`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: messageText }),
+        }
+      );
+      if (!res.ok) {
+        setMessageResult('error');
+        return;
+      }
+      setMessageResult('success');
+      setTimeout(() => {
+        setMessageMember(null);
+        setMessageText('');
+        setMessageResult(null);
+      }, 1500);
+    } catch {
+      setMessageResult('error');
+    } finally {
+      setMessageSending(false);
+    }
   }
 
   function resetAddForm() {
@@ -528,6 +618,25 @@ export function ClientTeamClient({
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
+                              {member.phone && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setMessageMember(member);
+                                        setMessageText('');
+                                        setMessageResult(null);
+                                      }}
+                                    >
+                                      <MessageSquare className="size-4" />
+                                      <span className="sr-only">Message</span>
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Send message</TooltipContent>
+                                </Tooltip>
+                              )}
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -623,6 +732,73 @@ export function ClientTeamClient({
                 />
                 <Label htmlFor="edit-member-active">Active</Label>
               </div>
+
+              {/* S4: Work Schedule */}
+              <Collapsible open={workScheduleOpen} onOpenChange={setWorkScheduleOpen}>
+                <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground w-full">
+                  <ChevronDown
+                    className={`size-4 transition-transform ${workScheduleOpen ? 'rotate-180' : ''}`}
+                  />
+                  Work Schedule
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="ml-auto text-xs text-muted-foreground cursor-default">
+                        What is this?
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      Override this member&apos;s working hours. When unchecked, the client&apos;s
+                      default business hours apply. Use this to reflect part-time or shift schedules.
+                    </TooltipContent>
+                  </Tooltip>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3 space-y-2">
+                  <div className="rounded-md border p-3 space-y-3">
+                    {DAYS_OF_WEEK.map(({ key, label }) => {
+                      const day = editWorkSchedule[key];
+                      return (
+                        <div key={key} className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              id={`sched-${key}`}
+                              checked={day.working}
+                              onCheckedChange={(checked) =>
+                                updateWorkDay(key, 'working', checked === true)
+                              }
+                            />
+                            <Label htmlFor={`sched-${key}`} className="w-24 font-normal">
+                              {label}
+                            </Label>
+                            {day.working && (
+                              <div className="flex items-center gap-2 ml-auto">
+                                <Input
+                                  type="time"
+                                  className="h-7 w-28 text-sm"
+                                  value={day.start ?? '08:00'}
+                                  onChange={(e) => updateWorkDay(key, 'start', e.target.value)}
+                                  aria-label={`${label} start time`}
+                                />
+                                <span className="text-muted-foreground text-sm">to</span>
+                                <Input
+                                  type="time"
+                                  className="h-7 w-28 text-sm"
+                                  value={day.end ?? '17:00'}
+                                  onChange={(e) => updateWorkDay(key, 'end', e.target.value)}
+                                  aria-label={`${label} end time`}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Unchecked days use the client&apos;s business hours by default.
+                  </p>
+                </CollapsibleContent>
+              </Collapsible>
+
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setEditMember(null)}>
                   Cancel
@@ -727,6 +903,77 @@ export function ClientTeamClient({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* S9: Send Message Dialog */}
+        <Dialog
+          open={!!messageMember}
+          onOpenChange={(open) => {
+            if (!open) {
+              setMessageMember(null);
+              setMessageText('');
+              setMessageResult(null);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Message {messageMember?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {messageMember && !messageMember.phone && (
+                <p className="text-sm text-[#C15B2E] bg-[#FFF3E0] p-3 rounded-md">
+                  This team member has no phone number on file and cannot receive SMS messages.
+                </p>
+              )}
+              <div>
+                <Label htmlFor="team-message">Message</Label>
+                <Textarea
+                  id="team-message"
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Type your message here..."
+                  rows={4}
+                  maxLength={1600}
+                  className="mt-1"
+                  disabled={messageSending || messageResult === 'success'}
+                />
+                <p className="text-xs text-muted-foreground mt-1 text-right">
+                  {messageText.length}/1600
+                </p>
+              </div>
+
+              {messageResult === 'success' && (
+                <p className="text-sm text-[#3D7A50] bg-[#E8F5E9] p-3 rounded-md">
+                  Message sent successfully.
+                </p>
+              )}
+              {messageResult === 'error' && (
+                <p className="text-sm text-[#C15B2E] bg-[#FDEAE4] p-3 rounded-md">
+                  Failed to send message. Check that this member has a phone number configured.
+                </p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMessageMember(null);
+                    setMessageText('');
+                    setMessageResult(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!messageText.trim() || messageSending || messageResult === 'success'}
+                >
+                  {messageSending ? 'Sending...' : 'Send Message'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );

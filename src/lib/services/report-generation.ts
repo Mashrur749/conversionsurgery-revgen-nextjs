@@ -17,6 +17,7 @@ import {
   calculateConfirmedRevenueCents,
 } from '@/lib/services/pipeline-value';
 import { getTeamMembers } from '@/lib/services/team-bridge';
+import { getTeamPerformanceSummary, type TeamMemberPerformance } from '@/lib/services/revenue';
 import { sendBiWeeklyReportEmail } from '@/lib/services/report-email';
 import { sendAlert } from '@/lib/services/agency-communication';
 import { getCurrentQuarterlyCampaignSummary } from '@/lib/services/campaign-service';
@@ -426,6 +427,21 @@ export async function generateClientReport(
   };
 
   const teamMemsList = await getTeamMembers(clientId);
+
+  // S11: per-member job attribution — only when the client has more than one active member
+  let teamBreakdown: TeamMemberPerformance[] | null = null;
+  const activeMemberCount = teamMemsList.filter((m) => m.isActive).length;
+  if (activeMemberCount > 1) {
+    try {
+      const breakdown = await getTeamPerformanceSummary(clientId, periodStart);
+      if (breakdown.length > 0) {
+        teamBreakdown = breakdown;
+      }
+    } catch (err) {
+      console.error('[Report] Team breakdown generation failed:', stringifyError(err));
+    }
+  }
+
   const quarterlyCampaignSummary = await getCurrentQuarterlyCampaignSummary(
     clientId,
     new Date(endDate)
@@ -509,6 +525,7 @@ export async function generateClientReport(
   const teamPerformance = {
     totalMembers: teamMemsList.length,
     activeMembers: teamMemsList.filter((teamMember) => teamMember.isActive).length,
+    ...(teamBreakdown ? { breakdown: teamBreakdown } : {}),
   };
 
   const reportTitle =

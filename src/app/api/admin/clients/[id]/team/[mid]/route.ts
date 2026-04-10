@@ -11,6 +11,12 @@ import {
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
+const workDaySchema = z.object({
+  working: z.boolean(),
+  start: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  end: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+});
+
 const updateClientMemberSchema = z.object({
   roleTemplateId: z.string().uuid().optional(),
   permissionOverrides: z.object({
@@ -21,6 +27,15 @@ const updateClientMemberSchema = z.object({
   receiveHotTransfers: z.boolean().optional(),
   priority: z.number().int().min(1).max(10).optional(),
   isActive: z.boolean().optional(),
+  workSchedule: z.object({
+    monday: workDaySchema,
+    tuesday: workDaySchema,
+    wednesday: workDaySchema,
+    thursday: workDaySchema,
+    friday: workDaySchema,
+    saturday: workDaySchema,
+    sunday: workDaySchema,
+  }).optional().nullable(),
 }).strict();
 
 export const PATCH = adminClientRoute<{ id: string; mid: string }>(
@@ -112,6 +127,9 @@ export const PATCH = adminClientRoute<{ id: string; mid: string }>(
     }
     if (validated.isActive !== undefined) {
       updateData.isActive = validated.isActive;
+    }
+    if (validated.workSchedule !== undefined) {
+      updateData.workSchedule = validated.workSchedule;
     }
 
     const [updated] = await db

@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { jobs, revenueEvents, leads, clientServices, invoices } from '@/db/schema';
+import { jobs, revenueEvents, leads, clientServices, invoices, clientMemberships, people } from '@/db/schema';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 
 /**
@@ -366,6 +366,109 @@ export async function createDepositInvoice(
     .returning();
 
   return invoice.id;
+}
+
+export interface MemberJobStats {
+  totalJobs: number;
+  wonJobs: number;
+  completedJobs: number;
+  totalRevenueCents: number;
+}
+
+/**
+ * Retrieves job performance stats for a specific team member on a client.
+ * @param clientId - The client ID (used to scope results to one client)
+ * @param membershipId - The clientMemberships.id of the assigned member
+ * @param since - Optional date filter on jobs.createdAt
+ */
+export async function getJobsByMember(
+  clientId: string,
+  membershipId: string,
+  since?: Date
+): Promise<MemberJobStats> {
+  const db = getDb();
+
+  const conditions = [
+    eq(jobs.clientId, clientId),
+    eq(jobs.assignedMembershipId, membershipId),
+  ];
+  if (since) {
+    conditions.push(gte(jobs.createdAt, since));
+  }
+
+  const [stats] = await db
+    .select({
+      totalJobs: sql<number>`count(*)`,
+      wonJobs: sql<number>`count(*) filter (where ${jobs.status} = 'won' or ${jobs.status} = 'completed')`,
+      completedJobs: sql<number>`count(*) filter (where ${jobs.status} = 'completed')`,
+      totalRevenueCents: sql<number>`coalesce(sum(coalesce(${jobs.finalAmount}, ${jobs.quoteAmount}, 0)) filter (where ${jobs.status} = 'won' or ${jobs.status} = 'completed'), 0)`,
+    })
+    .from(jobs)
+    .where(and(...conditions));
+
+  return {
+    totalJobs: Number(stats?.totalJobs || 0),
+    wonJobs: Number(stats?.wonJobs || 0),
+    completedJobs: Number(stats?.completedJobs || 0),
+    totalRevenueCents: Number(stats?.totalRevenueCents || 0),
+  };
+}
+
+export interface TeamMemberPerformance {
+  membershipId: string;
+  memberName: string;
+  memberRole: string | null;
+  totalJobs: number;
+  wonJobs: number;
+  completedJobs: number;
+  revenueCents: number;
+}
+
+/**
+ * Retrieves per-member job performance for all active team members on a client.
+ * Members with zero assigned jobs are omitted from the result.
+ * @param clientId - The client ID
+ * @param since - Optional date filter on jobs.createdAt
+ */
+export async function getTeamPerformanceSummary(
+  clientId: string,
+  since?: Date
+): Promise<TeamMemberPerformance[]> {
+  const db = getDb();
+
+  // Fetch all active memberships for this client in a single query
+  const activeMembers = await db
+    .select({
+      id: clientMemberships.id,
+      name: people.name,
+    })
+    .from(clientMemberships)
+    .innerJoin(people, eq(clientMemberships.personId, people.id))
+    .where(and(
+      eq(clientMemberships.clientId, clientId),
+      eq(clientMemberships.isActive, true)
+    ));
+
+  if (activeMembers.length === 0) return [];
+
+  // Fetch per-member stats in parallel
+  const results = await Promise.all(
+    activeMembers.map(async (member) => {
+      const stats = await getJobsByMember(clientId, member.id, since);
+      return {
+        membershipId: member.id,
+        memberName: member.name,
+        memberRole: null as string | null, // role is template-based in new auth model
+        totalJobs: stats.totalJobs,
+        wonJobs: stats.wonJobs,
+        completedJobs: stats.completedJobs,
+        revenueCents: stats.totalRevenueCents,
+      };
+    })
+  );
+
+  // Omit members with no assigned jobs
+  return results.filter((r) => r.totalJobs > 0);
 }
 
 /**
