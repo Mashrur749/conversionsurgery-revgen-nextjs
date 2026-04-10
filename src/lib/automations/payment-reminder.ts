@@ -12,6 +12,9 @@ interface PaymentPayload {
   amount?: number;
   dueDate?: string;      // YYYY-MM-DD
   paymentLink?: string;
+  milestoneType?: 'standard' | 'deposit' | 'progress' | 'final';
+  parentInvoiceId?: string;
+  jobId?: string;
 }
 
 interface CreatePaymentLinkParams {
@@ -43,7 +46,7 @@ const PAYMENT_SCHEDULE = [
 export async function startPaymentReminder(payload: PaymentPayload) {
   console.log('[Payments] Starting payment reminder sequence', { leadId: payload.leadId, clientId: payload.clientId });
   const db = getDb();
-  const { leadId, clientId, invoiceNumber, amount, dueDate, paymentLink } = payload;
+  const { leadId, clientId, invoiceNumber, amount, dueDate, paymentLink, milestoneType, parentInvoiceId, jobId } = payload;
 
   // 1. Get client and lead
   const clientResult = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1);
@@ -70,6 +73,9 @@ export async function startPaymentReminder(payload: PaymentPayload) {
       dueDate: dueDate || new Date().toISOString().split('T')[0],
       paymentLink,
       status: 'pending',
+      ...(milestoneType && { milestoneType }),
+      ...(parentInvoiceId && { parentInvoiceId }),
+      ...(jobId && { jobId }),
     })
     .returning();
 
@@ -179,15 +185,16 @@ export async function startPaymentReminder(payload: PaymentPayload) {
 /**
  * Marks an invoice as paid and cancels any remaining payment reminders.
  * Also updates associated pending payments to paid status.
+ * If the invoice is a deposit, automatically creates and starts a final invoice sequence.
  * @param invoiceId - The invoice ID to mark as paid
- * @returns Success status
+ * @returns Success status, plus finalInvoiceId if a final invoice was automatically created
  */
 export async function markInvoicePaid(invoiceId: string, options?: {
   paymentMethod?: string;
   notes?: string;
   paidAt?: Date;
   recordedBy?: string;
-}) {
+}): Promise<{ success: boolean; finalInvoiceId?: string }> {
   console.log('[Payments] Marking invoice as paid', { invoiceId, paymentMethod: options?.paymentMethod });
   const db = getDb();
 
@@ -208,7 +215,11 @@ export async function markInvoicePaid(invoiceId: string, options?: {
     .where(eq(invoices.id, invoiceId))
     .limit(1);
 
+  let finalInvoiceId: string | undefined;
+
   if (invoiceResult.length && invoiceResult[0].leadId) {
+    const invoice = invoiceResult[0];
+
     // Cancel remaining payment reminders
     await db
       .update(scheduledMessages)
@@ -218,7 +229,7 @@ export async function markInvoicePaid(invoiceId: string, options?: {
         cancelledReason: 'Invoice paid',
       })
       .where(and(
-        eq(scheduledMessages.leadId, invoiceResult[0].leadId),
+        eq(scheduledMessages.leadId, invoice.leadId),
         eq(scheduledMessages.sequenceType, 'payment_reminder'),
         eq(scheduledMessages.sent, false),
         eq(scheduledMessages.cancelled, false)
@@ -232,7 +243,44 @@ export async function markInvoicePaid(invoiceId: string, options?: {
         eq(payments.invoiceId, invoiceId),
         eq(payments.status, 'pending')
       ));
+
+    // Deposit → final chain: auto-create final invoice and start reminders when deposit is paid
+    if (invoice.milestoneType === 'deposit') {
+      try {
+        const { createFinalInvoice } = await import('@/lib/services/revenue');
+        finalInvoiceId = await createFinalInvoice(invoiceId);
+
+        // Fetch final invoice to get computed remaining amount
+        const finalInvoiceResult = await db
+          .select()
+          .from(invoices)
+          .where(eq(invoices.id, finalInvoiceId))
+          .limit(1);
+
+        if (finalInvoiceResult.length) {
+          const finalInvoice = finalInvoiceResult[0];
+          const finalAmountDollars = finalInvoice.totalAmount
+            ? finalInvoice.totalAmount / 100
+            : undefined;
+
+          // Start payment reminder sequence — this will schedule SMS reminders for the balance
+          await startPaymentReminder({
+            leadId: invoice.leadId,
+            clientId: invoice.clientId,
+            amount: finalAmountDollars,
+            milestoneType: 'final',
+            parentInvoiceId: invoiceId,
+            jobId: invoice.jobId ?? undefined,
+          });
+        }
+
+        console.log('[Payments] Final invoice created from deposit', { depositInvoiceId: invoiceId, finalInvoiceId });
+      } catch (err) {
+        console.error('[Payments] Failed to create final invoice from deposit:', err);
+        // Non-fatal — deposit confirmation is already complete
+      }
+    }
   }
 
-  return { success: true };
+  return { success: true, ...(finalInvoiceId ? { finalInvoiceId } : {}) };
 }

@@ -11,6 +11,7 @@ export type FunnelEventType =
   | 'quote_sent'
   | 'quote_accepted'
   | 'job_won'
+  | 'job_started'
   | 'job_lost'
   | 'payment_received'
   | 'review_requested'

@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { jobs, revenueEvents, leads, clientServices } from '@/db/schema';
+import { jobs, revenueEvents, leads, clientServices, invoices } from '@/db/schema';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 
 /**
@@ -45,14 +45,41 @@ export async function createJobFromLead(
  */
 export async function updateJobStatus(
   jobId: string,
-  status: 'lead' | 'quoted' | 'won' | 'lost' | 'completed',
+  status: 'lead' | 'quoted' | 'won' | 'in_progress' | 'lost' | 'completed',
   data?: {
     quoteAmount?: number;
     finalAmount?: number;
     lostReason?: string;
+    startDate?: string; // YYYY-MM-DD, used when transitioning to in_progress
   }
 ): Promise<void> {
   const db = getDb();
+
+  // Validate status transitions
+  const [currentJob] = await db
+    .select({ status: jobs.status })
+    .from(jobs)
+    .where(eq(jobs.id, jobId))
+    .limit(1);
+
+  if (!currentJob) throw new Error('Job not found');
+
+  const VALID_TRANSITIONS: Record<string, string[]> = {
+    lead: ['quoted', 'lost'],
+    quoted: ['won', 'lost'],
+    won: ['in_progress', 'completed', 'lost'],
+    in_progress: ['completed', 'lost'],
+    lost: [],
+    completed: [],
+  };
+
+  const allowed = VALID_TRANSITIONS[currentJob.status ?? 'lead'] ?? [];
+  if (!allowed.includes(status)) {
+    throw new Error(
+      `Invalid status transition: ${currentJob.status} → ${status}. Allowed: ${allowed.join(', ') || 'none'}`
+    );
+  }
+
   const updates: Record<string, Date | string | number | undefined> = { status, updatedAt: new Date() };
 
   if (status === 'quoted' && data?.quoteAmount) {
@@ -62,6 +89,10 @@ export async function updateJobStatus(
   if (status === 'won') {
     updates.wonAt = new Date();
     if (data?.finalAmount) updates.finalAmount = data.finalAmount;
+  }
+
+  if (status === 'in_progress') {
+    updates.startDate = data?.startDate ?? new Date().toISOString().split('T')[0];
   }
 
   if (status === 'lost') {
@@ -96,6 +127,13 @@ export async function updateJobStatus(
           leadId: job.leadId,
           eventType: 'job_won',
           valueCents: data?.finalAmount || job.quoteAmount || undefined,
+        });
+      } else if (status === 'in_progress') {
+        await trackFunnelEvent({
+          clientId: job.clientId,
+          leadId: job.leadId,
+          eventType: 'job_started',
+          eventData: { startDate: updates.startDate },
         });
       } else if (status === 'lost') {
         await trackFunnelEvent({
@@ -292,4 +330,93 @@ export async function getRevenueByService(
     totalPipeline: Number(r.totalPipeline),
     totalWonValue: Number(r.totalWonValue),
   }));
+}
+
+/**
+ * Creates a deposit invoice for a job.
+ * The invoice has milestoneType 'deposit' and is linked to the job.
+ * @param jobId - The job ID this deposit is for
+ * @param depositAmountCents - Deposit amount in cents
+ * @param clientId - The client ID
+ * @param leadId - The lead ID
+ * @returns The created invoice ID
+ */
+export async function createDepositInvoice(
+  jobId: string,
+  depositAmountCents: number,
+  clientId: string,
+  leadId: string
+): Promise<string> {
+  const db = getDb();
+
+  const [invoice] = await db
+    .insert(invoices)
+    .values({
+      jobId,
+      clientId,
+      leadId,
+      invoiceNumber: `DEP-${Date.now()}`,
+      totalAmount: depositAmountCents,
+      remainingAmount: depositAmountCents,
+      paidAmount: 0,
+      milestoneType: 'deposit',
+      status: 'pending',
+      dueDate: new Date().toISOString().split('T')[0],
+    })
+    .returning();
+
+  return invoice.id;
+}
+
+/**
+ * Creates the final invoice for a job, chained from a deposit invoice.
+ * Reads the deposit invoice and job to compute the remaining balance
+ * (job.finalAmount - deposit invoice.totalAmount).
+ * @param depositInvoiceId - The deposit invoice ID to chain from
+ * @returns The created final invoice ID
+ */
+export async function createFinalInvoice(depositInvoiceId: string): Promise<string> {
+  const db = getDb();
+
+  // Fetch deposit invoice
+  const [depositInvoice] = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.id, depositInvoiceId))
+    .limit(1);
+
+  if (!depositInvoice) throw new Error('Deposit invoice not found');
+  if (!depositInvoice.jobId) throw new Error('Deposit invoice is not linked to a job');
+
+  // Fetch the job to get final amount
+  const [job] = await db
+    .select()
+    .from(jobs)
+    .where(eq(jobs.id, depositInvoice.jobId))
+    .limit(1);
+
+  if (!job) throw new Error('Job not found for deposit invoice');
+
+  const depositPaid = depositInvoice.totalAmount ?? 0;
+  const totalJobValue = job.finalAmount ?? job.quoteAmount ?? depositPaid;
+  const remainingCents = Math.max(0, totalJobValue - depositPaid);
+
+  const [finalInvoice] = await db
+    .insert(invoices)
+    .values({
+      jobId: depositInvoice.jobId,
+      clientId: depositInvoice.clientId,
+      leadId: depositInvoice.leadId,
+      invoiceNumber: `FIN-${Date.now()}`,
+      totalAmount: remainingCents,
+      remainingAmount: remainingCents,
+      paidAmount: 0,
+      milestoneType: 'final',
+      parentInvoiceId: depositInvoiceId,
+      status: 'pending',
+      dueDate: new Date().toISOString().split('T')[0],
+    })
+    .returning();
+
+  return finalInvoice.id;
 }

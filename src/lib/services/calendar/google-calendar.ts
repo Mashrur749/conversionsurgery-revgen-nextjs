@@ -1,6 +1,6 @@
 import { google, calendar_v3 } from 'googleapis';
 import { getDb, calendarIntegrations, calendarEvents, leads } from '@/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -40,11 +40,16 @@ export function parseOAuthState(state: string): { clientId: string; origin: 'adm
 }
 
 /**
- * Exchange code for tokens and save integration
+ * Exchange code for tokens and save integration.
+ *
+ * @param membershipId - Optional. When provided, the integration is scoped to
+ *   that team member (per-member calendar). When omitted, the integration is a
+ *   client-level (shared) calendar connection.
  */
 export async function handleGoogleCallback(
   code: string,
-  clientId: string
+  clientId: string,
+  membershipId?: string
 ): Promise<void> {
   const { tokens } = await oauth2Client.getToken(code);
 
@@ -56,16 +61,24 @@ export async function handleGoogleCallback(
 
   const db = getDb();
 
-  // Upsert integration
+  // Upsert integration — lookup key includes membershipId so each member can
+  // have their own integration alongside the client-level one.
+  const lookupConditions = membershipId
+    ? and(
+        eq(calendarIntegrations.clientId, clientId),
+        eq(calendarIntegrations.provider, 'google'),
+        eq(calendarIntegrations.membershipId, membershipId)
+      )
+    : and(
+        eq(calendarIntegrations.clientId, clientId),
+        eq(calendarIntegrations.provider, 'google'),
+        isNull(calendarIntegrations.membershipId)
+      );
+
   const [existing] = await db
     .select()
     .from(calendarIntegrations)
-    .where(
-      and(
-        eq(calendarIntegrations.clientId, clientId),
-        eq(calendarIntegrations.provider, 'google')
-      )
-    )
+    .where(lookupConditions)
     .limit(1);
 
   const integrationData = {
@@ -88,6 +101,7 @@ export async function handleGoogleCallback(
     await db.insert(calendarIntegrations).values({
       clientId,
       provider: 'google',
+      membershipId: membershipId ?? null,
       ...integrationData,
     });
   }
@@ -331,25 +345,37 @@ export async function deleteGoogleEvent(
 }
 
 /**
- * Sync events from Google Calendar (inbound)
+ * Sync events from Google Calendar (inbound).
+ *
+ * @param membershipId - Optional. When provided, only that member&apos;s calendar
+ *   integration is used. When omitted, the client-level (shared) integration is used.
  */
 export async function syncFromGoogleCalendar(
   clientId: string,
   startDate: Date,
-  endDate: Date
+  endDate: Date,
+  membershipId?: string
 ): Promise<{ created: number; updated: number }> {
   const db = getDb();
+
+  const integrationConditions = membershipId
+    ? and(
+        eq(calendarIntegrations.clientId, clientId),
+        eq(calendarIntegrations.provider, 'google'),
+        eq(calendarIntegrations.isActive, true),
+        eq(calendarIntegrations.membershipId, membershipId)
+      )
+    : and(
+        eq(calendarIntegrations.clientId, clientId),
+        eq(calendarIntegrations.provider, 'google'),
+        eq(calendarIntegrations.isActive, true),
+        isNull(calendarIntegrations.membershipId)
+      );
 
   const [integration] = await db
     .select()
     .from(calendarIntegrations)
-    .where(
-      and(
-        eq(calendarIntegrations.clientId, clientId),
-        eq(calendarIntegrations.provider, 'google'),
-        eq(calendarIntegrations.isActive, true)
-      )
-    )
+    .where(integrationConditions)
     .limit(1);
 
   if (!integration) return { created: 0, updated: 0 };

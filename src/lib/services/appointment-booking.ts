@@ -6,13 +6,13 @@
  */
 
 import { getDb } from '@/db';
-import { appointments, auditLog, businessHours, calendarEvents, clients, leads, scheduledMessages } from '@/db/schema';
+import { appointments, auditLog, businessHours, calendarEvents, clientMemberships, clients, leads, scheduledMessages } from '@/db/schema';
 import { eq, and, gte, lte, not, inArray, lt, gt } from 'drizzle-orm';
 import { scheduleAppointmentReminders } from '@/lib/automations/appointment-reminder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail } from '@/lib/services/resend';
 import { createEvent } from '@/lib/services/calendar';
-import { format, addDays, addHours, parse, isBefore, isAfter } from 'date-fns';
+import { format, addDays, addMinutes, parse, isBefore, isAfter } from 'date-fns';
 import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
 
 export interface TimeSlot {
@@ -22,23 +22,58 @@ export interface TimeSlot {
   displayTime: string; // "10:00 AM"
 }
 
+/** Shape of a per-day entry in the clientMemberships.workSchedule jsonb column. */
+interface WorkScheduleDay {
+  start: string;     // HH:mm
+  end: string;       // HH:mm
+  isWorking: boolean;
+}
+
+/** The full workSchedule object keyed by day-of-week string (0=Sunday…6=Saturday). */
+type WorkSchedule = Record<string, WorkScheduleDay>;
+
 /**
  * Gets available time slots for a client over the next 7 days.
- * Checks business hours and filters out existing appointments (1-hour blocks).
+ * Checks business hours and filters out existing appointments.
+ *
+ * @param membershipId - Optional. When provided, only checks that member&apos;s calendar
+ *   integration and their appointments. Uses their workSchedule (S4) if set.
+ *   When omitted, falls back to client-level behavior (all calendars, client business hours).
+ * @param durationMinutes - Duration of the appointment in minutes (default 60). A longer
+ *   appointment blocks more consecutive time. Conflict detection uses
+ *   [slotStart, slotStart + durationMinutes) as the occupied window.
  */
 export async function getAvailableSlots(
   clientId: string,
-  preferredDate?: string
+  preferredDate?: string,
+  membershipId?: string,
+  durationMinutes: number = 60
 ): Promise<TimeSlot[]> {
   const db = getDb();
 
-  // Get business hours
+  // --- S4: Determine effective schedule for slot generation ---
+  // When a membershipId is given, check for a member-level workSchedule first.
+  let memberWorkSchedule: WorkSchedule | null = null;
+  if (membershipId) {
+    const [membership] = await db
+      .select({ workSchedule: clientMemberships.workSchedule })
+      .from(clientMemberships)
+      .where(eq(clientMemberships.id, membershipId))
+      .limit(1);
+
+    if (membership?.workSchedule) {
+      memberWorkSchedule = membership.workSchedule as WorkSchedule;
+    }
+  }
+
+  // Get client business hours (used as fallback or when no membershipId provided)
   const hours = await db
     .select()
     .from(businessHours)
     .where(eq(businessHours.clientId, clientId));
 
-  if (hours.length === 0) return [];
+  // If no member work schedule and no business hours, nothing to offer
+  if (!memberWorkSchedule && hours.length === 0) return [];
 
   const hoursByDay = new Map(hours.map(h => [h.dayOfWeek, h]));
 
@@ -46,22 +81,50 @@ export async function getAvailableSlots(
   const startDate = preferredDate || format(new Date(), 'yyyy-MM-dd');
   const endDate = format(addDays(new Date(startDate), 7), 'yyyy-MM-dd');
 
+  // --- S1: Filter appointments by member when membershipId is given ---
+  const appointmentConditions = membershipId
+    ? and(
+        eq(appointments.clientId, clientId),
+        eq(appointments.assignedTeamMemberId, membershipId),
+        gte(appointments.appointmentDate, startDate),
+        lte(appointments.appointmentDate, endDate),
+        not(eq(appointments.status, 'cancelled'))
+      )
+    : and(
+        eq(appointments.clientId, clientId),
+        gte(appointments.appointmentDate, startDate),
+        lte(appointments.appointmentDate, endDate),
+        not(eq(appointments.status, 'cancelled'))
+      );
+
   const existingAppointments = await db
     .select({
       date: appointments.appointmentDate,
       time: appointments.appointmentTime,
+      duration: appointments.durationMinutes,
     })
     .from(appointments)
-    .where(and(
-      eq(appointments.clientId, clientId),
-      gte(appointments.appointmentDate, startDate),
-      lte(appointments.appointmentDate, endDate),
-      not(eq(appointments.status, 'cancelled'))
-    ));
+    .where(appointmentConditions);
 
-  // Get calendar events (e.g. synced from Google Calendar) that overlap the window
+  // Get calendar events that overlap the window
   const windowStart = parse(startDate, 'yyyy-MM-dd', new Date());
   const windowEnd = parse(endDate, 'yyyy-MM-dd', new Date());
+
+  // --- S1: Filter calendar events by member integration when membershipId is given ---
+  const calendarEventConditions = membershipId
+    ? and(
+        eq(calendarEvents.clientId, clientId),
+        eq(calendarEvents.assignedTeamMemberId, membershipId),
+        not(eq(calendarEvents.status, 'cancelled')),
+        lt(calendarEvents.startTime, windowEnd),
+        gt(calendarEvents.endTime, windowStart)
+      )
+    : and(
+        eq(calendarEvents.clientId, clientId),
+        not(eq(calendarEvents.status, 'cancelled')),
+        lt(calendarEvents.startTime, windowEnd),
+        gt(calendarEvents.endTime, windowStart)
+      );
 
   const existingCalendarEvents = await db
     .select({
@@ -69,17 +132,26 @@ export async function getAvailableSlots(
       endTime: calendarEvents.endTime,
     })
     .from(calendarEvents)
-    .where(and(
-      eq(calendarEvents.clientId, clientId),
-      not(eq(calendarEvents.status, 'cancelled')),
-      lt(calendarEvents.startTime, windowEnd),
-      gt(calendarEvents.endTime, windowStart)
-    ));
+    .where(calendarEventConditions);
 
-  // Build blocked time set
-  const blockedSlots = new Set(
-    existingAppointments.map(a => `${a.date}|${a.time.substring(0, 5)}`)
-  );
+  // Build blocked time set — appointments block [appointmentStart, appointmentStart + duration)
+  // Each appointment occupies N consecutive hourly slots based on its duration.
+  const blockedSlots = new Set<string>();
+  for (const appt of existingAppointments) {
+    const apptStart = parse(
+      `${appt.date} ${appt.time.substring(0, 5)}`,
+      'yyyy-MM-dd HH:mm',
+      new Date()
+    );
+    const apptDuration = appt.duration ?? 60;
+    const apptEnd = addMinutes(apptStart, apptDuration);
+    // Mark every hourly slot that overlaps with [apptStart, apptEnd)
+    let cursor = apptStart;
+    while (isBefore(cursor, apptEnd)) {
+      blockedSlots.add(`${appt.date}|${format(cursor, 'HH:mm')}`);
+      cursor = addMinutes(cursor, 60);
+    }
+  }
 
   // Generate available slots
   const slots: TimeSlot[] = [];
@@ -89,17 +161,35 @@ export async function getAvailableSlots(
     const date = addDays(new Date(startDate), i);
     const dayOfWeek = date.getDay();
     const dateStr = format(date, 'yyyy-MM-dd');
-    const dayHours = hoursByDay.get(dayOfWeek);
 
-    if (!dayHours || !dayHours.isOpen || !dayHours.openTime || !dayHours.closeTime) {
-      continue;
+    // --- S4: Resolve effective open/close times for this day ---
+    let openTime: string | null = null;
+    let closeTime: string | null = null;
+
+    if (memberWorkSchedule) {
+      const dayEntry = memberWorkSchedule[String(dayOfWeek)];
+      if (!dayEntry?.isWorking) continue;
+      openTime = dayEntry.start;
+      closeTime = dayEntry.end;
+    } else {
+      const dayHours = hoursByDay.get(dayOfWeek);
+      if (!dayHours || !dayHours.isOpen || !dayHours.openTime || !dayHours.closeTime) continue;
+      openTime = dayHours.openTime;
+      closeTime = dayHours.closeTime;
     }
 
-    // Generate hourly slots within business hours
-    const [openHour, openMin] = dayHours.openTime.split(':').map(Number);
-    const [closeHour] = dayHours.closeTime.split(':').map(Number);
+    if (!openTime || !closeTime) continue;
 
-    for (let hour = openHour; hour < closeHour; hour++) {
+    // --- S2: Generate slots at hourly intervals, ensuring durationMinutes fits before close ---
+    const [openHour, openMin] = openTime.split(':').map(Number);
+    const [closeHour, closeMin] = closeTime.split(':').map(Number);
+    const closeTotalMins = closeHour * 60 + closeMin;
+
+    for (let hour = openHour; ; hour++) {
+      const slotStartMins = hour * 60 + openMin;
+      // Slot must start + duration fit before close
+      if (slotStartMins + durationMinutes > closeTotalMins) break;
+
       const timeStr = `${String(hour).padStart(2, '0')}:${String(openMin).padStart(2, '0')}`;
       const slotDateTime = parse(`${dateStr} ${timeStr}`, 'yyyy-MM-dd HH:mm', new Date());
 
@@ -109,8 +199,8 @@ export async function getAvailableSlots(
       // Skip slots blocked by existing appointments
       if (blockedSlots.has(`${dateStr}|${timeStr}`)) continue;
 
-      // Skip slots blocked by calendar events (overlap: event.startTime < slotEnd AND event.endTime > slotStart)
-      const slotEnd = addHours(slotDateTime, 1);
+      // --- S2: Conflict window spans the full duration of the new appointment ---
+      const slotEnd = addMinutes(slotDateTime, durationMinutes);
       const hasCalendarConflict = existingCalendarEvents.some(
         event => isBefore(event.startTime, slotEnd) && isAfter(event.endTime, slotDateTime)
       );
@@ -165,13 +255,17 @@ export function suggestSlots(
 /**
  * Books an appointment and schedules reminders for both parties.
  * Returns the formatted confirmation message.
+ *
+ * @param durationMinutes - Duration of the appointment in minutes (default 60). Saved to
+ *   the appointment record and used to compute the calendar event end time (S2).
  */
 export async function bookAppointment(
   clientId: string,
   leadId: string,
   date: string,
   time: string,
-  address?: string
+  address?: string,
+  durationMinutes: number = 60
 ): Promise<{
   success: boolean;
   appointmentId?: string;
@@ -233,6 +327,16 @@ export async function bookAppointment(
 
   if (!result.success) {
     return { success: false, error: result.reason };
+  }
+
+  // S2: Persist durationMinutes on the appointment record. scheduleAppointmentReminders
+  // creates the appointment with the DB default (60 min); we update it here to avoid
+  // modifying the automation's payload shape.
+  if (result.appointmentId && durationMinutes !== 60) {
+    await db
+      .update(appointments)
+      .set({ durationMinutes, updatedAt: new Date() })
+      .where(eq(appointments.id, result.appointmentId));
   }
 
   // Schedule contractor notification (evening before + 1 hour before)
@@ -427,13 +531,14 @@ export async function bookAppointment(
   // Create calendar event if client has calendar integration.
   // assignedTeamMemberId is populated with the primary routing recipient so
   // subsequent reminders can be directed to the specific assigned crew member.
+  // S2: endTime uses the actual appointment duration instead of a hardcoded +1 hour.
   try {
     await createEvent({
       clientId,
       leadId,
       title: `${lead.projectType || 'Service Call'}: ${lead.name || 'Customer'}`,
       startTime: appointmentDateTime,
-      endTime: addHours(appointmentDateTime, 1),
+      endTime: addMinutes(appointmentDateTime, durationMinutes),
       location: lead.address || undefined,
       timezone: client.timezone || 'America/New_York',
       eventType: 'estimate',
