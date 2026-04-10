@@ -115,15 +115,26 @@ The AI requires an address before confirming any booking. When no address is on 
 - Sent through compliance gateway with quiet-hours queueing
 - **Email fallback:** if compliance blocks all SMS recipients for a booking notification (e.g., quiet hours, opt-out), the system falls back to email notification so the contractor is never left uninformed
 
+### Appointment Duration &amp; Multi-Day Jobs
+
+Appointments support configurable duration (default 60 minutes). Multi-day jobs (e.g., 3-day HVAC install) can span multiple dates with `endDate`.
+
+- `durationMinutes` field on appointments &mdash; AI booking and manual booking both save the actual duration
+- `getAvailableSlots()` blocks the full duration window, not just 1 hour
+- Calendar events use actual duration for Google Calendar sync (`endTime = startTime + durationMinutes`)
+- Multi-day: when `endDate` is set, all days in range are blocked from slot generation
+
 ### Google Calendar Two-Way Sync
 
-Contractors can connect their Google Calendar so platform appointments and external calendar events stay in sync automatically.
+Contractors and team members can connect their Google Calendar so platform appointments and external calendar events stay in sync automatically.
+
+**Per-member calendar integration:** each team member can connect their own Google Calendar from the portal. The system checks ALL connected calendars (business-level + all member calendars) when generating available slots. When booking for a specific member, only that member&apos;s calendar is checked.
 
 | Capability | Detail |
 |------------|--------|
-| **OAuth connection** | Contractor connects via Google OAuth (read/write scope). Tokens stored securely and refreshed automatically. |
+| **OAuth connection** | Contractor or team member connects via Google OAuth. `membershipId` on `calendar_integrations` identifies per-member connections (null = business-level). |
 | **Bidirectional sync** | Platform appointments push to Google Calendar as events. Google Calendar events pull into the platform and block booking slots. |
-| **Availability checking** | `getAvailableSlots()` checks both the `appointments` table and `calendar_events` table — Google Calendar events prevent double-booking. |
+| **Per-member availability** | `getAvailableSlots(membershipId)` checks that member&apos;s calendar + their `workSchedule` (per-day start/end times stored as jsonb on `clientMemberships`). Falls back to client `businessHours` when no member schedule is set. |
 | **Auto-sync cadence** | Cron job (`/api/cron/calendar-sync`) runs every 15 minutes, syncing all active integrations. |
 | **Event lifecycle** | Create, update, and delete operations propagate both directions. |
 | **Admin connection** | Operator can connect/disconnect a client&apos;s calendar from the client detail page (Configuration tab). |
@@ -155,7 +166,11 @@ Triggered via `POST /api/sequences/payment` with invoice details. Auto-generates
 | 3 | Day 7, 10am | 7 days past due |
 | 4 | Day 14, 10am | Final reminder |
 
-Stripe webhook confirms payment &rarr; cancels remaining reminders &rarr; sends confirmation SMS to both lead and owner. Supports partial payments.
+Stripe webhook confirms payment &rarr; cancels remaining reminders &rarr; sends confirmation SMS to both lead and owner. Supports partial payments. All payment templates include &ldquo;To pay by phone, call [businessPhone]&rdquo; alternative for non-tech-savvy homeowners.
+
+**Deposit &rarr; final payment chain:** invoices have a `milestoneType` (deposit, progress, final, standard) and `parentInvoiceId` for chaining. When a deposit invoice is marked paid, the system auto-creates a final invoice for the remaining balance and starts the payment reminder sequence for it. This eliminates manual tracking of split payments for $5K+ jobs.
+
+**Portal invoice creation:** contractors can create invoices from the portal (`POST /api/client/invoices`) with amount, due date, milestone type, and optional job link. Mark Paid (cash/check) available for non-Stripe payments.
 
 ### Review Generation
 
@@ -322,9 +337,11 @@ Replaces text threads, sticky notes, and memory with one unified system.
 
 ### Lead Pipeline
 
-Stages: `new` &rarr; `contacted` &rarr; `estimate_sent` &rarr; `appointment_scheduled` &rarr; `won` &rarr; `completed` / `lost`
+Stages: `new` &rarr; `contacted` &rarr; `estimate_sent` &rarr; `appointment_scheduled` &rarr; `won` &rarr; `in_progress` &rarr; `completed` / `lost`
 
-Special states: `action_required` (needs human attention), `opted_out`, `dormant`
+Job lifecycle: `won` &rarr; `in_progress` (sets startDate, fires `job_started` funnel event) &rarr; `completed` (sets completedDate, triggers review request). Status guard prevents invalid transitions.
+
+Special states: `action_required` (needs human attention), `opted_out`, `dormant` (auto-promoted to `contacted` on inbound reply)
 
 ### Lead Intelligence
 
@@ -368,6 +385,11 @@ Every lead accumulates:
 - **Team member SMS commands:** any active team member can text EST [name] (trigger estimate follow-up) or NOSHOW [name] (mark appointment no-show) from their personal phone — not just the owner. Command auth checks `clientMemberships` for the sender&apos;s phone.
 - **Escalation batching:** when 3+ escalations fire within 30 minutes, team members receive a single summary SMS instead of individual notifications per lead
 - **Crew availability toggle:** `availabilityStatus` field on team memberships (available/busy/off_duty). Busy or off-duty members are automatically excluded from ring groups and escalation routing.
+- **Per-member work schedule:** admin can set per-day working hours (start/end time, working flag) for each team member via the team edit dialog. Stored as `workSchedule` jsonb. Used by `getAvailableSlots()` when booking for a specific member.
+- **Dispatch/schedule view:** visual 7-day grid at `/admin/clients/[id]/schedule` showing all team members&apos; appointments color-coded by member. Inline reassignment via native select dropdown. Unassigned appointments highlighted. Linked from client detail header.
+- **Appointment reassignment:** `PATCH /api/admin/clients/[id]/appointments/[appointmentId]` with `{ assignedTeamMemberId }`. Cascades to linked calendar events.
+- **Operator &rarr; team member messaging:** admin can send SMS to any team member via &ldquo;Message&rdquo; button on team page. Routes through compliance gateway.
+- **Bulk lead messaging:** `POST /api/admin/clients/[id]/leads/bulk-message` sends to leads matching status/source filter. Capped at 50 per request.
 
 ### Conversation Modes
 
@@ -619,6 +641,7 @@ Auto-generated and delivered to clients every 2 weeks:
 - **&ldquo;Leads at Risk&rdquo; model:** Conservative/Likely/Optimistic directional estimate of leads that would have waited 40+ minutes for a response (with disclaimer). The response-time baseline used for the &ldquo;without us&rdquo; comparison is per-client: if the client has a `previousResponseTimeMinutes` value set, it overrides the platform default (42 min), making the comparison accurate to what that contractor was actually doing before.
 - **Confirmed Won revenue:** reports show &quot;Confirmed Won: $X&quot; alongside pipeline estimates, based on contractor-entered actual job values when marking leads &quot;won&quot;
 - **Pipeline Proof (`pipelineProof` in `roiSummary`):** 6 auto-tracked metrics added to every report — leads responded to, estimates in follow-up, missed calls caught, dead quotes re-engaged, appointments booked, and average response time. `probablePipelineValue` is calculated automatically as (appointments booked + reactivated quotes) &times; avg project value ($40K default). These metrics require zero contractor action and prove system value even before any wins are confirmed.
+- **Per-member team breakdown:** for clients with &gt;1 active team member, reports include a `teamBreakdown` section showing per-member job counts and revenue totals (based on `jobs.assignedMembershipId`). Omitted for solo operators. Non-fatal &mdash; failure to compute breakdown does not block report generation.
 - Versioned output — shows `ready` or `insufficient_data` (never fabricates)
 
 ### Weekly Activity Digest
@@ -882,6 +905,8 @@ The admin nav has 5 groups. `/admin` redirects to `/admin/triage`. Updated 2026-
 | **Settings** | Agency Settings, Phone Numbers (with Twilio balance badge), Twilio Account, Voice AI (client selector + Settings/Testing tabs), Webhook Logs, Email Templates, API Keys, System Settings (diagnostics collapsed by default) |
 
 **Key changes (2026-04-09):** Template Performance merged into Flow Analytics. Compliance moved from Settings to Reporting. Roles/Users collapsed into Team sub-tabs. Discussions renamed to Support. AI Quality renamed to AI Flagged Responses. AI Effectiveness renamed to AI Performance. Platform Analytics no longer duplicates MRR/churn from Billing. Voice AI uses client selector instead of per-client accordion.
+
+**Key changes (2026-04-10):** Agency Summary added to Reporting (cross-client weekly stats). KB Gap Queue added to Optimization (cross-client knowledge gaps). Client detail: Schedule page added (visual dispatch/calendar view with team member appointment reassignment).
 
 ### Admin Client Detail Page Structure
 
