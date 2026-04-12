@@ -117,6 +117,8 @@ These sit in `pending_manual` until explicitly approved. You must reply `SEND [r
 
 **This is your retention touchpoint.** The auto-SMS handles the nudge, but you should still proactively engage if the report is thin or you notice declining metrics. Even if the report is short.
 
+**Triggering estimate follow-up from the admin dashboard:** When reviewing a client&apos;s leads during a call and the contractor confirms they sent a quote, open the client detail page &rarr; Overview tab &rarr; &ldquo;Leads Needing Follow-up&rdquo; card. Click &ldquo;Start Follow-up&rdquo; next to the lead. The system starts the estimate follow-up sequence immediately &mdash; no need to ask the contractor to text EST.
+
 ---
 
 ## 5. Guarantee Evaluation

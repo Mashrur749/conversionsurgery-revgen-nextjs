@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "${ROOT_DIR}"

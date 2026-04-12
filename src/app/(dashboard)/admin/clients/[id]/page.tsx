@@ -32,6 +32,7 @@ import { CalendarIntegrationCard } from './calendar-integration-card';
 import { getClientKnowledge, initializeClientKnowledge } from '@/lib/services/knowledge-base';
 import { loadStructuredKnowledge } from '@/lib/services/structured-knowledge';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { LeadsNeedingFollowupCard } from './leads-needing-followup-card';
 import { SendPaymentLink } from './send-payment-link';
 import { DataExportButton } from './data-export-button';
 import { DncCard } from './dnc-card';
@@ -415,6 +416,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
         teamMemberCount={members.length}
         onboardingChecklist={onboardingChecklist}
         roiDashboard={<ROIDashboard metrics={roiMetrics} />}
+        leadsNeedingFollowupCard={<LeadsNeedingFollowupCard clientId={id} />}
         usageCard={
           <Card>
             <CardHeader>
