@@ -13,6 +13,7 @@ interface ClientDetailTabsProps {
   /* Tab 1: Overview */
   onboardingChecklist: ReactNode | null;
   roiDashboard: ReactNode;
+  leadsNeedingFollowupCard?: ReactNode;
   dayOneActivationCard: ReactNode;
   guaranteeStatusCard?: ReactNode;
   engagementHealthBadge?: ReactNode;
@@ -46,6 +47,7 @@ export function ClientDetailTabs({
   teamMemberCount,
   onboardingChecklist,
   roiDashboard,
+  leadsNeedingFollowupCard,
   dayOneActivationCard,
   guaranteeStatusCard,
   engagementHealthBadge,
@@ -108,6 +110,7 @@ export function ClientDetailTabs({
         {engagementHealthBadge}
         {onboardingChecklist}
         {roiDashboard}
+        {leadsNeedingFollowupCard}
         {guaranteeStatusCard}
         {dayOneActivationCard}
         {onboardingQualityPanel}
