@@ -427,6 +427,26 @@ export async function handleAgencyInboundSMS(payload: {
     return;
   }
 
+  // ── Handle S/SKIP for revenue entry (skip recording job value) ──
+  if (
+    pendingPrompt.promptType === "won_revenue_entry" &&
+    (normalizedReply === "S" || normalizedReply === "SKIP")
+  ) {
+    await db
+      .update(agencyMessages)
+      .set({ actionStatus: "replied", clientReply: body })
+      .where(eq(agencyMessages.id, pendingPrompt.id));
+
+    await sendAgencySMS({
+      clientId: client.id,
+      toPhone: client.phone,
+      body: "Skipped. Using your average job value for reporting.",
+      category: "reply",
+      inReplyTo: pendingPrompt.id,
+    });
+    return;
+  }
+
   // ── Handle numbered reply against pending prompt options ──
   const payloadOptions = extractPromptOptions(pendingPrompt.actionPayload);
   if (payloadOptions.length > 0 && isNumberedReply(body)) {
@@ -1135,6 +1155,162 @@ async function notifyPromptFallback(
       ${errorMessage ? `<p><strong>Error:</strong> ${errorMessage}</p>` : ""}
     `,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Cross-route: handle agency prompt replies that arrive on the business number
+// ---------------------------------------------------------------------------
+
+/**
+ * Try to resolve a contractor's reply against a pending agency prompt.
+ * Called from incoming-sms.ts when an authorized sender's message doesn't
+ * match any business-channel command. This handles the case where the
+ * contractor replies to a nudge/prompt on the wrong number.
+ *
+ * Returns true if the reply was handled, false to fall through.
+ */
+export async function tryResolveAgencyPromptCrossRoute(params: {
+  clientId: string;
+  clientPhone: string;
+  clientBusinessName: string;
+  replyBody: string;
+}): Promise<boolean> {
+  const { clientId, clientPhone, clientBusinessName, replyBody } = params;
+  const body = replyBody.trim();
+  const normalizedReply = body.toUpperCase();
+  const db2 = getDb();
+
+  // Find most recent pending prompt for this client
+  const [pendingPrompt] = await db2
+    .select()
+    .from(agencyMessages)
+    .where(
+      and(
+        eq(agencyMessages.clientId, clientId),
+        eq(agencyMessages.actionStatus, "pending"),
+        gte(agencyMessages.expiresAt, new Date()),
+      ),
+    )
+    .orderBy(desc(agencyMessages.createdAt))
+    .limit(1);
+
+  if (!pendingPrompt) return false;
+
+  const client = { id: clientId, phone: clientPhone, businessName: clientBusinessName };
+
+  // Check for numbered reply against prompt options
+  const payloadOptions = extractPromptOptions(pendingPrompt.actionPayload);
+  if (payloadOptions.length > 0 && isNumberedReply(body)) {
+    const parsed = parseNumberedReply(body, payloadOptions.length);
+    if (parsed.matched) {
+      // Log cross-route for observability
+      console.log(
+        `[Agency CrossRoute] Handling numbered reply on business channel: client=${clientBusinessName}, reply=${body}`,
+      );
+      const handled = await executeNumberedReply(
+        clientId,
+        clientPhone,
+        pendingPrompt,
+        payloadOptions,
+        parsed,
+        pendingPrompt.id,
+      );
+      if (handled) return true;
+    }
+  }
+
+  // Check for binary 1/2 as YES/NO on prompts without numbered options
+  if (payloadOptions.length === 0 && (normalizedReply === "1" || normalizedReply === "2")) {
+    const syntheticReply = normalizedReply === "1" ? "YES" : "NO";
+    console.log(
+      `[Agency CrossRoute] Handling ${syntheticReply} reply on business channel: client=${clientBusinessName}`,
+    );
+    await handleAgencyYesNoReply(client, pendingPrompt, pendingPrompt.id, syntheticReply, body);
+    return true;
+  }
+
+  // Check for YES/Y/NO/N
+  if (normalizedReply === "YES" || normalizedReply === "Y") {
+    console.log(
+      `[Agency CrossRoute] Handling YES reply on business channel: client=${clientBusinessName}`,
+    );
+    await handleAgencyYesNoReply(client, pendingPrompt, pendingPrompt.id, "YES", body);
+    return true;
+  }
+  if (normalizedReply === "NO" || normalizedReply === "N") {
+    console.log(
+      `[Agency CrossRoute] Handling NO reply on business channel: client=${clientBusinessName}`,
+    );
+    await handleAgencyYesNoReply(client, pendingPrompt, pendingPrompt.id, "NO", body);
+    return true;
+  }
+
+  // Check for revenue entry (numeric reply to won_revenue_entry prompt)
+  if (
+    pendingPrompt.promptType === "won_revenue_entry" &&
+    /^\d[\d,.\s]*$/.test(body)
+  ) {
+    console.log(
+      `[Agency CrossRoute] Handling revenue entry on business channel: client=${clientBusinessName}`,
+    );
+    const raw = body.replace(/[,\s]/g, "").replace(/\..*$/, "");
+    const dollars = parseInt(raw, 10);
+    const leadId =
+      typeof (pendingPrompt.actionPayload as Record<string, unknown>)?.leadId === "string"
+        ? ((pendingPrompt.actionPayload as Record<string, unknown>).leadId as string)
+        : null;
+
+    if (leadId && !isNaN(dollars) && dollars > 0) {
+      await db2
+        .update(leads)
+        .set({ confirmedRevenue: dollars * 100, updatedAt: new Date() })
+        .where(and(eq(leads.id, leadId), eq(leads.clientId, clientId)));
+
+      await db2
+        .update(agencyMessages)
+        .set({ actionStatus: "executed", clientReply: body })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
+
+      await sendAgencySMS({
+        clientId,
+        toPhone: clientPhone,
+        body: `Logged. Job value set to $${dollars.toLocaleString()}. Thanks!`,
+        category: "reply",
+        inReplyTo: pendingPrompt.id,
+      });
+    } else {
+      await sendAgencySMS({
+        clientId,
+        toPhone: clientPhone,
+        body: "Could not read that amount. Please reply with a whole number (e.g. 55000).",
+        category: "reply",
+        inReplyTo: pendingPrompt.id,
+      });
+    }
+    return true;
+  }
+
+  // Check for S/SKIP on revenue entry
+  if (
+    pendingPrompt.promptType === "won_revenue_entry" &&
+    (normalizedReply === "S" || normalizedReply === "SKIP")
+  ) {
+    await db2
+      .update(agencyMessages)
+      .set({ actionStatus: "replied", clientReply: body })
+      .where(eq(agencyMessages.id, pendingPrompt.id));
+
+    await sendAgencySMS({
+      clientId,
+      toPhone: clientPhone,
+      body: "Skipped. Using your average job value for reporting.",
+      category: "reply",
+      inReplyTo: pendingPrompt.id,
+    });
+    return true;
+  }
+
+  return false;
 }
 
 // ---------------------------------------------------------------------------

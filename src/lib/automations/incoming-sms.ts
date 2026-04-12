@@ -462,6 +462,22 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         leadId: outcomeCommandResult.leadId,
       };
     }
+
+    // Cross-route: handle replies to agency prompts that arrive on the business number.
+    // Contractors reply to whichever thread is open — this catches nudge/prompt replies
+    // that land here instead of the agency number.
+    const { tryResolveAgencyPromptCrossRoute } = await import(
+      '@/lib/services/agency-communication'
+    );
+    const crossRouted = await tryResolveAgencyPromptCrossRoute({
+      clientId: client.id,
+      clientPhone: client.phone,
+      clientBusinessName: client.businessName,
+      replyBody: messageBody,
+    });
+    if (crossRouted) {
+      return { processed: true, action: 'agency_prompt_crossroute' };
+    }
   }
 
   // 2. Handle opt-out
