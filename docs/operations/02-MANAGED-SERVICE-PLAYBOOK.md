@@ -1022,25 +1022,42 @@ Sync runs every 15 minutes via the `calendar-sync` cron. Connection requires Goo
 
 ## 17. Probable Wins Nudge + WON/LOST Commands
 
-**What it is:** A daily automated SMS (10am UTC) to the contractor asking about leads that had appointments 7+ days ago but no outcome recorded. Each lead gets a short reference code (e.g., &ldquo;4A&rdquo;). Message: &ldquo;Did you win [Name]&apos;s [project]? Ref 4A. Reply WON 4A or LOST 4A to your business number.&rdquo;
+**What it is:** A daily automated SMS (10am UTC) to the contractor asking about leads that had appointments 7+ days ago but no outcome recorded. Up to 5 leads per client are batched into a single SMS with numbered options.
 
-**Contractor SMS commands (from their business number):**
+**Message format (single lead):**
+> Sarah T. &mdash; basement dev. Did you win it?
+> W = Won  L = Lost  0 = Skip
 
-| Command | Example | What happens |
-|---------|---------|-------------|
-| WON [ref] | WON 4A | Marks lead won, logs revenue (client avg project value), triggers review request |
-| WON [ref] [amount] | WON 4A 55000 | Same but with explicit $55K revenue |
-| LOST [ref] | LOST 4A | Marks lead lost, cancels follow-up sequences |
-| WINS | WINS | Lists up to 10 recent leads with pending outcomes + ref codes |
-| PAUSE | PAUSE | Pauses all automation &mdash; AI mode off, scheduled messages cancelled |
-| RESUME | RESUME | Resumes automation &mdash; AI mode back to autonomous |
+**Message format (multiple leads):**
+> 3 jobs &mdash; won or lost?
+> 1. Sarah &mdash; basement dev
+> 2. Kyle &mdash; legal suite
+> 3. Mike &mdash; basement finish
+> W + numbers = won, L + numbers = lost
+> e.g. W13 L2. Reply 0 to skip.
 
-**Why it matters:** Without this, pipeline reports show $0 confirmed revenue even when contractors are winning jobs. The WON/LOST commands let them report outcomes in 2 seconds from their truck &mdash; no portal login needed.
+**Contractor reply syntax (replies work on EITHER phone number):**
 
-**During onboarding:** explain the WON/LOST commands: &ldquo;When a job closes, text WON [name] to your business number. That&apos;s how we track your results for the guarantee.&rdquo;
+| Reply | Example | What happens |
+|-------|---------|-------------|
+| W + numbers | W1 or W13 | Marks those leads as won, triggers review request + revenue prompt |
+| L + numbers | L2 | Marks those leads as lost, cancels follow-up sequences |
+| W or L (bare) | W | All leads won / all lost |
+| Mixed | W13 L2 | Won 1 and 3, lost 2 &mdash; all in one reply |
+| 0 | 0 | Skip all &mdash; leads roll to next week |
+| PAUSE | PAUSE | Pauses all automation |
+| RESUME | RESUME | Resumes automation |
+
+**Legacy commands still work:** `WON 4A`, `LOST 4A`, `WINS` &mdash; for contractors who prefer the old format or are replying from the portal conversation view.
+
+**Cross-route:** Contractors can reply to the nudge on either the agency number or the business number. The system detects pending prompts on both channels and handles the reply correctly. No training needed &mdash; contractors reply to whichever thread is open on their phone.
+
+**Why it matters:** Without this, pipeline reports show $0 confirmed revenue even when contractors are winning jobs. The numbered replies let them report outcomes in 1-5 characters from their truck &mdash; no ref codes to remember, no portal login needed.
+
+**During onboarding:** explain the system briefly: &ldquo;You&apos;ll get a text each week asking about your recent appointments. Reply W for won, L for lost &mdash; one character. That&apos;s how we track results for the guarantee.&rdquo;
 
 Script:
-> &quot;Every week, the system will text you about leads that had appointments but we don&apos;t know the outcome yet. Just reply YES or NO &mdash; it takes 2 seconds. This is how we track your wins and make sure the reports show real numbers.&quot;
+> &quot;Every week, the system will text you a numbered list of recent appointments and ask if you won or lost them. Just reply W1, L2 &mdash; whatever the outcome is. Takes 2 seconds. This is how we track your wins and make sure the reports show real numbers.&quot;
 
 If a contractor asks to stop receiving these nudges, they can be disabled per-client in admin settings. Note that disabling them will cause win-rate reporting to drift unless the contractor updates outcomes manually.
 

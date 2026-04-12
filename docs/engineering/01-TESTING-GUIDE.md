@@ -1735,32 +1735,49 @@ Combined verification for six features shipped after Wave 7: Probable Wins Nudge
 curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-3. Verify `Owner Dev Phone (#3)` receives an SMS via the agency line with outcome reference code: &ldquo;Did you win [Lead Name]&apos;s [project type]? Ref [code]. Reply WON [code] or LOST [code] to your business number.&rdquo;
+3. Verify `Owner Dev Phone (#3)` receives a **batched numbered SMS** via the agency line. Single lead: &ldquo;[Name] &mdash; [project]. Did you win it? W = Won, L = Lost, 0 = Skip.&rdquo; Multiple leads: numbered list with compact reply syntax (e.g., &ldquo;W13 L2&rdquo;).
 4. Verify response payload includes `nudged >= 1`.
 5. Run the cron again immediately &mdash; verify the 7-day cooldown prevents a second nudge (no SMS sent, `nudged = 0`).
+6. Reply `W1` (or `W` for single lead) &mdash; verify lead marked `won`, review request scheduled, revenue prompt follows.
+7. Reply `W13 L2` for a multi-lead nudge &mdash; verify leads 1 and 3 marked `won`, lead 2 marked `lost`.
+8. Reply `0` &mdash; verify all leads skipped, prompt marked replied.
+9. **Cross-route test:** Reply to the numbered nudge on the **business Twilio number** instead of the agency number. Verify the reply is still handled correctly (cross-route detection).
 
 Expected:
 
-- Nudge is sent only for unresolved leads with 7+ day old completed/confirmed appointments.
+- Up to 5 leads per client batched into a single SMS with numbered options.
 - 7-day per-client cooldown is enforced (checked via `agencyMessages` with `promptType = 'won_lost_nudge'`).
-- Each lead is nudged at most once per run. Message includes outcome reference code.
+- Each lead is nudged at most once per run. `actionPayload.options` contains the numbered list.
 - Clients with no phone number or `status=paused` are skipped.
+- Replies work on both the agency number and the business number (cross-route).
 
-#### 58b: WON/LOST/WINS SMS Commands
+#### 58b: WON/LOST/WINS SMS Commands + Numbered Replies
+
+**Legacy ref-code commands** (still supported):
 
 1. As an authorized sender, text `WON [ref]` to the client Twilio number. Verify: lead status changed to `won`, confirmed revenue set (client avg project value), review request scheduled, audit_log entry with `lead_outcome_won`.
 2. Text `WON [ref] 55000` &mdash; verify explicit revenue ($55K = 5500000 cents) is stored.
 3. Text `LOST [ref]` &mdash; verify: lead status `lost`, active sequences cancelled, audit_log entry.
 4. Text `WINS` &mdash; verify: response lists up to 10 recent leads with pending outcomes + ref codes.
-5. Text `WON` with no ref code &mdash; verify: not matched as outcome command (falls through to AI).
-6. Text `WON [invalid-ref]` &mdash; verify: error response with suggestion to text WINS.
+
+**Numbered replies** (from nudge prompts):
+
+5. Trigger a probable wins nudge, then reply `W1` to the agency number &mdash; verify lead marked `won`.
+6. Reply `L2` &mdash; verify lead marked `lost`.
+7. Reply `W` (bare) &mdash; verify all listed leads marked `won`.
+8. Reply `0` &mdash; verify all skipped.
+9. After a WON reply, verify revenue prompt follows. Reply `55000` &mdash; verify revenue recorded. Reply `S` &mdash; verify skip accepted.
+10. **Cross-route:** Reply to nudge on business number instead of agency number &mdash; verify handled correctly.
 
 #### 58c: Proactive Quote Prompt (3-Day)
 
 1. Create a test lead in `contacted` status with `created_at` 4 days ago and no EST trigger.
-2. Trigger `/api/cron/proactive-quote-prompt` &mdash; verify contractor gets SMS: &ldquo;[Name] has been waiting 3 days. Reply EST [Name] or PASS.&rdquo;
-3. Trigger the cron again &mdash; verify the same lead is NOT prompted again (audit_log dedup).
-4. Create a lead with an active estimate sequence &mdash; verify it is skipped.
+2. Trigger `/api/cron/proactive-quote-prompt` &mdash; verify contractor gets SMS via agency channel: &ldquo;[Name] &mdash; 3 days, no quote yet. 1 = Yes (start follow-up)  2 = Not yet&rdquo;
+3. Reply `1` to the agency number &mdash; verify estimate follow-up sequence started for the lead.
+4. Reply `2` on a different lead &mdash; verify prompt marked as replied, lead NOT marked lost (stays eligible for future nudge).
+5. Trigger the cron again &mdash; verify the same lead is NOT prompted again (audit_log dedup).
+6. Create a lead with an active estimate sequence &mdash; verify it is skipped.
+7. **Cross-route:** Reply `1` to the business number instead of agency &mdash; verify handled correctly.
 
 #### 58d: PAUSE/RESUME Commands
 
@@ -1772,7 +1789,7 @@ Expected:
 
 1. Set `bookingConfirmationRequired = true` on a test client.
 2. Trigger a booking via the AI &mdash; verify: appointment created in `pending_confirmation` status, contractor gets SMS with booking details, homeowner gets &ldquo;checking availability&rdquo; holding message.
-3. Reply `YES` from the contractor &mdash; verify: appointment status changes to `scheduled`, homeowner gets confirmation SMS, timeout scheduled messages cancelled.
+3. Reply `YES` from the contractor &mdash; verify: appointment status changes to `scheduled`, homeowner gets confirmation SMS, timeout scheduled messages cancelled. Also verify `1`, `Y`, `OK`, and `CONFIRM` are accepted as aliases for YES.
 4. Test a time suggestion (e.g., `THU 2PM`) &mdash; verify: old appointment cancelled, new pending appointment created with new time, homeowner notified of proposed change.
 5. Wait for 2-hour timeout &mdash; verify: contractor gets reminder SMS.
 6. Wait for 4-hour timeout &mdash; verify: operator gets escalation alert SMS.
