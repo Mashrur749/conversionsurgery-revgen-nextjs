@@ -1,272 +1,168 @@
-# Stochastic Multi-Agent Consensus Report — Full Platform Gap Audit
+# Stochastic Multi-Agent Consensus Report
 
-**Problem**: From the ICP (home service contractor) perspective, find real-world workflow gaps across ALL 18 service delivery domains.
-**Agents**: 10 (neutral, risk-averse, growth, contrarian, first-principles, user-empathy, resource-constrained, long-term, data-driven, systems-thinker)
-**Date**: 2026-04-09
-**Scope**: 18 domains × 10 agents = ~150 unique gap findings, aggregated below
-
----
-
-## TIER 1 — LAUNCH BLOCKERS (8+ agents agree, HIGH impact)
-
-These are gaps that will cause visible failures for the first real client. Fix before any contractor goes live.
-
-### LB-01: No Appointment List in Client Portal (10/10 — previous round)
-Appointments table is populated but no portal page exists. Contractor cannot see their schedule.
-**Fix:** Add `/client/appointments` page (read from existing `appointments` table).
-
-### LB-02: Crew Not Assigned/Notified at Booking (10/10 — previous round)
-`calendar_events.assignedTeamMemberId` exists but is never populated. Owner gets the calendar event; estimator who visits sites gets nothing.
-**Fix:** SMS dispatch to assigned crew member with address + lead info at booking time.
-
-### LB-03: Timezone Hardcoded Wrong (9/10 — previous round)
-`calendar_events` defaults `America/Denver`, `clients` defaults `America/Edmonton`. Slot generation, reminder scheduling, no-show detection, campaign scheduling, hot-transfer routing ALL use timezone and get it wrong for non-Mountain clients.
-**Fix:** Make `clients.timezone` the single source of truth, require during onboarding, thread through all time-sensitive code.
-
-### LB-04: Estimate Follow-Up Sequences Survive Won/Lost Status (9/10)
-When contractor marks lead `won` or `lost`, active estimate follow-up scheduled messages are NOT cancelled. Homeowner who already hired the contractor gets "still thinking about your estimate?" on day 10.
-**Fix:** Cancel all pending `scheduledMessages` for a lead whenever status changes to `won`, `lost`, or `completed`.
-
-### LB-05: Win-Back Fires on Leads with Active Sequences (8/10)
-Win-back (25-35 day) query doesn't check for existing unsent scheduled messages. Lead can receive both an estimate follow-up AND a win-back in the same day.
-**Fix:** Exclude leads with any unsent, uncancelled scheduled messages from win-back eligibility.
-
-### LB-06: Voice AI Callback Requests Never Actioned (8/10)
-`voice_calls.callbackRequested = true` is stored but no cron or notification reads it. Homeowner expects a morning callback that never comes.
-**Fix:** Daily cron that alerts contractor when callbacks are due.
-
-### LB-07: Business Hours Not Gated Before AI Activation (8/10)
-Onboarding quality gate doesn't check if `businessHours` table has any entries. When AI activates with no business hours, `getAvailableSlots()` returns empty — every booking attempt fails silently.
-**Fix:** Add `business_hours_configured` as a critical onboarding quality gate.
-
-### LB-08: Quiet Hours Falls Back to UTC on Timezone Failure (8/10)
-If client timezone resolution fails, compliance gateway falls back to UTC. A client in Pacific time (UTC-8) gets quiet hours inverted — messages sent at 2am, blocked at noon. TCPA/CRTC violation.
-**Fix:** Default to most restrictive window on failure, never to UTC.
-
-### LB-09: Reply-on-Lead Cancels ALL Sequences Indiscriminately (8/10)
-`incoming-sms.ts` line 295: any inbound reply cancels every unsent scheduled message for that lead — including payment reminders and estimate follow-ups. A homeowner texting "thanks, still thinking" kills their entire nurture sequence.
-**Fix:** Scope cancellation by sequence type. Only cancel the active sequence, not all sequences. Payment reminders should only cancel on Stripe payment confirmation.
-
-### LB-10: Voice AI Hot-Transfer Timezone Hardcoded (8/10)
-`routeHighIntentLead()` hardcodes `timezone: 'America/Edmonton'`. An Atlanta contractor's 4:30pm call (within business hours) is evaluated as 6:30pm Mountain (outside hours), routing to SMS escalation instead of ring group.
-**Fix:** Read `client.timezone` from DB.
+**Problem:** Given the pre-launch Markov simulation results for ConversionSurgery, answer: (1) ICP minimum criteria, (2) safe client cap before hiring, (3) one process change before client #1.
+**Agents:** 10 (Neutral, Risk-averse, Growth, Contrarian, First-principles, User-empathy, Resource-constrained, Long-term, Data-driven, Systems thinker)
+**Date:** 2026-04-11
+**Markov data:** Shared across all agents (not invented individually)
 
 ---
 
-## TIER 2 — PRE-LAUNCH (6-7 agents agree, HIGH/MEDIUM impact)
+## Q1: ICP Minimum Criteria
 
-Fix these in the first sprint after launch blockers are resolved.
+### Consensus (9/10 agree)
 
-### PL-01: No Job Completion Lifecycle Loop (8/10 — previous round)
-After `won`, there's no way to mark "job complete" that triggers review request at the right moment and captures final revenue.
-**Fix:** "Mark Job Complete" action in portal → sets `completed`, triggers review request.
+**15+ inbound leads/month is the hard floor.** Every agent except the Contrarian used this as a primary gate. The Markov data makes this obvious: below 15 leads, the Low Volume Starvation chain fires and the system appears to do nothing.
 
-### PL-02: No-Show Recovery Fires Without Contractor Verification (6/10 — previous round)
-`processNoShows()` sends recovery SMS to homeowner without checking if contractor's crew was the one who missed.
-**Fix:** SMS confirmation to contractor before firing homeowner recovery.
+### Consensus (8/10 agree)
 
-### PL-03: Address Not Captured at Booking Time (7/10)
-`appointments.address` is nullable and the AI booking flow never prompts for it. Crew shows up with no address.
-**Fix:** AI booking flow prompts "What's the address for the estimate?" before confirming.
+**Screen for responsiveness, not just demographics.** Eight agents included some form of "contractor must respond to SMS/calls within X hours" as a qualifier. The specific thresholds varied (20 min to 2 hours), but the principle was unanimous: a contractor who ignores messages will churn regardless of lead volume.
 
-### PL-04: Review Request Fires on Frustrated/Escalated Homeowners (7/10)
-No sentiment gate before scheduling review request. A homeowner who texted "very unhappy with the work" still gets a Google review request.
-**Fix:** Check lead sentiment signals and escalation history before firing review request.
+### Consensus (7/10 agree)
 
-### PL-05: No "Mark Paid (Cash/Check)" in Client Portal (7/10)
-`markInvoicePaid` only reachable via Stripe webhook or admin API. Contractors who collect cash/check can't stop payment reminders.
-**Fix:** Add portal-accessible "Mark Paid" action on invoice cards.
+**Year-round interior work only (no seasonal trades).** Seven agents explicitly gated on seasonality. The ICP already handles this (basement = year-round), but agents reinforced it as a non-negotiable.
 
-### PL-06: "Without Us" ROI Model Uses Wrong Per-Client Baselines (7/10)
-`averageProjectValue` and `previousResponseTimeMinutes` use agency-wide defaults. A plumber ($800 avg job) gets the same model as a roofer ($15K avg).
-**Fix:** Require `averageJobValueCents` and `previousResponseTimeMinutes` during onboarding.
+### Divergence (6/4 split)
 
-### PL-07: `won` Status Never Fires `job_won` Funnel Event (7/10)
-Portal status update to `won` doesn't call `trackFunnelEvent('job_won')`. AI attribution, effectiveness dashboard, and guarantee monitor are all systematically understated.
-**Fix:** Add `trackFunnelEvent('job_won')` to both portal and admin status update routes.
+**Revenue floor: $600K vs $800K.** Six agents used $600K+ (matching the ICP's Solo Finisher floor). Four agents (Risk-averse, Growth, Long-term, First-principles) pushed for $800K+ to avoid the Solo Finisher segment entirely at launch. The Growth agent's reasoning: "Handyman/Referral King economics are fatal at $1K/mo."
 
-### PL-08: No Platform-Level DNC (Cross-Client Opt-Out) (7/10)
-Opt-outs are per-client. A homeowner who STOPs one contractor can be texted by another contractor on the same platform.
-**Fix:** Platform-level DNC table checked before per-client logic.
+### Outlier
 
-### PL-09: Onboarding Quality Gate Doesn't Block AI on Empty KB (7/10)
-Client with 0 KB entries activates AI. Every AI response hits knowledge boundary guardrail, escalates. Cascade: high escalation rate → contractor ignores escalations → leads go cold → bad reports.
-**Fix:** Make KB completeness a hard block for AI activation.
-
-### PL-10: Voice AI Overflow Mode Not Implemented (7/10)
-`overflow` is selectable in UI but the voice webhook never reads the field. Setting it does nothing — same behavior as no AI.
-**Fix:** Implement the overflow dial-then-fallback-to-AI path in the voice webhook.
-
-### PL-11: Soft Rejection Detection Missing (7/10)
-"I went with someone else" / "not interested" doesn't trigger opt-out or status change. AI fires win-back 25 days later.
-**Fix:** Detect soft rejection signals and auto-transition to `lost`, cancelling sequences.
-
-### PL-12: Escalation Re-Notification Insufficient (7/10)
-Only one re-notify after 15 minutes. Field crews on job sites can't respond for 90+ minutes. Hot lead goes cold with no further alerts.
-**Fix:** Allow 3 re-notifications (15, 30, 60 min) before marking exhausted.
-
-### PL-13: Referral Request Fires After Negative Review (6/10)
-Review request (day 1) and referral request (day 4) are separate scheduled messages. If homeowner leaves a 1-2 star review, referral still fires.
-**Fix:** Check most recent review rating before sending referral; cancel if <= 3 stars.
-
-### PL-14: Campaign Scheduling Uses UTC 10am, Not Client Local (6/10)
-`getDefaultScheduledAtForQuarter()` uses `setUTCHours(10)`. A Vancouver contractor's campaign launches at 3am local.
-**Fix:** Use client timezone for campaign scheduling.
+**Contrarian: Screen for speed-to-first-response, not tech or tools.** Agent 4 argued the conventional wisdom (screen for GCal, tech comfort) is wrong. "A contractor who uses a paper notepad but returns calls in 20 min is a better fit than a Jobber user who ignores messages for 2 hours." Proposes a live test inquiry during qualification to verify actual response speed.
 
 ---
 
-## TIER 3 — POST-LAUNCH / BACKLOG (4-5 agents agree, or MEDIUM impact)
+## Q2: Safe Client Cap Before Hiring
 
-### BL-01: No Deposit/Milestone Payment Split
-The payment system only creates one invoice per sequence. $12K jobs need 30% deposit + 70% final. `payments.type` already has `deposit|progress|final` but it's never used.
+### Distribution
 
-### BL-02: Estimate Follow-Up Uses Static Templates (No AI Personalization)
-Win-back and no-show use AI-generated messages; estimate follow-up (the highest-volume automation) uses static `renderTemplate()` with no project type or amount reference.
+| Cap | Agents | Reasoning |
+|:---:|:------:|-----------|
+| **3** | 1 (Systems) | High churn creates false capacity; when retention improves, all clients stay and you hit the wall |
+| **5** | 1 (First-principles) | Crisis-handling capacity is the binding constraint, not hours |
+| **6** | 1 (User-empathy) | Surge weeks (collision + cancellation save + new onboard) push solo operator past 28h |
+| **8** | 5 (Risk-averse, Growth, Resource, Long-term, Data-driven) | ~$8K MRR, 13-14h peak, leaves buffer for sales + platform work + first hire |
+| **10** | 2 (Neutral, Neutral-adjacent) | P90 peak = 21.5h, steady = 1.9h/wk, leaves recovery playbook capacity |
 
-### BL-03: No Post-Appointment Quote Capture via SMS
-After appointment time passes, no prompt to contractor to log the outcome. Jobs don't get marked, review requests don't fire, reports show $0.
+### Consensus (5/10 — plurality)
 
-### BL-04: Booking Window Fixed at 7 Days
-Contractors booked 3 weeks out can't offer further slots. No configurable `bookingLeadTimeDays` or extended window.
+**8 clients is the modal answer.** Five agents converged on 8, with the reasoning that it generates enough MRR ($8K) to fund a part-time hire while keeping peak operator load under 15h with buffer for sales and platform work.
 
-### BL-05: No MMS/Photo-Aware AI Responses
-Homeowners send photos of damage. AI receives the media but can't reason about it. Responds with generic "tell me more."
+### Divergence (3-6 vs 8-10)
 
-### BL-06: Appointments and Calendar Events Are Parallel Tables
-No FK between `appointments` and `calendar_events`. Reschedule in Google Calendar doesn't update `appointments`. Divergent state accumulates.
+Three agents pushed for lower caps (3, 5, 6) — their shared reasoning: the simulation's capacity model doesn't account for sales time, platform development, and crisis absorption. The constraint isn't steady-state hours, it's surge-week resilience.
 
-### BL-07: No Returning Customer Recognition
-A homeowner who used the contractor 8 months ago is treated as a brand-new lead. No "welcome back" context.
+Two agents went higher (10) — reasoning that the P90 data supports it and the recovery playbook keeps churn manageable.
 
-### BL-08: No Morning-Of Appointment Confirmation
-No proactive "are you still on for 2pm today?" SMS. Would prevent 60-70% of no-shows (prevention vs. recovery).
+### Outlier
 
-### BL-09: Slot Capacity Not Modeled (Multi-Crew)
-System assumes 1 appointment per time slot. Multi-crew contractors get artificially blocked.
-
-### BL-10: Decision Node Always Uses Haiku
-`analyzeAndDecide` hardcodes `model: 'fast'` regardless of lead value. $40K lead gets escalation decision from cheapest model.
-
-### BL-11: No Lead Source Revenue Breakdown in Reports
-`leads.source` exists but reports don't break down revenue by source. Contractors can't evaluate which acquisition channel is worth investing in.
-
-### BL-12: Stripe Payment Link Expiry Not Handled
-Checkout links may expire. No re-issue mechanism. Homeowner clicks expired link, gets error, gives up.
-
-### BL-13: No Callback Scheduling from Escalation Queue
-Missed hot transfer has no "schedule callback" action. Contractor can't commit to calling back at a specific time.
-
-### BL-14: Win-Back Message Ignores Open Objections
-AI win-back uses generic re-engagement prompt even when conversation history shows an unresolved price objection.
-
-### BL-15: No Contractor Portal Walkthrough on First Login
-No tooltip sequence, no "start here" prompt. First-impression confusion is the #1 SaaS churn driver.
-
-### BL-16: Voice AI Has No SMS Conversation Memory
-Voice AI answers a call with no context from prior SMS conversation. Homeowner repeats everything.
-
-### BL-17: Invoice Dual Amount Model (Dollars vs Cents)
-`amount` (numeric, dollars) coexists with `totalAmount/paidAmount/remainingAmount` (integer, cents). No constraint forcing one. Financial data integrity risk.
-
-### BL-18: No Voice AI Emergency Escalation Path
-After-hours emergency calls (burst pipe, no heat) get standard AI handling. No immediate transfer to owner's cell.
-
-### BL-19: Compliance Cache Not Invalidated on Opt-Out
-`compliance_check_cache` can serve stale `isOptedOut = false` after STOP. Window for TCPA violation.
-
-### BL-20: `completed` Without `won` Loses Revenue Data
-Contractor skips `won` → goes directly to `completed`. `confirmedRevenue` never captured. Reports show $0.
+**Systems thinker: 3 clients.** The most conservative answer, with novel reasoning: "High churn creates false capacity headroom. At 4-5 clients you feel fine because 2 are about to leave. When retention improves, all 5 stay — and you hit the load wall simultaneously." This is the only agent that modeled the second-order effect of fixing churn on capacity.
 
 ---
 
-## OUTLIER IDEAS (1-3 agents, high-creativity)
+## Q3: ONE Process Change Before Client #1
 
-### OUT-01: Day-Of Homeowner Prep Sequence (Contrarian)
-Instead of crew dispatch, send the homeowner a "day-of" SMS: who's coming, arrival window, what to prepare. Reduces owner's phone burden more than dispatch tools. **Zero schema changes — template content update only.**
+### Consensus (7/10 agree)
 
-### OUT-02: Review Count Milestone Celebrations (Growth)
-At 10/25/50/100 reviews, send contractor a celebratory SMS: "You just hit 25 Google reviews — most competitors have fewer than 10." Creates shareable moments and word-of-mouth.
+**Build the At-Risk Recovery Playbook.** Seven agents named this explicitly as the #1 process change, citing the sensitivity data (+$80/client, 5x more than any other fix). Multiple agents noted it should be written, documented, and tested before onboarding — not developed reactively after the first churn.
 
-### OUT-03: Competitor Review Benchmarking (Growth)
-Track competitor Google review counts via Places API. Report says "You now have more reviews than 2 of your 3 top competitors." Creates retention urgency.
+| Agent | Named Recovery Playbook? |
+|-------|:------------------------:|
+| Neutral | Yes |
+| Risk-averse | Yes |
+| Resource-constrained | Yes |
+| Long-term | Yes |
+| Data-driven | Yes |
+| First-principles | Yes (as "Week 3 value checkpoint") |
+| Systems thinker | No — prioritized KB intake |
+| Growth | No — prioritized dead-man's-switch monitoring |
+| Contrarian | No — prioritized live test inquiry on sales call |
+| User-empathy | No — prioritized Day 2-3 quote import call |
 
-### OUT-04: "Biggest Opportunity This Week" in Digest (Growth)
-Add one line to weekly digest: "Your highest-value estimate: $18K bathroom reno for Sarah M — quoted 11 days ago, no response. Worth a personal call."
+### Divergence (3 alternative answers)
 
-### OUT-05: Voice AI Consent Disclosure (Compliance-forward)
-Mandatory AI + recording disclosure in voice greeting. Not optional post-2026 from a regulatory standpoint.
+Three agents proposed different #1 changes:
 
-### OUT-06: KB Answer Quality Scoring (Growth)
-Track which KB entries consistently lead to follow-up questions or escalations. Surface low-quality entries for operator improvement.
+1. **Systems thinker: Week-1 KB build session, live with the contractor, 60 min.** Reasoning: KB Thinning at 38% is a supply-side problem you can eliminate before it starts. "Fix KB intake -> retention improves -> churn stops masking load -> cap becomes real -> hire from a position of signal, not crisis."
 
-### OUT-07: CASL Consent Expiry Dashboard (Risk-averse)
-Surface which leads are approaching 6-month consent expiry. Operator can prompt re-consent before messages start getting silently blocked.
+2. **Contrarian: Live test inquiry during the sales call.** Text the prospect's business number while they're still on the phone. Catches forwarding failures, carrier filtering, and wrong Twilio numbers before onboarding.
 
-### OUT-08: Facebook Lead Ad Integration (Growth)
-Webhook from Facebook Lead Ads → platform. Captures the largest untapped advertising channel for home service contractors.
+3. **User-empathy: Day 2-3 quote import call.** A dedicated 15-min call with pre-work SMS: "Write down 5 people you quoted in the last 6 months." Fills the win-back pool that makes the 30-day report show real value.
 
----
+### Synthesis
 
-## CROSS-DOMAIN CASCADE CHAINS (Systems Thinker findings)
-
-The following gaps have 3+ domain cascade effects:
-
-| Root Gap | Cascade | Depth |
-|----------|---------|-------|
-| Empty KB activates AI | KB → AI quality → Escalation rate → Lead conversion → Reports → Engagement health | 6 |
-| `won` never fires funnel event | Portal → Attribution → AI Effectiveness → Reports → Guarantee | 5 |
-| Reply cancels all sequences | Lead Capture → Estimate Follow-Up → Payment → Win-Back | 4 |
-| Timezone hardcoded | Booking → Reminders → No-Show → Voice → Campaigns → Compliance | 6 |
-| No job completion loop | Portal → Reviews → Reports → Digest → Engagement health | 5 |
+These three are not mutually exclusive with the recovery playbook — they're complementary upstream fixes. The recovery playbook catches clients who reach At-Risk. The KB session, live test, and quote import prevent clients from reaching At-Risk in the first place. The consensus is: recovery playbook first (biggest single delta), then layer in the upstream fixes.
 
 ---
 
-## PRIORITY MATRIX
+## Raw Scores
 
-### Fix This Week (launch blockers — cannot ship without these)
-| ID | Gap | Effort | Impact |
-|----|-----|--------|--------|
-| LB-04 | Sequences survive won/lost | 30 min | Revenue trust |
-| LB-05 | Win-back fires on active sequences | 1 hr | Double-messaging |
-| LB-09 | Reply cancels ALL sequences | 2 hrs | Estimate follow-up coverage |
-| LB-03 | Timezone hardcoded | 1 day | Every non-Mountain client |
-| LB-10 | Voice hot-transfer timezone | 1 hr | Voice routing broken |
-| LB-08 | Quiet hours UTC fallback | 2 hrs | TCPA/CRTC compliance |
-| LB-07 | Business hours not gated | 2 hrs | Booking always fails |
-| LB-01 | No appointment list | 1-2 days | Core portal UX |
-| LB-02 | Crew not notified | 1 day | Booking value prop |
-| LB-06 | Voice callbacks not actioned | 4 hrs | Voice AI trust |
+### Q1: ICP Criteria Frequency
 
-### Fix Next Sprint (pre-launch quality)
-| ID | Gap | Effort |
-|----|-----|--------|
-| PL-01 | Job completion loop | 1 day |
-| PL-03 | Address at booking | 4 hrs |
-| PL-04 | Review sentiment gate | 4 hrs |
-| PL-05 | Mark Paid (cash) | 4 hrs |
-| PL-06 | Per-client ROI baselines | 1 day |
-| PL-07 | `won` funnel event | 2 hrs |
-| PL-08 | Platform DNC | 1 day |
-| PL-09 | KB activation gate | 4 hrs |
-| PL-10 | Voice overflow mode | 1 day |
-| PL-11 | Soft rejection detection | 4 hrs |
-| PL-12 | Escalation re-notify | 4 hrs |
-| PL-13 | Referral after neg review | 2 hrs |
-| PL-14 | Campaign timezone | 2 hrs |
+| Criterion | Agents who included it |
+|-----------|:----------------------:|
+| 15+ leads/month | 9/10 |
+| Responsiveness gate (SMS reply speed) | 8/10 |
+| Year-round / no seasonal | 7/10 |
+| Revenue floor ($600K+) | 6/10 |
+| Revenue floor ($800K+) | 4/10 |
+| Owner answers own phone (no gatekeeper) | 5/10 |
+| Active Google Business Profile | 3/10 |
+| Phone type qualifier (cell, not GV/VoIP) | 4/10 |
+| Single decision-maker | 3/10 |
+
+### Q2: Client Cap Distribution
+
+| Cap | Votes |
+|:---:|:-----:|
+| 3 | 1 |
+| 5 | 1 |
+| 6 | 1 |
+| 8 | 5 |
+| 10 | 2 |
+
+**Mean = 7.4 | Median = 8**
+
+### Q3: Process Change Frequency
+
+| Change | Agents |
+|--------|:------:|
+| Recovery playbook / At-Risk intervention | 7/10 |
+| KB intake improvement | 2/10 |
+| Live test on sales call | 1/10 |
+| Quote import call | 1/10 |
+| Dead-man's-switch monitoring | 1/10 |
 
 ---
 
-## AGENT FRAMING CONTRIBUTIONS
+## Recommendations (synthesized from consensus)
 
-| Agent | Framing | Unique High-Value Finding |
-|-------|---------|--------------------------|
-| 1 — Neutral | Balanced full-domain | Booking address capture; AI response while estimate sequence active |
-| 2 — Risk-averse | Churn/trust focus | Quiet-hours missed-call promise broken; Smart Assist draft silently discarded |
-| 3 — Growth | 10x value | MMS photo AI; competitor review benchmarking; milestone celebrations |
-| 4 — Contrarian | Challenge assumptions | Day-of homeowner prep > crew dispatch; static templates are the biggest quality gap |
-| 5 — First principles | Lead-to-money pipeline | Post-appointment SMS quote capture; deposit collection timing |
-| 6 — User empathy | Both perspectives | Booking confirmation lacks crew details; conversation message type badges |
-| 7 — Resource constrained | Solo founder lens | Voice overflow mode is a no-op; Mark Paid (cash) is critical |
-| 8 — Long-term | Architecture debt | Invoice dual-amount model; compliance cache invalidation; appointments/calendar_events FK |
-| 9 — Data-driven | Industry metrics | Lead source revenue breakdown; 78% first-responder rule applied to MMS |
-| 10 — Systems thinker | Cascade chains | `won` funnel event cascade; empty KB cascade (6 domains deep) |
+### 1. ICP Minimum Criteria — USE THIS
+
+All five must pass:
+1. Basement development or finishing (30-second qualifier Q1)
+2. 15+ inbound leads per month (Q2)
+3. Misses calls during builds — no receptionist (Q3)
+4. Phone type check — flag Google Voice for modified onboarding (Q4)
+5. **NEW from consensus:** Responds to SMS within 2 hours during business day (verify with a test text during qualification)
+
+Revenue floor: $600K for inbound leads, but **actively cold-call only $800K+** (Small Crew Developer and Suite Specialist). Solo Finishers ($600-800K) are inbound-only until 5+ primary clients.
+
+### 2. Client Cap — 8, then hire
+
+8 clients before hiring a part-time ops person. Not 10, not 15. At 8 clients:
+- MRR = $8,000 (enough to fund a part-time hire)
+- P90 peak operator load = ~14h (buffer for sales + platform)
+- Steady-state = ~1.4h/wk
+- Hire trigger: when 6+ clients have survived past month 2 with no manual escalations
+
+**Systems thinker's warning to keep in mind:** When retention improves (because you built the recovery playbook), the capacity math changes. Clients who would have churned now stay. Plan for the success case, not just the current churn rate.
+
+### 3. Process Change — Recovery Playbook (already written)
+
+The recovery playbook is now in `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 1.5. It was the consensus #1 by a wide margin (7/10).
+
+**Layer in these three upstream fixes in the first month:**
+- Live test inquiry during sales call (Contrarian's idea — catches Day 1 failures before contract) — **DONE:** added as ICP Q5, Playbook Section 10 pre-check, Launch Checklist 6.3
+- Phone number onboarding strategy — **DONE:** 10-agent consensus (2026-04-12) recommended conditional forwarding Day 0 → listing migration Day 7. Full report: `active/consensus/phone-onboarding-consensus.md`
+- 60-min structured KB build session during onboarding (Systems thinker — breaks cascade chain 1)
+- Day 2-3 quote import call with pre-work SMS (User-empathy — fills the win-back pool)

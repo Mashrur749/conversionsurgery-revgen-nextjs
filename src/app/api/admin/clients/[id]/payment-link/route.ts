@@ -89,7 +89,7 @@ export const POST = adminClientRoute<{ id: string }>(
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.conversionsurgery.com';
 
-    // Create Stripe Checkout Session
+    // Create Stripe Checkout Session with Terms of Service
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: stripeCustomerId,
@@ -97,6 +97,14 @@ export const POST = adminClientRoute<{ id: string }>(
       subscription_data: {
         trial_period_days: plan.trialDays ?? 30,
         metadata: { clientId, planId },
+      },
+      consent_collection: {
+        terms_of_service: 'required',
+      },
+      custom_text: {
+        terms_of_service_acceptance: {
+          message: 'I agree to the [Terms of Service](https://app.conversionsurgery.com/terms)',
+        },
       },
       success_url: `${appUrl}/client/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/client/billing`,

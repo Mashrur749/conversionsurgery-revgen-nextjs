@@ -213,7 +213,7 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 
 > "Fair. Let me give you two numbers.
 >
-> One recovered kitchen project — the kind you already do — is probably $40,000 to $65,000. One project you'd have lost to slow follow-up pays for more than three years of this service.
+> One recovered kitchen project — the kind you already do — is probably $40,000 to $65,000 in revenue. At your margins, that&apos;s $8,000 to $13,000 in profit. One project you&apos;d have lost to slow follow-up covers the service for the better part of a year.
 >
 > The more relevant number is your outstanding quotes. How many estimates have you sent in the last 90 days that went quiet? [Get the number.] Even if we get two of those back — what's the revenue?
 >
@@ -395,7 +395,7 @@ Before the call, gather:
 3. **Google reviews**: Check their Google Business Profile review count vs. top 3 competitors (already done in pre-sale audit)
 4. **Current tools**: &ldquo;Do you use Jobber, ServiceTitan, or anything for lead management?&rdquo;
 5. **Guarantee window**: If below 15 leads/month, calculate the adjusted guarantee window and state it explicitly during the call: &ldquo;Your guarantee window would be X days, not 30, based on your lead volume.&rdquo;
-6. **Loss ceiling**: State it plainly: &ldquo;Your maximum risk is $1,000. One month. If 5 leads don&apos;t engage in 30 days, you get it back. One project covers 3-5 years of the service.&rdquo;
+6. **Loss ceiling**: State it plainly: &ldquo;Your maximum risk is $1,000. One month. If 5 leads don&apos;t engage in 30 days, you get it back. One recovered project&apos;s profit covers the service for over a year.&rdquo;
 7. **ROI Calculator**: Have the calculator ready at `POST /api/public/roi-calculator` or the ROI worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`. Enter their numbers live during the call if price comes up.
 
 ---

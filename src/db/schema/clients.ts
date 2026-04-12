@@ -55,6 +55,7 @@ export const clients = pgTable(
     calendarSyncEnabled: boolean('calendar_sync_enabled').default(false),
     hotTransferEnabled: boolean('hot_transfer_enabled').default(false),
     paymentLinksEnabled: boolean('payment_links_enabled').default(false),
+    bookingConfirmationRequired: boolean('booking_confirmation_required').default(false),
 
     // Reputation
     reputationMonitoringEnabled: boolean('reputation_monitoring_enabled').default(false),

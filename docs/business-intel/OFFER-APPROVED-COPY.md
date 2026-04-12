@@ -163,8 +163,8 @@ The following lines are approved for live sales conversations, landing page head
 | Full-time office employee | $4,000-5,000/month | The system runs around the clock, never quits, never calls in sick, and costs a fraction of a hire. |
 | Part-time hire            | $1,500-2,500/month | Still more than us, and you have to manage them.                                                    |
 | Answering service         | $500-1,500/month   | They take messages. We book appointments. They charge per minute. We're flat rate.                  |
-| One basement project      | $45,000-80,000     | One project pays for years of this service.                                                         |
-| One kitchen project       | $35,000-65,000     | One project pays for years of this service.                                                         |
+| One basement project      | $9,000-16,000 profit (at 20% margin) | One recovered project covers the service for over a year.                              |
+| One kitchen project       | $7,000-13,000 profit (at 20% margin) | One recovered project covers the service for 7-13 months.                              |
 
 ---
 

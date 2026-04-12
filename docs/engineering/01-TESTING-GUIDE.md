@@ -1531,13 +1531,13 @@ Expected: all 11 items pass.
 
 Combined verification for CON-02, CON-03, CON-05, CON-10, and CON-11.
 
-1. **Estimate nudge timing (CON-02):** Verify the fallback nudge cron identifies stale leads after 48 hours (not 5 days). Check the `ESTIMATE_NUDGE_STALE_DAYS` constant is set to `2`. Create a lead, leave it without an estimate sequence for 48+ hours, then run the cron. Verify the owner receives a nudge SMS: &quot;Did you send an estimate to [name]?&quot;
+1. **Estimate nudge timing (CON-02):** Verify the fallback nudge cron identifies stale leads after 24 hours (not 48h). Check the `ESTIMATE_NUDGE_STALE_DAYS` constant is set to `1`. Create a lead, leave it without an estimate sequence for 24+ hours, then run the cron. Verify the owner receives a nudge SMS: &quot;Did you send an estimate to [name]?&quot;
 
 2. **Confirmed revenue field (CON-03):** In the admin UI, mark a lead as &quot;won.&quot; Verify a `confirmedRevenue` input field appears where the operator enters the actual job value in dollars. Save it. Verify the value persists on the lead record. Generate a bi-weekly report for that client. Verify the report includes a &quot;Confirmed Won&quot; line showing the confirmed revenue total alongside pipeline estimates.
 
 3. **Log-based guarantee attribution (CON-05):** Review the Layer 2 guarantee evaluation logic. Verify attribution checks platform logs (automated response or follow-up engagement) rather than requiring subjective contractor confirmation. The criterion is: &quot;the platform logs show the system engaged the lead through automated response or follow-up before the opportunity progressed.&quot;
 
-4. **Report auto-follow-up SMS (CON-10):** Trigger a bi-weekly report delivery for a test client. After the report is sent (email delivery completes), verify the system auto-sends an SMS to the contractor via the agency number: &quot;[Business Name] &mdash; your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.&quot; Verify this is fire-and-forget (does not affect the report delivery state).
+4. **Report auto-follow-up SMS with inline stats (CON-10):** Trigger a bi-weekly report delivery for a test client that has at least one responded lead, one followed-up estimate, and one booked appointment. After the report is sent (email delivery completes), verify the system auto-sends an SMS to the contractor via the agency number that includes inline stats from the report period: leads responded to, estimates followed up, and appointments booked. Verify the message is fire-and-forget (does not affect the report delivery state).
 
 5. **KB gap &quot;Ask Contractor&quot; button (CON-11):** Navigate to `/admin/clients/[id]/knowledge` &rarr; Gaps tab. Verify each knowledge gap card shows an &quot;Ask Contractor&quot; button. Click it. Verify an SMS is sent to the contractor: &quot;[Business Name] &mdash; a customer asked about [question]. How should we answer this?&quot; Verify the gap status changes to `in_progress`. Verify the API endpoint `POST /api/admin/clients/[id]/knowledge/gaps/[gapId]/ask` returns success.
 
@@ -1735,18 +1735,49 @@ Combined verification for six features shipped after Wave 7: Probable Wins Nudge
 curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-3. Verify `Owner Dev Phone (#3)` receives an SMS via the agency line: "Did you win [Lead Name]'s [project type]? Reply YES or NO..."
+3. Verify `Owner Dev Phone (#3)` receives an SMS via the agency line with outcome reference code: &ldquo;Did you win [Lead Name]&apos;s [project type]? Ref [code]. Reply WON [code] or LOST [code] to your business number.&rdquo;
 4. Verify response payload includes `nudged >= 1`.
-5. Run the cron again immediately — verify the 14-day cooldown prevents a second nudge (no SMS sent, `nudged = 0`).
+5. Run the cron again immediately &mdash; verify the 7-day cooldown prevents a second nudge (no SMS sent, `nudged = 0`).
 
 Expected:
 
-- Nudge is sent only for unresolved leads with 14+ day old completed/confirmed appointments.
-- 14-day per-client cooldown is enforced (checked via `agencyMessages` with `promptType = 'won_lost_nudge'`).
-- Each lead is nudged at most once per run.
+- Nudge is sent only for unresolved leads with 7+ day old completed/confirmed appointments.
+- 7-day per-client cooldown is enforced (checked via `agencyMessages` with `promptType = 'won_lost_nudge'`).
+- Each lead is nudged at most once per run. Message includes outcome reference code.
 - Clients with no phone number or `status=paused` are skipped.
 
-#### 58b: Since Your Last Visit Card
+#### 58b: WON/LOST/WINS SMS Commands
+
+1. As an authorized sender, text `WON [ref]` to the client Twilio number. Verify: lead status changed to `won`, confirmed revenue set (client avg project value), review request scheduled, audit_log entry with `lead_outcome_won`.
+2. Text `WON [ref] 55000` &mdash; verify explicit revenue ($55K = 5500000 cents) is stored.
+3. Text `LOST [ref]` &mdash; verify: lead status `lost`, active sequences cancelled, audit_log entry.
+4. Text `WINS` &mdash; verify: response lists up to 10 recent leads with pending outcomes + ref codes.
+5. Text `WON` with no ref code &mdash; verify: not matched as outcome command (falls through to AI).
+6. Text `WON [invalid-ref]` &mdash; verify: error response with suggestion to text WINS.
+
+#### 58c: Proactive Quote Prompt (3-Day)
+
+1. Create a test lead in `contacted` status with `created_at` 4 days ago and no EST trigger.
+2. Trigger `/api/cron/proactive-quote-prompt` &mdash; verify contractor gets SMS: &ldquo;[Name] has been waiting 3 days. Reply EST [Name] or PASS.&rdquo;
+3. Trigger the cron again &mdash; verify the same lead is NOT prompted again (audit_log dedup).
+4. Create a lead with an active estimate sequence &mdash; verify it is skipped.
+
+#### 58d: PAUSE/RESUME Commands
+
+1. Text `PAUSE` from an authorized sender. Verify: `clients.aiAgentMode` set to `off`, all pending `scheduledMessages` cancelled, confirmation SMS sent.
+2. Text `RESUME`. Verify: `aiAgentMode` restored to `autonomous`, confirmation SMS sent.
+3. Verify PAUSE/RESUME are case-insensitive.
+
+#### 58e: Booking Confirmation Mode
+
+1. Set `bookingConfirmationRequired = true` on a test client.
+2. Trigger a booking via the AI &mdash; verify: appointment created in `pending_confirmation` status, contractor gets SMS with booking details, homeowner gets &ldquo;checking availability&rdquo; holding message.
+3. Reply `YES` from the contractor &mdash; verify: appointment status changes to `scheduled`, homeowner gets confirmation SMS, timeout scheduled messages cancelled.
+4. Test a time suggestion (e.g., `THU 2PM`) &mdash; verify: old appointment cancelled, new pending appointment created with new time, homeowner notified of proposed change.
+5. Wait for 2-hour timeout &mdash; verify: contractor gets reminder SMS.
+6. Wait for 4-hour timeout &mdash; verify: operator gets escalation alert SMS.
+
+#### 58f: Since Your Last Visit Card
 
 1. Log into the client portal as a test contractor.
 2. On the dashboard (`/client`), note the &ldquo;Since Your Last Visit&rdquo; card.
@@ -2483,11 +2514,15 @@ Expected:
 curl -i http://localhost:3000/api/cron -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-3. **Owner Dev Phone (port 3002):** Verify an SMS arrives with dollar pipeline values (e.g., &quot;Probable pipeline: $80K | Confirmed: $25K&quot;) and a needs-attention count.
+3. **Owner Dev Phone (port 3002):** Verify an SMS arrives with dollar pipeline values (e.g., &quot;Probable pipeline: $80K | Confirmed: $25K&quot;) and a needs-attention count. Also verify the message includes activity metrics (inquiries, estimates, appointments).
+
+4. **$0 pipeline CTA:** Set the test client&apos;s confirmed pipeline to $0 (no leads marked won). Trigger the cron again. Verify the SMS appends a &ldquo;Reply WON [name]&rdquo; prompt for the contractor to confirm any actual wins.
 
 Expected:
 - SMS includes dollar values for probable and confirmed pipeline.
+- SMS includes activity metrics: inquiries, estimates, and appointments booked.
 - SMS includes the count of leads needing attention (action_required).
+- When confirmed pipeline is $0, SMS includes a &ldquo;Reply WON&rdquo; CTA.
 - SMS is sent via agency number (#5), not the business line.
 
 #### 67b: ROI Calculator endpoint

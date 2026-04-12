@@ -91,7 +91,7 @@ Triggered when owner flags an estimate as sent (SMS keyword `EST`, dashboard act
 | 3 | Day 10, 10am | Circling back, still available |
 | 4 | Day 14, 10am | Last check-in, no hard feelings |
 
-**Fallback nudge:** Cron identifies stale leads (48+ hours, no estimate sequence) and prompts the owner: "Did you send an estimate to [name]? Reply YES to start follow-up."
+**Fallback nudge:** Cron identifies stale leads (24+ hours, no estimate sequence) and prompts the owner: "Did you send an estimate to [name]? Reply YES to start follow-up." (Window shortened from 48h to 24h to reduce EST trigger adoption decay.)
 
 Cancellation: new sequence auto-cancels prior unsent messages for the same lead. When the lead is marked `won` or `lost`, all pending estimate follow-up messages are automatically cancelled.
 
@@ -123,6 +123,27 @@ Appointments support configurable duration (default 60 minutes). Multi-day jobs 
 - `getAvailableSlots()` blocks the full duration window, not just 1 hour
 - Calendar events use actual duration for Google Calendar sync (`endTime = startTime + durationMinutes`)
 - Multi-day: when `endDate` is set, all days in range are blocked from slot generation
+
+### Booking Confirmation Mode (Non-Google-Calendar Contractors)
+
+A per-client toggle (`bookingConfirmationRequired`) that changes how AI booking works for contractors who do not use Google Calendar or who want to manually approve each booking before the homeowner is confirmed.
+
+**When enabled:**
+
+1. AI collects the homeowner&apos;s preferred time as normal.
+2. Instead of auto-confirming, creates the appointment in `pending_confirmation` status.
+3. Sends the contractor an SMS: &ldquo;Booking request: [Lead name] for [project], [date] at [time]. Reply YES to confirm, or suggest a new time (e.g., THU 2PM).&rdquo;
+4. Sends the homeowner a holding message: &ldquo;I&apos;m checking availability. You&apos;ll hear back shortly to confirm!&rdquo;
+5. When the contractor replies YES, the appointment is confirmed and the homeowner is notified with full confirmation details.
+6. When the contractor replies with a new time (e.g., &ldquo;THU 2PM&rdquo;), the old appointment is cancelled, a new pending request is created, and the homeowner is informed of the proposed new time.
+
+**Timeout escalation:**
+- 2 hours with no response: contractor receives a reminder SMS.
+- 4 hours with no response: operator alert SMS (uses agency `operatorPhone`; falls back to contractor if no operator phone configured).
+
+**Schema:** `clients.booking_confirmation_required` (boolean, default false). Appointments use status `pending_confirmation` while awaiting contractor approval. Timeout messages stored as `scheduled_messages` rows with `sequenceType = 'booking_confirmation_reminder'` or `'booking_confirmation_escalation'` — cancelled automatically when the contractor confirms.
+
+**Service:** `src/lib/services/booking-confirmation.ts` (`createPendingBooking`, `confirmPendingBooking`, `suggestNewTimeForPendingBooking`, `findPendingConfirmationForContractor`, `parseContractorTimeSuggestion`).
 
 ### Google Calendar Two-Way Sync
 
@@ -200,13 +221,48 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 
 ### Probable Wins Nudge
 
-Weekly cron (`/api/cron/probable-wins-nudge`) identifies leads that have had a completed or confirmed appointment 14+ days ago but have not been marked won or lost.
+Daily cron (`/api/cron/probable-wins-nudge`, runs at 10am UTC) identifies leads that have had a completed or confirmed appointment **7+ days ago** but have not been marked won or lost.
 
-- Sends a contractor SMS via the agency channel (operator-to-contractor, not compliance gateway): "Did you win [Lead Name]'s [project type]? Reply YES or NO to this number, then we'll ask for the value."
-- If the contractor replies YES, a follow-up asks for the job value so confirmed revenue can be recorded
-- 14-day cooldown per client — at most one nudge cycle per 14 days regardless of how many qualifying leads exist
+- Sends a contractor SMS via the agency channel (operator-to-contractor, not compliance gateway) with an outcome reference code: &ldquo;Appointment with [Lead Name] was 7+ days ago. Did you win it? Reply WON [ref] or LOST [ref] (e.g., WON 4A)&rdquo;
+- **Outcome reference codes:** each lead is assigned a short alphanumeric code (e.g., &ldquo;4A&rdquo;) stored in `leads.outcome_ref_code`. These codes make it unambiguous which lead the contractor is confirming when multiple nudges are active.
+- If the contractor replies WON [ref], a follow-up asks for the job value so confirmed revenue can be recorded
+- 7-day cooldown per client &mdash; at most one nudge cycle per 7 days regardless of how many qualifying leads exist
 - Deduped per lead: one nudge per lead per run, no duplicate sends
 - Skips clients with no active phone number, paused clients, and leads already marked won/lost/closed
+
+### WON / LOST / WINS SMS Commands
+
+Contractors can report outcomes directly via SMS to the agency line, using the reference code from a nudge:
+
+| Command | Example | Action |
+|---------|---------|--------|
+| `WON [ref]` | `WON 4A` | Marks the matching lead as `won`; triggers a follow-up asking for confirmed job value |
+| `LOST [ref]` | `LOST 4A` | Marks the matching lead as `lost`; cancels all pending follow-up messages for that lead |
+| `WINS` | `WINS` | Replies with a list of recent leads (last 14 days) that have appointments but no outcome, with their ref codes — useful if the contractor forgets the code |
+
+**Schema:** `leads.outcome_ref_code` — short alphanumeric code generated on lead creation, used to match SMS replies to specific leads.
+
+**Files:** `src/lib/automations/outcome-ref-codes.ts` (code generation/lookup), `src/lib/automations/outcome-command-parser.ts` (parses WON/LOST/WINS text), `src/lib/automations/outcome-commands.ts` (command dispatch and lead update logic).
+
+### Auto-Detect Probable Wins
+
+A companion to the Probable Wins Nudge. Runs daily at 10am UTC alongside the nudge cron.
+
+- Finds leads where: the most recent appointment was 7+ days ago, the lead has not been marked won or lost, **and the lead has had no inbound or outbound messages in the last 7 days** (silence after appointment = likely closed)
+- Prompts the contractor with the same outcome ref code format as the nudge
+- Fires once per lead (tracked via audit_log — no repeat prompts for the same lead)
+- Intent: catch probable wins that the regular nudge may miss due to its 7-day per-client cooldown
+
+### Proactive Quote SMS at 3 Days
+
+Automated prompt to the contractor when a new lead has been waiting too long for a quote.
+
+- Daily cron at 10am UTC (`/api/cron/proactive-quote-prompt`)
+- Condition: lead in `new` or `contacted` status for 3+ days with no EST trigger recorded
+- Contractor receives: &ldquo;[Lead Name] has been waiting 3 days. Reply EST [Name] or PASS&rdquo;
+- EST reply triggers the standard estimate follow-up sequence; PASS marks the lead as lost
+- Fires once per lead (deduped via audit_log)
+- **File:** `src/lib/automations/proactive-quote-prompt.ts`
 
 ### Dormant Re-Engagement (6-Month Stage)
 
@@ -382,7 +438,8 @@ Every lead accumulates:
 - **Hot transfer:** Voice AI detects urgency &rarr; dials team immediately &rarr; SMS heads-up ("Hot lead calling!")
 - **Missed transfer fallback:** SMS to team ("Missed hot transfer — call back ASAP") + SMS to lead ("Sorry we missed you")
 - **Owner notification:** Smart Assist drafts with reference codes for SEND/EDIT/CANCEL approval. Contractor notification SMS capped at 5/hour per client to prevent notification fatigue during surge.
-- **Team member SMS commands:** any active team member can text EST [name] (trigger estimate follow-up) or NOSHOW [name] (mark appointment no-show) from their personal phone — not just the owner. Command auth checks `clientMemberships` for the sender&apos;s phone.
+- **Team member SMS commands:** any active team member can text EST [name] (trigger estimate follow-up), NOSHOW [name] (mark appointment no-show), WON [ref] / LOST [ref] (report job outcome), or WINS (list pending leads with ref codes) from their personal phone &mdash; not just the owner. Command auth checks `clientMemberships` for the sender&apos;s phone.
+- **PAUSE / RESUME commands:** contractor texts PAUSE to their business number &rarr; AI mode set to `off`, all pending scheduled messages cancelled. Texts RESUME &rarr; AI mode restored to `autonomous`. Gives contractors a sense of control over automation. Notification fires when AI auto-progresses to autonomous mode: &ldquo;Your system is now fully automated. Reply PAUSE to this number to pause at any time.&rdquo;
 - **Escalation batching:** when 3+ escalations fire within 30 minutes, team members receive a single summary SMS instead of individual notifications per lead
 - **Crew availability toggle:** `availabilityStatus` field on team memberships (available/busy/off_duty). Busy or off-duty members are automatically excluded from ring groups and escalation routing.
 - **Per-member work schedule:** admin can set per-day working hours (start/end time, working flag) for each team member via the team edit dialog. Stored as `workSchedule` jsonb. Used by `getAvailableSlots()` when booking for a specific member.
@@ -668,9 +725,24 @@ Sent from the client&apos;s business line (same thread as AI conversations). Per
 - Report delivery lifecycle: generated &rarr; queued &rarr; sent &rarr; failed
 - Retry cron with exponential backoff
 - Terminal failure alerts to admin
-- **Auto-follow-up SMS:** after report delivery, the system auto-sends an SMS to the contractor via the agency number: &quot;[Business Name] &mdash; your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.&quot; Fire-and-forget; does not affect delivery state.
-- **Weekly activity digest:** Monday SMS with activity summary, adaptive cadence (see above).
+- **Auto-follow-up SMS:** after report delivery, the system auto-sends an SMS to the contractor via the agency number that includes inline stats from the report period &mdash; leads responded to, estimates followed up, and appointments booked &mdash; so key numbers land in the message thread even if the contractor never opens the email. Fire-and-forget; does not affect delivery state.
+- **Weekly activity digest:** Monday SMS with activity summary, adaptive cadence (see above). The active-week message now includes activity metrics (inquiries, estimates, appointments) alongside pipeline dollars. When confirmed pipeline is $0, the SMS appends a &ldquo;Reply WON [name]&rdquo; CTA to prompt the contractor to confirm any actual wins.
 - Client portal download link
+
+### Bi-Weekly Strategy Call (Managed Service)
+
+The primary retention mechanism. 30-minute call with each client every 2 weeks, timed to the report delivery.
+
+**Structured agenda:**
+1. **Revenue capture (5 min):** Walk through leads with pending outcomes. Mark WON/LOST from admin UI live on the call. This closes the gap the automation can&apos;t &mdash; the contractor tells the operator what closed, operator records it.
+2. **Report walkthrough (10 min):** Speed-to-lead, follow-up activity, appointments, reviews, pipeline. Frame as &ldquo;what happened&rdquo; not &ldquo;what we did.&rdquo;
+3. **Action items (5 min):** EST habit check, KB gap resolution, team member setup, calendar review.
+4. **Business challenges (5 min):** Seasonal changes, new services, pricing updates, frustrations.
+5. **Next steps + close (5 min):** Summarize, confirm next call, end with a specific dollar number.
+
+**Why it matters:** Resolves 4 of 6 remaining yellow-grade friction points (revenue data, WON/LOST adoption, team setup, EST adoption) through direct operator intervention rather than automation. Competitors either skip the call or make it a perfunctory check-in. This call is structured, data-driven, and the single biggest differentiator of the managed service.
+
+**Operator time:** 30 min call + 15 min prep/post = 45 min per client per cycle = ~22.5 min/week per client. At 15 clients: 5.6 hr/week for strategy calls.
 
 ### Funnel Tracking
 
@@ -791,6 +863,7 @@ Before the sales call, the operator runs a lightweight pre-sale audit using publ
 - **Welcome communications:** signup triggers a fire-and-forget welcome email (using `onboardingWelcomeEmail` template) and welcome SMS with login link. Contractor receives both within seconds of signing up.
 - **Phone setup prompt:** if the `number_live` milestone goes overdue (Day 1-2), the day-one SLA check cron sends the contractor an SMS reminder with a direct link to `/client/settings/phone`.
 - **Subscription-gated phone purchase:** phone provisioning requires an active subscription. Clear prompt to choose a plan if attempted without one.
+- **Day 2-3 Quote Import Call:** operator schedules a follow-up call 24-48 hours after go-live to collect the contractor&apos;s existing open quotes. These are imported via the portal quote import (`POST /api/client/leads/import`) so the estimate follow-up sequence can activate immediately on past-due opportunities. This step is now a standard onboarding milestone — see `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10.
 
 ### Onboarding Checklist
 

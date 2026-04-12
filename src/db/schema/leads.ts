@@ -47,6 +47,7 @@ export const leads = pgTable(
     temperature: varchar('temperature', { length: 10 }).default('warm'),
     confirmedRevenue: integer('confirmed_revenue'), // nullable; stored in cents
     stripeCustomerId: varchar('stripe_customer_id', { length: 100 }),
+    outcomeRefCode: varchar('outcome_ref_code', { length: 8 }),
     tags: jsonb('tags').$type<string[]>().default([]),
     optedOut: boolean('opted_out').default(false),
     optedOutAt: timestamp('opted_out_at'),
@@ -62,6 +63,7 @@ export const leads = pgTable(
       sql`${table.actionRequired} = true`
     ),
     index('idx_leads_conversation_mode').on(table.conversationMode),
+    unique('leads_client_outcome_ref_unique').on(table.clientId, table.outcomeRefCode),
     check('leads_score_range', sql`${table.score} >= 0 AND ${table.score} <= 100`),
     check('leads_confirmed_revenue_non_negative', sql`${table.confirmedRevenue} IS NULL OR ${table.confirmedRevenue} >= 0`),
   ]

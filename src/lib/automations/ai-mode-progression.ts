@@ -22,6 +22,7 @@ import { auditLog, clients, conversations } from '@/db/schema';
 import { and, count, eq, gte, ne } from 'drizzle-orm';
 import { evaluateOnboardingQualityForClient } from '@/lib/services/onboarding-quality';
 import { sendAlert } from '@/lib/services/agency-communication';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -87,6 +88,8 @@ export async function runAiModeProgression(): Promise<AiModeProgressionResult> {
       businessName: clients.businessName,
       aiAgentMode: clients.aiAgentMode,
       createdAt: clients.createdAt,
+      phone: clients.phone,
+      twilioNumber: clients.twilioNumber,
     })
     .from(clients)
     .where(
@@ -190,15 +193,25 @@ export async function runAiModeProgression(): Promise<AiModeProgressionResult> {
 
       // ── SMS notification to contractor ───────────────────────────────────
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.conversionsurgery.com';
-      const smsMessage =
-        targetMode === 'assist'
-          ? `Your AI for ${client.businessName} is now active. It will draft responses to leads and auto-send after 5 minutes — giving you a window to review or edit. Check drafts in your portal: ${appUrl}/client/conversations`
-          : `Your AI for ${client.businessName} is now running on autopilot. Responses send instantly — no review window. You can take over any conversation anytime from your portal: ${appUrl}/client/conversations`;
 
-      await sendAlert({
-        clientId: client.id,
-        message: smsMessage,
-      });
+      if (targetMode === 'assist') {
+        await sendAlert({
+          clientId: client.id,
+          message: `Your AI for ${client.businessName} is now active. It will draft responses to leads and auto-send after 5 minutes — giving you a window to review or edit. Check drafts in your portal: ${appUrl}/client/conversations`,
+        });
+      } else if (client.phone && client.twilioNumber) {
+        // Autonomous activation — send via sendCompliantMessage so the contractor
+        // knows they can reply PAUSE to this same number to stop automation.
+        await sendCompliantMessage({
+          clientId: client.id,
+          to: client.phone,
+          from: client.twilioNumber,
+          body: 'Your system is now fully automated. It responds to leads, follows up on estimates, and requests reviews — all on its own. To pause automation at any time, reply PAUSE to this number.',
+          messageClassification: 'proactive_outreach',
+          messageCategory: 'transactional',
+          metadata: { source: 'ai_mode_progression_autonomous_activation' },
+        });
+      }
 
       details.push({
         clientId: client.id,

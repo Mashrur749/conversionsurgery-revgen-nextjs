@@ -34,7 +34,7 @@ ConversionSurgery is a managed revenue recovery service. You run the system for 
 |------|:----:|-----|
 | One onboarding call | 30 min, once | You run it. They answer questions. |
 | Flag estimates as sent | 10 seconds each | Text EST to their business number, or tap &ldquo;Mark Estimate Sent&rdquo; in the portal |
-| Mark jobs won or lost | 10 seconds each | Tap &ldquo;Mark Won&rdquo; in the portal, enter the amount. Or reply YES/NO to the weekly nudge SMS. |
+| Mark jobs won or lost | 10 seconds each | Text WON [ref code] or LOST [ref code] to their business number. Or tap &ldquo;Mark Won&rdquo; in the portal. Auto-detect prompts them after 7 days of silence. |
 | Respond to escalations | As needed | AI texts them when a lead needs human attention. They reply. |
 | Review AI-drafted Google responses | Occasional | Approve or edit before it posts. Nothing auto-posts. |
 
@@ -78,11 +78,11 @@ Full guarantee terms, volume conditions, and attribution rules: see `docs/busine
 
 ### The ROI Math (Memorize This)
 
-One recovered kitchen ($35-65K) or basement ($45-80K) project pays for **3-5 years** of the service.
+One recovered kitchen ($7-13K profit at 20% margin) or basement ($9-16K profit) project covers **7-16 months** of the service. Always use profit math, not revenue &mdash; contractors know their margins and will do the calculation themselves.
 
-A contractor with 20 dead quotes at $40K average has $800K sitting in their phone. The system contacts all 20 for free in Month 1. If ONE responds and closes, that&apos;s $40K from a $12K annual investment.
+A contractor with 20 dead quotes at $40K average has $160K in profit sitting in their phone (at 20% margin). The system contacts all 20 for free in Month 1. If ONE responds and closes, that&apos;s $8K profit from a $1K monthly investment.
 
-**Break-even: 1 project per year.** The system typically delivers 2-8 per year.
+**Monthly ROI: recovering 1 leaked lead/month = 8-16x.** Frame as monthly, not annual &mdash; that&apos;s how they think.
 
 ### Who Gets 5-10x ROI (Sign Them)
 
@@ -181,8 +181,8 @@ This is the highest-ROI feature. Most contractors never follow up on estimates. 
 | AI is too generic / defers too much | High (Week 1) | KB is thin. Normal. Fill more entries from the gap queue. | Low &mdash; resolves by Week 2-3 |
 | Double-booking | Low | Calendar sync checks both systems. If sync token expires, reconnect. | Medium &mdash; embarrassing but recoverable |
 | Message during quiet hours | Very low | STRICT mode prevents this. Will not happen. | N/A &mdash; system blocks it |
-| Contractor never flags estimates | High | Follow-up never fires. 48-hour nudge and portal button help. | Medium &mdash; depends on habit |
-| Contractor never marks jobs won | High | Jobs We Helped Win shows $0 — but System Activity card auto-tracks pipeline proof with no contractor action. Probable wins nudge (weekly YES/NO SMS) recovers some wins. The Revenue page ROI card still shows net return from confirmed wins. | Low &mdash; mitigated by pipeline proof card |
+| Contractor never flags estimates | High | Follow-up never fires. 24-hour fallback nudge + 3-day proactive quote prompt + portal button help. | Medium &mdash; depends on habit |
+| Contractor never marks jobs won | High | Jobs We Helped Win shows $0 &mdash; but System Activity card auto-tracks pipeline proof. Daily auto-detect (7-day silence after appointment) prompts with WON/LOST ref codes. Bi-weekly strategy call catches the rest. | Low &mdash; mitigated by auto-detect + strategy call |
 
 ### What This System Does NOT Do (Know This Cold)
 

@@ -27,10 +27,11 @@ Work through these sections in order. Each test tells you exactly what to click,
 
 1. In the admin nav, click **Clients** &rarr; **Clients** &rarr; then click the **+ New Client** button (or use the wizard link)
 2. Fill in:
-   - Business name: &ldquo;Summit Renovations&rdquo; (or anything)
+   - Business name: &ldquo;Peak Basements YYC&rdquo; (use a basement company name &mdash; this is what you&apos;ll sell to)
    - Owner name, email, phone: use your Dev Phone #3 (Owner) number for the phone
    - Twilio number: select Dev Phone #1 (Business Line)
 3. Complete the wizard. Click through each step.
+4. **Load the basement KB preset:** open `docs/operations/templates/BASEMENT-KB-PRESET.md` and enter the 21 preset entries into the Knowledge Base. Customize the 5 REQUIRED entries (pricing range, warranty, service area, trades, scope exclusions) for your test company. This simulates what you&apos;ll do for every real client.
 4. Click **Clients** &rarr; **Clients** in the nav &mdash; your new client should appear.
 
 - [ ] Client shows in the list with status &ldquo;active&rdquo;
@@ -40,7 +41,7 @@ Work through these sections in order. Each test tells you exactly what to click,
 This is the product&apos;s core value. A homeowner texts, the AI replies.
 
 1. Open Dev Phone #2 (Lead) in your browser (port 3001)
-2. Send a text to the Business Line (#1): &ldquo;Hi, I need a quote for a kitchen renovation&rdquo;
+2. Send a text to the Business Line (#1): &ldquo;Hi, I&apos;m looking to get my basement finished. About 800 square feet. What would something like that cost?&rdquo;
 3. Watch your terminal &mdash; you should see webhook logs
 4. Within 2-8 seconds, Dev Phone #2 receives an AI response
 5. In the admin nav, click **Client View** &rarr; **Conversations** (make sure your test client is selected in the client dropdown)
@@ -64,7 +65,7 @@ This is the product&apos;s core value. A homeowner texts, the AI replies.
 
 1. From Dev Phone #2, **call** the Business Line (#1) and let it ring until Voice AI picks up
 2. You should hear a voice greeting (ElevenLabs voice)
-3. Say: &ldquo;I need help with a bathroom renovation&rdquo; &mdash; AI should respond conversationally
+3. Say: &ldquo;I&apos;m looking to finish my basement &mdash; about 1,000 square feet&rdquo; &mdash; AI should respond conversationally using the KB preset data
 4. Say: &ldquo;I want to speak to someone&rdquo; &mdash; this should trigger a transfer attempt
 5. Hang up. Go to **Clients** &rarr; **Clients** &rarr; click your test client &rarr; look for call transcript + AI summary
 
@@ -276,22 +277,53 @@ You already know the features work (Phase 2). Now practice delivering the servic
 
 > **Have open while working through this:** `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` &mdash; Section 10 is the onboarding call script you&apos;ll practice.
 
-### 3.1 Day 0: Sign the Client
+### 3.1 Day 0: The Full Close Flow
 
-You&apos;re simulating the moment a contractor says &ldquo;yes.&rdquo;
+You&apos;re simulating the moment a contractor says &ldquo;yes&rdquo; &mdash; practice the ENTIRE close flow from Sales Toolkit Section 14.
+
+**Step 1: Create the client**
 
 1. Click **Clients** &rarr; **Clients** &rarr; **+ New Client** (use the wizard)
-2. Create &ldquo;Summit Renovations&rdquo; (managed service model)
+2. Create &ldquo;Peak Basements YYC&rdquo; (managed service model &mdash; simulate a Calgary basement contractor, your target ICP)
    - Owner phone: Dev Phone #3
    - Twilio number: Dev Phone #1
-3. Open `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` and read through it as if you&apos;re about to send it to Summit Renovations. You need to be comfortable explaining every section on a call.
-4. Click **Clients** &rarr; **Clients** &rarr; click Summit Renovations &rarr; click **Send Payment Link**
-5. On Dev Phone #3, open the Stripe link. Pay with test card `4242 4242 4242 4242`.
-6. Check: welcome email arrived? Welcome SMS with login link?
 
-- [ ] Service agreement reviewed &mdash; I can explain every section
-- [ ] Payment captured via Send Payment Link
+**Step 2: Practice the close script OUT LOUD**
+
+Open `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` Section 14. Say these out loud as if you&apos;re on the call:
+
+1. &ldquo;Awesome. Let&apos;s get you set up.&rdquo;
+2. Walk through the 5 key terms (say them out loud):
+   - First month free
+   - Month-to-month, cancel anytime with 30 days notice
+   - 90-day guarantee
+   - Your data is yours, full export if you leave
+   - $1,000/month flat, no hidden fees
+3. &ldquo;I&apos;m sending you the payment link now. The full terms are on the checkout page.&rdquo;
+
+**Step 3: Send payment link + verify**
+
+4. Click **Clients** &rarr; **Clients** &rarr; click Peak Basements YYC &rarr; click **Send Payment Link**
+5. On Dev Phone #3, open the Stripe link. Verify: Terms of Service checkbox appears on checkout page.
+6. Pay with test card `4242 4242 4242 4242`.
+7. Check: welcome email arrived? Welcome SMS with login link?
+
+**Step 4: Practice the post-close script OUT LOUD**
+
+8. Say out loud: &ldquo;Perfect, I can see that went through. Your free month starts today. Billing kicks in on [date]. Sound good?&rdquo;
+9. Say: &ldquo;Now let&apos;s get you live. I need 30 minutes with you to set up your business number and train the AI on your business. What works &mdash; [time options]?&rdquo;
+10. Say: &ldquo;Here&apos;s what happens next. On our onboarding call I&apos;ll set up your business number, train the AI with your services, and import your old quotes so we can start following up immediately. You&apos;ll start catching leads the same day.&rdquo;
+
+**Step 5: Send the welcome text**
+
+11. Practice sending this text to Dev Phone #3 (or say it out loud):
+    &ldquo;Hey [Name], welcome to ConversionSurgery. Your free month starts today. Onboarding call: [day] at [time]. Before that call, think of 5 people you quoted in the last 6 months that never got back to you &mdash; just first names and what the project was. Talk soon. &mdash; Mashrur&rdquo;
+
+- [ ] Close script practiced out loud &mdash; I can say the 5 key terms without reading
+- [ ] Payment link sent and checkout completed with ToS acceptance
 - [ ] Welcome email + SMS received
+- [ ] Post-close script practiced &mdash; I can book the onboarding call naturally
+- [ ] Welcome text practiced
 
 ### 3.2 Day 1: Practice the Onboarding Call
 
@@ -301,8 +333,8 @@ Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10 (the call scrip
 
 1. Open the call script (Playbook Section 10)
 2. Say the intro out loud: &ldquo;Thanks for signing up, let me walk you through...&rdquo;
-3. Click **Clients** &rarr; **Clients** &rarr; click Summit Renovations &rarr; click **Knowledge Base** (link in the top-right area of the client detail page, or via the &ldquo;Configure&rdquo; link in the onboarding checklist on the Overview tab)
-4. Fill in the knowledge base while &ldquo;asking&rdquo; Summit Renovations:
+3. Click **Clients** &rarr; **Clients** &rarr; click Peak Basements YYC &rarr; click **Knowledge Base** (link in the top-right area of the client detail page, or via the &ldquo;Configure&rdquo; link in the onboarding checklist on the Overview tab)
+4. Fill in the knowledge base while &ldquo;asking&rdquo; Peak Basements YYC:
    - What services do you offer?
    - What&apos;s your service area?
    - What are your hours?
@@ -315,7 +347,7 @@ Read `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10 (the call scrip
 
 Practice this exact phrase out loud: &ldquo;Before we turn anything on &mdash; anyone you want us to skip? Family, close friends, personal numbers that might be in your contacts?&rdquo;
 
-1. Click **Clients** &rarr; **Clients** &rarr; click Summit Renovations &rarr; **Configuration** tab
+1. Click **Clients** &rarr; **Clients** &rarr; click Peak Basements YYC &rarr; **Configuration** tab
 2. Find **Exclusion List** card &rarr; add 2-3 fake numbers
 
 This is mandatory for every real client. Skipping it means the AI could text a contractor&apos;s wife or best friend.
@@ -326,7 +358,7 @@ This is mandatory for every real client. Skipping it means the AI could text a c
 
 Before any real client goes live, you QA their voice AI.
 
-1. Click **Settings** &rarr; **Voice AI** &rarr; expand Summit Renovations
+1. Click **Settings** &rarr; **Voice AI** &rarr; expand Peak Basements YYC
 2. **Greeting Preview:** click play &mdash; listen to the greeting. Does it sound right for a renovation company?
 3. **KB Test:** run it &mdash; check coverage percentage. If below 70%, add more KB entries.
 4. **Guardrail Test:** run 8 adversarial inputs. All should pass.
@@ -354,17 +386,73 @@ Before any real client goes live, you QA their voice AI.
 
 - [ ] I understand what the contractor sees on their first login
 
+### 3.2b Day 2-3: Practice the Quote Import Call
+
+This is the 15-minute follow-up call to collect old quotes. See Playbook Section 10.
+
+1. Practice the pre-call SMS out loud: &ldquo;One more thing before our next quick call &mdash; think of 5 people you gave a quote to in the last 6 months that never got back to you. Just first name and what the project was.&rdquo;
+2. Simulate the call: pretend you&apos;re on the phone with the contractor. They read off 5 names. You type them into a CSV.
+3. Import the CSV via **Client View** &rarr; **Leads** &rarr; **Import** with `status=estimate_sent`.
+4. Verify follow-up sequences are scheduled for the imported leads.
+5. Practice the post-import text: &ldquo;Just sent follow-ups to 5 of your old quotes. You&apos;ll start seeing replies within 24-48 hours.&rdquo;
+
+- [ ] Quote Import Call script practiced out loud
+- [ ] Old quotes imported and follow-ups firing
+
+### 3.2c Day 7: Practice the Check-In Call
+
+This is the 10-minute Day 7 check-in. Simulate it.
+
+1. Say out loud: &ldquo;Hey [Name], quick check-in. Let me show you what the system did this week.&rdquo;
+2. Open **Client View** &rarr; **Leads** &mdash; note how many leads came in, how many responded.
+3. Practice walking through the numbers: &ldquo;You had X leads come in. We responded to all of them in under 10 seconds. Y of your old quotes replied.&rdquo;
+4. Practice the EST reinforcement: &ldquo;Quick reminder &mdash; when you send an estimate, text EST [name] to your business number. That starts the follow-up.&rdquo;
+5. Practice WON/LOST introduction: &ldquo;And when a job closes, text WON [name] so we can track your results for the guarantee.&rdquo;
+6. Book the next check-in: &ldquo;Let&apos;s do a 30-minute strategy call in two weeks. I&apos;ll walk you through a full report with your numbers.&rdquo;
+
+- [ ] Day 7 check-in script practiced out loud
+- [ ] I know where to find the data to walk through
+
+### 3.2d Practice the Bi-Weekly Strategy Call
+
+This is your #1 retention touchpoint. See Playbook Section 4.
+
+1. Open the strategy call agenda from `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 4.
+2. Practice out loud (pretend you have 2 weeks of data):
+   - **Revenue capture (5 min):** &ldquo;Let&apos;s go through your recent leads. Sarah T. had an appointment 2 weeks ago. Did you close that one?&rdquo; Practice entering WON in admin.
+   - **Report walkthrough (10 min):** Walk through leads captured, response time, appointments, reviews, pipeline.
+   - **Action items (5 min):** &ldquo;I see 3 estimates went out but only 1 triggered follow-up. Let&apos;s make sure we catch all of them.&rdquo;
+   - **Business challenges (5 min):** &ldquo;Anything going on in the business I should know about?&rdquo;
+   - **Close (5 min):** &ldquo;You recovered $X this cycle. One more basement like Sarah&apos;s covers the whole year.&rdquo;
+
+- [ ] Strategy call flow practiced out loud
+- [ ] I can walk through the report and capture revenue data naturally
+
+### 3.2e Practice SMS Commands (Contractor Perspective)
+
+Test every command the contractor will use, from their perspective (Dev Phone #3):
+
+1. Text `EST Sarah` to the business number (Dev Phone #1) &mdash; verify estimate follow-up starts
+2. Text `WON 1` (or whatever ref code) &mdash; verify lead marked won, revenue logged
+3. Text `LOST 2` &mdash; verify lead marked lost, sequences cancelled
+4. Text `WINS` &mdash; verify list of pending leads with ref codes
+5. Text `PAUSE` &mdash; verify AI mode turns off, scheduled messages cancelled
+6. Text `RESUME` &mdash; verify AI mode returns to autonomous
+
+- [ ] All 6 SMS commands tested from the contractor&apos;s phone
+- [ ] I can explain each one to a contractor in 10 seconds
+
 ### 3.3 Day 1-2: Revenue Leak Audit
 
 This is the deliverable you give every client within 48 hours. Practice on a real business.
 
-1. Open Google Maps. Search for a real renovation contractor in your area.
-2. Open `docs/operations/templates/REVENUE-LEAK-AUDIT-TEMPLATE.md`
-3. Fill it out using what you find: their Google reviews, response time, website, and online presence
-4. Also practice the **Pre-Sale** version: open `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` and fill it for a different contractor using only public data. This is what you run BEFORE outreach &mdash; no contractor participation needed.
+1. Open Google Maps. Search &ldquo;basement development Calgary&rdquo; &mdash; pick a real basement contractor.
+2. Open `docs/operations/templates/BASEMENT-REVENUE-LEAK-AUDIT.md` (the basement-specific audit template)
+3. Follow the 5-step research checklist (10-15 min). Fill in every section using what you find: their Google reviews vs competitors, estimated response time, secondary suite listing, follow-up gap estimate, missed call revenue.
+4. Do this for 3 different real basement contractors. By the third one, you&apos;ll be fast. These become your first 3 outreach targets.
 
-- [ ] Revenue Leak Audit completed for a real business
-- [ ] Pre-Sale audit completed for a second business
+- [ ] Revenue Leak Audit completed for 3 real Calgary basement contractors
+- [ ] I can complete one in under 15 minutes
 
 ### 3.4 Week 1-2: Daily Operations
 
@@ -372,20 +460,21 @@ Simulate what your daily routine looks like with an active client.
 
 **Simulate homeowner conversations (10 min):**
 
-1. From Dev Phone #2, text the business number as different &ldquo;homeowners&rdquo;:
-   - &ldquo;Hi, do you do bathroom renovations?&rdquo;
-   - &ldquo;What&apos;s your availability next week?&rdquo;
-   - &ldquo;How much for a deck?&rdquo;
+1. From Dev Phone #2, text the business number as different &ldquo;homeowners&rdquo; (use basement-specific questions &mdash; this is what your real clients&apos; leads will ask):
+   - &ldquo;Hi, we just bought a house in Airdrie and want to finish the basement. About 900 sq ft. What would that run?&rdquo;
+   - &ldquo;Do you do secondary suites? We want to add a legal suite for rental income.&rdquo;
+   - &ldquo;How long does a full basement development take? We&apos;re hoping to be done by fall.&rdquo;
    - &ldquo;Can I book an estimate for next Tuesday?&rdquo; (tests appointment booking)
-   - &ldquo;I want to speak to someone about a complaint.&rdquo; (tests escalation)
+   - &ldquo;I want to speak to someone &mdash; the quote I got seems really high.&rdquo; (tests escalation)
+   - &ldquo;Do you need a permit to finish a basement in Calgary?&rdquo; (tests KB preset knowledge)
 2. Watch the AI respond to each. Note which responses are good and which need KB improvement.
 
 **Check your daily operator dashboard (5 min):**
 
-3. Click **Clients** &rarr; **Triage** &mdash; does Summit Renovations show as needing attention?
+3. Click **Clients** &rarr; **Triage** &mdash; does Peak Basements YYC show as needing attention?
 4. Click **Client View** &rarr; **Escalations** (per-client queue) &mdash; the &ldquo;complaint&rdquo; text should have created an escalation. Click it. Read the AI&apos;s notes. Click **Resolve** with a note. With multiple clients, use **Clients** &rarr; **Escalations** for the cross-client queue (same as `/escalations` in the nav).
 5. Click **Clients** &rarr; **AI Flagged Responses** &mdash; any flagged messages? If so, review them.
-6. Click **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; **Knowledge Base** (page link) &rarr; **Gap Queue** tab &mdash; any KB gaps? Add the answer.
+6. Click **Clients** &rarr; **Clients** &rarr; Peak Basements YYC &rarr; **Knowledge Base** (page link) &rarr; **Gap Queue** tab &mdash; any KB gaps? Add the answer.
 
 **Generate a report:**
 
@@ -400,7 +489,7 @@ Simulate what your daily routine looks like with an active client.
 9. Log in as Summit&apos;s contractor (http://localhost:3000/client-login in incognito)
 10. Check: Voice AI card, System Activity card (probable pipeline), Jobs We Helped Win card (numbers may be $0 with test data)
 11. Go to **Settings** &rarr; Billing &mdash; you should see: current plan (read-only), trial countdown, guarantee status card with progress bar. No &ldquo;Change Plan&rdquo; button (managed client). Note: Billing is in Settings, not a top-level nav item for managed clients.
-12. Switch to admin view &rarr; **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; Overview tab &mdash; check guarantee phase, pipeline value, days remaining.
+12. Switch to admin view &rarr; **Clients** &rarr; **Clients** &rarr; Peak Basements YYC &rarr; Overview tab &mdash; check guarantee phase, pipeline value, days remaining.
 
 - [ ] I know what the daily operator routine feels like
 - [ ] Escalation resolved
@@ -426,7 +515,7 @@ These WILL happen with real clients. Practice now so you&apos;re not figuring it
 
 **Contractor wants to pause (Section 6):**
 
-1. Click **Clients** &rarr; **Clients** &rarr; Summit Renovations &rarr; pause the subscription
+1. Click **Clients** &rarr; **Clients** &rarr; Peak Basements YYC &rarr; pause the subscription
 2. Verify: automations stop. Check **Client View** &rarr; **Scheduled** &mdash; pending messages should not send.
 3. Log in as contractor &mdash; they should see the paused state
 4. **Key learning:** pause = temporary, automations stop, data stays. Cancel = 30-day grace, then data export.
@@ -467,17 +556,34 @@ These WILL happen with real clients. Practice now so you&apos;re not figuring it
 ### Phase 3 done?
 
 You should now be able to:
-- [ ] Walk a contractor through onboarding on a call (KB, exclusion list, Voice QA, expectations)
+
+**The close:**
+- [ ] Say the 5 key terms out loud without reading
+- [ ] Send a payment link and verify ToS acceptance on checkout
+- [ ] Say the post-close script naturally (book onboarding, set expectations, send welcome text)
+
+**The onboarding:**
+- [ ] Walk a contractor through the full onboarding call (KB preset + 5 custom Qs, exclusion list, calendar path, team members, EST walkthrough, Voice AI QA, expectations)
+- [ ] Run the Day 2-3 Quote Import Call
+- [ ] Run the Day 7 check-in with real data
+
+**The ongoing delivery:**
+- [ ] Run a bi-weekly strategy call (revenue capture, report walkthrough, action items, business challenges)
 - [ ] Handle daily operations in 5-10 minutes per client
 - [ ] Resolve an escalation
-- [ ] Fill a KB gap when the AI can&apos;t answer something
+- [ ] Fill a KB gap
 - [ ] Explain what the report shows
-- [ ] Handle opt-outs, pauses, and cancellations confidently
-- [ ] Deliver a Revenue Leak Audit
-- [ ] Capture payment during an onboarding call
-- [ ] Explain the difference between DNC and opt-out
 
-If you can check all of those, you&apos;re ready to learn the sales pitch. Move to Phase 4.
+**SMS commands:**
+- [ ] All 6 commands tested (EST, WON, LOST, WINS, PAUSE, RESUME)
+- [ ] Can explain each to a contractor in 10 seconds
+
+**Edge cases:**
+- [ ] Handle opt-outs, pauses, and cancellations confidently
+- [ ] Explain DNC vs opt-out
+- [ ] Deliver a Revenue Leak Audit in under 15 minutes
+
+If you can check all of those, you&apos;ve practiced the ENTIRE client lifecycle: close &rarr; onboard &rarr; deliver &rarr; retain. Move to Phase 4.
 
 ---
 
@@ -499,22 +605,24 @@ After Evening 1 you should be able to describe the full service delivery without
 
 **Evening 2 &mdash; How to sell it (2 hours):**
 
-4. `docs/business-intel/OFFER-APPROVED-COPY.md` (20 min) &mdash; **approved sales copy**: proposals, emails, website language all come from HERE
-5. `docs/operations/COLD-START-PLAYBOOK.md` (30 min) &mdash; day-by-day schedule for getting first clients, word-for-word scripts
-6. `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (30 min) &mdash; &ldquo;too expensive,&rdquo; &ldquo;tried something similar,&rdquo; &ldquo;I get referrals&rdquo;
-7. `docs/business-intel/COMPETITIVE-COMPARISON.md` (10 min) &mdash; positioning vs answering services, CRMs, DIY tools
-8. `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` (10 min) &mdash; known risks acknowledged before first client
-9. `docs/business-intel/VOICE.md` (10 min) &mdash; brand voice: how to write and speak as ConversionSurgery
+4. `docs/business-intel/ICP-DEFINITION.md` (10 min) &mdash; **your target buyer**: Calgary basement development contractors. Memorize the 30-second qualifier.
+5. `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` (30 min) &mdash; **your complete sales toolkit**: cold call script with guardrails, DM templates, instant demo flow, 10 objection handlers, leave-behind one-pager, practice call guide. This is your primary sales doc.
+6. `docs/business-intel/OFFER-APPROVED-COPY.md` (20 min) &mdash; approved sales copy for proposals and emails
+7. `docs/operations/ACQUISITION-PLAYBOOK-0-TO-5.md` (20 min) &mdash; broader strategy for landing first 5 clients
+8. `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (20 min) &mdash; deep-dive objection handling
+9. `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` (10 min) &mdash; known risks acknowledged before first client
+10. `docs/operations/templates/CS-PLUS-YOUR-TOOL.md` (5 min) &mdash; how to position CS alongside Jobber/BuilderTrend/etc.
 
 After Evening 2 you should be able to pitch the service and handle the top 5 objections.
 
 **Bookmark these for sales calls (don&apos;t memorize &mdash; just know where they are):**
 
+- `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` &mdash; **your primary sales doc**: scripts, objections, demo flow, leave-behind
+- `docs/operations/templates/BASEMENT-REVENUE-LEAK-AUDIT.md` &mdash; run before every demo call
+- `docs/business-intel/ICP-DEFINITION.md` &mdash; your target buyer definition + 30-second qualifier
 - `docs/business-intel/OFFER-APPROVED-COPY.md` &mdash; exact language for proposals and emails
-- `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` &mdash; ROI calculation for calls
 - `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md` &mdash; fill in YOUR details before first client
-- `docs/business-intel/COMPETITIVE-COMPARISON.md` &mdash; comparison table for objection handling
-- `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` &mdash; run before every outreach
+- `docs/operations/templates/CS-PLUS-YOUR-TOOL.md` &mdash; positioning when they use Jobber/BuilderTrend
 - `docs/product/ROI-CALCULATOR-GUIDE.md` &mdash; how to use the calculator during calls
 - `docs/product/PLATFORM-CAPABILITIES.md` &mdash; when a contractor asks &ldquo;can it do X?&rdquo;
 
@@ -524,14 +632,15 @@ After Evening 2 you should be able to pitch the service and handle the top 5 obj
 
 ### 4.2 Practice Sales Out Loud
 
-Don&apos;t skip this. Reading scripts silently is not the same as saying them. Open `docs/operations/COLD-START-PLAYBOOK.md`.
+Don&apos;t skip this. Reading scripts silently is not the same as saying them. Open `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md`.
 
-**The pitch (15 min):**
+**The pitch (20 min):**
 
-1. Say the cold call opener 3 times until it feels natural
-2. Practice the &ldquo;I&apos;m busy&rdquo; response and voicemail script
+1. Follow the Practice Call Guide (Section 6 of the Sales Toolkit): read the script out loud 5 times, record yourself, listen back
+2. Practice ALL 6 cold call branches: engage, send me something, not interested, what does it cost, too busy, awkward silence
 3. Practice the close: &ldquo;First month is free. I set everything up. You pay nothing until you see results.&rdquo;
-4. Have someone ask you the top 3 objections &mdash; respond without notes
+4. Have someone play the contractor &mdash; have them use these 5 responses: (a) &ldquo;yeah tell me more&rdquo; (b) &ldquo;not interested&rdquo; (c) &ldquo;what does it cost?&rdquo; (d) &ldquo;I&apos;m busy&rdquo; (e) awkward silence
+5. Your first 3 REAL calls are practice calls &mdash; pick the 3 lowest-priority prospects on your list
 
 - [ ] I can deliver the opener without reading it
 
@@ -545,9 +654,9 @@ Don&apos;t skip this. Reading scripts silently is not the same as saying them. O
 
 **Pre-outreach prep (30 min):**
 
-8. Pick 3 real contractors from Google Maps
-9. For each one, fill out `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` using only public data (15-20 min each)
-10. Run the ROI calculator with 3 profiles: 15 leads/$50K avg, 30 leads/$35K avg, 8 leads/$80K avg. Check that numbers feel credible.
+8. Pick 3 real Calgary basement contractors from Google Maps (&ldquo;basement development Calgary&rdquo;)
+9. For each one, fill out `docs/operations/templates/BASEMENT-REVENUE-LEAK-AUDIT.md` using only public data (10-15 min each)
+10. Run the ROI calculator with 3 basement profiles: 15 leads/$60K avg, 25 leads/$50K avg, 12 leads/$90K avg (suite specialist). Check that numbers feel credible.
 11. Verify `POST /api/public/roi-calculator` returns a valid response (bookmark this for calls)
 
 - [ ] 3 Pre-Sale Revenue Leak Audits completed
@@ -699,22 +808,25 @@ Before you contact anyone:
 - [ ] Service agreement filled with your details &mdash; saved as PDF
 - [ ] Demo number tested today (call it, text it, confirm it works)
 - [ ] Voice AI Playground QA passed for demo client
-- [ ] Prospect list built (80+ contacts &mdash; see Cold Start Playbook)
-- [ ] Pre-Sale Revenue Leak Audit completed for first 3 prospects
-- [ ] Top 3 objection responses memorized (from `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`)
-- [ ] Competitive comparison reviewed (`docs/business-intel/COMPETITIVE-COMPARISON.md`)
+- [ ] Prospect list built (80+ Calgary basement contractors &mdash; see ICP Definition for sources)
+- [ ] Basement Revenue Leak Audit completed for first 3 prospects (`docs/operations/templates/BASEMENT-REVENUE-LEAK-AUDIT.md`)
+- [ ] Cold call script practiced out loud 5+ times (Sales Toolkit Section 1)
+- [ ] Top 5 objection responses practiced (Sales Toolkit Section 4)
+- [ ] 3 practice calls done on lowest-priority prospects
 
 ### 6.2 Start Outreach
 
-**Open:** `docs/operations/COLD-START-PLAYBOOK.md` &mdash; follow the day-by-day schedule.
+**Open:** `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` &mdash; your primary sales doc with scripts, DM templates, demo flow, and objection handlers.
 
-Also reference: `docs/operations/ACQUISITION-PLAYBOOK-0-TO-5.md` for the broader strategy of landing your first 5 clients.
+Also reference: `docs/operations/ACQUISITION-PLAYBOOK-0-TO-5.md` for the broader strategy of landing your first 5 Calgary basement clients.
 
-Both docs have: day-by-day schedules (designed around a 9-5 job), word-for-word scripts for every channel, follow-up sequences, and objection handling.
+**Your ICP:** `docs/business-intel/ICP-DEFINITION.md` &mdash; the 30-second qualifier, where to find prospects, and which sub-segments to prioritize.
 
 ### 6.3 When They Say Yes
 
 **Open:** `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10
+
+**Before hanging up the sales call** &mdash; run the live phone test if you haven&apos;t already (ICP qualifier Q5): text their business number from your Twilio number while still on the line. Confirms texts arrive, no carrier filtering, correct number. If it fails, flag the issue and plan the workaround before onboarding day. Also confirm Google Business Profile access (Q6) &mdash; if they can&apos;t log in, help them claim it before the Day 7 listing migration.
 
 On the call, after the &ldquo;wow moment&rdquo; (they hear the AI answer their phone):
 
@@ -722,8 +834,10 @@ On the call, after the &ldquo;wow moment&rdquo; (they hear the AI answer their p
 2. Contractor receives SMS + email with Stripe checkout link
 3. Stay on the line while they enter their card
 4. Once paid: walk them through onboarding (you practiced this in Phase 3)
+5. **Pre-commit the Day 7 listing migration** &mdash; before hanging up, schedule the Day 7 check-in on both calendars. Frame it: &ldquo;Next week I&rsquo;ll update your Google listing so every Google lead gets the same safety net. 5 minutes, you watch me do it.&rdquo; If they say &ldquo;just do it now,&rdquo; do it on the spot.
+6. **Hand them the exit document** (Playbook Appendix) &mdash; lists every change made, original values, and how to revert in 5 minutes. Makes exit feel safe.
 
-Timeline: Day 0 (signing) &rarr; Day 1 (onboarding call + KB + Voice QA) &rarr; Week 2 (first report) &rarr; Week 3 (check-in). Saturday mornings work well for onboarding calls.
+Timeline: Day 0 (signing + conditional forwarding) &rarr; Day 1 (onboarding call + KB + Voice QA) &rarr; **Day 7 (listing migration call)** &rarr; Week 2 (first report) &rarr; Week 3 (check-in). Saturday mornings work well for onboarding calls.
 
 ### 6.4 Daily Routine (5-10 min per client)
 

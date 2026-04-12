@@ -260,11 +260,18 @@ export async function POST(request: NextRequest) {
       results.kbGapNotify = await dispatch(baseUrl, '/api/cron/kb-gap-notify', cronSecret!, 'GET', failedJobs);
     }
 
-    // ── Weekly Monday 10am UTC ───────────────────────────────
-    if (day === 1 && hour === 10 && minute < 10) {
+    // ── Daily 10am UTC — Auto-detect probable wins ─────────────
+    if (hour === 10 && minute < 10) {
       results.probableWinsNudge = await dispatch(
         baseUrl,
         '/api/cron/probable-wins-nudge',
+        cronSecret!,
+        'GET',
+        failedJobs
+      );
+      results.proactiveQuotePrompt = await dispatch(
+        baseUrl,
+        '/api/cron/proactive-quote-prompt',
         cronSecret!,
         'GET',
         failedJobs

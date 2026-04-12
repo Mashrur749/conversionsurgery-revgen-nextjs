@@ -24,6 +24,35 @@ Extract from the user's message:
 
 If the problem is vague, ask the user to sharpen it. N agents on a fuzzy prompt wastes tokens.
 
+#### 1a. Markov activation gate
+
+Check whether the problem involves temporal or probabilistic reasoning about client lifecycles. Read `../service-delivery-simulation/references/markov-engine.md` Section 2 (Auto-detection gate).
+
+**Trigger signals:** time-based ("over N months", "timeline"), probability ("churn risk", "likelihood"), distribution ("P10/P50/P90", "best/worst case"), financial ("LTV", "lifetime value"), capacity ("breaking point distribution"), forecast ("predict", "expect", "what happens if").
+
+If ANY temporal signals are present:
+
+1. **Run pre-agent computation.** Execute the service-delivery simulation with Markov layer ONCE using the 10 archetype templates from `../service-delivery-simulation/references/variation-axes.md` (one cascade walk + one script run per archetype — not a full N=50 simulation).
+2. **Build the shared context block.** For each archetype, format the Markov output:
+   ```
+   MARKOV TRAJECTORY DATA (shared across all agents — do not invent alternative numbers):
+
+   Archetype: [name]
+     Expected absorption: [X] weeks
+     Churned probability: [X]%  |  Retained probability: [X]%
+     LTV distribution: P10=$[X]  P50=$[X]  P90=$[X]
+     Highest-sensitivity transition: [from]->[to] (reducing by 30% improves LTV by $[X])
+
+   [... repeated for each archetype ...]
+
+   Use these numbers as given. Your role is to INTERPRET them through your analytical
+   lens, not to question or replace them. Disagree on what to DO about them, not on
+   what they ARE.
+   ```
+3. **Include this block in every agent prompt** (Step 4), before the output schema.
+
+If NO temporal signals are present, skip this entirely — proceed with standard consensus flow.
+
 ### 2. Design the structured output schema
 
 Before spawning, define what each agent must return. This MUST be structured enough to aggregate. Examples:

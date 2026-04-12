@@ -11,6 +11,7 @@ import { checkAndSuggestFlows, handleApprovalResponse } from '@/lib/services/flo
 import { triggerEstimateFollowupFromSmsCommand } from '@/lib/services/estimate-triggers';
 import { AI_ASSIST_CATEGORY, resolveAiSendPolicy } from '@/lib/services/ai-send-policy';
 import { handleSmartAssistOwnerCommand, queueSmartAssistDraft } from '@/lib/services/smart-assist-lifecycle';
+import { handleOutcomeCommand } from '@/lib/services/outcome-commands';
 import { scoreLead, quickScore } from '@/lib/services/lead-scoring';
 import { processIncomingMedia, generatePhotoAcknowledgment } from '@/lib/services/media';
 import { processIncomingMessage } from '@/lib/agent/orchestrator';
@@ -301,6 +302,62 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       return { processed: true, action: 'noshow_command_handled', leadId: noshowLeadId };
     }
 
+    // PAUSE command — contractor pauses all AI automation for this client
+    if (/^pause$/i.test(messageBody.trim())) {
+      await db
+        .update(clients)
+        .set({ aiAgentMode: 'off', updatedAt: new Date() })
+        .where(eq(clients.id, client.id));
+
+      // Cancel all pending scheduled messages for this client
+      await db
+        .update(scheduledMessages)
+        .set({
+          cancelled: true,
+          cancelledAt: new Date(),
+          cancelledReason: 'PAUSE command from contractor',
+        })
+        .where(
+          and(
+            eq(scheduledMessages.clientId, client.id),
+            eq(scheduledMessages.sent, false),
+            eq(scheduledMessages.cancelled, false)
+          )
+        );
+
+      await sendCompliantMessage({
+        clientId: client.id,
+        to: senderPhone,
+        from: client.twilioNumber,
+        body: "Automation paused. Your leads will still be captured but the AI won't respond automatically. Reply RESUME to turn it back on.",
+        messageClassification: 'inbound_reply',
+        messageCategory: 'transactional',
+      });
+
+      console.log(`[IncomingSMS] PAUSE command: AI automation paused for client ${client.id}`);
+      return { processed: true, action: 'automation_paused' };
+    }
+
+    // RESUME command — contractor re-enables autonomous AI automation
+    if (/^resume$/i.test(messageBody.trim())) {
+      await db
+        .update(clients)
+        .set({ aiAgentMode: 'autonomous', updatedAt: new Date() })
+        .where(eq(clients.id, client.id));
+
+      await sendCompliantMessage({
+        clientId: client.id,
+        to: senderPhone,
+        from: client.twilioNumber,
+        body: 'Automation resumed. The AI is responding to leads again.',
+        messageClassification: 'inbound_reply',
+        messageCategory: 'transactional',
+      });
+
+      console.log(`[IncomingSMS] RESUME command: AI automation resumed for client ${client.id}`);
+      return { processed: true, action: 'automation_resumed' };
+    }
+
     const smartAssistCommandResult = await handleSmartAssistOwnerCommand({
       clientId: client.id,
       fromPhone: senderPhone,
@@ -311,6 +368,98 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
       return {
         processed: true,
         action: smartAssistCommandResult.action,
+      };
+    }
+
+    // Booking confirmation: contractor replies YES/CONFIRM or suggests a new time
+    // Only applies when the client has bookingConfirmationRequired = true
+    if (client.bookingConfirmationRequired) {
+      const {
+        findPendingConfirmationForContractor,
+        confirmPendingBooking,
+        parseContractorTimeSuggestion,
+        suggestNewTimeForPendingBooking,
+      } = await import('@/lib/services/booking-confirmation');
+
+      const isConfirm = /^(yes|confirm)$/i.test(messageBody.trim());
+      const timeSuggestion = isConfirm ? null : parseContractorTimeSuggestion(messageBody);
+
+      if (isConfirm || timeSuggestion) {
+        const pending = await findPendingConfirmationForContractor(client.id);
+
+        if (pending) {
+          if (isConfirm) {
+            const confirmResult = await confirmPendingBooking(pending.id);
+            const replyMsg = confirmResult.success
+              ? 'Appointment confirmed! The homeowner has been notified.'
+              : `Could not confirm appointment: ${confirmResult.error ?? 'unknown error'}`;
+            await sendCompliantMessage({
+              clientId: client.id,
+              to: senderPhone,
+              from: client.twilioNumber,
+              body: replyMsg,
+              messageClassification: 'inbound_reply',
+              messageCategory: 'transactional',
+            });
+            return {
+              processed: true,
+              action: confirmResult.success
+                ? 'booking_confirmation_confirmed'
+                : 'booking_confirmation_error',
+              leadId: pending.leadId,
+            };
+          }
+
+          // Contractor suggested a new time
+          if (timeSuggestion) {
+            const suggestResult = await suggestNewTimeForPendingBooking(
+              pending.id,
+              timeSuggestion.date,
+              timeSuggestion.time
+            );
+            const replyMsg = suggestResult.success
+              ? 'New time sent to the homeowner for their confirmation.'
+              : `Could not update booking time: ${suggestResult.error ?? 'unknown error'}`;
+            await sendCompliantMessage({
+              clientId: client.id,
+              to: senderPhone,
+              from: client.twilioNumber,
+              body: replyMsg,
+              messageClassification: 'inbound_reply',
+              messageCategory: 'transactional',
+            });
+            return {
+              processed: true,
+              action: suggestResult.success
+                ? 'booking_confirmation_new_time'
+                : 'booking_confirmation_error',
+              leadId: pending.leadId,
+            };
+          }
+        }
+        // No pending confirmation found — fall through to normal processing
+      }
+    }
+
+    const outcomeCommandResult = await handleOutcomeCommand({
+      clientId: client.id,
+      messageBody,
+    });
+    if (outcomeCommandResult.handled) {
+      if (outcomeCommandResult.message) {
+        await sendCompliantMessage({
+          clientId: client.id,
+          to: senderPhone,
+          body: outcomeCommandResult.message,
+          from: client.twilioNumber,
+          messageClassification: 'inbound_reply',
+          messageCategory: 'transactional',
+        });
+      }
+      return {
+        processed: true,
+        action: outcomeCommandResult.success ? 'outcome_command_handled' : 'outcome_command_error',
+        leadId: outcomeCommandResult.leadId,
       };
     }
   }

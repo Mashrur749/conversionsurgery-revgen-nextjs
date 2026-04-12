@@ -5,6 +5,8 @@ Date: April 4, 2026
 Status: Launch-Ready (pending legal review &mdash; see Part 10)
 
 > **NOTE:** The approved copy bank lives in `docs/business-intel/OFFER-APPROVED-COPY.md` (v1.8). The client-facing presentation is `docs/business-intel/offer-page.html`. If this strategy doc and the approved copy conflict, the **approved copy is the source of truth** for anything a contractor might see. This doc provides internal rationale and strategy context.
+>
+> **ICP:** The canonical ICP definition (who we sell to, sub-segment priority, 30-second qualifier, and avoidance criteria) lives in `docs/business-intel/ICP-DEFINITION.md`. Primary target: Calgary basement development contractors.
 
 This document is the single source of truth for what ConversionSurgery sells, how every component is structured, and the operational definitions behind every promise. All sales scripts, outreach templates, landing pages, and client-facing materials should be built FROM this document.
 
@@ -550,9 +552,9 @@ One recovered kitchen project pays for the entire year. Most clients see results
 | Full-time office employee | $4,000-5,000/month                   | "And they can't work at 11 PM on a Saturday."                                                       |
 | Part-time hire            | $1,500-2,500/month                   | "Still more than us, and you have to manage them."                                                  |
 | Answering service         | $500-1,500/month                     | "They take messages. We book appointments. And they charge per minute. We're flat rate, unlimited." |
-| One basement project      | $45,000-80,000                       | "One project pays for four years of this."                                                          |
-| One kitchen project       | $35,000-65,000                       | "One project pays for three years."                                                                 |
-| Doing nothing             | $50,000-200,000/year in lost revenue | "The most expensive option is the one you're choosing now."                                         |
+| One basement project      | $9,000-16,000 profit (at 20% margin) | "One recovered basement covers the service for over a year. Always talk profit, not revenue &mdash; they know their margins."  |
+| One kitchen project       | $7,000-13,000 profit (at 20% margin) | "One recovered kitchen covers 7-13 months."                                                         |
+| Doing nothing             | $10,000-40,000/year in lost profit   | "The most expensive option is the one you're choosing now."                                         |
 
 ---
 

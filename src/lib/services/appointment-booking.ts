@@ -256,6 +256,10 @@ export function suggestSlots(
  * Books an appointment and schedules reminders for both parties.
  * Returns the formatted confirmation message.
  *
+ * When client.bookingConfirmationRequired = true, creates the appointment in
+ * `pending_confirmation` status and delegates to the booking-confirmation flow
+ * instead of auto-confirming with the homeowner.
+ *
  * @param durationMinutes - Duration of the appointment in minutes (default 60). Saved to
  *   the appointment record and used to compute the calendar event end time (S2).
  */
@@ -296,6 +300,28 @@ export async function bookAppointment(
 
   if (!lead || !client) {
     return { success: false, error: 'Lead or client not found' };
+  }
+
+  // Booking confirmation mode: when the client requires contractor approval before
+  // confirming with the homeowner, delegate to the confirmation flow instead.
+  if (client.bookingConfirmationRequired) {
+    const { createPendingBooking } = await import('@/lib/services/booking-confirmation');
+    const pendingResult = await createPendingBooking(
+      clientId,
+      leadId,
+      date,
+      time,
+      address,
+      durationMinutes
+    );
+    if (!pendingResult.success) {
+      return { success: false, error: pendingResult.error };
+    }
+    return {
+      success: true,
+      appointmentId: pendingResult.appointmentId,
+      confirmationMessage: pendingResult.holdingMessage,
+    };
   }
 
   // Create appointment via existing automation

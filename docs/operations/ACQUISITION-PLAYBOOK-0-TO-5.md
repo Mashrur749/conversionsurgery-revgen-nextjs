@@ -1,6 +1,8 @@
 # 0 to 5 Clients: Acquisition Playbook
 
-Target: $5,000/month (5 clients × $1,000/month) Timeline: 30 days to first client, 90 days to five Stage: Pre-first-client — everything here is manual, low-cost, high-touch
+**Target ICP:** Calgary basement development contractors. See `docs/business-intel/ICP-DEFINITION.md` for the canonical profile, sub-segment priority, 30-second qualifier, and avoidance criteria.
+
+Target: $5,000/month (5 clients &times; $1,000/month) Timeline: 30 days to first client, 90 days to five Stage: Pre-first-client &mdash; everything here is manual, low-cost, high-touch
 
 ---
 
@@ -20,17 +22,17 @@ The "call your own number" live demo is your closer. The audit opens the door. T
 
 ### Build your prospect list
 
-You need 30 qualified contractors. Here's where to find them and what to look for.
+You need 30 qualified contractors. **Basement development and finishing only** &mdash; do not mix in kitchen, bath, or general reno at this stage. For the full list of where to find them and who to avoid, see `docs/business-intel/ICP-DEFINITION.md`.
 
 **Source 1: Google Maps (primary)**
 
 Search these terms in Calgary:
 
-- "kitchen renovation Calgary"
-- "basement renovation Calgary"
-- "bathroom renovation Calgary"
-- "home renovation contractor Calgary"
-- "general contractor Calgary"
+- &ldquo;basement development Calgary&rdquo;
+- &ldquo;basement finishing Calgary&rdquo;
+- &ldquo;secondary suite Calgary&rdquo;
+- &ldquo;legal suite Calgary&rdquo;
+- &ldquo;basement renovation Calgary&rdquo;
 
 For each result, capture:
 
@@ -41,34 +43,50 @@ For each result, capture:
 - Phone number (from GBP listing)
 - Email (from website)
 - Whether their website has a contact form
-- Whether they're running Google Ads (look for "Sponsored" tag in search results)
+- Whether they&rsquo;re running Google Ads (look for &ldquo;Sponsored&rdquo; tag in search results)
 
-**Source 2: HomeStars / Houzz / BBB**
+**Source 2: HomeStars Calgary &mdash; basement renovation filter**
 
-Cross-reference your Google Maps list. Contractors active on multiple platforms are more likely to care about their online presence — and more likely to have follow-up gaps because they're getting leads from multiple channels they can't keep up with.
+Cross-reference your Google Maps list. Contractors active on multiple platforms are more likely to care about their online presence &mdash; and more likely to have follow-up gaps because they&rsquo;re getting leads from multiple channels they can&rsquo;t keep up with.
 
-**Source 3: Facebook Groups**
+**Source 3: BILD Calgary member directory (bild.ca)**
 
-Search "Calgary renovation" or "Calgary contractors" on Facebook. Many Alberta contractors are active in local trade groups. This also gives you a DM channel for outreach.
+Renovation category. These are registered, serious operators &mdash; higher close rate than random Google searches.
+
+**Source 4: Facebook &mdash; &ldquo;Calgary Basement Development&rdquo; group + Instagram**
+
+Search Instagram: #calgarybasement #yycbasement #calgarybasementdevelopment. Many Alberta basement contractors post project photos &mdash; check engagement and DM channel availability.
+
+**Source 5: Supplier showrooms**
+
+Lumber yards, Olympia Tile, Emco. Ask reps: &ldquo;Who are your busiest small basement contractors?&rdquo; These warm referrals convert faster than any cold search.
 
 ### Qualification filter
 
-Score each prospect. You want contractors who meet at least 3 of these 5:
+**Use the 30-second qualifier first** (from `docs/business-intel/ICP-DEFINITION.md`): basement development? 15+ leads/month? Phone goes to voicemail on site? All three must be YES.
+
+Then score each prospect. You want contractors who meet at least 3 of these 5:
 
 | Signal | What it tells you | How to check |
 | --- | --- | --- |
-| 30–200 Google reviews | Active business, cares about reputation | Google Business Profile |
+| 10&ndash;60 Google reviews | Active business, cares about reputation | Google Business Profile |
 | Has a website with contact form | Getting web leads they need to respond to | Visit their site |
-| Running Google Ads | Paying for leads — makes your ROI pitch concrete | Search their trade + "Calgary" |
-| Hasn't responded to recent Google reviews | Follow-up gap is visible | Scroll their reviews |
-| 2–10 person team (not a solo operator, not a large firm) | Right size for $1K/month to make sense | Website "About" page, team photos |
+| Running Google Ads or HomeStars | Paying for leads &mdash; makes your ROI pitch concrete | Search their name + &ldquo;Calgary&rdquo; |
+| Hasn&rsquo;t responded to recent Google reviews | Follow-up gap is visible | Scroll their reviews |
+| Owner + 1&ndash;3 crew (no office manager) | Right size for $1K/month to make sense | Website &ldquo;About&rdquo; page, team photos |
+
+**Sub-segment priority:** Small Crew Developer ($800K&ndash;$1.2M, 20&ndash;25 leads/mo) first. Suite Specialist ($1M+) second. Solo Finisher third. Referral Veteran &mdash; avoid as primary.
 
 **Disqualify if:**
 
-- Solo operator with &lt;10 reviews (too small, $1K is a stretch)
-- Large firm with 50+ employees (they have office staff already)
-- No web presence at all (they won't value what you do)
-- Already using a CRM/answering service (visible on their site — "powered by" footers, chat widgets)
+- Not doing basement development or finishing (wrong trade entirely)
+- Fewer than 15 inbound leads/month (speed-to-lead pitch loses its edge)
+- 60%+ referral-only &mdash; no inbound digital leads to capture
+- Has a receptionist or office manager handling calls (problem already solved)
+- 48h+ response time &mdash; &ldquo;ghost&rdquo; profile, consumes 2.5&times; operator time
+- &lt;$500K revenue (too small, $1K/month feels heavy)
+- No web presence at all (they won&rsquo;t value what you do)
+- Already using a CRM/answering service (visible on their site &mdash; &ldquo;powered by&rdquo; footers, chat widgets)
 
 ### Rank your list
 
@@ -102,23 +120,28 @@ For each of your top 10 prospects, produce a shortened version of the Revenue Le
 
 ### The outreach message
 
-Subject line: "\[Business Name\] — found something you should see"
+Subject line: &ldquo;[Business Name] &mdash; found something you should see&rdquo;
 
 Body (email version):
 
-> \[First name\],
+> [First name],
 >
-> I put together a quick revenue audit for \[Business Name\] — no strings attached, just thought you'd find it useful.
+> I put together a quick revenue audit for [Business Name] &mdash; no strings attached, just thought you&rsquo;d find it useful.
 >
-> The short version: \[one specific finding — e.g., "I submitted your contact form on Tuesday at 2 PM and haven't heard back yet. Your competitor \[name\] responded in 4 minutes."\]
+> The short version: [one specific finding &mdash; e.g., &ldquo;I submitted your contact form on Tuesday at 2 PM and haven&rsquo;t heard back yet. Your competitor [name] responded in 4 minutes.&rdquo;]
 >
-> The full breakdown is attached — takes 2 minutes to read.
+> The full breakdown is attached &mdash; takes 2 minutes to read.
 >
-> If any of it resonates, I can show you something live in 15 minutes that most contractors find pretty eye-opening. No pitch deck, no slides — I'll just have you call a number and watch what happens.
+> If any of it resonates, I can show you something live in 15 minutes that most basement contractors find pretty eye-opening. No pitch deck, no slides &mdash; I&rsquo;ll just have you call a number and watch what happens.
 >
 > Either way, the audit is yours to keep.
 >
-> Mashrur ConversionSurgery
+> Mashrur
+> ConversionSurgery
+
+**Cold call opener** (phone, when you can reach them directly):
+
+&ldquo;Hey [Name], this is Mashrur from Calgary. Quick one &mdash; I built something for basement contractors that texts back every missed call in 5 seconds, follows up on every estimate for 2 weeks, and books the site visit while you&rsquo;re still on the job. Most guys I talk to are losing 3&ndash;4 basement jobs a year just from leads that went cold. First month&rsquo;s free. You got 15 minutes this week?&rdquo;
 
 ### Channel strategy (multi-touch, same asset)
 
@@ -169,20 +192,20 @@ This is your entire sales process. It's not a discovery call. It's not a consult
 
 **Structure:**
 
-1. **(2 min) Acknowledge the audit finding.** "You saw in the audit that \[specific finding\]. That's actually pretty common — most renovation contractors in Calgary have the same gap. The question is what happens when a lead texts you at 6 PM on a Thursday and you're mid-demo."
+1. **(2 min) Acknowledge the audit finding.** &ldquo;You saw in the audit that [specific finding]. That&rsquo;s actually pretty common &mdash; most basement contractors in Calgary have the same gap. The question is what happens when a homeowner texts you at 6 PM on a Thursday and you&rsquo;re underground with no signal.&rdquo;
 
 2. **(2 min) Set up the demo.** "I want to show you something. Can you call this number on your phone right now? \[Give demo number.\] Let it ring — don't leave a voicemail — just hang up after 3-4 rings."
 
 3. **(30 sec) Let them experience it.** They call. They hang up. Within 5 seconds, a text arrives on their phone: "Hey, sorry we missed your call! What can we help you with?" Say nothing. Let them react.
 
-4. **(3 min) Explain what just happened.** "That text went out in under 5 seconds. If that was a homeowner looking for a kitchen quote, you just captured them before they called the next contractor on Google. Now imagine that happening for every missed call, every form fill, every text — and then the AI follows up on every estimate you send for 6 weeks straight."
+4. **(3 min) Explain what just happened.** &ldquo;That text went out in under 5 seconds. If that was a homeowner looking for a basement quote, you just captured them before they called the next contractor on Google. Now imagine that happening for every missed call while you&rsquo;re underground &mdash; and then the AI follows up on every estimate you send for 2 weeks straight. A $80K suite job that would have gone cold just got recovered.&rdquo;
 
-5. **(3 min) The pitch.** "It's $1,000/month. Month-to-month, cancel anytime. No setup fee. We run the whole thing for you — your only job is to keep doing great work. The system responds to leads, follows up on estimates, books appointments into your Google Calendar, collects payments, and asks for reviews. You spend about 15 minutes a week on it. If after 30 days you haven't seen 5 real lead conversations, your first month is free. If after 90 days you can't point to a single project it helped you win, we refund your last month and you keep every lead."
+5. **(3 min) The pitch.** &ldquo;It&rsquo;s $1,000/month. Month-to-month, cancel anytime. No setup fee. We run the whole thing for you &mdash; your only job is to keep building. The system responds to leads, follows up on estimates, books appointments into your Google Calendar, collects payments, and asks for reviews. You spend about 15 minutes a week on it. If after 30 days you haven&rsquo;t seen 5 real lead conversations, your first month is free. If after 90 days you can&rsquo;t point to a single project it helped you win, we refund your last month and you keep every lead.&rdquo;
 
 6. **(3 min) Handle objections.** Use the quick-reference from your playbook Section 12. The three most common at this stage:
 
    - "What if the AI says something wrong?" → Smart Assist review window in Week 2, guardrails, escalation.
-   - "$1,000 is a lot." → One kitchen project pays for the year. The risk is one month.
+   - &ldquo;$1,000 is a lot.&rdquo; &rarr; One basement job ($80K at 20% margin = $16K profit) covers 16 months. The risk is one month.
    - "I need to think about it." → "Totally fair. The audit is yours regardless. But every week without this, the gap it describes keeps costing you."
 
 7. **Close or schedule next step.** Either they say yes and you schedule the onboarding call, or they need time. If they need time, send the post-call follow-up email from your playbook within 2 hours.
@@ -218,7 +241,7 @@ This is conservative. The audit-based outreach will likely outperform generic co
 
 ### What changes after client #1
 
-1. **You have a case study.** Even if it's just "we responded to 47 leads in 30 days with an average response time of 8 seconds for \[trade type\] contractor in Calgary." That's real.
+1. **You have a case study.** Even if it&rsquo;s just &ldquo;we responded to 47 leads in 30 days with an average response time of 8 seconds for a basement development contractor in Calgary.&rdquo; That&rsquo;s real.
 
 2. **Your audits get faster.** You know the Calgary market now. You know the competitor landscape. Each audit drops from 20 minutes to 10.
 
@@ -228,13 +251,13 @@ This is conservative. The audit-based outreach will likely outperform generic co
 
 ### Nurture list
 
-Every contractor who didn't close goes on a monthly nurture list. Once a month, send them one useful thing — not a pitch:
+Every contractor who didn't close goes on a monthly nurture list. Once a month, send them one useful thing &mdash; not a pitch:
 
-- "3 Calgary contractors got hit with negative Google reviews this week. Here's the best response template I've seen."
-- "HomeStars just changed their ranking algorithm. Here's what it means for renovation contractors."
-- "I audited 30 Calgary renovation contractors this month. Average form response time: 6 hours. Fastest: 12 seconds."
+- &ldquo;Calgary passed 3 new secondary suite bylaw changes this month. Here&rsquo;s what changes for developers.&rdquo;
+- &ldquo;HomeStars just changed their ranking algorithm. Here&rsquo;s what it means for basement contractors.&rdquo;
+- &ldquo;I audited 30 Calgary basement contractors this month. Average form response time: 6 hours. Fastest: 12 seconds.&rdquo;
 
-Position yourself as the person who understands their market. When they're ready, they'll remember you.
+Position yourself as the person who understands the basement development market. When they&rsquo;re ready, they&rsquo;ll remember you.
 
 ---
 
@@ -276,7 +299,7 @@ Keep it dead simple. A Google Sheet with these columns:
 | --- | --- |
 | Business name | Who |
 | Contact name | Who specifically |
-| Trade | Kitchen, basement, general, etc. |
+| Sub-segment | Small Crew Developer / Suite Specialist / Solo Finisher |
 | Google reviews | Quick-reference for priority |
 | Audit sent date | When you sent the outreach |
 | Channels used | Email, FB, IG, etc. |
@@ -304,4 +327,4 @@ If your response rate is below 10% after 20 audits, the audit content needs work
 
 ---
 
-*This playbook is for the 0-to-5 stage only. Once you hit 5 clients and $5K/month, the acquisition strategy shifts — referrals, case studies, and possibly content marketing replace cold audit outreach as the primary channel.*
+*This playbook is for the 0-to-5 stage only (Calgary basement contractors). Once you hit 5 clients and $5K/month, the acquisition strategy shifts &mdash; referrals, case studies, and possibly content marketing replace cold audit outreach as the primary channel. For expansion to kitchen/bath (Month 4+) or Edmonton (Month 6+), see the expansion path in `docs/business-intel/ICP-DEFINITION.md`.*

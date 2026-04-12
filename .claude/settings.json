@@ -1,4 +1,55 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npm run build *)",
+      "Bash(npm run typecheck *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run dev *)",
+      "Bash(npm test *)",
+      "Bash(npm run test *)",
+      "Bash(npm run test:ai *)",
+      "Bash(npm run ms:gate *)",
+      "Bash(npm run quality:*)",
+      "Bash(npm run db:generate *)",
+      "Bash(npm run db:studio *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vitest *)",
+      "Bash(npx shadcn@latest *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git worktree *)",
+      "Bash(wc *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(find *)",
+      "Bash(kill *)",
+      "Bash(chmod *)",
+      "Bash(rm src/*)",
+      "Bash(rm .scratch/*)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(tail *)",
+      "Bash(head *)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)",
+      "Bash(git checkout . *)",
+      "Bash(git clean *)",
+      "Bash(git branch -D *)",
+      "Bash(npm run db:push)",
+      "Bash(npm run db:push *)",
+      "Bash(npm run db:migrate)",
+      "Bash(npm run db:migrate *)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -43,55 +94,9 @@
       }
     ]
   },
-  "permissions": {
-    "deny": [
-      "Read(.env)",
-      "Read(.env.*)",
-      "Bash(rm -rf *)",
-      "Bash(git push --force *)",
-      "Bash(git reset --hard *)",
-      "Bash(git checkout . *)",
-      "Bash(git clean *)",
-      "Bash(git branch -D *)",
-      "Bash(npm run db:push)",
-      "Bash(npm run db:push *)",
-      "Bash(npm run db:migrate)",
-      "Bash(npm run db:migrate *)"
-    ],
-    "allow": [
-      "Bash(npm run build *)",
-      "Bash(npm run typecheck *)",
-      "Bash(npm run lint *)",
-      "Bash(npm run dev *)",
-      "Bash(npm test *)",
-      "Bash(npm run test *)",
-      "Bash(npm run test:ai *)",
-      "Bash(npm run ms:gate *)",
-      "Bash(npm run quality:*)",
-      "Bash(npm run db:generate *)",
-      "Bash(npm run db:studio *)",
-      "Bash(npx tsc *)",
-      "Bash(npx vitest *)",
-      "Bash(npx shadcn@latest *)",
-      "Bash(git status *)",
-      "Bash(git diff *)",
-      "Bash(git log *)",
-      "Bash(git branch *)",
-      "Bash(git add *)",
-      "Bash(git commit *)",
-      "Bash(git worktree *)",
-      "Bash(wc *)",
-      "Bash(ls *)",
-      "Bash(mkdir *)",
-      "Bash(find *)",
-      "Bash(kill *)",
-      "Bash(chmod *)",
-      "Bash(rm src/*)",
-      "Bash(rm .scratch/*)",
-      "Bash(cat *)",
-      "Bash(echo *)",
-      "Bash(tail *)",
-      "Bash(head *)"
-    ]
+  "enabledPlugins": {
+    "claude-api@anthropic-agent-skills": true,
+    "superpowers@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true
   }
 }

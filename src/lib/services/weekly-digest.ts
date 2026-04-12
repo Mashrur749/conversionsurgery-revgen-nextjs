@@ -4,6 +4,7 @@ import { eq, and, gte, lte, sql, ne, count as countFn } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getAgency } from '@/lib/services/agency-settings';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { calculateProbablePipelineValueCents } from '@/lib/services/pipeline-value';
 
 /** How many consecutive zero-activity weeks before switching to monthly reassurance. */
 const SLOW_PERIOD_THRESHOLD = 3;
@@ -16,6 +17,8 @@ export interface DigestStats {
   revenueWonThisWeek: number; // cents
   jobsToCloseOut: number;
   stuckEstimates: number;
+  /** Probable pipeline value in whole dollars for the past 7 days. */
+  probablePipelineValueDollars: number;
 }
 
 interface DigestResult {
@@ -30,8 +33,9 @@ interface DigestResult {
  */
 export async function getWeeklyStats(clientId: string): Promise<DigestStats> {
   const db = getDb();
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const twentyOneDaysAgo = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twentyOneDaysAgo = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
 
   const [newLeadsRow] = await db
     .select({ count: countFn() })
@@ -83,6 +87,12 @@ export async function getWeeklyStats(clientId: string): Promise<DigestStats> {
       lte(leads.updatedAt, twentyOneDaysAgo)
     ));
 
+  const probablePipelineValueCents = await calculateProbablePipelineValueCents(
+    clientId,
+    oneWeekAgo,
+    now
+  );
+
   return {
     newLeads: Number(newLeadsRow?.count ?? 0),
     appointmentsBooked: Number(appointmentsRow?.count ?? 0),
@@ -91,6 +101,7 @@ export async function getWeeklyStats(clientId: string): Promise<DigestStats> {
     revenueWonThisWeek: Number(wonRow?.revenue ?? 0),
     jobsToCloseOut: Number(closeOutRow?.count ?? 0),
     stuckEstimates: Number(stuckRow?.count ?? 0),
+    probablePipelineValueDollars: Math.round(probablePipelineValueCents / 100),
   };
 }
 
@@ -139,16 +150,22 @@ export function buildDigestMessage(
   const parts: string[] = [`Hey ${firstName}, your week:`];
 
   if (stats.newLeads > 0) {
-    parts.push(`${stats.newLeads} new ${stats.newLeads === 1 ? 'lead' : 'leads'}`);
+    parts.push(`${stats.newLeads} new ${stats.newLeads === 1 ? 'inquiry' : 'inquiries'}`);
   }
   if (stats.appointmentsBooked > 0) {
-    parts.push(`${stats.appointmentsBooked} ${stats.appointmentsBooked === 1 ? 'appointment' : 'appointments'} booked`);
+    parts.push(`${stats.appointmentsBooked} ${stats.appointmentsBooked === 1 ? 'appointment' : 'appointments'} scheduled`);
   }
   if (stats.estimatesInFollowUp > 0) {
-    parts.push(`${stats.estimatesInFollowUp} ${stats.estimatesInFollowUp === 1 ? 'estimate' : 'estimates'} in follow-up`);
+    parts.push(`${stats.estimatesInFollowUp} ${stats.estimatesInFollowUp === 1 ? 'estimate' : 'estimates'} being followed up`);
   }
 
   let body = parts[0] + ' ' + parts.slice(1).join(', ') + '.';
+
+  // Pipeline line
+  const pipelineK = Math.round(stats.probablePipelineValueDollars / 1000);
+  if (pipelineK > 0) {
+    body += ` Pipeline: $${pipelineK}K.`;
+  }
 
   // Won jobs line (only if any)
   if (stats.jobsWonThisWeek > 0) {
@@ -164,6 +181,11 @@ export function buildDigestMessage(
   // Stuck estimates line (only if any)
   if (stats.stuckEstimates > 0) {
     body += ` ${stats.stuckEstimates} ${stats.stuckEstimates === 1 ? 'estimate needs' : 'estimates need'} an update — mark them won or lost to keep your ROI accurate.`;
+  }
+
+  // ROI prompt: when pipeline shows $0 but there IS activity, prompt them to log wins
+  if (pipelineK === 0 && (stats.newLeads > 0 || stats.appointmentsBooked > 0)) {
+    body += ` Reply WON [name] for any jobs you've closed to see your full ROI.`;
   }
 
   return { body, type: 'active' };

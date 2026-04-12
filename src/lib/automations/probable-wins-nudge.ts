@@ -1,20 +1,23 @@
 /**
  * Probable Wins Nudge Automation
  *
- * Sends an internal SMS to contractors (clients) asking them to mark leads
- * as won or lost when an appointment was completed 14+ days ago but the lead
- * status has not yet been resolved.
+ * Auto-Detect Probable Wins
+ *
+ * Sends an internal SMS to contractors asking them to confirm job outcomes
+ * when an appointment was completed 7+ days ago but the lead status is
+ * still unresolved. Includes outcome reference codes so contractors can
+ * reply WON/LOST directly to their business number.
  *
  * This is an OPERATOR-to-CONTRACTOR notification — it goes through
  * sendActionPrompt (agency channel), NOT the compliance gateway.
  *
- * Runs weekly via the cron orchestrator.
+ * Runs daily via the cron orchestrator.
  *
  * Rules:
  * - Lead status must NOT be won, lost, or closed
  * - At least one appointment for the lead must be completed or confirmed
- * - The most recent qualifying appointment must be 14+ days old
- * - No won_lost_nudge prompt sent to this client in the last 14 days
+ * - The most recent qualifying appointment must be 7+ days old
+ * - No won_lost_nudge prompt sent to this client in the last 7 days
  *   (checked via agencyMessages with promptType = 'won_lost_nudge')
  * - Client must be active and have a phone number
  * - At most 1 nudge per lead per client per run (deduped by leadId)
@@ -25,23 +28,24 @@ import { leads, clients, appointments, agencyMessages } from '@/db/schema';
 import { eq, and, notInArray, inArray, gte, lte, desc } from 'drizzle-orm';
 import { sendActionPrompt } from '@/lib/services/agency-communication';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { ensureOutcomeRefCode } from '@/lib/services/outcome-ref-codes';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const APPOINTMENT_AGE_DAYS = 14;
-const NUDGE_COOLDOWN_DAYS = 14;
+const APPOINTMENT_AGE_DAYS = 7;
+const NUDGE_COOLDOWN_DAYS = 7;
 
 // Statuses that mean the lead is already resolved
 const RESOLVED_STATUSES = ['won', 'lost', 'closed'] as const;
 
 // ── Message builder ────────────────────────────────────────────────────────────
 
-function buildNudgeMessage(leadName: string, projectType: string | null): string {
+function buildNudgeMessage(leadName: string, projectType: string | null, refCode: string): string {
   const project = projectType ?? 'project';
   const nameDisplay = leadName || 'this lead';
   return (
     `Did you win ${nameDisplay}'s ${project}? ` +
-    `Reply YES or NO to this number, then we'll ask for the value.`
+    `Ref ${refCode}. Reply WON ${refCode} or LOST ${refCode} to your business number.`
   );
 }
 
@@ -164,7 +168,8 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
     }
 
     try {
-      const message = buildNudgeMessage(lead.name ?? '', lead.projectType ?? null);
+      const refCode = await ensureOutcomeRefCode(lead.id, lead.clientId);
+      const message = buildNudgeMessage(lead.name ?? '', lead.projectType ?? null, refCode);
 
       const messageId = await sendActionPrompt({
         clientId: lead.clientId,

@@ -28,7 +28,7 @@ export const appointments = pgTable(
     appointmentDate: date('appointment_date').notNull(),
     appointmentTime: time('appointment_time').notNull(),
     address: varchar('address', { length: 500 }),
-    status: varchar('status', { length: 20 }).default('scheduled'), // scheduled, confirmed, completed, no_show, cancelled
+    status: varchar('status', { length: 30 }).default('scheduled'), // scheduled, confirmed, completed, no_show, cancelled, pending_confirmation
     durationMinutes: integer('duration_minutes').default(60),
     endDate: date('end_date'), // nullable, for multi-day jobs
     assignedTeamMemberId: uuid('assigned_team_member_id').references(

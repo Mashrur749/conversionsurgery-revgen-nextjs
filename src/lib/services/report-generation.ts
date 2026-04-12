@@ -700,12 +700,26 @@ export async function processBiWeeklyReportPeriod(periodEndDate: Date) {
 
           // Auto-send follow-up SMS to the client owner (CON-10).
           // Fire-and-forget — SMS failure must not affect report delivery status.
-          sendAlert({
-            clientId: client.id,
-            message: `${client.businessName} — your bi-weekly performance report is ready. Check your email or view it in the dashboard. Questions? Just reply to this text.`,
-          }).catch((smsErr: unknown) => {
-            console.error('[BiWeeklyReports] Follow-up SMS failed for client', client.id, smsErr);
-          });
+          {
+            const roi = report.roiSummary as {
+              pipelineProof?: {
+                leadsEngaged?: number;
+                estimatesInFollowUp?: number;
+                appointmentsBooked?: number;
+              };
+            } | null;
+            const proof = roi?.pipelineProof ?? {};
+            const leadsResponded = proof.leadsEngaged ?? 0;
+            const estimatesFollowedUp = proof.estimatesInFollowUp ?? 0;
+            const apptBooked = proof.appointmentsBooked ?? 0;
+            const smsBody = `${client.businessName} — 2-week results: ${leadsResponded} ${leadsResponded === 1 ? 'lead' : 'leads'} responded, ${estimatesFollowedUp} ${estimatesFollowedUp === 1 ? 'estimate' : 'estimates'} followed up, ${apptBooked} ${apptBooked === 1 ? 'appointment' : 'appointments'} booked. Full report in your email or dashboard.`;
+            sendAlert({
+              clientId: client.id,
+              message: smsBody,
+            }).catch((smsErr: unknown) => {
+              console.error('[BiWeeklyReports] Follow-up SMS failed for client', client.id, smsErr);
+            });
+          }
         } else {
           failed++;
           await transitionReportDeliveryState(delivery.id, 'failed', {
