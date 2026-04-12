@@ -132,7 +132,7 @@ A per-client toggle (`bookingConfirmationRequired`) that changes how AI booking 
 
 1. AI collects the homeowner&apos;s preferred time as normal.
 2. Instead of auto-confirming, creates the appointment in `pending_confirmation` status.
-3. Sends the contractor an SMS: &ldquo;Booking request: [Lead name] for [project], [date] at [time]. Reply YES to confirm, or suggest a new time (e.g., THU 2PM).&rdquo;
+3. Sends the contractor an SMS: &ldquo;Booking request: [Lead name] for [project], [date] at [time]. Reply YES to confirm, or suggest a new time (e.g., THU 2PM).&rdquo; Accepts: `YES`, `CONFIRM`, `Y`, `1`, `OK`.
 4. Sends the homeowner a holding message: &ldquo;I&apos;m checking availability. You&apos;ll hear back shortly to confirm!&rdquo;
 5. When the contractor replies YES, the appointment is confirmed and the homeowner is notified with full confirmation details.
 6. When the contractor replies with a new time (e.g., &ldquo;THU 2PM&rdquo;), the old appointment is cancelled, a new pending request is created, and the homeowner is informed of the proposed new time.
@@ -223,26 +223,39 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 
 Daily cron (`/api/cron/probable-wins-nudge`, runs at 10am UTC) identifies leads that have had a completed or confirmed appointment **7+ days ago** but have not been marked won or lost.
 
-- Sends a contractor SMS via the agency channel (operator-to-contractor, not compliance gateway) with an outcome reference code: &ldquo;Appointment with [Lead Name] was 7+ days ago. Did you win it? Reply WON [ref] or LOST [ref] (e.g., WON 4A)&rdquo;
-- **Outcome reference codes:** each lead is assigned a short alphanumeric code (e.g., &ldquo;4A&rdquo;) stored in `leads.outcome_ref_code`. These codes make it unambiguous which lead the contractor is confirming when multiple nudges are active.
-- If the contractor replies WON [ref], a follow-up asks for the job value so confirmed revenue can be recorded
+- **Batched numbered list:** Up to 5 leads per client are grouped into a single SMS with numbered options. Single lead: &ldquo;Sarah T. &mdash; basement dev. Did you win it? W = Won, L = Lost, 0 = Skip.&rdquo; Multiple leads: numbered list with compact reply syntax.
+- **Compact reply syntax:** Contractor replies `W1` (won #1), `L2` (lost #2), `W13 L2` (won 1 and 3, lost 2), `W` (all won), `0` (skip all). Parsed by `src/lib/services/numbered-reply-parser.ts`.
+- **Outcome reference codes:** each lead also has a short alphanumeric code (e.g., &ldquo;4A&rdquo;) stored in `leads.outcome_ref_code` for backward compatibility with the old `WON [ref]` / `LOST [ref]` commands.
+- If the contractor marks a lead as won, a follow-up asks for the job value so confirmed revenue can be recorded.
 - 7-day cooldown per client &mdash; at most one nudge cycle per 7 days regardless of how many qualifying leads exist
-- Deduped per lead: one nudge per lead per run, no duplicate sends
+- Deduped per lead: one nudge per lead per run, no duplicate sends. Max 5 leads per batch; overflow rolls to next week.
 - Skips clients with no active phone number, paused clients, and leads already marked won/lost/closed
 
 ### WON / LOST / WINS SMS Commands
 
-Contractors can report outcomes directly via SMS to the agency line, using the reference code from a nudge:
+Contractors can report outcomes directly via SMS to the agency line. Two formats are supported:
+
+**Numbered replies** (preferred &mdash; from nudge prompts):
+
+| Reply | Example | Action |
+|-------|---------|--------|
+| `W` + numbers | `W1` or `W13` | Marks those leads as `won`; triggers review request and revenue prompt |
+| `L` + numbers | `L2` | Marks those leads as `lost`; cancels all pending follow-up |
+| `W` / `L` (bare) | `W` | Marks ALL listed leads as won / lost |
+| `0` | `0` | Skip all &mdash; leads roll to next week&apos;s nudge |
+| Mixed | `W13 L2` | Won 1 and 3, lost 2 &mdash; all in one reply |
+
+**Legacy ref code commands** (still supported):
 
 | Command | Example | Action |
 |---------|---------|--------|
 | `WON [ref]` | `WON 4A` | Marks the matching lead as `won`; triggers a follow-up asking for confirmed job value |
 | `LOST [ref]` | `LOST 4A` | Marks the matching lead as `lost`; cancels all pending follow-up messages for that lead |
-| `WINS` | `WINS` | Replies with a list of recent leads (last 14 days) that have appointments but no outcome, with their ref codes — useful if the contractor forgets the code |
+| `WINS` | `WINS` | Replies with a list of recent leads (last 14 days) that have appointments but no outcome, with their ref codes |
 
 **Schema:** `leads.outcome_ref_code` — short alphanumeric code generated on lead creation, used to match SMS replies to specific leads.
 
-**Files:** `src/lib/automations/outcome-ref-codes.ts` (code generation/lookup), `src/lib/automations/outcome-command-parser.ts` (parses WON/LOST/WINS text), `src/lib/automations/outcome-commands.ts` (command dispatch and lead update logic).
+**Files:** `src/lib/services/numbered-reply-parser.ts` (compact reply parser), `src/lib/services/outcome-ref-codes.ts` (code generation/lookup), `src/lib/services/outcome-command-parser.ts` (parses legacy WON/LOST/WINS text), `src/lib/services/outcome-commands.ts` (command dispatch and lead update logic).
 
 ### Auto-Detect Probable Wins
 
@@ -259,8 +272,8 @@ Automated prompt to the contractor when a new lead has been waiting too long for
 
 - Daily cron at 10am UTC (`/api/cron/proactive-quote-prompt`)
 - Condition: lead in `new` or `contacted` status for 3+ days with no EST trigger recorded
-- Contractor receives: &ldquo;[Lead Name] has been waiting 3 days. Reply EST [Name] or PASS&rdquo;
-- EST reply triggers the standard estimate follow-up sequence; PASS marks the lead as lost
+- Contractor receives via agency channel: &ldquo;[Lead Name] &mdash; 3 days, no quote yet. 1 = Yes (start follow-up)  2 = Not yet&rdquo;
+- Reply `1` or `YES` triggers the standard estimate follow-up sequence; reply `2` or `NO` defers (lead stays eligible for future nudge)
 - Fires once per lead (deduped via audit_log)
 - **File:** `src/lib/automations/proactive-quote-prompt.ts`
 

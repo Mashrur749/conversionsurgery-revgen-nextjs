@@ -381,7 +381,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
         suggestNewTimeForPendingBooking,
       } = await import('@/lib/services/booking-confirmation');
 
-      const isConfirm = /^(yes|confirm)$/i.test(messageBody.trim());
+      const isConfirm = /^(yes|confirm|y|1|ok)$/i.test(messageBody.trim());
       const timeSuggestion = isConfirm ? null : parseContractorTimeSuggestion(messageBody);
 
       if (isConfirm || timeSuggestion) {

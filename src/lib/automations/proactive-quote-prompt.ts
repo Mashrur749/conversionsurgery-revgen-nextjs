@@ -27,8 +27,7 @@
 import { getDb } from '@/db';
 import { leads, clients, scheduledMessages, auditLog } from '@/db/schema';
 import { eq, and, inArray, lte, or, like } from 'drizzle-orm';
-import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
-import { normalizePhoneNumber } from '@/lib/utils/phone';
+import { sendActionPrompt } from '@/lib/services/agency-communication';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -50,9 +49,20 @@ export interface ProactiveQuotePromptResult {
 function buildPromptMessage(leadName: string | null): string {
   const nameDisplay = leadName ?? 'This lead';
   return (
-    `${nameDisplay} has been waiting 3 days. Did you send a quote? ` +
-    `Reply EST ${leadName ?? 'LEAD'} to start follow-up, or PASS to skip.`
+    `${nameDisplay} — 3 days, no quote yet.\n` +
+    `1 = Yes (start follow-up)  2 = Not yet`
   );
+}
+
+function buildPromptPayload(leadId: string, leadName: string | null): Record<string, unknown> {
+  const label = leadName ?? 'Lead';
+  return {
+    interactionType: 'quote_prompt',
+    options: [
+      { index: 1, leadId, label, action: 'start_estimate' },
+      { index: 2, leadId, label, action: 'skip' },
+    ],
+  };
 }
 
 // ── Main runner ────────────────────────────────────────────────────────────────
@@ -150,28 +160,22 @@ export async function runProactiveQuotePrompt(): Promise<ProactiveQuotePromptRes
       continue;
     }
 
-    // Skip clients without phone or Twilio number
-    if (!row.clientPhone || !row.clientTwilioNumber) {
+    // Skip clients without phone
+    if (!row.clientPhone) {
       skipped++;
       continue;
     }
 
-    const normalizedTo = normalizePhoneNumber(row.clientPhone);
-    const normalizedFrom = normalizePhoneNumber(row.clientTwilioNumber);
-
     try {
       const body = buildPromptMessage(row.leadName);
+      const payload = buildPromptPayload(row.leadId, row.leadName);
 
-      await sendCompliantMessage({
+      await sendActionPrompt({
         clientId: row.clientId,
-        to: normalizedTo,
-        from: normalizedFrom,
-        body,
-        messageClassification: 'proactive_outreach',
-        messageCategory: 'transactional',
-        consentBasis: { type: 'existing_customer' },
-        leadId: row.leadId,
-        queueOnQuietHours: true,
+        promptType: 'quote_prompt',
+        message: body,
+        actionPayload: payload,
+        expiresInHours: 48,
       });
 
       // Record in audit_log so this lead is never prompted again

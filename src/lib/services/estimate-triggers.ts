@@ -91,8 +91,23 @@ function formatLeadLabel(lead: LeadLookupCandidate): string {
 }
 
 function buildAmbiguousLeadMessage(candidates: LeadLookupCandidate[]): string {
-  const preview = candidates.slice(0, 3).map(formatLeadLabel).join('; ');
-  return `Multiple leads match that command: ${preview}. Reply with EST <phone> or EST <lead-id>.`;
+  // Numbered list for quick selection
+  const lines = candidates.slice(0, 5).map((c, i) => {
+    const label = c.name ? `${c.name}` : c.phone;
+    return `${i + 1}. ${label}`;
+  });
+  return `Which one?\n${lines.join('\n')}\nReply ${candidates.length <= 1 ? '1' : `1-${Math.min(candidates.length, 5)}`}`;
+}
+
+function buildAmbiguousActionPayload(candidates: LeadLookupCandidate[]): Record<string, unknown> {
+  return {
+    interactionType: 'est_disambiguation',
+    options: candidates.slice(0, 5).map((c, i) => ({
+      index: i + 1,
+      leadId: c.id,
+      label: c.name ?? c.phone,
+    })),
+  };
 }
 
 async function findLeadByCommandTarget(
@@ -258,6 +273,20 @@ export async function triggerEstimateFollowupFromSmsCommand(params: {
   }
 
   if (leadResolution.status === 'ambiguous') {
+    // Send numbered disambiguation prompt via the agency channel
+    try {
+      const { sendActionPrompt } = await import('./agency-communication');
+      await sendActionPrompt({
+        clientId: params.clientId,
+        promptType: 'est_disambiguation',
+        message: buildAmbiguousLeadMessage(leadResolution.candidates),
+        actionPayload: buildAmbiguousActionPayload(leadResolution.candidates),
+        expiresInHours: 1,
+      });
+    } catch {
+      // Non-fatal — fall through to the old-style message
+    }
+
     return {
       handled: true,
       success: false,

@@ -8,6 +8,8 @@ import {
   notificationPreferences,
 } from "@/db/schema";
 import { eq, and, desc, gte, lte, lt, sql, inArray } from "drizzle-orm";
+import { isNumberedReply, parseNumberedReply } from "./numbered-reply-parser";
+import type { NumberedSelection } from "./numbered-reply-parser";
 import {
   sendEmail,
   onboardingWelcomeEmail,
@@ -425,6 +427,38 @@ export async function handleAgencyInboundSMS(payload: {
     return;
   }
 
+  // ── Handle numbered reply against pending prompt options ──
+  const payloadOptions = extractPromptOptions(pendingPrompt.actionPayload);
+  if (payloadOptions.length > 0 && isNumberedReply(body)) {
+    const parsed = parseNumberedReply(body, payloadOptions.length);
+    if (parsed.matched) {
+      const result = await executeNumberedReply(
+        client.id,
+        client.phone,
+        pendingPrompt,
+        payloadOptions,
+        parsed,
+        inboundMsg.id,
+      );
+      if (result) return;
+    }
+  }
+
+  // ── Handle "1" / "2" as YES / NO for binary prompts (no numbered options) ──
+  if (payloadOptions.length === 0 && (normalizedReply === "1" || normalizedReply === "2")) {
+    // Treat "1" as YES and "2" as NO for any pending prompt
+    const syntheticReply = normalizedReply === "1" ? "YES" : "NO";
+    // Fall through to YES/NO handlers below by overriding normalizedReply
+    // (handled inline to avoid duplicating the YES/NO logic)
+    return handleAgencyYesNoReply(
+      client,
+      pendingPrompt,
+      inboundMsg.id,
+      syntheticReply,
+      body,
+    );
+  }
+
   // Handle STOP/opt-out
   if (normalizedReply === "STOP") {
     await db
@@ -438,100 +472,12 @@ export async function handleAgencyInboundSMS(payload: {
 
   // Handle YES/Y
   if (normalizedReply === "YES" || normalizedReply === "Y") {
-    try {
-      // Execute first, then mark executed only on success.
-      const actionResult = await executePromptAction(
-        pendingPrompt.promptType!,
-        pendingPrompt.actionPayload as Record<string, unknown>,
-        client.id,
-      );
-
-      await db
-        .update(agencyMessages)
-        .set({ actionStatus: "executed", clientReply: body })
-        .where(eq(agencyMessages.id, pendingPrompt.id));
-
-      // Only send ack if the handler produced a message
-      if (actionResult.ackMessage) {
-        await sendAgencySMS({
-          clientId: client.id,
-          toPhone: client.phone,
-          body: actionResult.ackMessage,
-          category: "reply",
-          inReplyTo: pendingPrompt.id,
-        });
-      }
-    } catch (error) {
-      console.error("[Agency Inbound] Failed to execute prompt action:", error);
-
-      await db
-        .update(agencyMessages)
-        .set({ actionStatus: "replied", clientReply: body })
-        .where(eq(agencyMessages.id, pendingPrompt.id));
-
-      await sendAgencySMS({
-        clientId: client.id,
-        toPhone: client.phone,
-        body: `Thanks — we received your approval, but this action needs manual handling by our team.`,
-        category: "reply",
-        inReplyTo: pendingPrompt.id,
-      });
-      await notifyPromptFallback(
-        client.id,
-        client.businessName,
-        body,
-        "execution_failure",
-        error instanceof Error ? error.message : String(error),
-      );
-    }
-    return;
+    return handleAgencyYesNoReply(client, pendingPrompt, inboundMsg.id, "YES", body);
   }
 
   // Handle NO/N
   if (normalizedReply === "NO" || normalizedReply === "N") {
-    // Special case: won_lost_nudge NO → mark lead as lost
-    if (pendingPrompt.promptType === "won_lost_nudge") {
-      const leadId =
-        typeof (pendingPrompt.actionPayload as Record<string, unknown>)?.leadId === "string"
-          ? ((pendingPrompt.actionPayload as Record<string, unknown>).leadId as string)
-          : null;
-
-      if (leadId) {
-        const db3 = getDb();
-        await db3
-          .update(leads)
-          .set({ status: "lost", updatedAt: new Date() })
-          .where(and(eq(leads.id, leadId), eq(leads.clientId, client.id)));
-      }
-
-      await db
-        .update(agencyMessages)
-        .set({ actionStatus: "executed", clientReply: body })
-        .where(eq(agencyMessages.id, pendingPrompt.id));
-
-      await sendAgencySMS({
-        clientId: client.id,
-        toPhone: client.phone,
-        body: `Got it — lead marked as lost. Thanks for the update.`,
-        category: "reply",
-        inReplyTo: pendingPrompt.id,
-      });
-      return;
-    }
-
-    await db
-      .update(agencyMessages)
-      .set({ actionStatus: "replied", clientReply: body })
-      .where(eq(agencyMessages.id, pendingPrompt.id));
-
-    await sendAgencySMS({
-      clientId: client.id,
-      toPhone: client.phone,
-      body: `No problem — we'll skip this one.`,
-      category: "reply",
-      inReplyTo: pendingPrompt.id,
-    });
-    return;
+    return handleAgencyYesNoReply(client, pendingPrompt, inboundMsg.id, "NO", body);
   }
 
   // Any other reply — store but don't execute
@@ -752,12 +698,403 @@ async function handleWonRevenueEntryPrompt(
   };
 }
 
+// ---------------------------------------------------------------------------
+// Numbered reply helpers
+// ---------------------------------------------------------------------------
+
+interface PromptOption {
+  index: number;
+  leadId: string;
+  label: string;
+  action?: string; // e.g., 'start_estimate', 'skip'
+}
+
+function extractPromptOptions(
+  actionPayload: unknown,
+): PromptOption[] {
+  if (!actionPayload || typeof actionPayload !== "object") return [];
+  const payload = actionPayload as Record<string, unknown>;
+  if (!Array.isArray(payload.options)) return [];
+  return payload.options.filter(
+    (opt): opt is PromptOption =>
+      typeof opt === "object" &&
+      opt !== null &&
+      typeof (opt as Record<string, unknown>).index === "number" &&
+      typeof (opt as Record<string, unknown>).leadId === "string",
+  );
+}
+
+/**
+ * Execute a numbered reply against a prompt with options.
+ * Returns true if the reply was handled, false to fall through.
+ */
+async function executeNumberedReply(
+  clientId: string,
+  clientPhone: string,
+  pendingPrompt: { id: string; promptType: string | null; actionPayload: unknown },
+  options: PromptOption[],
+  parsed: { skipAll: boolean; selections: NumberedSelection[] },
+  inboundMsgId: string,
+): Promise<boolean> {
+  const db2 = getDb();
+
+  // Skip all
+  if (parsed.skipAll) {
+    await db2
+      .update(agencyMessages)
+      .set({ actionStatus: "replied", clientReply: "0" })
+      .where(eq(agencyMessages.id, pendingPrompt.id));
+
+    await sendAgencySMS({
+      clientId,
+      toPhone: clientPhone,
+      body: "Skipped. We'll check back next week.",
+      category: "reply",
+      inReplyTo: pendingPrompt.id,
+    });
+    return true;
+  }
+
+  const interactionType =
+    typeof (pendingPrompt.actionPayload as Record<string, unknown>)
+      ?.interactionType === "string"
+      ? ((pendingPrompt.actionPayload as Record<string, unknown>)
+          .interactionType as string)
+      : null;
+
+  // ── probable_wins_batch: W/L selections ──
+  if (interactionType === "probable_wins_batch") {
+    const wonLeads: string[] = [];
+    const lostLeads: string[] = [];
+    const selectedLabels: string[] = [];
+
+    for (const sel of parsed.selections) {
+      const opt = options.find((o) => o.index === sel.index);
+      if (!opt) continue;
+
+      const action = sel.action === "select" ? "won" : sel.action;
+
+      if (action === "won") {
+        await db2
+          .update(leads)
+          .set({ status: "won", updatedAt: new Date() })
+          .where(and(eq(leads.id, opt.leadId), eq(leads.clientId, clientId)));
+        wonLeads.push(opt.leadId);
+        selectedLabels.push(`${opt.label} = Won`);
+
+        // Trigger review request (non-blocking)
+        try {
+          const { startReviewRequest } = await import(
+            "@/lib/automations/review-request"
+          );
+          startReviewRequest({ leadId: opt.leadId, clientId }).catch(() => {});
+        } catch {}
+
+        // Track funnel event
+        try {
+          const { trackFunnelEvent } = await import("./funnel-tracking");
+          await trackFunnelEvent({
+            clientId,
+            leadId: opt.leadId,
+            eventType: "job_won",
+          });
+        } catch {}
+      } else if (action === "lost") {
+        await db2
+          .update(leads)
+          .set({ status: "lost", updatedAt: new Date() })
+          .where(and(eq(leads.id, opt.leadId), eq(leads.clientId, clientId)));
+        lostLeads.push(opt.leadId);
+        selectedLabels.push(`${opt.label} = Lost`);
+      }
+    }
+
+    await db2
+      .update(agencyMessages)
+      .set({
+        actionStatus: "executed",
+        clientReply: parsed.selections
+          .map(
+            (s) =>
+              `${s.action === "lost" ? "L" : "W"}${s.index}`,
+          )
+          .join(" "),
+      })
+      .where(eq(agencyMessages.id, pendingPrompt.id));
+
+    // Build confirmation message
+    const ack = selectedLabels.join(", ") + ". Updated.";
+    await sendAgencySMS({
+      clientId,
+      toPhone: clientPhone,
+      body: ack,
+      category: "reply",
+      inReplyTo: pendingPrompt.id,
+    });
+
+    // Send revenue prompt for first won lead (if any)
+    if (wonLeads.length > 0) {
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 48);
+
+      await db2.insert(agencyMessages).values({
+        clientId,
+        direction: "outbound",
+        channel: "sms",
+        content:
+          wonLeads.length === 1
+            ? "What was the job value? Reply with the amount (e.g. 55000) or S to skip."
+            : `${wonLeads.length} wins recorded. What was the job value for the first one? Reply amount or S to skip.`,
+        category: "action_prompt",
+        promptType: "won_revenue_entry",
+        actionPayload: { leadId: wonLeads[0] },
+        actionStatus: "pending",
+        expiresAt,
+      });
+
+      const agencyNumber = await getAgencyNumber();
+      if (agencyNumber) {
+        try {
+          const twilioClient = (await import("twilio")).default(
+            process.env.TWILIO_ACCOUNT_SID!,
+            process.env.TWILIO_AUTH_TOKEN!,
+          );
+          await twilioClient.messages.create({
+            to: clientPhone,
+            from: agencyNumber,
+            body:
+              wonLeads.length === 1
+                ? "What was the job value? Reply with the amount (e.g. 55000) or S to skip."
+                : `${wonLeads.length} wins recorded. What was the job value for the first one? Reply amount or S to skip.`,
+          });
+        } catch {}
+      }
+    }
+
+    return true;
+  }
+
+  // ── quote_prompt: "1" = start follow-up, "2" = skip ──
+  if (interactionType === "quote_prompt") {
+    const sel = parsed.selections[0];
+    if (!sel) return false;
+
+    const opt = options.find((o) => o.index === sel.index);
+    if (!opt) return false;
+
+    if (opt.action === "start_estimate" || sel.action === "select") {
+      const result = await triggerEstimateFollowup({
+        clientId,
+        leadId: opt.leadId,
+        source: "prompt_quick_reply",
+      });
+
+      await db2
+        .update(agencyMessages)
+        .set({ actionStatus: "executed", clientReply: String(sel.index) })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
+
+      await sendAgencySMS({
+        clientId,
+        toPhone: clientPhone,
+        body: result.success
+          ? `Follow-up started for ${opt.label}.`
+          : `Follow-up already running for ${opt.label}.`,
+        category: "reply",
+        inReplyTo: pendingPrompt.id,
+      });
+      return true;
+    }
+
+    if (opt.action === "skip") {
+      await db2
+        .update(agencyMessages)
+        .set({ actionStatus: "replied", clientReply: String(sel.index) })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
+
+      await sendAgencySMS({
+        clientId,
+        toPhone: clientPhone,
+        body: "Got it, skipped.",
+        category: "reply",
+        inReplyTo: pendingPrompt.id,
+      });
+      return true;
+    }
+  }
+
+  // ── est_disambiguation: bare digit selects lead ──
+  if (interactionType === "est_disambiguation") {
+    const sel = parsed.selections[0];
+    if (!sel) return false;
+
+    const opt = options.find((o) => o.index === sel.index);
+    if (!opt) return false;
+
+    const result = await triggerEstimateFollowup({
+      clientId,
+      leadId: opt.leadId,
+      source: "sms_keyword",
+    });
+
+    await db2
+      .update(agencyMessages)
+      .set({ actionStatus: "executed", clientReply: String(sel.index) })
+      .where(eq(agencyMessages.id, pendingPrompt.id));
+
+    await sendAgencySMS({
+      clientId,
+      toPhone: clientPhone,
+      body: result.success
+        ? `Started estimate follow-up for ${opt.label}.`
+        : `Follow-up already running for ${opt.label}.`,
+      category: "reply",
+      inReplyTo: pendingPrompt.id,
+    });
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Handle YES/NO reply (or synthetic "1"→YES, "2"→NO) for a pending prompt.
+ * Extracted so numbered reply handler can delegate to it.
+ */
+async function handleAgencyYesNoReply(
+  client: { id: string; phone: string; businessName: string },
+  pendingPrompt: { id: string; promptType: string | null; actionPayload: unknown },
+  inboundMsgId: string,
+  reply: "YES" | "NO",
+  rawBody: string,
+): Promise<void> {
+  const db2 = getDb();
+
+  if (reply === "YES") {
+    try {
+      const actionResult = await executePromptAction(
+        pendingPrompt.promptType!,
+        pendingPrompt.actionPayload as Record<string, unknown>,
+        client.id,
+      );
+
+      await db2
+        .update(agencyMessages)
+        .set({ actionStatus: "executed", clientReply: rawBody })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
+
+      if (actionResult.ackMessage) {
+        await sendAgencySMS({
+          clientId: client.id,
+          toPhone: client.phone,
+          body: actionResult.ackMessage,
+          category: "reply",
+          inReplyTo: pendingPrompt.id,
+        });
+      }
+    } catch (error) {
+      console.error("[Agency Inbound] Failed to execute prompt action:", error);
+
+      await db2
+        .update(agencyMessages)
+        .set({ actionStatus: "replied", clientReply: rawBody })
+        .where(eq(agencyMessages.id, pendingPrompt.id));
+
+      await sendAgencySMS({
+        clientId: client.id,
+        toPhone: client.phone,
+        body: "Thanks — we received your approval, but this action needs manual handling by our team.",
+        category: "reply",
+        inReplyTo: pendingPrompt.id,
+      });
+      await notifyPromptFallback(
+        client.id,
+        client.businessName,
+        rawBody,
+        "execution_failure",
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+    return;
+  }
+
+  // NO
+  if (pendingPrompt.promptType === "won_lost_nudge") {
+    const leadId =
+      typeof (pendingPrompt.actionPayload as Record<string, unknown>)?.leadId === "string"
+        ? ((pendingPrompt.actionPayload as Record<string, unknown>).leadId as string)
+        : null;
+
+    if (leadId) {
+      await db2
+        .update(leads)
+        .set({ status: "lost", updatedAt: new Date() })
+        .where(and(eq(leads.id, leadId), eq(leads.clientId, client.id)));
+    }
+
+    await db2
+      .update(agencyMessages)
+      .set({ actionStatus: "executed", clientReply: rawBody })
+      .where(eq(agencyMessages.id, pendingPrompt.id));
+
+    await sendAgencySMS({
+      clientId: client.id,
+      toPhone: client.phone,
+      body: "Got it — lead marked as lost. Thanks for the update.",
+      category: "reply",
+      inReplyTo: pendingPrompt.id,
+    });
+    return;
+  }
+
+  await db2
+    .update(agencyMessages)
+    .set({ actionStatus: "replied", clientReply: rawBody })
+    .where(eq(agencyMessages.id, pendingPrompt.id));
+
+  await sendAgencySMS({
+    clientId: client.id,
+    toPhone: client.phone,
+    body: "No problem — we'll skip this one.",
+    category: "reply",
+    inReplyTo: pendingPrompt.id,
+  });
+}
+
+async function handleQuotePromptYes(
+  actionPayload: Record<string, unknown>,
+  clientId: string,
+): Promise<PromptActionResult> {
+  // Quote prompt YES = start estimate follow-up for the lead
+  const options = Array.isArray(actionPayload.options) ? actionPayload.options : [];
+  const firstOption = options[0] as { leadId?: string; label?: string } | undefined;
+  const leadId = firstOption?.leadId ?? (actionPayload.leadId as string | undefined);
+
+  if (!leadId) {
+    throw new Error("quote_prompt: missing leadId in actionPayload");
+  }
+
+  const result = await triggerEstimateFollowup({
+    clientId,
+    leadId,
+    source: "prompt_quick_reply",
+  });
+
+  const label = firstOption?.label ?? "this lead";
+  return {
+    ackMessage: result.success
+      ? `Follow-up started for ${label}.`
+      : `Follow-up already running for ${label}.`,
+  };
+}
+
 const PROMPT_ACTION_HANDLERS: Record<string, PromptActionHandler> = {
   start_sequences: handleStartSequencesPrompt,
   schedule_callback: handleScheduleCallbackPrompt,
   confirm_action: handleConfirmActionPrompt,
   won_lost_nudge: handleWonLostNudgeYesPrompt,
   won_revenue_entry: handleWonRevenueEntryPrompt,
+  quote_prompt: handleQuotePromptYes,
 };
 
 /** Dispatch prompt action based on promptType. */

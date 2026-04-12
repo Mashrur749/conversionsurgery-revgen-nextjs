@@ -38,15 +38,44 @@ const NUDGE_COOLDOWN_DAYS = 7;
 // Statuses that mean the lead is already resolved
 const RESOLVED_STATUSES = ['won', 'lost', 'closed'] as const;
 
-// ── Message builder ────────────────────────────────────────────────────────────
+// ── Message builders ──────────────────────────────────────────────────────────
 
-function buildNudgeMessage(leadName: string, projectType: string | null, refCode: string): string {
-  const project = projectType ?? 'project';
-  const nameDisplay = leadName || 'this lead';
+interface NudgeLead {
+  id: string;
+  name: string | null;
+  projectType: string | null;
+}
+
+function buildLeadLabel(lead: NudgeLead): string {
+  const name = lead.name || 'Lead';
+  const project = lead.projectType ? ` — ${lead.projectType}` : '';
+  return `${name}${project}`;
+}
+
+function buildBatchNudgeMessage(batchLeads: NudgeLead[]): string {
+  if (batchLeads.length === 1) {
+    const label = buildLeadLabel(batchLeads[0]);
+    return `${label}. Did you win it?\nW = Won  L = Lost  0 = Skip`;
+  }
+
+  const lines = batchLeads.map((lead, i) => `${i + 1}. ${buildLeadLabel(lead)}`);
   return (
-    `Did you win ${nameDisplay}'s ${project}? ` +
-    `Ref ${refCode}. Reply WON ${refCode} or LOST ${refCode} to your business number.`
+    `${batchLeads.length} jobs — won or lost?\n` +
+    lines.join('\n') +
+    '\nW + numbers = won, L + numbers = lost\n' +
+    'e.g. W13 L2. Reply 0 to skip.'
   );
+}
+
+function buildBatchActionPayload(batchLeads: NudgeLead[]): Record<string, unknown> {
+  return {
+    interactionType: 'probable_wins_batch',
+    options: batchLeads.map((lead, i) => ({
+      index: i + 1,
+      leadId: lead.id,
+      label: buildLeadLabel(lead),
+    })),
+  };
 }
 
 // ── Result type ───────────────────────────────────────────────────────────────
@@ -139,14 +168,14 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
 
   const recentlyNudgedClientIds = new Set(recentNudges.map((r) => r.clientId));
 
-  // ── Step 4: Send nudges ───────────────────────────────────────────────────
+  // ── Step 4: Group leads by client, send batched nudges ─────────────────────
 
-  // Build a map of leadId → appointment info for quick lookups
   const appointmentByLead = new Map(
     qualifyingAppointments.map((a) => [a.leadId, a])
   );
 
-  // Dedupe: one nudge per lead
+  // Group unresolved leads by clientId, deduped
+  const leadsPerClient = new Map<string, NudgeLead[]>();
   const seen = new Set<string>();
 
   for (const lead of unresolvedLeads) {
@@ -167,30 +196,46 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
       continue;
     }
 
+    const existing = leadsPerClient.get(lead.clientId) ?? [];
+    if (existing.length < 5) {
+      // Cap at 5 leads per batch to keep the SMS readable
+      existing.push({ id: lead.id, name: lead.name, projectType: lead.projectType });
+      leadsPerClient.set(lead.clientId, existing);
+    } else {
+      skipped++; // Overflow leads roll to next week's nudge
+    }
+  }
+
+  // Send one batched message per client
+  for (const [clientId, batchLeads] of leadsPerClient) {
     try {
-      const refCode = await ensureOutcomeRefCode(lead.id, lead.clientId);
-      const message = buildNudgeMessage(lead.name ?? '', lead.projectType ?? null, refCode);
+      // Ensure ref codes still exist for backward compat (old WON/LOST commands)
+      for (const lead of batchLeads) {
+        await ensureOutcomeRefCode(lead.id, clientId);
+      }
+
+      const message = buildBatchNudgeMessage(batchLeads);
+      const payload = buildBatchActionPayload(batchLeads);
 
       const messageId = await sendActionPrompt({
-        clientId: lead.clientId,
+        clientId,
         promptType: 'won_lost_nudge',
         message,
-        actionPayload: { leadId: lead.id },
-        expiresInHours: 7 * 24, // 7 days
+        actionPayload: payload,
+        expiresInHours: 7 * 24,
       });
 
       if (messageId) {
-        nudged++;
+        nudged += batchLeads.length;
       } else {
-        // sendActionPrompt returned null — quiet hours or no phone
-        skipped++;
+        skipped += batchLeads.length;
       }
     } catch (error) {
-      logSanitizedConsoleError('[ProbableWinsNudge] Failed to send nudge:', error, {
-        leadId: lead.id,
-        clientId: lead.clientId,
+      logSanitizedConsoleError('[ProbableWinsNudge] Failed to send batch nudge:', error, {
+        clientId,
+        leadCount: batchLeads.length,
       });
-      skipped++;
+      skipped += batchLeads.length;
     }
   }
 
