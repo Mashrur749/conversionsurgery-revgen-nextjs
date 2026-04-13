@@ -286,4 +286,17 @@ Since the original audit window, new managed-service features (Smart Assist work
    - CTIA HELP keyword auto-reply added for regulatory compliance; all exempt sends now produce `compliance_exempt_send` audit events.
    - no new auth model exceptions were introduced.
 
+24. Prompt injection sanitization (2026-04-12):
+   - All user-provided values interpolated into AI system prompts (business name, owner name, agent name, lead name) are now sanitized via `sanitizeForPrompt()` before injection.
+   - Sanitization strips newlines (prevents prompt structure breaks), removes `{placeholder}` syntax (prevents template hijacking), collapses whitespace, and caps length at 200 characters.
+   - Applied to: `respond.ts` (agent response generation), `context-builder.ts` (AI context pipeline), `win-back.ts` and `no-show-recovery.ts` (automation message generation).
+   - No auth boundary changes were introduced.
+
+25. Post-generation output guard (2026-04-12):
+   - A deterministic regex-based output guard (`checkOutputGuardrails()`) runs after every AI message generation and before sending to customers.
+   - Checks for: pricing leaks when `canDiscussPricing` is disabled, opt-out retention attempts after customer stop signals, and AI identity denial when directly asked.
+   - Blocked responses are replaced with a safe fallback, logged in `agent_decisions`, and the violation is recorded for operator review.
+   - Applied to: agent orchestrator, win-back automation, no-show recovery automation.
+   - No auth boundary changes were introduced.
+
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.
