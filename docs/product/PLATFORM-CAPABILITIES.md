@@ -151,7 +151,7 @@ When the AI encounters questions it cannot answer, the contractor is automatical
 
 ### Estimate Follow-Up
 
-Triggered when owner flags an estimate as sent (SMS keyword `EST`, dashboard action, or API call).
+Triggered when owner flags an estimate as sent (SMS keyword `EST`, dashboard action, or API call), OR automatically when the AI detects conversation signals implying a quote was sent (see Section 1: Estimate Auto-Detection).
 
 | Touch | Timing | Message tone |
 |-------|--------|-------------|
