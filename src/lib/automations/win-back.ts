@@ -13,6 +13,7 @@ import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getTrackedAI } from '@/lib/ai';
 import { checkOutputGuardrails } from '@/lib/agent/output-guard';
+import { sanitizeForPrompt } from '@/lib/utils/prompt-sanitize';
 import { truncateAtSentence } from '@/lib/utils/text';
 
 // Win-back window: 25-35 days since last message
@@ -313,7 +314,7 @@ async function generateWinBackMessage(
         },
       ],
       {
-        systemPrompt: `You're writing a casual follow-up text from ${ownerName} at ${businessName}.
+        systemPrompt: `You're writing a casual follow-up text from ${sanitizeForPrompt(ownerName)} at ${sanitizeForPrompt(businessName)}.
 Write like a real person texting — not a marketer, not a chatbot.
 
 ${attemptPrompt}

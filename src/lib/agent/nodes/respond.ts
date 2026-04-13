@@ -3,6 +3,7 @@ import type { ConversationStateType } from '../state';
 import { getAIProvider } from '@/lib/ai';
 import { selectModelTier } from '@/lib/ai/model-routing';
 import { truncateAtSentence } from '@/lib/utils/text';
+import { sanitizeForPrompt } from '@/lib/utils/prompt-sanitize';
 
 const RESPONSE_PROMPT = `You are {agentName}, a {agentTone} assistant for {businessName}. {ownerName} manages the business.
 
@@ -75,10 +76,10 @@ export async function generateResponse(
     : 'Not yet specified';
 
   const prompt = RESPONSE_PROMPT
-    .replace('{agentName}', clientSettings.agentName)
-    .replace(/{agentTone}/g, clientSettings.agentTone)
-    .replace('{businessName}', clientSettings.businessName)
-    .replace('{ownerName}', clientSettings.ownerName)
+    .replace('{agentName}', sanitizeForPrompt(clientSettings.agentName))
+    .replace(/{agentTone}/g, sanitizeForPrompt(clientSettings.agentTone))
+    .replace('{businessName}', sanitizeForPrompt(clientSettings.businessName))
+    .replace('{ownerName}', sanitizeForPrompt(clientSettings.ownerName))
     .replace(/{primaryGoal}/g, clientSettings.primaryGoal === 'book_appointment' ? 'book an appointment' : clientSettings.primaryGoal)
     .replace('{maxLength}', String(clientSettings.maxResponseLength))
     .replace('{schedulingRule}', clientSettings.canScheduleAppointments

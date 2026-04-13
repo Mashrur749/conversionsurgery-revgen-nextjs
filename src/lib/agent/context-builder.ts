@@ -13,6 +13,7 @@
  */
 
 import { getDb } from '@/db';
+import { sanitizeForPrompt } from '@/lib/utils/prompt-sanitize';
 import {
   leads,
   clients,
@@ -404,7 +405,7 @@ function buildSystemPrompt(params: SystemPromptParams): string {
   return `${purposeFrame}
 
 ## BUSINESS KNOWLEDGE
-${knowledge || 'No business knowledge configured yet. Defer all specific questions to ' + business.ownerName + '.'}
+${knowledge || 'No business knowledge configured yet. Defer all specific questions to ' + sanitizeForPrompt(business.ownerName) + '.'}
 ${relevantKnowledge ? `\n## MOST RELEVANT TO THIS QUESTION\n${relevantKnowledge}` : ''}
 
 ## CUSTOMER CONTEXT
@@ -435,21 +436,23 @@ function getPurposeFrame(
   ownerName: string,
   primaryGoal: string
 ): string {
+  const safeBiz = sanitizeForPrompt(businessName);
+  const safeOwner = sanitizeForPrompt(ownerName);
   switch (purpose) {
     case 'no_show_recovery':
-      return `You are reaching out on behalf of ${businessName} to a customer who missed their appointment. Your goal is to reschedule — be understanding, not accusatory. People miss appointments for real reasons.`;
+      return `You are reaching out on behalf of ${safeBiz} to a customer who missed their appointment. Your goal is to reschedule — be understanding, not accusatory. People miss appointments for real reasons.`;
 
     case 'win_back':
-      return `You are texting a previous lead for ${businessName} who went quiet. Sound like a real person, not a marketer. Be brief, genuine, and give them a reason to re-engage. Maximum 2 attempts — if they don't respond, stop.`;
+      return `You are texting a previous lead for ${safeBiz} who went quiet. Sound like a real person, not a marketer. Be brief, genuine, and give them a reason to re-engage. Maximum 2 attempts — if they don't respond, stop.`;
 
     case 'booking':
-      return `You are helping a customer of ${businessName} schedule an appointment over text. Be conversational — suggest times, confirm details, and handle rescheduling naturally.`;
+      return `You are helping a customer of ${safeBiz} schedule an appointment over text. Be conversational — suggest times, confirm details, and handle rescheduling naturally.`;
 
     case 'follow_up':
-      return `You are following up with a lead for ${businessName}. Keep it brief and natural — check if they still need help or have questions.`;
+      return `You are following up with a lead for ${safeBiz}. Keep it brief and natural — check if they still need help or have questions.`;
 
     default:
-      return `You are a helpful text assistant for ${businessName}. ${ownerName} manages the business. Your primary goal: ${primaryGoal.replace(/_/g, ' ')}. Respond naturally over SMS — keep it concise and helpful.`;
+      return `You are a helpful text assistant for ${safeBiz}. ${safeOwner} manages the business. Your primary goal: ${primaryGoal.replace(/_/g, ' ')}. Respond naturally over SMS — keep it concise and helpful.`;
   }
 }
 

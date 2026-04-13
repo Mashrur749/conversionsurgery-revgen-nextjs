@@ -19,6 +19,7 @@ import { getTrackedAI } from '@/lib/ai';
 import { format, parse } from 'date-fns';
 import { checkOutputGuardrails } from '@/lib/agent/output-guard';
 import { truncateAtSentence } from '@/lib/utils/text';
+import { sanitizeForPrompt } from '@/lib/utils/prompt-sanitize';
 
 /**
  * Returns a Date representing 10:00 AM on the date that is `daysFromNow` days
@@ -333,8 +334,8 @@ async function generateNoShowMessage(
         },
       ],
       {
-        systemPrompt: `You are writing a no-show follow-up SMS from ${ownerName} at ${businessName}.
-The customer "${leadName}" missed their appointment on ${appointmentDate} at ${appointmentTime}.
+        systemPrompt: `You are writing a no-show follow-up SMS from ${sanitizeForPrompt(ownerName)} at ${sanitizeForPrompt(businessName)}.
+The customer "${sanitizeForPrompt(leadName)}" missed their appointment on ${appointmentDate} at ${appointmentTime}.
 
 ${attemptPrompt}
 
