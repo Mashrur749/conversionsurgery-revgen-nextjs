@@ -18,6 +18,8 @@ import { getActiveProviderName } from '@/lib/ai';
 import { startFlowExecution } from '@/lib/services/flow-execution';
 import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
 import { buildGuardrailPrompt } from './guardrails';
+import { checkOutputGuardrails } from './output-guard';
+import { truncateAtSentence } from '@/lib/utils/text';
 import { classifyService, updateLeadServiceMatch } from '@/lib/services/service-classification';
 import { detectBookingIntent, handleBookingConversation } from '@/lib/services/booking-conversation';
 import { selectModelTier } from '@/lib/ai/model-routing';
@@ -388,11 +390,56 @@ export async function processIncomingMessage(
 
   // Handle response via compliance gateway
   if (finalState.responseToSend && !finalState.needsEscalation) {
+    const responseToSend = finalState.responseToSend;
+
+    // Run output guard
+    const guardResult = checkOutputGuardrails(responseToSend, messageText, {
+      canDiscussPricing: settings?.canDiscussPricing || false,
+    });
+
+    let messageToSend = responseToSend;
+
+    if (!guardResult.passed) {
+      // Log blocked response
+      console.warn(`[Agent] Output guard blocked: ${guardResult.violation}`);
+
+      // Log a separate agent decision for the blocked response
+      await db.insert(agentDecisions).values({
+        leadId,
+        clientId: client.id,
+        messageId,
+        triggerType: 'inbound_message',
+        stageAtDecision: context.stage,
+        contextSnapshot: {
+          urgencyScore: finalState.signals.urgency,
+          budgetScore: finalState.signals.budget,
+          intentScore: finalState.signals.intent,
+          sentiment: finalState.signals.sentiment,
+          recentObjections: finalState.objections.slice(-3),
+        },
+        action: 'respond' as AgentAction,
+        actionDetails: {
+          blockedResponse: responseToSend,
+          violation: guardResult.violation,
+          violationDetail: guardResult.detail,
+        },
+        reasoning: `Output guard blocked: ${guardResult.violation}`,
+        confidence: 0,
+        processingTimeMs: Date.now() - startTime,
+      });
+
+      // Use safe fallback
+      messageToSend = `Thanks for your message! I'll have ${client.ownerName} get back to you shortly.`;
+    }
+
+    // Apply safe truncation
+    messageToSend = truncateAtSentence(messageToSend, settings?.maxResponseLength || 300);
+
     const sendResult = await sendCompliantMessage({
       clientId: client.id,
       to: lead.phone,
       from: client.twilioNumber,
-      body: finalState.responseToSend,
+      body: messageToSend,
       messageClassification: 'inbound_reply',
       messageCategory: 'marketing',
       consentBasis: { type: 'lead_reply' },
@@ -407,7 +454,7 @@ export async function processIncomingMessage(
         clientId: client.id,
         direction: 'outbound',
         messageType: 'ai_response',
-        content: finalState.responseToSend,
+        content: messageToSend,
         twilioSid: sendResult.messageSid || undefined,
       });
       responseSent = true;
