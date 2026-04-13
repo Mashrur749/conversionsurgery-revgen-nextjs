@@ -2712,6 +2712,30 @@ Expected:
 
 ---
 
+### Step 69: Output Guard + Utilities Verification
+
+1. Run output guard tests:
+   ```bash
+   npx vitest run src/lib/agent/output-guard.test.ts
+   ```
+   Expected: All tests pass. Covers pricing leak detection, opt-out retention detection, and AI identity denial detection.
+
+2. Run truncation tests:
+   ```bash
+   npx vitest run src/lib/utils/text.test.ts
+   ```
+   Expected: All tests pass. Covers sentence-boundary truncation with fallbacks.
+
+3. Run prompt sanitization tests:
+   ```bash
+   npx vitest run src/lib/utils/prompt-sanitize.test.ts
+   ```
+   Expected: All tests pass. Covers injection prevention for user-provided prompt values.
+
+4. All three are deterministic (no API key required).
+
+---
+
 ## 3. Useful Commands
 
 ```bash

@@ -48,6 +48,22 @@ Both the analyze-and-decide node and respond node use dynamic model routing base
 - Industry benchmark comparison: calculates multiplier vs. 42-minute industry average
 - Surfaced in bi-weekly reports and client revenue dashboard
 
+### Post-Generation Safety Guard
+
+After every AI-generated message, a deterministic output guard checks for three critical violations before the message is sent:
+
+1. **Pricing leak** — detects dollar amounts or pricing patterns when `canDiscussPricing` is disabled
+2. **Opt-out retention** — detects persuasion/retention language after a customer says &ldquo;stop&rdquo; or &ldquo;unsubscribe&rdquo;
+3. **AI identity denial** — detects claims of being human when a customer directly asks &ldquo;are you a bot?&rdquo;
+
+If any check fails, the response is blocked, a safe fallback message is sent, and the violation is logged in `agent_decisions` for quality analysis.
+
+Applied to: Agent orchestrator, win-back automation, no-show recovery automation.
+
+### Response Length Control
+
+AI responses are truncated at sentence boundaries instead of mid-word. This ensures messages sent to homeowners always end with complete sentences, even when the AI exceeds the configured maximum response length. Win-back messages are capped at 160 characters (SMS optimal). No-show recovery at 200 characters.
+
 ---
 
 ## 2. Follow-Up Automation (Never Drop a Lead)
