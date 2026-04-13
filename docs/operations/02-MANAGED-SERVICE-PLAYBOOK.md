@@ -435,6 +435,8 @@ Stay on the line. Confirm in Stripe. See Payment Capture section below for hesit
    - &quot;When a lead asks for a price, what do you want the system to say?&quot; (Most contractors: &quot;Don&apos;t quote prices, get them to book an estimate.&quot;)
    - &quot;What makes you different from the next contractor?&quot;
 
+   **Pricing ranges are mandatory.** The onboarding quality gate now requires at least 1 service with a pricing range (e.g., &quot;Drain cleaning: $150-$400&quot;). Without this, the AI defers every pricing question and the #1 homeowner question goes unanswered. If the contractor says &quot;it depends,&quot; push for a ballpark: &quot;What&apos;s the cheapest drain cleaning you&apos;ve done? And the most expensive? Great &mdash; I&apos;ll use that range so the AI can give them a rough idea.&quot; Set the service to &quot;Discuss price range&quot; with those values.
+
    Enter into KB as they talk. Read back the AI persona summary and get verbal approval: &quot;This is how your system will talk to homeowners. Sound like you?&quot;
 
    **Critical:** The messages must sound like THEM. This is identity protection, not a feature request.

@@ -946,6 +946,7 @@ Before the sales call, the operator runs a lightweight pre-sale audit using publ
 - Multi-criteria evaluation: knowledge base populated, business hours set, team configured, etc.
 - **Business hours gate (critical):** AI activation is blocked if no business hours are configured &mdash; prevents booking failures from empty slot availability
 - **KB activation gate:** when policy mode is `enforce`, the AI orchestrator checks quality gate readiness before generating responses. If critical gates fail (e.g., empty KB), AI returns `no_action` and logs which gates are failing. Degrades gracefully on check failure.
+- **Pricing coverage gate (critical):** at least one service must have pricing ranges configured (`canDiscussPrice = 'yes_range'` with valid min/max). Without this, the AI cannot answer the most common homeowner question ("how much does it cost?") and defers every pricing inquiry. Contractors with all services set to "defer" fail this gate.
 - Critical vs. standard gates with pass/fail scoring
 - Three enforcement modes: enforce (blocks autonomous), warn (allows with notice), off
 - Override capability with audit trail (reason required, &ge;10 chars)
