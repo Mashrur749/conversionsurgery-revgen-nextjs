@@ -6,8 +6,12 @@
 export function truncateAtSentence(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
   const truncated = text.substring(0, maxLength);
-  const lastSentenceEnd = truncated.search(/[.!?]\s*[^.!?]*$/);
-  if (lastSentenceEnd >= 0 && lastSentenceEnd > maxLength * 0.5) {
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf('.'),
+    truncated.lastIndexOf('!'),
+    truncated.lastIndexOf('?'),
+  );
+  if (lastSentenceEnd >= 0 && lastSentenceEnd >= maxLength * 0.5) {
     return truncated.substring(0, lastSentenceEnd + 1).trim();
   }
   const lastSpace = truncated.lastIndexOf(' ');
