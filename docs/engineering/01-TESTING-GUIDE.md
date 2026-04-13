@@ -1,6 +1,6 @@
 # Testing Guide
 
-Last updated: 2026-04-06
+Last updated: 2026-04-12
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
 
@@ -2796,12 +2796,36 @@ Verifies the four quick wins shipped in the 2026-04-12 wave.
 
 ---
 
+### Step 73: Full AI Eval Suite
+
+1. Run the complete eval suite:
+   ```bash
+   npm run test:ai:full
+   ```
+   This runs all 11 .ai-test.ts files, generates an HTML report at `.scratch/eval-report.html`, saves baseline, and checks for regressions.
+
+2. Requires `ANTHROPIC_API_KEY` for AI-powered tests (9 of 11 files). Without it, only coherence + retrieval (deterministic) tests run.
+
+3. Review the HTML report for failed assertions &mdash; each failure shows the test ID, description, AI response, and error.
+
+4. If a safety regression is detected, the script exits with code 1 (CI failure).
+
+5. Eval categories: safety, quality, accuracy, grounding, coherence, retrieval.
+
+6. To run a single category:
+   ```bash
+   npx vitest run --config vitest.ai.config.ts -t "Grounding"
+   ```
+
+---
+
 ## 3. Useful Commands
 
 ```bash
 # Automated baseline
 npm test                    # 315 deterministic tests (no LLM calls)
 npm run test:ai             # 29 AI tests: 23 single-turn criteria + 6 multi-turn scenarios (requires ANTHROPIC_API_KEY)
+npm run test:ai:full        # all 11 .ai-test.ts files across 6 eval categories, HTML report + baseline tracking (~$0.30, ~4min)
 npm run build
 npm run quality:logging-guard
 npm run quality:no-regressions

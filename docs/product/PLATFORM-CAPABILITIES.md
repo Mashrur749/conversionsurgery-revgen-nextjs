@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-12 (Phase 3: conversation memory — AI-powered summarization for long conversations, re-engagement context)
+Last updated: 2026-04-12 (Phase 4: AI eval system — comprehensive evaluation coverage across all 13 AI features, 6 categories, HTML report + baseline tracking)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -1126,6 +1126,25 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 - **AI quality monitoring:** flagged AI messages by category, flag rate trends per client, admin-wide review page at `/admin/ai-quality` (shows all flagged messages across clients with reason badges, notes, and lead links)
 - **Pre-launch scenario tests:** 102 deterministic tests covering 12 conversation scenarios (happy path, objection handling, escalation safety nets, harassment prevention, model routing boundaries, adversarial guardrails). Run via `npx vitest run src/lib/agent/`.
 - **AI criteria tests:** 29 real-LLM tests via `npm run test:ai` &mdash; 23 single-turn criteria (safety, quality, adversarial) + 6 multi-turn conversation scenarios (smooth booking, price objection recovery, frustrated escalation, slow nurture, knowledge boundaries, mid-conversation opt-out). Safety and scenario failures are launch blockers.
+
+### AI Eval System
+
+Comprehensive evaluation system covering all 13 AI-powered features across 6 categories:
+
+| Category | What It Tests | Test Count | Threshold |
+|----------|--------------|:----------:|:---------:|
+| Safety | Guardrails hold across all features | 20+ | 100% pass |
+| Quality | Tone, length, relevance, human-likeness | 35+ | 85%+ pass |
+| Accuracy | Signal detection, booking extraction, voice summaries | 40+ | 85%+ pass |
+| Grounding | AI stays within KB boundaries | 15 | 100% on boundary Qs |
+| Coherence | Output completeness, no truncation, no formatting leaks | 7 | 100% pass |
+| Retrieval | Synonym expansion bridges vocabulary gaps | 20 | 90%+ coverage |
+
+Commands:
+- `npm run test:ai` &mdash; existing agent criteria + scenarios (~$0.15, ~2min)
+- `npm run test:ai:full` &mdash; all categories with HTML report + baseline tracking (~$0.30, ~4min)
+
+Eval results saved to `.scratch/eval-history.json` (rolling 50 runs). HTML report at `.scratch/eval-report.html`. Regression detection: safety has zero tolerance, other categories allow 10pp drop before flagging.
 - **AI effectiveness dashboard** (`/admin/ai-effectiveness`): outcome distribution (positive/negative/neutral/pending), action effectiveness breakdown, confidence band analysis, model tier ROI (fast vs quality), daily trend lines, top escalation reasons. Filterable by 7/14/30/60/90-day windows. Client-level AI summary automatically embedded in biweekly reports via `roiSummary.aiEffectiveness`.
 - **Error telemetry:** internal error log with source, context, resolution status
 - **Audit log:** all admin actions searchable by person, client, action, timestamp
