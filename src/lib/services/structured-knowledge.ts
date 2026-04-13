@@ -7,7 +7,8 @@
 
 import { getDb } from '@/db';
 import { knowledgeBase, clientServices } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
+import { embedBatch, buildEmbeddingText } from './embedding';
 
 export interface StructuredKnowledgeData {
   // Section 1: Services & Boundaries
@@ -225,6 +226,32 @@ export async function saveStructuredKnowledge(
   // ---- Bulk insert ----
   if (entries.length > 0) {
     await db.insert(knowledgeBase).values(entries);
+
+    // Fire-and-forget batch embedding
+    const textsToEmbed = entries.map(e => buildEmbeddingText(e.title, e.content));
+    embedBatch(textsToEmbed)
+      .then(async (embeddings) => {
+        const freshDb = getDb();
+        // Fetch IDs of the entries we just inserted
+        const inserted = await freshDb
+          .select({ id: knowledgeBase.id })
+          .from(knowledgeBase)
+          .where(and(
+            eq(knowledgeBase.clientId, clientId),
+            eq(knowledgeBase.keywords, tag)
+          ))
+          .orderBy(knowledgeBase.createdAt);
+
+        for (let i = 0; i < Math.min(inserted.length, embeddings.length); i++) {
+          const vectorStr = `[${embeddings[i].join(',')}]`;
+          await freshDb.execute(
+            sql`UPDATE knowledge_base SET embedding = ${vectorStr}::vector, embedding_status = 'ready' WHERE id = ${inserted[i].id}`
+          );
+        }
+      })
+      .catch((err) => {
+        console.error('[KB] Batch embedding failed:', err);
+      });
   }
 
   // ---- Sync to client_services table ----

@@ -5,6 +5,10 @@ import {
   addKnowledgeEntry,
   initializeClientKnowledge,
 } from '@/lib/services/knowledge-base';
+import { embedKnowledgeEntry } from '@/lib/services/embedding';
+import { getDb } from '@/db';
+import { knowledgeBase } from '@/db/schema';
+import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 export const GET = adminClientRoute<{ id: string }>(
@@ -32,6 +36,24 @@ export const POST = adminClientRoute<{ id: string }>(
     const data = createSchema.parse(body);
 
     const entryId = await addKnowledgeEntry(clientId, data);
+
+    // Fire-and-forget: generate embedding asynchronously
+    embedKnowledgeEntry(data.title, data.content)
+      .then(async (embedding) => {
+        const db = getDb();
+        const vectorStr = `[${embedding.join(',')}]`;
+        await db.execute(
+          sql`UPDATE knowledge_base SET embedding = ${vectorStr}::vector, embedding_status = 'ready' WHERE id = ${entryId}`
+        );
+      })
+      .catch((err) => {
+        console.error(`[KB] Embedding failed for entry ${entryId}:`, err);
+        const db = getDb();
+        db.update(knowledgeBase)
+          .set({ embeddingStatus: 'failed' as const })
+          .where(eq(knowledgeBase.id, entryId))
+          .catch(() => {});
+      });
 
     return NextResponse.json({ id: entryId });
   }

@@ -7,7 +7,8 @@ import { checkSlaBreaches } from '@/lib/services/escalation';
 import { runDailyAnalyticsJob } from '@/lib/services/analytics-aggregation';
 import { updateCohortMetrics } from '@/lib/services/cohort-analysis';
 import { getDb, clients, reviewSources } from '@/db';
-import { eq, and, or, isNull, lt } from 'drizzle-orm';
+import { knowledgeBase } from '@/db/schema';
+import { eq, and, or, isNull, lt, sql } from 'drizzle-orm';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
@@ -15,6 +16,51 @@ import { alertOperator } from '@/lib/services/operator-alerts';
 import { runEngagementHealthCheck } from '@/lib/services/engagement-health';
 import { runDormantReengagement } from '@/lib/automations/dormant-reengagement';
 import { processStuckEstimateNudges } from '@/lib/automations/stuck-estimate-nudge';
+import { embedKnowledgeEntry } from '@/lib/services/embedding';
+
+async function backfillEmbeddings(): Promise<{ processed: number; failed: number }> {
+  const db = getDb();
+
+  const pending = await db
+    .select({
+      id: knowledgeBase.id,
+      title: knowledgeBase.title,
+      content: knowledgeBase.content,
+    })
+    .from(knowledgeBase)
+    .where(
+      and(
+        eq(knowledgeBase.isActive, true),
+        or(
+          eq(knowledgeBase.embeddingStatus, 'pending'),
+          eq(knowledgeBase.embeddingStatus, 'failed')
+        )
+      )
+    )
+    .limit(50);
+
+  let processed = 0;
+  let failed = 0;
+
+  for (const entry of pending) {
+    try {
+      const embedding = await embedKnowledgeEntry(entry.title, entry.content);
+      const vectorStr = `[${embedding.join(',')}]`;
+      await db.execute(
+        sql`UPDATE knowledge_base SET embedding = ${vectorStr}::vector, embedding_status = 'ready' WHERE id = ${entry.id}`
+      );
+      processed++;
+    } catch (err) {
+      logSanitizedConsoleError(`[Cron] Embedding backfill failed for ${entry.id}:`, err);
+      await db.update(knowledgeBase)
+        .set({ embeddingStatus: 'failed' })
+        .where(eq(knowledgeBase.id, entry.id));
+      failed++;
+    }
+  }
+
+  return { processed, failed };
+}
 
 // Helper to dispatch a cron sub-endpoint via fetch.
 // Appends to failedJobs on non-2xx status or fetch exception so the caller
@@ -161,6 +207,18 @@ export async function POST(request: NextRequest) {
         'GET',
         failedJobs
       );
+
+      try {
+        const embeddingResult = await backfillEmbeddings();
+        if (embeddingResult.processed > 0 || embeddingResult.failed > 0) {
+          console.log('[Cron] Embedding backfill:', embeddingResult);
+        }
+        results.embeddingBackfill = { success: true, ...embeddingResult };
+      } catch (err) {
+        // Voyage API key not configured or service down — skip silently
+        console.warn('[Cron] Embedding backfill skipped:', err instanceof Error ? err.message : err);
+        results.embeddingBackfill = { skipped: true };
+      }
     }
 
     // ── Daily midnight UTC (hour=0) ──────────────────────────
