@@ -84,6 +84,17 @@ describe('truncateAtSentence', () => {
     expect(result).not.toMatch(/\.\.\.$/);
   });
 
+  it('skips sentence boundary in front half, uses word boundary instead', () => {
+    // "Hi." ends at position 2, which is < 50% of 50 (25), so word boundary should be used
+    const text = 'Hi. This is a longer sentence without more periods in this text here';
+    const result = truncateAtSentence(text, 50);
+    // Should NOT be "Hi." — that's too short (front half)
+    // Should truncate at last word boundary within 50 chars
+    expect(result).not.toBe('Hi.');
+    expect(result.length).toBeLessThanOrEqual(50);
+    expect(result).not.toContain('...');
+  });
+
   it('does not cut mid-word', () => {
     const text = 'No sentence here but words are important in this text output';
     const result = truncateAtSentence(text, 20);
