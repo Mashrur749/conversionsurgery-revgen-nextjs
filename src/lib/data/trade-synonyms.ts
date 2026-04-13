@@ -7,9 +7,9 @@
 const SYNONYM_GROUPS: string[][] = [
   // Plumbing — fixtures
   ['faucet', 'tap', 'spigot'],
-  ['drain cleaning', 'drain unclogging', 'clogged drain', 'blocked drain', 'snake the drain'],
+  ['drain cleaning', 'drain unclogging', 'clogged drain', 'blocked drain', 'snake the drain', 'sewage smell', 'sewer smell', 'smells like sewage', 'sewage backup', 'sewer backup'],
   ['water heater', 'hot water tank', 'hot water heater'],
-  ['toilet repair', 'fix the toilet', 'toilet replacement', 'toilet not flushing'],
+  ['toilet repair', 'fix the toilet', 'toilet replacement', 'toilet not flushing', 'sewage', 'sewer'],
   ['pipe repair', 'burst pipe', 'broken pipe', 'pipe replacement', 'pipe leak'],
   ['sump pump', 'sump pump installation', 'basement pump'],
   ['water softener', 'water treatment', 'hard water'],
