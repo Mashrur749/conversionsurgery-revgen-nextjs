@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-12 (Phase 2: pgvector semantic search, two-tier KB context, Voyage AI embeddings, backfill cron)
+Last updated: 2026-04-12 (Phase 3: conversation memory — AI-powered summarization for long conversations, re-engagement context)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -116,6 +116,20 @@ The 1-10 booking aggressiveness slider produces four concrete behavioral tiers:
 | **Aggressive** | 8-10 | Lead with availability immediately — first or second message includes booking offer |
 
 Default is 5 (balanced). Adjust in client Settings &rarr; AI Behavior.
+
+### Conversation Memory
+
+For conversations exceeding 20 messages, older messages are automatically summarized using AI and stored in `leadContext.conversationSummary`. When a lead re-engages after 24+ hours, the summary is regenerated to capture &ldquo;where we left off.&rdquo; The AI prompt structure becomes:
+
+- **Earlier Conversation Summary** &mdash; AI-generated paragraph covering project details, pricing discussed, objections, appointments, and current status
+- **Recent Messages** &mdash; last 15 raw messages for immediate context
+
+This ensures returning leads don&apos;t have to repeat project details, pricing discussions, or scheduling preferences from previous conversations. Summary updates are triggered by:
+- First time message count exceeds 20
+- Re-engagement after 24+ hour gap
+- 10+ new messages since last summary
+
+Summarization uses Haiku (fast tier) for cost efficiency. Non-blocking &mdash; if summarization fails, the AI continues with raw messages only.
 
 ---
 

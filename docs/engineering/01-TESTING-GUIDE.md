@@ -2785,6 +2785,17 @@ Verifies the four quick wins shipped in the 2026-04-12 wave.
 
 ---
 
+### Step 72: Conversation Summary Verification
+
+1. Run summary trigger tests:
+   ```bash
+   npx vitest run src/lib/services/conversation-summary.test.ts
+   ```
+   Expected: All tests pass. Covers message count threshold, re-engagement gap, and stale summary detection.
+2. Verify summary is populated for a lead with 20+ messages by checking `lead_context.conversation_summary` in the database.
+
+---
+
 ## 3. Useful Commands
 
 ```bash
