@@ -140,6 +140,15 @@ export function evaluateOnboardingQualityFromInput(
     Math.min(1, serviceCount / Math.max(1, policy.thresholds.minServices)) * 60 +
       (invalidPricedServices.length === 0 ? 40 : 0)
   );
+
+  // Check pricing coverage — at least 1 service must have pricing ranges
+  const servicesWithPricing = input.services.filter(s => s.canDiscussPrice === 'yes_range');
+  const hasPricingCoverage = servicesWithPricing.length > 0;
+
+  // If no services have pricing ranges, deduct 30 points (drops below 80 pass threshold)
+  const pricingCoverageDeduction = hasPricingCoverage ? 0 : 30;
+  const adjustedServicesScore = Math.max(0, servicesScore - pricingCoverageDeduction);
+
   const servicesReasons: string[] = [];
   const servicesActions: OnboardingQualityAction[] = [];
   if (!hasMinServices) {
@@ -158,15 +167,24 @@ export function evaluateOnboardingQualityFromInput(
       impact: 'high',
     });
   }
+  if (!hasPricingCoverage && serviceCount > 0) {
+    servicesReasons.push('No services have pricing ranges — homeowner pricing questions will all be deferred to the owner');
+    servicesActions.push({
+      gateKey: 'services_pricing_boundaries',
+      action: 'Set at least 1 service to "Discuss price range" with min/max values in structured knowledge.',
+      impact: 'high',
+    });
+  }
   gateResults.push({
     key: 'services_pricing_boundaries',
     title: 'Services & Pricing Boundaries',
-    score: servicesScore,
+    score: adjustedServicesScore,
     maxScore: policy.gates.services_pricing_boundaries.weight,
     passed:
       hasMinServices &&
       invalidPricedServices.length === 0 &&
-      servicesScore >= policy.gates.services_pricing_boundaries.minScore,
+      hasPricingCoverage &&
+      adjustedServicesScore >= policy.gates.services_pricing_boundaries.minScore,
     critical: policy.gates.services_pricing_boundaries.critical,
     reasons: servicesReasons,
     actions: servicesActions,

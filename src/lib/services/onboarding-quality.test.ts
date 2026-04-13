@@ -158,3 +158,73 @@ describe('setOnboardingQualityOverride', () => {
     ).rejects.toThrow('Override reason must be at least 10 characters');
   });
 });
+
+describe('pricing coverage enforcement', () => {
+  it('fails services_pricing_boundaries gate when all services defer pricing', () => {
+    const result = evaluateOnboardingQualityFromInput({
+      ...completeInput,
+      services: [
+        {
+          name: 'Kitchen Renovation',
+          priceRangeMinCents: null,
+          priceRangeMaxCents: null,
+          canDiscussPrice: 'defer',
+        },
+        {
+          name: 'Basement Renovation',
+          priceRangeMinCents: null,
+          priceRangeMaxCents: null,
+          canDiscussPrice: 'defer',
+        },
+        {
+          name: 'Bathroom Renovation',
+          priceRangeMinCents: null,
+          priceRangeMaxCents: null,
+          canDiscussPrice: 'defer',
+        },
+      ],
+    } as any);
+
+    const servicesGate = result.gates.find((g) => g.key === 'services_pricing_boundaries');
+    expect(servicesGate).toBeDefined();
+    expect(servicesGate?.passed).toBe(false);
+    expect(result.criticalFailures).toContain('services_pricing_boundaries');
+    // Reason about pricing coverage should be present
+    expect(servicesGate?.reasons.some((r) => r.includes('pricing ranges'))).toBe(true);
+    // High-impact action for pricing should be present
+    const pricingAction = result.recommendedActions.find(
+      (a) => a.gateKey === 'services_pricing_boundaries' && a.impact === 'high' && a.action.includes('price range')
+    );
+    expect(pricingAction).toBeDefined();
+  });
+
+  it('passes services_pricing_boundaries gate when at least 1 service has pricing ranges', () => {
+    const result = evaluateOnboardingQualityFromInput({
+      ...completeInput,
+      services: [
+        {
+          name: 'Kitchen Renovation',
+          priceRangeMinCents: 2500000,
+          priceRangeMaxCents: 8000000,
+          canDiscussPrice: 'yes_range',
+        },
+        {
+          name: 'Basement Renovation',
+          priceRangeMinCents: null,
+          priceRangeMaxCents: null,
+          canDiscussPrice: 'defer',
+        },
+        {
+          name: 'Bathroom Renovation',
+          priceRangeMinCents: null,
+          priceRangeMaxCents: null,
+          canDiscussPrice: 'defer',
+        },
+      ],
+    } as any);
+
+    const servicesGate = result.gates.find((g) => g.key === 'services_pricing_boundaries');
+    expect(servicesGate).toBeDefined();
+    expect(servicesGate?.passed).toBe(true);
+  });
+});
