@@ -12,6 +12,8 @@ import { eq, and, lte, gte, not, inArray, sql, desc } from 'drizzle-orm';
 import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getTrackedAI } from '@/lib/ai';
+import { checkOutputGuardrails } from '@/lib/agent/output-guard';
+import { truncateAtSentence } from '@/lib/utils/text';
 
 // Win-back window: 25-35 days since last message
 const MIN_DAYS_STALE = 25;
@@ -342,9 +344,20 @@ Project info: ${context.lead.projectInfo.type || 'unknown'}`,
       },
     );
 
-    const text = result.content.trim();
+    let text = result.content.trim();
+    if (!text) return null;
 
-    return text || null;
+    // Apply safe truncation (SMS limit)
+    text = truncateAtSentence(text, 160);
+
+    // Post-generation safety check
+    const guardResult = checkOutputGuardrails(text, '', { canDiscussPricing: false });
+    if (!guardResult.passed) {
+      console.warn(`[WinBack] Output guard blocked: ${guardResult.violation}`);
+      return null; // Skip this lead — don't send a bad message
+    }
+
+    return text;
   } catch (err) {
     console.error('[WinBack] AI generation error:', err);
     return null;

@@ -17,6 +17,8 @@ import { buildAIContext } from '@/lib/agent/context-builder';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { getTrackedAI } from '@/lib/ai';
 import { format, parse } from 'date-fns';
+import { checkOutputGuardrails } from '@/lib/agent/output-guard';
+import { truncateAtSentence } from '@/lib/utils/text';
 
 /**
  * Returns a Date representing 10:00 AM on the date that is `daysFromNow` days
@@ -357,9 +359,20 @@ Project info: ${context.lead.projectInfo.type || 'unknown'}`,
       },
     );
 
-    const text = result.content.trim();
+    let text = result.content.trim();
+    if (!text) return null;
 
-    return text || null;
+    // Apply safe truncation
+    text = truncateAtSentence(text, 200);
+
+    // Post-generation safety check
+    const guardResult = checkOutputGuardrails(text, '', { canDiscussPricing: false });
+    if (!guardResult.passed) {
+      console.warn(`[NoShowRecovery] Output guard blocked: ${guardResult.violation}`);
+      return null;
+    }
+
+    return text;
   } catch (err) {
     console.error('[NoShowRecovery] AI generation error:', err);
     return null;
