@@ -2,6 +2,7 @@ import { AIMessage } from '@langchain/core/messages';
 import type { ConversationStateType } from '../state';
 import { getAIProvider } from '@/lib/ai';
 import { selectModelTier } from '@/lib/ai/model-routing';
+import { truncateAtSentence } from '@/lib/utils/text';
 
 const RESPONSE_PROMPT = `You are {agentName}, a {agentTone} assistant for {businessName}. {ownerName} manages the business.
 
@@ -117,9 +118,7 @@ export async function generateResponse(
   let responseText = result.content;
 
   // Trim to max length if needed
-  if (responseText.length > clientSettings.maxResponseLength) {
-    responseText = responseText.substring(0, clientSettings.maxResponseLength - 3) + '...';
-  }
+  responseText = truncateAtSentence(responseText, clientSettings.maxResponseLength);
 
   return {
     responseToSend: responseText,
