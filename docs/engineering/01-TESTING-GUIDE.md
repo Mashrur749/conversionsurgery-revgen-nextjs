@@ -2736,6 +2736,32 @@ Expected:
 
 ---
 
+### Step 70: Quick-Win Feature Tests (Synonym Search, Estimate Auto-Trigger, Onboarding Quality)
+
+Verifies the four quick wins shipped in the 2026-04-12 wave.
+
+1. Run synonym expansion tests:
+   ```bash
+   npx vitest run src/lib/data/trade-synonyms.test.ts
+   ```
+   Expected: All tests pass. Covers 40+ synonym groups across plumbing, renovation, electrical, HVAC, roofing, and transactional intent. Verifies that canonical terms expand to their trade-specific variants.
+
+2. Run estimate auto-trigger tests:
+   ```bash
+   npx vitest run src/lib/automations/estimate-auto-trigger.test.ts
+   ```
+   Expected: All tests pass. Covers signal detection for phrases like &ldquo;waiting on the quote&rdquo;, &ldquo;comparing prices&rdquo;, and &ldquo;got your estimate&rdquo;. Verifies deduplication (only fires once per lead) and audit_log entry (`estimate_auto_triggered`).
+
+3. Run onboarding quality gate tests:
+   ```bash
+   npx vitest run src/lib/services/onboarding-quality.test.ts
+   ```
+   Expected: All tests pass. Covers the pricing KB enforcement check — gate must fail when no services have pricing ranges configured, and pass once at least one service has a price range set.
+
+4. All three are deterministic (no API key required).
+
+---
+
 ## 3. Useful Commands
 
 ```bash

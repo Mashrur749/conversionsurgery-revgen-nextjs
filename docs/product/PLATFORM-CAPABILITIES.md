@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-09 (Platform Gap Audit — Wave 1+2 fixes)
+Last updated: 2026-04-12 (Quick wins: synonym search, estimate auto-trigger, booking calibration, pricing gate)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -63,6 +63,46 @@ Applied to: Agent orchestrator, win-back automation, no-show recovery automation
 ### Response Length Control
 
 AI responses are truncated at sentence boundaries instead of mid-word. This ensures messages sent to homeowners always end with complete sentences, even when the AI exceeds the configured maximum response length. Win-back messages are capped at 160 characters (SMS optimal). No-show recovery at 200 characters.
+
+### Trade-Aware Knowledge Search
+
+KB lookups expand the incoming query with 40+ trade-specific synonym groups before searching, so surface-form variation never causes a knowledge miss.
+
+Example mappings:
+
+| Customer says | Also searches |
+|--------------|--------------|
+| leaky faucet | tap repair, dripping tap, faucet dripping |
+| legal suite | secondary suite conversion, in-law suite, basement suite |
+| hot water tank | water heater, HWT, water heater replacement |
+| re-roof | shingle replacement, new roof, roofing job |
+| panel upgrade | electrical panel, breaker box, service upgrade |
+| heat pump | HVAC, mini split, ductless |
+
+Coverage groups: plumbing, renovation, electrical, HVAC, roofing, and transactional intent (quote, estimate, pricing, cost).
+
+### Estimate Auto-Detection
+
+The AI monitors inbound lead messages for signals that a quote was already sent. When detected, the 4-touch estimate follow-up sequence starts automatically — no contractor action required.
+
+Trigger phrases include: &ldquo;waiting on the quote&rdquo;, &ldquo;comparing prices&rdquo;, &ldquo;got your estimate&rdquo;, &ldquo;still thinking about your quote&rdquo;, &ldquo;haven&apos;t heard back&rdquo;.
+
+- Auto-trigger is logged in `audit_log` as `estimate_auto_triggered`
+- Deduped per lead — only fires once per lead regardless of how many trigger messages are received
+- Applies only to leads in `new` or `contacted` status with no active estimate flow
+
+### Booking Aggressiveness Calibration
+
+The 1-10 booking aggressiveness slider produces four concrete behavioral tiers:
+
+| Tier | Range | Behavior |
+|------|-------|----------|
+| **Conservative** | 1-3 | Wait for the customer to ask about booking; never suggest times proactively |
+| **Balanced** | 4-5 | Gentle booking offer after the lead has qualified interest (e.g., confirmed scope, asked about availability) |
+| **Proactive** | 6-7 | Suggest specific times within 1-2 exchanges once basic interest is established |
+| **Aggressive** | 8-10 | Lead with availability immediately — first or second message includes booking offer |
+
+Default is 5 (balanced). Adjust in client Settings &rarr; AI Behavior.
 
 ---
 
