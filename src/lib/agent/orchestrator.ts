@@ -27,6 +27,7 @@ import { trackKnowledgeGap } from '@/lib/agent/context-builder';
 import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
 import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality';
 import { maybeAutoTriggerEstimateFollowup } from '@/lib/automations/estimate-auto-trigger';
+import { shouldUpdateSummary, updateConversationSummary } from '@/lib/services/conversation-summary';
 
 interface ProcessMessageResult {
   action: AgentAction;
@@ -118,6 +119,24 @@ export async function processIncomingMessage(
     .where(eq(conversations.leadId, leadId))
     .orderBy(desc(conversations.createdAt))
     .limit(20);
+
+  // Check if conversation summary needs updating before processing
+  const lastConvMessage = conversationHistory[conversationHistory.length - 1];
+  if (lastConvMessage && shouldUpdateSummary({
+    totalMessages: context.totalMessages || 0,
+    lastMessageAt: lastConvMessage.createdAt!,
+    existingSummary: context.conversationSummary ?? null,
+  })) {
+    try {
+      const summary = await updateConversationSummary(client.id, leadId);
+      if (summary) {
+        context.conversationSummary = summary;
+      }
+    } catch (err) {
+      console.error('[Agent] Summary update failed:', err);
+      // Non-blocking — continue without updated summary
+    }
+  }
 
   // Convert to LangChain messages
   const langChainMessages = conversationHistory
@@ -253,8 +272,8 @@ export async function processIncomingMessage(
     canDiscussPricing: settings?.canDiscussPricing || false,
   });
 
-  // Build initial state
-  const initialState: Partial<ConversationStateType> = {
+  // Build initial state (cast to allow conversationSummary which is added to the type in Task 3)
+  const initialState = {
     leadId,
     clientId: client.id,
     messages: langChainMessages,
@@ -288,7 +307,9 @@ export async function processIncomingMessage(
     },
     knowledgeContext: knowledge,
     guardrailText,
-  };
+    // Conversation summary for returning leads (field added to state type in Task 3)
+    conversationSummary: context.conversationSummary ?? undefined,
+  } as unknown as Partial<ConversationStateType>;
 
   // Run the agent graph
   const finalState = await conversationAgent.invoke(initialState);
