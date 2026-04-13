@@ -16,7 +16,7 @@ import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
 import { getActiveProviderName } from '@/lib/ai';
 import { startFlowExecution } from '@/lib/services/flow-execution';
-import { buildKnowledgeContext } from '@/lib/services/knowledge-base';
+import { buildSmartKnowledgeContext } from '@/lib/services/knowledge-base';
 import { buildGuardrailPrompt } from './guardrails';
 import { checkOutputGuardrails } from './output-guard';
 import { truncateAtSentence } from '@/lib/utils/text';
@@ -228,10 +228,11 @@ export async function processIncomingMessage(
     }
   }
 
-  // Retrieve relevant knowledge
+  // Retrieve relevant knowledge (two-tier: structural + search-matched)
   let knowledge: string | null = null;
   try {
-    knowledge = await buildKnowledgeContext(client.id);
+    const smartContext = await buildSmartKnowledgeContext(client.id, messageText);
+    knowledge = smartContext.full;
   } catch (err) {
     console.error('[Agent] Knowledge retrieval failed:', err);
   }

@@ -25,7 +25,7 @@ import {
   knowledgeBase,
 } from '@/db/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
-import { buildKnowledgeContext, searchKnowledge } from '@/lib/services/knowledge-base';
+import { buildSmartKnowledgeContext } from '@/lib/services/knowledge-base';
 import { isWithinBusinessHours } from '@/lib/services/business-hours';
 import { upsertKnowledgeGapFromDetection } from '@/lib/services/knowledge-gap-queue';
 import { buildGuardrailPrompt, assessConfidence, type ConfidenceLevel } from './guardrails';
@@ -162,27 +162,18 @@ export async function buildAIContext(params: BuildContextParams): Promise<AICont
 
   // ---- Knowledge context ----
   let knowledge = '';
-  let relevantKnowledge: string | null = null;
+  const relevantKnowledge: string | null = null;
   let knowledgeMatchCount = 0;
 
   try {
-    knowledge = await buildKnowledgeContext(clientId);
+    const smartContext = await buildSmartKnowledgeContext(clientId, currentMessage);
+    knowledge = smartContext.full;
+    // matchedEntryIds.length drives confidence scoring; the matched entries are
+    // already embedded in the ## MOST RELEVANT section of smartContext.full so
+    // no separate relevantKnowledge string is needed.
+    knowledgeMatchCount = smartContext.matchedEntryIds.length;
   } catch (err) {
     console.error('[ContextBuilder] Knowledge context failed:', err);
-  }
-
-  if (currentMessage) {
-    try {
-      const matches = await searchKnowledge(clientId, currentMessage);
-      knowledgeMatchCount = matches.length;
-      if (matches.length > 0) {
-        relevantKnowledge = matches
-          .map(m => `[${m.category}] ${m.title}: ${m.content}`)
-          .join('\n\n');
-      }
-    } catch (err) {
-      console.error('[ContextBuilder] Knowledge search failed:', err);
-    }
   }
 
   // ---- Conversation history ----
