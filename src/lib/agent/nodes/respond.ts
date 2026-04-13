@@ -62,13 +62,17 @@ export async function generateResponse(
   }
 
   // Format conversation
-  const conversationText = state.messages
+  const recentMessages = state.messages
     .slice(-15)
     .map(m => {
       const role = m._getType() === 'human' ? 'Customer' : 'Agent';
       return `${role}: ${m.content}`;
     })
     .join('\n');
+
+  const conversationText = state.conversationSummary
+    ? `## EARLIER CONVERSATION SUMMARY\n${state.conversationSummary}\n\n## RECENT MESSAGES\n${recentMessages}`
+    : recentMessages;
 
   // Format project info
   const projectInfo = state.extractedInfo.projectType

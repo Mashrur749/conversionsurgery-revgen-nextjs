@@ -272,7 +272,7 @@ export async function processIncomingMessage(
     canDiscussPricing: settings?.canDiscussPricing || false,
   });
 
-  // Build initial state (cast to allow conversationSummary which is added to the type in Task 3)
+  // Build initial state
   const initialState = {
     leadId,
     clientId: client.id,
@@ -307,9 +307,9 @@ export async function processIncomingMessage(
     },
     knowledgeContext: knowledge,
     guardrailText,
-    // Conversation summary for returning leads (field added to state type in Task 3)
+    // Conversation summary for returning leads (populated by conversation-summary service)
     conversationSummary: context.conversationSummary ?? undefined,
-  } as unknown as Partial<ConversationStateType>;
+  } satisfies Partial<ConversationStateType>;
 
   // Run the agent graph
   const finalState = await conversationAgent.invoke(initialState);

@@ -46,6 +46,7 @@ function makeState(overrides: Partial<ConversationStateType> = {}): Conversation
     guardrailText: null,
     decisionReasoning: null,
     decisionConfidence: 80,
+    conversationSummary: undefined,
     ...overrides,
   };
 }

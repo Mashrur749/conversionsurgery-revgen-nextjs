@@ -129,6 +129,12 @@ export const ConversationState = Annotation.Root({
     reducer: (current, update) => update,
     default: () => 80,
   }),
+
+  // Optional conversation summary for returning leads (populated by conversation-summary service)
+  conversationSummary: Annotation<string | undefined>({
+    reducer: (current, update) => update ?? current,
+    default: () => undefined,
+  }),
 });
 
 export type ConversationStateType = typeof ConversationState.State;
