@@ -1,0 +1,157 @@
+[
+  {
+    "id": "ns-001",
+    "leadName": "Sarah",
+    "appointmentDate": "March 15, 2026",
+    "appointmentTime": "2:00 PM",
+    "businessName": "Red Deer Renos",
+    "ownerName": "Tom",
+    "projectType": "bathroom renovation quote",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "I'd like to get a quote on redoing my main bath" },
+      { "role": "assistant", "content": "Hi Sarah! Tom would love to come take a look. I have March 15 at 2 PM open - does that work?" },
+      { "role": "user", "content": "perfect, see you then" }
+    ]
+  },
+  {
+    "id": "ns-002",
+    "leadName": "Derek",
+    "appointmentDate": "April 3, 2026",
+    "appointmentTime": "10:00 AM",
+    "businessName": "Calgary Drain Pros",
+    "ownerName": "Dave",
+    "projectType": "main sewer line cleanout",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "drains are backing up" },
+      { "role": "assistant", "content": "Hi Derek! Dave can get that cleared up fast. April 3 at 10 AM work for you?" },
+      { "role": "user", "content": "yep sounds good" }
+    ]
+  },
+  {
+    "id": "ns-003",
+    "leadName": "Priya",
+    "appointmentDate": "March 22, 2026",
+    "appointmentTime": "9:00 AM",
+    "businessName": "Summit HVAC Services",
+    "ownerName": "Greg",
+    "projectType": "furnace tune-up and inspection",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "haven't had my furnace serviced in 2 years, should probably get it done" },
+      { "role": "assistant", "content": "Good call Priya! Greg's team does thorough tune-ups. I can book you for March 22 at 9 AM - first slot of the day. Work for you?" },
+      { "role": "user", "content": "that works, thanks" }
+    ]
+  },
+  {
+    "id": "ns-004",
+    "leadName": "Marcus",
+    "appointmentDate": "April 8, 2026",
+    "appointmentTime": "1:00 PM",
+    "businessName": "Spark Electric Calgary",
+    "ownerName": "Rob",
+    "projectType": "outdoor lighting installation",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "want to put some pot lights in my backyard patio area" },
+      { "role": "assistant", "content": "Nice! Rob's team does outdoor lighting installs regularly. April 8 at 1 PM available - want that slot?" },
+      { "role": "user", "content": "sure, lock it in" }
+    ]
+  },
+  {
+    "id": "ns-005",
+    "leadName": "Linda",
+    "appointmentDate": "March 28, 2026",
+    "appointmentTime": "11:00 AM",
+    "businessName": "Prairie Roofing Co",
+    "ownerName": "Lyle",
+    "projectType": "roof inspection and shingle replacement estimate",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "few shingles blew off last week, need someone to look at it" },
+      { "role": "assistant", "content": "Hi Linda! Lyle can do a free inspection to assess the damage. March 28 at 11 AM work?" },
+      { "role": "user", "content": "yes that's fine" }
+    ]
+  },
+  {
+    "id": "ns-006",
+    "leadName": "Chris",
+    "appointmentDate": "February 18, 2026",
+    "appointmentTime": "3:00 PM",
+    "businessName": "Red Deer Renos",
+    "ownerName": "Tom",
+    "projectType": "kitchen cabinet replacement quote",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "need new kitchen cabinets" },
+      { "role": "assistant", "content": "Hi Chris! Tom loves kitchen projects. Feb 18 at 3 PM work for a quote?" },
+      { "role": "user", "content": "ok" },
+      { "role": "assistant", "content": "Great! Tom will be there at 3 PM on Feb 18. Just want to confirm you're still on - we had a cancellation before the slot so wanted to touch base." }
+    ]
+  },
+  {
+    "id": "ns-007",
+    "leadName": "Natalie",
+    "appointmentDate": "March 5, 2026",
+    "appointmentTime": "10:30 AM",
+    "businessName": "Foothills Plumbing",
+    "ownerName": "Kevin",
+    "projectType": "faucet and fixture replacement",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "want to replace all the faucets in my house - 3 bathrooms" },
+      { "role": "assistant", "content": "Hi Natalie! Kevin can supply and install. March 5 at 10:30 AM work?" },
+      { "role": "user", "content": "works for me" },
+      { "role": "assistant", "content": "Perfect! Kevin's set for March 5 at 10:30 AM. He had the slot open and we wanted to make sure it still works for you before he drives out." }
+    ]
+  },
+  {
+    "id": "ns-008",
+    "leadName": "Ryan",
+    "appointmentDate": "April 15, 2026",
+    "appointmentTime": "8:00 AM",
+    "businessName": "Summit HVAC Services",
+    "ownerName": "Greg",
+    "projectType": "AC installation assessment",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "want to get AC before summer, need someone to look at what's needed" },
+      { "role": "assistant", "content": "Hi Ryan! Greg can do an assessment and give you a firm quote. April 15 at 8 AM - early bird slot?" },
+      { "role": "user", "content": "bit early but ok" },
+      { "role": "assistant", "content": "Appreciate you making it work! Greg is confirmed for April 15 at 8 AM - just touching base to make sure that still works since it's a few weeks out." }
+    ]
+  },
+  {
+    "id": "ns-009",
+    "leadName": "Jennifer",
+    "appointmentDate": "March 10, 2026",
+    "appointmentTime": "4:00 PM",
+    "businessName": "Spark Electric Calgary",
+    "ownerName": "Rob",
+    "projectType": "whole-home smoke detector replacement",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "my smoke detectors are all old and hardwired ones need replacing" },
+      { "role": "assistant", "content": "Important job Jennifer! Rob can replace and test all of them in one visit. March 10 at 4 PM work?" },
+      { "role": "user", "content": "yes that works" },
+      { "role": "assistant", "content": "Great. Rob has you on the books for March 10 at 4 PM. Just confirming - is the address still the one on file?" }
+    ]
+  },
+  {
+    "id": "ns-010",
+    "leadName": "Karen",
+    "appointmentDate": "April 20, 2026",
+    "appointmentTime": "2:30 PM",
+    "businessName": "Prairie Roofing Co",
+    "ownerName": "Lyle",
+    "projectType": "eavestrough cleaning and inspection",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "eavestroughs are full of leaves and overflowing when it rains" },
+      { "role": "assistant", "content": "Hi Karen! Lyle's team can clean and inspect them. April 20 at 2:30 PM?" },
+      { "role": "user", "content": "perfect" },
+      { "role": "assistant", "content": "You're all set for April 20 at 2:30 PM. Wanted to confirm ahead of time since it's a bigger job and we want to make sure you're available." }
+    ]
+  }
+]

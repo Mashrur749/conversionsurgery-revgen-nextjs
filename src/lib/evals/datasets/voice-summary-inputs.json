@@ -1,0 +1,52 @@
+[
+  {
+    "id": "vs-001",
+    "transcript": "Caller: Hi, I need someone to look at my furnace. It's making a loud banging noise when it starts up.\nAgent: Sure, what seems to be the issue? Does it run after the bang or does it shut off?\nCaller: It runs but the noise is scary. It started last week.\nAgent: Got it. That sounds like it could be delayed ignition. We can have a technician out to diagnose it. Are you available this week?\nCaller: Yeah Thursday or Friday works.\nAgent: Perfect, I'll get that booked for you. Can I confirm your address?",
+    "expectedPoints": ["furnace banging noise", "delayed ignition possible cause", "scheduling Thursday or Friday"]
+  },
+  {
+    "id": "vs-002",
+    "transcript": "Caller: My basement flooded and the sump pump stopped working.\nAgent: How much water are we talking about right now?\nCaller: Maybe 2 inches across the whole basement. I have boxes down there.\nAgent: Okay, that's urgent. Let me get an emergency crew dispatched. What's your address?\nCaller: 1452 Oak Bay Road NE Calgary.\nAgent: Got it. Someone will call you back within 20 minutes to confirm arrival time. Don't go into the water if there are any electrical outlets near the floor.",
+    "expectedPoints": ["flooded basement", "sump pump failure", "emergency dispatch", "safety warning about electricity"]
+  },
+  {
+    "id": "vs-003",
+    "transcript": "Caller: I want to get a quote for replacing my kitchen faucet and maybe the bathroom ones too.\nAgent: Happy to help with that. How many bathrooms are we talking?\nCaller: Two full baths and the kitchen.\nAgent: So three faucets total. Do you have faucets picked out already or would you want us to supply them?\nCaller: I'd rather you supply them. Something mid-range.\nAgent: We carry Moen and Delta in mid-range - both solid options. I'll set up a visit to measure and give you a firm quote. What day works?\nCaller: Next Tuesday afternoon if possible.",
+    "expectedPoints": ["faucet replacement", "three locations", "contractor supply mid-range fixtures", "quote visit Tuesday afternoon"]
+  },
+  {
+    "id": "vs-004",
+    "transcript": "Caller: I got a quote from you guys about six months ago for a roof replacement and I'm finally ready to move forward.\nAgent: Great! Do you have the quote number handy?\nCaller: I don't but it was for a full replacement on a 1980 bungalow. About 1800 square feet.\nAgent: I can pull that up with your name. What's the address?\nCaller: 72 Ranchlands Crescent NW.\nAgent: Found it. The quote was $14,200. Pricing is still the same. When are you looking to start?\nCaller: As soon as possible, maybe this month if you have space.",
+    "expectedPoints": ["returning customer from prior quote", "full roof replacement", "accepting original quote price", "wants to start this month"]
+  },
+  {
+    "id": "vs-005",
+    "transcript": "Caller: My breaker panel trips every time I run the microwave and dishwasher at the same time.\nAgent: That's usually a sign the circuit is overloaded. How old is your panel?\nCaller: The house was built in 1992 so probably original.\nAgent: A 30-year-old panel can definitely have capacity issues. We can do a free assessment and let you know if it needs an upgrade.\nCaller: How much does a panel upgrade usually cost?\nAgent: Typically between $1,800 and $3,500 depending on what we find. The assessment is free with no obligation.\nCaller: Okay, that's fair. Can someone come next week?",
+    "expectedPoints": ["circuit overload tripping breaker", "1992 panel likely needs upgrade", "price range $1800-$3500", "free assessment", "scheduling next week"]
+  },
+  {
+    "id": "vs-006",
+    "transcript": "Caller: I want to build a new deck off my back door. What's involved?\nAgent: Great project! We'd need to do a site visit to assess the ground, measure, and talk through what you're envisioning.\nCaller: It's about 12 by 16 feet, pressure treated wood. Nothing fancy.\nAgent: A 12x16 pressure treated deck is a common size. Budget is usually around $8,000 to $12,000 installed, but a proper quote depends on the site.\nCaller: That's higher than I expected.\nAgent: It covers materials, labor, and permits. We stand behind the work too. Want to start with a free on-site quote?\nCaller: Yeah alright, let's do that.",
+    "expectedPoints": ["deck build 12x16 pressure treated", "budget range $8000-$12000", "price concern noted", "free on-site quote agreed"]
+  },
+  {
+    "id": "vs-007",
+    "transcript": "Caller: Do you do duct cleaning?\nAgent: We do! A full duct cleaning visit covers all supply and return vents, the plenum, and the furnace blower. It usually takes 3-4 hours.\nCaller: How much?\nAgent: $299 for a house up to 2,000 square feet, $349 for larger homes.\nCaller: We're about 2,400 square feet so the $349 one?\nAgent: That's right. Want to get on the schedule?\nCaller: Can you do it while the furnace is running or does it need to be off?\nAgent: We work with the furnace on - actually helps pull debris out. No downtime needed.\nCaller: Oh good. Yeah, book me in.",
+    "expectedPoints": ["duct cleaning service", "2400 sq ft home at $349", "furnace stays on during service", "booking confirmed"]
+  },
+  {
+    "id": "vs-008",
+    "transcript": "Caller: We're building a new garage and need it wired for lights and two 240V outlets for a welder and a compressor.\nAgent: Nice setup! For a detached garage we'd need to run a sub-panel from the house. How far is the garage from the house?\nCaller: Maybe 30 feet.\nAgent: 30 feet is easy. You'll want at least a 60-amp sub-panel to handle the welder plus compressor plus lighting.\nCaller: What's that going to run?\nAgent: Sub-panel supply and wiring for a garage that distance, with two 240V circuits and general lighting, usually comes in around $2,200 to $2,800.\nCaller: That works. When can you start?",
+    "expectedPoints": ["new garage wiring", "sub-panel 60-amp required", "two 240V circuits plus lighting", "price range $2200-$2800", "ready to proceed"]
+  },
+  {
+    "id": "vs-009",
+    "transcript": "Caller: Hi, just calling to cancel my appointment for tomorrow. Something came up at work.\nAgent: No problem! What name is the appointment under?\nCaller: Janet Okafor, it was at 10 AM for a furnace tune-up.\nAgent: Got it Janet, I'll cancel that. Do you want to rebook for another time?\nCaller: Maybe next week? I'm usually free afternoons.\nAgent: I have Thursday April 16 at 1 PM or 3 PM available.\nCaller: 1 PM Thursday works great.\nAgent: Perfect. New appointment is Thursday April 16 at 1 PM. We'll send a reminder the day before.",
+    "expectedPoints": ["cancellation of tomorrow's appointment", "rebooking Thursday April 16 at 1 PM", "reminder to be sent"]
+  },
+  {
+    "id": "vs-010",
+    "transcript": "Caller: I've got a weird situation - there's a wet spot on my ceiling in the living room but I can't figure out where it's coming from. No bathroom above it.\nAgent: Mysterious leaks like that can come from a few places - roof, plumbing in the attic, or even condensation issues. Has it grown?\nCaller: It appeared after the last big rain but it's been dry since.\nAgent: Rain-related with no bathroom above it does point to roof or attic. We'd want to do a roof inspection and check the attic for moisture.\nCaller: Can you do both in one visit?\nAgent: Absolutely. One visit, one assessment. We'll give you a clear picture of what's happening and what it'll cost to fix.\nCaller: Great, I need this figured out before it gets worse.",
+    "expectedPoints": ["ceiling wet spot", "rain-related likely roof or attic source", "combined roof and attic inspection", "urgency to diagnose before worsening"]
+  }
+]

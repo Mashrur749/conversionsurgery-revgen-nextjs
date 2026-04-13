@@ -1,0 +1,152 @@
+[
+  {
+    "id": "rev-001",
+    "reviewText": "Dave and his crew showed up exactly when they said they would and had our drain cleared in under an hour. No mess, no fuss. Will definitely call again.",
+    "rating": 5,
+    "authorName": "Robert T.",
+    "tone": "professional",
+    "maxLength": 200,
+    "businessName": "Calgary Drain Pros",
+    "ownerName": "Dave"
+  },
+  {
+    "id": "rev-002",
+    "reviewText": "Lyle came out same day and replaced three damaged roof sections before the next rain. Saved us from a potential flood. Five stars all the way!",
+    "rating": 5,
+    "authorName": "Heather B.",
+    "tone": "thankful",
+    "maxLength": 200,
+    "businessName": "Prairie Roofing Co",
+    "ownerName": "Lyle"
+  },
+  {
+    "id": "rev-003",
+    "reviewText": "Greg and his team installed our new furnace in one day and even swept up after. Heat works great and the price was fair. Highly recommend Summit HVAC.",
+    "rating": 5,
+    "authorName": "Phil K.",
+    "tone": "friendly",
+    "maxLength": 200,
+    "businessName": "Summit HVAC Services",
+    "ownerName": "Greg"
+  },
+  {
+    "id": "rev-004",
+    "reviewText": "Rob wired our new workshop addition and passed inspection on the first try. He was professional, knowledgeable, and didn't try to upsell us on stuff we didn't need.",
+    "rating": 4,
+    "authorName": "Steve W.",
+    "tone": "professional",
+    "maxLength": 200,
+    "businessName": "Spark Electric Calgary",
+    "ownerName": "Rob"
+  },
+  {
+    "id": "rev-005",
+    "reviewText": "Tom and his renovation crew did our basement bathroom and laundry room. Took a week longer than quoted but the finished product looks incredible. Really happy with it.",
+    "rating": 4,
+    "authorName": "Christine L.",
+    "tone": "friendly",
+    "maxLength": 200,
+    "businessName": "Red Deer Renos",
+    "ownerName": "Tom"
+  },
+  {
+    "id": "rev-006",
+    "reviewText": "Service was okay. Technician was polite but seemed rushed. The drain is cleared but they didn't explain what caused the issue or how to prevent it. Decent for the price.",
+    "rating": 3,
+    "authorName": "M. Johnson",
+    "tone": "professional",
+    "maxLength": 200,
+    "businessName": "Calgary Drain Pros",
+    "ownerName": "Dave"
+  },
+  {
+    "id": "rev-007",
+    "reviewText": "Roof inspection was fine but the quote took almost 2 weeks to arrive. By then I'd already booked another company. The crew seemed competent, just slow on the admin side.",
+    "rating": 3,
+    "authorName": "Paul D.",
+    "tone": "professional",
+    "maxLength": 200,
+    "businessName": "Prairie Roofing Co",
+    "ownerName": "Lyle"
+  },
+  {
+    "id": "rev-008",
+    "reviewText": "Furnace works. Installation went fine. Would have been nice to get a walkthrough of the new system since I'm not familiar with the controls. Average experience overall.",
+    "rating": 3,
+    "authorName": "Diana N.",
+    "tone": "professional",
+    "maxLength": 200,
+    "businessName": "Summit HVAC Services",
+    "ownerName": "Greg"
+  },
+  {
+    "id": "rev-009",
+    "reviewText": "Work was done but scheduling was a headache. Got rescheduled twice and nobody called ahead of time to let me know. Not ideal when you're taking time off work.",
+    "rating": 3,
+    "authorName": "Kyle R.",
+    "tone": "professional",
+    "maxLength": 200,
+    "businessName": "Spark Electric Calgary",
+    "ownerName": "Rob"
+  },
+  {
+    "id": "rev-010",
+    "reviewText": "Kevin showed up and fixed the leak, no complaints there. But the price was higher than the phone estimate by about 20%. I get that things come up but a heads up would be nice.",
+    "rating": 3,
+    "authorName": "Amanda F.",
+    "tone": "professional",
+    "maxLength": 200,
+    "businessName": "Foothills Plumbing",
+    "ownerName": "Kevin"
+  },
+  {
+    "id": "rev-011",
+    "reviewText": "Worst experience. Charged me $300 to clear a drain and it backed up again within a week. Called back and got told it would be another service charge. Never again.",
+    "rating": 1,
+    "authorName": "Greg S.",
+    "tone": "apologetic",
+    "maxLength": 200,
+    "businessName": "Calgary Drain Pros",
+    "ownerName": "Dave"
+  },
+  {
+    "id": "rev-012",
+    "reviewText": "They no-showed my appointment without calling. I took the afternoon off work. When I finally reached someone they offered to rebook 3 weeks out. Completely unacceptable.",
+    "rating": 1,
+    "authorName": "Brenda H.",
+    "tone": "apologetic",
+    "maxLength": 200,
+    "businessName": "Prairie Roofing Co",
+    "ownerName": "Lyle"
+  },
+  {
+    "id": "rev-013",
+    "reviewText": "Technician showed up 2 hours late, didn't have the part, had to come back 4 days later. House was without heat the whole time. No compensation offered. Really disappointed.",
+    "rating": 2,
+    "authorName": "Doug C.",
+    "tone": "apologetic",
+    "maxLength": 200,
+    "businessName": "Summit HVAC Services",
+    "ownerName": "Greg"
+  },
+  {
+    "id": "rev-014",
+    "reviewText": "Electrical work failed its first inspection and Rob seemed more annoyed than accountable. Had to take another day off to be home for the re-inspection. Not impressed.",
+    "rating": 2,
+    "authorName": "Tammy V.",
+    "tone": "apologetic",
+    "maxLength": 200,
+    "businessName": "Spark Electric Calgary",
+    "ownerName": "Rob"
+  },
+  {
+    "id": "rev-015",
+    "reviewText": "Basement reno went way over budget - final invoice was 40% higher than quoted. Tom kept finding 'extra work' that wasn't in the contract. Felt nickel and dimed the whole time.",
+    "rating": 2,
+    "authorName": "Frank M.",
+    "tone": "apologetic",
+    "maxLength": 200,
+    "businessName": "Red Deer Renos",
+    "ownerName": "Tom"
+  }
+]

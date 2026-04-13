@@ -1,0 +1,282 @@
+[
+  {
+    "id": "sig-001",
+    "messages": [
+      { "role": "user", "content": "My basement has been flooding for 3 days and my furnace is starting to get wet. I need someone TODAY" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": true,
+      "frustrated": false,
+      "readyToSchedule": true,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Explicit time pressure ('TODAY') + active damage = urgent + ready to schedule"
+  },
+  {
+    "id": "sig-002",
+    "messages": [
+      { "role": "user", "content": "I've called 3 companies and nobody has called me back. This is ridiculous. Do you actually answer the phone or what??" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": true,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Explicit frustration with prior contractors, question about responsiveness = frustrated"
+  },
+  {
+    "id": "sig-003",
+    "messages": [
+      { "role": "user", "content": "Yeah I'm free Tuesday afternoon or Thursday morning if you have anything open" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": true,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Offering specific availability without prompting = strong ready-to-schedule"
+  },
+  {
+    "id": "sig-004",
+    "messages": [
+      { "role": "user", "content": "just wondering what you guys charge for a furnace tune-up. not in a rush just gathering info" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": true,
+      "priceObjection": false
+    },
+    "notes": "Explicitly 'not in a rush, gathering info' = just browsing"
+  },
+  {
+    "id": "sig-005",
+    "messages": [
+      { "role": "user", "content": "that's way more than I expected. guy down the street said he could do it for $200 less" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": true
+    },
+    "notes": "Explicit competitor price comparison = price objection"
+  },
+  {
+    "id": "sig-006",
+    "messages": [
+      { "role": "user", "content": "Pipe burst in my kitchen. Water is spraying everywhere. PLEASE send someone now" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": true,
+      "frustrated": false,
+      "readyToSchedule": true,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Active emergency, all-caps, begging for immediate help = urgent + ready to schedule"
+  },
+  {
+    "id": "sig-007",
+    "messages": [
+      { "role": "user", "content": "I already told the other guy twice what the problem was. Why do I have to repeat myself again??" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": true,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Had to repeat info, rhetorical question with double punctuation = frustrated"
+  },
+  {
+    "id": "sig-008",
+    "messages": [
+      { "role": "user", "content": "Works for me. Lock in Friday at 10am and I'll be home" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": true,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Confirming a specific slot = strong ready to schedule"
+  },
+  {
+    "id": "sig-009",
+    "messages": [
+      { "role": "user", "content": "just browsing tbh. saw your ad on facebook and was curious what services you offer" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": true,
+      "priceObjection": false
+    },
+    "notes": "Self-identified as browsing, came from an ad = just browsing"
+  },
+  {
+    "id": "sig-010",
+    "messages": [
+      { "role": "user", "content": "honestly that's too expensive. we're a bit tight right now money wise. is there a payment plan or cheaper option?" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": true
+    },
+    "notes": "Mentions money is tight, asks for cheaper option or financing = price objection"
+  },
+  {
+    "id": "sig-011",
+    "messages": [
+      { "role": "user", "content": "The smell from our drains has been bad for weeks and we have guests coming this weekend. Need it fixed before Saturday" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": true,
+      "frustrated": false,
+      "readyToSchedule": true,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Hard deadline (before Saturday) + social pressure = urgent + ready to schedule"
+  },
+  {
+    "id": "sig-012",
+    "messages": [
+      { "role": "user", "content": "I am so fed up. This is the second time this year my hot water tank has gone. I need someone reliable not these fly-by-night guys" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": true,
+      "frustrated": true,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Recurring failure, 'so fed up', criticizing other contractors = frustrated + urgent"
+  },
+  {
+    "id": "sig-013",
+    "messages": [
+      { "role": "user", "content": "No rush at all. Sometime next month maybe? Just want to get a quote for a bathroom reno eventually" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": true,
+      "priceObjection": false
+    },
+    "notes": "Vague future timeline, 'no rush', 'eventually' = just browsing"
+  },
+  {
+    "id": "sig-014",
+    "messages": [
+      { "role": "user", "content": "Sounds good to me. What do you need from me to get things started?" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": true,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Asking what is needed to proceed = strong purchase intent, ready to schedule"
+  },
+  {
+    "id": "sig-015",
+    "messages": [
+      { "role": "user", "content": "your quote is double what the last company gave me. how do you justify that?" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": true
+    },
+    "notes": "Price is double a competitor, explicitly asking for justification = price objection"
+  },
+  {
+    "id": "sig-016",
+    "messages": [
+      { "role": "user", "content": "Heater been making a noise but it still works. Not sure if its worth fixing now or later. What do u think?" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Uncertain, asking for advice, no clear urgency or readiness = ambiguous/neutral"
+  },
+  {
+    "id": "sig-017",
+    "messages": [
+      { "role": "user", "content": "k" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Single character acknowledgement = completely ambiguous/neutral, no signals"
+  },
+  {
+    "id": "sig-018",
+    "messages": [
+      { "role": "user", "content": "maybe. ill think about it and let you know" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Non-committal, deferring decision = ambiguous, no strong signals"
+  },
+  {
+    "id": "sig-019",
+    "messages": [
+      { "role": "user", "content": "we just moved in and not sure what services we'll need yet. still figuring out what's in the house" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": false,
+      "justBrowsing": true,
+      "priceObjection": false
+    },
+    "notes": "New homeowner in discovery mode, no specific need yet = browsing"
+  },
+  {
+    "id": "sig-020",
+    "messages": [
+      { "role": "user", "content": "yeah so we talked last week and I said I'd get back to you. I think I'm ready to book now if you still have availability" }
+    ],
+    "expectedSignals": {
+      "urgentNeed": false,
+      "frustrated": false,
+      "readyToSchedule": true,
+      "justBrowsing": false,
+      "priceObjection": false
+    },
+    "notes": "Prior warm lead returning, explicitly saying they are ready to book = ready to schedule"
+  }
+]

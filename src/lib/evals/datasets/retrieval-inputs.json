@@ -1,0 +1,242 @@
+[
+  {
+    "id": "ret-001",
+    "query": "my faucet is dripping all night",
+    "kbEntries": [
+      { "title": "Faucet & Tap Repair", "content": "We repair dripping taps, worn washers, and leaky faucet handles. Starting from $150." },
+      { "title": "Drain Cleaning", "content": "Professional drain cleaning and unclogging. Includes camera inspection. $150-$400." },
+      { "title": "Emergency Plumbing", "content": "24/7 emergency plumbing for burst pipes, flooding, and sewer backups." }
+    ],
+    "expectedMatches": ["Faucet & Tap Repair"],
+    "expectedNonMatches": ["Drain Cleaning"],
+    "description": "Synonym: homeowner says 'faucet dripping' — matches 'tap repair' / 'dripping taps'"
+  },
+  {
+    "id": "ret-002",
+    "query": "leaky tap in the kitchen",
+    "kbEntries": [
+      { "title": "Faucet & Tap Repair", "content": "We repair dripping taps, worn washers, and leaky faucet handles. Starting from $150." },
+      { "title": "Pipe Repair", "content": "Repair of burst or leaking pipes, including copper and PEX. Quotes provided on-site." },
+      { "title": "Toilet Repair", "content": "Running toilets, broken flush mechanisms, and wax ring replacements. $100-$350." }
+    ],
+    "expectedMatches": ["Faucet & Tap Repair"],
+    "expectedNonMatches": ["Toilet Repair"],
+    "description": "Synonym: 'leaky tap' maps to 'Faucet & Tap Repair'"
+  },
+  {
+    "id": "ret-003",
+    "query": "legal suite in my basement",
+    "kbEntries": [
+      { "title": "Secondary Suite Development", "content": "Full basement secondary suite builds including framing, rough-in plumbing, insulation, and drywall. Permit handling included." },
+      { "title": "Basement Framing", "content": "Rough framing for basement developments. Open concept and room layouts available." },
+      { "title": "Deck Building", "content": "Pressure-treated and composite deck construction. Custom sizing and railing options." }
+    ],
+    "expectedMatches": ["Secondary Suite Development"],
+    "expectedNonMatches": ["Deck Building"],
+    "description": "Synonym: homeowner says 'legal suite' — matches 'secondary suite' terminology"
+  },
+  {
+    "id": "ret-004",
+    "query": "hot water tank stopped working",
+    "kbEntries": [
+      { "title": "Water Heater Replacement", "content": "Supply and install natural gas and electric water heaters. Same-day service available for failures." },
+      { "title": "Furnace Tune-Up", "content": "Annual furnace tune-up and inspection to maintain efficiency. $99 flat fee." },
+      { "title": "Drain Cleaning", "content": "Professional drain cleaning and unclogging. Includes camera inspection. $150-$400." }
+    ],
+    "expectedMatches": ["Water Heater Replacement"],
+    "expectedNonMatches": ["Furnace Tune-Up"],
+    "description": "Synonym: 'hot water tank' maps to 'water heater' terminology used in KB"
+  },
+  {
+    "id": "ret-005",
+    "query": "eavestroughs are overflowing every time it rains",
+    "kbEntries": [
+      { "title": "Eavestrough & Gutter Cleaning", "content": "Full eavestrough cleaning and debris removal. Prevents overflow and ice damming. $150-$300." },
+      { "title": "Roof Repair", "content": "Shingle replacement, flashing repair, and leak patching. Free inspection included." },
+      { "title": "Foundation Waterproofing", "content": "Interior and exterior waterproofing solutions to prevent basement water intrusion." }
+    ],
+    "expectedMatches": ["Eavestrough & Gutter Cleaning"],
+    "expectedNonMatches": ["Foundation Waterproofing"],
+    "description": "Synonym: 'eavestroughs' and 'gutters' are the same thing — matches eavestrough/gutter entry"
+  },
+  {
+    "id": "ret-006",
+    "query": "stucco cracking outside the house",
+    "kbEntries": [
+      { "title": "Exterior Stucco Repair", "content": "Patching cracks, spalling, and damaged stucco on exterior walls. Colour matching available." },
+      { "title": "Interior Drywall Repair", "content": "Hole patching, crack filling, and skim coat finishing for interior drywall." },
+      { "title": "Window Caulking", "content": "Re-caulk around windows and doors to prevent air and water infiltration." }
+    ],
+    "expectedMatches": ["Exterior Stucco Repair"],
+    "expectedNonMatches": ["Interior Drywall Repair"],
+    "description": "Synonym: 'stucco cracking' maps to 'crack' and 'stucco repair' in KB"
+  },
+  {
+    "id": "ret-007",
+    "query": "my basement is flooding",
+    "kbEntries": [
+      { "title": "Emergency Plumbing", "content": "24/7 emergency plumbing for burst pipes, flooding, and sewer backups. Response within 1 hour." },
+      { "title": "Foundation Waterproofing", "content": "Interior and exterior waterproofing solutions to prevent basement water intrusion." },
+      { "title": "Drain Cleaning", "content": "Professional drain cleaning and unclogging. Includes camera inspection. $150-$400." }
+    ],
+    "expectedMatches": ["Emergency Plumbing", "Foundation Waterproofing"],
+    "expectedNonMatches": [],
+    "description": "Conceptual: 'basement flooding' should surface emergency plumbing and waterproofing"
+  },
+  {
+    "id": "ret-008",
+    "query": "furnace stopped heating the house",
+    "kbEntries": [
+      { "title": "Furnace Repair", "content": "Diagnose and repair gas furnaces of all makes and models. Emergency service available." },
+      { "title": "Furnace Tune-Up", "content": "Annual furnace tune-up and inspection to maintain efficiency. $99 flat fee." },
+      { "title": "Water Heater Replacement", "content": "Supply and install natural gas and electric water heaters. Same-day service available." }
+    ],
+    "expectedMatches": ["Furnace Repair"],
+    "expectedNonMatches": ["Water Heater Replacement"],
+    "description": "Conceptual: 'furnace stopped heating' implies repair need, not tune-up or unrelated service"
+  },
+  {
+    "id": "ret-009",
+    "query": "roof is leaking into my attic",
+    "kbEntries": [
+      { "title": "Roof Leak Repair", "content": "Emergency leak patching, flashing repair, and shingle replacement to stop active leaks." },
+      { "title": "Attic Insulation", "content": "Blown-in and batt insulation installation for improved energy efficiency." },
+      { "title": "Eavestrough & Gutter Cleaning", "content": "Full eavestrough cleaning and debris removal. Prevents overflow and ice damming." }
+    ],
+    "expectedMatches": ["Roof Leak Repair"],
+    "expectedNonMatches": ["Attic Insulation"],
+    "description": "Conceptual: active roof leak maps to repair service, not insulation"
+  },
+  {
+    "id": "ret-010",
+    "query": "smells like sewage in the bathroom",
+    "kbEntries": [
+      { "title": "Drain Cleaning", "content": "Professional drain cleaning and unclogging. Camera inspection included. $150-$400." },
+      { "title": "Toilet Repair", "content": "Running toilets, broken flush mechanisms, and wax ring replacements. $100-$350." },
+      { "title": "Faucet & Tap Repair", "content": "Repair dripping taps, worn washers, and leaky faucet handles. Starting from $150." }
+    ],
+    "expectedMatches": ["Drain Cleaning", "Toilet Repair"],
+    "expectedNonMatches": ["Faucet & Tap Repair"],
+    "description": "Conceptual: sewage smell is associated with drain and toilet issues, not faucets"
+  },
+  {
+    "id": "ret-011",
+    "query": "no power in part of the house",
+    "kbEntries": [
+      { "title": "Electrical Troubleshooting", "content": "Diagnose tripped breakers, dead outlets, and partial power loss. Fully licensed." },
+      { "title": "Panel Upgrade", "content": "200-amp electrical service upgrades for older homes or high-demand needs." },
+      { "title": "Furnace Repair", "content": "Diagnose and repair gas furnaces of all makes and models." }
+    ],
+    "expectedMatches": ["Electrical Troubleshooting"],
+    "expectedNonMatches": ["Furnace Repair"],
+    "description": "Conceptual: 'no power in part of the house' maps to troubleshooting, not panel upgrade or unrelated service"
+  },
+  {
+    "id": "ret-012",
+    "query": "deck staining and repair this summer",
+    "kbEntries": [
+      { "title": "Deck Staining & Sealing", "content": "Professional staining and weatherproofing for pressure-treated and cedar decks." },
+      { "title": "Deck Board Replacement", "content": "Replace rotted or damaged deck boards, joists, and ledger boards." },
+      { "title": "Fence Installation", "content": "Wood, vinyl, and chain-link fence installation and repair." }
+    ],
+    "expectedMatches": ["Deck Staining & Sealing", "Deck Board Replacement"],
+    "expectedNonMatches": ["Fence Installation"],
+    "description": "Multi-word: query references both staining and repair — should match two distinct deck services"
+  },
+  {
+    "id": "ret-013",
+    "query": "new flooring and baseboards in living room",
+    "kbEntries": [
+      { "title": "Hardwood & Laminate Flooring", "content": "Supply and install hardwood, laminate, and LVP flooring. Free estimates." },
+      { "title": "Baseboard & Trim Installation", "content": "Install and paint baseboards, door casings, and crown moulding." },
+      { "title": "Carpet Installation", "content": "Carpet supply and installation for bedrooms and living areas." }
+    ],
+    "expectedMatches": ["Hardwood & Laminate Flooring", "Baseboard & Trim Installation"],
+    "expectedNonMatches": [],
+    "description": "Multi-word: two distinct services mentioned — both should be retrieved"
+  },
+  {
+    "id": "ret-014",
+    "query": "kitchen backsplash tile and drywall behind the stove",
+    "kbEntries": [
+      { "title": "Tile Installation", "content": "Ceramic, porcelain, and natural stone tile installation for backsplashes, floors, and showers." },
+      { "title": "Drywall Installation & Repair", "content": "New drywall, taping, mudding, and finishing for renovations and repairs." },
+      { "title": "Cabinet Installation", "content": "Kitchen and bathroom cabinet installation, including upper and lower units." }
+    ],
+    "expectedMatches": ["Tile Installation", "Drywall Installation & Repair"],
+    "expectedNonMatches": ["Cabinet Installation"],
+    "description": "Multi-word: query clearly references two services — tile and drywall should both match"
+  },
+  {
+    "id": "ret-015",
+    "query": "exterior painting and window caulking before winter",
+    "kbEntries": [
+      { "title": "Exterior Painting", "content": "Full exterior paint preparation and application. Includes priming and two coats." },
+      { "title": "Window Caulking & Sealing", "content": "Re-caulk around windows, doors, and trim to prevent air and water infiltration." },
+      { "title": "Interior Painting", "content": "Full-room interior painting including walls, ceilings, and trim." }
+    ],
+    "expectedMatches": ["Exterior Painting", "Window Caulking & Sealing"],
+    "expectedNonMatches": ["Interior Painting"],
+    "description": "Multi-word: two related exterior services — both should match, not the interior painting entry"
+  },
+  {
+    "id": "ret-016",
+    "query": "price?",
+    "kbEntries": [
+      { "title": "Faucet & Tap Repair", "content": "We repair dripping taps, worn washers, and leaky faucet handles. Starting from $150." },
+      { "title": "Drain Cleaning", "content": "Professional drain cleaning and unclogging. Includes camera inspection. $150-$400." },
+      { "title": "Furnace Tune-Up", "content": "Annual furnace tune-up and inspection. $99 flat fee." }
+    ],
+    "expectedMatches": [],
+    "expectedNonMatches": [],
+    "description": "Edge case: single ambiguous word — no specific service is determinable, no strong match expected"
+  },
+  {
+    "id": "ret-017",
+    "query": "drian cleaning",
+    "kbEntries": [
+      { "title": "Drain Cleaning", "content": "Professional drain cleaning and unclogging. Camera inspection included. $150-$400." },
+      { "title": "Faucet & Tap Repair", "content": "We repair dripping taps, worn washers, and leaky faucet handles. Starting from $150." },
+      { "title": "Toilet Repair", "content": "Running toilets, broken flush mechanisms, and wax ring replacements. $100-$350." }
+    ],
+    "expectedMatches": ["Drain Cleaning"],
+    "expectedNonMatches": ["Faucet & Tap Repair"],
+    "description": "Edge case: typo 'drian' is a transposition of 'drain' — should still surface Drain Cleaning"
+  },
+  {
+    "id": "ret-018",
+    "query": "how much",
+    "kbEntries": [
+      { "title": "Faucet & Tap Repair", "content": "We repair dripping taps, worn washers, and leaky faucet handles. Starting from $150." },
+      { "title": "Roof Repair", "content": "Shingle replacement, flashing repair, and leak patching. Free inspection included." },
+      { "title": "Furnace Tune-Up", "content": "Annual furnace tune-up and inspection. $99 flat fee." }
+    ],
+    "expectedMatches": [],
+    "expectedNonMatches": [],
+    "description": "Edge case: ambiguous price query with no service context — should not strongly match any single entry"
+  },
+  {
+    "id": "ret-019",
+    "query": "can someone install my hot tub",
+    "kbEntries": [
+      { "title": "Electrical Troubleshooting", "content": "Diagnose tripped breakers, dead outlets, and partial power loss. Fully licensed." },
+      { "title": "Deck Building", "content": "Pressure-treated and composite deck construction. Custom sizing and railing options." },
+      { "title": "Furnace Repair", "content": "Diagnose and repair gas furnaces of all makes and models." }
+    ],
+    "expectedMatches": [],
+    "expectedNonMatches": ["Furnace Repair"],
+    "description": "Negative: hot tub installation is not in KB — no entry should strongly match"
+  },
+  {
+    "id": "ret-020",
+    "query": "can you remove a load-bearing wall",
+    "kbEntries": [
+      { "title": "Basement Framing", "content": "Rough framing for basement developments. Open concept and room layouts available." },
+      { "title": "Drywall Installation & Repair", "content": "New drywall, taping, mudding, and finishing for renovations and repairs." },
+      { "title": "Tile Installation", "content": "Ceramic, porcelain, and natural stone tile installation for backsplashes, floors, and showers." }
+    ],
+    "expectedMatches": [],
+    "expectedNonMatches": ["Tile Installation"],
+    "description": "Negative: structural wall removal is not listed as a service — no entry should match"
+  }
+]

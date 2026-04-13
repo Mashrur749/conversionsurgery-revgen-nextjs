@@ -1,0 +1,108 @@
+[
+  {
+    "id": "bk-001",
+    "customerMessage": "Can you come Tuesday morning?",
+    "availableSlots": [
+      { "date": "2026-04-14", "time": "09:00", "displayDate": "Tuesday, April 14", "displayTime": "9:00 AM" },
+      { "date": "2026-04-14", "time": "11:00", "displayDate": "Tuesday, April 14", "displayTime": "11:00 AM" },
+      { "date": "2026-04-15", "time": "09:00", "displayDate": "Wednesday, April 15", "displayTime": "9:00 AM" }
+    ],
+    "expectedDate": "2026-04-14",
+    "expectedTime": "09:00"
+  },
+  {
+    "id": "bk-002",
+    "customerMessage": "Anytime Friday afternoon works for me",
+    "availableSlots": [
+      { "date": "2026-04-17", "time": "13:00", "displayDate": "Friday, April 17", "displayTime": "1:00 PM" },
+      { "date": "2026-04-17", "time": "15:00", "displayDate": "Friday, April 17", "displayTime": "3:00 PM" },
+      { "date": "2026-04-20", "time": "10:00", "displayDate": "Monday, April 20", "displayTime": "10:00 AM" }
+    ],
+    "expectedDate": "2026-04-17",
+    "expectedTime": "13:00"
+  },
+  {
+    "id": "bk-003",
+    "customerMessage": "I'll take option 2",
+    "availableSlots": [
+      { "date": "2026-04-16", "time": "09:00", "displayDate": "Thursday, April 16", "displayTime": "9:00 AM" },
+      { "date": "2026-04-16", "time": "14:00", "displayDate": "Thursday, April 16", "displayTime": "2:00 PM" },
+      { "date": "2026-04-17", "time": "09:00", "displayDate": "Friday, April 17", "displayTime": "9:00 AM" }
+    ],
+    "expectedDate": "2026-04-16",
+    "expectedTime": "14:00"
+  },
+  {
+    "id": "bk-004",
+    "customerMessage": "The first one you listed",
+    "availableSlots": [
+      { "date": "2026-04-15", "time": "10:00", "displayDate": "Wednesday, April 15", "displayTime": "10:00 AM" },
+      { "date": "2026-04-16", "time": "13:00", "displayDate": "Thursday, April 16", "displayTime": "1:00 PM" }
+    ],
+    "expectedDate": "2026-04-15",
+    "expectedTime": "10:00"
+  },
+  {
+    "id": "bk-005",
+    "customerMessage": "Thursday at 2 works",
+    "availableSlots": [
+      { "date": "2026-04-16", "time": "10:00", "displayDate": "Thursday, April 16", "displayTime": "10:00 AM" },
+      { "date": "2026-04-16", "time": "14:00", "displayDate": "Thursday, April 16", "displayTime": "2:00 PM" },
+      { "date": "2026-04-17", "time": "09:00", "displayDate": "Friday, April 17", "displayTime": "9:00 AM" }
+    ],
+    "expectedDate": "2026-04-16",
+    "expectedTime": "14:00"
+  },
+  {
+    "id": "bk-006",
+    "customerMessage": "Can we do next week instead? I'm away this week",
+    "availableSlots": [
+      { "date": "2026-04-14", "time": "09:00", "displayDate": "Tuesday, April 14", "displayTime": "9:00 AM" },
+      { "date": "2026-04-15", "time": "14:00", "displayDate": "Wednesday, April 15", "displayTime": "2:00 PM" }
+    ],
+    "expectedDate": null,
+    "expectedTime": null
+  },
+  {
+    "id": "bk-007",
+    "customerMessage": "Do you have anything on the weekend?",
+    "availableSlots": [
+      { "date": "2026-04-14", "time": "09:00", "displayDate": "Tuesday, April 14", "displayTime": "9:00 AM" },
+      { "date": "2026-04-15", "time": "14:00", "displayDate": "Wednesday, April 15", "displayTime": "2:00 PM" },
+      { "date": "2026-04-16", "time": "10:00", "displayDate": "Thursday, April 16", "displayTime": "10:00 AM" }
+    ],
+    "expectedDate": null,
+    "expectedTime": null
+  },
+  {
+    "id": "bk-008",
+    "customerMessage": "Yeah that works, book me in",
+    "availableSlots": [
+      { "date": "2026-04-14", "time": "11:00", "displayDate": "Tuesday, April 14", "displayTime": "11:00 AM" }
+    ],
+    "expectedDate": "2026-04-14",
+    "expectedTime": "11:00"
+  },
+  {
+    "id": "bk-009",
+    "customerMessage": "Can we move it to the afternoon instead of the morning?",
+    "availableSlots": [
+      { "date": "2026-04-14", "time": "09:00", "displayDate": "Tuesday, April 14", "displayTime": "9:00 AM" },
+      { "date": "2026-04-14", "time": "14:00", "displayDate": "Tuesday, April 14", "displayTime": "2:00 PM" },
+      { "date": "2026-04-15", "time": "09:00", "displayDate": "Wednesday, April 15", "displayTime": "9:00 AM" }
+    ],
+    "expectedDate": "2026-04-14",
+    "expectedTime": "14:00"
+  },
+  {
+    "id": "bk-010",
+    "customerMessage": "the last option please",
+    "availableSlots": [
+      { "date": "2026-04-14", "time": "09:00", "displayDate": "Tuesday, April 14", "displayTime": "9:00 AM" },
+      { "date": "2026-04-15", "time": "13:00", "displayDate": "Wednesday, April 15", "displayTime": "1:00 PM" },
+      { "date": "2026-04-17", "time": "10:00", "displayDate": "Friday, April 17", "displayTime": "10:00 AM" }
+    ],
+    "expectedDate": "2026-04-17",
+    "expectedTime": "10:00"
+  }
+]

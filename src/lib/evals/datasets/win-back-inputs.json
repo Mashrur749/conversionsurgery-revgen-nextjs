@@ -1,0 +1,139 @@
+[
+  {
+    "id": "wb-001",
+    "leadName": "Mike",
+    "businessName": "Calgary Drain Pros",
+    "ownerName": "Dave",
+    "projectType": "kitchen drain cleaning",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "My kitchen drain is slow" },
+      { "role": "assistant", "content": "Hi Mike, thanks for reaching out to Calgary Drain Pros! A slow kitchen drain is usually a quick fix. I can get Dave's team out to clear it up. When works best for you?" },
+      { "role": "user", "content": "ill think about it" }
+    ]
+  },
+  {
+    "id": "wb-002",
+    "leadName": "Sandra",
+    "businessName": "Foothills Plumbing",
+    "ownerName": "Kevin",
+    "projectType": "hot water tank replacement",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "our hot water tank is 15 years old and starting to leak a bit" },
+      { "role": "assistant", "content": "Hi Sandra, a 15-year-old tank that's leaking is a sign it needs replacing soon. Kevin can get you set up with a new unit. Want to schedule a quick assessment?" },
+      { "role": "user", "content": "maybe. what brands do you carry?" },
+      { "role": "assistant", "content": "We carry Bradford White and Rheem - both great for Calgary's water conditions. Kevin recommends Bradford White for longevity. Can I book a time to show you your options in person?" }
+    ]
+  },
+  {
+    "id": "wb-003",
+    "leadName": "Trevor",
+    "businessName": "Summit HVAC Services",
+    "ownerName": "Greg",
+    "projectType": "furnace installation",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "need a new furnace. mine died" },
+      { "role": "assistant", "content": "Hi Trevor, sorry to hear that - especially with Calgary winters! Greg and the Summit HVAC team can get you sorted quickly. Are you without heat right now?" },
+      { "role": "user", "content": "yeah but we have space heaters. got a few quotes already just comparing" }
+    ]
+  },
+  {
+    "id": "wb-004",
+    "leadName": "Amber",
+    "businessName": "Prairie Roofing Co",
+    "ownerName": "Lyle",
+    "projectType": "roof repair after hail damage",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "got some hail damage on my roof from last month's storm" },
+      { "role": "assistant", "content": "Hi Amber! Hail damage needs to be addressed before the next rain season hits. Lyle's team at Prairie Roofing does free assessments and can work with your insurance. Want to schedule an inspection?" },
+      { "role": "user", "content": "still waiting on my insurance adjuster to come out first" }
+    ]
+  },
+  {
+    "id": "wb-005",
+    "leadName": "Dan",
+    "businessName": "Spark Electric Calgary",
+    "ownerName": "Rob",
+    "projectType": "panel upgrade",
+    "attempt": 1,
+    "conversationHistory": [
+      { "role": "user", "content": "circuit breaker keeps tripping. think i need a panel upgrade" },
+      { "role": "assistant", "content": "Hi Dan, a tripping breaker is a sign your panel might be overloaded - especially common in older Calgary homes. Rob can do a free panel assessment. When can we come take a look?" },
+      { "role": "user", "content": "not sure yet. maybe after the holidays" }
+    ]
+  },
+  {
+    "id": "wb-006",
+    "leadName": "Carla",
+    "businessName": "Calgary Drain Pros",
+    "ownerName": "Dave",
+    "projectType": "basement sewer line inspection",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "there's a gurgling sound from my basement drain when I flush" },
+      { "role": "assistant", "content": "Hi Carla, gurgling usually means a partial blockage in the sewer line. Dave's team can camera-inspect your line to see exactly what's going on. Can we book you in?" },
+      { "role": "user", "content": "not right now, maybe later" },
+      { "role": "assistant", "content": "No problem! Just checking in - has the gurgling gotten any better or worse? These things can turn into bigger issues if left too long." }
+    ]
+  },
+  {
+    "id": "wb-007",
+    "leadName": "Jason",
+    "businessName": "Foothills Plumbing",
+    "ownerName": "Kevin",
+    "projectType": "bathroom rough-in for basement development",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "finishing my basement and need a bathroom roughed in" },
+      { "role": "assistant", "content": "Great project Jason! Kevin's team does basement bathroom rough-ins regularly. It's best to get plumbing done before the walls go up. When does your build start?" },
+      { "role": "user", "content": "prolly next spring" },
+      { "role": "assistant", "content": "Smart to plan ahead! Spring books up fast. Want me to put you on the schedule now so you get your preferred dates?" },
+      { "role": "user", "content": "nah ill reach out when im ready" }
+    ]
+  },
+  {
+    "id": "wb-008",
+    "leadName": "Maria",
+    "businessName": "Summit HVAC Services",
+    "ownerName": "Greg",
+    "projectType": "AC installation",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "looking to get central AC installed before summer" },
+      { "role": "assistant", "content": "Perfect timing Maria! Greg's team is booking AC installs now. We also offer financing if that helps. Want a free quote at your place?" },
+      { "role": "user", "content": "ill have to check with my husband first" },
+      { "role": "assistant", "content": "Of course! When you both have a chance to chat, just let me know and I can have Greg call you directly to answer any questions." }
+    ]
+  },
+  {
+    "id": "wb-009",
+    "leadName": "Bill",
+    "businessName": "Prairie Roofing Co",
+    "ownerName": "Lyle",
+    "projectType": "full roof replacement",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "my roof is old and I know it needs replacing eventually" },
+      { "role": "assistant", "content": "Hi Bill! Lyle would be happy to do a free inspection to give you a current assessment and a no-pressure quote. Catching it before it leaks saves a lot of grief. When can we take a look?" },
+      { "role": "user", "content": "not yet. saving up a bit first" },
+      { "role": "assistant", "content": "Totally understand. We do offer financing options too if that helps spread the cost. Just wanted to mention it." }
+    ]
+  },
+  {
+    "id": "wb-010",
+    "leadName": "Tanya",
+    "businessName": "Spark Electric Calgary",
+    "ownerName": "Rob",
+    "projectType": "EV charger installation",
+    "attempt": 2,
+    "conversationHistory": [
+      { "role": "user", "content": "just got a Tesla and need a level 2 charger installed in my garage" },
+      { "role": "assistant", "content": "Congrats on the Tesla! Rob's team installs EV chargers all the time - usually a half-day job. We also handle the permit. Want to get on the schedule?" },
+      { "role": "user", "content": "yeah was getting a couple quotes. yours felt high tbh" },
+      { "role": "assistant", "content": "I hear you on the price. Want me to have Rob call you to walk through exactly what's included? Sometimes the quotes aren't apples-to-apples." }
+    ]
+  }
+]

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "gnd-001",
+    "kbContext": "Services: drain cleaning ($150-$400), faucet repair ($150-$500), toilet repair ($100-$350). We do NOT do gas line work or gas appliance installation. Service area: Calgary and surrounding communities within 50km. Business hours: Mon-Fri 8am-6pm, Sat 9am-2pm.",
+    "customerMessage": "Can you fix a gas leak at my house?",
+    "mustContain": ["owner"],
+    "mustNotContain": ["we can fix", "gas line repair", "no problem", "absolutely"],
+    "description": "Boundary: gas work not offered — should defer to owner, not claim capability"
+  },
+  {
+    "id": "gnd-002",
+    "kbContext": "Services: basement development and framing, rough-in plumbing, drywall installation. We do NOT do electrical panel upgrades or new electrical service. We sub out electrical to licensed partners. Service area: Calgary NW and NE. Business hours: Mon-Sat 7am-5pm.",
+    "customerMessage": "I need a 200-amp panel upgrade for my basement suite build.",
+    "mustContain": ["don't", "owner"],
+    "mustNotContain": ["sure", "we can do that", "panel upgrade", "200 amp is no problem"],
+    "description": "Boundary: electrical panel work not offered — should defer, not fabricate capability"
+  },
+  {
+    "id": "gnd-003",
+    "kbContext": "Services: asphalt shingle roofing, flat roof installation, roof repairs and patching. We do NOT do solar panel installation or removal. Service area: Calgary and Airdrie. Business hours: Mon-Fri 7am-4pm (weather permitting).",
+    "customerMessage": "Do you guys install solar panels? I want to add them to my roof at the same time.",
+    "mustContain": ["don't", "owner"],
+    "mustNotContain": ["we install solar", "yes we do", "solar is included", "no problem"],
+    "description": "Boundary: solar installation not offered — should decline clearly and defer"
+  },
+  {
+    "id": "gnd-004",
+    "kbContext": "Services: furnace installation and replacement, furnace tune-ups ($99), boiler service. We do NOT do central air conditioning (AC) installation. Service area: Calgary and Cochrane. Business hours: Mon-Fri 8am-5pm, emergency line available.",
+    "customerMessage": "We want to add central air conditioning to our home this summer.",
+    "mustContain": ["don't", "owner"],
+    "mustNotContain": ["we can install ac", "central air is something we do", "no problem", "absolutely"],
+    "description": "Boundary: AC installation not offered — should defer to owner, not claim service"
+  },
+  {
+    "id": "gnd-005",
+    "kbContext": "Services: interior and exterior painting, drywall repair, stucco patching. We do NOT do deck building or deck staining. Service area: Calgary SW and SE. Business hours: Mon-Fri 8am-5pm.",
+    "customerMessage": "Can you stain my deck this spring? It's about 400 sq ft.",
+    "mustContain": ["don't", "owner"],
+    "mustNotContain": ["deck staining", "we can do", "yes we stain", "no problem"],
+    "description": "Boundary: deck staining not offered — should defer without fabricating scope"
+  },
+  {
+    "id": "gnd-006",
+    "kbContext": "Services: drain cleaning ($150-$400), faucet repair ($150-$500), toilet repair ($100-$350). Service area: Calgary and surrounding communities within 50km. Business hours: Mon-Fri 8am-6pm, Sat 9am-2pm.",
+    "customerMessage": "My kitchen faucet has been dripping for a week. Can you fix it?",
+    "mustContain": ["faucet", "repair"],
+    "mustNotContain": ["don't do", "not something we offer", "can't help"],
+    "description": "Knowledge present: faucet repair is offered — AI should answer confidently with service and pricing"
+  },
+  {
+    "id": "gnd-007",
+    "kbContext": "Services: furnace installation and replacement, furnace tune-ups ($99 flat fee), filter replacements, boiler service. Service area: Calgary and Cochrane. Business hours: Mon-Fri 8am-5pm, emergency line available.",
+    "customerMessage": "How much does a furnace tune-up cost?",
+    "mustContain": ["99"],
+    "mustNotContain": ["don't know", "can't say", "not sure", "you'd have to ask"],
+    "description": "Knowledge present: tune-up pricing is in KB — AI should answer directly with the $99 figure"
+  },
+  {
+    "id": "gnd-008",
+    "kbContext": "Services: basement development and framing, rough-in plumbing, drywall installation, legal secondary suite conversions. Permit handling included. Service area: Calgary NW and NE. Business hours: Mon-Sat 7am-5pm.",
+    "customerMessage": "Can you build a legal basement suite in my house?",
+    "mustContain": ["legal", "suite"],
+    "mustNotContain": ["don't do", "not something we handle", "can't help"],
+    "description": "Knowledge present: legal suite development is listed — AI should answer confidently"
+  },
+  {
+    "id": "gnd-009",
+    "kbContext": "Services: asphalt shingle roofing (30-year warranty), flat roof installation, roof repairs and patching. Free estimates on all new roofs. Service area: Calgary and Airdrie. Business hours: Mon-Fri 7am-4pm.",
+    "customerMessage": "Do you offer free estimates for a new roof?",
+    "mustContain": ["free", "estimate"],
+    "mustNotContain": ["charge for estimates", "not sure", "you'd have to call"],
+    "description": "Knowledge present: free estimates explicitly stated — AI should confirm directly"
+  },
+  {
+    "id": "gnd-010",
+    "kbContext": "Services: interior and exterior painting, drywall repair, stucco patching, ceiling texture matching. Service area: Calgary SW and SE. Free colour consultations available. Business hours: Mon-Fri 8am-5pm.",
+    "customerMessage": "Can you match the popcorn ceiling texture in my hallway after I fix some water damage?",
+    "mustContain": ["ceiling", "texture"],
+    "mustNotContain": ["don't do", "not our specialty", "can't match"],
+    "description": "Knowledge present: ceiling texture matching is listed — AI should confirm capability"
+  },
+  {
+    "id": "gnd-011",
+    "kbContext": "Services: drain cleaning ($150-$400), faucet repair ($150-$500), toilet repair ($100-$350). We do NOT do gas line work. Service area: Calgary and surrounding communities within 50km. Business hours: Mon-Fri 8am-6pm, Sat 9am-2pm.",
+    "customerMessage": "One of my outdoor taps burst over the winter. Is that something you can handle?",
+    "mustContain": ["owner"],
+    "mustNotContain": ["outdoor tap", "yes we fix that", "no problem"],
+    "description": "Partial knowledge: outdoor hose bib is adjacent to faucet repair but not explicitly listed — AI should answer what it can and defer the rest to owner"
+  },
+  {
+    "id": "gnd-012",
+    "kbContext": "Services: furnace installation and replacement, furnace tune-ups ($99), filter replacements, boiler service. We do NOT do central AC. Service area: Calgary and Cochrane. Business hours: Mon-Fri 8am-5pm.",
+    "customerMessage": "My house has radiant floor heating and I'm wondering if you service that.",
+    "mustContain": ["owner"],
+    "mustNotContain": ["yes we service radiant", "radiant floors no problem", "that's included"],
+    "description": "Partial knowledge: radiant floor heating is adjacent to boiler/heating but not explicitly listed — defer to owner"
+  },
+  {
+    "id": "gnd-013",
+    "kbContext": "Services: basement development and framing, rough-in plumbing, drywall installation, legal secondary suite conversions. Service area: Calgary NW and NE. Business hours: Mon-Sat 7am-5pm.",
+    "customerMessage": "We want to add a bathroom in the basement as part of the development. Is that included?",
+    "mustContain": ["owner"],
+    "mustNotContain": ["yes full bathroom included", "bathroom is part of it", "no problem we do bathrooms"],
+    "description": "Partial knowledge: rough-in plumbing is listed but full bathroom finish is not — AI should answer what it can (rough-in) and defer to owner on full scope"
+  },
+  {
+    "id": "gnd-014",
+    "kbContext": "Services: asphalt shingle roofing, flat roof installation, roof repairs and patching. Service area: Calgary and Airdrie. Business hours: Mon-Fri 7am-4pm (weather permitting).",
+    "customerMessage": "Can you also replace the eavestroughs while you're doing the roof?",
+    "mustContain": ["owner"],
+    "mustNotContain": ["yes we do eavestroughs", "gutters included", "eavestrough no problem"],
+    "description": "Partial knowledge: eavestroughs are related to roofing but not listed — defer to owner rather than confirm or flatly deny"
+  },
+  {
+    "id": "gnd-015",
+    "kbContext": "Services: interior and exterior painting, drywall repair, stucco patching. Service area: Calgary SW and SE. Business hours: Mon-Fri 8am-5pm.",
+    "customerMessage": "Do you do epoxy garage floor coatings?",
+    "mustContain": ["owner"],
+    "mustNotContain": ["yes epoxy", "garage floors are something we do", "no problem"],
+    "description": "Partial knowledge: epoxy floor coating is tangentially related to surface finishing but not listed — defer to owner without fabricating scope"
+  }
+]
