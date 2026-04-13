@@ -1,6 +1,7 @@
 import { getDb } from '@/db';
 import { knowledgeBase, clients, type NewKnowledgeBaseEntry } from '@/db/schema';
 import { eq, and, desc, ilike, or } from 'drizzle-orm';
+import { expandQueryWithSynonyms } from '@/lib/data/trade-synonyms';
 
 export type KnowledgeCategory = 'services' | 'pricing' | 'faq' | 'policies' | 'about' | 'custom';
 
@@ -38,7 +39,10 @@ export async function searchKnowledge(
   clientId: string,
   query: string
 ): Promise<KnowledgeEntry[]> {
-  const searchTerms = query.toLowerCase().split(' ').filter(t => t.length > 2);
+  const expandedTerms = expandQueryWithSynonyms(query);
+  const searchTerms = expandedTerms.length > 0
+    ? expandedTerms
+    : query.toLowerCase().split(' ').filter(t => t.length > 2);
 
   if (searchTerms.length === 0) {
     return getClientKnowledge(clientId);
