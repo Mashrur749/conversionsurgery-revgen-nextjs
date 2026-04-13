@@ -371,6 +371,41 @@ export async function buildAIContext(params: BuildContextParams): Promise<AICont
 }
 
 // ============================================================
+// Booking behavior rules
+// ============================================================
+
+export function getBookingBehaviorRules(aggressiveness: number): string {
+  if (aggressiveness <= 3) {
+    return `BOOKING APPROACH (conservative):
+- Do NOT suggest booking unless the customer explicitly asks to schedule
+- Focus on answering questions and providing information
+- Only mention availability if the customer brings it up
+- Never push for a specific date or time
+- If they seem interested, say "When you're ready, just let us know and we'll find a time."`;
+  }
+  if (aggressiveness <= 5) {
+    return `BOOKING APPROACH (balanced):
+- After 2-3 exchanges of qualifying conversation, gently offer to schedule
+- Use soft language: "Would you like us to come take a look?" or "Happy to set up a time if you'd like"
+- Don't push if they decline or hesitate
+- One booking suggestion per conversation maximum`;
+  }
+  if (aggressiveness <= 7) {
+    return `BOOKING APPROACH (proactive):
+- If the customer describes a project or mentions a problem, suggest booking within 1-2 exchanges
+- Offer specific available times: "We have openings this Tuesday or Thursday — which works better?"
+- If they hesitate, offer a low-commitment option: "Even just a quick look to give you an accurate number"
+- Up to 2 booking suggestions per conversation`;
+  }
+  return `BOOKING APPROACH (aggressive):
+- Suggest booking on the FIRST relevant exchange if the customer has a real need
+- Lead with availability: "We can come out as early as tomorrow — want me to lock in a time?"
+- Frame the estimate as free and low-commitment
+- Reframe objections toward the estimate: "The estimate is free and only takes 20 minutes"
+- Up to 3 booking suggestions per conversation, escalating directness`;
+}
+
+// ============================================================
 // System prompt assembly
 // ============================================================
 
@@ -425,7 +460,7 @@ ${relevantKnowledge ? `\n## MOST RELEVANT TO THIS QUESTION\n${relevantKnowledge}
 - Tone: ${agent.tone}
 - Max response length: ${agent.maxResponseLength} characters
 - Goal: ${agent.primaryGoal}
-- Booking aggressiveness: ${agent.bookingAggressiveness}/10
+${getBookingBehaviorRules(agent.bookingAggressiveness)}
 
 ${guardrailText}`;
 }
