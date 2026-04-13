@@ -501,6 +501,7 @@ Then follow up in 24-48 hours with the link. Most contractors who refuse on the 
 - Configure business hours from the call.
 - **Fire the outbound quote reactivation batch** &mdash; send the messages to the dead quotes collected on the call. This is the highest-ROI action on Day 0. Do it before anything else.
 - **Run Voice AI Playground QA:** Open `/admin/voice-ai`, expand the client. Preview the greeting (hear it in their voice). Run the KB Test (all 10 questions should be answered or deferred, not gapped). Run the Guardrail Test (all 8 should pass). Complete QA Checklist &rarr; click &ldquo;Go Live.&rdquo;
+- **KB embedding:** After saving structured knowledge, entries are automatically embedded for semantic search. No action needed &mdash; the system handles this in the background. If the Voyage AI service is down, search falls back to keyword matching until embeddings complete.
 - Verify call forwarding with a test call to XYZ &mdash; confirm it rings 3 times then forwards to Twilio.
 - Verify subscription was created in Stripe Dashboard (trial active, card on file).
 - Add exclusion list contacts to the DNC/skip list in admin.

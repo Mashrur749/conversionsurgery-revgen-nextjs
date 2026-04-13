@@ -2762,6 +2762,29 @@ Verifies the four quick wins shipped in the 2026-04-12 wave.
 
 ---
 
+### Step 71: Semantic Search + Embedding Verification
+
+1. Verify pgvector extension is enabled:
+   ```sql
+   SELECT extname FROM pg_extension WHERE extname = 'vector';
+   ```
+2. Check embedding status for a client:
+   ```sql
+   SELECT embedding_status, count(*) FROM knowledge_base WHERE client_id = '{id}' GROUP BY embedding_status;
+   ```
+3. All active entries should eventually reach `embedding_status = 'ready'`.
+4. Run embedding service tests:
+   ```bash
+   npx vitest run src/lib/services/embedding.test.ts
+   ```
+5. Run KB search tests:
+   ```bash
+   npx vitest run src/lib/services/knowledge-base.test.ts
+   ```
+6. Required env var: `VOYAGE_API_KEY` (Voyage AI API key for embedding generation).
+
+---
+
 ## 3. Useful Commands
 
 ```bash
@@ -2808,6 +2831,7 @@ curl -i http://localhost:3000/api/cron/calendar-sync -H "Authorization: Bearer $
 curl -i http://localhost:3000/api/cron/engagement-health-check -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/dormant-reengagement -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/embedding-backfill -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/weekly-digest -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/ai-mode-progression -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/voice-callbacks -H "Authorization: Bearer $CRON_SECRET"

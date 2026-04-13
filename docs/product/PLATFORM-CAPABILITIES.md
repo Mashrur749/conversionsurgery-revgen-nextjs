@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-12 (Quick wins: synonym search, estimate auto-trigger, booking calibration, pricing gate)
+Last updated: 2026-04-12 (Phase 2: pgvector semantic search, two-tier KB context, Voyage AI embeddings, backfill cron)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -64,11 +64,16 @@ Applied to: Agent orchestrator, win-back automation, no-show recovery automation
 
 AI responses are truncated at sentence boundaries instead of mid-word. This ensures messages sent to homeowners always end with complete sentences, even when the AI exceeds the configured maximum response length. Win-back messages are capped at 160 characters (SMS optimal). No-show recovery at 200 characters.
 
-### Trade-Aware Knowledge Search
+### Semantic Knowledge Retrieval
 
-KB lookups expand the incoming query with 40+ trade-specific synonym groups before searching, so surface-form variation never causes a knowledge miss.
+Knowledge base entries are embedded using Voyage AI `voyage-3-lite` (1024-dimensional vectors) and searched using pgvector cosine similarity. This replaces keyword matching and handles:
+- Synonym matching (&ldquo;leaky faucet&rdquo; matches &ldquo;tap repair&rdquo;)
+- Conceptual matching (&ldquo;my basement is flooding&rdquo; matches &ldquo;Emergency Services&rdquo;)
+- Multi-word queries without exact phrase requirements
 
-Example mappings:
+As a bridge layer, trade-aware synonym expansion (40+ synonym groups) runs before any search &mdash; both ILIKE fallback and semantic search benefit from expanded query terms.
+
+Example synonym mappings:
 
 | Customer says | Also searches |
 |--------------|--------------|
@@ -80,6 +85,14 @@ Example mappings:
 | heat pump | HVAC, mini split, ductless |
 
 Coverage groups: plumbing, renovation, electrical, HVAC, roofing, and transactional intent (quote, estimate, pricing, cost).
+
+Context is split into two tiers:
+- **Structural** (always included): Company overview, service area, hours, restrictions, high-priority entries (priority &ge; 9)
+- **Search-matched** (per-message): Top 3 semantically relevant entries for the customer&apos;s question
+
+Fallback: If Voyage AI is unavailable or entries have not been embedded yet, the system falls back to ILIKE keyword search with synonym expansion automatically.
+
+Embedding is asynchronous &mdash; entries are usable immediately on create/update. A backfill cron processes pending embeddings hourly (50 per run).
 
 ### Estimate Auto-Detection
 
