@@ -26,6 +26,7 @@ import { selectModelTier } from '@/lib/ai/model-routing';
 import { trackKnowledgeGap } from '@/lib/agent/context-builder';
 import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/lib/types/agent';
 import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality';
+import { maybeAutoTriggerEstimateFollowup } from '@/lib/automations/estimate-auto-trigger';
 
 interface ProcessMessageResult {
   action: AgentAction;
@@ -458,6 +459,11 @@ export async function processIncomingMessage(
         twilioSid: sendResult.messageSid || undefined,
       });
       responseSent = true;
+
+      // Fire-and-forget: check if conversation signals an estimate was sent
+      maybeAutoTriggerEstimateFollowup(leadId, client.id, messageText).catch(
+        err => console.error('[Agent] Estimate auto-trigger error:', err)
+      );
     } else {
       console.log('[Agent] Message blocked by compliance:', sendResult.blockReason);
     }
