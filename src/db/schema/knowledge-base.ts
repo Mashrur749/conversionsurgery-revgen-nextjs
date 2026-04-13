@@ -11,6 +11,12 @@ import {
 } from 'drizzle-orm/pg-core';
 import { clients } from './clients';
 
+export const embeddingStatusEnum = pgEnum('embedding_status', [
+  'pending',
+  'ready',
+  'failed',
+]);
+
 export const knowledgeCategoryEnum = pgEnum('knowledge_category', [
   'services',
   'pricing',
@@ -33,6 +39,7 @@ export const knowledgeBase = pgTable(
     keywords: text('keywords'), // comma-separated for search
     priority: integer('priority').default(0), // Higher = more important
     isActive: boolean('is_active').default(true),
+    embeddingStatus: embeddingStatusEnum('embedding_status').default('pending'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
