@@ -10,6 +10,7 @@ import {
   conversations,
   leads,
   clients,
+  voiceCalls,
 } from '@/db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
@@ -126,6 +127,50 @@ export async function processIncomingMessage(
     .where(eq(conversations.leadId, leadId))
     .orderBy(desc(conversations.createdAt))
     .limit(20);
+
+  // SIM-06: Load voice call context for cross-channel handoff
+  try {
+    const [recentVoiceCall] = await db
+      .select({
+        id: voiceCalls.id,
+        aiSummary: voiceCalls.aiSummary,
+        createdAt: voiceCalls.createdAt,
+      })
+      .from(voiceCalls)
+      .where(eq(voiceCalls.leadId, leadId))
+      .orderBy(desc(voiceCalls.createdAt))
+      .limit(1);
+
+    if (recentVoiceCall?.aiSummary) {
+      // Check if voice call is already represented in conversation history
+      const voiceAlreadyInHistory = conversationHistory.some(
+        m => m.messageType === 'voice_summary'
+      );
+
+      if (!voiceAlreadyInHistory) {
+        // Insert synthetic conversation record so the agent sees the voice context
+        await db.insert(conversations).values({
+          leadId,
+          clientId: client.id,
+          direction: 'inbound',
+          messageType: 'voice_summary',
+          content: `[Prior voice call summary] ${recentVoiceCall.aiSummary}`,
+          createdAt: recentVoiceCall.createdAt,
+        });
+
+        // Prepend to conversation history so it appears in context
+        conversationHistory.push({
+          direction: 'inbound',
+          messageType: 'voice_summary',
+          content: `[Prior voice call summary] ${recentVoiceCall.aiSummary}`,
+          createdAt: recentVoiceCall.createdAt,
+        } as typeof conversationHistory[0]);
+      }
+    }
+  } catch (err) {
+    console.error('[Agent] Voice context loading failed:', err);
+    // Non-blocking — continue without voice context
+  }
 
   // Check if conversation summary needs updating before processing
   const lastConvMessage = conversationHistory[conversationHistory.length - 1];
