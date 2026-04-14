@@ -140,6 +140,7 @@ export default async function LeadDetailPage({ params }: Props) {
           composite: Math.round(((contextResult.urgencyScore ?? 0) + (contextResult.budgetScore ?? 0) + (contextResult.intentScore ?? 0)) / 3),
         } : null}
         decisionMakers={contextResult?.decisionMakers as LeadHeaderProps['decisionMakers'] ?? null}
+        strategyState={contextResult?.strategyState as LeadHeaderProps['strategyState'] ?? null}
       />
       <LeadTags leadId={lead.id} initialTags={(lead.tags as string[]) || []} />
 

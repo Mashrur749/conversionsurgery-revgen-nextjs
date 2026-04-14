@@ -50,9 +50,17 @@ export interface LeadHeaderProps {
     secondaryConsulted: boolean;
     partnerApprovalNeeded: boolean;
   } | null;
+  strategyState?: {
+    currentObjective: string;
+    requiredInfo: string[];
+    suggestedAction: string;
+    nextMoveIfSuccessful: string;
+    constraints: string[];
+    maxTurnsRemaining: number;
+  } | null;
 }
 
-export function LeadHeader({ lead, conversationStage, scores, decisionMakers }: LeadHeaderProps) {
+export function LeadHeader({ lead, conversationStage, scores, decisionMakers, strategyState }: LeadHeaderProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [modeLoading, setModeLoading] = useState(false);
@@ -135,6 +143,17 @@ export function LeadHeader({ lead, conversationStage, scores, decisionMakers }: 
                 <Badge variant="outline" className="bg-[#E8F5E9] text-[#3D7A50] text-xs">Consulted</Badge>
               ) : (
                 <Badge variant="outline" className="bg-[#FFF3E0] text-[#C15B2E] text-xs">Not yet consulted</Badge>
+              )}
+            </div>
+          )}
+          {lead.caslConsentAttested && (
+            <Badge variant="outline" className="mt-1 text-xs bg-[#E8F5E9] text-[#3D7A50]">CASL</Badge>
+          )}
+          {strategyState && conversationStage && conversationStage !== 'greeting' && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Objective: {strategyState.currentObjective}
+              {strategyState.suggestedAction && (
+                <span className="ml-2">| Next: {strategyState.suggestedAction.replace(/_/g, ' ')}</span>
               )}
             </div>
           )}
