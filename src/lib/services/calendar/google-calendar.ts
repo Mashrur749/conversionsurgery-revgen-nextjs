@@ -1,6 +1,7 @@
 import { google, calendar_v3 } from 'googleapis';
 import { getDb, calendarIntegrations, calendarEvents, leads } from '@/db';
 import { eq, and, isNull } from 'drizzle-orm';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -453,7 +454,24 @@ export async function syncFromGoogleCalendar(
 
     return { created, updated };
   } catch (err) {
-    console.error('Google Calendar sync error:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+    // Increment error counter on the integration so the admin UI and operator alerts work
+    await db
+      .update(calendarIntegrations)
+      .set({
+        lastError: errorMessage,
+        consecutiveErrors: (integration.consecutiveErrors ?? 0) + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(calendarIntegrations.id, integration.id));
+
+    logSanitizedConsoleError(
+      '[Calendar][syncFromGoogleCalendar] Inbound sync failed',
+      err,
+      { clientId, integrationId: integration.id }
+    );
+
     return { created: 0, updated: 0 };
   }
 }

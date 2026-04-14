@@ -1,6 +1,8 @@
 import { getDb, calendarEvents, calendarIntegrations } from '@/db';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import * as googleCalendar from './google-calendar';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { alertOperator } from '@/lib/services/operator-alerts';
 
 interface CreateEventInput {
   clientId: string;
@@ -155,7 +157,42 @@ async function syncEventToProviders(
       }
       // Add other providers here
     } catch (err) {
-      console.error(`Sync to ${integration.provider} failed:`, err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+      // Mark the event as failed so the UI can surface it
+      await db
+        .update(calendarEvents)
+        .set({
+          syncStatus: 'error',
+          lastSyncError: errorMessage.slice(0, 500),
+          updatedAt: new Date(),
+        })
+        .where(eq(calendarEvents.id, event.id));
+
+      // Increment consecutive error counter on the integration
+      const newCount = (integration.consecutiveErrors ?? 0) + 1;
+      await db
+        .update(calendarIntegrations)
+        .set({
+          lastError: errorMessage,
+          consecutiveErrors: newCount,
+          updatedAt: new Date(),
+        })
+        .where(eq(calendarIntegrations.id, integration.id));
+
+      logSanitizedConsoleError(
+        `[Calendar][syncEventToProviders] Sync to ${integration.provider} failed`,
+        err,
+        { eventId: event.id, clientId, provider: integration.provider, consecutiveErrors: newCount }
+      );
+
+      // Alert operator after 5 consecutive failures
+      if (newCount >= 5) {
+        await alertOperator(
+          `Calendar sync failing for client ${clientId}`,
+          `${newCount} consecutive sync errors on ${integration.provider} integration. Last error: ${errorMessage.slice(0, 200)}`
+        );
+      }
     }
   }
 }
@@ -246,8 +283,13 @@ export async function fullSync(clientId: string): Promise<{
     try {
       await syncEventToProviders(clientId, event);
       results.outbound.synced++;
-    } catch {
+    } catch (err) {
       results.outbound.failed++;
+      logSanitizedConsoleError(
+        '[Calendar][fullSync.outbound] Unexpected error during sync',
+        err,
+        { eventId: event.id, clientId }
+      );
     }
   }
 
