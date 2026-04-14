@@ -9,7 +9,7 @@ import {
   people,
 } from '@/db/schema';
 import type { EscalationQueueStatus } from '@/db/schema/agent-enums';
-import { eq, and, desc, sql, or } from 'drizzle-orm';
+import { eq, and, desc, sql, or, not } from 'drizzle-orm';
 import { sendTrackedSMS } from '@/lib/clients/twilio-tracked';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail } from '@/lib/services/resend';
@@ -321,7 +321,7 @@ export async function assignEscalation(
 
   // Get the escalation's clientId for ownership check
   const [escalation] = await db
-    .select({ clientId: escalationQueue.clientId })
+    .select({ clientId: escalationQueue.clientId, status: escalationQueue.status })
     .from(escalationQueue)
     .where(eq(escalationQueue.id, escalationId))
     .limit(1);
@@ -331,12 +331,30 @@ export async function assignEscalation(
   // Verify team member belongs to the same client
   await assertSameClient(db, 'client_memberships', teamMemberId, escalation.clientId, 'team member');
 
-  await db.update(escalationQueue).set({
-    assignedTo: teamMemberId,
-    assignedAt: new Date(),
-    status: 'assigned',
-    updatedAt: new Date(),
-  }).where(eq(escalationQueue.id, escalationId));
+  // Atomic update: only succeeds if escalation is still pending or unassigned.
+  // .returning() lets us detect a no-op (row matched but status guard failed → 0 rows returned).
+  const [updated] = await db
+    .update(escalationQueue)
+    .set({
+      assignedTo: teamMemberId,
+      assignedAt: new Date(),
+      status: 'assigned',
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(escalationQueue.id, escalationId),
+        or(
+          eq(escalationQueue.status, 'pending'),
+          eq(escalationQueue.status, 'assigned'),
+        )
+      )
+    )
+    .returning({ id: escalationQueue.id });
+
+  if (!updated) {
+    throw new Error('Escalation already assigned to another team member or no longer available');
+  }
 }
 
 /**
@@ -362,12 +380,28 @@ export async function takeOverConversation(
   // Verify team member belongs to the same client
   await assertSameClient(db, 'client_memberships', teamMemberId, escalation.clientId, 'team member');
 
-  await db.update(escalationQueue).set({
-    status: 'in_progress',
-    assignedTo: teamMemberId,
-    firstResponseAt: new Date(),
-    updatedAt: new Date(),
-  }).where(eq(escalationQueue.id, escalationId));
+  // Atomic update: takeover is allowed on pending/assigned/in_progress escalations.
+  // Blocked only if already resolved or dismissed. .returning() detects the no-op.
+  const [updated] = await db
+    .update(escalationQueue)
+    .set({
+      status: 'in_progress',
+      assignedTo: teamMemberId,
+      firstResponseAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(escalationQueue.id, escalationId),
+        not(eq(escalationQueue.status, 'resolved')),
+        not(eq(escalationQueue.status, 'dismissed')),
+      )
+    )
+    .returning({ id: escalationQueue.id });
+
+  if (!updated) {
+    throw new Error('Escalation already resolved or dismissed');
+  }
 }
 
 /**
