@@ -64,6 +64,12 @@ export const clients = pgTable(
     // Communication
     photoRequestsEnabled: boolean('photo_requests_enabled').default(true),
     multiLanguageEnabled: boolean('multi_language_enabled').default(false),
+
+    // ============================================
+    // FMA WAVE 1 FEATURE FLAGS (nullable = inherit system default)
+    // ============================================
+    dailyDigestEnabled: boolean('daily_digest_enabled'),
+    billingReminderEnabled: boolean('billing_reminder_enabled'),
     preferredLanguage: varchar('preferred_language', { length: 10 }).default('en'),
 
     // ============================================

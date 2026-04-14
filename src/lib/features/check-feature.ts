@@ -2,7 +2,11 @@ import { getDb } from '@/db';
 import { clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
-export type FeatureFlag =
+/**
+ * Legacy per-client feature flags — resolved directly from a client boolean column.
+ * These never fall back to system defaults; null/missing → false.
+ */
+export type LegacyFeatureFlag =
   | 'missedCallSms'
   | 'aiResponse'
   | 'aiAgent'
@@ -18,7 +22,29 @@ export type FeatureFlag =
   | 'photoRequests'
   | 'multiLanguage';
 
-const featureToColumn: Record<FeatureFlag, keyof typeof clients.$inferSelect> = {
+/**
+ * FMA-wave feature flags — resolved via resolveFeatureFlag() which checks:
+ * 1. Client column (if not null)
+ * 2. system_settings row (key: `feature.<flag>.enabled`)
+ * 3. Hardcoded default (false)
+ *
+ * Wave 1 (client columns exist): dailyDigest, billingReminder
+ * Wave 2+ (system-settings only until columns added): all others
+ */
+export type SystemFeatureFlag =
+  | 'dailyDigest'
+  | 'billingReminder'
+  | 'engagementSignals'
+  | 'autoResolve'
+  | 'forwardingVerification'
+  | 'opsHealthMonitor'
+  | 'callPrep'
+  | 'capacityTracking';
+
+/** Union of all feature flags in the platform */
+export type FeatureFlag = LegacyFeatureFlag | SystemFeatureFlag;
+
+const featureToColumn: Record<LegacyFeatureFlag, keyof typeof clients.$inferSelect> = {
   missedCallSms: 'missedCallSmsEnabled',
   aiResponse: 'aiResponseEnabled',
   aiAgent: 'aiAgentEnabled',
@@ -36,11 +62,26 @@ const featureToColumn: Record<FeatureFlag, keyof typeof clients.$inferSelect> = 
 };
 
 /**
- * Check if a feature is enabled for a client
+ * Wave 1 system flags that also have a nullable client column override.
+ * Keyed by SystemFeatureFlag — only flags with columns listed here.
+ * Exported for use by resolveFeatureFlag() in @/lib/services/feature-flags.
+ */
+export const systemFlagToColumn: Partial<Record<SystemFeatureFlag, keyof typeof clients.$inferSelect>> = {
+  dailyDigest: 'dailyDigestEnabled',
+  billingReminder: 'billingReminderEnabled',
+};
+
+function isLegacyFlag(flag: FeatureFlag): flag is LegacyFeatureFlag {
+  return flag in featureToColumn;
+}
+
+/**
+ * Check if a legacy per-client feature is enabled.
+ * For system-level flags (FMA waves), use resolveFeatureFlag() from @/lib/services/feature-flags instead.
  */
 export async function isFeatureEnabled(
   clientId: string,
-  feature: FeatureFlag
+  feature: LegacyFeatureFlag
 ): Promise<boolean> {
   const db = getDb();
   const column = featureToColumn[feature];
@@ -55,7 +96,9 @@ export async function isFeatureEnabled(
 }
 
 /**
- * Check multiple features at once
+ * Check multiple features at once.
+ * Accepts both legacy and system flags. System flags without a client column resolve to false
+ * via this function — call resolveFeatureFlag() for proper system-default resolution.
  */
 export async function getEnabledFeatures(
   clientId: string,
@@ -71,8 +114,18 @@ export async function getEnabledFeatures(
 
   return features.reduce(
     (acc, feature) => {
-      const col = featureToColumn[feature] as keyof typeof client;
-      acc[feature] = (client?.[col] as boolean) ?? false;
+      if (isLegacyFlag(feature)) {
+        const col = featureToColumn[feature] as keyof typeof client;
+        acc[feature] = (client?.[col] as boolean) ?? false;
+      } else {
+        const col = systemFlagToColumn[feature];
+        if (col) {
+          const val = client?.[col as keyof typeof client];
+          acc[feature] = (val as boolean | null) ?? false;
+        } else {
+          acc[feature] = false;
+        }
+      }
       return acc;
     },
     {} as Record<FeatureFlag, boolean>
@@ -80,11 +133,12 @@ export async function getEnabledFeatures(
 }
 
 /**
- * Require a feature to be enabled, throw if not
+ * Require a legacy feature to be enabled, throw if not.
+ * For system-level flags use resolveFeatureFlag() first, then throw manually.
  */
 export async function requireFeature(
   clientId: string,
-  feature: FeatureFlag,
+  feature: LegacyFeatureFlag,
   errorMessage?: string
 ): Promise<void> {
   const enabled = await isFeatureEnabled(clientId, feature);
