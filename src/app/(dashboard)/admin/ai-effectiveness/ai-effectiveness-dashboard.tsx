@@ -367,6 +367,19 @@ interface AnalysisSnapshot {
   extractedInfo: Record<string, unknown>;
 }
 
+interface PromptVersion {
+  methodology?: string;
+  locale?: string;
+  playbook?: string;
+  channel?: string;
+}
+
+interface ActionDetailsWithVersion {
+  modelTier?: string;
+  promptVersion?: PromptVersion;
+  [key: string]: unknown;
+}
+
 interface DecisionRow {
   id: string;
   createdAt: Date;
@@ -397,7 +410,9 @@ function DecisionRowItem({ decision }: DecisionRowItemProps) {
   const [open, setOpen] = useState(false);
 
   const snapshot = decision.analysisSnapshot as AnalysisSnapshot | null;
-  const modelTier = (decision.actionDetails as { modelTier?: string } | null)?.modelTier ?? null;
+  const actionDetails = decision.actionDetails as ActionDetailsWithVersion | null;
+  const modelTier = actionDetails?.modelTier ?? null;
+  const promptVersion = actionDetails?.promptVersion ?? null;
 
   const outcomeBadgeClass = OUTCOME_BADGE[decision.outcome ?? 'pending'] ?? OUTCOME_BADGE.pending;
   const shortId = decision.id.slice(0, 8);
@@ -492,6 +507,11 @@ function DecisionRowItem({ decision }: DecisionRowItemProps) {
             {decision.processingTimeMs !== null && (
               <p className="text-xs text-muted-foreground">
                 Processing time: {decision.processingTimeMs}ms
+              </p>
+            )}
+            {promptVersion && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Prompt: methodology {promptVersion.methodology ?? 'n/a'} | locale {promptVersion.locale ?? 'n/a'} | playbook {promptVersion.playbook ?? 'n/a'}
               </p>
             )}
           </div>
