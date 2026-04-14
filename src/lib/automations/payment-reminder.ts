@@ -4,6 +4,8 @@ import { eq, and } from 'drizzle-orm';
 import { renderTemplate } from '@/lib/utils/templates';
 import { addDays, isFuture, isToday } from 'date-fns';
 import { createPaymentLink } from '@/lib/services/stripe';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { sendEmail } from '@/lib/services/resend';
 
 interface PaymentPayload {
   leadId: string;
@@ -36,6 +38,39 @@ const PAYMENT_SCHEDULE = [
   { daysFromDue: 7, template: 'payment_day_7', step: 3 },
   { daysFromDue: 14, template: 'payment_day_14', step: 4 },
 ];
+
+/**
+ * Returns a UTC Date representing 10:00am in the client's local timezone
+ * on the given calendar date.
+ *
+ * Uses the Intl API (no external dependency) — same approach as no-show-recovery.ts.
+ */
+function tenAmInTimezone(date: Date, timezone: string): Date {
+  // Get the calendar date string in the client's timezone (YYYY-MM-DD)
+  const localDateStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+
+  const [year, month, day] = localDateStr.split('-').map(Number);
+
+  // Candidate: 10:00 UTC on that calendar date
+  const candidateUtc = new Date(Date.UTC(year, month - 1, day, 10, 0, 0, 0));
+
+  // Determine what local hour that candidate falls on
+  const localHourStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric',
+    hour12: false,
+  }).format(candidateUtc);
+  const localHour = Number(localHourStr);
+
+  // Shift to align candidate with 10:00 local
+  const offsetMs = (10 - localHour) * 60 * 60 * 1000;
+  return new Date(candidateUtc.getTime() + offsetMs);
+}
 
 /**
  * Starts a payment reminder sequence for a client's invoice.
@@ -82,29 +117,67 @@ export async function startPaymentReminder(payload: PaymentPayload) {
   const invoice = invoiceCreated[0];
 
   // 3. Auto-create Stripe payment link if not provided and amount is set
+  // Retry up to 3 times with exponential backoff (500ms, 1000ms) on transient Stripe errors.
   let resolvedPaymentLink = paymentLink;
   let paymentLinkFailed = false;
   if (!resolvedPaymentLink && amountCents && amountCents > 0) {
-    try {
-      const result = await createPaymentLink({
-        clientId,
-        leadId,
-        invoiceId: invoice.id,
-        amount: amountCents,
-        description: `Invoice ${invoice.invoiceNumber || ''} - ${client.businessName}`.trim(),
-        type: 'full',
-      } as CreatePaymentLinkParams) as CreatePaymentLinkResult;
-      resolvedPaymentLink = result.paymentLinkUrl;
+    const MAX_ATTEMPTS = 3;
+    const RETRY_DELAYS_MS = [500, 1000];
+    let lastError: unknown;
 
-      // Update invoice with the payment link
-      await db
-        .update(invoices)
-        .set({ paymentLink: resolvedPaymentLink })
-        .where(eq(invoices.id, invoice.id));
-    } catch (err) {
-      console.error('[Payments] Failed to create Stripe payment link:', err);
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const result = await createPaymentLink({
+          clientId,
+          leadId,
+          invoiceId: invoice.id,
+          amount: amountCents,
+          description: `Invoice ${invoice.invoiceNumber || ''} - ${client.businessName}`.trim(),
+          type: 'full',
+        } as CreatePaymentLinkParams) as CreatePaymentLinkResult;
+        resolvedPaymentLink = result.paymentLinkUrl;
+
+        // Update invoice with the payment link
+        await db
+          .update(invoices)
+          .set({ paymentLink: resolvedPaymentLink })
+          .where(eq(invoices.id, invoice.id));
+
+        lastError = undefined;
+        break; // success — exit retry loop
+      } catch (err) {
+        lastError = err;
+        if (attempt < MAX_ATTEMPTS) {
+          // Wait before retrying
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt - 1]));
+        }
+      }
+    }
+
+    if (lastError !== undefined) {
+      logSanitizedConsoleError(
+        '[Payments] Failed to create Stripe payment link after 3 attempts',
+        lastError instanceof Error ? lastError : new Error(String(lastError)),
+        { invoiceNumber: invoice.invoiceNumber, clientId, leadId }
+      );
       paymentLinkFailed = true;
-      // Continue without a payment link
+
+      // Alert operator so they can share the payment link manually
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (adminEmail) {
+        await sendEmail({
+          to: adminEmail,
+          subject: `Payment link creation failed — invoice ${invoice.invoiceNumber || invoice.id} for ${client.businessName}`,
+          html: `<p>Stripe payment link creation failed after 3 attempts for the following invoice. The payment reminder sequence has started using a fallback message (&ldquo;Contact us to arrange payment&rdquo;).</p>
+<p><strong>Invoice:</strong> ${invoice.invoiceNumber || invoice.id}</p>
+<p><strong>Client:</strong> ${client.businessName}</p>
+<p><strong>Amount:</strong> $${(amountCents / 100).toFixed(2)}</p>
+<p><strong>Lead ID:</strong> ${leadId}</p>
+<p>Please create a payment link manually in Stripe and share it with the customer directly, or update the invoice record in the admin dashboard.</p>`,
+        }).catch(() => {
+          // Email failure must not block the reminder sequence
+        });
+      }
     }
   }
 
@@ -127,9 +200,12 @@ export async function startPaymentReminder(payload: PaymentPayload) {
   const dueDateObj = dueDate ? new Date(dueDate + 'T00:00:00') : new Date();
   const scheduledIds: string[] = [];
 
+  // Use client's timezone for scheduling — fall back to Alberta default if not set
+  const clientTimezone = client.timezone || 'America/Edmonton';
+
   for (const item of PAYMENT_SCHEDULE) {
-    const sendAt = addDays(dueDateObj, item.daysFromDue);
-    sendAt.setHours(10, 0, 0, 0);
+    const targetDate = addDays(dueDateObj, item.daysFromDue);
+    const sendAt = tenAmInTimezone(targetDate, clientTimezone);
 
     // Skip past dates (except day 0 if it's today)
     const shouldSchedule = isFuture(sendAt) || (item.daysFromDue === 0 && isToday(dueDateObj));
