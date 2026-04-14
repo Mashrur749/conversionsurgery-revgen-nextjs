@@ -1,6 +1,6 @@
 import { getDb } from '@/db';
 import { flowExecutions, flowStepExecutions, flows, leads, clients } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { resolveFlowSteps } from './flow-resolution';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import {
@@ -215,4 +215,28 @@ async function executeStep(
   } else {
     console.error('[FlowEngine] Step execution failed:', smsError);
   }
+}
+
+/**
+ * Cancel all active flow executions for a client.
+ * Used by PAUSE command to stop all automated sequences.
+ */
+export async function cancelActiveFlowsForClient(clientId: string): Promise<number> {
+  const db = getDb();
+  const cancelled = await db
+    .update(flowExecutions)
+    .set({
+      status: 'cancelled',
+      cancelledAt: new Date(),
+      cancelReason: 'PAUSE command',
+    })
+    .where(
+      and(
+        eq(flowExecutions.clientId, clientId),
+        eq(flowExecutions.status, 'active'),
+      )
+    )
+    .returning({ id: flowExecutions.id });
+
+  return cancelled.length;
 }

@@ -19,6 +19,7 @@ import { detectBookingIntent, handleBookingConversation, checkAndCompletePending
 import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
 import { ComplianceService } from '@/lib/compliance/compliance-service';
 import { recordLeadResponse } from '@/lib/services/flow-metrics';
+import { cancelActiveFlowsForClient } from '@/lib/services/flow-execution';
 import { appointments, flowExecutions, flows, leadContext, clientMemberships, people } from '@/db/schema';
 import { eq, and, sql, desc, inArray, isNull, not, ilike, gte, count } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber } from '@/lib/utils/phone';
@@ -324,6 +325,12 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
             eq(scheduledMessages.cancelled, false)
           )
         );
+
+      // RACE-03: Also cancel active flow executions
+      const cancelledFlows = await cancelActiveFlowsForClient(client.id);
+      if (cancelledFlows > 0) {
+        console.log(`[PAUSE] Cancelled ${cancelledFlows} active flow executions for client ${client.id}`);
+      }
 
       await sendCompliantMessage({
         clientId: client.id,

@@ -1,5 +1,5 @@
 import { getDb, clients, conversations, dailyStats, leads, scheduledMessages } from '@/db';
-import { and, eq, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendSMS } from '@/lib/services/twilio';
 import type { AiAssistCategory } from '@/lib/services/ai-send-policy';
@@ -236,6 +236,31 @@ export async function sendSmartAssistDraftNow(params: {
     targetStatus !== SMART_ASSIST_STATUS.APPROVED_SENT
   ) {
     return { success: false, status: null, reason: 'not_pending' };
+  }
+
+  // RACE-02: Auto-cancel if ANY outbound message was sent for this lead since draft was queued
+  if (params.action === 'auto_send') {
+    const draftCreatedAt = message.createdAt ?? new Date(0);
+    const [recentOutbound] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.leadId, message.leadId!),
+          eq(conversations.direction, 'outbound'),
+          gte(conversations.createdAt, draftCreatedAt),
+        )
+      )
+      .limit(1);
+
+    if (recentOutbound) {
+      await cancelSmartAssistDraft({
+        scheduledMessageId: message.id,
+        reason: 'Outbound message sent after draft was queued',
+        source: 'auto_cancel_outbound_exists',
+      });
+      return { success: false, status: 'cancelled', reason: 'blocked' as const };
+    }
   }
 
   const finalContent = params.editedContent?.trim().length
