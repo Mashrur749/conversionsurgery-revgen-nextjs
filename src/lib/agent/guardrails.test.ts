@@ -46,15 +46,26 @@ describe('buildGuardrailPrompt', () => {
   });
 
   describe('pricing rules', () => {
-    it('blocks pricing discussion when canDiscussPricing=false', () => {
-      const prompt = buildGuardrailPrompt(makeConfig({ canDiscussPricing: false }));
-      expect(prompt).toContain('I\'d want Mike to give you an accurate quote');
-    });
-
     it('allows range-based pricing when canDiscussPricing=true', () => {
       const prompt = buildGuardrailPrompt(makeConfig({ canDiscussPricing: true }));
       expect(prompt).toContain('share only the ranges');
-      expect(prompt).toContain('Never quote exact prices');
+      expect(prompt).toContain('Never invent prices');
+    });
+
+    it('defers to owner quote when canDiscussPricing=false and no active objection', () => {
+      const prompt = buildGuardrailPrompt(makeConfig({ canDiscussPricing: false, activePricingObjection: false }));
+      expect(prompt).toContain('I\'d want Mike to give you an accurate quote based on your specific project');
+    });
+
+    it('allows value discussion without quoting prices when activePricingObjection=true', () => {
+      const prompt = buildGuardrailPrompt(makeConfig({ canDiscussPricing: false, activePricingObjection: true }));
+      expect(prompt).toContain('discuss VALUE and differentiation');
+      expect(prompt).toContain('do NOT quote any specific dollar amounts');
+    });
+
+    it('value objection path names owner for estimate visit', () => {
+      const prompt = buildGuardrailPrompt(makeConfig({ canDiscussPricing: false, activePricingObjection: true }));
+      expect(prompt).toContain('Mike can provide an accurate, detailed quote');
     });
   });
 

@@ -47,6 +47,7 @@ function makeState(overrides: Partial<ConversationStateType> = {}): Conversation
     decisionReasoning: null,
     decisionConfidence: 80,
     conversationSummary: undefined,
+    conversationStrategy: null,
     ...overrides,
   };
 }
@@ -151,7 +152,7 @@ describe('Scenario: Price-sensitive lead with objections', () => {
   it('guardrails allow range pricing when canDiscussPricing=true', () => {
     const prompt = buildGuardrailPrompt(makeGuardrailConfig({ canDiscussPricing: true }));
     expect(prompt).toContain('share only the ranges');
-    expect(prompt).toContain('Never quote exact prices');
+    expect(prompt).toContain('Never invent prices');
   });
 
   it('low budget score does NOT auto-escalate (stays respond)', () => {

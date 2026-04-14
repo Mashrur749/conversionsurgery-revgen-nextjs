@@ -28,6 +28,12 @@ import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/li
 import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality';
 import { maybeAutoTriggerEstimateFollowup } from '@/lib/automations/estimate-auto-trigger';
 import { shouldUpdateSummary, updateConversationSummary } from '@/lib/services/conversation-summary';
+import { resolveStrategy } from './strategy-resolver';
+import { composeAgentPrompt } from './prompt-composer';
+import { resolveEntryContext } from './entry-context';
+import { CA_AB_LOCALE } from './locales/ca-ab';
+import { BASEMENT_DEVELOPMENT_PLAYBOOK } from './playbooks/basement-development';
+import { getChannelConfig } from './channels';
 
 interface ProcessMessageResult {
   action: AgentAction;
@@ -270,6 +276,73 @@ export async function processIncomingMessage(
     agentTone: (settings?.agentTone || 'professional') as 'professional' | 'friendly' | 'casual',
     messagesWithoutResponse,
     canDiscussPricing: settings?.canDiscussPricing || false,
+    activePricingObjection: (context.objections as Array<{ detail: string }>)?.some(o =>
+      ['price_comparison', 'competing_quote', 'too_expensive', 'cost'].includes(o.detail)
+    ) ?? false,
+  });
+
+  // --- 6-LAYER ORCHESTRATION ---
+
+  // Load locale and playbook configs
+  // For now, use hardcoded defaults. When clients.localeId and clients.playbookId
+  // are populated via admin UI, load from DB instead.
+  const locale = CA_AB_LOCALE;
+  const playbook = BASEMENT_DEVELOPMENT_PLAYBOOK;
+  const channelConfig = getChannelConfig('sms');
+
+  // Resolve entry context (Layer 5)
+  const entryContext = resolveEntryContext({
+    leadSource: lead.source,
+    isReturningLead: (context.totalMessages ?? 0) > 0,
+    daysSinceLastContact: context.updatedAt
+      ? Math.floor((Date.now() - context.updatedAt.getTime()) / (1000 * 60 * 60 * 24))
+      : null,
+    existingProjectInfo: context.projectType ? {
+      projectType: context.projectType,
+      projectSize: context.projectSize,
+      preferredTimeframe: context.preferredTimeframe,
+    } : null,
+    timezone: locale.timezone,
+  });
+
+  // Resolve conversation strategy (Layer 1 + 3)
+  const conversationStrategy = resolveStrategy({
+    currentStage: context.conversationStage ?? 'greeting',
+    stageTurnCount: context.stageTurnCount ?? 0,
+    signals: {
+      urgency: context.urgencyScore || 50,
+      budget: context.budgetScore || 50,
+      intent: context.intentScore || 50,
+      sentiment: (context.currentSentiment as string) || 'neutral',
+    },
+    extractedInfo: {
+      projectType: context.projectType,
+      projectSize: context.projectSize,
+      preferredTimeframe: context.preferredTimeframe,
+      estimatedValue: context.estimatedValue,
+    },
+    objections: (context.objections as Array<{ detail: string }>)?.map(o => o.detail) || [],
+    bookingAttempts: context.bookingAttempts || 0,
+    entryContext,
+    isFirstMessage: (context.totalMessages ?? 0) === 0,
+    playbook,
+    maxBookingAttempts: settings?.maxBookingAttempts || 3,
+  });
+
+  // Compose the 6-layer prompt (replaces the simple RESPONSE_PROMPT template)
+  const composedPrompt = composeAgentPrompt({
+    agentName: settings?.agentName || 'Assistant',
+    businessName: client.businessName,
+    ownerName: client.ownerName,
+    agentTone: settings?.agentTone || 'professional',
+    strategy: conversationStrategy,
+    locale,
+    playbook,
+    channel: channelConfig,
+    entryContext: (context.totalMessages ?? 0) === 0 ? entryContext : null,
+    guardrailText,
+    knowledgeContext: knowledge,
+    conversationSummary: context.conversationSummary ?? undefined,
   });
 
   // Build initial state
@@ -305,10 +378,12 @@ export async function processIncomingMessage(
       canDiscussPricing: settings?.canDiscussPricing || false,
       canScheduleAppointments: settings?.canScheduleAppointments ?? true,
     },
-    knowledgeContext: knowledge,
-    guardrailText,
+    knowledgeContext: knowledge,   // Keep for now — respond.ts still reads this
+    guardrailText,                 // Keep for now — respond.ts still reads this
     // Conversation summary for returning leads (populated by conversation-summary service)
     conversationSummary: context.conversationSummary ?? undefined,
+    // 6-layer orchestration: resolved strategy for this turn
+    conversationStrategy,
   } satisfies Partial<ConversationStateType>;
 
   // Run the agent graph
@@ -358,6 +433,7 @@ export async function processIncomingMessage(
       escalationReason: finalState.escalationReason ?? undefined,
       modelTier: routingDecision.tier,
       modelRoutingReason: routingDecision.reason,
+      promptVersion: composedPrompt.version,
     },
     reasoning: finalState.decisionReasoning ?? undefined,
     confidence: finalState.decisionConfidence,
@@ -388,7 +464,7 @@ export async function processIncomingMessage(
     }
   }
 
-  // Update lead context
+  // Update lead context (including 6-layer strategy state)
   await db.update(leadContext).set({
     stage: finalState.stage as LeadStage,
     urgencyScore: finalState.signals.urgency,
@@ -403,6 +479,16 @@ export async function processIncomingMessage(
     bookingAttempts: finalState.bookingAttempts,
     totalMessages: (context.totalMessages || 0) + 1,
     leadMessages: (context.leadMessages || 0) + 1,
+    conversationStage: conversationStrategy.currentStage,
+    stageTurnCount: (context.stageTurnCount ?? 0) + 1,
+    strategyState: {
+      currentObjective: conversationStrategy.currentObjective,
+      requiredInfo: conversationStrategy.requiredInfo,
+      suggestedAction: conversationStrategy.suggestedAction,
+      nextMoveIfSuccessful: conversationStrategy.nextMoveIfSuccessful,
+      constraints: conversationStrategy.constraints,
+      maxTurnsRemaining: conversationStrategy.maxTurnsRemaining,
+    },
     updatedAt: new Date(),
   }).where(eq(leadContext.id, context.id));
 

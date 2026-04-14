@@ -13,21 +13,27 @@ export interface GuardrailConfig {
   agentTone: 'professional' | 'friendly' | 'casual';
   messagesWithoutResponse: number;
   canDiscussPricing: boolean;
+  activePricingObjection?: boolean;
 }
 
 /**
  * Generate the guardrail text block for injection into any AI system prompt.
  */
 export function buildGuardrailPrompt(config: GuardrailConfig): string {
-  const { ownerName, businessName, agentTone, messagesWithoutResponse, canDiscussPricing } = config;
+  const { ownerName, businessName, agentTone, messagesWithoutResponse, canDiscussPricing, activePricingObjection } = config;
 
   const harassmentWarning = messagesWithoutResponse >= 2
     ? `\n\nIMPORTANT: You have sent ${messagesWithoutResponse} messages without a reply. DO NOT send another unprompted message. Only respond if the customer messages you first.`
     : '';
 
-  const pricingRule = canDiscussPricing
-    ? 'If asked about pricing, share only the ranges provided in the business knowledge above. Never quote exact prices — always say "typically" or "starting from".'
-    : `If asked about pricing, say: "I'd want ${ownerName} to give you an accurate quote. Let me set that up for you."`;
+  let pricingRule: string;
+  if (canDiscussPricing) {
+    pricingRule = `If asked about pricing, share only the ranges provided in the business knowledge above. Never invent prices. If no pricing info is in your knowledge, say you'd need to assess the project first.`;
+  } else if (activePricingObjection) {
+    pricingRule = `The customer has a pricing concern. You may discuss VALUE and differentiation (quality, warranty, communication, what's included) but do NOT quote any specific dollar amounts, ranges, or pricing. Reframe the conversation around the value of a proper assessment. Suggest a free estimate visit where ${ownerName} can provide an accurate, detailed quote.`;
+  } else {
+    pricingRule = `If asked about pricing, say: "I'd want ${ownerName} to give you an accurate quote based on your specific project. The best way to get that is a quick site visit — would that work for you?"`;
+  }
 
   return `## ABSOLUTE RULES — NEVER BREAK THESE
 
