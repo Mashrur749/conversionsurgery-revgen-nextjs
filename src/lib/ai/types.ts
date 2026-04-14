@@ -14,12 +14,19 @@ export interface ContentPart {
   image_url?: { url: string };
 }
 
+export interface SystemBlock {
+  text: string;
+  cacheControl?: 'ephemeral';
+}
+
 export interface ChatOptions {
   model?: ModelTier;
   temperature?: number;
   maxTokens?: number;
   /** Extracted as a top-level param for Anthropic compatibility */
   systemPrompt?: string;
+  /** Split system prompt into cacheable blocks. When provided, takes precedence over systemPrompt. */
+  systemBlocks?: SystemBlock[];
 }
 
 export interface ChatResult {

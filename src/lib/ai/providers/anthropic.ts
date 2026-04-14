@@ -11,6 +11,8 @@ import type {
 } from '../types';
 import { withRetry } from '../retry';
 
+type SystemParam = string | Anthropic.TextBlockParam[];
+
 const MODEL_MAP: Record<ModelTier, string> = {
   fast: 'claude-haiku-4-5-20251001',
   quality: 'claude-sonnet-4-6',
@@ -47,6 +49,27 @@ function extractSystem(
     system: systemMessages.length > 0 ? systemMessages.join('\n\n') : undefined,
     messages: nonSystem,
   };
+}
+
+/**
+ * Build the system parameter for Anthropic's messages API.
+ * When systemBlocks are provided they are used directly (supports cache_control).
+ * Falls back to extractSystem() for callers that pass systemPrompt as a plain string.
+ */
+function buildSystemParam(
+  messages: ChatMessage[],
+  options?: ChatOptions,
+): { system: SystemParam | undefined; messages: ChatMessage[] } {
+  if (options?.systemBlocks && options.systemBlocks.length > 0) {
+    const { messages: nonSystem } = extractSystem(messages, undefined);
+    const blocks: Anthropic.TextBlockParam[] = options.systemBlocks.map((block) => ({
+      type: 'text' as const,
+      text: block.text,
+      ...(block.cacheControl ? { cache_control: { type: block.cacheControl } } : {}),
+    }));
+    return { system: blocks, messages: nonSystem };
+  }
+  return extractSystem(messages, options?.systemPrompt);
 }
 
 /** Convert our ChatMessage to Anthropic's format */
@@ -104,7 +127,7 @@ export class AnthropicProvider implements AIProvider {
 
   async chat(messages: ChatMessage[], options?: ChatOptions): Promise<ChatResult> {
     const modelName = resolveModel(options?.model);
-    const { system, messages: nonSystemMessages } = extractSystem(messages, options?.systemPrompt);
+    const { system, messages: nonSystemMessages } = buildSystemParam(messages, options);
     const anthropicMessages = toAnthropicMessages(nonSystemMessages);
 
     return withRetry(async () => {
@@ -121,12 +144,18 @@ export class AnthropicProvider implements AIProvider {
 
   async chatJSON<T>(messages: ChatMessage[], options?: ChatOptions): Promise<{ data: T } & ChatResult> {
     const modelName = resolveModel(options?.model);
-    const { system, messages: nonSystemMessages } = extractSystem(messages, options?.systemPrompt);
+    const { system, messages: nonSystemMessages } = buildSystemParam(messages, options);
 
-    // Append JSON instruction to system prompt
-    const jsonSystem = system
-      ? `${system}\n\nYou MUST respond with valid JSON only. No markdown, no explanation.`
-      : 'You MUST respond with valid JSON only. No markdown, no explanation.';
+    // Append JSON instruction to system prompt (or blocks)
+    const JSON_INSTRUCTION = 'You MUST respond with valid JSON only. No markdown, no explanation.';
+    let jsonSystem: SystemParam;
+    if (Array.isArray(system)) {
+      jsonSystem = [...system, { type: 'text' as const, text: JSON_INSTRUCTION }];
+    } else {
+      jsonSystem = system
+        ? `${system}\n\n${JSON_INSTRUCTION}`
+        : JSON_INSTRUCTION;
+    }
 
     const anthropicMessages = toAnthropicMessages(nonSystemMessages);
 
@@ -153,7 +182,7 @@ export class AnthropicProvider implements AIProvider {
     options?: ChatOptions,
   ): Promise<{ data: T } & ChatResult> {
     const modelName = resolveModel(options?.model);
-    const { system, messages: nonSystemMessages } = extractSystem(messages, options?.systemPrompt);
+    const { system, messages: nonSystemMessages } = buildSystemParam(messages, options);
     const anthropicMessages = toAnthropicMessages(nonSystemMessages);
 
     return withRetry(async () => {
