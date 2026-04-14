@@ -393,7 +393,7 @@ async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe
           try {
             await sendSMS(
               client.phone,
-              `Your payment for ConversionSurgery didn&apos;t go through. Please update your payment method at ${portalUrl}/client/billing to keep your leads protected. - ConversionSurgery`,
+              `Your payment for ConversionSurgery did not go through. Please update your payment method at ${portalUrl}/client/billing to keep your leads protected. - ConversionSurgery`,
               adminNumber
             );
           } catch (smsErr) {
