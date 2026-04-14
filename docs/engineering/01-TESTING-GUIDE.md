@@ -206,6 +206,8 @@ npm run db:migrate
 npm run db:seed -- --lean
 ```
 
+> **Migration note (XDOM-23):** the `db:migrate` step above must be run before deployment to apply the `casl_consent_attested` and `casl_consent_attested_at` columns to the `leads` table. Both columns are backward-compatible (nullable/defaulted) — existing rows are unaffected. Without the migration, the import routes will attempt to insert values into non-existent columns and fail.
+
 The `--lean` flag seeds only reference data the product needs to function (subscription plans, role templates, flow templates, system settings, admin account, template variants) — no demo clients, leads, or conversations. You create everything else through the product UI, exactly like a real delivery.
 
 Why this matters:
@@ -1857,6 +1859,26 @@ Expected:
 - All three side effects (homeowner SMS, escalation, team alert) fire without blocking TwiML.
 - `voice_calls.outcome` = `dropped` for missed transfer.
 - Escalation appears in triage dashboard at P1 priority.
+
+#### 58d-2: Ring group call status callback (XDOM-20)
+
+**Prerequisites:** Ring group configured with at least one team member.
+
+1. Initiate a ring group call via the admin interface (or via `POST /api/admin/clients/<id>/ring-group/call` if available).
+2. In the Twilio Console &rarr; Calls, find the outbound call. Confirm the `StatusCallback` URL is `<APP_URL>/api/webhooks/twilio/ring-status?attemptId=<uuid>`.
+3. Let the call proceed through its lifecycle (answer, or let it time out with no-answer).
+4. Verify that Twilio received a `204` response (not `404`) for each `CallStatus` event (`initiated`, `ringing`, `answered` or `no-answer`/`busy`/`completed`).
+5. After the call ends, query the database:
+   ```sql
+   SELECT status, ended_at FROM call_attempts WHERE id = '<attemptId>';
+   ```
+   Verify `status` updated to the expected value (`answered`, `no-answer`, or `failed`) and `ended_at` is populated on completion.
+
+Expected:
+
+- `POST /api/webhooks/twilio/ring-status` returns `204` for all valid `CallStatus` values.
+- `call_attempts.status` reflects the call outcome after the callback fires.
+- `call_attempts.ended_at` is populated when the call completes or is answered.
 
 #### 58e: AI Preview / Sandbox
 

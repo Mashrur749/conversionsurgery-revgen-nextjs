@@ -527,12 +527,12 @@ Every lead accumulates:
 - Up to 1,000 leads per import with per-row error reporting
 - Preview table before import with column mapping summary
 - Source tracked as `csv_import` for attribution
-- **CASL consent attestation:** both the admin CSV import route and the portal quote import require the importer to confirm: &ldquo;I confirm all contacts have made an inquiry to my business under CASL.&rdquo; Import is rejected (400) if the attestation checkbox is not checked. The attestation is recorded in the import response audit trail.
+- **CASL consent attestation:** both the admin CSV import route and the portal quote import require the importer to confirm: &ldquo;I confirm all contacts have made an inquiry to my business under CASL.&rdquo; Import is rejected (400) if the attestation checkbox is not checked. The attestation is **persisted to the database** — each imported lead row receives `casl_consent_attested = true` and `casl_consent_attested_at` timestamp, providing an auditable record of consent beyond the response body. Schema: `leads.caslConsentAttested` (boolean, default false), `leads.caslConsentAttestedAt` (timestamp).
 
 ### Team Coordination
 
 - **Ring group:** simultaneous dial to available team members during business hours. Filters by `availabilityStatus = 'available'` (members set to `busy` or `off_duty` are excluded). Prefers owner-flagged members for quote calls; falls back to all if none qualify.
-- **Escalation queue:** priority-ranked (1-5) with SLA deadlines, live countdown timers (color-coded: green/sienna/red by urgency), assignment, claim tokens, and 30-second auto-refresh with &quot;Updated X ago&quot; timestamp. **3-stage re-notification:** unclaimed escalations re-notify at 15 min, 30 min, and 60 min (inferred from elapsed time, capped at 3 attempts). After 60 min unclaimed, escalates to the owner directly.
+- **Escalation queue:** priority-ranked (1-5) with SLA deadlines, live countdown timers (color-coded: green/sienna/red by urgency), assignment, claim tokens, and 30-second auto-refresh with &quot;Updated X ago&quot; timestamp. **3-stage re-notification:** unclaimed escalations re-notify at 15 min, 30 min, and 60 min (inferred from elapsed time, capped at 3 attempts). After 60 min unclaimed, escalates to the owner directly. **Atomic assignment guard:** `assignEscalation` uses a status-conditional UPDATE (only succeeds when status is `pending` or `assigned`) so concurrent claims cannot silently overwrite each other — the second requester receives an error. `takeOverConversation` similarly blocks takeover on `resolved` or `dismissed` escalations.
 - **Hot transfer:** Voice AI detects urgency &rarr; dials team immediately &rarr; SMS heads-up ("Hot lead calling!")
 - **Missed transfer fallback:** SMS to team ("Missed hot transfer — call back ASAP") + SMS to lead ("Sorry we missed you")
 - **Owner notification:** Smart Assist drafts with reference codes for SEND/EDIT/CANCEL approval. Contractor notification SMS capped at 5/hour per client to prevent notification fatigue during surge.
@@ -1259,7 +1259,7 @@ Beyond the review *request* automation (Section 2), the platform monitors and re
 
 - Google Places integration: hourly sync of new reviews
 - Auto-detect sentiment: positive (&ge;4), neutral (3), negative (&le;2)
-- **Negative review alert:** instant SMS to owner when &le;2 star review detected
+- **Negative review alert:** instant SMS to owner when &le;2 star review detected — alert fires in the same sync run (not the next cron batch); idempotent via `alertSent` flag to prevent duplicate notifications
 
 ### Auto-Response
 
@@ -1272,14 +1272,14 @@ Beyond the review *request* automation (Section 2), the platform monitors and re
 
 Each client has a `reviewApprovalMode` field controlling who approves AI-drafted review responses:
 
-| Mode | Positive reviews (&ge;3 stars) | Negative reviews (&le;2 stars) | Default for |
+| Mode | Positive reviews (&ge;4 stars) | Neutral/negative reviews (&le;3 stars) | Default for |
 |------|-------------------------------|-------------------------------|-------------|
 | **operator_managed** | Auto-approved and posted to Google immediately | Held as `pending_approval`; operator notified via SMS | Managed-service clients |
 | **client_approves** | Draft stays for contractor approval at `/client/reviews` | Same &mdash; contractor reviews all drafts | Self-serve clients |
 
 **Operator workflow (operator_managed):**
-1. Positive reviews auto-post &mdash; no action needed
-2. Negative reviews appear in &ldquo;Pending Responses&rdquo; section on `/admin/clients/[id]/reviews`
+1. Positive reviews (&ge;4 stars) auto-post &mdash; no action needed
+2. Neutral/negative reviews (&le;3 stars) appear in &ldquo;Pending Responses&rdquo; section on `/admin/clients/[id]/reviews`
 3. Operator can: **Approve &amp; Post**, **Edit** the draft then post, or **Forward to Client** for personal input
 4. &ldquo;Approve All Positive&rdquo; batch button for bulk operations
 5. Forwarded reviews appear on the contractor&apos;s `/client/reviews` page
