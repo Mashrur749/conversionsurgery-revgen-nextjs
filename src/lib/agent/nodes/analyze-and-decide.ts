@@ -19,6 +19,10 @@ const analyzeAndDecideSchema = z.object({
     preferredTimeframe: z.string().optional(),
     propertyType: z.string().optional(),
     specificRequests: z.array(z.string()).optional(),
+    decisionMakers: z.object({
+      partnerMentioned: z.boolean().optional(),
+      partnerName: z.string().optional(),
+    }).optional(),
   }),
   suggestedStage: z.enum([
     'new', 'qualifying', 'nurturing', 'hot',
@@ -82,6 +86,7 @@ Can Schedule Appointments: {canSchedule}
    Examples: "too expensive", "need to think about it", "comparing other quotes", "bad timing"
 
 5. EXTRACTED INFO: Pull out any project details mentioned
+   - Decision-makers: Does the customer mention needing to consult a partner/spouse? If so, note it.
 
 6. ESCALATION: Should a human take over?
    Escalate if: asking for manager/owner, legal threats, very frustrated, complex technical questions, high-value project (>$10k).
@@ -117,6 +122,14 @@ DECISION GUIDELINES:
 - Don't be too pushy - space out booking attempts
 - If they ask about pricing and you can't discuss it, escalate
 
+CURRENT STRATEGY:
+The conversation strategy system has determined:
+- Current objective: {strategyObjective}
+- Suggested action: {strategySuggestedAction}
+- Guidance: {strategyGuidance}
+
+Follow this strategy unless the conversation clearly requires something different. If you override the strategy, explain why in your reasoning.
+
 Recent conversation (newest last):
 {conversation}
 
@@ -140,6 +153,7 @@ export async function analyzeAndDecide(
     })
     .join('\n');
 
+  const strategy = state.conversationStrategy;
   const prompt = ANALYZE_AND_DECIDE_PROMPT
     .replace('{businessName}', clientSettings.businessName)
     .replace('{services}', clientSettings.services.join(', '))
@@ -151,6 +165,9 @@ export async function analyzeAndDecide(
     .replace(/{maxBookingAttempts}/g, String(clientSettings.maxBookingAttempts))
     .replace('{objections}', state.objections.join(', ') || 'None')
     .replace('{lastAction}', state.lastAction || 'None')
+    .replace('{strategyObjective}', strategy?.currentObjective ?? 'Answer helpfully')
+    .replace('{strategySuggestedAction}', strategy?.suggestedAction ?? 'respond')
+    .replace('{strategyGuidance}', strategy?.actionGuidance ?? 'No specific strategy guidance.')
     .replace('{conversation}', conversationText);
 
   // Use model routing based on existing signals from prior turns.

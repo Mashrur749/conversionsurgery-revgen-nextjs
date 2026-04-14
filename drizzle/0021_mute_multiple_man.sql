@@ -1,0 +1,1 @@
+ALTER TABLE "lead_context" ADD COLUMN "decision_makers" jsonb;

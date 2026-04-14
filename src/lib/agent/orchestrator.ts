@@ -28,6 +28,7 @@ import type { AgentAction, EscalationReason, LeadStage, LeadSignals } from '@/li
 import { getOnboardingQualityReadiness } from '@/lib/services/onboarding-quality';
 import { maybeAutoTriggerEstimateFollowup } from '@/lib/automations/estimate-auto-trigger';
 import { shouldUpdateSummary, updateConversationSummary } from '@/lib/services/conversation-summary';
+import { syncLeadStatusFromStage } from '@/lib/services/lead-state-sync';
 import { resolveStrategy } from './strategy-resolver';
 import { composeAgentPrompt } from './prompt-composer';
 import { resolveEntryContext } from './entry-context';
@@ -464,6 +465,34 @@ export async function processIncomingMessage(
     }
   }
 
+  // Build decision-maker update if AI detected a partner mention (SIM-03)
+  const aiDecisionMakers = finalState.extractedInfo.decisionMakers as {
+    partnerMentioned?: boolean;
+    partnerName?: string;
+  } | undefined;
+
+  let decisionMakersUpdate: {
+    primary?: string;
+    secondary?: string;
+    secondaryConsulted: boolean;
+    partnerApprovalNeeded: boolean;
+  } | undefined;
+
+  if (aiDecisionMakers?.partnerMentioned) {
+    const currentDM = (context.decisionMakers as {
+      primary?: string;
+      secondary?: string;
+      secondaryConsulted: boolean;
+      partnerApprovalNeeded: boolean;
+    } | null) ?? { secondaryConsulted: false, partnerApprovalNeeded: false };
+
+    decisionMakersUpdate = {
+      ...currentDM,
+      partnerApprovalNeeded: true,
+      secondary: aiDecisionMakers.partnerName ?? currentDM.secondary,
+    };
+  }
+
   // Update lead context (including 6-layer strategy state)
   await db.update(leadContext).set({
     stage: finalState.stage as LeadStage,
@@ -476,6 +505,7 @@ export async function processIncomingMessage(
     estimatedValue: finalState.extractedInfo.estimatedValue,
     preferredTimeframe: finalState.extractedInfo.preferredTimeframe,
     ...(matchedServiceId ? { matchedServiceId } : {}),
+    ...(decisionMakersUpdate ? { decisionMakers: decisionMakersUpdate } : {}),
     bookingAttempts: finalState.bookingAttempts,
     totalMessages: (context.totalMessages || 0) + 1,
     leadMessages: (context.leadMessages || 0) + 1,
@@ -491,6 +521,11 @@ export async function processIncomingMessage(
     },
     updatedAt: new Date(),
   }).where(eq(leadContext.id, context.id));
+
+  // SIM-02: Sync leads.status from the updated conversationStage (fire-and-forget)
+  syncLeadStatusFromStage(leadId, conversationStrategy.currentStage).catch(
+    err => console.error('[Agent] Status sync failed:', err)
+  );
 
   // Track AI usage
   trackUsage({

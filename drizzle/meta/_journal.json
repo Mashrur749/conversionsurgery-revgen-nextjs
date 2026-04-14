@@ -148,6 +148,13 @@
       "when": 1776142127111,
       "tag": "0020_blue_pet_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1776169851346,
+      "tag": "0021_mute_multiple_man",
+      "breakpoints": true
     }
   ]
 }

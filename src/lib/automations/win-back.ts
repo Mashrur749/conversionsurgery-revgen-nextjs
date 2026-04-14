@@ -306,6 +306,12 @@ async function generateWinBackMessage(
       ? `This is the FIRST re-engagement. Reference their specific project naturally.`
       : `This is the FINAL follow-up. Even shorter — just a soft "still here if you need us" vibe. 1 sentence max.`;
 
+    // Tone context: adapt based on how much the lead engaged before going quiet
+    const engagementDepth = context.lead.conversationCount ?? 0;
+    const toneContext = engagementDepth > 5
+      ? 'This lead had a real conversation with us before — reference their project and reconnect warmly. They know who we are.'
+      : 'This lead barely engaged — keep it fresh and introductory. They may not remember us.';
+
     const ai = getTrackedAI({ clientId, operation: 'win_back', leadId, metadata: { attempt } });
     const result = await ai.chat(
       [
@@ -319,6 +325,8 @@ async function generateWinBackMessage(
 Write like a real person texting — not a marketer, not a chatbot.
 
 ${attemptPrompt}
+
+${toneContext}
 
 Rules:
 - 1-2 short sentences maximum

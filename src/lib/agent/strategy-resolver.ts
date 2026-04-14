@@ -522,6 +522,11 @@ function buildObjectionStrategy(
     guidanceParts.push('Acknowledge their concern empathetically, then address it directly without being defensive.');
   }
 
+  // SIM-03: For partner/spouse approval objections, add explicit inclusion guidance
+  if (latestObjection === 'partner_approval') {
+    guidanceParts.push('Offer to include the partner: suggest a joint estimate visit or offer to text them a summary.');
+  }
+
   const constraints = buildConstraints(methodology, playbook, input.objections);
 
   return {

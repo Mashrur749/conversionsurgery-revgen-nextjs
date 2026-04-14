@@ -122,6 +122,14 @@ export const leadContext = pgTable(
     recommendedAction: agentActionEnum('recommended_action'),
     recommendedActionReason: text('recommended_action_reason'),
 
+    // Decision-maker tracking (SIM-03)
+    decisionMakers: jsonb('decision_makers').$type<{
+      primary?: string;
+      secondary?: string;
+      secondaryConsulted: boolean;
+      partnerApprovalNeeded: boolean;
+    }>(),
+
     // 6-layer orchestration: conversation stage tracking
     conversationStage: varchar('conversation_stage', { length: 30 }).default('greeting'),
     stageTurnCount: integer('stage_turn_count').default(0),
