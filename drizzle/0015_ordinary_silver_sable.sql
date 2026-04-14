@@ -1,0 +1,1 @@
+ALTER TABLE "calendar_events" ADD COLUMN "last_sync_error" varchar(500);

@@ -45,6 +45,7 @@ export const calendarEvents = pgTable(
     externalEventId: varchar('external_event_id', { length: 255 }),
     lastSyncedAt: timestamp('last_synced_at'),
     syncStatus: varchar('sync_status', { length: 20 }).notNull().default('pending'), // pending, synced, error
+    lastSyncError: varchar('last_sync_error', { length: 500 }),
 
     // Assignment
     assignedTeamMemberId: uuid('assigned_team_member_id').references(() => clientMemberships.id, { onDelete: 'set null' }),
