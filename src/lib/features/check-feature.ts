@@ -97,8 +97,9 @@ export async function isFeatureEnabled(
 
 /**
  * Check multiple features at once.
- * Accepts both legacy and system flags. System flags without a client column resolve to false
- * via this function — call resolveFeatureFlag() for proper system-default resolution.
+ * Accepts both legacy and system flags. System flags without a client column resolve to false.
+ * Does NOT check globalAutomationPause and does NOT fall back to system_settings defaults.
+ * Use resolveFeatureFlag() or resolveFeatureFlags() for system-default + global pause resolution.
  */
 export async function getEnabledFeatures(
   clientId: string,
