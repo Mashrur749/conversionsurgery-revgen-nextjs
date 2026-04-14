@@ -45,6 +45,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { isWithinLocalSendWindow } from './send-window';
 
+// Standard win-back/dormant overrides: Monday no earlier than 11am, Friday no later than 1pm
+const WIN_BACK_OVERRIDES = [
+  { day: 1, startHour: 11 },  // Monday: 11am-2pm
+  { day: 5, endHour: 13 },    // Friday: 10am-1pm
+];
+
 describe('isWithinLocalSendWindow', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -69,33 +75,65 @@ describe('isWithinLocalSendWindow', () => {
   });
 
   it('returns false on Saturday', () => {
-    // Saturday 11am Mountain = Saturday 5pm UTC
     vi.setSystemTime(new Date('2026-04-18T17:00:00Z'));
     expect(isWithinLocalSendWindow('America/Edmonton', 10, 14)).toBe(false);
   });
 
   it('returns false on Sunday', () => {
-    // Sunday 11am Mountain = Sunday 5pm UTC
     vi.setSystemTime(new Date('2026-04-19T17:00:00Z'));
     expect(isWithinLocalSendWindow('America/Edmonton', 10, 14)).toBe(false);
   });
 
   it('handles edge at exactly window open', () => {
-    // Tuesday 10:00am Mountain = Tuesday 4pm UTC
     vi.setSystemTime(new Date('2026-04-14T16:00:00Z'));
     expect(isWithinLocalSendWindow('America/Edmonton', 10, 14)).toBe(true);
   });
 
   it('handles edge at exactly window close', () => {
-    // Tuesday 2:00pm Mountain = Tuesday 8pm UTC
     vi.setSystemTime(new Date('2026-04-14T20:00:00Z'));
     expect(isWithinLocalSendWindow('America/Edmonton', 10, 14)).toBe(false);
   });
 
   it('works with different timezone', () => {
-    // Tuesday 11am Eastern = Tuesday 3pm UTC (EDT is UTC-4)
     vi.setSystemTime(new Date('2026-04-14T15:00:00Z'));
     expect(isWithinLocalSendWindow('America/Toronto', 10, 14)).toBe(true);
+  });
+
+  // Day-specific override tests
+  it('blocks Monday before 11am with day override', () => {
+    // Monday 10:30am Mountain = Monday 4:30pm UTC
+    vi.setSystemTime(new Date('2026-04-13T16:30:00Z'));
+    // Without override: 10:30am is within 10-14 → true
+    expect(isWithinLocalSendWindow('America/Edmonton', 10, 14)).toBe(true);
+    // With override: Monday starts at 11am → false
+    expect(isWithinLocalSendWindow('America/Edmonton', 10, 14, WIN_BACK_OVERRIDES)).toBe(false);
+  });
+
+  it('allows Monday at 11am with day override', () => {
+    // Monday 11am Mountain = Monday 5pm UTC
+    vi.setSystemTime(new Date('2026-04-13T17:00:00Z'));
+    expect(isWithinLocalSendWindow('America/Edmonton', 10, 14, WIN_BACK_OVERRIDES)).toBe(true);
+  });
+
+  it('blocks Friday at 1pm with day override', () => {
+    // Friday 1pm Mountain = Friday 7pm UTC
+    vi.setSystemTime(new Date('2026-04-17T19:00:00Z'));
+    // Without override: 1pm is within 10-14 → true
+    expect(isWithinLocalSendWindow('America/Edmonton', 10, 14)).toBe(true);
+    // With override: Friday ends at 1pm → false
+    expect(isWithinLocalSendWindow('America/Edmonton', 10, 14, WIN_BACK_OVERRIDES)).toBe(false);
+  });
+
+  it('allows Friday at 12pm with day override', () => {
+    // Friday 12pm Mountain = Friday 6pm UTC
+    vi.setSystemTime(new Date('2026-04-17T18:00:00Z'));
+    expect(isWithinLocalSendWindow('America/Edmonton', 10, 14, WIN_BACK_OVERRIDES)).toBe(true);
+  });
+
+  it('Tuesday unaffected by day overrides', () => {
+    // Tuesday 10:30am Mountain
+    vi.setSystemTime(new Date('2026-04-14T16:30:00Z'));
+    expect(isWithinLocalSendWindow('America/Edmonton', 10, 14, WIN_BACK_OVERRIDES)).toBe(true);
   });
 });
 ```
@@ -110,19 +148,30 @@ Expected: FAIL — module not found
 ```typescript
 // src/lib/utils/send-window.ts
 
+export interface DayOverride {
+  /** Day of week: 0=Sunday, 1=Monday ... 6=Saturday */
+  day: number;
+  /** Override start hour for this day (inclusive, 0-23) */
+  startHour?: number;
+  /** Override end hour for this day (exclusive, 0-23) */
+  endHour?: number;
+}
+
 /**
  * Timezone-aware send window check.
  * Returns true if current time is within the specified hour range on a weekday
- * in the given timezone.
+ * in the given timezone, respecting optional day-specific overrides.
  *
  * @param timezone - IANA timezone string (e.g., 'America/Edmonton')
- * @param startHour - Window open hour (inclusive, 0-23)
- * @param endHour - Window close hour (exclusive, 0-23)
+ * @param startHour - Default window open hour (inclusive, 0-23)
+ * @param endHour - Default window close hour (exclusive, 0-23)
+ * @param dayOverrides - Optional per-day start/end hour overrides
  */
 export function isWithinLocalSendWindow(
   timezone: string,
   startHour: number,
   endHour: number,
+  dayOverrides?: DayOverride[],
 ): boolean {
   const now = new Date();
 
@@ -137,10 +186,29 @@ export function isWithinLocalSendWindow(
     timeZone: timezone,
     weekday: 'short',
   }).format(now);
-  const isWeekend = dayStr === 'Sat' || dayStr === 'Sun';
 
+  const isWeekend = dayStr === 'Sat' || dayStr === 'Sun';
   if (isWeekend) return false;
-  if (hour < startHour || hour >= endHour) return false;
+
+  // Map day string to number for override lookup
+  const dayMap: Record<string, number> = {
+    Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  };
+  const dayNum = dayMap[dayStr];
+
+  // Apply day-specific overrides if present
+  let effectiveStart = startHour;
+  let effectiveEnd = endHour;
+
+  if (dayOverrides && dayNum !== undefined) {
+    const override = dayOverrides.find((o) => o.day === dayNum);
+    if (override) {
+      if (override.startHour !== undefined) effectiveStart = override.startHour;
+      if (override.endHour !== undefined) effectiveEnd = override.endHour;
+    }
+  }
+
+  if (hour < effectiveStart || hour >= effectiveEnd) return false;
 
   return true;
 }
@@ -189,13 +257,18 @@ if (hour < 10 || hour >= 14) return { processed: 0, sent: 0, skipped: 0 };
 ```
 
 ```typescript
-// New:
-if (!isWithinLocalSendWindow('America/Edmonton', 10, 14)) {
-  return { processed: 0, sent: 0, skipped: 0 };
+// New — replaces ALL 4 lines (44-51) including Monday/Friday rules:
+const WIN_BACK_DAY_OVERRIDES = [
+  { day: 1, startHour: 11 },  // Monday: 11am-2pm (no early Monday)
+  { day: 5, endHour: 13 },    // Friday: 10am-1pm (early Friday cutoff)
+];
+
+if (!isWithinLocalSendWindow('America/Edmonton', 10, 14, WIN_BACK_DAY_OVERRIDES)) {
+  return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] };
 }
 ```
 
-Note: The day-specific rules (Monday delay, Friday cutoff) may exist on adjacent lines. Preserve any additional constraints like `if (dayOfWeek === 1 && hour < 11)` by converting them similarly using the timezone-aware hour. Read the full block before editing to capture all conditions.
+This replaces ALL 8 lines (44-51): the `now`, `hour`, `dayOfWeek` variables AND the 4 conditional returns (weekends, hours, Monday, Friday). The utility handles all of it. The return value shape must match `processWinBacks()` return type — verified as `{ eligible, messaged, markedDormant, errors }`.
 
 - [ ] **Step 3: Reduce temperature from 0.9 to 0.6**
 
@@ -254,9 +327,18 @@ function isWithinSendWindow(): boolean {
   return true;
 }
 
-// New — delete the function entirely, use the import at call sites:
+// New — delete the function entirely, use the import at call sites.
+// The dormant-reengagement file has the SAME day-specific rules as win-back.
 // Replace calls from: isWithinSendWindow()
-// To: isWithinLocalSendWindow('America/Edmonton', 10, 14)
+// To:
+const DORMANT_DAY_OVERRIDES = [
+  { day: 1, startHour: 11 },  // Monday: 11am-2pm
+  { day: 5, endHour: 13 },    // Friday: 10am-1pm
+];
+if (!isWithinLocalSendWindow('America/Edmonton', 10, 14, DORMANT_DAY_OVERRIDES)) {
+  return { processed: 0, sent: 0, skipped: 0, errors: [] };
+}
+// NOTE: Verify the return type shape matches runDormantReengagement() return type.
 ```
 
 - [ ] **Step 3: Run typecheck + tests**
@@ -284,13 +366,16 @@ Run: Read `src/app/api/cron/process-scheduled/route.ts` lines 145-175.
 
 - [ ] **Step 2: Add freshness gate before AI generation**
 
-Add imports at top of file:
+Add `leadContext` to the existing `@/db/schema` import on line 11:
 
 ```typescript
-import { leadContext } from '@/db/schema';
+// Line 11 currently:
+import { auditLog, calendarEvents, clientMemberships, people } from '@/db/schema';
+// Change to:
+import { auditLog, calendarEvents, clientMemberships, people, leadContext } from '@/db/schema';
 ```
 
-(Verify `leadContext` isn't already imported — `conversations` and `leads` likely are.)
+VERIFIED: `conversations` is already imported from `@/db` (line 2). `gte` and `and` are already imported from `drizzle-orm` (line 12). `leadContext` is NOT currently imported — this is the only addition needed.
 
 Insert freshness gate after `if (message.content === '__AI_GENERATE__')` and before `let generated`:
 
@@ -475,7 +560,18 @@ git commit -m "fix: use 'contacted' not 'active' on re-subscribe (SIM-10)"
 
 Run: Read `src/lib/agent/orchestrator.ts` lines 410-515.
 
-- [ ] **Step 2: Add leads.status update after first successful AI response (SIM-01)**
+- [ ] **Step 2: Add `and` to drizzle-orm imports**
+
+```typescript
+// Line 14 currently:
+import { eq, desc } from 'drizzle-orm';
+// Change to:
+import { eq, desc, and } from 'drizzle-orm';
+```
+
+VERIFIED: `and` is NOT currently imported. Both `leads` and `conversations` ARE already imported from `@/db/schema`.
+
+- [ ] **Step 3: Add leads.status update after first successful AI response (SIM-01)**
 
 After `responseSent = true` (around line 483), add:
 
@@ -491,7 +587,7 @@ if (responseSent) {
 }
 ```
 
-- [ ] **Step 3: Add escalation acknowledgment (SIM-08)**
+- [ ] **Step 4: Add escalation acknowledgment (SIM-08)**
 
 In the escalation block (around line 495-514), BEFORE creating the escalation queue entry, send an acknowledgment:
 
@@ -565,35 +661,49 @@ In `sendSmartAssistDraftNow()`, after loading the `row` (the scheduled message +
 
 Read lines 194-220 first to find exact insertion point. After the `not_pending` check (around line 221) and before the atomic claim (around line 245):
 
+First, add `gte` to the drizzle-orm import on line 2:
+
 ```typescript
-// RACE-02: Auto-cancel if contractor already replied manually
+// Line 2 currently:
+import { and, eq, lte, sql } from 'drizzle-orm';
+// Change to:
+import { and, eq, gte, lte, sql } from 'drizzle-orm';
+```
+
+VERIFIED: `conversations` IS already imported (line 1). `gte` is NOT imported — needs adding.
+
+Then insert the check. After the `resolveSmartAssistTransition` check (~line 229) and before the atomic claim (~line 245):
+
+```typescript
+// RACE-02: Auto-cancel if ANY outbound message was sent for this lead since draft was queued.
+// This catches: manual dashboard replies (messageType: 'manual'), AI auto-responses,
+// and any other outbound. If something was already sent, the draft is redundant.
 if (params.action === 'auto_send') {
   const draftCreatedAt = message.createdAt ?? new Date(0);
-  const [manualReply] = await db
+  const [recentOutbound] = await db
     .select({ id: conversations.id })
     .from(conversations)
     .where(
       and(
         eq(conversations.leadId, message.leadId!),
         eq(conversations.direction, 'outbound'),
-        eq(conversations.messageType, 'manual'),
         gte(conversations.createdAt, draftCreatedAt),
       )
     )
     .limit(1);
 
-  if (manualReply) {
+  if (recentOutbound) {
     await cancelSmartAssistDraft({
       scheduledMessageId: message.id,
-      reason: 'Contractor sent manual reply after draft was queued',
-      source: 'auto_cancel_manual_reply',
+      reason: 'Outbound message sent after draft was queued',
+      source: 'auto_cancel_outbound_exists',
     });
     return { success: false, status: 'cancelled', reason: 'blocked' as const };
   }
 }
 ```
 
-Add import for `gte` from drizzle-orm if not already imported. Add import for `conversations` from `@/db` if not already imported.
+NOTE: We check for ANY outbound (not just `messageType: 'manual'`) because if the AI already auto-sent a different response, or a scheduled message fired, the draft is stale regardless of who sent it.
 
 - [ ] **Step 3: Run typecheck + tests**
 
@@ -648,7 +758,24 @@ export async function cancelActiveFlowsForClient(clientId: string): Promise<numb
 }
 ```
 
-Verify that `flowExecutions` is imported from `@/db/schema` and has `clientId`, `status`, `updatedAt` columns.
+VERIFIED: `flowExecutions` IS imported from `@/db/schema` (line 2). It HAS `clientId`, `status` columns. It does NOT have `updatedAt` — use `cancelledAt` instead:
+
+```typescript
+.set({
+  status: 'cancelled',
+  cancelledAt: new Date(),
+  cancelReason: 'PAUSE command',
+})
+```
+
+Also add `and` to the drizzle-orm import in flow-execution.ts:
+
+```typescript
+// Line 3 currently:
+import { eq } from 'drizzle-orm';
+// Change to:
+import { eq, and } from 'drizzle-orm';
+```
 
 - [ ] **Step 3: Read PAUSE handler in incoming-sms.ts**
 
