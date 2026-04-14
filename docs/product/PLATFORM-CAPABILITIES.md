@@ -297,9 +297,10 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 - Targets leads with `status=contacted` or `status=estimate_sent` and 25-35 days since last activity (last message, or creation date for imported leads with no conversations)
 - **Excludes leads with active sequences:** leads with any unsent, uncancelled scheduled messages from other automations (estimate follow-up, payment reminders, etc.) are skipped to prevent double-messaging
 - AI-personalized win-back message with project context
-- Randomized send timing (10am-2pm weekdays, avoids Monday morning/Friday afternoon)
+- Timezone-aware send timing (10am-2pm weekdays in recipient&apos;s local time, avoids Monday before 11am/Friday after 1pm). Evaluated using IANA timezone, not server UTC.
 - Follow-up 20-30 days later (skipped for `estimate_sent` leads with inbound reply in past 45 days &mdash; prevents premature re-engagement after active dialogue)
 - After 2 attempts with no response, lead transitions to `dormant`
+- **Freshness gate for deferred messages:** AI-generated follow-ups check lead context before generation &mdash; cancelled if lead stage changed to booked/lost, or if lead had inbound activity within 7 days
 - **Dormant lead auto-promotion:** when a dormant lead texts back, status automatically promoted to `contacted` so they appear in the active pipeline
 
 ### Probable Wins Nudge
@@ -368,6 +369,7 @@ Follow-on stage after standard win-back for leads that have been dormant 6+ mont
 - Fresh AI-personalized outreach — acknowledges the time gap, low-pressure tone
 - Single-touch attempt with no additional follow-up
 - Runs weekly on Wednesdays via `engagement-health-check` and `dormant-reengagement` cron jobs
+- Send window is timezone-aware (same rules as win-back: 10am-2pm local time, Monday/Friday constraints)
 - Prevents permanent loss of re-contact opportunity once the initial win-back pool is exhausted
 
 ---
@@ -535,8 +537,10 @@ Every lead accumulates:
 - **Missed transfer fallback:** SMS to team ("Missed hot transfer — call back ASAP") + SMS to lead ("Sorry we missed you")
 - **Owner notification:** Smart Assist drafts with reference codes for SEND/EDIT/CANCEL approval. Contractor notification SMS capped at 5/hour per client to prevent notification fatigue during surge.
 - **Team member SMS commands:** any active team member can text EST [name] (trigger estimate follow-up), NOSHOW [name] (mark appointment no-show), WON [ref] / LOST [ref] (report job outcome), or WINS (list pending leads with ref codes) from their personal phone &mdash; not just the owner. Command auth checks `clientMemberships` for the sender&apos;s phone.
-- **PAUSE / RESUME commands:** contractor texts PAUSE to their business number &rarr; AI mode set to `off`, all pending scheduled messages cancelled. Texts RESUME &rarr; AI mode restored to `autonomous`. Gives contractors a sense of control over automation. Notification fires when AI auto-progresses to autonomous mode: &ldquo;Your system is now fully automated. Reply PAUSE to this number to pause at any time.&rdquo;
+- **PAUSE / RESUME commands:** contractor texts PAUSE to their business number &rarr; AI mode set to `off`, all pending scheduled messages cancelled, all active flow executions cancelled. Texts RESUME &rarr; AI mode restored to `autonomous`. Gives contractors a sense of control over automation. Notification fires when AI auto-progresses to autonomous mode: &ldquo;Your system is now fully automated. Reply PAUSE to this number to pause at any time.&rdquo;
 - **Escalation batching:** when 3+ escalations fire within 30 minutes, team members receive a single summary SMS instead of individual notifications per lead
+- **Escalation acknowledgment:** When the AI escalates, the homeowner receives an immediate SMS acknowledgment before the handoff to prevent silence during the transition window
+- **Auto-cancel on outbound (Smart Assist):** If any outbound message is sent for a lead after a Smart Assist draft was queued, the draft is automatically cancelled to prevent redundant messages
 - **Crew availability toggle:** `availabilityStatus` field on team memberships (available/busy/off_duty). Busy or off-duty members are automatically excluded from ring groups and escalation routing.
 - **Per-member work schedule:** admin can set per-day working hours (start/end time, working flag) for each team member via the team edit dialog. Stored as `workSchedule` jsonb. Used by `getAvailableSlots()` when booking for a specific member.
 - **Dispatch/schedule view:** visual 7-day grid at `/admin/clients/[id]/schedule` showing all team members&apos; appointments color-coded by member. Inline reassignment via native select dropdown. Unassigned appointments highlighted. Linked from client detail header.
@@ -744,7 +748,7 @@ CASL and CRTC compliant by default — the contractor never has to think about i
 
 - **Consent tracking:** express (never expires), implied from inquiry (6 months), implied from customer (2 years)
 - **Opt-out handling:** STOP, UNSUBSCRIBE, CANCEL, END, QUIT &rarr; instant opt-out, confirmation sent
-- **Re-opt-in:** START, YES, SUBSCRIBE, OPTIN &rarr; re-consent recorded
+- **Re-opt-in:** START, YES, SUBSCRIBE, OPTIN &rarr; re-consent recorded, lead status restored to contacted
 - **HELP/INFO keywords:** auto-reply with business name, owner phone, and STOP instructions (sent even to opted-out numbers)
 - **Quiet hours:** 9pm-10am recipient local time. Two modes: strict (all outbound queued) and inbound-reply-allowed (direct replies sent, proactive outreach queued)
 - **DNC list:** global + per-client do-not-contact registry with expiry and source tracking

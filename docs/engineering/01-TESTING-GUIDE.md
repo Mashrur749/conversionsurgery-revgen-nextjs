@@ -565,6 +565,7 @@ Expected:
    - AI detects escalation intent → triggers team escalation.
 2. **Team Member Dev Phone (port 3003):** Receive escalation SMS with claim link. Click the link to claim the escalation.
 3. To test owner fallback: temporarily deactivate the team member in admin UI, then trigger another escalation from Lead Dev Phone.
+4. Verify the lead receives an acknowledgment SMS before the escalation is created.
 
 Expected:
 
@@ -572,6 +573,7 @@ Expected:
 - Team Member Dev Phone receives escalation SMS when team member is active.
 - Owner Dev Phone receives fallback notification when no other recipients qualify.
 - Agency communication actions are marked executed only after successful execution.
+- Lead Dev Phone receives acknowledgment SMS before any team notification is sent.
 
 ### Step 8: Estimate follow-up + appointment reminders
 
@@ -1781,7 +1783,7 @@ Expected:
 
 #### 58d: PAUSE/RESUME Commands
 
-1. Text `PAUSE` from an authorized sender. Verify: `clients.aiAgentMode` set to `off`, all pending `scheduledMessages` cancelled, confirmation SMS sent.
+1. Text `PAUSE` from an authorized sender. Verify: `clients.aiAgentMode` set to `off`, all pending `scheduledMessages` cancelled, all active `flowExecutions` cancelled, confirmation SMS sent.
 2. Text `RESUME`. Verify: `aiAgentMode` restored to `autonomous`, confirmation SMS sent.
 3. Verify PAUSE/RESUME are case-insensitive.
 
