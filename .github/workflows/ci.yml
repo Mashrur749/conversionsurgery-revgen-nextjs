@@ -27,3 +27,50 @@ jobs:
       - run: npm run quality:feature-sweep
       - run: npm audit --audit-level=moderate
         continue-on-error: true
+
+  ai-evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      github.event_name == 'pull_request'
+    needs: check
+    env:
+      DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+      NEXTAUTH_SECRET: "ci-build-secret"
+      NEXTAUTH_URL: "http://127.0.0.1:4100"
+      AUTH_SECRET: "ci-build-secret"
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - name: Check if AI files changed
+        id: ai-files
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            ai:
+              - 'src/lib/agent/**'
+              - 'src/lib/ai/**'
+              - 'src/lib/automations/**'
+              - 'src/lib/services/signal-detection.ts'
+              - 'src/lib/services/voice-summary.ts'
+              - 'src/lib/services/booking-conversation.ts'
+              - 'src/lib/services/review-monitoring.ts'
+              - 'src/lib/evals/**'
+              - 'src/lib/data/trade-synonyms.ts'
+
+      - name: Run AI safety evals
+        if: steps.ai-files.outputs.ai == 'true' && env.ANTHROPIC_API_KEY != ''
+        run: npx vitest run src/lib/agent/ai-criteria.ai-test.ts --reporter=verbose
+        # Safety evals are zero-tolerance -- this step MUST pass
+
+      - name: Run full AI eval suite
+        if: steps.ai-files.outputs.ai == 'true' && env.ANTHROPIC_API_KEY != ''
+        run: npm run test:ai
+        continue-on-error: true
+        # Full suite is informational -- quality regressions logged but don't block
