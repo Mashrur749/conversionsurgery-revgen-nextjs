@@ -340,6 +340,17 @@ export async function processIncomingMessage(
       sentiment: finalState.signals.sentiment,
       recentObjections: finalState.objections.slice(-3),
     },
+    analysisSnapshot: {
+      sentiment: finalState.signals.sentiment,
+      sentimentConfidence: finalState.signals.urgency, // proxy — real sentimentConfidence comes from analyzeAndDecide
+      urgencyScore: finalState.signals.urgency,
+      budgetScore: finalState.signals.budget,
+      intentScore: finalState.signals.intent,
+      detectedObjections: finalState.objections,
+      suggestedStage: finalState.stage,
+      keyInsights: [], // populated when analyzeAndDecide exposes keyInsights
+      extractedInfo: finalState.extractedInfo as Record<string, unknown>,
+    },
     action: finalState.lastAction as AgentAction,
     actionDetails: {
       responseText: finalState.responseToSend ?? undefined,

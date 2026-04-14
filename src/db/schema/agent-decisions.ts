@@ -42,6 +42,17 @@ export const agentDecisions = pgTable(
       sentiment: string;
       recentObjections: string[];
     }>(),
+    analysisSnapshot: jsonb('analysis_snapshot').$type<{
+      sentiment: string;
+      sentimentConfidence: number;
+      urgencyScore: number;
+      budgetScore: number;
+      intentScore: number;
+      detectedObjections: string[];
+      suggestedStage: string;
+      keyInsights: string[];
+      extractedInfo: Record<string, unknown>;
+    }>(),
 
     // The decision
     action: agentActionEnum('action').notNull(),

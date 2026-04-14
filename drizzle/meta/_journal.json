@@ -113,6 +113,20 @@
       "when": 1776138884900,
       "tag": "0015_ordinary_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1776141359885,
+      "tag": "0016_goofy_arachne",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1776141367028,
+      "tag": "0017_past_ben_urich",
+      "breakpoints": true
     }
   ]
 }
