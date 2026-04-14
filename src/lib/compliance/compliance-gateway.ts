@@ -1,6 +1,6 @@
 import { sendSMS } from '@/lib/services/twilio';
 import { ComplianceService } from './compliance-service';
-import { getClientUsagePolicy } from '@/lib/services/subscription';
+import { getClientUsagePolicy, getSubscriptionWithPlan } from '@/lib/services/subscription';
 import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessages, blockedNumbers } from '@/db';
 import { isMessageLimitReached } from '@/lib/services/usage-policy';
 import { eq, and, sql } from 'drizzle-orm';
@@ -130,6 +130,29 @@ export async function sendCompliantMessage(
         ...metadata,
       }
     );
+  }
+
+  // Subscription enforcement: block proactive outreach when subscription is past_due (XDOM-02)
+  // Allow inbound replies so homeowners don't get ghosted during billing issues.
+  const subResult = await getSubscriptionWithPlan(clientId);
+  if (subResult && subResult.subscription.status === 'past_due') {
+    if (messageClassification !== 'inbound_reply') {
+      return blocked(
+        `Subscription past_due — blocking ${messageClassification} (only inbound replies allowed)`,
+        normalizedPhone,
+        phoneHash,
+        clientId,
+        {
+          messageCategory,
+          messageClassification,
+          leadId,
+          subscriptionStatus: 'past_due',
+          ...metadata,
+        }
+      );
+    }
+    // past_due + inbound_reply: allow through with warning
+    warnings.push('Subscription past_due — allowing inbound reply only');
   }
 
   // Platform-wide kill switch
