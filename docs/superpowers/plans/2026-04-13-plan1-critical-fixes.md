@@ -809,7 +809,113 @@ git commit -m "fix: PAUSE command cancels active flow executions (RACE-03)"
 
 ---
 
-### Task 10: Documentation Updates (Mandatory Per CLAUDE.md)
+### Task 10: Fix Voice Notification Compliance Bypass (AI-SUB-01)
+
+**Files:**
+- Modify: `src/lib/services/voice-summary.ts:88-90`
+
+- [ ] **Step 1: Read voice-summary.ts to confirm the direct sendSMS call**
+
+Run: Read `src/lib/services/voice-summary.ts` lines 80-100.
+
+- [ ] **Step 2: Replace sendSMS with sendCompliantMessage**
+
+The file currently calls `sendSMS(notifyPhone, message, twilioFrom)` directly. Replace with:
+
+```typescript
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
+
+// Replace the direct sendSMS call with:
+await sendCompliantMessage({
+  clientId: clientId,    // Must be available in scope — check function params
+  to: notifyPhone,
+  from: twilioFrom,
+  body: message,
+  messageClassification: 'proactive_outreach',
+  messageCategory: 'transactional',
+  consentBasis: { type: 'existing_consent' },
+  queueOnQuietHours: true,
+  metadata: { source: 'voice_call_notification' },
+});
+```
+
+NOTE: The function signature of `notifyClientOfCall` must include `clientId`. Read the full function to verify it's available in scope. If not, it needs to be added as a parameter or loaded from the `voiceCalls` record.
+
+- [ ] **Step 3: Run typecheck**
+
+Run: `npm run typecheck`
+Expected: PASS
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/lib/services/voice-summary.ts
+git commit -m "fix: route voice notification through compliance gateway (AI-SUB-01)"
+```
+
+---
+
+### Task 11: Add Error Handling to Conversation Summary AI Call (AI-SUB-03)
+
+**Files:**
+- Modify: `src/lib/services/conversation-summary.ts:123-133`
+
+- [ ] **Step 1: Read current AI call block**
+
+Run: Read `src/lib/services/conversation-summary.ts` lines 120-145.
+
+- [ ] **Step 2: Wrap ai.chat() in try/catch**
+
+```typescript
+// Old (lines ~124-132):
+const result = await ai.chat(
+  [{ role: 'user', content: transcript }],
+  {
+    model: 'fast',
+    temperature: 0.3,
+    maxTokens: 300,
+    systemPrompt: SYSTEM_PROMPT,
+  }
+);
+
+const summary = result.content.trim();
+
+// New:
+let summary: string;
+try {
+  const result = await ai.chat(
+    [{ role: 'user', content: transcript }],
+    {
+      model: 'fast',
+      temperature: 0.3,
+      maxTokens: 300,
+      systemPrompt: SYSTEM_PROMPT,
+    }
+  );
+  summary = result.content.trim();
+} catch (err) {
+  console.error('[ConversationSummary] AI call failed, keeping existing summary:', err);
+  return null;
+}
+```
+
+This returns `null` on failure (matching the function's return type `Promise<string | null>`). The caller in `orchestrator.ts` already handles `null` gracefully (line 132: `if (summary)`).
+
+- [ ] **Step 3: Run typecheck + tests**
+
+Run: `npm run typecheck && npm test`
+Expected: PASS
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/lib/services/conversation-summary.ts
+git commit -m "fix: add error handling to conversation summary AI call (AI-SUB-03)"
+```
+
+---
+
+### Task 12: Documentation Updates (Mandatory Per CLAUDE.md)
 
 **Files:**
 - Modify: `docs/product/PLATFORM-CAPABILITIES.md`
@@ -903,7 +1009,7 @@ git commit -m "docs: update capabilities and testing guide for Plan 1 fixes"
 
 ---
 
-### Task 11: Run Full Quality Gate
+### Task 13: Run Full Quality Gate
 
 - [ ] **Step 1: Run no-regressions gate**
 
@@ -921,7 +1027,7 @@ If any quality gate issues arise from the changes, fix and commit.
 
 ---
 
-### Task 12: Post-Execution Simulation
+### Task 14: Post-Execution Simulation
 
 Re-run the scenarios that exposed gaps to verify fixes work. Trace through updated code paths.
 
