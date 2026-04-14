@@ -15,6 +15,7 @@ import { createEvent } from '@/lib/services/calendar';
 import { format, addDays, addMinutes, parse, isBefore, isAfter } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 
 export interface TimeSlot {
   date: string;        // YYYY-MM-DD
@@ -575,7 +576,20 @@ export async function bookAppointment(
       eventType: 'estimate',
       assignedTeamMemberId: assignedMembershipId ?? undefined, // undefined = no assignment; null would be treated same way
     });
-  } catch {} // Don't block booking on calendar failure
+  } catch (err) {
+    // Calendar creation failure must never block the booking from completing.
+    // Log for operator visibility — syncStatus will be 'error' on the event record
+    // (handled inside createEvent → syncEventToProviders in Task 3).
+    logSanitizedConsoleError(
+      '[Booking][calendar-event-creation] Failed to create calendar event',
+      err,
+      {
+        clientId,
+        leadId,
+        appointmentId: result.appointmentId,
+      }
+    );
+  }
 
   // Dispatch webhook
   try {
