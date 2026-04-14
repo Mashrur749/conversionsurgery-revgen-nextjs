@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { LEAD_STATUSES, LEAD_TEMPERATURES, TEMPERATURE_COLORS } from '@/lib/constants/leads';
 import { LeadNavigation } from './lead-navigation';
+import { LeadScoreBadge } from '@/components/leads/lead-score-badge';
 import type { Lead } from '@/db/schema/leads';
 
 const CONVERSATION_MODE_STYLES: Record<string, string> = {
@@ -25,11 +26,33 @@ const CONVERSATION_MODE_LABELS: Record<string, string> = {
   paused: 'Paused',
 };
 
-interface LeadHeaderProps {
+const STAGE_STYLES: Record<string, string> = {
+  proposing: 'bg-[#6B7E54]/15 text-[#6B7E54]',
+  educating: 'bg-[#6B7E54]/15 text-[#6B7E54]',
+  objection_handling: 'bg-[#FFF3E0] text-[#C15B2E]',
+  booked: 'bg-[#E8F5E9] text-[#3D7A50]',
+  closing: 'bg-[#E8F5E9] text-[#3D7A50]',
+  lost: 'bg-[#FDEAE4] text-[#C15B2E]',
+};
+
+export interface LeadHeaderProps {
   lead: Lead;
+  conversationStage?: string | null;
+  scores?: {
+    urgency: number;
+    budget: number;
+    intent: number;
+    composite: number;
+  } | null;
+  decisionMakers?: {
+    primary?: string;
+    secondary?: string;
+    secondaryConsulted: boolean;
+    partnerApprovalNeeded: boolean;
+  } | null;
 }
 
-export function LeadHeader({ lead }: LeadHeaderProps) {
+export function LeadHeader({ lead, conversationStage, scores, decisionMakers }: LeadHeaderProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [modeLoading, setModeLoading] = useState(false);
@@ -78,6 +101,42 @@ export function LeadHeader({ lead }: LeadHeaderProps) {
           {lead.email && <p className="text-muted-foreground">{lead.email}</p>}
           {lead.source && (
             <Badge variant="outline" className="mt-1">{lead.source}</Badge>
+          )}
+          {conversationStage && conversationStage !== 'greeting' && (
+            <Badge
+              variant="outline"
+              className={`mt-1 capitalize ${STAGE_STYLES[conversationStage] ?? ''}`}
+            >
+              Stage: {conversationStage.replace(/_/g, ' ')}
+            </Badge>
+          )}
+          {scores && (
+            <div className="mt-2">
+              <LeadScoreBadge
+                score={scores.composite}
+                temperature={(lead.temperature as 'hot' | 'warm' | 'cold') ?? 'cold'}
+                factors={{
+                  urgency: scores.urgency,
+                  budget: scores.budget,
+                  intent: scores.intent,
+                  engagement: 0,
+                  signals: [],
+                }}
+                compact
+              />
+            </div>
+          )}
+          {decisionMakers?.partnerApprovalNeeded && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+              <span>
+                Partner involved{decisionMakers.secondary ? `: ${decisionMakers.secondary}` : ''}
+              </span>
+              {decisionMakers.secondaryConsulted ? (
+                <Badge variant="outline" className="bg-[#E8F5E9] text-[#3D7A50] text-xs">Consulted</Badge>
+              ) : (
+                <Badge variant="outline" className="bg-[#FFF3E0] text-[#C15B2E] text-xs">Not yet consulted</Badge>
+              )}
+            </div>
           )}
         </div>
 

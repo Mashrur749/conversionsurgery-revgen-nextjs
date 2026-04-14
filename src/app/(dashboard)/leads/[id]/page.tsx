@@ -4,7 +4,7 @@ import { leads } from '@/db/schema/leads';
 import { conversations } from '@/db/schema/conversations';
 import { scheduledMessages } from '@/db/schema/scheduled-messages';
 import { mediaAttachments } from '@/db/schema/media-attachments';
-import { flowExecutions, flows } from '@/db/schema';
+import { flowExecutions, flows, leadContext } from '@/db/schema';
 import { eq, and, or } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { ReplyForm } from './reply-form';
 import { ActionButtons } from './action-buttons';
 import { LeadTabs } from './lead-tabs';
 import { LeadHeader } from './lead-header';
+import type { LeadHeaderProps } from './lead-header';
 import { FlowStatus } from './flow-status';
 import { LeadTags } from './lead-tags';
 import { SMART_ASSIST_STATUS } from '@/lib/services/smart-assist-state';
@@ -88,6 +89,12 @@ export default async function LeadDetailPage({ params }: Props) {
     }
   }
 
+  const [contextResult] = await db
+    .select()
+    .from(leadContext)
+    .where(eq(leadContext.leadId, lead.id))
+    .limit(1);
+
   const [scheduled, activeFlows] = await Promise.all([
     db
       .select()
@@ -123,7 +130,17 @@ export default async function LeadDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <LeadHeader lead={lead} />
+      <LeadHeader
+        lead={lead}
+        conversationStage={contextResult?.conversationStage}
+        scores={contextResult ? {
+          urgency: contextResult.urgencyScore ?? 0,
+          budget: contextResult.budgetScore ?? 0,
+          intent: contextResult.intentScore ?? 0,
+          composite: Math.round(((contextResult.urgencyScore ?? 0) + (contextResult.budgetScore ?? 0) + (contextResult.intentScore ?? 0)) / 3),
+        } : null}
+        decisionMakers={contextResult?.decisionMakers as LeadHeaderProps['decisionMakers'] ?? null}
+      />
       <LeadTags leadId={lead.id} initialTags={(lead.tags as string[]) || []} />
 
       <div className="grid gap-6 lg:grid-cols-3">
