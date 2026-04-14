@@ -2,23 +2,26 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getDb } from '@/db';
-import { escalationQueue, leads, clients } from '@/db/schema';
+import { escalationQueue, leads, clients, clientMemberships, people } from '@/db/schema';
 import { inArray, eq, and } from 'drizzle-orm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { AlertTriangle, CheckCircle, ArrowRight, Clock, Building2, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { EscalationAssignSelect, type TeamMember } from './escalation-assign-select';
 
 interface EscalationRow {
   id: string;
   leadId: string;
+  clientId: string;
   reason: string;
   reasonDetails: string | null;
   priority: number;
   status: string;
   slaBreach: boolean | null;
   slaDeadline: Date | null;
+  assignedTo: string | null;
   createdAt: Date;
   leadName: string | null;
   leadPhone: string;
@@ -28,17 +31,18 @@ interface EscalationRow {
 async function getOpenEscalations(): Promise<EscalationRow[]> {
   const db = getDb();
 
-  // Fetch all open escalations (pending, assigned, in_progress)
   const rows = await db
     .select({
       id: escalationQueue.id,
       leadId: escalationQueue.leadId,
+      clientId: escalationQueue.clientId,
       reason: escalationQueue.reason,
       reasonDetails: escalationQueue.reasonDetails,
       priority: escalationQueue.priority,
       status: escalationQueue.status,
       slaBreach: escalationQueue.slaBreach,
       slaDeadline: escalationQueue.slaDeadline,
+      assignedTo: escalationQueue.assignedTo,
       createdAt: escalationQueue.createdAt,
       leadName: leads.name,
       leadPhone: leads.phone,
@@ -51,13 +55,43 @@ async function getOpenEscalations(): Promise<EscalationRow[]> {
       inArray(escalationQueue.status, ['pending', 'assigned', 'in_progress'])
     );
 
-  // Sort: P1 first, then by createdAt ascending (oldest first within same priority)
   rows.sort((a, b) => {
     if (a.priority !== b.priority) return a.priority - b.priority;
     return a.createdAt.getTime() - b.createdAt.getTime();
   });
 
   return rows;
+}
+
+async function getTeamMembersByClient(
+  clientIds: string[]
+): Promise<Map<string, TeamMember[]>> {
+  if (clientIds.length === 0) return new Map();
+
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      clientId: clientMemberships.clientId,
+      membershipId: clientMemberships.id,
+      name: people.name,
+    })
+    .from(clientMemberships)
+    .innerJoin(people, eq(clientMemberships.personId, people.id))
+    .where(
+      and(
+        inArray(clientMemberships.clientId, clientIds),
+        eq(clientMemberships.isActive, true)
+      )
+    );
+
+  const map = new Map<string, TeamMember[]>();
+  for (const row of rows) {
+    const existing = map.get(row.clientId) ?? [];
+    existing.push({ membershipId: row.membershipId, name: row.name });
+    map.set(row.clientId, existing);
+  }
+  return map;
 }
 
 function getPriorityBadge(priority: number, slaBreach: boolean | null) {
@@ -107,42 +141,60 @@ function formatReason(reason: string): string {
   return reason.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// Mobile card for a single escalation row
-function EscalationCard({ row }: { row: EscalationRow }) {
+function EscalationCard({
+  row,
+  teamMembers,
+}: {
+  row: EscalationRow;
+  teamMembers: TeamMember[];
+}) {
   const isUrgent = row.priority <= 2 || row.slaBreach;
   return (
-    <Link href={`/leads/${row.leadId}`}>
-      <Card
-        className={`hover:shadow-md transition-shadow cursor-pointer ${isUrgent ? 'border-l-4 border-l-sienna' : ''}`}
-      >
-        <CardContent className="py-4 space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            {getPriorityBadge(row.priority, row.slaBreach)}
-            {getStatusBadge(row.status)}
+    <Card
+      className={`${isUrgent ? 'border-l-4 border-l-sienna' : ''}`}
+    >
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          {getPriorityBadge(row.priority, row.slaBreach)}
+          {getStatusBadge(row.status)}
+        </div>
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-sm font-medium">
+            <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="truncate">{row.leadName ?? 'Unknown Lead'}</span>
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-1.5 text-sm font-medium">
-              <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span className="truncate">{row.leadName ?? 'Unknown Lead'}</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Building2 className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{row.clientBusinessName}</span>
-            </div>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Building2 className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{row.clientBusinessName}</span>
           </div>
-          <div className="text-sm font-medium">{formatReason(row.reason)}</div>
-          {row.reasonDetails && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {row.reasonDetails}
-            </p>
-          )}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            {formatDistanceToNow(row.createdAt, { addSuffix: true })}
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </div>
+        <div className="text-sm font-medium">{formatReason(row.reason)}</div>
+        {row.reasonDetails && (
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {row.reasonDetails}
+          </p>
+        )}
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          {formatDistanceToNow(row.createdAt, { addSuffix: true })}
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Assign to</p>
+          <EscalationAssignSelect
+            escalationId={row.id}
+            currentAssignedTo={row.assignedTo}
+            teamMembers={teamMembers}
+          />
+        </div>
+        <Link
+          href={`/leads/${row.leadId}`}
+          className="inline-flex items-center gap-1 text-sm font-medium hover:underline text-forest"
+        >
+          View lead
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -153,6 +205,9 @@ export default async function AdminEscalationsPage() {
   }
 
   const rows = await getOpenEscalations();
+
+  const uniqueClientIds = [...new Set(rows.map((r) => r.clientId))];
+  const teamMembersByClient = await getTeamMembersByClient(uniqueClientIds);
 
   const p1Count = rows.filter((r) => r.priority === 1).length;
   const p2Count = rows.filter((r) => r.priority === 2).length;
@@ -167,7 +222,6 @@ export default async function AdminEscalationsPage() {
         ]}
       />
 
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Cross-Client Escalations</h1>
         <p className="text-muted-foreground">
@@ -175,7 +229,6 @@ export default async function AdminEscalationsPage() {
         </p>
       </div>
 
-      {/* Summary KPIs */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardContent className="py-4">
@@ -228,7 +281,11 @@ export default async function AdminEscalationsPage() {
           {/* Mobile: card layout */}
           <div className="space-y-3 sm:hidden">
             {rows.map((row) => (
-              <EscalationCard key={row.id} row={row} />
+              <EscalationCard
+                key={row.id}
+                row={row}
+                teamMembers={teamMembersByClient.get(row.clientId) ?? []}
+              />
             ))}
           </div>
 
@@ -255,6 +312,9 @@ export default async function AdminEscalationsPage() {
                         Status
                       </th>
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                        Assign To
+                      </th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">
                         Age
                       </th>
                       <th className="px-4 py-3"></th>
@@ -263,6 +323,7 @@ export default async function AdminEscalationsPage() {
                   <tbody className="divide-y">
                     {rows.map((row) => {
                       const isUrgent = row.priority <= 2 || row.slaBreach;
+                      const teamMembers = teamMembersByClient.get(row.clientId) ?? [];
                       return (
                         <tr
                           key={row.id}
@@ -292,6 +353,13 @@ export default async function AdminEscalationsPage() {
                           </td>
                           <td className="px-4 py-3">
                             {getStatusBadge(row.status)}
+                          </td>
+                          <td className="px-4 py-3 min-w-[160px]">
+                            <EscalationAssignSelect
+                              escalationId={row.id}
+                              currentAssignedTo={row.assignedTo}
+                              teamMembers={teamMembers}
+                            />
                           </td>
                           <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                             <div className="flex items-center gap-1">
