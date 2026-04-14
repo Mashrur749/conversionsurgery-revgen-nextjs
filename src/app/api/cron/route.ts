@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
 
     // ── Every 30 minutes (minute 0-4 or 30-34) ──────────────
     if (minute < 5 || (minute >= 30 && minute < 35)) {
+      results.onboardingReminder = await dispatch(baseUrl, '/api/cron/onboarding-reminder', cronSecret!, 'GET', failedJobs);
       results.autoReviewResponse = await dispatch(baseUrl, '/api/cron/auto-review-response', cronSecret!, 'POST', failedJobs);
       results.calendarSync = await dispatch(baseUrl, '/api/cron/calendar-sync', cronSecret!, 'GET', failedJobs);
       results.reportDeliveryRetries = await dispatch(

@@ -122,6 +122,7 @@ export const clients = pgTable(
     localeId: varchar('locale_id', { length: 10 }).default('ca-ab'),
     playbookId: varchar('playbook_id', { length: 50 }).default('basement_development'),
 
+    scheduledOnboardingCallAt: timestamp('scheduled_onboarding_call_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
