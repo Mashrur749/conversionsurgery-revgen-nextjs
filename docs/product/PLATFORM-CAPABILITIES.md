@@ -247,6 +247,12 @@ Contractors and team members can connect their Google Calendar so platform appoi
 | **Feature toggle** | Controlled by the `calendarSyncEnabled` per-client feature flag. |
 | **Schema** | `calendar_integrations` (OAuth tokens, sync state, `consecutiveErrors`) and `calendar_events` (events with external IDs for sync). |
 
+- **Timezone handling:** All calendar operations use the client&apos;s configured timezone (defaults to America/Edmonton for Alberta-based contractors). No hardcoded timezone assumptions.
+- **Timezone-aware availability:** Slot generation evaluates &ldquo;today&rdquo; and past-slot cutoffs in the client&apos;s local timezone, preventing slots from being incorrectly filtered for clients in later time zones
+- **Sync error tracking:** Calendar sync failures are recorded per-event (lastSyncError field) and per-integration (consecutiveErrors counter). After 5 consecutive sync failures, an operator alert is sent via SMS
+- **Event change notifications:** When a contractor cancels or reschedules an appointment via Google Calendar, the homeowner receives an SMS notification through the compliance gateway with updated details or cancellation confirmation
+- Calendar event creation failures during booking are logged for operator visibility without blocking the appointment from being confirmed
+
 ### No-Show Recovery
 
 Cron detects appointments 2+ hours past scheduled time with no completion.
@@ -884,6 +890,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 - Configurable plan tiers with included quotas (leads, SMS, team members, phone numbers)
 - **Pre-subscription usage:** usage limits (team members, phone numbers, leads) are not enforced until a plan is assigned. This allows the admin setup wizard to configure team members, provision numbers, etc. before billing is active. Limits take effect once a subscription is created.
 - Free first month (30-day trial); billing starts day 31. Configurable trial days, waived for returning clients.
+- **Trial billing notification:** Before billing starts (Day 28 and Day 30), the contractor receives both an SMS notification and an email with their plan details, pricing, and a link to manage billing
 - **Trial reminder emails:** automated cron sends at days 7, 14, 25, 28, and 30. Days 28 and 30 also send an SMS alert via the agency communication channel.
 - Pause/resume capability
 - Coupon system (percentage/fixed, one-time/recurring, plan restrictions)
@@ -908,10 +915,16 @@ Every funnel event is automatically linked to the agent decision that contribute
 - **Plan changes:** In-app plan upgrade/downgrade for existing subscribers with proration (self-serve only &mdash; hidden for managed clients)
 - Payment methods on file with add/remove/default management
 - One-time payment links for lead invoices (deposits, progress payments, final)
+- **Webhook deduplication:** All Stripe webhook handlers (invoice, payment method, dispute, payment action) use `billingEvents.stripeEventId` for idempotent processing — duplicate webhook deliveries are silently skipped
+- **Missing metadata detection:** If a checkout session completes without required metadata (clientId, planId), the subscription is not provisioned locally and an admin alert email is sent with full session details for manual intervention
+- **Orphan prevention:** Subscription cancellation webhooks without a clientId in metadata are blocked before updating client status — prevents a cancelled Stripe subscription from leaving the client record in active state
+- **Orphaned subscription alerting:** If a subscription is created in Stripe but the local DB transaction fails, and the compensating cancellation also fails, a CRITICAL admin email alert is sent to prevent the client from being silently billed
+- **Payment link retry:** Stripe payment link creation retries up to 3 times with exponential backoff. After all retries fail, an operator alert is sent and reminder messages continue with manual payment instructions
 - Webhook handler with dedup protection
 - Payment confirmation SMS to both lead and owner
 - Reconciliation cron syncs subscription status daily
 - **Payment failure notification:** When a subscription payment fails, the contractor receives an SMS notification with a link to update their payment method. An admin email alert is also sent.
+- Payment reminders scheduled at 10 AM in the recipient&apos;s local timezone (uses IANA timezone from client settings, defaults to America/Edmonton)
 
 ### Guarantee Workflow
 
@@ -935,7 +948,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 - Data export within 5 business days (CSV: leads, conversations, pipeline jobs)
 - Export download with time-limited token
 - Retention call scheduling option
-- **Automated grace-period reminders:** daily cron sends email reminders at 20 days left, 7 days left, and 3 days left — each fired at most once per client, deduplicated via audit_log
+- **Automated grace-period reminders:** daily cron sends email reminders at 20 days left, 7 days left, and 3 days left — each fired at most once per client, deduplicated via audit_log. Grace-period reminders target both pending cancellation requests and those with a scheduled save call (status: pending or scheduled_call)
 - **Post-cancellation win-back:** personalized email sent 7 days after grace period ends. Includes months active, leads captured, messages sent, and revenue tracked from the stored `valueShown` snapshot. Falls back to generic copy if data unavailable.
 
 ---

@@ -1019,6 +1019,8 @@ Expected:
 - First reminder SMS delivered with correct amount and working Stripe link.
 - Payment link expires after 30 days.
 
+5. **Payment link retry:** Simulate a Stripe outage by temporarily invalidating the API key. Trigger a payment reminder. Verify: retry logs appear, operator alert sent after 3 failures, reminder SMS sent with manual payment instructions.
+
 ### Step 23: Review request after job completion
 
 1. Mark a test lead as job-completed (triggers review request):
@@ -1645,6 +1647,9 @@ Expected:
 - `calendar_integrations` row marked inactive (or deleted).
 - Subsequent sync cron runs do not attempt to sync for this client.
 - Booking slots revert to using only the `appointments` table (Google Calendar events no longer block).
+
+4. **Event change notification:** Cancel or reschedule a booked appointment directly in Google Calendar. Run calendar-sync cron. Verify: homeowner receives an SMS notification via the compliance gateway with the cancellation or new time details.
+5. **Sync error alerting:** Revoke Google Calendar OAuth token. Run calendar-sync cron 5+ times. Verify: `consecutiveErrors` increments on each run, operator SMS alert sent after 5 consecutive failures.
 
 ### Step 57: Wave 7 — Operator Triage Dashboard, KB Intake Questionnaire, Engagement Health, Dormant Re-Engagement
 
