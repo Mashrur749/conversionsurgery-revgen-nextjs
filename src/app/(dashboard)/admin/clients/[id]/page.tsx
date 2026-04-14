@@ -30,6 +30,7 @@ import { ClientDetailTabs } from './client-detail-tabs';
 import { EmbedWidgetCard } from './embed-widget-card';
 import { CalendarIntegrationCard } from './calendar-integration-card';
 import { getClientKnowledge, initializeClientKnowledge } from '@/lib/services/knowledge-base';
+import { evaluateOnboardingQualityForClient } from '@/lib/services/onboarding-quality';
 import { loadStructuredKnowledge } from '@/lib/services/structured-knowledge';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { LeadsNeedingFollowupCard } from './leads-needing-followup-card';
@@ -41,6 +42,7 @@ import { GuaranteeStatusCard } from './guarantee-status-card';
 import { EngagementHealthBadge } from './engagement-health-badge';
 import { IntegrationsCard } from './integrations-card';
 import { ServiceModelToggle } from './service-model-toggle';
+import { OnboardingProgress } from './onboarding-progress';
 import { checkEngagementHealth } from '@/lib/services/engagement-health';
 import { countQualifiedLeadEngagements } from '@/lib/services/guarantee-v2/metrics';
 import { calculateProbablePipelineValueCents } from '@/lib/services/pipeline-value';
@@ -317,6 +319,29 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
   const hasKnowledge = Number(kbCount?.count ?? 0) > 0;
   const setupComplete = hasPhone && hasLeads && hasKnowledge;
 
+  // Load quality gates for OnboardingProgress — only when client is in onboarding window
+  const ONBOARDING_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+  const isInOnboardingWindow =
+    client.aiAgentMode !== 'autonomous' ||
+    Date.now() - new Date(client.createdAt).getTime() < ONBOARDING_WINDOW_MS;
+
+  const onboardingQualityResult = isInOnboardingWindow
+    ? await evaluateOnboardingQualityForClient({
+        clientId: id,
+        source: 'admin_client_detail',
+        persistSnapshot: false,
+      }).catch((err) => {
+        console.error('[AdminClientPage] Failed to load onboarding quality:', err);
+        return null;
+      })
+    : null;
+
+  const onboardingQualityGates = onboardingQualityResult?.gates.map((gate) => ({
+    name: gate.title,
+    passed: gate.passed,
+    details: gate.passed ? undefined : gate.reasons[0],
+  })) ?? null;
+
   const statusColors: Record<string, string> = {
     active: 'bg-[#E8F5E9] text-[#3D7A50]',
     pending: 'bg-[#FFF3E0] text-sienna',
@@ -406,6 +431,11 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             </Link>
           </Button>
           <Button asChild variant="outline">
+            <Link href={`/admin/clients/${client.id}/call-prep`}>
+              Prep for Call
+            </Link>
+          </Button>
+          <Button asChild variant="outline">
             <Link href={`/admin/clients/${client.id}/schedule`}>
               Schedule
             </Link>
@@ -429,6 +459,16 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
       <ClientDetailTabs
         teamMemberCount={members.length}
         onboardingChecklist={onboardingChecklist}
+        onboardingProgressCard={
+          isInOnboardingWindow && onboardingQualityGates ? (
+            <OnboardingProgress
+              clientId={id}
+              aiAgentMode={client.aiAgentMode ?? 'off'}
+              createdAt={new Date(client.createdAt)}
+              qualityGates={onboardingQualityGates}
+            />
+          ) : null
+        }
         roiDashboard={<ROIDashboard metrics={roiMetrics} />}
         leadsNeedingFollowupCard={<LeadsNeedingFollowupCard clientId={id} />}
         usageCard={
