@@ -128,5 +128,10 @@ export * from './roi-calculator-leads';
 // AI Health Reports
 export * from './ai-health-reports';
 
+// 6-layer Orchestration
+export * from './sales-methodology';
+export * from './locale-contexts';
+export * from './industry-playbooks';
+
 // Export all relations for type-safe queries
 export * from './relations';

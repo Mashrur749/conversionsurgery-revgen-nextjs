@@ -141,6 +141,13 @@
       "when": 1776141833637,
       "tag": "0019_powerful_songbird",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1776142127111,
+      "tag": "0020_blue_pet_avengers",
+      "breakpoints": true
     }
   ]
 }

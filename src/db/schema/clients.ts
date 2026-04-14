@@ -112,6 +112,10 @@ export const clients = pgTable(
     // Speed-to-lead: how long it took before ConversionSurgery (minutes)
     previousResponseTimeMinutes: integer('previous_response_time_minutes'),
 
+    // 6-layer orchestration: locale and industry playbook
+    localeId: varchar('locale_id', { length: 10 }).default('ca-ab'),
+    playbookId: varchar('playbook_id', { length: 50 }).default('basement_development'),
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
