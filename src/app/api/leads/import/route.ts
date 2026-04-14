@@ -167,6 +167,8 @@ export async function POST(request: NextRequest) {
             notes: row.notes || null,
             source: 'csv_import' as const,
             status: row.status || 'new',
+            caslConsentAttested: true,
+            caslConsentAttestedAt: new Date(),
           }))
         ).returning({ id: leads.id, status: leads.status });
         imported = inserted.length;

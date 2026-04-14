@@ -151,6 +151,8 @@ export const POST = portalRoute(
               projectType: row.projectType || null,
               source: 'csv_import' as const,
               status: row.status || 'new',
+              caslConsentAttested: true,
+              caslConsentAttestedAt: new Date(),
             }))
           )
           .returning({ id: leads.id, status: leads.status });
