@@ -15,6 +15,7 @@ import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail } from '@/lib/services/resend';
 import { getTeamMembers, getTeamMemberById, getEscalationMembers } from '@/lib/services/team-bridge';
 import { assertSameClient, ClientOwnershipError } from '@/lib/utils/client-ownership';
+import { alertOperator } from '@/lib/services/operator-alerts';
 
 /**
  * Parameters for creating a new escalation
@@ -566,6 +567,12 @@ async function checkSlaBreachesInternal(): Promise<number> {
         }
       }
     }
+
+    // Alert operator via SMS for each SLA breach
+    await alertOperator(
+      `SLA Breach: ${client?.businessName ?? escalation.clientId}`,
+      `Escalation SLA breached for ${client?.businessName ?? 'a client'}. Reason: ${escalation.reason.replace(/_/g, ' ')}. View: ${process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.conversionsurgery.com'}/escalations/${escalation.id}`
+    ).catch((err) => console.error('[Escalation] Operator SLA breach alert failed:', err));
   }
 
   return breached.length;

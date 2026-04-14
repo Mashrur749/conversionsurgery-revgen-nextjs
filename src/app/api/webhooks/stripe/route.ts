@@ -13,6 +13,7 @@ import { sendEmail } from '@/lib/services/resend';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { provisionSubscriptionFromCheckout } from '@/lib/services/subscription';
+import { alertOperator } from '@/lib/services/operator-alerts';
 
 /** POST /api/webhooks/stripe */
 export async function POST(request: NextRequest) {
@@ -567,6 +568,26 @@ async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe
             invoiceId: invoice.id,
           });
         }
+      }
+
+      // Also alert operator via SMS
+      try {
+        const amountStr = `$${((invoice.amount_due || 0) / 100).toFixed(2)}`;
+        const [clientForSms] = await db
+          .select({ businessName: clients.businessName })
+          .from(clients)
+          .where(eq(clients.id, subscription.clientId))
+          .limit(1);
+        const businessName = clientForSms?.businessName || subscription.clientId;
+        await alertOperator(
+          `Payment failed: ${businessName}`,
+          `Payment of ${amountStr} failed for ${businessName}. Contractor has been notified via SMS to update their payment method.`
+        );
+      } catch (smsAlertErr) {
+        logSanitizedConsoleError('[Billing][payment-failed.operator-alert]', smsAlertErr, {
+          clientId: subscription.clientId,
+          invoiceId: invoice.id,
+        });
       }
     }
   }

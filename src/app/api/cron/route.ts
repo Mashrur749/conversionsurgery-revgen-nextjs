@@ -367,6 +367,11 @@ export async function POST(request: NextRequest) {
           const criticals = healthResult.alerts.filter(a => a.severity === 'critical');
           if (criticals.length > 0) {
             console.warn(`[AIHealthCheck] ${criticals.length} critical alerts:`, criticals.map(a => a.message).join('; '));
+            const alertMsg = criticals.map(a => a.message).join('; ');
+            await alertOperator(
+              'AI Health Critical',
+              `${criticals.length} critical AI health alert(s): ${alertMsg}`
+            ).catch(err => logSanitizedConsoleError('[AIHealthCheck] Operator alert failed:', err));
           }
         }
         results.aiHealthCheck = { job: 'ai-health-check', ...healthResult };
