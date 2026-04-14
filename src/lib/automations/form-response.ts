@@ -1,4 +1,5 @@
 import { getDb, clients, leads, conversations, blockedNumbers, dailyStats } from '@/db';
+import { leadContext } from '@/db/schema';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { eq, and, sql } from 'drizzle-orm';
 import { normalizePhoneNumber, formatPhoneNumber, isValidPhoneNumber } from '@/lib/utils/phone';
@@ -106,6 +107,36 @@ export async function handleFormSubmission(payload: FormPayload) {
       })
       .returning();
     lead = created[0];
+  }
+
+  // SIM-05: Store form data in leadContext so the agent can skip qualifying questions
+  if (projectType || message) {
+    // Extract project details from available form fields
+    const projectTypeValue = projectType || null;
+
+    if (projectTypeValue) {
+      try {
+        // Upsert leadContext with form-provided project info
+        await db
+          .insert(leadContext)
+          .values({
+            leadId: lead.id,
+            clientId: client.id,
+            projectType: projectTypeValue,
+            stage: 'new',
+          })
+          .onConflictDoUpdate({
+            target: [leadContext.leadId],
+            set: {
+              projectType: projectTypeValue,
+              updatedAt: new Date(),
+            },
+          });
+      } catch (err) {
+        console.error('[FormResponse] Failed to populate leadContext with form data:', err);
+        // Non-blocking — agent will qualify on first reply if this fails
+      }
+    }
   }
 
   // 4. Send SMS
