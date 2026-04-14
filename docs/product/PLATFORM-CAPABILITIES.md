@@ -535,6 +535,8 @@ Every lead accumulates:
 - **Objections:** tracked with resolution status
 - **Conversation summary** and key facts (AI-maintained)
 - **Recommended next action** (AI-generated)
+- **Strategy state display:** Lead detail page shows the current conversation objective and suggested next action from the strategy resolver, giving operators visibility into the AI&apos;s plan for each lead
+- **CASL consent badge:** Imported leads with attested CASL consent display a green &ldquo;CASL&rdquo; badge on both the leads list table and lead detail header for at-a-glance compliance visibility
 - **Decision-maker tracking:** The AI detects partner/spouse mentions in conversation ("need to check with my wife") and tracks decision-maker involvement in leadContext. Partner-approval objections do not count as booking rejections — the agent offers to include the partner via joint estimate visit or summary text.
 
 ### Multi-Channel Inbox
@@ -637,6 +639,10 @@ The contractor nav has 10 items: **Dashboard | Conversations | Appointments | Re
 | **Help &amp; Support** | Account Manager card at top (operator name and phone when configured). Help articles organized by category. &ldquo;Need more help?&rdquo; link to Discussions for async threads. Discussions merged into Help &amp; Support — no separate nav item. |
 | **Lead Import** | Self-serve CSV lead import with drag-and-drop, header auto-detection, preview, and downloadable template (see below). |
 | **Cancel** | Cancellation request with 30-day notice + data export |
+
+### AI Settings (Client Portal)
+
+- **Booking aggressiveness control:** Slider (1-10 scale) in the AI Settings page lets contractors adjust how proactively the system suggests appointments. 1 = gentle/educational, 10 = assertive/direct. Default: 5.
 
 ### KB Onboarding Wizard (Contractor Self-Serve)
 
@@ -1092,6 +1098,7 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 - **Cron failure SMS:** when any cron job fails, the operator receives an SMS alert to the phone number configured in `operator_phone` (stored in the `agencies` table). Alerts are sent from the agency number.
 - **Deduplication:** at most 1 alert per subject per hour to prevent alert storms.
 - **Setup:** configure `operator_phone`, `operator_name`, and `twilio_number` in the `agencies` table via `/admin/agency` (Agency Settings in the Settings nav group).
+- **Operator SMS alerts:** Critical events send immediate SMS to the operator phone: AI health critical thresholds breached (confidence -20%, guard violations &gt;5%), subscription payment failures (after contractor notification), and escalation SLA breaches (unclaimed past deadline). All alerts are deduplicated to prevent notification storms.
 
 ### Agency Voice Webhook
 
@@ -1147,6 +1154,8 @@ The service model badge (Managed/Self-Serve) in the client header is clickable &
 - AI settings: mode, tone, guardrails, smart assist delay, send policy
 - Team management with role-based access
 - Phone number provisioning and webhook configuration (admin and self-serve client portal). All number writes (purchase, assign, release, reassign) go through the `client-phone-management` service, which keeps `clients.twilioNumber` and the `client_phone_numbers` table in sync. UI labels distinguish &ldquo;Owner&apos;s Phone&rdquo; (private, for escalation alerts) from &ldquo;AI Business Line&rdquo; (lead-facing Twilio number).
+- **Call prep sheet:** One-click &ldquo;Prep for Call&rdquo; button on each client detail page generates a structured briefing for biweekly strategy calls: 14-day performance metrics, active pipeline by stage, attention items (high correction rate, opt-outs, KB gaps), and auto-generated talking points. Print-friendly layout.
+- **Onboarding progress tracker:** Client detail page shows a visual timeline of AI mode progression (off &rarr; assist &rarr; autonomous) with quality gate status (passed/failed per gate), blocking indicators, and days remaining. Auto-hides for established clients past the onboarding window.
 
 ### AI Preview / Sandbox
 
@@ -1198,6 +1207,7 @@ Commands:
 
 Eval results saved to `.scratch/eval-history.json` (rolling 50 runs). HTML report at `.scratch/eval-report.html`. Regression detection: safety has zero tolerance, other categories allow 10pp drop before flagging.
 - **AI effectiveness dashboard** (`/admin/ai-effectiveness`): outcome distribution (positive/negative/neutral/pending), action effectiveness breakdown, confidence band analysis, model tier ROI (fast vs quality), daily trend lines, top escalation reasons. Filterable by 7/14/30/60/90-day windows. Client-level AI summary automatically embedded in biweekly reports via `roiSummary.aiEffectiveness`.
+- **Prompt version tracking in UI:** Each agent decision in the AI Effectiveness dashboard shows the prompt version (methodology, locale, playbook versions) in the expandable detail view, enabling operators to correlate AI behavior changes with prompt updates
 - **Error telemetry:** internal error log with source, context, resolution status
 - **Audit log:** all admin actions searchable by person, client, action, timestamp
 - **Webhook logs:** inbound event viewer with filtering
@@ -1248,6 +1258,7 @@ Unified cross-client triage view at `/admin/triage` (Clients group in admin nav)
 - **Trigger detail on each card:** shows the specific reason for flagging with threshold context (e.g., &ldquo;Last estimate sent: 22d ago, threshold: 21d&rdquo;) and duration at status (&ldquo;Flagged for 3 weeks&rdquo; vs &ldquo;Just flagged today&rdquo;)
 - **Pending Drafts column:** shows the Smart Assist pending draft count per client in both the table view and mobile card layout
 - **Batch escalation acknowledge:** `POST /api/admin/escalations/batch` accepts multiple escalation IDs for bulk resolve/dismiss
+- **Per-client health metrics:** Each client row on the triage dashboard includes conversation stage distribution (qualifying/proposing/booking counts), Smart Assist correction rate (highlighted in warning when &gt;30%), recent opt-outs (last 7 days), and AI health alert status &mdash; all visible at a glance without opening the client detail page
 - Designed as a daily starting point for the solo operator — open this before the full daily checklist
 - Replaces the need to open each client separately to find what needs attention
 - Accessible via admin nav: Clients &rarr; Triage

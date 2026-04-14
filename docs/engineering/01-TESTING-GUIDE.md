@@ -2890,6 +2890,13 @@ Verifies the four quick wins shipped in the 2026-04-12 wave.
 3. Mark a lead as WON via SMS command. Verify `leadContext.conversationStage` syncs to `booked`.
 4. In the AI agent, let a conversation reach `lost` stage. Verify `leads.status` syncs to `lost`.
 
+### Step 79: Operator Dashboard Enhancements
+
+1. Open `/admin/triage`. Verify each client row shows: active lead count by conversation stage, Smart Assist correction rate, opt-outs in last 7 days, and AI health alert indicator.
+2. Open `/admin/clients/{id}`. Click &ldquo;Prep for Call&rdquo;. Verify the call prep page shows: 14-day performance, active pipeline, attention items, and talking points. Verify print layout works.
+3. For a new client (aiAgentMode not autonomous): verify the onboarding progress tracker appears showing AI mode timeline and quality gate status.
+4. Verify operator SMS alerts fire for: AI health critical (trigger via test), payment failure (simulate in Stripe test mode), escalation SLA breach (create test escalation past deadline).
+
 ---
 
 ## 3. Useful Commands
