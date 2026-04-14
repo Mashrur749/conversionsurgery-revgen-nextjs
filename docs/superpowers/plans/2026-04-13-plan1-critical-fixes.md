@@ -809,7 +809,101 @@ git commit -m "fix: PAUSE command cancels active flow executions (RACE-03)"
 
 ---
 
-### Task 10: Run Full Quality Gate
+### Task 10: Documentation Updates (Mandatory Per CLAUDE.md)
+
+**Files:**
+- Modify: `docs/product/PLATFORM-CAPABILITIES.md`
+- Modify: `docs/engineering/01-TESTING-GUIDE.md`
+
+- [ ] **Step 1: Update PLATFORM-CAPABILITIES.md — Win-Back Section (line ~300)**
+
+Current text at line 300:
+```
+- Randomized send timing (10am-2pm weekdays, avoids Monday morning/Friday afternoon)
+```
+Change to:
+```
+- Timezone-aware send timing (10am-2pm weekdays in recipient's local time, avoids Monday before 11am/Friday after 1pm). Evaluated using IANA timezone, not server UTC.
+```
+
+- [ ] **Step 2: Update PLATFORM-CAPABILITIES.md — Dormant Re-Engagement Section (line ~367)**
+
+Add after "Runs weekly on Wednesdays":
+```
+- Send window is timezone-aware (same rules as win-back: 10am-2pm local time, Monday/Friday constraints)
+```
+
+- [ ] **Step 3: Update PLATFORM-CAPABILITIES.md — Win-Back freshness (line ~299)**
+
+Add new bullet after the "After 2 attempts" bullet:
+```
+- **Freshness gate for deferred messages:** AI-generated follow-ups (`__AI_GENERATE__` scheduled messages) check lead context before generation — cancelled if lead stage changed to `booked`/`won`/`lost`, or if lead had inbound activity within 7 days
+```
+
+- [ ] **Step 4: Update PLATFORM-CAPABILITIES.md — Escalation behavior (new bullet after line ~539)**
+
+Add after the escalation batching bullet:
+```
+- **Escalation acknowledgment:** When the AI escalates, the homeowner receives an immediate SMS: "I hear you, and I want to make sure this gets handled properly. I'm connecting you with [ownerName] directly — expect to hear from them shortly." This prevents silence during the handoff window.
+```
+
+- [ ] **Step 5: Update PLATFORM-CAPABILITIES.md — PAUSE command (line ~538)**
+
+Current text:
+```
+**PAUSE / RESUME commands:** contractor texts PAUSE to their business number → AI mode set to `off`, all pending scheduled messages cancelled.
+```
+Change to:
+```
+**PAUSE / RESUME commands:** contractor texts PAUSE to their business number → AI mode set to `off`, all pending scheduled messages cancelled, all active flow executions cancelled.
+```
+
+- [ ] **Step 6: Update PLATFORM-CAPABILITIES.md — Opt-out re-subscribe (line ~747)**
+
+Current text:
+```
+- **Re-opt-in:** START, YES, SUBSCRIBE, OPTIN → re-consent recorded
+```
+Change to:
+```
+- **Re-opt-in:** START, YES, SUBSCRIBE, OPTIN → re-consent recorded, lead status restored to `contacted`
+```
+
+- [ ] **Step 7: Update PLATFORM-CAPABILITIES.md — Smart Assist auto-cancel (line ~536)**
+
+Add after the existing Smart Assist reference:
+```
+- **Auto-cancel on outbound:** If any outbound message is sent for a lead (manual reply, AI response, or scheduled message) after a Smart Assist draft was queued, the draft is automatically cancelled to prevent redundant messages.
+```
+
+- [ ] **Step 8: Update TESTING-GUIDE.md — PAUSE test step (line ~1784)**
+
+Current text:
+```
+1. Text `PAUSE` from an authorized sender. Verify: `clients.aiAgentMode` set to `off`, all pending `scheduledMessages` cancelled, confirmation SMS sent.
+```
+Change to:
+```
+1. Text `PAUSE` from an authorized sender. Verify: `clients.aiAgentMode` set to `off`, all pending `scheduledMessages` cancelled, all active `flowExecutions` cancelled, confirmation SMS sent.
+```
+
+- [ ] **Step 9: Update TESTING-GUIDE.md — Escalation test step (line ~563)**
+
+Add after existing escalation test step:
+```
+4. Verify the lead receives an acknowledgment SMS before the escalation is created: "I hear you, and I want to make sure this gets handled properly. I'm connecting you with [ownerName] directly..."
+```
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add docs/product/PLATFORM-CAPABILITIES.md docs/engineering/01-TESTING-GUIDE.md
+git commit -m "docs: update capabilities and testing guide for Plan 1 fixes"
+```
+
+---
+
+### Task 11: Run Full Quality Gate
 
 - [ ] **Step 1: Run no-regressions gate**
 
@@ -824,6 +918,40 @@ Expected: All pass (signal-detection tests may need schema alignment)
 - [ ] **Step 3: Final commit if any fixes needed**
 
 If any quality gate issues arise from the changes, fix and commit.
+
+---
+
+### Task 12: Post-Execution Simulation
+
+Re-run the scenarios that exposed gaps to verify fixes work. Trace through updated code paths.
+
+- [ ] **Step 1: Re-run affected scenarios**
+
+Dispatch an Explore agent to trace these scenarios through the UPDATED code:
+
+| Scenario | Gap Fixed | Verify |
+|----------|----------|--------|
+| 3 (Slow nurture → win-back) | AUDIT-01, 02, 03 | Freshness gate cancels stale messages; send window uses Alberta time; temperature 0.6 |
+| 5 (Emergency) | SIM-04 noted, NOT fixed in Plan 1 | Confirm still flagged for Plan 2 |
+| 8 (Form submission) | SIM-05 noted, NOT fixed in Plan 1 | Confirm still flagged for Plan 3 |
+| 11 (Opt-out) | SIM-10 | Re-subscribe sets 'contacted' not 'active' |
+| 12 (Frustrated escalation) | SIM-08 | Homeowner gets ack SMS before escalation |
+| 13 (Dormant reactivation) | AUDIT-02 | Send window uses Alberta time |
+| 17 (No-show recovery) | AUDIT-01 | Freshness gate checks before generation |
+
+- [ ] **Step 2: Check for regression scenarios**
+
+Verify these WORKING scenarios still work with the changes:
+
+| Scenario | Risk | Verify |
+|----------|------|--------|
+| 7 (Missed call) | PAUSE change could affect | PAUSE only cancels for the PAUSED client, not other clients |
+| 18 (Payment → review) | Freshness gate could interfere | Payment sequences don't use `__AI_GENERATE__`, so unaffected |
+| 20 (Knowledge gap) | Orchestrator changes | Knowledge gap tracking unchanged — verify `trackKnowledgeGap` still called |
+
+- [ ] **Step 3: Report findings**
+
+If any scenario fails verification, create a follow-up fix task before marking Plan 1 complete.
 
 ---
 
