@@ -128,18 +128,19 @@ export async function runAiModeProgression(): Promise<AiModeProgressionResult> {
         continue;
       }
 
-      // ── Gate 3: onboarding quality (required for off→assist) ─────────────
-      if (targetMode === 'assist') {
-        const evaluation = await evaluateOnboardingQualityForClient({
-          clientId: client.id,
-          source: 'ai_mode_progression_cron',
-          persistSnapshot: false,
-        });
+      // ── Gate 3: onboarding quality (required for ALL transitions) ───────
+      // XDOM-04: Quality gates must pass for both off→assist AND assist→autonomous.
+      // A contractor who deletes KB entries after reaching assist mode should NOT
+      // be promoted to autonomous with zero knowledge.
+      const evaluation = await evaluateOnboardingQualityForClient({
+        clientId: client.id,
+        source: 'ai_mode_progression_cron',
+        persistSnapshot: false,
+      });
 
-        if (!evaluation.passedCritical) {
-          skipped++;
-          continue;
-        }
+      if (!evaluation.passedCritical) {
+        skipped++;
+        continue;
       }
 
       // ── Gate 4: no AI quality flags in past 7 days (required for autonomous) ──
@@ -229,6 +230,90 @@ export async function runAiModeProgression(): Promise<AiModeProgressionResult> {
       const reason = error instanceof Error ? error.message : 'Unknown error';
       errors.push(`Client ${client.id}: ${reason}`);
       logSanitizedConsoleError('[AiModeProgression] Error processing client:', error, {
+        clientId: client.id,
+      });
+    }
+  }
+
+  // ── Regression detection (XDOM-04) ──────────────────────────────────────────
+  // Check clients already in 'autonomous' mode — if quality gates fail,
+  // regress to 'assist' and alert the operator. This prevents a client
+  // from staying in autonomous mode with degraded KB or missing config.
+  const autonomousClients = await db
+    .select({
+      id: clients.id,
+      businessName: clients.businessName,
+      aiAgentMode: clients.aiAgentMode,
+      phone: clients.phone,
+      twilioNumber: clients.twilioNumber,
+    })
+    .from(clients)
+    .where(
+      and(
+        eq(clients.status, 'active'),
+        eq(clients.aiAgentMode, 'autonomous')
+      )
+    );
+
+  for (const client of autonomousClients) {
+    try {
+      const evaluation = await evaluateOnboardingQualityForClient({
+        clientId: client.id,
+        source: 'ai_mode_regression_check',
+        persistSnapshot: false,
+      });
+
+      if (!evaluation.passedCritical) {
+        // Regress to assist mode
+        await db
+          .update(clients)
+          .set({
+            aiAgentMode: 'assist',
+            updatedAt: now,
+          })
+          .where(eq(clients.id, client.id));
+
+        // Audit log
+        await db.insert(auditLog).values({
+          personId: null,
+          clientId: client.id,
+          action: 'ai_mode_auto_regressed',
+          resourceType: 'client',
+          resourceId: client.id,
+          metadata: {
+            previousMode: 'autonomous',
+            newMode: 'assist',
+            reason: 'Quality gates no longer passing',
+            criticalFailures: evaluation.criticalFailures,
+            triggeredBy: 'ai_mode_regression_check',
+          },
+          createdAt: now,
+        });
+
+        // Alert operator
+        await sendAlert({
+          clientId: client.id,
+          message: `AI mode for ${client.businessName} has been regressed from autonomous to assist. Reason: quality gates no longer passing (${evaluation.criticalFailures.join(', ')}). Review their knowledge base and configuration.`,
+          isUrgent: true,
+        });
+
+        details.push({
+          clientId: client.id,
+          businessName: client.businessName,
+          previousMode: 'autonomous',
+          newMode: 'assist',
+          reason: `Regression — critical gates failed: ${evaluation.criticalFailures.join(', ')}`,
+        });
+
+        advanced++; // Count regressions in the advanced counter for visibility
+        console.log(
+          `[AiModeProgression] REGRESSED ${client.businessName} (${client.id}): autonomous → assist (quality gates failed)`
+        );
+      }
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Unknown error';
+      errors.push(`Regression check ${client.id}: ${reason}`);
+      logSanitizedConsoleError('[AiModeProgression] Regression check error:', error, {
         clientId: client.id,
       });
     }
