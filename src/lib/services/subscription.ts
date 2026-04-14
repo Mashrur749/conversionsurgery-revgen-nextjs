@@ -9,6 +9,8 @@ import {
   type PlanFeatures,
 } from '@/lib/services/usage-policy';
 import { buildInitialGuaranteeWindowState } from '@/lib/services/guarantee-v2/state-machine';
+import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { sendEmail } from '@/lib/services/resend';
 import type Stripe from 'stripe';
 import type { Subscription } from '@/db/schema/subscriptions';
 import type { Plan } from '@/db/schema/plans';
@@ -197,13 +199,39 @@ export async function createSubscription(
   } catch (error) {
     // Transaction failed — attempt to cancel the Stripe subscription
     // to prevent orphaned billing
-    console.error('[Subscription] DB transaction failed after Stripe create, attempting compensation:', error);
+    logSanitizedConsoleError(
+      '[Subscription] DB transaction failed after Stripe create, attempting compensation',
+      error instanceof Error ? error : new Error(String(error)),
+      { stripeSubscriptionId: stripeSubscription.id, clientId, planId }
+    );
+
     try {
       await stripe.subscriptions.cancel(stripeSubscription.id);
-      console.log('[Subscription] Compensating Stripe cancel succeeded');
     } catch (cancelError) {
-      console.error('[Subscription] Compensating Stripe cancel FAILED — manual reconciliation needed:', cancelError);
+      // Compensating cancel also failed — subscription is orphaned and will continue billing.
+      // Alert the operator immediately so they can cancel manually in Stripe.
+      logSanitizedConsoleError(
+        '[Subscription] Compensating Stripe cancel FAILED — orphaned subscription requires manual cancellation',
+        cancelError instanceof Error ? cancelError : new Error(String(cancelError)),
+        { stripeSubscriptionId: stripeSubscription.id, clientId, planId }
+      );
+
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (adminEmail) {
+        await sendEmail({
+          to: adminEmail,
+          subject: `CRITICAL: Orphaned Stripe subscription — manual cancellation required`,
+          html: `<p>A Stripe subscription was created but the local database transaction failed. The compensating cancellation also failed, leaving an <strong>active subscription that will continue billing</strong>.</p>
+<p><strong>Stripe Subscription ID:</strong> ${stripeSubscription.id}</p>
+<p><strong>Client ID:</strong> ${clientId}</p>
+<p><strong>Plan ID:</strong> ${planId}</p>
+<p>Please cancel this subscription immediately in the <a href="https://dashboard.stripe.com/subscriptions/${stripeSubscription.id}">Stripe Dashboard</a> to stop the customer from being charged.</p>`,
+        }).catch(() => {
+          // Email failure must not swallow the original error
+        });
+      }
     }
+
     throw error;
   }
 }
