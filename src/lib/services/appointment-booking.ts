@@ -13,6 +13,7 @@ import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { sendEmail } from '@/lib/services/resend';
 import { createEvent } from '@/lib/services/calendar';
 import { format, addDays, addMinutes, parse, isBefore, isAfter } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 import { resolveReminderRecipients } from '@/lib/services/reminder-routing';
 
 export interface TimeSlot {
@@ -47,7 +48,8 @@ export async function getAvailableSlots(
   clientId: string,
   preferredDate?: string,
   membershipId?: string,
-  durationMinutes: number = 60
+  durationMinutes: number = 60,
+  timezone: string = 'America/Edmonton'
 ): Promise<TimeSlot[]> {
   const db = getDb();
 
@@ -78,7 +80,8 @@ export async function getAvailableSlots(
   const hoursByDay = new Map(hours.map(h => [h.dayOfWeek, h]));
 
   // Get existing appointments for next 7 days
-  const startDate = preferredDate || format(new Date(), 'yyyy-MM-dd');
+  const nowInClientTz = toZonedTime(new Date(), timezone);
+  const startDate = preferredDate || format(nowInClientTz, 'yyyy-MM-dd');
   const endDate = format(addDays(new Date(startDate), 7), 'yyyy-MM-dd');
 
   // --- S1: Filter appointments by member when membershipId is given ---
@@ -155,7 +158,9 @@ export async function getAvailableSlots(
 
   // Generate available slots
   const slots: TimeSlot[] = [];
-  const now = new Date();
+  // Compare slots against "now in client timezone" so UTC offsets don't truncate today's slots.
+  // toZonedTime converts the wall-clock representation to the client's local time.
+  const now = toZonedTime(new Date(), timezone);
 
   for (let i = 0; i < 7; i++) {
     const date = addDays(new Date(startDate), i);

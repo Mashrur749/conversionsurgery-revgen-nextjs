@@ -83,6 +83,39 @@ export async function POST(request: NextRequest) {
               stripeEventId: event.id,
             });
           }
+        } else {
+          // Missing metadata — Stripe charged the customer but we cannot auto-provision.
+          // Alert the operator for manual intervention. Do NOT throw (Stripe would retry).
+          const missingFields = [
+            !clientId && 'clientId',
+            !planId && 'planId',
+          ].filter(Boolean).join(', ');
+
+          logSanitizedConsoleError(
+            '[Billing][checkout.missing-metadata]',
+            new Error(`checkout.session.completed missing required metadata: ${missingFields}`),
+            {
+              stripeSubId,
+              stripeEventId: event.id,
+              sessionId: session.id,
+              availableMetadata: session.metadata,
+            }
+          );
+
+          const adminEmail = process.env.ADMIN_EMAIL;
+          if (adminEmail) {
+            await sendEmail({
+              to: adminEmail,
+              subject: `ACTION REQUIRED: Stripe checkout completed but subscription not provisioned`,
+              html: `<p>A Stripe checkout session completed but the subscription could not be auto-provisioned because required metadata fields are missing.</p>
+<p><strong>Missing fields:</strong> ${missingFields}</p>
+<p><strong>Stripe Subscription ID:</strong> ${stripeSubId}</p>
+<p><strong>Stripe Event ID:</strong> ${event.id}</p>
+<p><strong>Stripe Session ID:</strong> ${session.id}</p>
+<p><strong>Available metadata:</strong> ${JSON.stringify(session.metadata || {})}</p>
+<p>Please manually provision the subscription in the admin dashboard or contact support.</p>`,
+            });
+          }
         }
         break;
       }
@@ -156,6 +189,14 @@ export async function POST(request: NextRequest) {
     }
 
     case 'checkout.session.expired': {
+      // Dedup — prevents setting status to 'cancelled' twice on Stripe retry
+      const [existingExpiredEvent] = await db
+        .select({ id: billingEvents.id })
+        .from(billingEvents)
+        .where(eq(billingEvents.stripeEventId, event.id))
+        .limit(1);
+      if (existingExpiredEvent) break;
+
       const session = event.data.object as Stripe.Checkout.Session;
 
       if (session.payment_link) {
@@ -163,6 +204,19 @@ export async function POST(request: NextRequest) {
           .update(payments)
           .set({ status: 'cancelled' })
           .where(eq(payments.stripePaymentLinkId, session.payment_link as string));
+
+        // Persist event.id as the dedup key for future retries
+        const clientId = session.metadata?.clientId;
+        if (clientId) {
+          await db.insert(billingEvents).values({
+            clientId,
+            eventType: event.type.replace(/\./g, '_'),
+            description: 'Checkout session expired',
+            stripeEventId: event.id,
+            stripeEventType: event.type,
+            rawData: event.data.object as unknown as Record<string, unknown>,
+          });
+        }
       }
       break;
     }
@@ -214,9 +268,67 @@ export async function POST(request: NextRequest) {
     case 'customer.subscription.trial_will_end': {
       const sub = event.data.object as Stripe.Subscription;
       const clientId = sub.metadata?.clientId;
-      if (clientId) {
-        await logBillingEvent(db, clientId, event, 'Trial ending in 3 days');
+      if (!clientId) break;
+
+      // Dedup — prevents duplicate trial-end notifications on Stripe retry
+      const [existingTrialEvent] = await db
+        .select({ id: billingEvents.id })
+        .from(billingEvents)
+        .where(eq(billingEvents.stripeEventId, event.id))
+        .limit(1);
+      if (existingTrialEvent) break;
+
+      await logBillingEvent(db, clientId, event, 'Trial ending in 3 days');
+
+      // Fetch client record to get contact details
+      const [client] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.id, clientId))
+        .limit(1);
+
+      if (!client) break;
+
+      // SMS notification — use admin Twilio number as from (client.twilioNumber is for lead outreach)
+      const adminNumber = process.env.TWILIO_PHONE_NUMBER;
+      if (client.phone && adminNumber) {
+        await sendSMS(
+          client.phone,
+          `Hi ${client.ownerName || client.businessName} — your ConversionSurgery trial ends in 3 days. Your card on file will be charged automatically. Questions? Reply to this message or call us.`,
+          adminNumber
+        );
       }
+
+      // Email notification — more detail + card update link
+      if (client.email) {
+        const [plan] = client.stripeSubscriptionId
+          ? await db
+              .select({ name: plans.name, stripePriceIdMonthly: plans.stripePriceIdMonthly })
+              .from(plans)
+              .innerJoin(
+                subscriptions,
+                eq(subscriptions.planId, plans.id)
+              )
+              .where(eq(subscriptions.clientId, clientId))
+              .limit(1)
+          : [];
+
+        const planName = plan?.name || 'your current plan';
+        const portalUrl = process.env.NEXT_PUBLIC_APP_URL
+          ? `${process.env.NEXT_PUBLIC_APP_URL}/portal/billing`
+          : 'your client portal';
+
+        await sendEmail({
+          to: client.email,
+          subject: `Your ConversionSurgery trial ends in 3 days`,
+          html: `<p>Hi ${client.ownerName || client.businessName},</p>
+<p>Your free trial of ConversionSurgery ends in <strong>3 days</strong>. After that, you&rsquo;ll be automatically billed for <strong>${planName}</strong> using the card on file.</p>
+<p>If you&rsquo;d like to update your payment method before billing starts, you can do so in your <a href="${portalUrl}">client portal</a>.</p>
+<p>If you have any questions about your plan or billing, simply reply to this email or reach out to your account manager.</p>
+<p>Thank you for trying ConversionSurgery &mdash; we&rsquo;re excited to keep working with you.</p>`,
+        });
+      }
+
       break;
     }
 
@@ -315,8 +427,31 @@ async function handleSubscriptionDeleted(db: DB, sub: Stripe.Subscription, event
 
   const clientId = sub.metadata?.clientId;
 
-  // Wrap all DB writes in transaction — prevents partial state where
-  // subscription is canceled but client status stays active
+  // Guard: without clientId we cannot update the client record atomically.
+  // Proceeding would leave client.status = 'active' while subscription.status = 'canceled'.
+  // Alert the operator and bail out — they must reconcile manually.
+  if (!clientId) {
+    logSanitizedConsoleError(
+      '[Billing][subscription-deleted.missing-client-id]',
+      new Error('No clientId in subscription metadata — cannot update client status'),
+      { stripeSubscriptionId: sub.id, stripeEventId: event.id }
+    );
+
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (adminEmail) {
+      await sendEmail({
+        to: adminEmail,
+        subject: `ACTION REQUIRED: Subscription deleted in Stripe with no client mapping`,
+        html: `<p>Stripe fired a <code>customer.subscription.deleted</code> event but the subscription has no <code>clientId</code> in its metadata. The client record has <strong>not</strong> been updated.</p>
+<p><strong>Stripe Subscription ID:</strong> ${sub.id}</p>
+<p><strong>Stripe Event ID:</strong> ${event.id}</p>
+<p>Please locate the client in the admin dashboard, cancel their subscription record manually, and update their status to cancelled.</p>`,
+      });
+    }
+    return;
+  }
+
+  // Wrap all DB writes in transaction — ensures subscription + client status update are atomic
   await withTransaction(async (tx) => {
     await tx.update(subscriptions).set({
       status: 'canceled',
@@ -324,25 +459,31 @@ async function handleSubscriptionDeleted(db: DB, sub: Stripe.Subscription, event
       updatedAt: new Date(),
     }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
 
-    if (clientId) {
-      await tx.insert(billingEvents).values({
-        clientId,
-        eventType: event.type.replace(/\./g, '_'),
-        description: 'Subscription canceled',
-        stripeEventId: event.id,
-        stripeEventType: event.type,
-        rawData: event.data.object as unknown as Record<string, unknown>,
-      });
+    await tx.insert(billingEvents).values({
+      clientId,
+      eventType: event.type.replace(/\./g, '_'),
+      description: 'Subscription canceled',
+      stripeEventId: event.id,
+      stripeEventType: event.type,
+      rawData: event.data.object as unknown as Record<string, unknown>,
+    });
 
-      await tx.update(clients).set({
-        status: 'cancelled',
-        updatedAt: new Date(),
-      }).where(eq(clients.id, clientId));
-    }
+    await tx.update(clients).set({
+      status: 'cancelled',
+      updatedAt: new Date(),
+    }).where(eq(clients.id, clientId));
   });
 }
 
 async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe.Event) {
+  // Dedup — prevent double sync + double billing event on Stripe retry
+  const [existingInvoiceEvent] = await db
+    .select({ id: billingEvents.id })
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingInvoiceEvent) return;
+
   try {
     await syncInvoiceFromStripe(invoice.id);
   } catch (err) {
@@ -432,6 +573,14 @@ async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe
 }
 
 async function handlePaymentMethodAttached(db: DB, pm: Stripe.PaymentMethod, event: Stripe.Event) {
+  // Dedup — logBillingEvent at the end persists the event.id key
+  const [existingPmEvent] = await db
+    .select({ id: billingEvents.id })
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingPmEvent) return;
+
   const customerStr = typeof pm.customer === 'string' ? pm.customer : pm.customer?.id;
   if (!customerStr) return;
 
@@ -521,6 +670,14 @@ async function handlePaymentActionRequired(db: DB, invoice: Stripe.Invoice, even
 
   if (!subscription) return;
 
+  // Dedup — prevents duplicate admin alert emails on Stripe retry
+  const [existingActionEvent] = await db
+    .select({ id: billingEvents.id })
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingActionEvent) return;
+
   await logBillingEvent(
     db,
     subscription.clientId,
@@ -572,6 +729,14 @@ async function handleDisputeCreated(db: DB, dispute: Stripe.Dispute, event: Stri
   const clientId = await resolveClientFromDispute(db, dispute);
   if (!clientId) return;
 
+  // Dedup — prevents duplicate URGENT email on Stripe retry
+  const [existingDisputeEvent] = await db
+    .select({ id: billingEvents.id })
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingDisputeEvent) return;
+
   await logBillingEvent(
     db,
     clientId,
@@ -598,6 +763,14 @@ async function handleDisputeCreated(db: DB, dispute: Stripe.Dispute, event: Stri
 async function handleDisputeClosed(db: DB, dispute: Stripe.Dispute, event: Stripe.Event) {
   const clientId = await resolveClientFromDispute(db, dispute);
   if (!clientId) return;
+
+  // Dedup — prevents duplicate billing event + admin email on Stripe retry
+  const [existingClosedEvent] = await db
+    .select({ id: billingEvents.id })
+    .from(billingEvents)
+    .where(eq(billingEvents.stripeEventId, event.id))
+    .limit(1);
+  if (existingClosedEvent) return;
 
   const won = dispute.status === 'won';
   await logBillingEvent(

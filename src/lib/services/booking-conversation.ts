@@ -7,7 +7,7 @@
  */
 
 import { getDb } from '@/db';
-import { leadContext, appointments, leads } from '@/db/schema';
+import { leadContext, appointments, leads, clients } from '@/db/schema';
 import { eq, and, not, desc } from 'drizzle-orm';
 import {
   getAvailableSlots,
@@ -259,12 +259,21 @@ async function handleNewBooking(
   leadAddress?: string | null,
   twilioNumber?: string | null
 ): Promise<BookingConversationResult> {
+  const db = getDb();
+
+  // Fetch client timezone for accurate slot generation
+  const [clientRow] = await db
+    .select({ timezone: clients.timezone })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+  const clientTimezone = clientRow?.timezone || 'America/Edmonton';
+
   // Get available slots
-  const available = await getAvailableSlots(clientId);
+  const available = await getAvailableSlots(clientId, undefined, undefined, 60, clientTimezone);
 
   if (available.length === 0) {
     // H2: Graceful waitlist — capture lead and escalate instead of dead-end rejection
-    const db = getDb();
 
     // Mark lead as contacted so it surfaces in the pipeline
     await db
@@ -358,7 +367,13 @@ async function handleSlotSelection(
   }
 
   // Get available slots again (they may have changed)
-  const available = await getAvailableSlots(clientId);
+  const db2 = getDb();
+  const [clientRow2] = await db2
+    .select({ timezone: clients.timezone })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+  const available = await getAvailableSlots(clientId, undefined, undefined, 60, clientRow2?.timezone || 'America/Edmonton');
 
   // Use AI to match the response to a slot
   const matchedSlot = await matchSlotFromResponse(message, lastAssistant.content, available, clientId);
@@ -442,7 +457,12 @@ async function handleReschedule(
   }
 
   // Get available slots
-  const available = await getAvailableSlots(clientId);
+  const [clientRow3] = await db
+    .select({ timezone: clients.timezone })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+  const available = await getAvailableSlots(clientId, undefined, undefined, 60, clientRow3?.timezone || 'America/Edmonton');
   const suggestions = suggestSlots(available, 3);
 
   if (suggestions.length === 0) {
