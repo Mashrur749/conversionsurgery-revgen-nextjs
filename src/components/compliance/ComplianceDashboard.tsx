@@ -16,6 +16,13 @@ export interface ComplianceStats {
   complianceScore: number;
 }
 
+/** A single row in the opt-out reason breakdown */
+export interface OptOutReasonCount {
+  reason: string;
+  count: number;
+  percentage: number;
+}
+
 interface QuietHoursPolicyStats {
   environmentMode: 'STRICT_ALL_OUTBOUND_QUEUE' | 'INBOUND_REPLY_ALLOWED';
   overrideCount: number;
@@ -32,6 +39,7 @@ interface ComplianceDashboardProps {
   stats: ComplianceStats;
   risks: string[];
   quietHoursPolicy: QuietHoursPolicyStats;
+  optOutReasonBreakdown: OptOutReasonCount[];
   onDownloadReport: () => void;
 }
 
@@ -57,6 +65,22 @@ function getScoreBadge(score: number): ScoreBadge {
   return { label: 'Needs Attention', color: 'bg-[#FDEAE4] text-sienna' };
 }
 
+const OPT_OUT_REASON_LABELS: Record<string, string> = {
+  competitor_chosen: 'Chose competitor',
+  project_cancelled: 'Project cancelled',
+  bad_experience: 'Bad experience',
+  cost: 'Cost',
+  not_interested: 'Not interested',
+  unknown: 'Unknown',
+};
+
+function formatOptOutReason(reason: string): string {
+  return (
+    OPT_OUT_REASON_LABELS[reason] ??
+    reason.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}
+
 function formatPolicyMode(mode: QuietHoursPolicyStats['environmentMode']): string {
   if (mode === 'INBOUND_REPLY_ALLOWED') {
     return 'Inbound Replies Allowed';
@@ -72,6 +96,7 @@ export function ComplianceDashboard({
   stats,
   risks,
   quietHoursPolicy,
+  optOutReasonBreakdown,
   onDownloadReport,
 }: ComplianceDashboardProps) {
   const scoreBadge = getScoreBadge(stats.complianceScore);
@@ -152,6 +177,47 @@ export function ComplianceDashboard({
           </CardContent>
         </Card>
       </div>
+
+      {/* Opt-Out Reason Breakdown */}
+      {optOutReasonBreakdown.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Opt-Out Reasons</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left px-3 py-2 font-medium text-muted-foreground">
+                      Reason
+                    </th>
+                    <th className="text-right px-3 py-2 font-medium text-muted-foreground">
+                      Count
+                    </th>
+                    <th className="text-right px-3 py-2 font-medium text-muted-foreground">
+                      %
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {optOutReasonBreakdown.map((row) => (
+                    <tr key={row.reason} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-3 py-2">{formatOptOutReason(row.reason)}</td>
+                      <td className="px-3 py-2 text-right font-medium tabular-nums">
+                        {row.count.toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 text-right text-muted-foreground tabular-nums">
+                        {row.percentage}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

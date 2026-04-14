@@ -1,18 +1,19 @@
-import { auth } from '@/auth';
-import { redirect } from 'next/navigation';
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import {
   getDb,
   consentRecords,
   optOutRecords,
   doNotContactList,
   complianceAuditLog,
-} from '@/db';
-import { eq, and, gte, count } from 'drizzle-orm';
-import { subDays } from 'date-fns';
-import { ComplianceDashboardClient } from './compliance-dashboard-client';
-import { getQuietHoursPolicyDiagnostics } from '@/lib/compliance/quiet-hours-policy';
+  leads,
+} from "@/db";
+import { eq, and, gte, count, isNotNull } from "drizzle-orm";
+import { subDays } from "date-fns";
+import { ComplianceDashboardClient } from "./compliance-dashboard-client";
+import { getQuietHoursPolicyDiagnostics } from "@/lib/compliance/quiet-hours-policy";
+import type { OptOutReasonCount } from "@/components/compliance/ComplianceDashboard";
 
-/** Compliance stats displayed on the admin dashboard */
 interface ComplianceStats {
   activeConsents: number;
   totalOptOuts: number;
@@ -22,7 +23,6 @@ interface ComplianceStats {
   complianceScore: number;
 }
 
-/** Calculates a compliance score (0-100) based on opt-out rate and blocked messages */
 function calculateComplianceScore(optOutRate: number, messagesBlocked: number): number {
   let score = 100;
   if (optOutRate > 5) score -= 20;
@@ -31,14 +31,13 @@ function calculateComplianceScore(optOutRate: number, messagesBlocked: number): 
   return Math.max(0, score);
 }
 
-/** Generates human-readable risk descriptions from compliance metrics */
 function generateRisks(optOutRate: number, messagesBlocked: number): string[] {
   const risks: string[] = [];
   if (optOutRate > 5) {
-    risks.push(`High opt-out rate: ${optOutRate.toFixed(1)}% in last 30 days`);
+    risks.push("High opt-out rate: " + optOutRate.toFixed(1) + "% in last 30 days");
   }
   if (messagesBlocked > 10) {
-    risks.push(`${messagesBlocked} messages blocked in last 30 days`);
+    risks.push(messagesBlocked + " messages blocked in last 30 days");
   }
   return risks;
 }
@@ -46,13 +45,12 @@ function generateRisks(optOutRate: number, messagesBlocked: number): string[] {
 export default async function CompliancePage() {
   const session = await auth();
   if (!session?.user?.isAgency) {
-    redirect('/dashboard');
+    redirect("/dashboard");
   }
 
   const db = getDb();
   const thirtyDaysAgo = subDays(new Date(), 30);
 
-  // Aggregate stats across all clients
   const [activeConsentsResult] = await db
     .select({ count: count() })
     .from(consentRecords)
@@ -73,10 +71,19 @@ export default async function CompliancePage() {
     .from(complianceAuditLog)
     .where(
       and(
-        eq(complianceAuditLog.eventType, 'message_blocked'),
+        eq(complianceAuditLog.eventType, "message_blocked"),
         gte(complianceAuditLog.eventTimestamp, thirtyDaysAgo)
       )
     );
+
+  const optOutReasonRows = await db
+    .select({
+      reason: leads.optOutReason,
+      count: count(),
+    })
+    .from(leads)
+    .where(and(eq(leads.optedOut, true), isNotNull(leads.optOutReason)))
+    .groupBy(leads.optOutReason);
 
   const activeConsents = activeConsentsResult.count;
   const totalOptOuts = totalOptOutsResult.count;
@@ -88,6 +95,16 @@ export default async function CompliancePage() {
   const complianceScore = calculateComplianceScore(optOutRate, messagesBlocked);
   const risks = generateRisks(optOutRate, messagesBlocked);
   const quietHoursPolicy = await getQuietHoursPolicyDiagnostics();
+
+  const reasonTotal = optOutReasonRows.reduce((sum, r) => sum + r.count, 0);
+  const optOutReasonBreakdown: OptOutReasonCount[] = optOutReasonRows
+    .filter((r): r is { reason: string; count: number } => r.reason !== null)
+    .map((r) => ({
+      reason: r.reason,
+      count: r.count,
+      percentage: reasonTotal > 0 ? Math.round((r.count / reasonTotal) * 100) : 0,
+    }))
+    .sort((a, b) => b.count - a.count);
 
   const stats: ComplianceStats = {
     activeConsents,
@@ -111,6 +128,7 @@ export default async function CompliancePage() {
         stats={stats}
         risks={risks}
         quietHoursPolicy={quietHoursPolicy}
+        optOutReasonBreakdown={optOutReasonBreakdown}
       />
     </div>
   );

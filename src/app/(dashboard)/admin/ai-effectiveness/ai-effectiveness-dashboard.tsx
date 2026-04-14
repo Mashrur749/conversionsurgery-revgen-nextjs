@@ -17,7 +17,12 @@ import {
   Legend,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { format } from 'date-fns';
 import type { AiEffectivenessSnapshot } from '@/lib/services/ai-effectiveness-metrics';
+import type { AgentDecision } from '@/db/schema/agent-decisions';
 
 const OUTCOME_COLORS: Record<string, string> = {
   positive: '#3D7A50',
@@ -285,6 +290,9 @@ export function AiEffectivenessDashboard() {
           )}
         </ChartCard>
       </div>
+
+      {/* Recent decisions with analysis snapshot viewer */}
+      <RecentDecisions days={days} />
     </div>
   );
 }
@@ -341,4 +349,244 @@ function formatEscalationReason(reason: string): string {
   return reason
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// ---------------------------------------------------------------------------
+// Analysis snapshot viewer types
+// ---------------------------------------------------------------------------
+
+interface AnalysisSnapshot {
+  sentiment: string;
+  sentimentConfidence: number;
+  urgencyScore: number;
+  budgetScore: number;
+  intentScore: number;
+  detectedObjections: string[];
+  suggestedStage: string;
+  keyInsights: string[];
+  extractedInfo: Record<string, unknown>;
+}
+
+interface DecisionRow {
+  id: string;
+  createdAt: Date;
+  action: AgentDecision['action'];
+  confidence: number | null;
+  outcome: string | null;
+  processingTimeMs: number | null;
+  analysisSnapshot: AgentDecision['analysisSnapshot'];
+  actionDetails: AgentDecision['actionDetails'];
+  reasoning: string | null;
+  clientName: string | null;
+  leadName: string | null;
+  leadPhone: string | null;
+}
+
+interface DecisionRowItemProps {
+  decision: DecisionRow;
+}
+
+const OUTCOME_BADGE: Record<string, string> = {
+  positive: 'bg-[#E8F5E9] text-[#3D7A50]',
+  neutral: 'bg-muted text-muted-foreground',
+  negative: 'bg-[#FDEAE4] text-[#C15B2E]',
+  pending: 'bg-[#FFF3E0] text-[#C15B2E]',
+};
+
+function DecisionRowItem({ decision }: DecisionRowItemProps) {
+  const [open, setOpen] = useState(false);
+
+  const snapshot = decision.analysisSnapshot as AnalysisSnapshot | null;
+  const modelTier = (decision.actionDetails as { modelTier?: string } | null)?.modelTier ?? null;
+
+  const outcomeBadgeClass = OUTCOME_BADGE[decision.outcome ?? 'pending'] ?? OUTCOME_BADGE.pending;
+  const shortId = decision.id.slice(0, 8);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="rounded-lg border border-border bg-white">
+        {/* Summary row */}
+        <CollapsibleTrigger className="w-full text-left px-4 py-3 flex items-center justify-between gap-4 hover:bg-muted/30 transition-colors rounded-lg">
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
+            <span className="text-xs text-muted-foreground font-mono shrink-0">
+              #{shortId}
+            </span>
+            <span className="text-xs text-muted-foreground shrink-0">
+              {format(new Date(decision.createdAt), 'MMM d, yyyy h:mm a')}
+            </span>
+            <Badge className="bg-[#1B2F26]/10 text-[#1B2F26] text-xs capitalize shrink-0">
+              {decision.action.replace(/_/g, ' ')}
+            </Badge>
+            {decision.confidence !== null && (
+              <span className="text-xs text-muted-foreground shrink-0">
+                Confidence: {decision.confidence}
+              </span>
+            )}
+            {modelTier && (
+              <span className="text-xs text-muted-foreground shrink-0">
+                Model: {modelTier}
+              </span>
+            )}
+            <Badge className={`${outcomeBadgeClass} text-xs capitalize shrink-0`}>
+              {decision.outcome ?? 'pending'}
+            </Badge>
+            {(decision.clientName ?? decision.leadName) && (
+              <span className="text-xs text-muted-foreground truncate">
+                {decision.clientName}
+                {decision.leadName ? ` — ${decision.leadName}` : ''}
+              </span>
+            )}
+          </div>
+          <span className="shrink-0 text-muted-foreground">
+            {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          </span>
+        </CollapsibleTrigger>
+
+        {/* Expanded analysis details */}
+        <CollapsibleContent>
+          <div className="px-4 pb-4 pt-1 border-t border-border space-y-3">
+            {snapshot ? (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-[#1B2F26] uppercase tracking-wide">
+                  Analysis Details
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1.5 text-sm">
+                  <SnapshotField
+                    label="Sentiment"
+                    value={`${snapshot.sentiment} (confidence: ${snapshot.sentimentConfidence})`}
+                  />
+                  <SnapshotField label="Urgency" value={String(snapshot.urgencyScore)} />
+                  <SnapshotField label="Budget" value={String(snapshot.budgetScore)} />
+                  <SnapshotField label="Intent" value={String(snapshot.intentScore)} />
+                  <SnapshotField label="Stage" value={snapshot.suggestedStage} />
+                  <SnapshotField
+                    label="Objections"
+                    value={
+                      snapshot.detectedObjections.length > 0
+                        ? snapshot.detectedObjections.join(', ')
+                        : '(none)'
+                    }
+                  />
+                  <SnapshotField
+                    label="Key Insights"
+                    value={
+                      snapshot.keyInsights.length > 0
+                        ? snapshot.keyInsights.join('; ')
+                        : '(none)'
+                    }
+                    wide
+                  />
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">No analysis snapshot recorded for this decision.</p>
+            )}
+            {decision.reasoning && (
+              <div>
+                <p className="text-xs font-semibold text-[#1B2F26] uppercase tracking-wide mb-1">
+                  Reasoning
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{decision.reasoning}</p>
+              </div>
+            )}
+            {decision.processingTimeMs !== null && (
+              <p className="text-xs text-muted-foreground">
+                Processing time: {decision.processingTimeMs}ms
+              </p>
+            )}
+          </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+}
+
+function SnapshotField({
+  label,
+  value,
+  wide,
+}: {
+  label: string;
+  value: string;
+  wide?: boolean;
+}) {
+  return (
+    <div className={wide ? 'col-span-2 sm:col-span-3' : ''}>
+      <span className="text-muted-foreground">{label}: </span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// RecentDecisions — loads on demand
+// ---------------------------------------------------------------------------
+
+function RecentDecisions({ days }: { days: DaysOption }) {
+  const [expanded, setExpanded] = useState(false);
+  const [decisions, setDecisions] = useState<DecisionRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const fetchDecisions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/ai-effectiveness/decisions?days=${days}&limit=50`);
+      if (res.ok) {
+        const json = await res.json() as { decisions: DecisionRow[] };
+        setDecisions(json.decisions);
+        setLoaded(true);
+      }
+    } catch (err) {
+      console.error('Failed to fetch recent decisions:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [days]);
+
+  function handleToggle() {
+    if (!expanded && !loaded) {
+      void fetchDecisions();
+    }
+    setExpanded((prev) => !prev);
+  }
+
+  return (
+    <div className="bg-white rounded-lg border p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold">Recent Decisions</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Click any row to see the AI&apos;s analysis snapshot for that decision
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleToggle}
+          disabled={loading}
+        >
+          {loading ? 'Loading...' : expanded ? 'Hide' : 'Show decisions'}
+        </Button>
+      </div>
+
+      {expanded && (
+        <div className="space-y-2">
+          {decisions.length === 0 && loaded && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No decisions recorded in this period.
+            </p>
+          )}
+          {decisions.map((d) => (
+            <DecisionRowItem key={d.id} decision={d} />
+          ))}
+          {decisions.length === 50 && (
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              Showing 50 most recent decisions
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { ComplianceDashboard } from '@/components/compliance/ComplianceDashboard';
+import type { OptOutReasonCount } from '@/components/compliance/ComplianceDashboard';
 
 interface Props {
   stats: {
@@ -22,9 +23,10 @@ interface Props {
       updatedAt: string;
     }>;
   };
+  optOutReasonBreakdown: OptOutReasonCount[];
 }
 
-export function ComplianceDashboardClient({ stats, risks, quietHoursPolicy }: Props) {
+export function ComplianceDashboardClient({ stats, risks, quietHoursPolicy, optOutReasonBreakdown }: Props) {
   const handleDownloadReport = async () => {
     try {
       const res = await fetch('/api/compliance/report?months=1');
@@ -48,6 +50,7 @@ export function ComplianceDashboardClient({ stats, risks, quietHoursPolicy }: Pr
       stats={stats}
       risks={risks}
       quietHoursPolicy={quietHoursPolicy}
+      optOutReasonBreakdown={optOutReasonBreakdown}
       onDownloadReport={handleDownloadReport}
     />
   );
