@@ -4,6 +4,7 @@ import { leads, scheduledMessages, appointments, auditLog } from '@/db/schema';
 import { parseOutcomeCommand } from './outcome-command-parser';
 import { resolveLeadByRefCode, ensureOutcomeRefCode } from './outcome-ref-codes';
 import { startReviewRequest } from '@/lib/automations/review-request';
+import { syncLeadStageFromStatus } from './lead-state-sync';
 
 export interface OutcomeCommandResult {
   handled: boolean;
@@ -132,6 +133,9 @@ async function handleWonCommand(
     })
     .where(eq(leads.id, lead.id));
 
+  // SIM-02: Sync leadContext.stage to match new status
+  await syncLeadStageFromStatus(lead.id, 'won');
+
   // Cancel active sequences
   await cancelActiveSequences(clientId, lead.id);
 
@@ -206,6 +210,9 @@ async function handleLostCommand(
     .update(leads)
     .set({ status: 'lost', updatedAt: new Date() })
     .where(eq(leads.id, lead.id));
+
+  // SIM-02: Sync leadContext.stage to match new status
+  await syncLeadStageFromStatus(lead.id, 'lost');
 
   // Cancel active sequences
   await cancelActiveSequences(clientId, lead.id);
