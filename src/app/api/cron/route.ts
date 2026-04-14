@@ -264,6 +264,7 @@ export async function POST(request: NextRequest) {
       results.guaranteeCheck = await dispatch(baseUrl, '/api/cron/guarantee-check', cronSecret!, 'GET', failedJobs);
       results.guaranteeAlert = await dispatch(baseUrl, '/api/cron/guarantee-alert', cronSecret!, 'GET', failedJobs);
       results.monthlyReset = await dispatch(baseUrl, '/api/cron/monthly-reset', cronSecret!, 'GET', failedJobs);
+      results.billingReminder = await dispatch(baseUrl, '/api/cron/billing-reminder', cronSecret!, 'GET', failedJobs);
 
       // Monthly: update cohort retention (1st of month)
       if (now.getUTCDate() === 1) {
