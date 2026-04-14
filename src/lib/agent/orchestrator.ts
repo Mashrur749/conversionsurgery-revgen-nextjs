@@ -11,7 +11,7 @@ import {
   leads,
   clients,
 } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { trackUsage } from '@/lib/services/usage-tracking';
 import { getActiveProviderName } from '@/lib/ai';
@@ -482,6 +482,14 @@ export async function processIncomingMessage(
       });
       responseSent = true;
 
+      // SIM-01: Update leads.status to 'contacted' on first AI response
+      if (lead.status === 'new') {
+        await db
+          .update(leads)
+          .set({ status: 'contacted', updatedAt: new Date() })
+          .where(and(eq(leads.id, leadId), eq(leads.status, 'new')));
+      }
+
       // Fire-and-forget: check if conversation signals an estimate was sent
       maybeAutoTriggerEstimateFollowup(leadId, client.id, messageText).catch(
         err => console.error('[Agent] Estimate auto-trigger error:', err)
@@ -493,6 +501,35 @@ export async function processIncomingMessage(
 
   // Handle escalation
   if (finalState.needsEscalation) {
+    // SIM-08: Send acknowledgment before escalating — homeowner shouldn't get silence
+    const escalationAck = `I hear you, and I want to make sure this gets handled properly. I'm connecting you with ${client.ownerName} directly — expect to hear from them shortly.`;
+
+    const ackResult = await sendCompliantMessage({
+      clientId: client.id,
+      to: lead.phone,
+      from: client.twilioNumber,
+      body: escalationAck,
+      messageClassification: 'inbound_reply',
+      messageCategory: 'transactional',
+      consentBasis: { type: 'lead_reply' },
+      leadId,
+      queueOnQuietHours: false,
+      metadata: { source: 'escalation_acknowledgment' },
+    });
+
+    if (ackResult.sent) {
+      await db.insert(conversations).values({
+        leadId,
+        clientId: client.id,
+        direction: 'outbound',
+        messageType: 'ai_response',
+        content: escalationAck,
+        twilioSid: ackResult.messageSid || undefined,
+      });
+      responseSent = true;
+    }
+
+    // Existing escalation queue insert follows...
     await db.insert(escalationQueue).values({
       leadId,
       clientId: client.id,
