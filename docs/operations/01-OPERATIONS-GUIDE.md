@@ -125,6 +125,26 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 ### Feature Toggle Reference
 66. **Toggle-first diagnosis:** When a contractor reports unexpected behavior (AI not responding, flows not sending, voice not activating), check their feature toggle state before investigating code. The 18 toggles are: `missedCallSms`, `aiResponse`, `aiAgent`, `autoEscalation`, `voice`, `flows`, `leadScoring`, `reputationMonitoring`, `autoReviewResponse`, `calendarSync`, `hotTransfer`, `paymentLinks`, `photoRequests`, `multiLanguage`, `smartAssist`, `smartAssistDelay`, `smartAssistManualCategories`, `preferredLanguage`. Most &ldquo;broken feature&rdquo; reports are a disabled toggle.
 
+### Notification Feature Flags (FMA Wave 1)
+66a. **Automation feature flags** control 8 notification and automation behaviors. Unlike the 18 feature toggles above (which control core product capabilities), these flags control notification *frequency and batching*. They have system-wide defaults configurable in `system_settings` and can be overridden per client:
+
+| Flag | Default | What it controls |
+|------|---------|-----------------|
+| `dailyDigestEnabled` | on | Contractor P2 notifications are batched into one 10am SMS daily |
+| `billingReminderEnabled` | on | Day 25 trial-end billing reminder SMS |
+| `engagementSignalsEnabled` | on | Weekly engagement health signals to contractor |
+| `autoResolveEnabled` | on | KB gaps auto-resolve when a matching entry is added |
+| `forwardingVerificationEnabled` | on | Call-forwarding health check nudges |
+| `opsHealthMonitorEnabled` | on | Operator alerts for platform health thresholds |
+| `callPrepEnabled` | on | Pre-call context brief generation |
+| `capacityTrackingEnabled` | on | Contractor capacity signals and booking limit nudges |
+
+To override a flag for a specific client: admin client detail page → Configuration tab → Notification Flags card. To change the system default: `/admin/settings` → `system_settings` section.
+
+66b. **Daily digest diagnosis:** If a contractor reports not receiving individual notification types (KB gap nudges, stale estimate prompts, WON/LOST nudges), first check if `dailyDigestEnabled` is on — if so, those notifications are being batched into the 10am daily digest, not sent individually. If the contractor prefers individual SMS, disable the flag for their client.
+
+66c. **globalAutomationPause emergency procedure:** In a platform-wide incident (e.g., runaway automation sending incorrect messages), set `globalAutomationPause = true` in `system_settings` via `/admin/settings`. This immediately halts all non-critical outbound automations across ALL clients (equivalent to enabling the outbound kill switch but persistent). To resume: set the value back to `false`. This does NOT affect inbound processing, escalation alerts, or P0 (critical) notifications like payment failures.
+
 ### Email Fallback Awareness
 67. **Booking notification email fallback:** When a booking notification is blocked by compliance (quiet hours, opt-out), the system falls back to email. If a contractor reports receiving unexpected booking emails, check the audit log for `reminder_delivery_no_recipient` entries — these confirm the SMS chain failed and email was used as fallback. Resolve by reviewing the contractor&apos;s notification routing policy.
 
@@ -257,6 +277,21 @@ curl -s "$BASE_URL/api/cron/probable-wins-nudge" \
   -H "Authorization: Bearer $CRON_SECRET"
 
 curl -s "$BASE_URL/api/cron/ai-mode-progression" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/daily-digest" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/billing-reminder" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/guarantee-alert" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/onboarding-reminder" \
+  -H "Authorization: Bearer $CRON_SECRET"
+
+curl -s "$BASE_URL/api/cron/onboarding-priming" \
   -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helper (preferred)

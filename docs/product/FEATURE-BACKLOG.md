@@ -170,3 +170,18 @@ Six admin UI tools shipped as part of the operator tooling gap closure. All are 
 | GAP-6 | Admin Data Export Trigger — Export Data button in client detail page header (Actions card removed) with AlertDialog confirmation; API: POST `/api/admin/clients/[id]/export` | **Implemented** |
 
 Note: The Jobber/FSM auto-detect integration referenced in COMPONENT 1 of the offer doc (auto-detect when estimate is created in Jobber) remains a future enhancement. SPEC-12 covers review and appointment sync; Jobber estimate webhook auto-detection is still a roadmap item. However, **conversation-based estimate auto-detection is now implemented** — the AI detects when a lead's message implies a quote was sent ("waiting on the quote", "comparing prices") and auto-starts the follow-up sequence without contractor action. This closes the trigger gap for the majority of cases where the contractor forgets to send the EST keyword.
+
+## Recently Implemented (FMA Wave 1, April 2026)
+
+Eight failure-mode-analysis items shipped to reduce notification fatigue, close coverage gaps, and add proactive operator alerting.
+
+| Item | Feature | Status |
+|------|---------|--------|
+| FMA-W1-1 | Feature Flag Infrastructure — `resolveFeatureFlag(clientId, flag)` with system defaults + per-client overrides. 8 flags: `dailyDigestEnabled`, `billingReminderEnabled`, `engagementSignalsEnabled`, `autoResolveEnabled`, `forwardingVerificationEnabled`, `opsHealthMonitorEnabled`, `callPrepEnabled`, `capacityTrackingEnabled`. Emergency `globalAutomationPause` via `system_settings`. | **Implemented** |
+| FMA-W1-2 | Notification Priority Tiers — P0 (critical/always), P1 (time-sensitive, max 2/day), P2 (daily digest batch), P3 (weekly). Prevents alert fatigue; P2 items held for digest. | **Implemented** |
+| FMA-W1-3 | Daily Contractor Digest — batches P2 items (KB gaps, stale estimates, WON/LOST prompts) into single 10am local-time SMS with numbered-reply disambiguation. Flag: `dailyDigestEnabled`. Cron: `daily-digest` (hourly). | **Implemented** |
+| FMA-W1-4 | Day 25 Billing Reminder — SMS 5 days before trial ends via agency channel. Flag: `billingReminderEnabled`. Cron: `billing-reminder` (daily midnight UTC). | **Implemented** |
+| FMA-W1-5 | Pre-Guarantee Day 80 Operator Alert — SMS to operator when client approaching Day 90 guarantee deadline with insufficient pipeline. Always-on. Cron: `guarantee-alert` (daily midnight UTC). | **Implemented** |
+| FMA-W1-6 | Onboarding Call Reminder — SMS 2 hours before scheduled onboarding call. Cron: `onboarding-reminder` (every 30 min). | **Implemented** |
+| FMA-W1-7 | Pre-Onboarding Priming SMS — &ldquo;Think of 5 dead quotes&rdquo; text 24-48h after signup. Cron: `onboarding-priming` (daily 7am UTC). | **Implemented** |
+| FMA-W1-8 | Probable-Wins Extension — nudge now includes `estimate_sent` leads 14+ days stale alongside post-appointment leads. No new cron; extends existing `probable-wins-nudge`. | **Implemented** |

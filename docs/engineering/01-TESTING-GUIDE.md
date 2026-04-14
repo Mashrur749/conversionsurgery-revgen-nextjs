@@ -2897,6 +2897,139 @@ Verifies the four quick wins shipped in the 2026-04-12 wave.
 3. For a new client (aiAgentMode not autonomous): verify the onboarding progress tracker appears showing AI mode timeline and quality gate status.
 4. Verify operator SMS alerts fire for: AI health critical (trigger via test), payment failure (simulate in Stripe test mode), escalation SLA breach (create test escalation past deadline).
 
+### Step 80: FMA Wave 1 — Feature Flags, Daily Digest, Billing Reminder, Guarantee Alert, Onboarding Automations
+
+Combined verification for all FMA Wave 1 features.
+
+#### 80a: Feature flag resolution
+
+1. Open the admin client detail page for a test client (Configuration tab — or via `system_settings` table directly).
+2. Verify `resolveFeatureFlag(clientId, 'dailyDigestEnabled')` returns `true` for a client with no override (system default is on).
+3. Set a per-client override to disable `dailyDigestEnabled` for the test client (via admin UI or direct DB insert into the appropriate override table).
+4. Verify the flag now resolves to `false` for that client but remains `true` for other clients.
+5. Remove the override — verify the client returns to the system default.
+
+Expected:
+- Per-client overrides take precedence over system defaults.
+- Other clients are unaffected by a single client override.
+- Removing the override immediately restores default behavior.
+
+#### 80b: Daily contractor digest
+
+1. Create a test client with `dailyDigestEnabled = true`.
+2. Seed at least two P2 items: one unresolved KB gap and one lead in `estimate_sent` for 15+ days with no outcome.
+3. Run the daily digest cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/daily-digest -H "Authorization: Bearer $CRON_SECRET"
+```
+
+4. Verify the contractor (Owner Dev Phone #3) receives a single batched SMS via the agency number containing numbered items — not separate individual messages.
+5. Reply `W1` — verify the first item is processed (lead marked won, review sequence started).
+6. Run the cron again immediately — verify no duplicate digest is sent for the same client on the same day.
+7. Disable `dailyDigestEnabled` for the client — run the cron — verify no digest is sent and instead individual P2 messages are sent normally.
+
+Expected:
+- Single batched SMS with numbered items, not individual notifications.
+- Per-item reply processing works correctly.
+- 7-day (or same-day) dedup prevents duplicates.
+- Flag disable reverts to individual delivery.
+
+#### 80c: Day 25 billing reminder
+
+1. Create a test subscription with `trialEndsAt` set to exactly 5 days from now.
+2. Set `billingReminderEnabled = true` for the client.
+3. Run the billing reminder cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/billing-reminder -H "Authorization: Bearer $CRON_SECRET"
+```
+
+4. Verify the contractor receives an SMS via the agency line with the trial end date and billing amount.
+5. Run the cron again immediately — verify no duplicate SMS (idempotent via audit_log).
+6. Set `billingReminderEnabled = false` — rerun — verify no SMS is sent.
+7. Set `trialEndsAt` to 10 days from now — rerun with flag on — verify no SMS (only fires at 5 days out).
+
+Expected:
+- Fires exactly once at the 5-day mark.
+- Deduped via audit_log — no duplicate sends.
+- Feature flag controls delivery.
+
+#### 80d: Pre-guarantee Day 80 operator alert
+
+1. Create a test client in the 90-day guarantee `recovery_pending` phase with `guaranteeStartedAt` set to 80+ days ago.
+2. Ensure the pipeline value is below $5,000 and attributed opportunities are 0.
+3. Run the guarantee alert cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/guarantee-alert -H "Authorization: Bearer $CRON_SECRET"
+```
+
+4. Verify the operator phone receives an SMS mentioning the business name, current pipeline value vs. the $5,000 threshold, and days remaining.
+5. Run the cron again immediately — verify no duplicate alert (deduped via audit_log per client per guarantee cycle).
+6. Set pipeline value above $5,000 — rerun — verify no alert fires (client is on track).
+
+Expected:
+- Alert fires once per client per guarantee cycle when at Day 80+ with insufficient pipeline.
+- No alert when pipeline meets the $5,000 threshold.
+- Always-on — not behind a feature flag.
+
+#### 80e: Onboarding call reminder
+
+1. Schedule a test onboarding call for a client with `callScheduledAt` set to 2 hours and 5 minutes from now.
+2. Run the onboarding reminder cron (runs every 30 minutes in production):
+
+```bash
+curl -i http://localhost:3000/api/cron/onboarding-reminder -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify the contractor receives an SMS: "Reminder: your onboarding call starts in 2 hours."
+4. Run the cron again immediately — verify no duplicate reminder (deduped via audit_log).
+5. Set `callScheduledAt` to 5 hours from now — rerun — verify no reminder (only fires within the 2-hour window).
+
+Expected:
+- Reminder fires within 30 minutes of the 2-hour window opening.
+- Deduped — one reminder per scheduled call.
+- Calls outside the 2-hour window are skipped.
+
+#### 80f: Pre-onboarding priming SMS
+
+1. Create a test client with `createdAt` set to 30 hours ago (24-48h window) and no priming SMS yet sent (no audit_log entry for `onboarding_priming_sent`).
+2. Run the onboarding priming cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/onboarding-priming -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify the contractor receives an SMS asking them to think of 5 dead quotes before their onboarding call.
+4. Run the cron again — verify no duplicate (audit_log dedup per client).
+5. Create a second test client with `createdAt` set to 72 hours ago — verify no priming SMS is sent (outside the 24-48h window).
+
+Expected:
+- Priming SMS fires once per client in the 24-48h post-signup window.
+- Outside that window: skipped.
+- Deduped — one priming SMS per client regardless of how many times the cron runs.
+
+#### 80g: Probable wins nudge includes estimate_sent leads
+
+1. Create two test leads:
+   - Lead A: `status=appointment_scheduled`, appointment completed 15+ days ago
+   - Lead B: `status=estimate_sent`, `updated_at` set to 15+ days ago, no outcome
+2. Run the probable wins nudge cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/probable-wins-nudge -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify the contractor receives a batched SMS including BOTH leads — not just Lead A.
+4. Verify Lead B is included with appropriate context (estimate sent, no reply).
+5. Reply `W2` — verify Lead B is marked won.
+
+Expected:
+- Both post-appointment leads AND 14+ day stale estimate_sent leads appear in the nudge batch.
+- Up to 5 total leads per batch (post-appointment + estimate_sent combined).
+- Numbered-reply disambiguation works correctly for the combined list.
+
 ---
 
 ## 3. Useful Commands
@@ -2952,6 +3085,11 @@ curl -i http://localhost:3000/api/cron/ai-mode-progression -H "Authorization: Be
 curl -i http://localhost:3000/api/cron/voice-callbacks -H "Authorization: Bearer $CRON_SECRET"
 curl -i -X POST http://localhost:3000/api/cron/trial-reminders -H "Authorization: Bearer $CRON_SECRET"
 curl -i -X POST http://localhost:3000/api/cron/cancellation-reminders -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/daily-digest -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/billing-reminder -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/guarantee-alert -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/onboarding-reminder -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/onboarding-priming -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core

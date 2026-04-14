@@ -330,9 +330,32 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 - **Engagement-depth tone:** Win-back messages adapt tone based on prior conversation depth — leads with 5+ messages get a warm reconnect referencing their project; leads with minimal engagement get a fresh introductory approach
 - **Returning lead detection:** When a lead replies after 7+ days of silence, the conversation stage resets to greeting with a fresh summary, preventing the agent from resuming mid-strategy with stale context
 
+### Notification Priority Tiers
+
+All contractor-facing notifications are assigned a priority tier to prevent alert fatigue and batch low-urgency items.
+
+| Tier | Label | Delivery | Examples |
+|------|-------|----------|---------|
+| **P0** | Critical | Immediate SMS, always-on | Escalation SLA breach, payment failure, guarantee deadline |
+| **P1** | Time-sensitive | SMS, max 2 per client per day | New lead reply, booking request, appointment no-show |
+| **P2** | Informational | Batched into daily digest | KB gaps, stale estimates, WON/LOST outcome prompts |
+| **P3** | Weekly summary | Weekly digest | Engagement health stats, dormant lead count |
+
+P2 items are never sent individually — they are held until the 10am daily digest run. P0 items bypass all batching and quiet-hours logic.
+
+### Daily Contractor Digest
+
+Aggregates all P2 notifications into a single SMS sent at 10am local time each day. Prevents contractors from receiving multiple separate nudges throughout the day.
+
+- **Contents:** KB gaps needing answers, stale estimate prompts (estimate_sent 14+ days), WON/LOST outcome prompts for post-appointment leads
+- **Format:** numbered list with compact reply syntax — contractor replies `W1`, `L2`, or `0` to act on individual items. Single-item digests use a shorter non-numbered format.
+- Feature flag: `dailyDigestEnabled` (per-client, system default: on). When disabled, items revert to individual SMS delivery.
+- Cron: `daily-digest` runs hourly to catch clients whose 10am window falls in the current UTC hour.
+- **Files:** `src/lib/services/daily-digest.ts`, `src/app/api/cron/daily-digest/route.ts`
+
 ### Probable Wins Nudge
 
-Daily cron (`/api/cron/probable-wins-nudge`, runs at 10am UTC) identifies leads that have had a completed or confirmed appointment **7+ days ago** but have not been marked won or lost.
+Daily cron (`/api/cron/probable-wins-nudge`, runs at 10am UTC) identifies leads that have had a completed or confirmed appointment **7+ days ago** but have not been marked won or lost. Also includes leads in `estimate_sent` status for **14+ days** with no status update — these long-stale estimates are likely decided but not yet recorded.
 
 - **Batched numbered list:** Up to 5 leads per client are grouped into a single SMS with numbered options. Single lead: &ldquo;Sarah T. &mdash; basement dev. Did you win it? W = Won, L = Lost, 0 = Skip.&rdquo; Multiple leads: numbered list with compact reply syntax.
 - **Compact reply syntax:** Contractor replies `W1` (won #1), `L2` (lost #2), `W13 L2` (won 1 and 3, lost 2), `W` (all won), `0` (skip all). Parsed by `src/lib/services/numbered-reply-parser.ts`.
@@ -923,6 +946,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 - Free first month (30-day trial); billing starts day 31. Configurable trial days, waived for returning clients.
 - **Trial billing notification:** Before billing starts (Day 28 and Day 30), the contractor receives both an SMS notification and an email with their plan details, pricing, and a link to manage billing
 - **Trial reminder emails:** automated cron sends at days 7, 14, 25, 28, and 30. Days 28 and 30 also send an SMS alert via the agency communication channel.
+- **Day 25 billing reminder SMS:** 5 days before trial ends, the contractor receives a dedicated SMS via the agency channel: "Your free trial ends in 5 days. Your card on file will be charged [amount] on [date]. Reply HELP to reach us." Feature flag: `billingReminderEnabled` (per-client, system default: on). Cron: `billing-reminder` runs daily at midnight UTC.
 - Pause/resume capability
 - Coupon system (percentage/fixed, one-time/recurring, plan restrictions)
 
@@ -1012,6 +1036,8 @@ Before the sales call, the operator runs a lightweight pre-sale audit using publ
 - **Phone setup prompt:** if the `number_live` milestone goes overdue (Day 1-2), the day-one SLA check cron sends the contractor an SMS reminder with a direct link to `/client/settings/phone`.
 - **Subscription-gated phone purchase:** phone provisioning requires an active subscription. Clear prompt to choose a plan if attempted without one.
 - **Day 2-3 Quote Import Call:** operator schedules a follow-up call 24-48 hours after go-live to collect the contractor&apos;s existing open quotes. These are imported via the portal quote import (`POST /api/client/leads/import`) so the estimate follow-up sequence can activate immediately on past-due opportunities. This step is now a standard onboarding milestone — see `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10.
+- **Pre-onboarding priming SMS:** sent 24-48 hours after signup, before the onboarding call. Message: &ldquo;Before our call &mdash; think of 5 quotes you sent in the last 6 months that went quiet. We&apos;ll reactivate them together on the call.&rdquo; Primes the contractor to arrive at the onboarding call with their dead pipeline ready, accelerating Day 2-3 quote import. Cron: `onboarding-priming` runs daily at 7am UTC. Feature flag: `preOnboardingPrimingEnabled` (system default: on).
+- **Onboarding call reminder:** automated SMS sent 2 hours before a scheduled onboarding call. Contractor receives: &ldquo;Reminder: your onboarding call starts in 2 hours. [join link if set].&rdquo; Cron: `onboarding-reminder` runs every 30 minutes and checks for calls starting within the next 2-hour window. Feature flag: controlled by `onboardingCallReminderEnabled` (system default: on).
 
 ### Onboarding Checklist
 
@@ -1092,6 +1118,36 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 ---
 
 ## 11. Agency Operations (Admin Tools)
+
+### Feature Flag Infrastructure
+
+All non-core automations and notifications are controlled by per-client feature flags with system-level defaults. Flags can be overridden per client via the admin client detail page (Configuration tab) or via `system_settings` for platform-wide defaults.
+
+**8 controllable flags:**
+
+| Flag | Default | Controls |
+|------|---------|----------|
+| `dailyDigestEnabled` | on | Daily contractor digest (P2 notification batching) |
+| `billingReminderEnabled` | on | Day 25 trial-end billing reminder SMS |
+| `engagementSignalsEnabled` | on | Weekly engagement health signals to contractor |
+| `autoResolveEnabled` | on | Auto-resolve KB gaps when a matching entry is added |
+| `forwardingVerificationEnabled` | on | Call-forwarding health check nudges |
+| `opsHealthMonitorEnabled` | on | Operator alerts for platform health thresholds |
+| `callPrepEnabled` | on | Pre-call context brief generation |
+| `capacityTrackingEnabled` | on | Contractor capacity signals and booking limit nudges |
+
+**Emergency pause:** Setting `globalAutomationPause = true` in `system_settings` immediately halts all non-critical outbound automations across all clients, equivalent to enabling the outbound kill switch but persistent across restarts. Use for platform-wide incidents. Cleared via admin Settings page.
+
+**Resolution logic:** `resolveFeatureFlag(clientId, flagName)` checks the per-client override first, then falls back to the system default. Adding a new flag requires a system_settings row with the default value — no code deploy needed to change defaults.
+
+### Pre-Guarantee Day 80 Operator Alert
+
+When a client is approaching the end of their 90-day guarantee window (Day 80) with insufficient pipeline to pass, the operator receives an SMS alert: &ldquo;[Business Name] is at Day 80 of their 90-day guarantee. Pipeline value: $[X] / $5,000. [N] opportunities attributed. Action needed.&rdquo;
+
+- Always-on (not behind a feature flag — guarantee health is too critical to suppress)
+- Fires once per client per guarantee cycle (deduped via audit_log)
+- Cron: `guarantee-alert` runs daily at midnight UTC alongside the guarantee check
+- Enables proactive operator intervention before the guarantee deadline rather than reactive refund processing
 
 ### Operator Alerting
 
@@ -1214,7 +1270,7 @@ Eval results saved to `.scratch/eval-history.json` (rolling 50 runs). HTML repor
 
 ### Cron Orchestrator
 
-36 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), KB empty nudge (daily), day 3 check-in (daily), KB gap auto-notify (daily), AI auto-progression (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
+41 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), KB empty nudge (daily), day 3 check-in (daily), KB gap auto-notify (daily), AI auto-progression (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, daily contractor digest (hourly), billing reminder (daily midnight), guarantee Day 80 alert (daily midnight), onboarding call reminder (every 30 min), onboarding priming SMS (daily 7am UTC), and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
 
 ### Help Center Seed Articles
 

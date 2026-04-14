@@ -156,6 +156,7 @@ These sit in `pending_manual` until explicitly approved. You must reply `SEND [r
 2. Check the client&apos;s lead pipeline in admin &mdash; note any leads in `contacted` or `estimate_sent` that haven&apos;t been resolved. These are your &ldquo;did you close this?&rdquo; questions.
 3. Check KB gaps queue &mdash; any unresolved gaps to discuss?
 4. Check team member setup &mdash; are all team members configured? Getting notifications?
+5. **Guarantee check (Day 80+ clients):** If the system sent you a Day 80 guarantee alert SMS for this client, review their guarantee status at Overview tab → Guarantee Status card before the call. Know the pipeline value vs. the $5,000 threshold and the days remaining. Be prepared to discuss what intervention options remain (Growth Blitz, import more past quotes, etc.).
 
 ### On the Call (30 min)
 
@@ -423,6 +424,10 @@ Stay on the line. Confirm in Stripe. See Payment Capture section below for hesit
    &gt; &quot;Hey [Name], it&apos;s [Contractor] &mdash; you got a quote from us a few months back. Still thinking about the project? Happy to revisit if the timing works.&quot;
 
    Schedule reactivation to go out that afternoon. Tell them: &quot;You&apos;re going to see replies within 24 hours, probably sooner.&quot;
+
+   **Pre-onboarding priming:** 24-48 hours before this call, the system automatically sent the contractor an SMS asking them to think of 5 dead quotes. Reference this if they already have a list ready: &ldquo;You may have already gotten a text from us about this &mdash; great, let&apos;s work through the list you prepped.&rdquo; If they didn&apos;t act on it, proceed as normal.
+
+   **Onboarding call reminder:** The system auto-sent a reminder 2 hours before this call. If the contractor mentions receiving it, confirm: &ldquo;Yes, that&apos;s automated &mdash; we&apos;ll do the same for Day 7 and any future calls.&rdquo;
 
 ---
 
@@ -821,6 +826,8 @@ Full scripts are in `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`. This is t
 ---
 
 ### Post-Call Follow-Up Templates
+
+**Day 25 billing reminder (automated):** At Day 25 of the trial, the system automatically sends the contractor an SMS via the agency line: &ldquo;Your free trial ends in 5 days. Your card on file will be charged [amount] on [date]. Reply HELP to reach us.&rdquo; This is automated — you do not need to send a manual outreach at Day 25. However, if the contractor calls or texts with billing questions after receiving this reminder, handle it proactively: confirm the trial end date, offer to walk through the plan, and remind them they can cancel anytime.
 
 **If card was captured on the sales/onboarding call (preferred path):**
 
