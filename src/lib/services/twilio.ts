@@ -175,6 +175,15 @@ export function validateTwilioWebhook(
 }
 
 /**
+ * Returns the shared Twilio REST client.
+ * Use this to place calls, send MMS, or access other Twilio APIs that
+ * are not exposed through sendSMS/sendTrackedSMS.
+ */
+export function getTwilioClient() {
+  return client;
+}
+
+/**
  * Helper to extract and validate a Twilio webhook from a NextRequest.
  * Parses the form body, validates the signature, and returns the params if valid.
  * Returns null if validation fails.
