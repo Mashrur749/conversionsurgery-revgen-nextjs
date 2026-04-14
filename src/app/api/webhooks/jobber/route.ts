@@ -80,12 +80,17 @@ export async function POST(request: Request) {
     );
   }
 
-  // Verify HMAC-SHA256 signature
-  if (webhookRow.secretKey) {
-    const expectedSignature = computeWebhookSignature(body, webhookRow.secretKey);
-    if (signature !== expectedSignature) {
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-    }
+  // Verify HMAC-SHA256 signature (XDOM-24: always required — never accept unauthenticated payloads)
+  if (!webhookRow.secretKey) {
+    return NextResponse.json(
+      { error: 'Webhook secret key not configured — integration setup incomplete' },
+      { status: 401 }
+    );
+  }
+
+  const expectedSignature = computeWebhookSignature(body, webhookRow.secretKey);
+  if (signature !== expectedSignature) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
   // Parse and validate the event payload
