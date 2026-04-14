@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminClientRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
 import { getDb } from '@/db';
-import { clients, subscriptions, scheduledMessages } from '@/db/schema';
+import { clients, subscriptions, scheduledMessages, auditLog } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { AI_ASSIST_CATEGORIES } from '@/lib/services/ai-send-policy';
@@ -72,6 +72,8 @@ const updateClientSchema = z.object({
   // Service model
   serviceModel: z.enum(['managed', 'self_serve']).optional(),
   reviewApprovalMode: z.enum(['operator_managed', 'client_approves']).optional(),
+  // Exclusion list gate (FMA 4.1) — one-way latch, only true is accepted
+  exclusionListReviewed: z.boolean().optional(),
 });
 
 export const PATCH = adminClientRoute<{ id: string }>(
@@ -89,13 +91,28 @@ export const PATCH = adminClientRoute<{ id: string }>(
 
     // Check previous status to detect activation
     const [existing] = await db
-      .select({ status: clients.status, aiAgentMode: clients.aiAgentMode })
+      .select({
+        status: clients.status,
+        aiAgentMode: clients.aiAgentMode,
+        exclusionListReviewed: clients.exclusionListReviewed,
+      })
       .from(clients)
       .where(eq(clients.id, clientId))
       .limit(1);
 
     const autonomousTransitionRequested =
       data.aiAgentMode === 'autonomous' && existing?.aiAgentMode !== 'autonomous';
+
+    // FMA 4.1: Exclusion list gate — must be reviewed before autonomous mode is enabled
+    if (autonomousTransitionRequested && !existing?.exclusionListReviewed) {
+      return NextResponse.json(
+        {
+          error:
+            'Exclusion list not reviewed. Confirm you asked the contractor about family, friends, and personal numbers before enabling autonomous mode.',
+        },
+        { status: 409 }
+      );
+    }
 
     if (autonomousTransitionRequested) {
       const readiness = await getOnboardingQualityReadiness({
@@ -120,10 +137,24 @@ export const PATCH = adminClientRoute<{ id: string }>(
       }
     }
 
+    // One-way latch: exclusionListReviewed can only transition to true.
+    // If explicitly false, strip it so we never un-review. Pull out the flag
+    // before spreading so we can conditionally add the companion fields.
+    const { exclusionListReviewed: exclusionListReviewedFlag, ...restData } = data;
+    const exclusionListSetFields =
+      exclusionListReviewedFlag === true
+        ? {
+            exclusionListReviewed: true as const,
+            exclusionListReviewedAt: new Date(),
+            exclusionListReviewedByPersonId: session.personId,
+          }
+        : {};
+
     const [updated] = await db
       .update(clients)
       .set({
-        ...data,
+        ...restData,
+        ...exclusionListSetFields,
         updatedAt: new Date(),
       })
       .where(eq(clients.id, clientId))
@@ -131,6 +162,19 @@ export const PATCH = adminClientRoute<{ id: string }>(
 
     if (!updated) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
+    }
+
+    // Write audit log entry when exclusion list is marked reviewed
+    if (exclusionListReviewedFlag === true) {
+      await db.insert(auditLog).values({
+        personId: session.personId,
+        clientId,
+        action: 'exclusion_list_reviewed',
+        resourceType: 'client',
+        resourceId: clientId,
+        metadata: { reviewedAt: new Date().toISOString() },
+        createdAt: new Date(),
+      });
     }
 
     // Fire onboarding notification when status changes to 'active'
