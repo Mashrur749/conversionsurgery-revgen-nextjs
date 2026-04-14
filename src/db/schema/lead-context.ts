@@ -108,6 +108,14 @@ export const leadContext = pgTable(
 
     // Conversation summary (updated by AI)
     conversationSummary: text('conversation_summary'),
+    structuredSummary: jsonb('structured_summary').$type<{
+      keyObjections: string[];
+      bookingAttemptsAndOutcomes: Array<{ attempt: string; outcome: string }>;
+      priceSensitivity: 'low' | 'medium' | 'high' | 'unknown';
+      emotionalArc: string;
+    }>(),
+    /** Message count at the time the last summary was generated — used by stale-summary re-trigger rule */
+    summaryMessageCount: integer('summary_message_count'),
     keyFacts: jsonb('key_facts').$type<string[]>().default([]),
 
     // Next action recommendation

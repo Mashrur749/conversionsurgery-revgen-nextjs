@@ -51,6 +51,7 @@ export const leads = pgTable(
     tags: jsonb('tags').$type<string[]>().default([]),
     optedOut: boolean('opted_out').default(false),
     optedOutAt: timestamp('opted_out_at'),
+    optOutReason: varchar('opt_out_reason', { length: 50 }),
     caslConsentAttested: boolean('casl_consent_attested').default(false),
     caslConsentAttestedAt: timestamp('casl_consent_attested_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),

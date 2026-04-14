@@ -24,6 +24,14 @@ Include:
 
 Keep it under 200 words. Facts only, no interpretation. Write in present tense.`;
 
+const STRUCTURED_PROMPT = `Extract these facts from the conversation. Return valid JSON only.
+{
+  "keyObjections": ["list of concerns/objections the customer raised"],
+  "bookingAttemptsAndOutcomes": [{"attempt": "what was proposed", "outcome": "accepted/declined/deferred"}],
+  "priceSensitivity": "low|medium|high|unknown",
+  "emotionalArc": "one sentence describing how the customer's mood changed"
+}`;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -139,10 +147,43 @@ export async function updateConversationSummary(
     return null;
   }
 
-  // 6. Persist to lead_context
+  // 6. Extract structured signals (separate call — cheap, Haiku)
+  let structuredSummary: {
+    keyObjections: string[];
+    bookingAttemptsAndOutcomes: Array<{ attempt: string; outcome: string }>;
+    priceSensitivity: 'low' | 'medium' | 'high' | 'unknown';
+    emotionalArc: string;
+  } | null = null;
+  try {
+    const structuredResult = await ai.chatJSON<{
+      keyObjections: string[];
+      bookingAttemptsAndOutcomes: Array<{ attempt: string; outcome: string }>;
+      priceSensitivity: 'low' | 'medium' | 'high' | 'unknown';
+      emotionalArc: string;
+    }>(
+      [{ role: 'user', content: transcript }],
+      {
+        model: 'fast',
+        temperature: 0.1,
+        maxTokens: 200,
+        systemPrompt: STRUCTURED_PROMPT,
+      }
+    );
+    structuredSummary = structuredResult.data;
+  } catch (err) {
+    console.error('[ConversationSummary] Structured extraction failed:', err);
+    // Non-blocking — narrative summary still saved
+  }
+
+  // 7. Persist to lead_context — includes summaryMessageCount to enable stale-summary re-trigger (fixes AI-SUB-14)
   await db
     .update(leadContext)
-    .set({ conversationSummary: summary, updatedAt: new Date() })
+    .set({
+      conversationSummary: summary,
+      structuredSummary,
+      summaryMessageCount: msgs.length,
+      updatedAt: new Date(),
+    })
     .where(eq(leadContext.leadId, leadId));
 
   return summary;

@@ -1,6 +1,7 @@
 import { ComplianceService } from './compliance-service';
 import { getDb, leads } from '@/db';
 import { eq, and } from 'drizzle-orm';
+import { classifyOptOutReason } from '@/lib/services/opt-out-reason';
 
 interface InboundMessage {
   from: string;
@@ -35,12 +36,14 @@ export async function handleInboundMessage(
     // Update lead status if exists
     const db = getDb();
     const normalizedPhone = ComplianceService.normalizePhoneNumber(from);
+    const optOutReason = classifyOptOutReason(body);
     await db
       .update(leads)
       .set({
         status: 'opted_out',
         optedOut: true,
         optedOutAt: new Date(),
+        optOutReason,
         updatedAt: new Date(),
       })
       .where(

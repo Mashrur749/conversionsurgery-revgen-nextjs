@@ -1,0 +1,1 @@
+ALTER TABLE "leads" ADD COLUMN "opt_out_reason" varchar(50);
