@@ -65,6 +65,9 @@ export async function processCancellationReminders(): Promise<CancellationRemind
   // 1. Grace-period reminders — gracePeriodEnds is in the future
   // ─────────────────────────────────────────────────────────────
 
+  // Status lifecycle: pending → scheduled_call (save call booked) → saved (retained) | cancelled (gone)
+  // Grace-period reminders apply while the request is unresolved — both 'pending' and 'scheduled_call'
+  // statuses represent an active grace window. 'saved' and 'cancelled' are terminal and excluded.
   const activeCancellations = await db
     .select({
       requestId: cancellationRequests.id,
@@ -78,7 +81,7 @@ export async function processCancellationReminders(): Promise<CancellationRemind
     .innerJoin(clients, eq(cancellationRequests.clientId, clients.id))
     .where(
       and(
-        eq(cancellationRequests.status, 'pending'),
+        inArray(cancellationRequests.status, ['pending', 'scheduled_call']),
         isNotNull(cancellationRequests.gracePeriodEnds),
         gt(cancellationRequests.gracePeriodEnds, now)
       )
