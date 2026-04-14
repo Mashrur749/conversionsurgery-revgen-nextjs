@@ -284,6 +284,7 @@ export async function POST(request: NextRequest) {
       results.dailySummary = await dispatch(baseUrl, '/api/cron/daily-summary', cronSecret!, 'GET', failedJobs);
       results.biweeklyReports = await dispatch(baseUrl, '/api/cron/biweekly-reports', cronSecret!, 'GET', failedJobs);
       results.day3Checkin = await dispatch(baseUrl, '/api/cron/day3-checkin', cronSecret!, 'GET', failedJobs);
+      results.onboardingPriming = await dispatch(baseUrl, '/api/cron/onboarding-priming', cronSecret!, 'GET', failedJobs);
     }
 
     // ── Daily 10am UTC ───────────────────────────────────────
