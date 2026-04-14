@@ -2846,6 +2846,20 @@ Verifies the four quick wins shipped in the 2026-04-12 wave.
    npx vitest run --config vitest.ai.config.ts -t "Grounding"
    ```
 
+### Step 74: 6-Layer Orchestration Verification
+
+1. Send a first-time SMS to the business number from a new phone number.
+2. Verify the AI response:
+   - References the lead&apos;s source (missed call &rarr; &ldquo;Sorry we missed your call!&rdquo;, form &rarr; references form data)
+   - Asks exactly ONE qualifying question (not zero, not two)
+   - Stays under 300 characters (SMS channel constraint)
+   - Uses friendly tone (Alberta locale default)
+3. Reply with project details (e.g., &ldquo;Looking to finish my basement, about 1000 sq ft&rdquo;).
+4. Verify the AI advances to qualifying stage and asks about timeline or scope.
+5. Continue conversation until booking is proposed &mdash; verify the agent follows the methodology stages in order.
+6. Check `agent_decisions` table: verify `actionDetails.promptVersion` is populated with methodology, locale, playbook, and channel versions.
+7. Check `lead_context` table: verify `conversation_stage`, `stage_turn_count`, and `strategy_state` are populated.
+
 ---
 
 ## 3. Useful Commands

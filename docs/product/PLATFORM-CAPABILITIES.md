@@ -39,7 +39,20 @@ The respond node (which generates the actual customer-facing message) dynamicall
 | **Frustrated + urgent** | Sentiment = frustrated AND urgency &ge; 60 | Quality |
 | **Standard** | None of the above | Fast |
 
-Both the analyze-and-decide node and respond node use dynamic model routing based on lead signals. High-value leads (&ge;70 score), high-intent (&ge;80), or frustrated+urgent leads get quality-tier processing for both decision-making and response generation. The routing decision and reason are logged in `agent_decisions.actionDetails` for observability.
+Both the analyze-and-decide node and respond node use dynamic model routing based on lead signals. High-value leads (&ge;70 score), high-intent (&ge;80), or frustrated+urgent leads get quality-tier processing for both decision-making and response generation. The routing decision and reason are logged in `agent_decisions.actionDetails` for observability. When the strategy resolver determines a high-stakes stage (proposing, closing, objection handling), the respond node upgrades to quality tier regardless of lead score.
+
+### Composable Agent Architecture
+
+The AI conversation agent uses a 6-layer composable architecture:
+
+1. **Sales Methodology (Layer 1):** 8-stage conversation strategy (greeting &rarr; qualifying &rarr; educating &rarr; proposing &rarr; objection handling &rarr; closing &rarr; nurturing &rarr; post-booking) with deterministic stage transitions and emergency bypass
+2. **Locale Context (Layer 2):** Region-specific communication norms, regulatory context (CASL/CRTC), and buying psychology (currently: Canadian Alberta)
+3. **Industry Playbook (Layer 3):** Trade-specific expertise including vocabulary mapping, objection patterns, qualifying sequences, and example conversations (currently: basement development)
+4. **Channel Adaptation (Layer 4):** Per-medium constraints (SMS: 300 char max, 1 question per message; Voice: real-time, filler words; Web Chat: formatting, links)
+5. **Conversation Entry Context (Layer 5):** Source-aware opening strategy (missed call &rarr; empathetic; form submission &rarr; reference data; referral &rarr; warm; dormant &rarr; gentle)
+6. **Client Personality (Layer 6):** Per-contractor identity, tone, KB, and settings (existing system)
+
+The strategy resolver computes a deterministic conversation plan each turn &mdash; the LLM executes the strategy rather than inventing one. Prompt caching reduces latency by caching the stable prefix (Layers 1&ndash;4 + guardrails).
 
 ### Speed-to-Lead Tracking
 
