@@ -145,6 +145,30 @@ export async function processIncomingMessage(
     }
   }
 
+  // GAP-S5: Reset stage for returning leads after a significant gap
+  const lastConvTime = conversationHistory[0]?.createdAt; // Most recent message (ordered desc)
+  if (lastConvTime) {
+    const daysSinceLastMessage = Math.floor(
+      (Date.now() - lastConvTime.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    if (daysSinceLastMessage > 7 && context.conversationStage !== 'greeting') {
+      console.log(`[Agent] Returning lead after ${daysSinceLastMessage} days — resetting stage to greeting`);
+      context.conversationStage = 'greeting';
+      context.stageTurnCount = 0;
+      // Ensure summary is fresh for the returning conversation
+      if (!context.conversationSummary && (context.totalMessages ?? 0) > 5) {
+        try {
+          const summary = await updateConversationSummary(client.id, leadId);
+          if (summary) {
+            context.conversationSummary = summary;
+          }
+        } catch (err) {
+          console.error('[Agent] Summary refresh for returning lead failed:', err);
+        }
+      }
+    }
+  }
+
   // Convert to LangChain messages
   const langChainMessages = conversationHistory
     .reverse()
