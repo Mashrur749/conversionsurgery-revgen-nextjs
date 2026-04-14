@@ -78,7 +78,7 @@ export async function handleInboundMessage(
     await db
       .update(leads)
       .set({
-        status: 'active',
+        status: 'contacted',
         optedOut: false,
         optedOutAt: null,
         updatedAt: new Date(),
