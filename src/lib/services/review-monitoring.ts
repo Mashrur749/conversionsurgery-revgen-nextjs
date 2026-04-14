@@ -51,6 +51,10 @@ export async function syncAllReviews(clientId: string): Promise<{
 
   // Future: Yelp, Facebook review sync (requires separate API integrations)
 
+  // Immediately alert on any new negative reviews after each sync run.
+  // checkAndAlertNegativeReviews is idempotent — alertSent flag prevents duplicates.
+  await checkAndAlertNegativeReviews(clientId);
+
   return results;
 }
 
