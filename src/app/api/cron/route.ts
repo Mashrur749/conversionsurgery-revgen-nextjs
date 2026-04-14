@@ -322,6 +322,7 @@ export async function POST(request: NextRequest) {
       );
       results.kbEmptyNudge = await dispatch(baseUrl, '/api/cron/kb-empty-nudge', cronSecret!, 'GET', failedJobs);
       results.kbGapNotify = await dispatch(baseUrl, '/api/cron/kb-gap-notify', cronSecret!, 'GET', failedJobs);
+      results.forwardingVerification = await dispatch(baseUrl, '/api/cron/forwarding-verification', cronSecret!, 'GET', failedJobs);
     }
 
     // ── Daily 10am UTC — Auto-detect probable wins ─────────────
