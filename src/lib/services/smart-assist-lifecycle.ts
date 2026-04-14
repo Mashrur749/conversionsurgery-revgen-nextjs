@@ -10,6 +10,7 @@ import {
   SMART_ASSIST_SEQUENCE_TYPE,
   type SmartAssistTransitionAction,
 } from '@/lib/services/smart-assist-state';
+import { logSmartAssistCorrection } from '@/lib/services/smart-assist-learning';
 
 const REFERENCE_CODE_LENGTH = 8;
 
@@ -341,6 +342,21 @@ export async function sendSmartAssistDraftNow(params: {
         assistResolutionSource: params.action === 'auto_send' ? 'auto_send' : 'approved_send',
       })
       .where(eq(scheduledMessages.id, message.id));
+
+    // Check if this was an edit (approved, content changed) — fire-and-forget
+    if (
+      targetStatus === SMART_ASSIST_STATUS.APPROVED_SENT &&
+      message.assistOriginalContent &&
+      finalContent !== message.assistOriginalContent
+    ) {
+      logSmartAssistCorrection({
+        scheduledMessageId: message.id,
+        clientId: message.clientId!,
+        leadId: message.leadId!,
+        originalContent: message.assistOriginalContent,
+        editedContent: finalContent,
+      }).catch(err => console.error('[SmartAssist] Correction logging failed:', err));
+    }
 
     await incrementSmartAssistMetric(
       client.id,
