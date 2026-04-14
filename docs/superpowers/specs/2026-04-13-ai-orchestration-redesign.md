@@ -423,6 +423,36 @@ The system prompt is composed by stacking layers. **Order matters for prompt cac
 
 **Why this order:** Anthropic prompt caching caches prefixes. Layers 1-4 + guardrails change rarely (same for every message within a conversation, or across conversations for the same client). By putting them first, we get cache hits on most calls. The dynamic content (strategy, KB, history) goes last.
 
+**Prompt validation:**
+
+The composer validates the assembled prompt before sending:
+1. All required sections present (methodology, guardrails, strategy objective)
+2. No unfilled placeholders (scan for `{...}` patterns in the rendered output)
+3. Total token estimate within budget (max 3000 tokens for system prompt at Haiku tier, 6000 at Sonnet tier)
+4. If validation fails: log the error, fall back to a minimal prompt (identity anchor + guardrails + conversation history only)
+
+**Prompt inspection (debug mode):**
+
+When `process.env.DEBUG_PROMPTS === 'true'`, the composer logs the full rendered prompt to `agentDecisions.actionDetails.renderedPrompt` for debugging. Off in production (token cost of storing full prompts).
+
+**Token budget per layer:**
+
+| Layer | Max Tokens | Cache | Priority |
+|-------|-----------|-------|----------|
+| Identity anchor | 50 | Stable | Required |
+| Methodology (current stage) | 200 | Stable | Required |
+| Locale context | 150 | Stable | Optional |
+| Industry playbook | 300 | Stable | Optional |
+| Channel rules | 100 | Stable | Required |
+| Guardrails | 200 | Stable | Required |
+| Entry context | 50 | Dynamic | First message only |
+| Strategy objective | 100 | Dynamic | Required |
+| KB context | 300 | Dynamic | Optional — truncate if over budget |
+| Conversation summary | 200 | Dynamic | When applicable |
+| Conversation history | Variable | Dynamic | Required — last N messages fit remaining budget |
+
+If total exceeds budget: truncate KB context first, then reduce conversation history window, then omit optional layers. Never truncate guardrails or strategy.
+
 ### 4.4 Prompt Caching Implementation
 
 ```typescript
@@ -565,6 +595,51 @@ When Anthropic releases new models (e.g., Claude Haiku 5):
 4. **Rollback:** If any metric degrades >10%, revert immediately. Prompt versioning (#5.3) enables instant before/after comparison.
 
 **Critical rule:** Never switch models mid-conversation. A lead's entire conversation uses the same model version for consistency. Model version stored in `leadContext` at first contact.
+
+### 5.8 Promise Tracking
+
+The agent may make commitments to homeowners: "someone will call you within the hour," "I'll send you some information," "we can start as early as next week." These promises must be tracked and fulfilled.
+
+**Data model (add to `leadContext`):**
+
+```typescript
+activePromises: Array<{
+  promise: string;          // "contractor will call tomorrow"
+  madeAt: Date;
+  deadline: Date;           // When the promise expires
+  source: 'agent' | 'flow'; // Who made it
+  fulfilled: boolean;
+  fulfilledAt?: Date;
+}>;
+```
+
+**How it works:**
+1. `analyzeAndDecide` extracts promises from the agent's own responses (post-generation scan for commitment language: "will call," "will send," "expect to hear," "by tomorrow")
+2. Promises stored in `leadContext.activePromises` with computed deadlines
+3. Daily cron checks for unfulfilled promises past deadline → alerts operator
+4. When homeowner follows up ("nobody called me"), the agent sees the broken promise in context and acknowledges it rather than deflecting
+
+### 5.9 Structured Lead Memory
+
+Beyond conversation summary (narrative) and scores (numeric), the agent needs structured memory of what it's learned about this specific homeowner.
+
+**Data model (add to `leadContext`):**
+
+```typescript
+learnedPreferences: {
+  communicationStyle?: 'brief' | 'detailed';
+  bestContactTimes?: string;
+  decisionProcess?: 'solo' | 'partner' | 'committee';
+  priceFraming?: 'budget_conscious' | 'value_focused' | 'premium';
+  urgencyDriver?: string;        // "insurance deadline," "baby coming," "selling house"
+};
+```
+
+**How it works:**
+1. `analyzeAndDecide` extracts preferences from conversation signals (e.g., homeowner consistently sends short replies → `communicationStyle: 'brief'`)
+2. Preferences persist across turns and sessions — never compressed into summary
+3. Strategy resolver uses preferences to adjust approach (brief communicator gets shorter messages, value-focused gets quality emphasis over price)
+4. Preferences survive conversation summary compression because they're stored as structured JSONB, not in the narrative
 
 ---
 
@@ -726,6 +801,31 @@ Production conversations
 
 **Assessment:** No changes needed. The architecture is already edge-optimized. The main latency bottleneck is LLM response time, which is controlled by model selection (Haiku vs Sonnet) and prompt caching (6.1).
 
+### 6.11 Outcome-Aligned Evaluation — NOT IMPLEMENTED (Strategic Gap)
+
+**Best practice:** AI evals should test not just message quality ("sounds human," "correct tone") but strategic effectiveness ("advances the conversation toward a booking").
+
+**Current state:** Eval system tests safety (pricing leaks, opt-out retention, identity denial) and quality (sounds human, matches tone, correct length). 120 test cases. No eval tests whether a response would actually move a lead closer to booking.
+
+**Impact:** The agent can produce perfectly polished messages that go nowhere. "Happy to answer any questions!" is well-formed but strategically worthless — it doesn't qualify, educate, or propose.
+
+**What to build:**
+
+Outcome-aligned eval criteria per stage:
+
+| Stage | Good Response Must... | Bad Response... |
+|-------|----------------------|----------------|
+| `greeting` | Reference their specific request + ask one qualifying question | Generic "thanks for reaching out" with no question |
+| `qualifying` | Ask about a MISSING piece of info, not re-ask something already answered | Re-asks what they already told us |
+| `educating` | Share a specific differentiator relevant to their project | Generic "we're the best" claims |
+| `proposing` | Offer a concrete next step with specifics (time, what happens) | Vague "let us know if you're interested" |
+| `objection_handling` | Acknowledge the concern, reframe, propose alternative | Ignore the objection or argue |
+| `closing` | Confirm details, set expectations, reduce buyer&apos;s remorse | Nothing actionable |
+
+Eval format: given (stage, conversation history, strategy objective), does the response fulfill the stage criteria?
+
+**Depends on:** Layer 1 (sales methodology) must be populated first — the eval criteria derive from the stage definitions.
+
 ---
 
 ## 7. Storage Model
@@ -797,7 +897,73 @@ export const CHANNEL_CONFIGS: Record<string, ChannelAdaptation> = {
 
 ---
 
-## 8. Implementation Sequence
+## 8. Feedback Loops and Operational Monitoring
+
+### 8.1 Three Feedback Loops
+
+**Loop 1: Homeowner Behavioral Signals → Agent Improvement**
+
+When homeowners respond positively (re-engage, book, accept estimate) or negatively (opt out, ignore, express frustration) to automated messages, those signals should feed into system improvement.
+
+Implementation:
+1. On opt-out with accompanying text ("found someone cheaper, stop texting me"), classify the opt-out reason via regex: `competitor_chosen`, `project_cancelled`, `bad_experience`, `cost`, `not_interested`. Store in `leads.optOutReason`.
+2. Weekly cron: aggregate positive vs negative responses to each automation type (win-back, estimate follow-up, no-show recovery). If opt-out rate > 15% for any type, alert operator.
+3. Monthly analysis: compare message patterns in successful re-engagements vs opt-outs. Feed winning patterns into playbook updates.
+
+**Loop 2: Contractor Behavioral Signals → System Tuning**
+
+Contractor actions reveal system quality:
+- PAUSE command → something went wrong. Log PAUSE duration and context.
+- Smart Assist EDIT → AI tone/content was wrong. Analyze correction patterns (AUDIT-05).
+- Smart Assist CANCEL → AI shouldn&apos;t have messaged at all. Track cancel rate per category.
+- WON/LOST with no AI attribution → system wasn&apos;t part of the conversion path.
+
+Implementation:
+1. Track PAUSE-to-RESUME intervals. If average > 24 hours, the contractor is losing trust.
+2. AUDIT-05 correction analysis: weekly batch, LLM-summarized patterns per client.
+3. Cancel rate per Smart Assist category: if `estimate_followup` cancels > 40%, the templates need revision.
+
+**Loop 3: System Performance Signals → Self-Correction**
+
+Automated anomaly detection with alerting.
+
+### 8.2 Drift Detection and Health Monitoring
+
+Weekly cron (`ai-health-check`) computes:
+
+| Metric | Warning Threshold | Critical Threshold |
+|--------|------------------|-------------------|
+| Average confidence delta (vs prior week) | < -10% | < -20% |
+| Escalation rate delta | > +50% | > +100% |
+| Output guard violation rate | > 3% of messages | > 5% |
+| Average response time | > 6s | > 10s |
+| Quality-tier usage rate delta | > +50% | > +100% |
+| Win-back opt-out rate | > 15% | > 25% |
+| Smart Assist correction rate | > 30% | > 50% |
+| Voyage fallback rate (ILIKE triggered) | > 10% | > 25% |
+| Twilio delivery failure rate | > 2% | > 5% |
+| Anthropic API error rate | > 1% | > 5% |
+
+When thresholds breached:
+- Warning: logged to `agent_health_reports` table, surfaced on operator dashboard
+- Critical: operator SMS alert + dashboard alert + auto-disable affected automation if safe to do so
+
+Data sources: `agentDecisions` (confidence, processing time, model tier), `dailyStats` (message counts), `conversations` (delivery status), `auditLog` (fallback events).
+
+### 8.3 External Dependency Health
+
+Each external API call should track:
+- Latency (p50, p95, p99)
+- Error rate (4xx, 5xx, timeout)
+- Fallback activation rate
+
+Currently tracked: Voyage fallback to ILIKE (implicit). Not tracked: Anthropic latency trend, Twilio carrier filtering trend, Stripe webhook reliability.
+
+Implementation: Add a `dependency_health` table or extend `dailyStats` with per-dependency columns. Populate from existing error handlers (the `catch` blocks already exist — they just log to console, not to a table).
+
+---
+
+## 9. Implementation Sequence
 
 ### Phase A: Foundation (Pre-Launch)
 
@@ -850,7 +1016,7 @@ export const CHANNEL_CONFIGS: Record<string, ChannelAdaptation> = {
 
 ---
 
-## 9. Success Metrics
+## 10. Success Metrics
 
 ### Leading Indicators (measure immediately)
 - **Strategy adherence rate:** % of conversations where the agent followed the resolved strategy vs overrode it
@@ -872,7 +1038,7 @@ export const CHANNEL_CONFIGS: Record<string, ChannelAdaptation> = {
 
 ---
 
-## 10. Risks and Mitigations
+## 11. Risks and Mitigations
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
@@ -885,7 +1051,7 @@ export const CHANNEL_CONFIGS: Record<string, ChannelAdaptation> = {
 
 ---
 
-## 11. Cross-Reference
+## 12. Cross-Reference
 
 | Topic | Document |
 |-------|----------|
