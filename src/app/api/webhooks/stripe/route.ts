@@ -373,6 +373,61 @@ async function handleInvoiceEvent(db: DB, invoice: Stripe.Invoice, event: Stripe
       `Invoice ${event.type.split('.')[1]}`,
       invoice.amount_due
     );
+
+    // XDOM-03: Notify contractor on payment failure
+    if (event.type === 'invoice.payment_failed') {
+      const [client] = await db
+        .select({
+          phone: clients.phone,
+          businessName: clients.businessName,
+        })
+        .from(clients)
+        .where(eq(clients.id, subscription.clientId))
+        .limit(1);
+
+      if (client?.phone) {
+        const adminNumber = process.env.TWILIO_PHONE_NUMBER;
+        const portalUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.conversionsurgery.com';
+
+        if (adminNumber) {
+          try {
+            await sendSMS(
+              client.phone,
+              `Your payment for ConversionSurgery didn&apos;t go through. Please update your payment method at ${portalUrl}/client/billing to keep your leads protected. - ConversionSurgery`,
+              adminNumber
+            );
+          } catch (smsErr) {
+            logSanitizedConsoleError('[Billing][payment-failed.sms]', smsErr, {
+              clientId: subscription.clientId,
+              invoiceId: invoice.id,
+            });
+          }
+        }
+      }
+
+      // Also notify admin
+      const adminEmail = process.env.ADMIN_EMAIL;
+      if (adminEmail) {
+        try {
+          const amountStr = `$${((invoice.amount_due || 0) / 100).toFixed(2)}`;
+          const [clientForEmail] = await db
+            .select({ businessName: clients.businessName })
+            .from(clients)
+            .where(eq(clients.id, subscription.clientId))
+            .limit(1);
+          await sendEmail({
+            to: adminEmail,
+            subject: `Payment failed — ${clientForEmail?.businessName || subscription.clientId}`,
+            html: `<p>Payment of <strong>${amountStr}</strong> failed for <strong>${clientForEmail?.businessName || subscription.clientId}</strong>.</p><p>Invoice: ${invoice.id}</p><p>The client has been notified via SMS to update their payment method.</p>`,
+          });
+        } catch (emailErr) {
+          logSanitizedConsoleError('[Billing][payment-failed.email]', emailErr, {
+            clientId: subscription.clientId,
+            invoiceId: invoice.id,
+          });
+        }
+      }
+    }
   }
 }
 
