@@ -15,17 +15,19 @@
  *
  * Rules:
  * - Lead status must NOT be won, lost, or closed
- * - At least one appointment for the lead must be completed or confirmed
- * - The most recent qualifying appointment must be 7+ days old
+ * - Qualifying via EITHER:
+ *     a) At least one completed/confirmed appointment that is 7+ days old
+ *     b) status = 'estimate_sent' with updatedAt 14+ days ago
  * - No won_lost_nudge prompt sent to this client in the last 7 days
  *   (checked via agencyMessages with promptType = 'won_lost_nudge')
  * - Client must be active and have a phone number
  * - At most 1 nudge per lead per client per run (deduped by leadId)
+ * - Both lead types appear in the same batched message, capped at 5 per client
  */
 
 import { getDb } from '@/db';
 import { leads, clients, appointments, agencyMessages } from '@/db/schema';
-import { eq, and, notInArray, inArray, gte, lte, desc } from 'drizzle-orm';
+import { eq, and, notInArray, inArray, gte, lte, lt } from 'drizzle-orm';
 import { sendActionPrompt } from '@/lib/services/agency-communication';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { ensureOutcomeRefCode } from '@/lib/services/outcome-ref-codes';
@@ -33,6 +35,7 @@ import { ensureOutcomeRefCode } from '@/lib/services/outcome-ref-codes';
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const APPOINTMENT_AGE_DAYS = 7;
+const ESTIMATE_STALE_DAYS = 14;
 const NUDGE_COOLDOWN_DAYS = 7;
 
 // Statuses that mean the lead is already resolved
@@ -88,8 +91,11 @@ export interface ProbableWinsNudgeResult {
 // ── Main runner ────────────────────────────────────────────────────────────────
 
 /**
- * Finds leads with a completed/confirmed appointment 14+ days ago where the
- * lead is still unresolved, and sends a won/lost nudge to the contractor.
+ * Finds two categories of unresolved leads and sends a batched won/lost nudge:
+ *   1. Leads with a completed/confirmed appointment 7+ days ago (appointment path)
+ *   2. Leads with status = 'estimate_sent' where updatedAt is 14+ days ago (estimate path)
+ * Both lead types merge into the same per-client batch, share the same 7-day
+ * cooldown check, and are capped at 5 leads per message.
  */
 export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
   const db = getDb();
@@ -99,11 +105,12 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
 
   const now = new Date();
   const appointmentCutoff = new Date(now.getTime() - APPOINTMENT_AGE_DAYS * 24 * 60 * 60 * 1000);
+  const estimateStaleCutoff = new Date(now.getTime() - ESTIMATE_STALE_DAYS * 24 * 60 * 60 * 1000);
   const nudgeCooldownCutoff = new Date(now.getTime() - NUDGE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
 
-  // ── Step 1: Find qualifying appointments ─────────────────────────────────
+  // ── Step 1a: Find qualifying appointments ────────────────────────────────
 
-  // Find all appointments that are completed/confirmed and at least 14 days old.
+  // Find all appointments that are completed/confirmed and at least 7 days old.
   // We need the lead's clientId and status to filter further.
   const qualifyingAppointments = await db
     .select({
@@ -121,16 +128,11 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
       )
     );
 
-  if (qualifyingAppointments.length === 0) {
-    return { nudged: 0, skipped: 0 };
-  }
+  // ── Step 1b: Find stale estimate_sent leads ──────────────────────────────
 
-  // ── Step 2: Collect unique leadIds to check lead status ──────────────────
-
-  const uniqueLeadIds = [...new Set(qualifyingAppointments.map((a) => a.leadId))];
-
-  // Fetch leads that are NOT yet resolved and belong to active clients
-  const unresolvedLeads = await db
+  // Find leads with status = 'estimate_sent' where updatedAt is 14+ days ago
+  // and the lead's client is active, excluding already-resolved statuses.
+  const staleEstimateLeads = await db
     .select({
       id: leads.id,
       clientId: leads.clientId,
@@ -138,12 +140,52 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
       projectType: leads.projectType,
     })
     .from(leads)
+    .innerJoin(clients, eq(leads.clientId, clients.id))
     .where(
       and(
-        inArray(leads.id, uniqueLeadIds),
-        notInArray(leads.status, [...RESOLVED_STATUSES]),
+        eq(leads.status, 'estimate_sent'),
+        lt(leads.updatedAt, estimateStaleCutoff),
+        eq(clients.status, 'active'),
       )
     );
+
+  // ── Step 2: Collect unresolved appointment-based leads ───────────────────
+
+  const uniqueLeadIds = [...new Set(qualifyingAppointments.map((a) => a.leadId))];
+
+  // Fetch leads from appointments that are NOT yet resolved and belong to active clients
+  const unresolvedAppointmentLeads = uniqueLeadIds.length > 0
+    ? await db
+        .select({
+          id: leads.id,
+          clientId: leads.clientId,
+          name: leads.name,
+          projectType: leads.projectType,
+        })
+        .from(leads)
+        .where(
+          and(
+            inArray(leads.id, uniqueLeadIds),
+            notInArray(leads.status, [...RESOLVED_STATUSES]),
+          )
+        )
+    : [];
+
+  // ── Step 2b: Merge both lead sources ────────────────────────────────────
+
+  // Use a map to deduplicate by leadId before merging
+  const mergedLeadMap = new Map<string, { id: string; clientId: string; name: string | null; projectType: string | null }>();
+
+  for (const lead of unresolvedAppointmentLeads) {
+    mergedLeadMap.set(lead.id, lead);
+  }
+  for (const lead of staleEstimateLeads) {
+    if (!mergedLeadMap.has(lead.id)) {
+      mergedLeadMap.set(lead.id, lead);
+    }
+  }
+
+  const unresolvedLeads = [...mergedLeadMap.values()];
 
   if (unresolvedLeads.length === 0) {
     return { nudged: 0, skipped: 0 };
@@ -154,7 +196,7 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
   // Find all clients we'd nudge
   const targetClientIds = [...new Set(unresolvedLeads.map((l) => l.clientId))];
 
-  // Find clients who already got a won_lost_nudge in the last 14 days
+  // Find clients who already got a won_lost_nudge in the last 7 days
   const recentNudges = await db
     .select({ clientId: agencyMessages.clientId })
     .from(agencyMessages)
@@ -170,10 +212,6 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
 
   // ── Step 4: Group leads by client, send batched nudges ─────────────────────
 
-  const appointmentByLead = new Map(
-    qualifyingAppointments.map((a) => [a.leadId, a])
-  );
-
   // Group unresolved leads by clientId, deduped
   const leadsPerClient = new Map<string, NudgeLead[]>();
   const seen = new Set<string>();
@@ -186,12 +224,6 @@ export async function nudgeProbableWins(): Promise<ProbableWinsNudgeResult> {
     seen.add(lead.id);
 
     if (recentlyNudgedClientIds.has(lead.clientId)) {
-      skipped++;
-      continue;
-    }
-
-    const appt = appointmentByLead.get(lead.id);
-    if (!appt) {
       skipped++;
       continue;
     }
