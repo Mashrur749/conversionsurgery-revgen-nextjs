@@ -5,15 +5,15 @@ import { createDraftResponse } from '@/lib/services/review-response';
 import { postResponseToGoogle } from '@/lib/services/google-business';
 
 /** Rating threshold: reviews at or above this are auto-approved for operator_managed clients. */
-const POSITIVE_RATING_THRESHOLD = 3;
+const POSITIVE_RATING_THRESHOLD = 4;
 
 /**
  * Auto-generate draft review responses for clients with autoReviewResponseEnabled.
  * Finds reviews that have no response record yet and creates AI/template drafts.
  *
  * For operator_managed clients:
- * - Positive reviews (rating >= 3): auto-approve and post immediately
- * - Negative reviews (rating <= 2): hold as pending_approval for operator review
+ * - Positive reviews (rating >= 4): auto-approve and post immediately
+ * - Neutral/negative reviews (rating <= 3): hold as pending_approval for operator review
  *
  * For client_approves clients:
  * - All drafts stay as 'draft' for contractor approval
