@@ -2,7 +2,7 @@ import { getDb } from '@/db';
 import { voiceCalls, clients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getTrackedAI } from '@/lib/ai';
-import { sendSMS } from './twilio';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 
 /**
@@ -87,7 +87,15 @@ export async function notifyClientOfCall(callId: string): Promise<void> {
 
   const twilioFrom = client.twilioNumber || process.env.TWILIO_PHONE_NUMBER!;
 
-  await sendSMS(notifyPhone, message, twilioFrom);
+  await sendCompliantMessage({
+    clientId: call.clientId,
+    to: notifyPhone,
+    from: twilioFrom,
+    body: message,
+    messageClassification: 'proactive_outreach',
+    messageCategory: 'transactional',
+    queueOnQuietHours: true,
+  });
 
   console.log('[Voice] Notification sent to:', notifyPhone);
 }

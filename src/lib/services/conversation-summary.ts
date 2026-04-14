@@ -121,17 +121,23 @@ export async function updateConversationSummary(
 
   // 5. Call AI (fast tier — Haiku, low temperature for factual summary)
   const ai = getTrackedAI({ clientId, operation: 'conversation_summary', leadId });
-  const result = await ai.chat(
-    [{ role: 'user', content: transcript }],
-    {
-      model: 'fast',
-      temperature: 0.3,
-      maxTokens: 300,
-      systemPrompt: SYSTEM_PROMPT,
-    }
-  );
 
-  const summary = result.content.trim();
+  let summary: string;
+  try {
+    const result = await ai.chat(
+      [{ role: 'user', content: transcript }],
+      {
+        model: 'fast',
+        temperature: 0.3,
+        maxTokens: 300,
+        systemPrompt: SYSTEM_PROMPT,
+      }
+    );
+    summary = result.content.trim();
+  } catch (err) {
+    console.error('[ConversationSummary] AI call failed, keeping existing summary:', err);
+    return null;
+  }
 
   // 6. Persist to lead_context
   await db
