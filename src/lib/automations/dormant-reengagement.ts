@@ -21,6 +21,7 @@ import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { addMonths } from 'date-fns';
 import { ComplianceService } from '@/lib/compliance/compliance-service';
+import { isWithinLocalSendWindow } from '@/lib/utils/send-window';
 
 // ── Timing constants ──────────────────────────────────────────────────────────
 
@@ -50,21 +51,6 @@ function buildReengagementMessage(params: {
   );
 }
 
-// ── Timing guard (same pattern as win-back) ───────────────────────────────────
-
-function isWithinSendWindow(): boolean {
-  const now = new Date();
-  const hour = now.getHours();
-  const day = now.getDay(); // 0=Sun, 6=Sat
-
-  if (day === 0 || day === 6) return false; // No weekends
-  if (hour < 10 || hour >= 14) return false; // 10am-2pm only
-  if (day === 1 && hour < 11) return false; // No Monday before 11am
-  if (day === 5 && hour >= 13) return false; // No Friday after 1pm
-
-  return true;
-}
-
 // ── Main runner ───────────────────────────────────────────────────────────────
 
 export interface DormantReengagementResult {
@@ -79,7 +65,12 @@ export interface DormantReengagementResult {
  * message per lead. Caps at MAX_PER_CLIENT per client per run.
  */
 export async function runDormantReengagement(): Promise<DormantReengagementResult> {
-  if (!isWithinSendWindow()) {
+  const DORMANT_DAY_OVERRIDES = [
+    { day: 1, startHour: 11 },
+    { day: 5, endHour: 13 },
+  ];
+
+  if (!isWithinLocalSendWindow('America/Edmonton', 10, 14, DORMANT_DAY_OVERRIDES)) {
     return { eligible: 0, messaged: 0, skipped: 0, errors: [] };
   }
 

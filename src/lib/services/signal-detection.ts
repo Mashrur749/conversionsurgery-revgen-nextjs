@@ -1,4 +1,5 @@
 import { getTrackedAI } from '@/lib/ai';
+import { z } from 'zod';
 
 export interface DetectedSignals {
   readyToSchedule: boolean;
@@ -14,6 +15,21 @@ export interface DetectedSignals {
   confidence: number;
   rawSignals: string[];
 }
+
+const detectedSignalsSchema = z.object({
+  readyToSchedule: z.boolean(),
+  wantsEstimate: z.boolean(),
+  jobComplete: z.boolean(),
+  satisfied: z.boolean(),
+  frustrated: z.boolean(),
+  priceObjection: z.boolean(),
+  urgentNeed: z.boolean(),
+  justBrowsing: z.boolean(),
+  referralMention: z.boolean(),
+  paymentMention: z.boolean(),
+  confidence: z.number().min(0).max(100),
+  rawSignals: z.array(z.string()),
+});
 
 const SIGNAL_PROMPT = `Analyze this conversation and detect customer signals. Return JSON only.
 
@@ -60,8 +76,9 @@ export async function detectSignals(
     const ai = clientId
       ? getTrackedAI({ clientId, operation: 'signal_detection' })
       : (await import('@/lib/ai')).getAIProvider();
-    const { data } = await ai.chatJSON<DetectedSignals>(
+    const { data } = await ai.chatStructured(
       [{ role: 'user', content: conversationText }],
+      detectedSignalsSchema,
       {
         systemPrompt: SIGNAL_PROMPT,
         temperature: 0.3,
@@ -69,20 +86,7 @@ export async function detectSignals(
       },
     );
 
-    return {
-      readyToSchedule: data.readyToSchedule || false,
-      wantsEstimate: data.wantsEstimate || false,
-      jobComplete: data.jobComplete || false,
-      satisfied: data.satisfied || false,
-      frustrated: data.frustrated || false,
-      priceObjection: data.priceObjection || false,
-      urgentNeed: data.urgentNeed || false,
-      justBrowsing: data.justBrowsing || false,
-      referralMention: data.referralMention || false,
-      paymentMention: data.paymentMention || false,
-      confidence: data.confidence || 50,
-      rawSignals: data.rawSignals || [],
-    };
+    return data;
   } catch (error) {
     console.error('Signal detection error:', error);
     return {

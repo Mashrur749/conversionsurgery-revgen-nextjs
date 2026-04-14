@@ -15,6 +15,7 @@ import { getTrackedAI } from '@/lib/ai';
 import { checkOutputGuardrails } from '@/lib/agent/output-guard';
 import { sanitizeForPrompt } from '@/lib/utils/prompt-sanitize';
 import { truncateAtSentence } from '@/lib/utils/text';
+import { isWithinLocalSendWindow } from '@/lib/utils/send-window';
 
 // Win-back window: 25-35 days since last message
 const MIN_DAYS_STALE = 25;
@@ -41,14 +42,14 @@ export async function processWinBacks(): Promise<{
   let markedDormant = 0;
 
   // Check timing: only send 10am-2pm weekdays, never Monday morning or Friday afternoon
-  const now = new Date();
-  const hour = now.getHours();
-  const dayOfWeek = now.getDay(); // 0=Sun, 6=Sat
+  const WIN_BACK_DAY_OVERRIDES = [
+    { day: 1, startHour: 11 },  // Monday: 11am-2pm (no early Monday)
+    { day: 5, endHour: 13 },    // Friday: 10am-1pm (early Friday cutoff)
+  ];
 
-  if (dayOfWeek === 0 || dayOfWeek === 6) return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] };
-  if (hour < 10 || hour >= 14) return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] };
-  if (dayOfWeek === 1 && hour < 11) return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] }; // No Monday before 11am
-  if (dayOfWeek === 5 && hour >= 13) return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] }; // No Friday after 1pm
+  if (!isWithinLocalSendWindow('America/Edmonton', 10, 14, WIN_BACK_DAY_OVERRIDES)) {
+    return { eligible: 0, messaged: 0, markedDormant: 0, errors: [] };
+  }
 
   // Find leads that:
   // 1. Status is 'contacted' or 'estimate_sent' (engaged but didn't progress)
@@ -340,7 +341,7 @@ Conversation context:
 ${context.conversationHistory.slice(-5).map(m => `${m.role}: ${m.content}`).join('\n')}
 
 Project info: ${context.lead.projectInfo.type || 'unknown'}`,
-        temperature: 0.9,
+        temperature: 0.6,
         maxTokens: 100,
       },
     );
