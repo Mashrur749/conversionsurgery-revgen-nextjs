@@ -537,6 +537,124 @@ async function checkSlaBreachesInternal(): Promise<number> {
   return breached.length;
 }
 
+/**
+ * Reassign all pending/assigned escalations from a removed team member.
+ * Uses round-robin to distribute to the next available member.
+ * Falls back to the client owner if no other active members exist.
+ *
+ * Called when a team member is deactivated or removed (XDOM-19).
+ */
+export async function reassignPendingEscalations(
+  clientId: string,
+  removedMembershipId: string
+): Promise<{ reassigned: number; fallbackToOwner: boolean }> {
+  const db = getDb();
+
+  // Find all pending/assigned escalations for this member
+  const orphaned = await db
+    .select({ id: escalationQueue.id })
+    .from(escalationQueue)
+    .where(
+      and(
+        eq(escalationQueue.clientId, clientId),
+        eq(escalationQueue.assignedTo, removedMembershipId),
+        or(
+          eq(escalationQueue.status, 'pending'),
+          eq(escalationQueue.status, 'assigned')
+        )
+      )
+    );
+
+  if (orphaned.length === 0) {
+    return { reassigned: 0, fallbackToOwner: false };
+  }
+
+  // Find active team members who can receive escalations (excluding the removed one)
+  const activeMembers = await getTeamMembers(clientId).then((m) =>
+    m.filter((x) => x.isActive && x.id !== removedMembershipId)
+  );
+
+  let fallbackToOwner = false;
+  let targetMemberId: string | null = null;
+
+  if (activeMembers.length > 0) {
+    // Round-robin: assign to member with fewest pending escalations
+    const withCounts: TeamMemberWithCount[] = await Promise.all(
+      activeMembers.map(async (m) => {
+        const [result] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(escalationQueue)
+          .where(
+            and(
+              eq(escalationQueue.assignedTo, m.id),
+              or(
+                eq(escalationQueue.status, 'pending'),
+                eq(escalationQueue.status, 'assigned')
+              )
+            )
+          );
+        return { id: m.id, name: m.name, pendingCount: Number(result?.count) || 0 };
+      })
+    );
+
+    withCounts.sort((a, b) => a.pendingCount - b.pendingCount);
+    targetMemberId = withCounts[0]?.id ?? null;
+  }
+
+  if (!targetMemberId) {
+    // Fallback: find the client owner's membership
+    const [ownerMembership] = await db
+      .select({ id: clientMemberships.id })
+      .from(clientMemberships)
+      .where(
+        and(
+          eq(clientMemberships.clientId, clientId),
+          eq(clientMemberships.isOwner, true),
+          eq(clientMemberships.isActive, true)
+        )
+      )
+      .limit(1);
+
+    targetMemberId = ownerMembership?.id ?? null;
+    fallbackToOwner = true;
+  }
+
+  // Reassign all orphaned escalations
+  let reassigned = 0;
+  for (const esc of orphaned) {
+    if (targetMemberId) {
+      await db
+        .update(escalationQueue)
+        .set({
+          assignedTo: targetMemberId,
+          assignedAt: new Date(),
+          status: 'assigned',
+          updatedAt: new Date(),
+        })
+        .where(eq(escalationQueue.id, esc.id));
+    } else {
+      // No one to assign to — set to pending (unassigned)
+      await db
+        .update(escalationQueue)
+        .set({
+          assignedTo: null,
+          assignedAt: null,
+          status: 'pending',
+          updatedAt: new Date(),
+        })
+        .where(eq(escalationQueue.id, esc.id));
+    }
+    reassigned++;
+  }
+
+  // Notify the new assignee about the reassigned escalations
+  if (targetMemberId && reassigned > 0) {
+    await notifyEscalation(orphaned[0].id, targetMemberId, ['sms', 'email']);
+  }
+
+  return { reassigned, fallbackToOwner };
+}
+
 // ============================================================================
 // FROZEN EXPORTS — Public API (signatures must not change)
 // ============================================================================

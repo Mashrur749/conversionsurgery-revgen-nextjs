@@ -9,6 +9,7 @@ import {
   invalidateClientSession,
 } from '@/lib/permissions';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
+import { reassignPendingEscalations } from '@/lib/services/escalation';
 
 const updateMemberSchema = z
   .object({
@@ -142,6 +143,21 @@ export const PATCH = portalRoute<{ id: string }>(
         .set(updateData)
         .where(eq(clientMemberships.id, id));
 
+      // XDOM-19: Reassign pending escalations when deactivating a team member
+      if (isActive === false) {
+        try {
+          const { reassigned, fallbackToOwner } = await reassignPendingEscalations(clientId, id);
+          if (reassigned > 0) {
+            console.log(
+              `[ClientTeam] Reassigned ${reassigned} escalations from deactivated member ${id}${fallbackToOwner ? ' (to owner)' : ''}`
+            );
+          }
+        } catch (reassignErr) {
+          // Non-fatal — member is already deactivated, log and continue
+          console.error('[ClientTeam] Failed to reassign escalations:', reassignErr);
+        }
+      }
+
       // Invalidate the target user's session so they get fresh permissions
       if (roleTemplateId || isActive === false) {
         await invalidateClientSession(id);
@@ -223,6 +239,19 @@ export const DELETE = portalRoute<{ id: string }>(
         .update(clientMemberships)
         .set({ isActive: false, updatedAt: new Date() })
         .where(eq(clientMemberships.id, id));
+
+      // XDOM-19: Reassign pending escalations when removing a team member
+      try {
+        const { reassigned, fallbackToOwner } = await reassignPendingEscalations(clientId, id);
+        if (reassigned > 0) {
+          console.log(
+            `[ClientTeam] Reassigned ${reassigned} escalations from removed member ${id}${fallbackToOwner ? ' (to owner)' : ''}`
+          );
+        }
+      } catch (reassignErr) {
+        // Non-fatal — member is already deactivated, log and continue
+        console.error('[ClientTeam] Failed to reassign escalations:', reassignErr);
+      }
 
       // Invalidate session
       await invalidateClientSession(id);
