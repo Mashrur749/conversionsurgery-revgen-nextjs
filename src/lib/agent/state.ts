@@ -1,6 +1,7 @@
 import { Annotation, messagesStateReducer } from '@langchain/langgraph';
 import { BaseMessage } from '@langchain/core/messages';
 import type { LeadStage, AgentAction, EscalationReason, LeadSignals } from '@/lib/types/agent';
+import type { ConversationStrategy } from './strategy-resolver';
 
 /**
  * LangGraph state annotation for conversation agent
@@ -134,6 +135,12 @@ export const ConversationState = Annotation.Root({
   conversationSummary: Annotation<string | undefined>({
     reducer: (current, update) => update ?? current,
     default: () => undefined,
+  }),
+
+  // 6-layer orchestration: resolved strategy for this turn (injected by orchestrator)
+  conversationStrategy: Annotation<ConversationStrategy | null>({
+    reducer: (current, update) => update ?? current,
+    default: () => null,
   }),
 });
 

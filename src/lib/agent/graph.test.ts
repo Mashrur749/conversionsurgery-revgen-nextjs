@@ -26,6 +26,7 @@ function makeState(overrides: Partial<ConversationStateType> = {}): Conversation
     decisionReasoning: null,
     decisionConfidence: 80,
     conversationSummary: undefined,
+    conversationStrategy: null,
     ...overrides,
   };
 }
