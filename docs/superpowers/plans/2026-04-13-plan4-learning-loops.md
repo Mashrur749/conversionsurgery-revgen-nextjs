@@ -140,6 +140,58 @@
 
 **Approach:** Change `attributeFunnelEvent()` to tag ALL `agentDecisions` within the 7-day window as `contributing`, not just the most recent. Add `attributionRole: 'primary' | 'contributing'` to the outcome tracking. Reporting shows the full chain of decisions that led to the outcome.
 
+### Task 10: Homeowner Behavioral Signal Analysis (NEW — Feedback Loop 1)
+
+**Timing:** First 30 days (signals available from Day 1)
+
+**Files:**
+- Modify: `src/db/schema/leads.ts` — add `optOutReason` varchar field
+- Create: `src/lib/services/homeowner-signal-analysis.ts`
+- Modify: `src/lib/compliance/opt-out-handler.ts` — classify opt-out reason from message text
+- Create: cron job for weekly aggregation
+- Migration needed
+
+**Approach:**
+1. When opt-out triggers alongside non-STOP text, classify reason via regex: `competitor_chosen` ("found someone else/cheaper"), `project_cancelled` ("not doing the project/changed our mind"), `bad_experience` ("too many messages/annoying"), `cost` ("too expensive"), `not_interested` ("not interested"), `unknown` (default). Store in `leads.optOutReason`.
+2. Weekly cron: aggregate positive responses (re-engagements, bookings after automated messages) vs negative responses (opt-outs, explicit "stop") per automation type.
+3. If opt-out rate > 15% for any automation type → alert operator via SMS.
+4. Dashboard: opt-out reason breakdown chart, automation-level response rates.
+
+### Task 11: AI Drift Detection and Health Monitoring (NEW — Feedback Loop 3)
+
+**Timing:** First 30 days
+
+**Files:**
+- Create: `src/db/schema/ai-health-reports.ts`
+- Create: `src/lib/services/ai-health-check.ts`
+- Create: cron job (weekly, added to main cron orchestrator)
+- Migration needed
+
+**Approach:**
+1. Weekly cron computes health metrics from existing data sources (`agentDecisions`, `dailyStats`, `conversations`, `auditLog`)
+2. Metrics tracked: confidence trend, escalation rate trend, output guard violation rate, avg response time, quality-tier usage rate, win-back opt-out rate, Smart Assist correction rate, Voyage fallback rate, Twilio delivery failure rate, Anthropic error rate
+3. Warning thresholds (logged + dashboard): confidence delta < -10%, escalation rate delta > +50%, guard violations > 3%, response time > 6s
+4. Critical thresholds (operator SMS alert): confidence delta < -20%, guard violations > 5%, response time > 10s, Voyage fallback > 25%
+5. Health report stored in `ai_health_reports` table for trend analysis
+6. Dashboard: health trend charts, current status indicators, alert history
+
+### Task 12: External Dependency Health Tracking (NEW)
+
+**Timing:** After 5+ clients
+
+**Files:**
+- Modify: `src/lib/ai/providers/anthropic.ts` — track latency + error rate per call
+- Modify: `src/lib/services/embedding.ts` — track Voyage fallback events
+- Modify: `src/lib/services/twilio.ts` — track delivery failures
+- Create: `src/lib/services/dependency-health.ts` — aggregation service
+- Modify: `src/db/schema/daily-stats.ts` — add dependency health columns (or new table)
+
+**Approach:**
+1. Each external API call records latency and success/failure to a lightweight in-memory counter (not per-call DB writes)
+2. Every 5 minutes (with process-scheduled cron): flush counters to `dailyStats` or a dedicated `dependency_health` table
+3. Weekly health check (Task 11) reads dependency metrics and includes in health report
+4. Alert when: Anthropic p95 latency > 10s, Voyage fallback rate > 10%, Twilio failure rate > 2%
+
 ---
 
 ## Execution Order
@@ -150,10 +202,13 @@ Phase A (First 30 days):
   Task 2 (Analysis/decision split) — enables better debugging
   Task 3 (Evals in CI) — safety gate
   Task 4 (Structured summary) — improves long conversations
+  Task 10 (Homeowner signals) — starts collecting opt-out reasons from Day 1
+  Task 11 (Drift detection) — catches problems early
 
 Phase B (After 5+ clients):
   Task 5 (A/B testing) — prerequisite: prompt versioning from Plan 2
   Task 8 (Outcome feedback) — needs outcome data
+  Task 12 (Dependency health) — needs enough traffic to be meaningful
 
 Phase C (After 200+ leads):
   Task 6 (Conversation analytics) — needs statistical significance
