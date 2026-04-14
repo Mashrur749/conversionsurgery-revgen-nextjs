@@ -35,8 +35,15 @@ interface ActionResult {
   reason: string;
 }
 
+interface CorrectionRate {
+  total: number;
+  corrected: number;
+  rate: number;
+}
+
 interface Props {
   clientId: string;
+  correctionRate?: CorrectionRate;
 }
 
 function formatTimeRemaining(sendAt: string): string {
@@ -51,6 +58,31 @@ function formatTimeRemaining(sendAt: string): string {
 function truncateContent(content: string, max = 100): string {
   if (content.length <= max) return content;
   return `${content.slice(0, max - 3)}...`;
+}
+
+function CorrectionRateIndicator({ rate }: { rate: CorrectionRate }) {
+  const pct = Math.round(rate.rate * 100);
+
+  let colorClass = 'text-foreground';
+  let warningText: string | null = null;
+
+  if (pct > 30) {
+    colorClass = 'text-[#C15B2E]';
+    warningText = 'High correction rate \u2014 review AI settings';
+  } else if (pct < 10) {
+    colorClass = 'text-[#3D7A50]';
+  }
+
+  return (
+    <div className="space-y-0.5">
+      <p className={`text-sm font-medium ${colorClass}`}>
+        Correction Rate: {pct}% ({rate.corrected} of {rate.total} drafts edited)
+      </p>
+      {warningText && (
+        <p className="text-xs text-[#C15B2E]">{warningText}</p>
+      )}
+    </div>
+  );
 }
 
 function DraftRow({
@@ -205,7 +237,7 @@ function DraftRow({
   );
 }
 
-export function SmartAssistCard({ clientId }: Props) {
+export function SmartAssistCard({ clientId, correctionRate }: Props) {
   const [drafts, setDrafts] = useState<PendingDraft[]>([]);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
 
@@ -270,8 +302,11 @@ export function SmartAssistCard({ clientId }: Props) {
             Pending Smart Assist Drafts
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-2">
           <p className="text-sm text-muted-foreground">No pending drafts</p>
+          {correctionRate && correctionRate.total > 0 && (
+            <CorrectionRateIndicator rate={correctionRate} />
+          )}
         </CardContent>
       </Card>
     );
@@ -290,6 +325,11 @@ export function SmartAssistCard({ clientId }: Props) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {correctionRate && correctionRate.total > 0 && (
+          <div className="pb-1 border-b border-border">
+            <CorrectionRateIndicator rate={correctionRate} />
+          </div>
+        )}
         {loadState === 'loading' && (
           <p className="text-sm text-muted-foreground">Loading drafts...</p>
         )}

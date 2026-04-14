@@ -44,6 +44,7 @@ import { ServiceModelToggle } from './service-model-toggle';
 import { checkEngagementHealth } from '@/lib/services/engagement-health';
 import { countQualifiedLeadEngagements } from '@/lib/services/guarantee-v2/metrics';
 import { calculateProbablePipelineValueCents } from '@/lib/services/pipeline-value';
+import { getSmartAssistCorrectionRate } from '@/lib/services/smart-assist-learning';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -206,6 +207,14 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
   // Fetch ROI metrics in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+
+  // Smart Assist correction rate (30 days)
+  const [correctionRateSettled] = await Promise.allSettled([
+    getSmartAssistCorrectionRate(id, thirtyDaysAgo),
+  ]);
+  const correctionRate = correctionRateSettled.status === 'fulfilled'
+    ? correctionRateSettled.value
+    : null;
 
   const defaultRevenueStats: Awaited<ReturnType<typeof getRevenueStats>> = { period: '', totalLeads: 0, totalQuotes: 0, totalWon: 0, totalLost: 0, totalCompleted: 0, conversionRate: 0, totalQuoteValue: 0, totalWonValue: 0, totalPaid: 0, avgJobValue: 0 };
   const defaultSpeedMetrics: Awaited<ReturnType<typeof getSpeedToLeadMetrics>> = { avgResponseTimeSeconds: 0, medianResponseTimeSeconds: 0, totalLeadsWithResponse: 0, fastestResponseSeconds: 0, slowestResponseSeconds: 0, percentUnder1Min: 0, percentUnder5Min: 0, industryAvgMinutes: 0, previousResponseTimeMinutes: null, speedMultiplier: null, improvementVsPrevious: null };
@@ -582,7 +591,12 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
         addonProvenanceCard={<AddonProvenanceCard clientId={client.id} />}
         dncCard={<DncCard clientId={client.id} />}
         integrationsCard={<IntegrationsCard clientId={client.id} />}
-        smartAssistCard={<SmartAssistCard clientId={client.id} />}
+        smartAssistCard={
+          <SmartAssistCard
+            clientId={client.id}
+            correctionRate={correctionRate ?? undefined}
+          />
+        }
         guaranteeStatusCard={
           guaranteeCardProps ? (
             <GuaranteeStatusCard
