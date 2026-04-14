@@ -12,6 +12,7 @@ interface ClientDetailTabsProps {
   teamMemberCount: number;
   /* Tab 1: Overview */
   onboardingChecklist: ReactNode | null;
+  onboardingProgressCard?: ReactNode;
   roiDashboard: ReactNode;
   leadsNeedingFollowupCard?: ReactNode;
   dayOneActivationCard: ReactNode;
@@ -46,6 +47,7 @@ function isValidTab(value: string | null): value is TabValue {
 export function ClientDetailTabs({
   teamMemberCount,
   onboardingChecklist,
+  onboardingProgressCard,
   roiDashboard,
   leadsNeedingFollowupCard,
   dayOneActivationCard,
@@ -109,6 +111,7 @@ export function ClientDetailTabs({
       <TabsContent value="overview" className="space-y-6 mt-4">
         {engagementHealthBadge}
         {onboardingChecklist}
+        {onboardingProgressCard}
         {roiDashboard}
         {leadsNeedingFollowupCard}
         {guaranteeStatusCard}
