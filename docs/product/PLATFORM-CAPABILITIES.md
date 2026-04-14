@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-12 (Phase 4: AI eval system — comprehensive evaluation coverage across all 13 AI features, 6 categories, HTML report + baseline tracking)
+Last updated: 2026-04-14 (FMA Wave 2: exclusion list gate, autonomous readiness checklist, ICP qualification fields, onboarding checklist, forwarding verification)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -26,6 +26,19 @@ The core promise: every inquiry gets a response in seconds, not hours.
 | **Smart Assist (immediate)** | AI generates and sends instantly | Speed-critical clients |
 | **Smart Assist (delayed)** | AI generates, owner has 1-60 min window to review/edit/cancel before auto-send | Week 2 onboarding (default 5 min) |
 | **Smart Assist (manual)** | AI generates draft, waits for owner approval via SMS command (SEND/EDIT/CANCEL + reference code) | Conservative clients |
+
+**Autonomous Readiness Checklist:** When an operator attempts to switch a client to Autonomous mode, a 6-item readiness checklist is evaluated inline and shown in the feature toggles UI. Critical items block the transition; warnings allow it with notice.
+
+| Check | Type | Threshold |
+|-------|------|-----------|
+| Knowledge base populated | Critical | &ge; 10 entries |
+| Pricing configured | Critical | At least 1 service with price range |
+| Smart Assist review period | Critical | &ge; 30 sent messages reviewed |
+| Escalation rate | Critical | &lt; 20% of conversations escalated |
+| Exclusion list reviewed | Critical | Operator must confirm with contractor |
+| Business hours configured | Warning | At least one day with hours set |
+
+API: `GET /api/admin/clients/{id}/readiness` returns all 6 items with pass/fail status and blocking reason.
 
 ### Dynamic Model Routing
 
@@ -1039,12 +1052,58 @@ Before the sales call, the operator runs a lightweight pre-sale audit using publ
 - **Pre-onboarding priming SMS:** sent 24-48 hours after signup, before the onboarding call. Message: &ldquo;Before our call &mdash; think of 5 quotes you sent in the last 6 months that went quiet. We&apos;ll reactivate them together on the call.&rdquo; Primes the contractor to arrive at the onboarding call with their dead pipeline ready, accelerating Day 2-3 quote import. Cron: `onboarding-priming` runs daily at 7am UTC. Feature flag: `preOnboardingPrimingEnabled` (system default: on).
 - **Onboarding call reminder:** automated SMS sent 2 hours before a scheduled onboarding call. Contractor receives: &ldquo;Reminder: your onboarding call starts in 2 hours. [join link if set].&rdquo; Cron: `onboarding-reminder` runs every 30 minutes and checks for calls starting within the next 2-hour window. Feature flag: controlled by `onboardingCallReminderEnabled` (system default: on).
 
+### ICP Qualification Fields
+
+The client creation wizard requires three ICP qualification fields at sign-up:
+
+- **Estimated monthly lead volume** — contractor&apos;s typical inbound inquiries per month
+- **Average project value** — typical job size in dollars
+- **Dead quote count** — outstanding quotes with no response (seeds Day 2-3 quote import)
+
+When monthly lead volume is &lt; 15, the wizard displays a mandatory disclosure: low-volume clients may see slower ROI accumulation and the speed-to-lead advantage is reduced. The operator must acknowledge before continuing. This data informs onboarding priority and sales qualification scoring.
+
 ### Onboarding Checklist
 
+The client detail page shows a platform-enforced 10-item onboarding progress card. Incomplete items block Smart Assist or Autonomous mode advancement until resolved. Items display as green (complete), gray (incomplete), or locked (blocked by dependency).
+
+The 10 checklist items are:
+
+1. Phone number provisioned
+2. Call forwarding configured and tested
+3. Business hours set
+4. Knowledge base populated (&ge; 10 entries)
+5. Pricing configured on at least 1 service
+6. Exclusion list reviewed with contractor
+7. Team member added (or confirmed solo)
+8. AI tone configured and approved
+9. Voice AI playground QA completed
+10. Quote reactivation batch sent
+
+API: `GET /api/admin/clients/{id}/onboarding-checklist` returns all 10 items with status and blocking reason. Items that block AI activation are marked `blocking: true`.
+
+**Legacy UI checklist entries (onboarding UX improvements):**
 - **Actionable steps:** each incomplete checklist item links directly to the relevant settings page (phone setup, business hours, team configuration, etc.)
 - **Tutorials as links:** tutorial items are clickable links, not plain text
 - **Start Here banner:** shows the single most important next action for the contractor
 - **Quality gates simplified:** hidden when passing; shown in plain language when failing (no technical jargon)
+
+### Exclusion List Gate
+
+Before autonomous mode can be activated, the operator must confirm that the exclusion list was reviewed with the contractor. This is a one-way latch on `clients.exclusionListReviewed` — once set, it cannot be cleared without a schema-level change. The confirmation is audit-logged with timestamp and operator ID. The gate is enforced by the autonomous readiness checklist (see Section 1).
+
+**Purpose:** prevents the AI from contacting family, friends, or personal relationships of the contractor via automated sequences — a common contractor concern and a source of early churn if it occurs.
+
+### Forwarding Verification
+
+For the first 7 days after a client is activated, a daily Twilio outbound call is placed to the contractor&apos;s business number to verify call forwarding is working correctly.
+
+- Uses Answering Machine Detection (AMD) to distinguish live pickup from voicemail intercept
+- If AMD detects voicemail, the operator receives an alert: forwarding may not be configured or carrier voicemail is intercepting before the Twilio number
+- Feature flag: `forwardingVerificationEnabled` (default: on)
+- Cron: `forwarding-verification` runs daily
+- Cost: ~$0.14/client for the 7-day verification window
+
+This catches the most common Day 1 setup failure (carrier voicemail winning over the conditional forward) before the contractor notices missed leads.
 
 ### Onboarding Quality Gates
 

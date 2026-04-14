@@ -1,6 +1,6 @@
 # Testing Guide
 
-Last updated: 2026-04-12
+Last updated: 2026-04-14
 Audience: Engineering + Operations
 Purpose: run a manual + automated release check without getting blocked mid-flow.
 
@@ -28,6 +28,10 @@ Follow this sequence to test the entire platform end-to-end. Steps are grouped b
 | B5 | Team setup + add-on pricing | 4 |
 | B6 | KB onboarding wizard (contractor self-serve) | 65a |
 | B7 | DNC / exclusion list | 62a-d, 68a |
+| B8 | Exclusion list gate + autonomous readiness checklist | 81a-b |
+| B9 | ICP qualification fields on wizard | 81c |
+| B10 | Forwarding verification (7-day daily call) | 81d |
+| B11 | Onboarding checklist (10-item progress card) | 81e |
 
 ### Phase C: AI Agent
 | # | What | Steps |
@@ -3030,6 +3034,117 @@ Expected:
 - Up to 5 total leads per batch (post-appointment + estimate_sent combined).
 - Numbered-reply disambiguation works correctly for the combined list.
 
+### Step 81: FMA Wave 2 — Exclusion List Gate, Readiness Checklist, ICP Fields, Onboarding Checklist, Forwarding Verification
+
+Combined verification for all FMA Wave 2 features.
+
+#### 81a: Exclusion list gate — blocks autonomous without review
+
+1. Create a test client with `exclusionListReviewed = false` (default for new clients).
+2. Attempt to switch `aiAgentMode` to `autonomous` via `PUT /api/admin/clients/{id}`:
+
+```bash
+curl -i -X PUT http://localhost:3000/api/admin/clients/$CLIENT_ID \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"aiAgentMode":"autonomous"}'
+```
+
+3. Verify the response is `409 Conflict` with `error: "exclusion_list_not_reviewed"`.
+4. Mark the exclusion list as reviewed: admin client detail → Configuration tab → Exclusion List card → &ldquo;Mark as Reviewed&rdquo;.
+5. Retry the mode switch — verify it succeeds (200).
+6. Check `audit_log` for an entry with `action: "exclusion_list_reviewed"` with operator ID and timestamp.
+7. Attempt to un-review (set `exclusionListReviewed = false`) — verify the UI has no such option (one-way latch).
+
+Expected:
+- `409` when `exclusionListReviewed` is false.
+- Succeeds once reviewed.
+- Audit log entry present.
+- One-way latch — cannot be reversed from the UI.
+
+#### 81b: Autonomous readiness checklist API
+
+1. For a test client with a partial setup (< 10 KB entries, no pricing, no business hours):
+
+```bash
+curl -i http://localhost:3000/api/admin/clients/$CLIENT_ID/readiness \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+2. Verify the response contains 6 items with `id`, `label`, `status` (pass/fail/warning), and `blocking` (boolean).
+3. Verify failing critical items have `blocking: true`.
+4. Complete each prerequisite (add 10+ KB entries, configure pricing, review exclusion list, reduce escalation rate, set business hours, ensure 30+ Smart Assist reviews).
+5. Re-call the endpoint — verify all items pass.
+
+Expected:
+- Always returns exactly 6 items.
+- Critical failures have `blocking: true`.
+- Status updates reflect real-time data (not cached).
+
+#### 81c: ICP qualification fields on wizard
+
+1. Open the client creation wizard: `/admin/clients/new`.
+2. Verify three ICP fields are present and required: estimated monthly lead volume, average project value, dead quote count.
+3. Enter a lead volume of 10 (sub-15) — verify a disclosure appears explaining ROI implications.
+4. Acknowledge the disclosure and complete the wizard — verify the client is created with the ICP fields stored.
+5. Enter a lead volume of 20 (above threshold) — verify no disclosure appears.
+6. Attempt to submit without filling ICP fields — verify validation errors.
+
+Expected:
+- All three fields are required.
+- Sub-15 volume triggers disclosure that must be acknowledged.
+- Data persists to the client record.
+
+#### 81d: Forwarding verification — trigger call and status callback
+
+1. Enable `forwardingVerificationEnabled` for a test client.
+2. Run the forwarding verification cron:
+
+```bash
+curl -i http://localhost:3000/api/cron/forwarding-verification -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify an outbound call was initiated to the client&apos;s business number (check Twilio logs or test-mode mock).
+4. Simulate a voicemail AMD detection callback to `/api/webhooks/twilio/ring-status`:
+
+```bash
+curl -i -X POST http://localhost:3000/api/webhooks/twilio/ring-status \
+  -d "CallStatus=completed&AnsweredBy=machine_start&clientId=$CLIENT_ID"
+```
+
+5. Verify the operator receives an SMS alert: forwarding may be intercepted by carrier voicemail.
+6. Simulate a live-answer callback (`AnsweredBy=human`) — verify no alert is sent.
+7. Run the cron on Day 8+ for the same client — verify no verification call is placed (7-day window only).
+8. Set `forwardingVerificationEnabled = false` — rerun cron — verify no call is placed.
+
+Expected:
+- Outbound call placed for days 1-7 after client activation.
+- Voicemail AMD detection triggers operator alert.
+- Live pickup produces no alert.
+- Stops after 7 days.
+- Feature flag controls execution.
+
+#### 81e: Onboarding checklist API — 10 items
+
+1. For a freshly created test client:
+
+```bash
+curl -i http://localhost:3000/api/admin/clients/$CLIENT_ID/onboarding-checklist \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+2. Verify the response contains exactly 10 items.
+3. Each item should have: `id`, `label`, `status` (`complete`/`incomplete`/`blocked`), `blocking` (boolean), and `action` (URL to resolve the item).
+4. Complete 3-4 items (provision phone, set business hours, add KB entries).
+5. Re-call the endpoint — verify completed items show `status: "complete"`.
+6. Verify the client detail page progress card reflects the same state (green/gray/lock icons).
+
+Expected:
+- Always returns 10 items.
+- Statuses are real-time.
+- Blocking items prevent AI mode advancement when incomplete.
+- UI card matches API response.
+
 ---
 
 ## 3. Useful Commands
@@ -3090,6 +3205,7 @@ curl -i http://localhost:3000/api/cron/billing-reminder -H "Authorization: Beare
 curl -i http://localhost:3000/api/cron/guarantee-alert -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/onboarding-reminder -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/onboarding-priming -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/forwarding-verification -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core

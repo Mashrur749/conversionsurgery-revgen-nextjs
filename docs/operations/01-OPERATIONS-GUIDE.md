@@ -125,6 +125,22 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 ### Feature Toggle Reference
 66. **Toggle-first diagnosis:** When a contractor reports unexpected behavior (AI not responding, flows not sending, voice not activating), check their feature toggle state before investigating code. The 18 toggles are: `missedCallSms`, `aiResponse`, `aiAgent`, `autoEscalation`, `voice`, `flows`, `leadScoring`, `reputationMonitoring`, `autoReviewResponse`, `calendarSync`, `hotTransfer`, `paymentLinks`, `photoRequests`, `multiLanguage`, `smartAssist`, `smartAssistDelay`, `smartAssistManualCategories`, `preferredLanguage`. Most &ldquo;broken feature&rdquo; reports are a disabled toggle.
 
+### FMA Wave 2: Onboarding Gates &amp; Enforcement
+
+71a. **Exclusion list review (mandatory before autonomous mode):** During the onboarding call, ask the contractor: &ldquo;Are there any contacts we should never automate messages to? Family, close friends, personal relationships?&rdquo; Collect all names and numbers. Add each excluded number via admin client detail → Configuration tab → Exclusion List card. Then click &ldquo;Mark as Reviewed&rdquo; to set `exclusionListReviewed = true`. This is required to enable autonomous mode — the system returns `409` until it&apos;s set. Do not skip this step even if the contractor says &ldquo;no one.&rdquo; Getting explicit confirmation protects both parties.
+
+71b. **Low-volume client disclosure (sub-15 leads/month):** When the client creation wizard shows the low-volume disclosure (monthly lead volume &lt; 15), acknowledge it and note it in your client record. These clients are lower-ROI on speed-to-lead features — focus onboarding on estimate follow-up and review generation instead. Set expectations on the onboarding call: &ldquo;With your lead volume, the biggest gains will come from following up on existing quotes and generating reviews, not missed call intercept.&rdquo;
+
+71c. **Forwarding verification alerts:** The `forwarding-verification` cron places a daily test call to each new client&apos;s business number for the first 7 days. If AMD detects voicemail (instead of a live pickup or the Twilio system), you&apos;ll receive an operator SMS alert. Common causes:
+- Carrier voicemail timeout is shorter than the conditional forward timeout (fix: have contractor disable carrier voicemail via `##004#` or equivalent)
+- Contractor set up unconditional forward but their own voicemail still intercepts (fix: disable voicemail on the original number)
+- Wrong business number entered at setup (fix: verify the number in admin Configuration tab)
+- VoIP system intercepting before forwarding (fix: check VoIP admin portal for voicemail settings)
+
+If the alert fires on Day 1: resolve before moving forward — leads are being lost to voicemail right now. If it fires on Day 4+: it may be an intermittent forwarding issue; verify with the contractor and test the forward manually.
+
+71d. **Onboarding checklist tracking:** The 10-item onboarding checklist on the client detail page is the primary tool for tracking new client setup progress. Check it during the daily operations review for clients in their first 14 days (`API: GET /api/admin/clients/{id}/onboarding-checklist`). Items that are incomplete and `blocking: true` prevent AI mode advancement — clear them before the Day 7 check-in call. If the contractor hasn&apos;t completed self-serve items (KB entries, pricing), complete them on their behalf using information from the onboarding call notes. The checklist auto-updates in real time — no manual sync needed.
+
 ### Notification Feature Flags (FMA Wave 1)
 66a. **Automation feature flags** control 8 notification and automation behaviors. Unlike the 18 feature toggles above (which control core product capabilities), these flags control notification *frequency and batching*. They have system-wide defaults configurable in `system_settings` and can be overridden per client:
 

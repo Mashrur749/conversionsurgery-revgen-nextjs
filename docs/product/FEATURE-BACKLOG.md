@@ -185,3 +185,15 @@ Eight failure-mode-analysis items shipped to reduce notification fatigue, close 
 | FMA-W1-6 | Onboarding Call Reminder — SMS 2 hours before scheduled onboarding call. Cron: `onboarding-reminder` (every 30 min). | **Implemented** |
 | FMA-W1-7 | Pre-Onboarding Priming SMS — &ldquo;Think of 5 dead quotes&rdquo; text 24-48h after signup. Cron: `onboarding-priming` (daily 7am UTC). | **Implemented** |
 | FMA-W1-8 | Probable-Wins Extension — nudge now includes `estimate_sent` leads 14+ days stale alongside post-appointment leads. No new cron; extends existing `probable-wins-nudge`. | **Implemented** |
+
+## Recently Implemented (FMA Wave 2, April 2026)
+
+Five failure-mode-analysis items shipped to enforce onboarding quality gates and prevent silent setup failures.
+
+| Item | Feature | Status |
+|------|---------|--------|
+| FMA-W2-1 | Exclusion List Gate — blocks autonomous mode until operator confirms exclusion list reviewed with contractor. One-way latch on `clients.exclusionListReviewed`. Returns 409 on blocked transition. Audit-logged. | **Implemented** |
+| FMA-W2-2 | Autonomous Readiness Checklist — 6-item checklist (KB &ge; 10, pricing set, 30+ Smart Assist reviews, escalation rate &lt; 20%, exclusion list reviewed, business hours configured). Shown inline when autonomous mode selected. Critical items block; warnings don&apos;t. API: `GET /api/admin/clients/{id}/readiness`. | **Implemented** |
+| FMA-W2-3 | ICP Qualification Fields — required on client creation wizard: estimated monthly lead volume, average project value, dead quote count. Sub-15 volume triggers mandatory disclosure. | **Implemented** |
+| FMA-W2-4 | Onboarding Checklist — 10-item platform-enforced checklist on client detail page. Items block Smart Assist or Autonomous mode. Progress card with green/gray/lock icons. API: `GET /api/admin/clients/{id}/onboarding-checklist`. | **Implemented** |
+| FMA-W2-5 | Forwarding Verification — daily Twilio outbound call to contractor&apos;s business number for first 7 days. AMD detects voicemail intercept. Operator alert on detection. Feature flag: `forwardingVerificationEnabled`. Cron: `forwarding-verification` (daily). Cost: ~$0.14/client. | **Implemented** |

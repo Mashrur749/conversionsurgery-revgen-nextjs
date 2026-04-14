@@ -417,7 +417,7 @@ Stay on the line. Confirm in Stripe. See Payment Capture section below for hesit
 
 **Minute 12-15: Exclusion List + Old Quotes Setup**
 
-4. **Exclusion list (1 min, mandatory):** &quot;Before we fire anything &mdash; are there any contacts you want us to skip? Family, close friends, anyone you have a personal relationship with? We&apos;ll keep them off all automated messages.&quot; Record the names. Frame it as protecting their relationships, not a product limitation. Add each excluded number in the admin dashboard: client detail page &rarr; Configuration tab &rarr; Exclusion List card &rarr; Add Number.
+4. **Exclusion list (1 min, mandatory):** &quot;Before we fire anything &mdash; are there any contacts you want us to skip? Family, close friends, anyone you have a personal relationship with? We&apos;ll keep them off all automated messages.&quot; Record the names. Frame it as protecting their relationships, not a product limitation. Add each excluded number in the admin dashboard: client detail page &rarr; Configuration tab &rarr; Exclusion List card &rarr; Add Number. Then click &ldquo;Mark as Reviewed&rdquo; — this is required to enable autonomous mode and is one-way (cannot be undone). Even if they say &ldquo;nobody,&rdquo; confirm verbally and mark reviewed.
 
 5. **Old quotes (3 min):** &quot;Now &mdash; those old quotes you never heard back from. How many from the last 6 months?&quot; Get the list on the call &mdash; don&apos;t assign it as homework. Have them scroll through their phone contacts or Jobber and read off names while you type. Build the first reactivation message live:
 
@@ -510,6 +510,9 @@ Then follow up in 24-48 hours with the link. Most contractors who refuse on the 
 - Verify call forwarding with a test call to XYZ &mdash; confirm it rings 3 times then forwards to Twilio.
 - Verify subscription was created in Stripe Dashboard (trial active, card on file).
 - Add exclusion list contacts to the DNC/skip list in admin.
+- **Mark exclusion list reviewed** in admin (Configuration tab → Exclusion List → &ldquo;Mark as Reviewed&rdquo;) — required before autonomous mode can be enabled.
+- **Check onboarding checklist** on the client detail page. Verify items 1-5 (phone, forwarding, hours, KB, pricing) are green before closing the post-call session. Any red items are Day 1 blockers.
+- **Forwarding verification is now active** &mdash; the system will place a daily test call for 7 days to confirm forwarding is still working. If you receive an alert in the first 24 hours, carrier voicemail is likely intercepting. Have the contractor run `##004#` to disable it (Rogers/Telus/Bell) or contact their carrier.
 - Send a recap text: &quot;You&apos;re live. Missed-call text-back is on, and I just sent follow-ups to [X] of your old quotes. You&apos;ll start seeing replies by tomorrow. Portal login: [link].&quot;
 
 **Revenue Leak Audit (48-hour deliverable):**
@@ -771,6 +774,8 @@ Then answer these two questions before the call. If either is a hard no, adjust 
 > &ldquo;Do you get at least 15 new inquiries per month &mdash; calls, form fills, Google leads?&rdquo;
 
 Below 15/month: the guarantee windows will extend substantially, and Week 1 reactivation results may be thin. Not a disqualifier, but manage expectations upfront. The dormant reactivation pitch is more important than the speed-to-lead pitch for low-volume contractors.
+
+**ICP qualification fields on wizard:** When creating the client record, the wizard requires: estimated monthly lead volume, average project value, and dead quote count. The lead volume field directly controls the sub-15 disclosure below — fill it in accurately during or immediately after the sales call.
 
 **Required disclosure for sub-15 lead volume prospects:**
 If the contractor reports fewer than 15 inbound leads per month, explicitly state the adjusted guarantee window during the close:
