@@ -8,7 +8,7 @@ import { isMessageLimitReached, type ClientUsagePolicy } from '@/lib/services/us
 import { processDueSmartAssistDrafts } from '@/lib/services/smart-assist-lifecycle';
 import { SMART_ASSIST_SEQUENCE_TYPE } from '@/lib/services/smart-assist-state';
 import { resolveReminderRecipients, type ReminderRoutingRecipient } from '@/lib/services/reminder-routing';
-import { auditLog, calendarEvents, clientMemberships, people } from '@/db/schema';
+import { auditLog, calendarEvents, clientMemberships, leadContext, people } from '@/db/schema';
 import { eq, and, lte, gte, sql, ne, or, isNull, gt } from 'drizzle-orm';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { verifyCronSecret } from '@/lib/utils/cron';
@@ -151,6 +151,39 @@ export async function GET(request: NextRequest) {
         // Resolve __AI_GENERATE__ placeholder to real AI-generated content
         let messageBody = message.content;
         if (message.content === '__AI_GENERATE__') {
+          // Freshness gate: check if context has changed since scheduling (AUDIT-01)
+          const [ctx] = await db
+            .select({ stage: leadContext.stage })
+            .from(leadContext)
+            .where(eq(leadContext.leadId, lead.id))
+            .limit(1);
+
+          if (ctx && ['booked', 'lost'].includes(ctx.stage)) {
+            await markCancelled(db, message.id, `Lead stage changed to ${ctx.stage} since scheduling`);
+            skipped++;
+            continue;
+          }
+
+          // Check for recent inbound activity (lead replied within 7 days)
+          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          const [recentInbound] = await db
+            .select({ id: conversations.id })
+            .from(conversations)
+            .where(
+              and(
+                eq(conversations.leadId, lead.id),
+                eq(conversations.direction, 'inbound'),
+                gte(conversations.createdAt, sevenDaysAgo),
+              )
+            )
+            .limit(1);
+
+          if (recentInbound) {
+            await markCancelled(db, message.id, 'Lead had recent inbound activity');
+            skipped++;
+            continue;
+          }
+
           let generated: string | null = null;
 
           if (message.sequenceType === 'no_show_followup') {
