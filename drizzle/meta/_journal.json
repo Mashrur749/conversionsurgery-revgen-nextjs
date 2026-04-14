@@ -134,6 +134,13 @@
       "when": 1776141418724,
       "tag": "0018_far_wraith",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1776141833637,
+      "tag": "0019_powerful_songbird",
+      "breakpoints": true
     }
   ]
 }

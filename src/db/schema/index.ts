@@ -125,5 +125,8 @@ export * from './integration-webhooks';
 // Public tools
 export * from './roi-calculator-leads';
 
+// AI Health Reports
+export * from './ai-health-reports';
+
 // Export all relations for type-safe queries
 export * from './relations';

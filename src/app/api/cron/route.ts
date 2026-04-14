@@ -14,6 +14,7 @@ import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { alertOperator } from '@/lib/services/operator-alerts';
 import { runEngagementHealthCheck } from '@/lib/services/engagement-health';
+import { runAiHealthCheck } from '@/lib/services/ai-health-check';
 import { runDormantReengagement } from '@/lib/automations/dormant-reengagement';
 import { processStuckEstimateNudges } from '@/lib/automations/stuck-estimate-nudge';
 import { embedKnowledgeEntry } from '@/lib/services/embedding';
@@ -357,6 +358,22 @@ export async function POST(request: NextRequest) {
         logSanitizedConsoleError('[Cron] Engagement health check error:', error);
         results.engagementHealthCheck = { error: 'Failed' };
         failedJobs.push('engagement-health-check');
+      }
+
+      // Plan 4 Task 11: AI drift detection — runs weekly on Mondays
+      try {
+        const healthResult = await runAiHealthCheck();
+        if (healthResult.alerts.length > 0) {
+          const criticals = healthResult.alerts.filter(a => a.severity === 'critical');
+          if (criticals.length > 0) {
+            console.warn(`[AIHealthCheck] ${criticals.length} critical alerts:`, criticals.map(a => a.message).join('; '));
+          }
+        }
+        results.aiHealthCheck = { job: 'ai-health-check', ...healthResult };
+      } catch (err) {
+        logSanitizedConsoleError('[Cron] AI health check error:', err);
+        results.aiHealthCheck = { error: 'Failed' };
+        failedJobs.push('ai-health-check');
       }
     }
 
