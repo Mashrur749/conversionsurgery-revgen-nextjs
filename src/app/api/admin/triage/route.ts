@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
-import { clients, leads, escalationQueue, knowledgeGaps, scheduledMessages } from '@/db/schema';
-import { eq, and, inArray, gte, lt, or, sql, count as countFn } from 'drizzle-orm';
+import { clients, leads, escalationQueue, knowledgeGaps, scheduledMessages, leadContext, aiHealthReports } from '@/db/schema';
+import { eq, and, inArray, gte, lt, or, sql, count as countFn, desc } from 'drizzle-orm';
 import { adminRoute, AGENCY_PERMISSIONS } from '@/lib/utils/route-handler';
+import { getSmartAssistCorrectionRate } from '@/lib/services/smart-assist-learning';
 
 export interface TriageTrigger {
   /** Human-readable trigger label */
@@ -10,6 +11,18 @@ export interface TriageTrigger {
   /** Detail with threshold context, e.g. "Last estimate sent: 22d ago (threshold: 21d)" */
   detail: string;
   severity: 'red' | 'yellow';
+}
+
+/** Conversation stage distribution for a single client */
+export interface StageDistribution {
+  total: number;
+  greeting: number;
+  qualifying: number;
+  presenting: number;
+  objectionHandling: number;
+  closing: number;
+  nurturing: number;
+  other: number;
 }
 
 export interface TriageClientRow {
@@ -33,6 +46,14 @@ export interface TriageClientRow {
    * Null for healthy clients.
    */
   daysAtCurrentStatus: number | null;
+  /** Conversation stage distribution across all active leads (last 30d) */
+  stageDistribution: StageDistribution;
+  /** Percentage of Smart Assist drafts corrected before sending (0-100) */
+  correctionRate: number;
+  /** Number of opt-outs in the last 7 days */
+  recentOptOuts: number;
+  /** Whether the latest AI health report has any alerts */
+  hasHealthAlert: boolean;
 }
 
 function computeHealth(
@@ -164,6 +185,8 @@ export const GET = adminRoute(
     const clientIds = activeClients.map((c) => c.id);
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     // Batch all queries — no N+1
     const [
@@ -173,6 +196,9 @@ export const GET = adminRoute(
       recentEstimates,
       recentWonLost,
       smartAssistPendingCounts,
+      stageDistributionRows,
+      recentOptOutRows,
+      latestHealthReports,
     ] = await Promise.all([
       // Open escalations per client (pending or in_progress)
       db
@@ -271,6 +297,44 @@ export const GET = adminRoute(
           )
         )
         .groupBy(scheduledMessages.clientId),
+
+      // Conversation stage distribution per client
+      db
+        .select({
+          clientId: leadContext.clientId,
+          conversationStage: leadContext.conversationStage,
+          count: countFn(),
+        })
+        .from(leadContext)
+        .where(inArray(leadContext.clientId, clientIds))
+        .groupBy(leadContext.clientId, leadContext.conversationStage),
+
+      // Recent opt-outs (last 7 days) per client
+      db
+        .select({
+          clientId: leads.clientId,
+          count: countFn(),
+        })
+        .from(leads)
+        .where(
+          and(
+            inArray(leads.clientId, clientIds),
+            eq(leads.optedOut, true),
+            gte(leads.optedOutAt, sevenDaysAgo)
+          )
+        )
+        .groupBy(leads.clientId),
+
+      // Latest AI health report per client (global — not per client, so just fetch the latest)
+      db
+        .select({
+          id: aiHealthReports.id,
+          alerts: aiHealthReports.alerts,
+          createdAt: aiHealthReports.createdAt,
+        })
+        .from(aiHealthReports)
+        .orderBy(desc(aiHealthReports.createdAt))
+        .limit(1),
     ]);
 
     // Index all results by clientId for O(1) lookup
@@ -280,6 +344,39 @@ export const GET = adminRoute(
     const estimateMap = new Map(recentEstimates.map((r) => [r.clientId, r.mostRecentAt]));
     const wonLostMap = new Map(recentWonLost.map((r) => [r.clientId, r.mostRecentAt]));
     const smartAssistMap = new Map(smartAssistPendingCounts.map((r) => [r.clientId, Number(r.count)]));
+    const optOutMap = new Map(recentOptOutRows.map((r) => [r.clientId, Number(r.count)]));
+
+    // Build stage distribution map keyed by clientId
+    const stageDistMap = new Map<string, StageDistribution>();
+    for (const row of stageDistributionRows) {
+      const existing = stageDistMap.get(row.clientId) ?? {
+        total: 0, greeting: 0, qualifying: 0, presenting: 0,
+        objectionHandling: 0, closing: 0, nurturing: 0, other: 0,
+      };
+      const cnt = Number(row.count);
+      existing.total += cnt;
+      const stage = row.conversationStage ?? 'other';
+      if (stage === 'greeting') existing.greeting += cnt;
+      else if (stage === 'qualifying') existing.qualifying += cnt;
+      else if (stage === 'presenting') existing.presenting += cnt;
+      else if (stage === 'objection_handling') existing.objectionHandling += cnt;
+      else if (stage === 'closing') existing.closing += cnt;
+      else if (stage === 'nurturing') existing.nurturing += cnt;
+      else existing.other += cnt;
+      stageDistMap.set(row.clientId, existing);
+    }
+
+    // Latest global health report alerts (shared across all clients — one report for the whole system)
+    const latestReport = latestHealthReports[0] ?? null;
+    const hasHealthAlert = latestReport !== null && Array.isArray(latestReport.alerts) && latestReport.alerts.length > 0;
+
+    // Fetch correction rates for all clients in parallel (uses existing service)
+    const correctionRates = await Promise.all(
+      clientIds.map((clientId) =>
+        getSmartAssistCorrectionRate(clientId, thirtyDaysAgo).then((r) => ({ clientId, rate: r.rate }))
+      )
+    );
+    const correctionRateMap = new Map(correctionRates.map((r) => [r.clientId, r.rate]));
 
     function daysSince(dateStr: string | undefined): number | null {
       if (!dateStr) return null;
@@ -287,7 +384,13 @@ export const GET = adminRoute(
       return Math.floor(ms / (1000 * 60 * 60 * 24));
     }
 
+    const emptyStageDistribution: StageDistribution = {
+      total: 0, greeting: 0, qualifying: 0, presenting: 0,
+      objectionHandling: 0, closing: 0, nurturing: 0, other: 0,
+    };
+
     const rows: TriageClientRow[] = activeClients.map((c) => {
+      const rawRate = correctionRateMap.get(c.id) ?? 0;
       const baseRow = {
         id: c.id,
         businessName: c.businessName,
@@ -299,6 +402,10 @@ export const GET = adminRoute(
         daysSinceEstimate: daysSince(estimateMap.get(c.id)),
         daysSinceWonOrLost: daysSince(wonLostMap.get(c.id)),
         pendingSmartAssistDrafts: smartAssistMap.get(c.id) ?? 0,
+        stageDistribution: stageDistMap.get(c.id) ?? { ...emptyStageDistribution },
+        correctionRate: Math.round(rawRate * 100),
+        recentOptOuts: optOutMap.get(c.id) ?? 0,
+        hasHealthAlert,
       };
       const { healthStatus, actionNeeded, triggers, daysAtCurrentStatus } = computeHealth(baseRow);
       return { ...baseRow, healthStatus, actionNeeded, triggers, daysAtCurrentStatus };

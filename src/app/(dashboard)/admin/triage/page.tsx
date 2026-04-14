@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import type { TriageClientRow, TriageTrigger } from '@/app/api/admin/triage/route';
+import { cn } from '@/lib/utils';
+import type { TriageClientRow, TriageTrigger, StageDistribution } from '@/app/api/admin/triage/route';
 
 // Health configuration
 const HEALTH_CONFIG = {
@@ -44,8 +45,9 @@ function formatTrendDuration(days: number | null): string | null {
 async function getTriageData(): Promise<TriageClientRow[]> {
   // Server-side direct DB query mirroring the API, but called inline for RSC
   const { getDb } = await import('@/db');
-  const { clients, leads, escalationQueue, knowledgeGaps, scheduledMessages } = await import('@/db/schema');
-  const { eq, and, inArray, gte, lt, or, sql, count: countFn } = await import('drizzle-orm');
+  const { clients, leads, escalationQueue, knowledgeGaps, scheduledMessages, leadContext, aiHealthReports } = await import('@/db/schema');
+  const { getSmartAssistCorrectionRate } = await import('@/lib/services/smart-assist-learning');
+  const { eq, and, inArray, gte, lt, or, sql, count: countFn, desc } = await import('drizzle-orm');
 
   const db = getDb();
 
@@ -64,6 +66,8 @@ async function getTriageData(): Promise<TriageClientRow[]> {
   const clientIds = activeClients.map((c) => c.id);
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   const [
     escalationCounts,
@@ -72,6 +76,9 @@ async function getTriageData(): Promise<TriageClientRow[]> {
     recentEstimates,
     recentWonLost,
     smartAssistPendingCounts,
+    stageDistributionRows,
+    recentOptOutRows,
+    latestHealthReports,
   ] = await Promise.all([
     db
       .select({ clientId: escalationQueue.clientId, count: countFn() })
@@ -150,6 +157,41 @@ async function getTriageData(): Promise<TriageClientRow[]> {
         )
       )
       .groupBy(scheduledMessages.clientId),
+
+    // Conversation stage distribution per client
+    db
+      .select({
+        clientId: leadContext.clientId,
+        conversationStage: leadContext.conversationStage,
+        count: countFn(),
+      })
+      .from(leadContext)
+      .where(inArray(leadContext.clientId, clientIds))
+      .groupBy(leadContext.clientId, leadContext.conversationStage),
+
+    // Recent opt-outs (last 7 days) per client
+    db
+      .select({ clientId: leads.clientId, count: countFn() })
+      .from(leads)
+      .where(
+        and(
+          inArray(leads.clientId, clientIds),
+          eq(leads.optedOut, true),
+          gte(leads.optedOutAt, sevenDaysAgo)
+        )
+      )
+      .groupBy(leads.clientId),
+
+    // Latest AI health report (global — one report per system)
+    db
+      .select({
+        id: aiHealthReports.id,
+        alerts: aiHealthReports.alerts,
+        createdAt: aiHealthReports.createdAt,
+      })
+      .from(aiHealthReports)
+      .orderBy(desc(aiHealthReports.createdAt))
+      .limit(1),
   ]);
 
   const escalationMap = new Map(escalationCounts.map((r) => [r.clientId, Number(r.count)]));
@@ -158,6 +200,38 @@ async function getTriageData(): Promise<TriageClientRow[]> {
   const estimateMap = new Map(recentEstimates.map((r) => [r.clientId, r.mostRecentAt]));
   const wonLostMap = new Map(recentWonLost.map((r) => [r.clientId, r.mostRecentAt]));
   const smartAssistMap = new Map(smartAssistPendingCounts.map((r) => [r.clientId, Number(r.count)]));
+  const optOutMap = new Map(recentOptOutRows.map((r) => [r.clientId, Number(r.count)]));
+
+  // Build stage distribution map keyed by clientId
+  const stageDistMap = new Map<string, StageDistribution>();
+  for (const row of stageDistributionRows) {
+    const existing = stageDistMap.get(row.clientId) ?? {
+      total: 0, greeting: 0, qualifying: 0, presenting: 0,
+      objectionHandling: 0, closing: 0, nurturing: 0, other: 0,
+    };
+    const cnt = Number(row.count);
+    existing.total += cnt;
+    const stage = row.conversationStage ?? 'other';
+    if (stage === 'greeting') existing.greeting += cnt;
+    else if (stage === 'qualifying') existing.qualifying += cnt;
+    else if (stage === 'presenting') existing.presenting += cnt;
+    else if (stage === 'objection_handling') existing.objectionHandling += cnt;
+    else if (stage === 'closing') existing.closing += cnt;
+    else if (stage === 'nurturing') existing.nurturing += cnt;
+    else existing.other += cnt;
+    stageDistMap.set(row.clientId, existing);
+  }
+
+  const latestReport = latestHealthReports[0] ?? null;
+  const hasHealthAlert = latestReport !== null && Array.isArray(latestReport.alerts) && latestReport.alerts.length > 0;
+
+  // Fetch correction rates in parallel
+  const correctionRates = await Promise.all(
+    clientIds.map((clientId) =>
+      getSmartAssistCorrectionRate(clientId, thirtyDaysAgo).then((r) => ({ clientId, rate: r.rate }))
+    )
+  );
+  const correctionRateMap = new Map(correctionRates.map((r) => [r.clientId, r.rate]));
 
   function daysSince(dateStr: string | undefined): number | null {
     if (!dateStr) return null;
@@ -263,7 +337,13 @@ async function getTriageData(): Promise<TriageClientRow[]> {
     };
   }
 
+  const emptyStageDistribution: StageDistribution = {
+    total: 0, greeting: 0, qualifying: 0, presenting: 0,
+    objectionHandling: 0, closing: 0, nurturing: 0, other: 0,
+  };
+
   const rows: TriageClientRow[] = activeClients.map((c) => {
+    const rawRate = correctionRateMap.get(c.id) ?? 0;
     const baseRow = {
       id: c.id,
       businessName: c.businessName,
@@ -275,6 +355,10 @@ async function getTriageData(): Promise<TriageClientRow[]> {
       daysSinceEstimate: daysSince(estimateMap.get(c.id)),
       daysSinceWonOrLost: daysSince(wonLostMap.get(c.id)),
       pendingSmartAssistDrafts: smartAssistMap.get(c.id) ?? 0,
+      stageDistribution: stageDistMap.get(c.id) ?? { ...emptyStageDistribution },
+      correctionRate: Math.round(rawRate * 100),
+      recentOptOuts: optOutMap.get(c.id) ?? 0,
+      hasHealthAlert,
     };
     const { healthStatus, actionNeeded, triggers, daysAtCurrentStatus } = computeHealth(baseRow);
     return { ...baseRow, healthStatus, actionNeeded, triggers, daysAtCurrentStatus };
@@ -321,6 +405,34 @@ function TriggerList({
       {trendLabel && (
         <div className="text-xs text-muted-foreground italic mt-0.5">{trendLabel}</div>
       )}
+    </div>
+  );
+}
+
+/** Desktop-only summary row showing AI pipeline health metrics */
+function HealthMetricsSummary({ row }: { row: TriageClientRow }) {
+  return (
+    <div className="hidden sm:grid grid-cols-4 gap-2 text-xs mt-2 pt-2 border-t">
+      <div>
+        <span className="text-muted-foreground">Active leads:</span>
+        <span className="ml-1 font-medium">{row.stageDistribution.total}</span>
+      </div>
+      <div>
+        <span className="text-muted-foreground">In qualifying:</span>
+        <span className="ml-1 font-medium">{row.stageDistribution.qualifying}</span>
+      </div>
+      <div>
+        <span className="text-muted-foreground">Correction rate:</span>
+        <span className={cn('ml-1 font-medium', row.correctionRate > 30 ? 'text-[#C15B2E]' : '')}>
+          {row.correctionRate}%
+        </span>
+      </div>
+      <div>
+        <span className="text-muted-foreground">Opt-outs (7d):</span>
+        <span className={cn('ml-1 font-medium', row.recentOptOuts > 0 ? 'text-[#C15B2E]' : '')}>
+          {row.recentOptOuts}
+        </span>
+      </div>
     </div>
   );
 }
@@ -476,90 +588,122 @@ export default async function TriagePage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody>
                     {rows.map((row) => {
                       const config = HEALTH_CONFIG[row.healthStatus];
                       const Icon = config.Icon;
                       return (
-                        <tr
-                          key={row.id}
-                          className={`hover:bg-muted/20 transition-colors cursor-pointer ${config.rowClass}`}
-                        >
-                          <td className="px-4 py-3">
-                            <Link
-                              href={`/admin/clients/${row.id}?from=triage`}
-                              className="font-medium hover:underline"
-                            >
-                              {row.businessName}
-                            </Link>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="space-y-1">
-                              <span
-                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${config.badgeClass}`}
+                        <>
+                          <tr
+                            key={row.id}
+                            className={`hover:bg-muted/20 transition-colors cursor-pointer border-t ${config.rowClass}`}
+                          >
+                            <td className="px-4 py-3">
+                              <Link
+                                href={`/admin/clients/${row.id}?from=triage`}
+                                className="font-medium hover:underline"
                               >
-                                <Icon className="h-3 w-3" />
-                                {config.label}
+                                {row.businessName}
+                              </Link>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="space-y-1">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${config.badgeClass}`}
+                                >
+                                  <Icon className="h-3 w-3" />
+                                  {config.label}
+                                </span>
+                                {row.daysAtCurrentStatus !== null && (
+                                  <div className="text-xs text-muted-foreground italic">
+                                    {formatTrendDuration(row.daysAtCurrentStatus)}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span
+                                className={
+                                  row.overdueEscalations > 0
+                                    ? 'font-semibold text-sienna'
+                                    : row.openEscalations > 0
+                                    ? 'font-medium'
+                                    : 'text-muted-foreground'
+                                }
+                              >
+                                {row.openEscalations}
                               </span>
-                              {row.daysAtCurrentStatus !== null && (
-                                <div className="text-xs text-muted-foreground italic">
-                                  {formatTrendDuration(row.daysAtCurrentStatus)}
-                                </div>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span
+                                className={
+                                  row.openKbGaps >= 5
+                                    ? 'font-semibold text-sienna'
+                                    : row.openKbGaps > 0
+                                    ? 'font-medium'
+                                    : 'text-muted-foreground'
+                                }
+                              >
+                                {row.openKbGaps}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <MetricCell value={row.daysSinceEstimate} label="d" />
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <MetricCell value={row.daysSinceWonOrLost} label="d" />
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {row.pendingSmartAssistDrafts > 0 ? (
+                                <span className="font-semibold text-sienna">
+                                  {row.pendingSmartAssistDrafts}
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">&mdash;</span>
                               )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span
-                              className={
-                                row.overdueEscalations > 0
-                                  ? 'font-semibold text-sienna'
-                                  : row.openEscalations > 0
-                                  ? 'font-medium'
-                                  : 'text-muted-foreground'
-                              }
-                            >
-                              {row.openEscalations}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span
-                              className={
-                                row.openKbGaps >= 5
-                                  ? 'font-semibold text-sienna'
-                                  : row.openKbGaps > 0
-                                  ? 'font-medium'
-                                  : 'text-muted-foreground'
-                              }
-                            >
-                              {row.openKbGaps}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <MetricCell value={row.daysSinceEstimate} label="d" />
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <MetricCell value={row.daysSinceWonOrLost} label="d" />
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {row.pendingSmartAssistDrafts > 0 ? (
-                              <span className="font-semibold text-sienna">
-                                {row.pendingSmartAssistDrafts}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">&mdash;</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            {row.triggers.length === 0 ? (
-                              <span className="text-muted-foreground text-xs">None</span>
-                            ) : (
-                              <TriggerList
-                                triggers={row.triggers}
-                                daysAtCurrentStatus={null}
-                              />
-                            )}
-                          </td>
-                        </tr>
+                            </td>
+                            <td className="px-4 py-3">
+                              {row.triggers.length === 0 ? (
+                                <span className="text-muted-foreground text-xs">None</span>
+                              ) : (
+                                <TriggerList
+                                  triggers={row.triggers}
+                                  daysAtCurrentStatus={null}
+                                />
+                              )}
+                            </td>
+                          </tr>
+                          {/* Health metrics summary sub-row */}
+                          <tr
+                            key={`${row.id}-metrics`}
+                            className={`bg-muted/10 ${config.rowClass}`}
+                          >
+                            <td colSpan={8} className="px-4 pb-3 pt-0">
+                              <div className="grid grid-cols-4 gap-2 text-xs">
+                                <div>
+                                  <span className="text-muted-foreground">Active leads:</span>
+                                  <span className="ml-1 font-medium">{row.stageDistribution.total}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">In qualifying:</span>
+                                  <span className="ml-1 font-medium">{row.stageDistribution.qualifying}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Correction rate:</span>
+                                  <span className={cn('ml-1 font-medium', row.correctionRate > 30 ? 'text-[#C15B2E]' : '')}>
+                                    {row.correctionRate}%
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Opt-outs (7d):</span>
+                                  <span className={cn('ml-1 font-medium', row.recentOptOuts > 0 ? 'text-[#C15B2E]' : '')}>
+                                    {row.recentOptOuts}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        </>
                       );
                     })}
                   </tbody>
