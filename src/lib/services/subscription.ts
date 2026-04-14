@@ -115,7 +115,7 @@ export async function createSubscription(
 
   const stripeSubscription = await stripe.subscriptions.create(
     stripeSubParams as unknown as Stripe.SubscriptionCreateParams,
-    { idempotencyKey: `sub_create_${clientId}_${planId}_${interval}_${Date.now()}` }
+    { idempotencyKey: `sub_create_${clientId}_${planId}_${interval}` }
   );
 
   // Calculate trial dates
@@ -352,13 +352,13 @@ export async function cancelSubscription(
   // Cancel in Stripe
   if (cancelImmediately) {
     await stripe.subscriptions.cancel(subscription.stripeSubscriptionId, {}, {
-      idempotencyKey: `sub_cancel_${subscriptionId}_${Date.now()}`,
+      idempotencyKey: `sub_cancel_${subscriptionId}`,
     });
   } else {
     await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
       cancel_at_period_end: true,
     }, {
-      idempotencyKey: `sub_cancel_eop_${subscriptionId}_${Date.now()}`,
+      idempotencyKey: `sub_cancel_eop_${subscriptionId}`,
     });
   }
 
@@ -426,7 +426,7 @@ export async function changePlan(
     }],
     proration_behavior: 'create_prorations',
   }, {
-    idempotencyKey: `sub_change_${subscriptionId}_${newPlanId}_${interval}_${Date.now()}`,
+    idempotencyKey: `sub_change_${subscriptionId}_${newPlanId}_${interval}`,
   });
 
   // Wrap DB writes in transaction
@@ -482,7 +482,7 @@ export async function pauseSubscription(
       resumes_at: resumeDate ? Math.floor(resumeDate.getTime() / 1000) : undefined,
     },
   }, {
-    idempotencyKey: `sub_pause_${subscriptionId}_${Date.now()}`,
+    idempotencyKey: `sub_pause_${subscriptionId}`,
   });
 
   // Update local record
@@ -516,7 +516,7 @@ export async function resumeSubscription(subscriptionId: string): Promise<Subscr
   await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
     pause_collection: '' as unknown as undefined,
   }, {
-    idempotencyKey: `sub_resume_${subscriptionId}_${Date.now()}`,
+    idempotencyKey: `sub_resume_${subscriptionId}`,
   });
 
   // Update local record
