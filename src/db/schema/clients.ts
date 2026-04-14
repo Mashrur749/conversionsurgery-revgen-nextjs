@@ -11,6 +11,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import { people } from './people';
 
 export const clients = pgTable(
   'clients',
@@ -123,6 +124,31 @@ export const clients = pgTable(
     playbookId: varchar('playbook_id', { length: 50 }).default('basement_development'),
 
     scheduledOnboardingCallAt: timestamp('scheduled_onboarding_call_at'),
+
+    // ============================================
+    // FMA WAVE 2: Exclusion list gate
+    // ============================================
+    exclusionListReviewed: boolean('exclusion_list_reviewed').default(false),
+    exclusionListReviewedAt: timestamp('exclusion_list_reviewed_at'),
+    exclusionListReviewedByPersonId: uuid('exclusion_list_reviewed_by_person_id').references(
+      () => people.id,
+      { onDelete: 'set null' }
+    ),
+
+    // ============================================
+    // FMA WAVE 2: ICP qualification
+    // ============================================
+    estimatedLeadVolume: integer('estimated_lead_volume'),
+    averageProjectValue: integer('average_project_value'),
+    deadQuoteCount: integer('dead_quote_count'),
+    lowVolumeDisclosureAcknowledged: boolean('low_volume_disclosure_acknowledged').default(false),
+
+    // ============================================
+    // FMA WAVE 2: Forwarding verification
+    // ============================================
+    forwardingVerifiedAt: timestamp('forwarding_verified_at'),
+    forwardingVerificationStatus: varchar('forwarding_verification_status', { length: 20 }),
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
