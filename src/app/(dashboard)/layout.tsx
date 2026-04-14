@@ -48,6 +48,7 @@ const getAdminNavItems = (hasClients: boolean) => [
     { href: '/admin/ab-tests', label: 'A/B Tests', disabled: !hasClients },
     { href: '/admin/reputation', label: 'Reputation', disabled: !hasClients },
     { href: '/admin/ai-effectiveness', label: 'AI Performance', disabled: !hasClients },
+    { href: '/admin/ai-health', label: 'AI Health', disabled: false },
     { href: '/admin/kb-gaps', label: 'KB Gap Queue', disabled: !hasClients },
   ]},
   { group: 'Team & Access', items: [
