@@ -1,8 +1,10 @@
 import { getDb, calendarEvents, calendarIntegrations } from '@/db';
+import { clients, leads } from '@/db/schema';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import * as googleCalendar from './google-calendar';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { alertOperator } from '@/lib/services/operator-alerts';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 
 interface CreateEventInput {
   clientId: string;
@@ -121,6 +123,64 @@ export async function cancelEvent(eventId: string): Promise<void> {
     .update(calendarEvents)
     .set({ status: 'cancelled', updatedAt: new Date() })
     .where(eq(calendarEvents.id, eventId));
+
+  // Notify the homeowner if a lead is attached to this event
+  if (event.leadId && event.clientId) {
+    const [lead] = await db
+      .select({ name: leads.name, phone: leads.phone })
+      .from(leads)
+      .where(eq(leads.id, event.leadId))
+      .limit(1);
+
+    const [client] = await db
+      .select({
+        twilioNumber: clients.twilioNumber,
+        businessName: clients.businessName,
+        phone: clients.phone,
+      })
+      .from(clients)
+      .where(eq(clients.id, event.clientId))
+      .limit(1);
+
+    if (lead?.phone && client?.twilioNumber) {
+      const timezone = event.timezone || 'America/Edmonton';
+      const oldFormatted = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }).format(event.startTime);
+
+      const businessName = client.businessName || 'your contractor';
+      const contactPhone = client.phone || 'us';
+
+      try {
+        await sendCompliantMessage({
+          clientId: event.clientId,
+          to: lead.phone,
+          from: client.twilioNumber,
+          body:
+            `Hi ${lead.name || 'there'}, your appointment with ${businessName} scheduled for ` +
+            `${oldFormatted} has been cancelled. Please contact ${businessName} at ${contactPhone} to reschedule.`,
+          leadId: event.leadId,
+          messageClassification: 'inbound_reply',
+          messageCategory: 'transactional',
+          consentBasis: { type: 'existing_customer' },
+          metadata: { source: 'cancel_event_notification' },
+        });
+      } catch (err) {
+        logSanitizedConsoleError(
+          '[Calendar][cancelEvent] Homeowner SMS notification failed',
+          err,
+          { eventId, clientId: event.clientId, leadId: event.leadId }
+        );
+        // Never re-throw — notification failure must not block the cancellation
+      }
+    }
+  }
 }
 
 /**

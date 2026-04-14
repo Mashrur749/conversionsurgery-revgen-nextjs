@@ -1,13 +1,112 @@
 import { google, calendar_v3 } from 'googleapis';
-import { getDb, calendarIntegrations, calendarEvents, leads } from '@/db';
+import { getDb, calendarIntegrations, calendarEvents, leads, clients } from '@/db';
 import { eq, and, isNull } from 'drizzle-orm';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
+import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
   `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback/google-calendar`
 );
+
+/**
+ * Format a Date in the given IANA timezone for display in SMS messages.
+ * Returns strings like "Tuesday, Apr 15 at 10:00 AM".
+ */
+function formatEventDateTime(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+}
+
+interface NotifyHomeownerParams {
+  clientId: string;
+  leadId: string;
+  isCancellation: boolean;
+  oldStartTime: Date;
+  newStartTime: Date | null;
+  timezone: string;
+}
+
+/**
+ * Send an SMS to the homeowner when their appointment is cancelled or rescheduled
+ * via an external Google Calendar action.
+ * Fires through sendCompliantMessage so compliance rules (opt-out, quiet hours) apply.
+ */
+async function notifyHomeownerOfEventChange(params: NotifyHomeownerParams): Promise<void> {
+  const { clientId, leadId, isCancellation, oldStartTime, newStartTime, timezone } = params;
+
+  const db = getDb();
+
+  // Fetch lead for phone and name
+  const [lead] = await db
+    .select({ name: leads.name, phone: leads.phone })
+    .from(leads)
+    .where(eq(leads.id, leadId))
+    .limit(1);
+
+  if (!lead?.phone) return;
+
+  // Fetch client for twilio number and business name
+  const [client] = await db
+    .select({
+      twilioNumber: clients.twilioNumber,
+      businessName: clients.businessName,
+      phone: clients.phone,
+    })
+    .from(clients)
+    .where(eq(clients.id, clientId))
+    .limit(1);
+
+  if (!client?.twilioNumber) return;
+
+  const oldFormatted = formatEventDateTime(oldStartTime, timezone);
+  const businessName = client.businessName || 'your contractor';
+  const contactPhone = client.phone || 'us';
+
+  let body: string;
+  if (isCancellation) {
+    body =
+      `Hi ${lead.name || 'there'}, your appointment with ${businessName} scheduled for ` +
+      `${oldFormatted} has been cancelled. Please contact ${businessName} at ${contactPhone} to reschedule.`;
+  } else {
+    const newFormatted = newStartTime ? formatEventDateTime(newStartTime, timezone) : 'a new time';
+    body =
+      `Hi ${lead.name || 'there'}, your appointment with ${businessName} has been rescheduled to ` +
+      `${newFormatted}. Reply STOP to opt out.`;
+  }
+
+  try {
+    await sendCompliantMessage({
+      clientId,
+      to: lead.phone,
+      from: client.twilioNumber,
+      body,
+      leadId,
+      messageClassification: 'inbound_reply',
+      messageCategory: 'transactional',
+      consentBasis: { type: 'existing_customer' },
+      metadata: {
+        source: 'calendar_event_change_notification',
+        isCancellation,
+      },
+    });
+  } catch (err) {
+    logSanitizedConsoleError(
+      '[Calendar][notifyHomeownerOfEventChange] SMS notification failed',
+      err,
+      { clientId, leadId, isCancellation }
+    );
+    // Never throw — notification failure must not block the sync loop
+  }
+}
 
 /**
  * Get auth URL for Google Calendar OAuth
@@ -427,11 +526,34 @@ export async function syncFromGoogleCalendar(
       };
 
       if (existing) {
+        // Detect changes that require homeowner notification BEFORE updating the local record
+        const isCancellation =
+          googleEvent.status === 'cancelled' && existing.status !== 'cancelled';
+        const isReschedule =
+          !isCancellation &&
+          googleEvent.start?.dateTime &&
+          new Date(googleEvent.start.dateTime).toISOString() !== existing.startTime.toISOString();
+
+        // Update local record first
         await db
           .update(calendarEvents)
           .set(eventData)
           .where(eq(calendarEvents.id, existing.id));
         updated++;
+
+        // Notify homeowner if there is a lead attached and something changed
+        if ((isCancellation || isReschedule) && existing.leadId) {
+          await notifyHomeownerOfEventChange({
+            clientId,
+            leadId: existing.leadId,
+            isCancellation,
+            oldStartTime: existing.startTime,
+            newStartTime: googleEvent.start?.dateTime
+              ? new Date(googleEvent.start.dateTime)
+              : null,
+            timezone: existing.timezone || 'America/Edmonton',
+          });
+        }
       } else {
         await db.insert(calendarEvents).values({
           clientId,
