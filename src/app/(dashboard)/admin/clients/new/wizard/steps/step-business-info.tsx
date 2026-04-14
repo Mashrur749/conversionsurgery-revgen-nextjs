@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -34,7 +35,7 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
   async function handleNext() {
     setError('');
 
-    // Validate
+    // Validate required business fields
     if (!data.businessName || !data.ownerName || !data.email || !data.phone) {
       setError('Please fill in all required fields');
       return;
@@ -43,6 +44,30 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
     // Email validation
     if (!data.email.includes('@')) {
       setError('Please enter a valid email address');
+      return;
+    }
+
+    // Validate ICP fields
+    const leadVolume = data.estimatedLeadVolume ? Number(data.estimatedLeadVolume) : 0;
+    const projectValue = data.averageProjectValue ? Number(data.averageProjectValue) : 0;
+    const deadQuotes = data.deadQuoteCount ? Number(data.deadQuoteCount) : 0;
+
+    if (!data.estimatedLeadVolume || leadVolume <= 0) {
+      setError('Estimated monthly leads is required');
+      return;
+    }
+    if (!data.averageProjectValue || projectValue <= 0) {
+      setError('Average project value is required');
+      return;
+    }
+    if (!data.deadQuoteCount || deadQuotes <= 0) {
+      setError('Dead quotes available is required');
+      return;
+    }
+
+    // Low volume disclosure gate
+    if (leadVolume < 15 && !data.lowVolumeDisclosureAcknowledged) {
+      setError('You must confirm you disclosed the low lead volume to the contractor before continuing');
       return;
     }
 
@@ -60,6 +85,10 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
           phone: data.phone,
           timezone: data.timezone,
           googleBusinessUrl: data.googleBusinessUrl,
+          estimatedLeadVolume: data.estimatedLeadVolume ? Number(data.estimatedLeadVolume) : undefined,
+          averageProjectValue: data.averageProjectValue ? Number(data.averageProjectValue) : undefined,
+          deadQuoteCount: data.deadQuoteCount ? Number(data.deadQuoteCount) : undefined,
+          lowVolumeDisclosureAcknowledged: data.lowVolumeDisclosureAcknowledged,
         }),
       });
 
@@ -180,6 +209,95 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
             It should look like <span className="font-mono">g.page/r/.../review</span>
           </p>
         </div>
+      </div>
+
+      {/* Lead Volume & Pipeline */}
+      <div className="space-y-4 pt-2">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Lead Volume &amp; Pipeline</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Used to set realistic expectations and configure guarantee windows.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="estimatedLeadVolume">Estimated Monthly Leads *</Label>
+            <Input
+              id="estimatedLeadVolume"
+              type="number"
+              min="1"
+              value={data.estimatedLeadVolume}
+              onChange={(e) => updateData({ estimatedLeadVolume: e.target.value })}
+              placeholder="e.g. 25"
+            />
+            <p className="text-xs text-muted-foreground">
+              Inbound leads per month (calls, texts, form submissions)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="averageProjectValue">Average Project Value ($) *</Label>
+            <Input
+              id="averageProjectValue"
+              type="number"
+              min="1"
+              value={data.averageProjectValue}
+              onChange={(e) => updateData({ averageProjectValue: e.target.value })}
+              placeholder="e.g. 5000"
+            />
+            <p className="text-xs text-muted-foreground">
+              Typical job value in dollars
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="deadQuoteCount">Dead Quotes Available *</Label>
+            <Input
+              id="deadQuoteCount"
+              type="number"
+              min="1"
+              value={data.deadQuoteCount}
+              onChange={(e) => updateData({ deadQuoteCount: e.target.value })}
+              placeholder="e.g. 10"
+            />
+            <p className="text-xs text-muted-foreground">
+              Quotes sent in last 6 months that never closed
+            </p>
+          </div>
+        </div>
+
+        {/* Low volume warning */}
+        {data.estimatedLeadVolume && Number(data.estimatedLeadVolume) > 0 && Number(data.estimatedLeadVolume) < 15 && (
+          <div
+            className="rounded-md p-4 space-y-3"
+            style={{
+              borderLeft: '4px solid #C15B2E',
+              backgroundColor: '#FFF3E0',
+            }}
+          >
+            <p className="text-sm" style={{ color: '#6B7E54' }}>
+              Low lead volume detected. Guarantee windows may be extended for this client.
+              Confirm you disclosed this to the contractor.
+            </p>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="lowVolumeDisclosureAcknowledged"
+                checked={data.lowVolumeDisclosureAcknowledged}
+                onCheckedChange={(checked) =>
+                  updateData({ lowVolumeDisclosureAcknowledged: checked === true })
+                }
+              />
+              <Label
+                htmlFor="lowVolumeDisclosureAcknowledged"
+                className="text-sm font-normal cursor-pointer"
+                style={{ color: '#6B7E54' }}
+              >
+                I disclosed the low lead volume to the contractor
+              </Label>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex justify-end pt-4">

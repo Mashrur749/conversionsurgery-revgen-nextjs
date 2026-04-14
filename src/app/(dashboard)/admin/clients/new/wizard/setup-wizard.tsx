@@ -20,6 +20,11 @@ export interface WizardData {
   phone: string;
   timezone: string;
   googleBusinessUrl: string;
+  // Step 1: ICP qualification
+  estimatedLeadVolume: string;
+  averageProjectValue: string;
+  deadQuoteCount: string;
+  lowVolumeDisclosureAcknowledged: boolean;
   // Step 2: Phone Number
   clientId?: string;
   twilioNumber?: string;
@@ -46,6 +51,10 @@ const INITIAL_DATA: WizardData = {
   phone: '',
   timezone: 'America/New_York',
   googleBusinessUrl: '',
+  estimatedLeadVolume: '',
+  averageProjectValue: '',
+  deadQuoteCount: '',
+  lowVolumeDisclosureAcknowledged: false,
   teamMembers: [],
   businessHours: [
     { dayOfWeek: 0, openTime: '08:00', closeTime: '18:00', isOpen: false },

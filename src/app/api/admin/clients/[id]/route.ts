@@ -74,6 +74,11 @@ const updateClientSchema = z.object({
   reviewApprovalMode: z.enum(['operator_managed', 'client_approves']).optional(),
   // Exclusion list gate (FMA 4.1) — one-way latch, only true is accepted
   exclusionListReviewed: z.boolean().optional(),
+  // ICP qualification fields (FMA 4.3)
+  estimatedLeadVolume: z.number().int().min(0).optional().or(z.null()),
+  averageProjectValue: z.number().int().min(0).optional().or(z.null()),
+  deadQuoteCount: z.number().int().min(0).optional().or(z.null()),
+  lowVolumeDisclosureAcknowledged: z.boolean().optional(),
 });
 
 export const PATCH = adminClientRoute<{ id: string }>(

@@ -34,6 +34,10 @@ const createClientSchema = z.object({
   phone: z.string().min(10, 'Phone number is required'),
   timezone: z.string().default('America/New_York'),
   googleBusinessUrl: z.string().url().optional().or(z.literal('')),
+  estimatedLeadVolume: z.number().int().min(0).optional(),
+  averageProjectValue: z.number().int().min(0).optional(),
+  deadQuoteCount: z.number().int().min(0).optional(),
+  lowVolumeDisclosureAcknowledged: z.boolean().optional(),
 });
 
 export const POST = adminRoute(
@@ -88,6 +92,10 @@ export const POST = adminRoute(
           timezone: data.timezone,
           googleBusinessUrl: data.googleBusinessUrl || null,
           status: 'pending', // Not active until Twilio number assigned
+          estimatedLeadVolume: data.estimatedLeadVolume ?? null,
+          averageProjectValue: data.averageProjectValue ?? null,
+          deadQuoteCount: data.deadQuoteCount ?? null,
+          lowVolumeDisclosureAcknowledged: data.lowVolumeDisclosureAcknowledged ?? false,
         })
         .returning();
 
