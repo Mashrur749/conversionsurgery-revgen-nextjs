@@ -233,6 +233,9 @@ export function LeadsTable() {
                           temperature={(lead.temperature as 'hot' | 'warm' | 'cold') || 'warm'}
                           compact
                         />
+                        {lead.caslConsentAttested && (
+                          <Badge variant="outline" className="text-xs bg-[#E8F5E9] text-[#3D7A50]">CASL</Badge>
+                        )}
                         {lead.source && (
                           <span className="text-xs text-muted-foreground">{lead.source}</span>
                         )}
@@ -283,9 +286,14 @@ export function LeadsTable() {
                           <span className="w-2 h-2 bg-destructive rounded-full shrink-0" />
                         )}
                         <div className="min-w-0">
-                          <p className="font-medium truncate">
-                            {lead.name || formatPhoneNumber(lead.phone)}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium truncate">
+                              {lead.name || formatPhoneNumber(lead.phone)}
+                            </p>
+                            {lead.caslConsentAttested && (
+                              <Badge variant="outline" className="text-xs bg-[#E8F5E9] text-[#3D7A50] shrink-0">CASL</Badge>
+                            )}
+                          </div>
                           {lead.name && (
                             <p className="text-sm text-muted-foreground">{formatPhoneNumber(lead.phone)}</p>
                           )}
