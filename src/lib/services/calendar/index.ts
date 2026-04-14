@@ -32,7 +32,14 @@ export async function createEvent(input: CreateEventInput): Promise<string> {
       location: input.location,
       startTime: input.startTime,
       endTime: input.endTime,
-      timezone: input.timezone || 'America/New_York',
+      timezone: input.timezone || (() => {
+        console.warn(
+          '[Calendar][createEvent] timezone not provided — falling back to America/Edmonton. ' +
+          'Pass client.timezone explicitly from the call site.',
+          { clientId: input.clientId }
+        );
+        return 'America/Edmonton';
+      })(),
       eventType: input.eventType,
       assignedTeamMemberId: input.assignedTeamMemberId,
       status: 'scheduled',

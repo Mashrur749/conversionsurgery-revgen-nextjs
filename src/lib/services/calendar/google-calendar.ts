@@ -190,11 +190,11 @@ export async function createGoogleEvent(
       location: event.location || undefined,
       start: {
         dateTime: event.startTime.toISOString(),
-        timeZone: event.timezone || 'America/New_York',
+        timeZone: event.timezone || 'America/Edmonton',
       },
       end: {
         dateTime: event.endTime.toISOString(),
-        timeZone: event.timezone || 'America/New_York',
+        timeZone: event.timezone || 'America/Edmonton',
       },
       reminders: {
         useDefault: false,
@@ -285,11 +285,11 @@ export async function updateGoogleEvent(
         location: event.location || undefined,
         start: {
           dateTime: event.startTime.toISOString(),
-          timeZone: event.timezone || 'America/New_York',
+          timeZone: event.timezone || 'America/Edmonton',
         },
         end: {
           dateTime: event.endTime.toISOString(),
-          timeZone: event.timezone || 'America/New_York',
+          timeZone: event.timezone || 'America/Edmonton',
         },
       },
     });

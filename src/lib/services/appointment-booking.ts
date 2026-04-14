@@ -566,7 +566,7 @@ export async function bookAppointment(
       startTime: appointmentDateTime,
       endTime: addMinutes(appointmentDateTime, durationMinutes),
       location: lead.address || undefined,
-      timezone: client.timezone || 'America/New_York',
+      timezone: client.timezone || 'America/Edmonton',
       eventType: 'estimate',
       assignedTeamMemberId: assignedMembershipId ?? undefined, // undefined = no assignment; null would be treated same way
     });
