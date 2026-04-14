@@ -186,6 +186,16 @@ No auth surfaces changed &mdash; existing role/user permissions, escalation prev
 - AI effectiveness summary is automatically embedded in biweekly reports via `roiSummary.aiEffectiveness` — no new auth surface (uses existing report generation pipeline).
 - No new portal/client-facing permission scopes were introduced.
 
+## Webhook Routes
+
+Webhook endpoints use signature verification instead of session-based auth. No permission wrapper is used — each webhook validates the inbound signature before processing.
+
+| Route | Auth Method | Notes |
+|-------|------------|-------|
+| `POST /api/webhooks/twilio` | Twilio signature validation (X-Twilio-Signature header) | Inbound SMS/voice events |
+| `POST /api/webhooks/stripe` | Stripe webhook secret (stripe-signature header) | Billing lifecycle events |
+| `POST /api/webhooks/jobber/job-completed` | HMAC-SHA256 signature required (webhook secret key) | Jobber integration events — signature verification is mandatory, webhooks without configured secret key are rejected with 401 |
+
 ## References
 - `src/lib/permissions/require-portal-page-permission.ts`
 - `src/lib/get-client-id.ts`

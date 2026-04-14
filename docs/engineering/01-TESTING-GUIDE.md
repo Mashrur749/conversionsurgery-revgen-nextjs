@@ -2860,6 +2860,36 @@ Verifies the four quick wins shipped in the 2026-04-12 wave.
 6. Check `agent_decisions` table: verify `actionDetails.promptVersion` is populated with methodology, locale, playbook, and channel versions.
 7. Check `lead_context` table: verify `conversation_stage`, `stage_turn_count`, and `strategy_state` are populated.
 
+### Step 75: Three-Way Pricing Guardrail Verification
+
+1. Set a test client to `canDiscussPricing: false`.
+2. Send a message with a price comparison objection: "I got a cheaper quote from another company."
+3. Verify the AI discusses value and differentiation WITHOUT quoting any dollar amounts.
+4. Send "How much does a basement cost?" with no active objection.
+5. Verify the AI defers to the contractor for a quote — does not discuss pricing at all.
+
+### Step 76: Decision-Maker and Returning Lead Verification
+
+1. Send "I need to check with my wife before we decide" from a test lead.
+2. Verify `leadContext.decisionMakers.partnerApprovalNeeded` is set to `true`.
+3. Verify `bookingAttempts` was NOT incremented.
+4. Wait 8+ days (adjust timestamps in DB). Send a new message from the same lead.
+5. Verify `conversationStage` resets to `greeting` (returning lead detection).
+
+### Step 77: Cross-Channel and Form Fast-Track Verification
+
+1. Submit a web form with: projectType="basement finishing", size="1200 sqft", timeline="next month".
+2. Verify `leadContext.projectType` is populated from the form data.
+3. Send an SMS from the same lead. Verify the AI references the form data and proposes an estimate visit (skips qualifying).
+4. For voice handoff: create a test voice call record with `aiSummary`. Send an SMS from the same lead. Verify a `voice_summary` conversation record was created and the AI references the voice call context.
+
+### Step 78: Contextual Estimate Follow-Up and Status Sync
+
+1. Mark a test lead as `estimate_sent` with `objections: [{detail: "price_comparison"}]`.
+2. Run the estimate follow-up cron. Verify the first touch message references comparing quotes (not the generic "checking in" template).
+3. Mark a lead as WON via SMS command. Verify `leadContext.conversationStage` syncs to `booked`.
+4. In the AI agent, let a conversation reach `lost` stage. Verify `leads.status` syncs to `lost`.
+
 ---
 
 ## 3. Useful Commands

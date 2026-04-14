@@ -73,6 +73,8 @@ If any check fails, the response is blocked, a safe fallback message is sent, an
 
 Applied to: Agent orchestrator, win-back automation, no-show recovery automation.
 
+- **Three-way pricing guardrail:** When pricing is disabled, the system distinguishes between quoting prices (always blocked) and discussing price concerns (allowed — reframes on value and proposes estimate visit). When a price-comparison objection is active, the agent can address the concern without revealing dollar amounts.
+
 ### Response Length Control
 
 AI responses are truncated at sentence boundaries instead of mid-word. This ensures messages sent to homeowners always end with complete sentences, even when the AI exceeds the configured maximum response length. Win-back messages are capped at 160 characters (SMS optimal). No-show recovery at 200 characters.
@@ -144,6 +146,8 @@ This ensures returning leads don&apos;t have to repeat project details, pricing 
 
 Summarization uses Haiku (fast tier) for cost efficiency. Non-blocking &mdash; if summarization fails, the AI continues with raw messages only.
 
+- **Structured summary extraction:** Alongside the narrative summary, the system extracts structured signals: key objections, booking attempts and outcomes, price sensitivity level, and emotional arc. These survive summary compression and inform the strategy resolver across long conversations.
+
 ---
 
 ## 2. Follow-Up Automation (Never Drop a Lead)
@@ -194,6 +198,8 @@ Cancellation: new sequence auto-cancels prior unsent messages for the same lead.
 **Pause-and-resume on reply:** when a homeowner replies during the sequence (e.g., &ldquo;still thinking&rdquo;), only the next unsent step is cancelled and remaining steps are delayed by 3 days &mdash; the sequence continues at a gentler pace rather than being killed permanently. Soft rejections (&ldquo;not interested&rdquo;, &ldquo;went with someone else&rdquo;) cancel ALL sequences (estimate, payment, review, referral, appointment reminders).
 
 **Stuck estimate nudge:** weekly cron (Wednesday) alerts the contractor when leads have been in `estimate_sent` for 21+ days without any status update. SMS names up to 3 leads and prompts the contractor to mark them won or lost so ROI reporting stays accurate.
+
+- **Contextual follow-up variants:** Estimate follow-up messages select from variant templates based on the lead&apos;s known objections — price-comparison leads get value-reframing messages, timeline-concern leads get availability updates, partner-approval leads get check-in messages
 
 ### Appointment Booking — Address Required
 
@@ -321,6 +327,8 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 - After 2 attempts with no response, lead transitions to `dormant`
 - **Freshness gate for deferred messages:** AI-generated follow-ups check lead context before generation &mdash; cancelled if lead stage changed to booked/lost, or if lead had inbound activity within 7 days
 - **Dormant lead auto-promotion:** when a dormant lead texts back, status automatically promoted to `contacted` so they appear in the active pipeline
+- **Engagement-depth tone:** Win-back messages adapt tone based on prior conversation depth — leads with 5+ messages get a warm reconnect referencing their project; leads with minimal engagement get a fresh introductory approach
+- **Returning lead detection:** When a lead replies after 7+ days of silence, the conversation stage resets to greeting with a fresh summary, preventing the agent from resuming mid-strategy with stale context
 
 ### Probable Wins Nudge
 
@@ -527,6 +535,7 @@ Every lead accumulates:
 - **Objections:** tracked with resolution status
 - **Conversation summary** and key facts (AI-maintained)
 - **Recommended next action** (AI-generated)
+- **Decision-maker tracking:** The AI detects partner/spouse mentions in conversation ("need to check with my wife") and tracks decision-maker involvement in leadContext. Partner-approval objections do not count as booking rejections — the agent offers to include the partner via joint estimate visit or summary text.
 
 ### Multi-Channel Inbox
 
@@ -537,6 +546,8 @@ Every lead accumulates:
 - Media attachment support (MMS)
 - **Message pagination** &mdash; initial load fetches the 50 most recent messages per conversation. &quot;Load earlier messages&quot; button loads older history on demand. Delta polling for new messages is unchanged.
 - **AI message flagging** &mdash; operators can flag any AI-generated message as problematic with a category (wrong tone, inaccurate, too pushy, hallucinated, off topic, other) and optional note. Flags are visible inline and surfaced in admin AI quality view.
+- **Form data fast-track:** When a web form submission includes project type, size, and timeline, the entry context skips the qualifying stage and the first AI response references the submitted data and proposes an estimate visit directly
+- **Cross-channel context handoff:** When a lead who spoke with Voice AI subsequently texts, the SMS agent loads the voice call summary into conversation history, preventing re-qualification of already-qualified leads
 
 ### Bulk Lead Import
 
@@ -559,6 +570,7 @@ Every lead accumulates:
 - **PAUSE / RESUME commands:** contractor texts PAUSE to their business number &rarr; AI mode set to `off`, all pending scheduled messages cancelled, all active flow executions cancelled. Texts RESUME &rarr; AI mode restored to `autonomous`. Gives contractors a sense of control over automation. Notification fires when AI auto-progresses to autonomous mode: &ldquo;Your system is now fully automated. Reply PAUSE to this number to pause at any time.&rdquo;
 - **Escalation batching:** when 3+ escalations fire within 30 minutes, team members receive a single summary SMS instead of individual notifications per lead
 - **Escalation acknowledgment:** When the AI escalates, the homeowner receives an immediate SMS acknowledgment before the handoff to prevent silence during the transition window
+- **Status/stage bidirectional sync:** When the AI conversation stage changes (e.g., to lost), the lead pipeline status syncs automatically. When the contractor marks a lead as won or lost via SMS command, the AI conversation stage updates correspondingly. Both directions are idempotent.
 - **Auto-cancel on outbound (Smart Assist):** If any outbound message is sent for a lead after a Smart Assist draft was queued, the draft is automatically cancelled to prevent redundant messages
 - **Crew availability toggle:** `availabilityStatus` field on team memberships (available/busy/off_duty). Busy or off-duty members are automatically excluded from ring groups and escalation routing.
 - **Per-member work schedule:** admin can set per-day working hours (start/end time, working flag) for each team member via the team edit dialog. Stored as `workSchedule` jsonb. Used by `getAvailableSlots()` when booking for a specific member.
@@ -1159,8 +1171,13 @@ Three platform-wide circuit breakers (toggle in admin settings, no deploy requir
 
 - **Reliability dashboard:** failed crons, webhook failures (24h), escalation SLA breaches, report delivery queue, unresolved errors
 - **AI quality monitoring:** flagged AI messages by category, flag rate trends per client, admin-wide review page at `/admin/ai-quality` (shows all flagged messages across clients with reason badges, notes, and lead links)
+- **Smart Assist correction tracking:** When contractors edit AI drafts before sending, the original and edited content are logged as correction events. Correction rate per client is computed weekly — sustained high correction rates (>30%) trigger operator review of AI settings.
+- **Analysis/decision split logging:** Each agent decision logs the analysis (sentiment, scores, stage, extracted info) separately from the decision (action, confidence, reasoning) in agentDecisions, enabling independent evaluation of analysis accuracy vs decision quality.
+- **Opt-out reason classification:** When leads opt out with accompanying text ("found someone cheaper, stop"), the system classifies the reason (competitor_chosen, project_cancelled, bad_experience, cost, not_interested) via regex and stores it for churn analytics
+- **AI drift detection:** Weekly automated health check computes confidence trends, escalation rate, output guard violation rate, and response time vs prior week. Warning alerts at -10% confidence / +50% escalation rate; critical alerts at -20% / +100% with operator SMS notification. Reports stored in ai_health_reports table.
 - **Pre-launch scenario tests:** 102 deterministic tests covering 12 conversation scenarios (happy path, objection handling, escalation safety nets, harassment prevention, model routing boundaries, adversarial guardrails). Run via `npx vitest run src/lib/agent/`.
 - **AI criteria tests:** 29 real-LLM tests via `npm run test:ai` &mdash; 23 single-turn criteria (safety, quality, adversarial) + 6 multi-turn conversation scenarios (smooth booking, price objection recovery, frustrated escalation, slow nurture, knowledge boundaries, mid-conversation opt-out). Safety and scenario failures are launch blockers.
+- **AI safety evals in CI:** Pull requests that modify AI-affecting files automatically run safety evals (pricing leaks, opt-out retention, identity denial, prompt injection). Safety failures block merge. Quality evals run informationally.
 
 ### AI Eval System
 
