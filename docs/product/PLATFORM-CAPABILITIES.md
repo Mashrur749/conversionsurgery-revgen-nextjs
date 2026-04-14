@@ -547,6 +547,7 @@ Every lead accumulates:
 - **Appointment reassignment:** `PATCH /api/admin/clients/[id]/appointments/[appointmentId]` with `{ assignedTeamMemberId }`. Cascades to linked calendar events.
 - **Operator &rarr; team member messaging:** admin can send SMS to any team member via &ldquo;Message&rdquo; button on team page. Routes through compliance gateway.
 - **Bulk lead messaging:** `POST /api/admin/clients/[id]/leads/bulk-message` sends to leads matching status/source filter. Capped at 50 per request.
+- **Escalation reassignment:** When a team member is deactivated or removed, their pending escalations are automatically reassigned to the next available team member via round-robin. Falls back to the client owner if no other active members exist.
 
 ### Conversation Modes
 
@@ -784,6 +785,8 @@ Every outbound message in the entire system routes through `sendCompliantMessage
 
 No message can bypass this path.
 
+- **Subscription enforcement:** Proactive outbound automations are blocked for clients with past_due subscription status. Inbound replies continue to prevent ghosting homeowners.
+
 ---
 
 ## 7. Reporting &amp; Analytics
@@ -908,6 +911,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 - Webhook handler with dedup protection
 - Payment confirmation SMS to both lead and owner
 - Reconciliation cron syncs subscription status daily
+- **Payment failure notification:** When a subscription payment fails, the contractor receives an SMS notification with a link to update their payment method. An admin email alert is also sent.
 
 ### Guarantee Workflow
 
@@ -1004,6 +1008,7 @@ The platform advances contractors through AI modes automatically based on time a
 - Each advancement sends an SMS notification to the contractor with specific, actionable context: assist mode explains the 5-minute review window and links to `/client/conversations`; autonomous mode explains instant responses and how to take over conversations
 - All transitions are logged to audit_log
 - Cron: `/api/cron/ai-mode-progression` runs daily at 10am UTC
+- **Quality gate re-evaluation:** Quality gates are checked on every AI mode progression step (not just initial activation). If a client in autonomous mode has critical quality gate failures (e.g., KB emptied), the system auto-regresses to Smart Assist mode and alerts the operator.
 
 ### Self-Serve KB Onboarding Wizard
 
@@ -1299,6 +1304,7 @@ Basic bidirectional webhook integration with Jobber for clients who use it for j
 - Integration is off by default; enabled per client via admin settings (requires `webhookUrl` configuration)
 - Architecture: generic `integration_webhooks` table supports future providers (HubSpot, ServiceTitan, Housecall Pro) with the same pattern
 - Non-blocking: integration failures do not affect core platform operations
+- **Webhook signature enforcement:** All Jobber webhook deliveries require HMAC-SHA256 signature verification. Webhooks without a configured secret key are rejected.
 
 **Sales positioning:** CS is the front end of the contractor&apos;s pipeline. Jobber handles job management; CS handles getting the work and closing the loop on reviews. The Jobber integration makes this concrete — no duplicate data entry, no manual review requests.
 
