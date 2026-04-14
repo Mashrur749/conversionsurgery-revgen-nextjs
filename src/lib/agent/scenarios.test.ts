@@ -17,6 +17,9 @@ import { describe, it, expect } from 'vitest';
 import { routeAfterDecision } from './graph';
 import { buildGuardrailPrompt, type GuardrailConfig } from './guardrails';
 import { selectModelTier, type RoutingInput } from '@/lib/ai/model-routing';
+import { resolveStrategy } from './strategy-resolver';
+import { resolveEntryContext } from './entry-context';
+import { BASEMENT_DEVELOPMENT_PLAYBOOK } from './playbooks/basement-development';
 import type { ConversationStateType } from './state';
 import type { AgentAction, LeadSignals, LeadStage } from '@/lib/types/agent';
 
@@ -407,6 +410,93 @@ describe('Scenario: Exhaustive action routing', () => {
       expect(routeAfterDecision(makeState({ lastAction: action as AgentAction }))).toBe(expectedRoute);
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// Strategy-Driven Conversation Progressions
+// Tests that the strategy resolver produces correct strategies for realistic
+// multi-step conversation flows without making LLM calls.
+// ---------------------------------------------------------------------------
+
+describe('strategy-driven conversation progressions', () => {
+  it('follows greeting → qualifying → educating for a standard lead', () => {
+    // Turn 1: first message with no project info — should stay in greeting
+    const s1 = resolveStrategy({
+      currentStage: 'greeting',
+      stageTurnCount: 0,
+      signals: { urgency: 50, budget: 50, intent: 50, sentiment: 'neutral' },
+      extractedInfo: {},
+      objections: [],
+      bookingAttempts: 0,
+      isFirstMessage: true,
+      entryContext: resolveEntryContext({
+        leadSource: 'missed_call',
+        isReturningLead: false,
+        daysSinceLastContact: null,
+        existingProjectInfo: null,
+      }),
+    });
+    expect(s1.currentStage).toBe('greeting');
+    expect(s1.actionGuidance).toContain('missed');
+
+    // Turn 2: lead replied with project info → should advance to qualifying
+    const s2 = resolveStrategy({
+      currentStage: 'greeting',
+      stageTurnCount: 1,
+      signals: { urgency: 50, budget: 50, intent: 60, sentiment: 'neutral' },
+      extractedInfo: { projectType: 'basement finishing' },
+      objections: [],
+      bookingAttempts: 0,
+      isFirstMessage: false,
+    });
+    expect(s2.currentStage).toBe('qualifying');
+
+    // Turn 5: all three qualifying fields collected → should advance to educating
+    const s3 = resolveStrategy({
+      currentStage: 'qualifying',
+      stageTurnCount: 3,
+      signals: { urgency: 60, budget: 60, intent: 70, sentiment: 'positive' },
+      extractedInfo: {
+        projectType: 'basement finishing',
+        projectSize: '1200 sqft',
+        preferredTimeframe: 'next month',
+      },
+      objections: [],
+      bookingAttempts: 0,
+      isFirstMessage: false,
+    });
+    expect(s3.currentStage).toBe('educating');
+  });
+
+  it('handles emergency bypass correctly', () => {
+    const s = resolveStrategy({
+      currentStage: 'qualifying',
+      stageTurnCount: 2,
+      signals: { urgency: 95, budget: 50, intent: 80, sentiment: 'frustrated' },
+      extractedInfo: { projectType: 'water damage' },
+      objections: [],
+      bookingAttempts: 0,
+      isFirstMessage: false,
+    });
+    expect(s.currentStage).toBe('emergency');
+    expect(s.suggestedAction).toContain('human');
+  });
+
+  it('handles price objection with playbook guidance', () => {
+    const s = resolveStrategy({
+      currentStage: 'proposing',
+      stageTurnCount: 1,
+      signals: { urgency: 50, budget: 30, intent: 50, sentiment: 'neutral' },
+      extractedInfo: { projectType: 'basement finishing' },
+      objections: ['price_comparison'],
+      bookingAttempts: 1,
+      isFirstMessage: false,
+      playbook: BASEMENT_DEVELOPMENT_PLAYBOOK,
+    });
+    expect(s.currentStage).toBe('objection_handling');
+    // Playbook guidance for price_comparison references investment value
+    expect(s.actionGuidance.toLowerCase()).toContain('value');
+  });
 });
 
 // ---------------------------------------------------------------------------

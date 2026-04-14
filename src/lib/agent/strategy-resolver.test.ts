@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveStrategy, type ResolveStrategyInput } from './strategy-resolver';
+import { resolveEntryContext } from './entry-context';
 import { DEFAULT_METHODOLOGY } from './methodology';
 import { BASEMENT_DEVELOPMENT_PLAYBOOK } from './playbooks/basement-development';
 import type { ConversationEntryContext } from './entry-context';
@@ -673,5 +674,52 @@ describe('edge cases', () => {
 
     // High intent + booking attempt → should advance to post_booking
     expect(strategy.currentStage).toBe('post_booking');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Returning lead via resolveEntryContext: welcome back acknowledgment
+  // ---------------------------------------------------------------------------
+
+  it('returning lead (daysSinceLastContact > 7) produces welcome-back opening strategy', () => {
+    const entryContext = resolveEntryContext({
+      leadSource: 'missed_call',
+      isReturningLead: true,
+      daysSinceLastContact: 14,
+      existingProjectInfo: { projectType: 'basement' },
+    });
+
+    const strategy = resolveStrategy(
+      baseInput({
+        currentStage: 'greeting',
+        isFirstMessage: true,
+        entryContext,
+      }),
+    );
+
+    // Opening strategy should acknowledge the returning lead
+    expect(strategy.suggestedAction).toBe('opening_message');
+    expect(strategy.actionGuidance).toContain('back');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Booking attempt limit: suggestedAction must NOT be book_appointment when at limit
+  // ---------------------------------------------------------------------------
+
+  it('does not suggest book_appointment when booking attempts >= maxBookingAttempts', () => {
+    const strategy = resolveStrategy(
+      baseInput({
+        currentStage: 'proposing',
+        stageTurnCount: 1,
+        bookingAttempts: 3,
+        maxBookingAttempts: 3,
+      }),
+    );
+
+    // Escalation trigger must be present
+    expect(strategy.escalationTriggers).toContain(
+      'Max booking attempts reached — do not push further',
+    );
+    // Suggested action must NOT push for a booking
+    expect(strategy.suggestedAction).not.toBe('book_appointment');
   });
 });
