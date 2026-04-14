@@ -209,6 +209,7 @@ export async function POST(request: NextRequest) {
         'GET',
         failedJobs
       );
+      results.dailyDigest = await dispatch(baseUrl, '/api/cron/daily-digest', cronSecret!, 'GET', failedJobs);
 
       try {
         const embeddingResult = await backfillEmbeddings();
