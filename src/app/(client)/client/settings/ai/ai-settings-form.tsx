@@ -21,6 +21,7 @@ interface Props {
     quietHoursEnabled: boolean;
     quietHoursStart: string;
     quietHoursEnd: string;
+    bookingAggressiveness: number;
   };
 }
 
@@ -36,7 +37,7 @@ export function AiSettingsForm({ defaults }: Props) {
   );
   useUnsavedChangesWarning(isDirty);
 
-  const update = (key: string, value: string | boolean) => {
+  const update = (key: string, value: string | boolean | number) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
   };
@@ -130,6 +131,39 @@ export function AiSettingsForm({ defaults }: Props) {
               checked={form.canScheduleAppointments}
               onCheckedChange={(checked) => update('canScheduleAppointments', checked)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="booking-aggressiveness">Booking Aggressiveness</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>How proactively should the system suggest appointments? 1 = very gentle, 10 = very assertive.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              How proactively should the system suggest appointments? 1 = very gentle, 10 = very assertive.
+            </p>
+            <input
+              id="booking-aggressiveness"
+              type="range"
+              min="1"
+              max="10"
+              value={form.bookingAggressiveness ?? 5}
+              onChange={(e) => update('bookingAggressiveness', parseInt(e.target.value, 10))}
+              className="w-full accent-[#6B7E54]"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Gentle</span>
+              <span>{form.bookingAggressiveness ?? 5}/10</span>
+              <span>Assertive</span>
+            </div>
           </div>
         </CardContent>
       </Card>

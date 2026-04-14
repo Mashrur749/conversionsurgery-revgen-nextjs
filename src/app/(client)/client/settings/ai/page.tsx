@@ -28,6 +28,7 @@ export default async function ClientAiSettingsPage() {
     quietHoursEnabled: settings?.quietHoursEnabled ?? true,
     quietHoursStart: settings?.quietHoursStart ?? '21:00',
     quietHoursEnd: settings?.quietHoursEnd ?? '08:00',
+    bookingAggressiveness: settings?.bookingAggressiveness ?? 5,
   };
 
   return (

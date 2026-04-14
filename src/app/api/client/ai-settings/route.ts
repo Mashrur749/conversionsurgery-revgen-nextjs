@@ -26,6 +26,7 @@ export const GET = portalRoute(
         quietHoursEnabled: true,
         quietHoursStart: '21:00',
         quietHoursEnd: '08:00',
+        bookingAggressiveness: 5,
       });
     }
 
@@ -38,6 +39,7 @@ export const GET = portalRoute(
       quietHoursEnabled: settings.quietHoursEnabled,
       quietHoursStart: settings.quietHoursStart,
       quietHoursEnd: settings.quietHoursEnd,
+      bookingAggressiveness: settings.bookingAggressiveness,
     });
   }
 );
@@ -51,6 +53,7 @@ const updateSchema = z.object({
   quietHoursEnabled: z.boolean().optional(),
   quietHoursStart: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   quietHoursEnd: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  bookingAggressiveness: z.number().int().min(1).max(10).optional(),
 }).strict();
 
 /** PUT /api/client/ai-settings - Update AI settings for the authenticated client. */

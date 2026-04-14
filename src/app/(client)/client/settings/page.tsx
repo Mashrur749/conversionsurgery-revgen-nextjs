@@ -56,6 +56,7 @@ export default async function ClientSettingsPage() {
     quietHoursEnabled: agentSettings?.quietHoursEnabled ?? true,
     quietHoursStart: agentSettings?.quietHoursStart ?? '21:00',
     quietHoursEnd: agentSettings?.quietHoursEnd ?? '08:00',
+    bookingAggressiveness: agentSettings?.bookingAggressiveness ?? 5,
   };
 
   // Feature toggles defaults
