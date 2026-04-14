@@ -1,15 +1,15 @@
 import { auth } from '@/auth';
 import { redirect, notFound } from 'next/navigation';
 import { getDb, clients, leads, appointments, dailyStats } from '@/db';
-import { knowledgeBase, plans, subscriptions } from '@/db/schema';
-import { eq, and, gte, sql, count as countFn } from 'drizzle-orm';
+import { plans, subscriptions } from '@/db/schema';
+import { eq, and, gte, sql } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatPhoneNumber } from '@/lib/utils/phone';
-import { CheckCircle, Phone, FileText, BookOpen } from 'lucide-react';
 import { EditClientForm } from './edit-client-form';
+import { OnboardingChecklistCard } from './onboarding-checklist-card';
 import { TeamManager } from './team-manager';
 import { DeleteButton } from './delete-button';
 import { FeatureTogglesCard } from './feature-toggles';
@@ -298,26 +298,12 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
     pipelineChange,
   };
 
-  // Setup status for onboarding card
-  const [leadCount] = await db
-    .select({ count: countFn() })
-    .from(leads)
-    .where(eq(leads.clientId, id));
-  const [kbCount] = await db
-    .select({ count: countFn() })
-    .from(knowledgeBase)
-    .where(eq(knowledgeBase.clientId, id));
   // Initialize and load knowledge base data
   await initializeClientKnowledge(id);
   const [kbEntries, structuredKnowledge] = await Promise.all([
     getClientKnowledge(id),
     loadStructuredKnowledge(id),
   ]);
-
-  const hasPhone = !!client.twilioNumber;
-  const hasLeads = Number(leadCount?.count ?? 0) > 0;
-  const hasKnowledge = Number(kbCount?.count ?? 0) > 0;
-  const setupComplete = hasPhone && hasLeads && hasKnowledge;
 
   // Load quality gates for OnboardingProgress — only when client is in onboarding window
   const ONBOARDING_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
@@ -349,60 +335,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
     cancelled: 'bg-[#FDEAE4] text-sienna',
   };
 
-  const onboardingChecklist = !setupComplete ? (
-    <Card className="border-olive/30 bg-moss-light">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Client Onboarding</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm">
-            {hasPhone
-              ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
-              : <Phone className="h-4 w-4 text-muted-foreground" />}
-            <span className={hasPhone ? 'line-through text-muted-foreground' : ''}>
-              Assign phone number
-            </span>
-          </div>
-          {!hasPhone && (
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/admin/clients/${client.id}/phone`}>Assign</Link>
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm">
-            {hasLeads
-              ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
-              : <FileText className="h-4 w-4 text-muted-foreground" />}
-            <span className={hasLeads ? 'line-through text-muted-foreground' : ''}>
-              Import historical quotes
-            </span>
-          </div>
-          {!hasLeads && (
-            <Button asChild size="sm" variant="outline">
-              <Link href="/leads">Import CSV</Link>
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm">
-            {hasKnowledge
-              ? <CheckCircle className="h-4 w-4 text-[#3D7A50]" />
-              : <BookOpen className="h-4 w-4 text-muted-foreground" />}
-            <span className={hasKnowledge ? 'line-through text-muted-foreground' : ''}>
-              Set up knowledge base
-            </span>
-          </div>
-          {!hasKnowledge && (
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/admin/clients/${client.id}/knowledge`}>Configure</Link>
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  ) : null;
+  const onboardingChecklist = <OnboardingChecklistCard clientId={client.id} />;
 
   return (
     <div className="space-y-6">
