@@ -26,6 +26,8 @@ Purpose: Every business scenario a contractor generates, and exactly how you han
 
 Keep it short. Contractors are on job sites. They&apos;ll reply in 10 seconds if the ask is specific.
 
+**Month 1 escalation budget:** New clients generate 2-3x the steady-state escalation rate in their first month. Budget 5-8 escalations/week per new client during Month 1. This is normal &mdash; the KB is thin, the AI defers more, and the contractor hasn&apos;t learned the EST/WON commands yet. Don&apos;t treat high Month 1 escalations as a system problem.
+
 ---
 
 ## 1.5. At-Risk Detection &amp; Recovery
@@ -133,6 +135,8 @@ After 3-5 days, text them: &quot;We texted your 30 old quotes. [X] responded so 
 
 This is the moment they realize the service works. Protect it.
 
+**Opt-out requirement for old contacts:** All reactivation messages to contacts 6+ months old must include opt-out language. The system adds &ldquo;Reply STOP to opt out&rdquo; automatically via the compliance gateway, but verify it&apos;s present in any custom reactivation templates. This is both a legal requirement and a trust signal &mdash; contractors who see opt-out language in their own reactivation messages trust the system more.
+
 ---
 
 ## 3. AI Quality Monitoring + Smart Assist Operations
@@ -168,6 +172,8 @@ These sit in `pending_manual` until explicitly approved. You must reply `SEND [r
 
 **When to switch from Smart Assist to Autonomous:** After you&apos;ve reviewed ~30+ AI interactions for this client and the KB is covering 90%+ of questions without escalation. Run `npm run test:ai` with their KB loaded. All Safety tests must pass. This is non-negotiable.
 
+**Capacity constraint &mdash; max 2 clients in Smart Assist simultaneously.** Smart Assist requires 3x daily review (~15 min/check). With 2 clients in SA, that&apos;s 90 min/day of review time. If 2 clients are already in Smart Assist, defer the new client&apos;s SA activation by 3-5 days until one graduates to autonomous. Track SA queue depth at `/admin/triage` (capacity KPI card).
+
 ### General AI Quality Monitoring (ongoing)
 
 1. Open `/admin/ai-quality` (or the AI quality section in the admin dashboard).
@@ -187,6 +193,8 @@ These sit in `pending_manual` until explicitly approved. You must reply `SEND [r
 **This is your #1 retention mechanism.** Not the report. Not the Monday SMS. The call. Every managed-service competitor either skips the call or makes it a cursory &ldquo;any questions?&rdquo; check-in. Your call is structured, data-driven, and closes every gap the automation can&apos;t.
 
 ### Pre-Call (10 min operator prep)
+
+**Lead with auto-tracked metrics, not WON data.** Even if the contractor hasn&apos;t texted WON once, you have real numbers to show: leads responded to, missed calls caught, response time improvement, appointments booked. Open `/admin/clients/{id}/call-prep` before the call &mdash; it pre-loads all these metrics for the last 14 days. Start with: &ldquo;Here&apos;s what the system did since we last talked...&rdquo; The auto-tracked data is always available; WON/LOST data depends on contractor participation.
 
 1. Review the bi-weekly report at `/admin/reports` for the client:
    - Are the numbers accurate? (Cross-check against the client dashboard.)
@@ -486,7 +494,11 @@ Stay on the line. Confirm in Stripe. See Payment Capture section below for hesit
 
    **Critical:** The messages must sound like THEM. This is identity protection, not a feature request.
 
+   **Closed-question technique:** Don&apos;t ask open-ended questions that get vague answers. Instead of &ldquo;What&apos;s your warranty?&rdquo; ask &ldquo;Do you offer a 1-year or 2-year warranty?&rdquo; Instead of &ldquo;What&apos;s your service area?&rdquo; ask &ldquo;Do you go as far as Airdrie? What about Okotoks?&rdquo; Closed questions get specific, usable answers that translate directly into KB entries. Open questions get &ldquo;it depends&rdquo; &mdash; which is useless for the AI.
+
 7. **Jobber setup (optional, 2 min):** If the client uses Jobber, ask for their Jobber webhook URL. Configure in the admin dashboard: client detail page &rarr; Configuration tab &rarr; Integrations card &rarr; Add Integration &rarr; select Jobber. Two-way sync: CS fires appointment bookings to Jobber, Jobber&apos;s job_completed triggers CS review requests.
+
+**Pre-sale audit shortcut:** If a pre-sale Revenue Leak Audit was completed during the sales process, reformat it as the post-sale Revenue Leak Audit. The data is already collected &mdash; just restructure it into the post-sale template. This saves ~30 minutes of redundant work (15 min instead of 45 min).
 
 ---
 
@@ -505,6 +517,12 @@ Stay on the line. Confirm in Stripe. See Payment Capture section below for hesit
    &gt; &quot;Let&apos;s lock in a quick check-in for [day, 7 days out]. 10 minutes. I&apos;ll show you what the system did in the first week and we can tune anything that needs it. [Tuesday or Wednesday] work?&quot;
 
    Put it in your calendar. This is mandatory, not optional.
+
+**If they no-show the onboarding call:** Send within 1 hour:
+
+&gt; &quot;Hey [Name] &mdash; looks like we missed each other. No worries. Your number is already catching missed calls and sending instant text-backs, so you&apos;re not losing leads while we sort out scheduling. What time works for a quick 30-min setup call this week?&quot;
+
+The &ldquo;your number is already working&rdquo; framing converts no-shows at 80%+ because it creates loss aversion &mdash; they&apos;re getting value they&apos;ll lose if they ghost. Reschedule same-day if possible, next-day at latest. After 2 no-shows with no reschedule, escalate to the operator cockpit as a red action item.
 
 ---
 
@@ -553,6 +571,7 @@ Then follow up in 24-48 hours with the link. Most contractors who refuse on the 
 - **Mark exclusion list reviewed** in admin (Configuration tab → Exclusion List → &ldquo;Mark as Reviewed&rdquo;) — required before autonomous mode can be enabled.
 - **Check onboarding checklist** on the client detail page. Verify items 1-5 (phone, forwarding, hours, KB, pricing) are green before closing the post-call session. Any red items are Day 1 blockers.
 - **Forwarding verification is now active** &mdash; the system will place a daily test call for 7 days to confirm forwarding is still working. If you receive an alert in the first 24 hours, carrier voicemail is likely intercepting. Have the contractor run `##004#` to disable it (Rogers/Telus/Bell) or contact their carrier.
+- **Test the contractor&apos;s web form** &mdash; submit a test inquiry on their website. Verify the webhook fires and a lead appears in the system within 60 seconds. If it doesn&apos;t, check the webhook URL configuration. This catches 15% of setup failures that would otherwise surface as &ldquo;the system isn&apos;t working&rdquo; complaints in Week 1.
 - Send a recap text: &quot;You&apos;re live. Missed-call text-back is on, and I just sent follow-ups to [X] of your old quotes. You&apos;ll start seeing replies by tomorrow. Portal login: [link].&quot;
 
 **Revenue Leak Audit (48-hour deliverable):**
@@ -1085,6 +1104,73 @@ Ask during the call: &ldquo;Do you use Google Calendar daily for scheduling?&rdq
 4. If the token expired: the contractor needs to re-authenticate via Google OAuth. Disconnect and reconnect resolves this.
 
 Sync runs every 15 minutes via the `calendar-sync` cron. Connection requires Google OAuth with calendar read/write permissions.
+
+---
+
+## 16b. Backup Operator Protocol
+
+**Cross-training requirements:** A backup operator must be able to handle these 4 tasks independently:
+1. **Escalation handling** &mdash; review, respond, or route to contractor (Section 1)
+2. **Smart Assist review** &mdash; approve, edit, or cancel AI drafts (Section 3)
+3. **Bi-weekly call format** &mdash; run the call using the call prep page (Section 4)
+4. **Daily cockpit triage** &mdash; process red/yellow actions (Section 1.6)
+
+**Handoff protocol (planned absence):**
+- 48h before: walk through the active client list, flag any in-progress situations
+- Share cockpit access (`/admin/triage`) &mdash; this is the single entry point
+- Set a calendar reminder for the return date to do a handoff-back review
+
+**Emergency coverage (unplanned absence):**
+- The system continues all automations autonomously &mdash; no human needed for message sending, follow-ups, or scheduled jobs
+- What STOPS: Smart Assist reviews (drafts auto-send after delay), escalation responses (queue builds), bi-weekly calls (reschedule on return)
+- If absence &gt; 3 days: temporarily switch all Smart Assist clients to autonomous mode to prevent draft queue buildup
+
+---
+
+## 16c. Provider Outage Communication
+
+**When Twilio is down (SMS/Voice):**
+&gt; &quot;[Business Name] update: We&apos;re experiencing a brief technical issue with our messaging service. Your leads are being queued and will receive responses as soon as service is restored. No leads will be lost. We expect this to be resolved within [X] hours.&quot;
+
+Send via email if SMS is the provider that&apos;s down. Use the contractor&apos;s email from the client record.
+
+**When Stripe is down (Billing):**
+&gt; No contractor communication needed. Retry logic handles transient failures. If down &gt; 24h, email the contractor: &quot;Your upcoming billing may be delayed by a day due to a payment processor update. No action needed on your end.&quot;
+
+**When Anthropic is down (AI):**
+&gt; Switch affected clients to manual mode temporarily. Escalation queue will fill faster. Send: &quot;[Business Name] update: Our AI system is undergoing maintenance. Your missed call text-backs are still active. Any complex inquiries will be forwarded to you directly until service is restored.&quot;
+
+---
+
+## 16d. Notification Philosophy
+
+**Why we batch:** Contractors get 2-3 texts/day from the system, not 15. Research shows notification fatigue kicks in at 4+ interruptions/day &mdash; after that, contractors stop reading. The daily digest (10am local time) bundles all non-urgent items into one SMS.
+
+**The priority tier model:**
+- **P0 (always immediate):** Opt-out confirmations, compliance alerts, PAUSE/RESUME &mdash; these can&apos;t wait
+- **P1 (immediate, max 2/day):** Booking confirmations, escalation alerts, billing reminders &mdash; time-sensitive but capped
+- **P2 (daily digest):** KB gap questions, estimate prompts, won/lost prompts &mdash; important but not urgent
+- **P3 (weekly digest):** Pipeline summaries, report notifications &mdash; informational
+
+**Adjusting per client:** If a contractor says &ldquo;I want more updates&rdquo; &mdash; don&apos;t increase P2 to immediate. Instead, explain: &ldquo;The digest keeps it to one text so you can batch your responses. Most contractors prefer it this way after a week.&rdquo; If they insist, you can enable individual P2 notifications by disabling daily digest for that client, but warn them the volume will triple.
+
+---
+
+## 16e. Automation Trust Management
+
+**The trust gradient:** Every automation starts conservative and earns autonomy through demonstrated accuracy.
+
+| Mode | What happens | Who reviews | When to use |
+|------|-------------|-------------|-------------|
+| **Shadow** | System runs but doesn&apos;t send &mdash; operator sees what it would have done | Operator reviews 100% | First week of any new automation |
+| **Supervised (Smart Assist)** | System sends after delay, operator can override | Operator reviews all, acts on exceptions | Weeks 2-3, until 30+ reviewed interactions |
+| **Autonomous** | System sends immediately, operator monitors via cockpit | Spot-check via AI quality flags | After readiness checklist passes (6 items) |
+
+**When to graduate:** Check `/admin/clients/{id}` feature toggles &mdash; select Autonomous and the readiness checklist appears. All 6 critical items must pass: KB &gt;= 10, pricing set, 30+ Smart Assist reviews, escalation rate &lt; 20%, exclusion list reviewed, business hours configured.
+
+**When to downgrade:** If a client&apos;s AI quality flags spike (3+ flags/week), or the contractor complains about message quality, switch back to Smart Assist immediately. Investigate the root cause before re-enabling autonomous.
+
+**Emergency pause:** Text PAUSE to the system, or toggle Global Automation Pause in admin settings. This stops ALL automations except compliance-required messages. Use sparingly &mdash; it affects every client.
 
 ---
 
