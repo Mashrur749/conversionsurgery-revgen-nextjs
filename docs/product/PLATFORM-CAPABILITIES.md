@@ -124,7 +124,11 @@ Embedding is asynchronous &mdash; entries are usable immediately on create/updat
 
 ### Estimate Auto-Detection
 
-The AI monitors inbound lead messages for signals that a quote was already sent. When detected, the 4-touch estimate follow-up sequence starts automatically — no contractor action required.
+The estimate follow-up sequence is triggered by two mechanisms:
+
+**Primary trigger &mdash; appointment age (cron-based):** A daily cron (`appointment-followup-trigger`, 7am UTC) queries appointments that were completed or confirmed 3-30 days ago. If the lead&apos;s status is not resolved, there is no active follow-up sequence, no recent outbound message, and no competitor signal detected &mdash; the system auto-sets lead status to `estimate_sent` and starts the estimate follow-up sequence. This fires automatically without any contractor action.
+
+**Secondary trigger &mdash; conversation signal detection:** The AI monitors inbound lead messages for signals that a quote was already sent. When detected, the 4-touch estimate follow-up sequence starts automatically. Applies to non-appointment quotes and quotes where the contractor never booked a formal appointment.
 
 Trigger phrases include: &ldquo;waiting on the quote&rdquo;, &ldquo;comparing prices&rdquo;, &ldquo;got your estimate&rdquo;, &ldquo;still thinking about your quote&rdquo;, &ldquo;haven&apos;t heard back&rdquo;.
 
@@ -362,7 +366,9 @@ P2 items are never sent individually — they are held until the 10am daily dige
 Aggregates all P2 notifications into a single SMS sent at 10am local time each day. Prevents contractors from receiving multiple separate nudges throughout the day.
 
 - **Contents:** KB gaps needing answers, stale estimate prompts (estimate_sent 14+ days), WON/LOST outcome prompts for post-appointment leads
+- **Slot allocation (priority-balanced):** 2 slots reserved for WON/LOST outcome prompts, 2 slots for stale estimate prompts, remainder for KB gaps. This ensures WON/LOST and estimate items surface even when there are many KB gaps.
 - **Format:** numbered list with compact reply syntax — contractor replies `W1`, `L2`, or `0` to act on individual items. Single-item digests use a shorter non-numbered format.
+- **Deduplication:** items already included in a digest within the past 24 hours are skipped (reduced from 48h).
 - Feature flag: `dailyDigestEnabled` (per-client, system default: on). When disabled, items revert to individual SMS delivery.
 - Cron: `daily-digest` runs hourly to catch clients whose 10am window falls in the current UTC hour.
 - **Files:** `src/lib/services/daily-digest.ts`, `src/app/api/cron/daily-digest/route.ts`
@@ -839,7 +845,7 @@ CASL and CRTC compliant by default — the contractor never has to think about i
 - **Re-opt-in:** START, YES, SUBSCRIBE, OPTIN &rarr; re-consent recorded, lead status restored to contacted
 - **HELP/INFO keywords:** auto-reply with business name, owner phone, and STOP instructions (sent even to opted-out numbers)
 - **Quiet hours:** 9pm-10am recipient local time. Two modes: strict (all outbound queued) and inbound-reply-allowed (direct replies sent, proactive outreach queued)
-- **Inbound-reply exemption feature flag (`inboundReplyExemptionEnabled`):** When enabled, messages classified as direct replies to an inbound homeowner message bypass quiet-hours queuing and are sent immediately. When disabled (default), all outbound messages — including replies — are subject to quiet hours. All 34 call sites in the compliance gateway are classified; the flag is resolved per-client via `resolveFeatureFlag`. Toggle via admin client detail page (Configuration tab) or system-wide via `system_settings`.
+- **Inbound-reply exemption feature flag (`inboundReplyExemptionEnabled`):** When enabled (default), messages classified as direct replies to an inbound homeowner message bypass quiet-hours queuing and are sent immediately. When disabled, all outbound messages — including replies — are subject to quiet hours. Per-client override available via admin client detail page (Configuration tab) or system-wide via `system_settings`. All 34 call sites in the compliance gateway are classified; the flag is resolved per-client via `resolveFeatureFlag`.
 - **DNC list:** global + per-client do-not-contact registry with expiry and source tracking
 - **Platform-level DNC:** if a homeowner opts out from any client on the platform, all other clients are blocked from texting them too &mdash; prevents the same number being re-contacted by a different contractor after opting out
 - **Blocked numbers:** per-client number blocking
@@ -1361,29 +1367,28 @@ Per-client and platform-wide health detection that surfaces problems before they
 - **Per-client circuit breaker:** trips automatically when 3+ automation errors are recorded for a client within a 24-hour window. Tripped clients are surfaced in the operator actions queue with action type `circuit_breaker_tripped`. Operator investigates and manually resets after resolving the root cause.
 - **Rate anomaly detection:** flags a client when today&apos;s outbound message volume exceeds 2x the 7-day daily average. Prevents runaway automation from blasting leads due to misconfiguration.
 - **Daily heartbeat check cron (`heartbeat-check`):** runs once per day and verifies that all expected cron jobs have fired within their expected window (checked against `cron_cursors` table). Any cron that has not fired within its window generates an operator SMS alert. Catches silent cron failures that the standard failure-alert path would miss (e.g., if a job completes but produces no output).
+- **External health endpoint (`GET /api/health`):** no-auth endpoint for external uptime monitors (Cloudflare Health Checks, BetterUptime, etc.). Returns HTTP 200 with `{"status":"ok"}` when the heartbeat cron cursor is fresh (updated within the past 26 hours). Returns HTTP 503 with `{"status":"degraded","reason":"..."}` when the cursor is stale or the database is unreachable. Intended for ping-every-5-minutes monitoring.
 - Feature flag: `opsHealthMonitorEnabled`. API: `GET /api/admin/operator-actions` includes `circuit_breaker_tripped` action type for affected clients.
 
 ### Capacity Tracking (FMA Wave 4)
 
-Per-client weekly hours estimation enabling the solo operator to know when they are approaching the limit of what one person can manage without adding headcount.
+Raw operational metrics giving the solo operator a real-time snapshot of how much is actively in flight across all clients.
 
-**Estimation model:** each active client contributes a base weekly operator-hours estimate based on lifecycle phase:
+**Snapshot metrics:**
 
-| Phase | Base weekly hours |
-|-------|------------------|
-| Onboarding (first 30 days) | 5h |
-| Assist mode (AI assist, active supervision) | 2.5h |
-| Autonomous mode | 1.5h |
-| Manual mode (AI off) | 3h |
+| Metric | What it counts |
+|--------|---------------|
+| `totalClients` | Total active clients |
+| `byPhase.onboarding` | Clients in onboarding (first 30 days) |
+| `byPhase.assist` | Clients in Smart Assist mode |
+| `byPhase.autonomous` | Clients in Autonomous mode |
+| `byPhase.manual` | Clients in Manual (AI off) mode |
+| `openEscalations` | Escalations currently open (not yet resolved) |
+| `openKbGaps` | High-priority KB gaps not yet resolved |
+| `smartAssistQueueDepth` | Pending Smart Assist drafts awaiting operator review |
 
-Activity adjustments add on top of the base: +0.5h per open escalation past SLA, +0.25h per unresolved high-priority KB gap. Totals are summed across all active clients.
-
-**Alert levels:** green = &lt;80% of max capacity, yellow = 80-99%, red = &ge;100%.
-**Max capacity:** 40 hours/week for a single operator.
-**KPI card:** &ldquo;Operator Capacity&rdquo; card appears on the triage dashboard cockpit alongside open escalations, pending drafts, at-risk clients, and KB gaps. Shows utilization percentage and alert level.
-**Smart Assist queue depth:** the capacity model also tracks Smart Assist queue depth (pending draft count) as a leading indicator of time demand.
-**Hiring trigger:** when capacity reaches red (&ge;100%) for 2 consecutive weeks or the agency reaches 8+ active clients, the system surfaces a hiring-trigger flag in the operator actions queue.
-API: `GET /api/admin/capacity` returns total estimated weekly hours, utilization percent, alert level, and per-client breakdown.
+**KPI card:** &ldquo;Operator Capacity&rdquo; card appears on the triage dashboard cockpit alongside open escalations, pending drafts, at-risk clients, and KB gaps. Shows raw counts by phase, open escalations, and queue depth.
+API: `GET /api/admin/capacity` returns the `CapacitySnapshot` with all metrics above.
 Feature flag: `capacityTrackingEnabled`.
 
 ### Monthly System Health Digest (FMA Wave 4)
@@ -1395,7 +1400,7 @@ System health page at `/admin/system-health` providing a structured monthly inte
 | Section | Contents |
 |---------|---------|
 | **Client overview** | Active, paused, cancelled counts; new clients this month; churned clients this month |
-| **Capacity utilization** | Total weekly hours estimate, utilization %, alert level, per-client breakdown |
+| **Capacity snapshot** | Client counts by phase (onboarding/assist/autonomous/manual), open escalations, open KB gaps, Smart Assist queue depth |
 | **Automation health** | Cron job status table — each cron with last-run time, last-run status (success/failed/missed), and consecutive failure count |
 | **Guarantee tracker** | All clients in guarantee window: phase, QLE progress, pipeline value, days remaining, on-track/at-risk/failing status |
 | **Key metrics** | Platform totals for the month: messages sent, leads responded to, revenue attributed |
@@ -1465,8 +1470,9 @@ A unified operator cockpit layer that aggregates all pending work across clients
 | `forwarding_failed` | Forwarding verification AMD detected voicemail intercept |
 | `kb_gaps_accumulating` | Client has 3+ unresolved high-priority KB gaps |
 | `digest_responses_pending` | Contractor answered KB gaps via daily digest SMS — operator must verify and approve |
+| `digest_no_response` | Digest item has appeared in 3+ consecutive digests without contractor response — contractor may be ignoring or needs a direct call |
 | `guarantee_approaching` | Client is within 10 days of guarantee deadline with insufficient pipeline |
-| `engagement_flagged` | Engagement signals service has flagged the client (4/5 indicators yellow/red) |
+| `engagement_flagged` | Engagement signals service has flagged the client (4/6 indicators yellow/red) |
 | `call_prep_due` | Biweekly strategy call is due and call prep has not been run |
 | `listing_migration_pending` | Listing migration still pending 7+ days after onboarding |
 | `payment_not_captured` | Client active 24+ hours without a subscription |
@@ -1477,7 +1483,7 @@ API: `GET /api/admin/operator-actions` — returns the current actions array for
 
 ### Engagement Signals (FMA Wave 3)
 
-5 deterministic per-client health indicators, each scored green/yellow/red. Gives the operator an objective read on contractor engagement without relying on gut feel.
+6 deterministic per-client health indicators, each scored green/yellow/red. Gives the operator an objective read on contractor engagement without relying on gut feel.
 
 | Signal | Green | Yellow | Red |
 |--------|-------|--------|-----|
@@ -1486,10 +1492,13 @@ API: `GET /api/admin/operator-actions` — returns the current actions array for
 | **KB gap response rate** | &ge; 70% of gaps resolved or in-progress | 40-70% | &lt; 40% |
 | **Nudge response rate** | Contractor replied to &ge; 60% of daily digests | 30-60% | &lt; 30% |
 | **Contractor contact recency** | Last inbound message or reply &lt; 14d | 14-30d | 30d+ |
+| **Lead volume trend** | 30-day count stable vs prior 30d | Down &ge;50% (min 3 lead drop) | Down &ge;75% or zero from 5+ |
 
-**Flagging rule:** client is flagged when 4 or more of the 5 signals are yellow or red. Flagged clients appear in the Operator Actions Queue with action type `engagement_flagged` and feed into the triage dashboard.
+**Dampening:** clients with fewer than 1 lead in the trailing 60 days are excluded from the volume-trend signal (dampened only when literally zero leads — not a low-volume threshold).
 
-Feature flag: `engagementSignals`. API: `GET /api/admin/clients/{id}/engagement-signals` — returns the 5 indicators with their current value, threshold, and status.
+**Flagging rule:** client is flagged when 4 or more of the 6 signals are yellow or red. Flagged clients appear in the Operator Actions Queue with action type `engagement_flagged` and feed into the triage dashboard.
+
+Feature flag: `engagementSignals`. API: `GET /api/admin/clients/{id}/engagement-signals` — returns the 6 indicators with their current value, threshold, and status.
 
 ### Engagement Health Monitoring
 

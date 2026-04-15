@@ -88,18 +88,20 @@ Keep it short. Contractors are on job sites. They&apos;ll reply in 10 seconds if
    - `engagement_flagged` → review signals (see below), schedule check-in call within 48 hours
    - `kb_gaps_accumulating` → clear top 3-5 gaps for that client (5 minutes)
    - `digest_responses_pending` → contractor answered KB gaps via daily digest SMS. Open the client&apos;s KB page, review the `in_review` entries, verify accuracy, approve or edit
+   - `digest_no_response` → digest item has appeared in 3+ consecutive digests with no contractor response. Do not wait — call them directly.
    - `call_prep_due` → click &ldquo;Prep Call&rdquo; on the client row, review the brief, dial
 
 **Interpreting engagement signals (when `engagement_flagged` appears):**
 
-The 5 signals are: estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, and contractor contact recency. A client is flagged when 4/5 are yellow or red.
+The 6 signals are: estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, contractor contact recency, and lead volume trend. A client is flagged when 4/6 are yellow or red. The lead volume trend signal compares 30-day vs prior-30-day lead count — yellow if down 50%+ (min 3-lead drop), red if down 75%+ or zero from 5+. Clients with zero leads in both periods are excluded from the volume-trend signal.
 
 | Pattern | What it means | What to do |
 |---------|--------------|-----------|
-| All 5 yellow | Contractor is engaged but slower than expected | Normal for busy periods — ask on the next biweekly call |
-| 4-5 red | Contractor has disengaged from the service | Proactive call within 48 hours — do not wait for biweekly |
+| All 6 yellow | Contractor is engaged but slower than expected | Normal for busy periods — ask on the next biweekly call |
+| 4-6 red | Contractor has disengaged from the service | Proactive call within 48 hours — do not wait for biweekly |
 | Only nudge response rate red | Contractor is skipping the digest SMS | Simplify the digest content or switch to individual notifications |
 | Only KB gap response rate red | Contractor not answering gap questions | Use &ldquo;Ask Contractor&rdquo; button more aggressively; consider a 15-min KB sprint on the next call |
+| Lead volume trend yellow or red | Lead flow has dropped significantly | Investigate referral source, seasonal pattern, or listing issue. May be seasonal — compare to prior year if available |
 
 **Using auto-resolve for KB gaps:**
 
@@ -968,7 +970,8 @@ Adjust the middle bullet to the specific objection they raised. If they were ske
 |----------|----------|---------|
 | New lead texts in | AI (automatic) | AI responds, logs conversation, scores lead |
 | Lead asks question AI can&apos;t answer | AI defers, gap queued | You fill KB entry from contractor input (Section 1, Knowledge Gap) |
-| Lead wants an estimate | AI books appointment or notifies contractor | Contractor sends estimate, triggers follow-up via SMS command |
+| Lead wants an estimate | AI books appointment or notifies contractor | Contractor sends estimate; system auto-triggers follow-up 3+ days after the appointment completes |
+| Appointment completed 3+ days ago, no outcome | System (automatic, daily cron) | Lead auto-set to `estimate_sent`, 4-touch follow-up starts — no contractor action needed |
 | Estimate sent, no response | System (automatic) | 4-touch follow-up over 14 days |
 | Lead no-shows appointment | System (automatic) | Same-day AI follow-up + rebook attempt |
 | Lead goes dormant (25+ days) | System (automatic) | Win-back AI message, up to 2 attempts |
@@ -1302,8 +1305,8 @@ Know these before you sell. Each risk has a built-in mitigation, but you must un
 | **AI gives wrong answer to a homeowner** | Medium (Week 1-2) | Lead gets incorrect info about services, pricing, or availability | Smart Assist catches it before sending (Week 2). Fix KB entry. If it got through, the operator correction loop fixes it same-day. | Low &mdash; fixable in minutes, AI learns immediately |
 | **AI is too generic / defers too much** | High (Week 1) | Lead gets &ldquo;I&apos;ll have someone get back to you&rdquo; on basic questions | KB is thin. Fill more entries from the gap queue. This is normal and expected in Week 1 &mdash; tell the contractor upfront. | Low &mdash; expected cold-start, resolves by Week 2-3 |
 | **Double-booking an appointment** | Low | AI books into a time slot the contractor blocked on Google Calendar | Calendar sync checks both appointments + Google Calendar events. If sync token expired (>60 days), sync fails silently. Monitor `consecutiveErrors`. | Medium &mdash; embarrassing but recoverable. Reconnect calendar. |
-| **Sending a message during quiet hours** | Very Low | Lead gets an SMS between 9 PM - 10 AM | STRICT mode prevents this. Messages queue until 10 AM. The system will NOT send during quiet hours unless the INBOUND_REPLY_ALLOWED mode is enabled (it is not). | Very Low &mdash; system prevents it |
-| **Contractor never flags estimates** | High | Estimate follow-up never fires, the highest-value automation is silent | 24-hour fallback nudge fires automatically. Proactive quote prompt at 3 days catches the rest. Portal has &ldquo;Mark Estimate Sent&rdquo; button. Explain EST command during onboarding. | Medium &mdash; automation depends on this habit. Nudges help but don&apos;t guarantee it. |
+| **Sending a proactive message during quiet hours** | Very Low | Lead gets a proactive SMS between 9 PM - 10 AM | STRICT mode queues all proactive outbound until 10 AM. Direct replies to inbound messages are sent immediately by default (inbound-reply exemption is on). Proactive outbound is always queued during quiet hours regardless of the exemption flag. | Very Low &mdash; system prevents proactive sends; replies are intentionally immediate. |
+| **Contractor never flags estimates** | Low | Estimate follow-up never fires via SMS command | Appointment-age trigger (primary): system auto-starts follow-up 3+ days after any completed appointment with no outcome. 24-hour fallback nudge and proactive quote prompt catch the rest. Portal has &ldquo;Mark Estimate Sent&rdquo; button. | Low &mdash; appointment-age cron is the primary trigger and requires zero contractor action. |
 | **Contractor never marks jobs won** | High | Jobs We Helped Win shows $0 &mdash; but System Activity card and `pipelineProof` in reports auto-track pipeline activity without contractor input | Auto-detect probable wins (daily, 7-day silence after appointment) prompts contractor with ref code. WON/LOST SMS commands. Bi-weekly strategy call captures remaining wins. Portal has &ldquo;Mark Won&rdquo; button. | Low &mdash; mitigated by auto-detect + strategy call + pipeline proof. |
 | **Lead volume is very low (&lt;8/month)** | Depends on client | System works but results are thin. Guarantee windows extend. | Disclose adjusted windows during sales. Lead with dormant reactivation, not speed-to-lead. | Low &mdash; the system works, just slower |
 | **Twilio webhook goes down** | Very Low | Inbound SMS stops processing, leads go unanswered | Operator gets SMS alert from reliability cron. Check `/admin/reliability`. Redeploy or fix webhook URL. | High if undetected &mdash; but alerting is built |

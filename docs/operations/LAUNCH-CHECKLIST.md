@@ -761,10 +761,12 @@ Work through each service. Don&apos;t skip &mdash; each one powers a specific pa
 3. Set `VOICE_WS_URL` env var on main app (the Worker URL from step 2)
 4. Verify ConversationRelay is enabled: Twilio Console &rarr; Voice &rarr; Settings
 5. Set up the cron trigger: every 5 minutes, `POST /api/cron` with `Authorization: Bearer CRON_SECRET`
+6. Configure external health monitor (Cloudflare Health Checks, BetterUptime, or equivalent) to `GET /api/health` every 5 minutes. Alert when HTTP status is not 200.
 
 - [ ] App deployed &mdash; `/login`, `/signup`, `/client-login` all load
 - [ ] Voice Agent Worker deployed
 - [ ] Cron running every 5 minutes
+- [ ] External health monitor pinging `/api/health` every 5 minutes
 
 ### 5.4 Configure
 

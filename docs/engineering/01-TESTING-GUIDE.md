@@ -3178,15 +3178,21 @@ curl -i http://localhost:3000/api/admin/clients/$CLIENT_ID/engagement-signals \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
-2. Verify the response contains exactly 5 signal objects, each with `name`, `value`, `status` (green/yellow/red), and `threshold`.
-3. Confirm signals include: `estimate_recency`, `won_lost_recency`, `kb_gap_response_rate`, `nudge_response_rate`, `contractor_contact_recency`.
-4. Simulate a client with 4/5 signals yellow or red — verify the client appears as `engagement_flagged` in the operator actions queue (Step 82a).
-5. Set `engagementSignals` feature flag to false for the client — verify the API still returns signals but the client is excluded from the actions queue.
+2. Verify the response contains exactly 6 signal objects, each with `name`, `value`, `status` (green/yellow/red), and `threshold`.
+3. Confirm signals include: `estimate_recency`, `won_lost_recency`, `kb_gap_response_rate`, `nudge_response_rate`, `contractor_contact_recency`, `lead_volume_trend`.
+4. Test volume-trend signal scenarios:
+   - Client with stable 30d vs prior-30d lead count — verify `lead_volume_trend` is green.
+   - Client with &ge;50% drop and 3+ fewer leads — verify yellow.
+   - Client with &ge;75% drop or zero leads from 5+ — verify red.
+   - Client with zero leads in both periods — verify signal is dampened (excluded from flagging).
+5. Simulate a client with 4/6 signals yellow or red — verify the client appears as `engagement_flagged` in the operator actions queue (Step 82a).
+6. Set `engagementSignals` feature flag to false for the client — verify the API still returns signals but the client is excluded from the actions queue.
 
 Expected:
-- Always returns exactly 5 signals.
+- Always returns exactly 6 signals.
 - Statuses match the threshold table (green/yellow/red).
-- 4/5 yellow/red triggers `engagement_flagged` action.
+- Volume-trend signal dampened only when both periods have zero leads.
+- 4/6 yellow/red triggers `engagement_flagged` action.
 - Feature flag controls action queue inclusion, not signal computation.
 
 #### 82c: Auto-resolve KB gap suggestions
@@ -3273,16 +3279,17 @@ curl -i http://localhost:3000/api/admin/capacity \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
-1. Verify the response includes: `totalWeeklyHours`, `utilizationPercent`, `alertLevel` (`green`/`yellow`/`red`), and a `perClient` array.
-2. Verify `alertLevel` is `green` when utilization &lt; 80%, `yellow` when 80-99%, `red` when &ge; 100%.
-3. Check that a client in onboarding phase contributes ~5h base, autonomous phase ~1.5h base, assist phase ~2.5h base, manual mode ~3h base.
-4. Add an open escalation past SLA to a test client — re-call the endpoint and verify that client&apos;s hours increased by 0.5h.
-5. Disable `capacityTrackingEnabled` flag system-wide — verify the endpoint still returns data (flag controls KPI card visibility, not the API).
+1. Verify the response includes a `CapacitySnapshot` with: `totalClients`, `byPhase` (with keys `onboarding`, `assist`, `autonomous`, `manual`), `openEscalations`, `openKbGaps`, `smartAssistQueueDepth`.
+2. Confirm `totalClients` matches the count of active clients.
+3. Confirm `byPhase` counts sum to `totalClients`.
+4. Add a new open escalation — re-call the endpoint and verify `openEscalations` increments.
+5. Verify there is no `utilizationPercent`, `alertLevel`, or `totalWeeklyHours` field in the response (these were removed in the NEWFM-A refactor).
+6. Disable `capacityTrackingEnabled` flag system-wide — verify the endpoint still returns data (flag controls KPI card visibility, not the API).
 
 Expected:
-- Correct phase-based hour contributions per client.
-- Correct alert level thresholds.
-- Per-client breakdown matches active client list.
+- Response matches `CapacitySnapshot` shape (raw counts, no percentages).
+- Phase counts are accurate and exhaustive.
+- No legacy hour-estimation fields present.
 
 #### 83c: Monthly health digest
 
@@ -3322,16 +3329,78 @@ Expected:
 #### 83e: Quiet hours inbound-reply exemption flag
 
 1. Configure a test client with quiet hours active (set system clock or test lead timezone to place current time in 9pm-10am window).
-2. With `inboundReplyExemptionEnabled = false` (default): send an inbound SMS from the test lead. Verify the AI reply is **queued** (not sent immediately) due to quiet hours.
-3. Enable `inboundReplyExemptionEnabled = true` for that client via admin Configuration tab.
-4. Send another inbound SMS from the test lead during quiet hours. Verify the AI reply is **sent immediately** (bypasses quiet-hours queue).
-5. Confirm the audit log records the exemption reason for the sent message.
+2. With `inboundReplyExemptionEnabled = true` (default): send an inbound SMS from the test lead. Verify the AI reply is **sent immediately** (bypasses quiet-hours queue due to exemption).
+3. Disable `inboundReplyExemptionEnabled = false` for that client via admin Configuration tab.
+4. Send another inbound SMS from the test lead during quiet hours. Verify the AI reply is **queued** (quiet hours enforced, no exemption).
+5. Confirm the audit log records the exemption reason for the sent message when flag is on.
 6. For a proactive outbound (e.g., scheduled follow-up): verify it is **still queued** during quiet hours even when the flag is enabled (exemption applies only to inbound replies, not proactive outreach).
 
 Expected:
-- Flag off (default): all outbound, including replies, queued during quiet hours.
-- Flag on: direct replies sent immediately; proactive outbound still queued.
+- Flag on (default): direct replies sent immediately; proactive outbound still queued.
+- Flag off: all outbound, including replies, queued during quiet hours.
 - Audit log reflects correct exemption classification.
+
+#### 83f: External health endpoint
+
+```bash
+curl -i http://localhost:3000/api/health
+```
+
+1. Verify the endpoint returns HTTP 200 with no `Authorization` header (no auth required).
+2. Verify the response body contains `{"status":"ok"}`.
+3. Artificially backdate the `heartbeat-check` cron cursor in `cron_cursors` to older than 26 hours ago to simulate a stale heartbeat.
+4. Re-call the endpoint — verify it returns HTTP 503 with `{"status":"degraded","reason":"..."}`.
+5. Restore the cursor timestamp — verify subsequent call returns 200.
+6. Simulate DB unreachable (e.g., bad connection string in test env) — verify the endpoint returns 503 rather than a 500 stack trace.
+
+Expected:
+- 200 when heartbeat cursor is fresh (&lt;26 hours).
+- 503 when cursor is stale or DB is unreachable.
+- No auth required on any call.
+- Response is JSON with `status` field.
+
+#### 83g: Daily digest slot allocation and dedup
+
+1. Set up a test client with 10+ unresolved KB gaps, 2 WON/LOST-eligible leads, and 2 stale estimate leads.
+2. Trigger the daily digest:
+
+```bash
+curl -i http://localhost:3000/api/cron/daily-digest \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify the digest SMS contains WON/LOST prompts and estimate prompts even though KB gaps outnumber them.
+4. Confirm WON/LOST items occupy at most 2 numbered slots, estimate items at most 2 slots, with KB gaps filling the remainder.
+5. Trigger the digest again immediately — verify no SMS is sent for the same client (dedup within 24h).
+6. Wait 24h (or manually advance the digest timestamp) and re-trigger — verify the digest fires again.
+
+Expected:
+- WON/LOST and estimate items appear even when 10+ KB gaps exist.
+- Priority-balanced slot ordering: WON/LOST first, estimates second, KB gaps third.
+- Items already in a digest within the past 24h are not re-included.
+
+#### 83h: Appointment-based estimate follow-up trigger
+
+```bash
+curl -i http://localhost:3000/api/cron/appointment-followup-trigger \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+1. Create a test lead with a completed or confirmed appointment 3-30 days in the past. Ensure lead status is not resolved and no active follow-up sequence exists.
+2. Run the cron and verify: lead status is set to `estimate_sent`, estimate follow-up sequence starts, and the trigger is logged in `audit_log` as `appointment_followup_triggered`.
+3. Run the cron again immediately — verify no duplicate sequence starts for the same lead (dedup guard).
+4. Test competitor guard: add a message to the lead thread with a competitor-chosen phrase (&ldquo;went with someone else&rdquo;). Ensure lead status is not resolved, appointment is 3+ days old, no active sequence. Run the cron — verify the trigger is **skipped** for that lead.
+5. Test boundary conditions:
+   - Appointment 2 days old — verify trigger does NOT fire (< 3 days).
+   - Appointment 31 days old — verify trigger does NOT fire (&gt; 30 days).
+   - Lead already resolved — verify trigger is skipped.
+   - Lead has an active follow-up sequence — verify trigger is skipped.
+
+Expected:
+- Happy path: follow-up sequence starts automatically for eligible appointments.
+- Dedup: same lead cannot be triggered twice by this cron.
+- Competitor guard: skips leads with competitor-chosen signals in recent messages.
+- Boundary conditions all respected (3-30 day window).
 
 ---
 
@@ -3395,6 +3464,7 @@ curl -i http://localhost:3000/api/cron/onboarding-reminder -H "Authorization: Be
 curl -i http://localhost:3000/api/cron/onboarding-priming -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/forwarding-verification -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/heartbeat-check -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/appointment-followup-trigger -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core

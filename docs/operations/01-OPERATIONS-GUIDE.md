@@ -76,6 +76,7 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 39. **Dormant re-engagement (Wednesdays):** The `dormant-reengagement` cron runs every Wednesday and sends a single re-contact message to leads that have been dormant for 6+ months. No action needed — monitor for any response that comes back as an escalation.
 40. **Probable wins nudge + auto-detect (daily):** The `probable-wins-nudge` cron runs daily at 10am UTC and prompts contractors to mark leads won or lost when an appointment is 7+ days old with no resolution. Up to 5 leads per client are batched into a single numbered SMS. Contractors reply with compact syntax: `W1` (won #1), `L2` (lost #2), `W13 L2` (mixed), `W` (all won), `0` (skip). Replies work on EITHER the agency number or the business number (cross-route detection). Legacy commands (`WON 4A`, `LOST 4A`, `WINS`) still work. If a client reports issues, verify: (a) phone configured, (b) status not paused, (c) 7-day cooldown not tripped.
 40a. **Proactive quote prompt (daily):** The `proactive-quote-prompt` cron runs daily at 10am UTC. When a lead has been in `new` or `contacted` for 3+ days with no EST trigger, the contractor gets via agency channel: &ldquo;[Name] &mdash; 3 days, no quote yet. 1 = Yes (start follow-up)  2 = Not yet.&rdquo; Fires once per lead (audit_log tracked). Replies work on either number.
+40c. **Appointment-based estimate follow-up trigger (daily, 7am UTC):** The `appointment-followup-trigger` cron runs daily at 7am UTC and is the primary trigger for estimate follow-up sequences. It queries completed or confirmed appointments 3-30 days old. If the lead is not resolved, has no active follow-up sequence, no recent outbound message, and no competitor signal in recent messages — the system auto-sets the lead to `estimate_sent` and starts the estimate follow-up sequence. No contractor action required. Logged in `audit_log` as `appointment_followup_triggered`. If a lead should have been triggered but was not, check: (a) appointment status is `completed` or `confirmed`, (b) appointment is 3-30 days old, (c) no active flow execution exists for that lead, (d) competitor-chosen signals are not present.
 40b. **Booking confirmation mode:** For non-Google-Calendar clients with `bookingConfirmationRequired = true`, AI booking requests go through a contractor approval step before confirming with the homeowner. The contractor gets an SMS with the booking details and replies YES (or `1`, `Y`, `OK`, `CONFIRM`) or suggests a new time. 2-hour reminder + 4-hour operator escalation if no response. Set this toggle during onboarding for any contractor who answers &ldquo;no&rdquo; to &ldquo;Do you use Google Calendar daily?&rdquo;
 41. **Weekly activity digest (Mondays):** The `weekly-digest` cron sends Monday morning SMS to contractors with an activity summary (new leads, appointments, follow-ups, won jobs, jobs to close out). Cadence adapts: weekly for active clients, biweekly for quiet weeks with follow-ups, monthly reassurance for slow periods (3+ weeks zero leads). Per-client toggle: `weeklyDigestEnabled`. Skips clients in first 7 days. If a client reports not receiving digests, verify: (a) `weeklyDigestEnabled = true`, (b) client is 7+ days old, (c) phone and twilioNumber are both set. If a slow-period client hasn&apos;t received a digest in 4+ weeks, the system correctly paused — reach out to them directly instead.
 41. **Webhook configuration (Jobber / Zapier clients):** For clients using Jobber or Zapier integrations, confirm `webhookUrl` and `webhookEvents` are set on their client record (admin client detail). The `lead.status_changed` event fires when a lead is marked `won` or `lost`. If a client reports their integration stopped receiving events, check: (a) `webhookUrl` is a valid HTTPS endpoint, (b) `webhookEvents` includes `"lead.status_changed"`, (c) look for error logs in `error_log` with source `[LeadManagement]`.
@@ -151,9 +152,10 @@ If the alert fires on Day 1: resolve before moving forward — leads are being l
 5. `guarantee_approaching` — check the client&apos;s Guarantee Status card and take action before the deadline.
 6. `engagement_flagged` — review engagement signals (see 72b below) and schedule a proactive check-in call.
 7. `digest_responses_pending` — contractor answered KB gap questions via daily digest SMS. Open the client&apos;s KB page, review the `in_review` entries, verify accuracy, then approve or edit before publishing.
-8. `call_prep_due` — click the &ldquo;Prep Call&rdquo; button for that client row, review the brief, then dial.
+8. `digest_no_response` — a digest item has appeared in 3+ consecutive digests with no contractor response. Review the item. If the contractor is genuinely ignoring it, call them directly — do not assume it will self-resolve.
+9. `call_prep_due` — click the &ldquo;Prep Call&rdquo; button for that client row, review the brief, then dial.
 
-72b. **Interpreting engagement signals:** Each client has 5 deterministic signals (green/yellow/red): estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, and contractor contact recency. A client is flagged when 4/5 are yellow or red. When a client is flagged:
+72b. **Interpreting engagement signals:** Each client has 6 deterministic signals (green/yellow/red): estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, contractor contact recency, and lead volume trend. A client is flagged when 4/6 are yellow or red. The lead volume trend signal compares the past 30 days to the prior 30 days — yellow if lead count dropped 50%+ (min 3-lead drop), red if 75%+ or fell to zero from 5+. Clients with zero leads in both periods are excluded from this signal. When a client is flagged:
 - **Yellow signals:** contractor is still engaged but a specific area is lagging. Address on the next biweekly call — ask directly about that signal (&ldquo;I noticed you haven&apos;t marked any outcomes in a few weeks &mdash; what&apos;s been going on?&rdquo;).
 - **Red signals across the board:** treat as a churn risk. Schedule a proactive call within 48 hours. Do not wait for the next biweekly cycle.
 - Check signals via `GET /api/admin/clients/{id}/engagement-signals` or see the engagement health badge on the client detail Overview tab.
@@ -197,19 +199,18 @@ The `heartbeat-check` cron runs daily and verifies all expected cron jobs fired 
    curl -i http://localhost:3000/api/cron/heartbeat-check -H "Authorization: Bearer $CRON_SECRET"
    ```
 
-**73c. Capacity management — reading utilization:**
+**73c. Capacity management — reading the snapshot:**
 
-The `GET /api/admin/capacity` endpoint and the &ldquo;Operator Capacity&rdquo; KPI card on the triage dashboard show total estimated weekly hours across all active clients.
+The `GET /api/admin/capacity` endpoint and the &ldquo;Operator Capacity&rdquo; KPI card on the triage dashboard show raw operational counts across all active clients: total clients, clients by phase (onboarding / assist / autonomous / manual), open escalations, open KB gaps, and Smart Assist queue depth.
 
-| Alert level | What it means | Action |
-|-------------|---------------|--------|
-| Green (&lt;80%) | Healthy headroom | Normal operations |
-| Yellow (80-99%) | Approaching limit | Pause new onboarding intake; prioritize autonomous-mode clients |
-| Red (&ge;100%) | Over capacity | Immediately pause new client onboarding; begin hiring planning |
+| Indicator | Watch for | Action |
+|-----------|-----------|--------|
+| Many clients in `onboarding` | Onboarding is the most intensive phase | Avoid signing new clients if 3+ are in onboarding simultaneously |
+| High `openEscalations` | Escalations require direct operator intervention | Clear before taking on new work |
+| High `smartAssistQueueDepth` | Pending drafts pile up if not reviewed daily | Review Smart Assist queue each morning |
+| Few clients in `autonomous` | System doing less for you | Prioritize KB sprint to advance clients to autonomous mode |
 
-**When to pause onboarding:** as soon as capacity reaches yellow (80%). Signing a new client at 90% utilization creates a gap-delivery risk — the onboarding window (first 30 days, 5h/week) is the most operator-intensive phase.
-
-**Hiring trigger:** if capacity stays red (&ge;100%) for 2 consecutive weeks, or the agency reaches 8 active clients, start the hiring process. The capacity model surfaces a `hiring_trigger` flag in the actions queue as a reminder.
+**When to pause onboarding:** if 3+ clients are already in the onboarding phase or if open escalations are mounting, defer signing the next client until at least one moves to assist or autonomous mode.
 
 **Reducing capacity pressure:** the fastest levers are (1) move more clients to autonomous mode by completing KB sprint, and (2) shift KB gap resolution to the contractor via &ldquo;Ask Contractor&rdquo; button instead of doing it yourself.
 
@@ -219,7 +220,7 @@ Run on the first business day of every month. Takes approximately 20 minutes.
 
 1. Open `/admin/system-health`.
 2. **Client overview:** confirm active count matches expected roster. Investigate any unexpected churn (cancelled) or pause.
-3. **Capacity utilization:** review the per-client breakdown. Clients in onboarding should be approaching assist or autonomous mode by Day 30 — flag any that are still in onboarding past Day 45.
+3. **Capacity snapshot:** review the phase breakdown. Clients in onboarding should be approaching assist or autonomous mode by Day 30 — flag any that are still in onboarding past Day 45. Check open escalations and Smart Assist queue depth.
 4. **Automation health:** scan the cron job table for any `failed` or `missed` status entries. For any failures: check if the operator alert fired (audit log), verify the issue is resolved, and confirm the cron ran successfully in the current month.
 5. **Guarantee tracker:** identify any client where status is `at_risk` or `failing`. For at-risk clients, confirm the Day 80 alert fired. For failing clients, begin the guarantee evaluation process (see Playbook Section 5).
 6. **Key metrics:** compare messages sent and leads responded to against the prior month. Significant drops (&gt;30%) warrant investigation — check for compliance blocks, subscription status, or cron failures.
