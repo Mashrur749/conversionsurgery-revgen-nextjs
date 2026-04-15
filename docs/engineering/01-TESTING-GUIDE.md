@@ -3233,6 +3233,7 @@ curl -i http://localhost:3000/api/cron/daily-digest \
 5. Verify the gap status changes to `in_review`.
 6. Simulate a WON/LOST item reply — verify the corresponding lead status updates to `won` or `lost`.
 7. Simulate an estimate prompt reply — verify the estimate follow-up sequence is triggered for the indicated lead.
+8. After a KB gap is answered (status `in_review`), verify the operator cockpit shows a `digest_responses_pending` action for that client at `GET /api/admin/operator-actions`.
 
 Expected:
 - Digest includes numbered KB gap items.

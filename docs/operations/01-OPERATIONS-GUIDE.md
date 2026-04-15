@@ -150,7 +150,8 @@ If the alert fires on Day 1: resolve before moving forward — leads are being l
 4. `kb_gaps_accumulating` — open the KB gap queue for that client and clear the top-priority items.
 5. `guarantee_approaching` — check the client&apos;s Guarantee Status card and take action before the deadline.
 6. `engagement_flagged` — review engagement signals (see 72b below) and schedule a proactive check-in call.
-7. `call_prep_due` — click the &ldquo;Prep Call&rdquo; button for that client row, review the brief, then dial.
+7. `digest_responses_pending` — contractor answered KB gap questions via daily digest SMS. Open the client&apos;s KB page, review the `in_review` entries, verify accuracy, then approve or edit before publishing.
+8. `call_prep_due` — click the &ldquo;Prep Call&rdquo; button for that client row, review the brief, then dial.
 
 72b. **Interpreting engagement signals:** Each client has 5 deterministic signals (green/yellow/red): estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, and contractor contact recency. A client is flagged when 4/5 are yellow or red. When a client is flagged:
 - **Yellow signals:** contractor is still engaged but a specific area is lagging. Address on the next biweekly call — ask directly about that signal (&ldquo;I noticed you haven&apos;t marked any outcomes in a few weeks &mdash; what&apos;s been going on?&rdquo;).

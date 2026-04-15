@@ -87,6 +87,7 @@ Keep it short. Contractors are on job sites. They&apos;ll reply in 10 seconds if
    - `forwarding_failed` → call contractor, fix forwarding
    - `engagement_flagged` → review signals (see below), schedule check-in call within 48 hours
    - `kb_gaps_accumulating` → clear top 3-5 gaps for that client (5 minutes)
+   - `digest_responses_pending` → contractor answered KB gaps via daily digest SMS. Open the client&apos;s KB page, review the `in_review` entries, verify accuracy, approve or edit
    - `call_prep_due` → click &ldquo;Prep Call&rdquo; on the client row, review the brief, dial
 
 **Interpreting engagement signals (when `engagement_flagged` appears):**

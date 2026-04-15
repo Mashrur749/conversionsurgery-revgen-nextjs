@@ -1451,7 +1451,7 @@ A unified operator cockpit layer that aggregates all pending work across clients
 
 **KPI cards (top of triage page):** Open escalations, Smart Assist pending drafts, at-risk clients (engagement signals flagged), and high-priority KB gaps — at a glance without scrolling.
 
-**7 action types collected:**
+**8 action types collected:**
 
 | Action type | Triggers when |
 |-------------|--------------|
@@ -1459,6 +1459,7 @@ A unified operator cockpit layer that aggregates all pending work across clients
 | `onboarding_gate_pending` | Critical onboarding gate blocking AI mode advancement |
 | `forwarding_failed` | Forwarding verification AMD detected voicemail intercept |
 | `kb_gaps_accumulating` | Client has 3+ unresolved high-priority KB gaps |
+| `digest_responses_pending` | Contractor answered KB gaps via daily digest SMS — operator must verify and approve |
 | `guarantee_approaching` | Client is within 10 days of guarantee deadline with insufficient pipeline |
 | `engagement_flagged` | Engagement signals service has flagged the client (4/5 indicators yellow/red) |
 | `call_prep_due` | Biweekly strategy call is due and call prep has not been run |

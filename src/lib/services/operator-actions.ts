@@ -54,6 +54,13 @@ interface GuaranteeRow {
   guaranteeRecoveryEndsAt: Date;
 }
 
+interface DigestResponseRow {
+  clientId: string;
+  businessName: string;
+  pendingCount: number;
+  oldestUpdatedAt: Date;
+}
+
 interface CallPrepRow {
   clientId: string;
   businessName: string;
@@ -225,6 +232,41 @@ async function fetchKbGapsAccumulating(): Promise<OperatorAction[]> {
   }));
 }
 
+async function fetchDigestResponsesPending(): Promise<OperatorAction[]> {
+  const db = getDb();
+
+  const rows = await db
+    .select({
+      clientId: knowledgeGaps.clientId,
+      businessName: clients.businessName,
+      pendingCount: count(knowledgeGaps.id),
+      oldestUpdatedAt: min(knowledgeGaps.lastSeenAt),
+    })
+    .from(knowledgeGaps)
+    .innerJoin(clients, eq(knowledgeGaps.clientId, clients.id))
+    .where(
+      and(
+        eq(knowledgeGaps.status, 'in_review'),
+        eq(clients.status, 'active')
+      )
+    )
+    .groupBy(knowledgeGaps.clientId, clients.businessName);
+
+  return rows
+    .filter((row) => row.pendingCount > 0)
+    .map((row): OperatorAction => ({
+      id: `digest_responses_pending_${row.clientId}`,
+      type: 'digest_responses_pending',
+      clientId: row.clientId,
+      clientName: row.businessName,
+      urgency: 'yellow',
+      title: `${row.pendingCount} digest response${row.pendingCount !== 1 ? 's' : ''} to review`,
+      detail: `Contractor answered ${row.pendingCount} KB gap${row.pendingCount !== 1 ? 's' : ''} via SMS — verify and approve`,
+      actionUrl: `/admin/clients/${row.clientId}/knowledge`,
+      createdAt: row.oldestUpdatedAt ?? new Date(),
+    }));
+}
+
 async function fetchGuaranteeApproaching(): Promise<OperatorAction[]> {
   const db = getDb();
   const now = new Date();
@@ -339,6 +381,7 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
     onboardingActions,
     forwardingActions,
     kbGapActions,
+    digestResponseActions,
     guaranteeActions,
     callPrepActions,
   ] = await Promise.all([
@@ -358,6 +401,10 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
       logSanitizedConsoleError('[OperatorActions] kb_gaps_accumulating query failed:', err, {});
       return [] as OperatorAction[];
     }),
+    fetchDigestResponsesPending().catch((err: unknown) => {
+      logSanitizedConsoleError('[OperatorActions] digest_responses_pending query failed:', err, {});
+      return [] as OperatorAction[];
+    }),
     fetchGuaranteeApproaching().catch((err: unknown) => {
       logSanitizedConsoleError('[OperatorActions] guarantee_approaching query failed:', err, {});
       return [] as OperatorAction[];
@@ -373,6 +420,7 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
     ...onboardingActions,
     ...forwardingActions,
     ...kbGapActions,
+    ...digestResponseActions,
     ...guaranteeActions,
     ...callPrepActions,
   ];
