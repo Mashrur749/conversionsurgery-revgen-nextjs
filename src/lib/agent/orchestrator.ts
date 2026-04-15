@@ -5,6 +5,7 @@ import { getDb } from '@/db';
 import {
   leadContext,
   agentDecisions,
+  auditLog,
   escalationQueue,
   clientAgentSettings,
   conversations,
@@ -650,6 +651,17 @@ export async function processIncomingMessage(
         reasoning: `Output guard blocked: ${guardResult.violation}`,
         confidence: 0,
         processingTimeMs: Date.now() - startTime,
+      });
+
+      // Write audit log entry for quality degradation monitoring
+      await db.insert(auditLog).values({
+        action: 'output_guard_blocked',
+        clientId: client.id,
+        metadata: {
+          leadId,
+          violation: guardResult.violation,
+          violationDetail: guardResult.detail,
+        } as Record<string, unknown>,
       });
 
       // Use safe fallback

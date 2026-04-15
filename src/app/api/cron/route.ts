@@ -210,6 +210,7 @@ export async function POST(request: NextRequest) {
         failedJobs
       );
       results.dailyDigest = await dispatch(baseUrl, '/api/cron/daily-digest', cronSecret!, 'GET', failedJobs);
+      results.aiQualityAlert = await dispatch(baseUrl, '/api/cron/ai-quality-alert', cronSecret!, 'GET', failedJobs);
 
       try {
         const embeddingResult = await backfillEmbeddings();
