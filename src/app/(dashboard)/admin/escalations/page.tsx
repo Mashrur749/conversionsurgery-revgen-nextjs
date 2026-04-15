@@ -10,6 +10,7 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { AlertTriangle, CheckCircle, ArrowRight, Clock, Building2, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { EscalationAssignSelect, type TeamMember } from './escalation-assign-select';
+import { EscalationActions } from './escalation-actions';
 
 interface EscalationRow {
   id: string;
@@ -186,6 +187,12 @@ function EscalationCard({
             teamMembers={teamMembers}
           />
         </div>
+        <EscalationActions
+          escalationId={row.id}
+          clientId={row.clientId}
+          reason={row.reason}
+          reasonDetails={row.reasonDetails}
+        />
         <Link
           href={`/leads/${row.leadId}`}
           className="inline-flex items-center gap-1 text-sm font-medium hover:underline text-forest"
@@ -317,6 +324,9 @@ export default async function AdminEscalationsPage() {
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">
                         Age
                       </th>
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                        Actions
+                      </th>
                       <th className="px-4 py-3"></th>
                     </tr>
                   </thead>
@@ -366,6 +376,14 @@ export default async function AdminEscalationsPage() {
                               <Clock className="h-3.5 w-3.5 shrink-0" />
                               {formatDistanceToNow(row.createdAt, { addSuffix: true })}
                             </div>
+                          </td>
+                          <td className="px-4 py-3 min-w-[200px]">
+                            <EscalationActions
+                              escalationId={row.id}
+                              clientId={row.clientId}
+                              reason={row.reason}
+                              reasonDetails={row.reasonDetails}
+                            />
                           </td>
                           <td className="px-4 py-3">
                             <Link
