@@ -134,7 +134,9 @@ The following lines are approved for live sales conversations, landing page head
 >
 > A Qualified Lead Engagement means: an inbound inquiry (call, form, or text) that received an automated response from our system, where the lead replied at least once. All engagements are visible in your dashboard with timestamps and full conversation logs.
 >
-> An Attributed Result means either: (a) an estimate appointment booked through the system from a lead that was previously unresponsive &mdash; visible in your calendar with full conversation log, or (b) $5,000 or more in probable pipeline value from leads the system engaged &mdash; calculated automatically from appointments booked and quotes re-engaged, visible in your dashboard and bi-weekly reports.
+> A system-engaged lead is any lead where the system captured their first contact (missed call, text, or form submission) or re-contacted them through automation (dormant reactivation, old quote follow-up), AND delivered at least one automated message before the outcome. Every engagement is logged with timestamps in your dashboard.
+>
+> An Attributed Result means either: (a) an estimate appointment booked through the system from a system-engaged lead that was previously unresponsive &mdash; visible in your calendar with full conversation log, or (b) $5,000 or more in probable pipeline value from system-engaged leads &mdash; calculated automatically from appointments booked and quotes re-engaged, visible in your dashboard and bi-weekly reports.
 >
 > **Volume Condition**
 >
@@ -144,7 +146,7 @@ The following lines are approved for live sales conversations, landing page head
 >
 > Example: 10 leads/month average &rarr; 30-day window becomes 45 days, 90-day window becomes 135 days. Below 8 leads/month, we&apos;ll review your situation individually &mdash; at that volume, the system needs more data to demonstrate its value.
 >
-> **If there&apos;s a question about attribution:** If our platform logs show system-initiated engagement before a booking or resumed conversation, attribution is confirmed. If logs are inconclusive, we honor the refund. We&apos;d rather refund a borderline case than lose your trust.
+> **If there&apos;s a question about attribution:** If our platform logs show the system captured or re-contacted the lead AND delivered at least one automated message before the outcome, attribution is confirmed. If the logs don&apos;t show that, we honor the refund. We&apos;d rather refund a borderline case than lose your trust.
 
 ---
 

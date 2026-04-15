@@ -92,7 +92,11 @@ A Qualified Lead Engagement means: (a) an inbound lead received by the system, (
 
 If, by the end of the applicable recovery window, neither of the following Attributed Results has occurred, Client is eligible for a refund of the most recent monthly service fee and may request export of all captured lead and conversation records.
 
-An Attributed Result means either: (a) at least one (1) estimate appointment booked through the Service from a lead that was previously unresponsive, visible in the Client&apos;s calendar with full conversation log; or (b) five thousand dollars ($5,000) or more in probable pipeline value from leads the Service engaged, calculated automatically from appointments booked and quotes re-engaged, visible in the Client&apos;s dashboard and bi-weekly reports. If platform logs are inconclusive, ConversionSurgery will honor the refund.
+A System-Engaged Lead means any lead where (a) the lead&apos;s first contact was captured by the platform (inbound SMS, missed-call text-back, or web-form response) OR the lead was re-contacted through platform automation (dormant reactivation, old-quote follow-up), AND (b) at least one (1) automated platform message was delivered to the lead prior to the attributed outcome, as evidenced by platform conversation logs with timestamps.
+
+An Attributed Result means either: (i) at least one (1) estimate appointment booked through the Service from a System-Engaged Lead that was previously unresponsive, visible in the Client&apos;s calendar with full conversation log; or (ii) five thousand dollars ($5,000) or more in probable pipeline value from System-Engaged Leads, calculated automatically from appointments booked and quotes re-engaged, visible in the Client&apos;s dashboard and bi-weekly reports.
+
+If platform logs do not establish that the lead was captured or re-contacted by the platform with at least one automated message, the result is inconclusive and ConversionSurgery will honor the refund.
 
 **Volume Condition — Low-Volume Extension Formula** [PENDING COUNSEL REVIEW]
 

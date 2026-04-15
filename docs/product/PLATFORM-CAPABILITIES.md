@@ -1023,7 +1023,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 | **90-Day Recovery** | Next 90 days | 1 attributed project opportunity OR $5,000+ probable pipeline value | Refund most recent month |
 
 - **Layer 2 has two passing criteria (OR logic):** the guarantee passes if EITHER (1) 1 attributed project opportunity is confirmed via platform logs, OR (2) the auto-calculated `probablePipelineValue` reaches $5,000 or more within the window. The pipeline floor gives contractors with longer renovation sales cycles a concrete, measurable standard even before a job is formally won.
-- **Layer 2 attribution is fully log-based:** attribution requires platform logs showing the system engaged the lead through automated response or follow-up before the opportunity progressed. No subjective contractor confirmation is required.
+- **Layer 2 attribution is fully log-based:** A system-engaged lead is one where (a) the platform captured the first contact (missed call, inbound SMS, form) OR re-contacted the lead via automation (dormant reactivation, old-quote follow-up), AND (b) at least one automated platform message was delivered before the outcome. No subjective contractor confirmation is required. If logs do not establish system engagement, the result is inconclusive and the refund is honored.
 - Volume condition: if &lt;15 leads/month, windows extend proportionally
 - State machine with automatic daily evaluation via cron
 - Metrics tracked: qualified engagements, attributed opportunities, probable pipeline value

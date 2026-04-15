@@ -307,10 +307,11 @@ The guarantee cron checks daily. At day 30:
 **Evaluation process:**
 
 1. Check the client&apos;s guarantee progress in the admin dashboard: client detail page &rarr; Overview tab &rarr; Guarantee Status card. It shows the current phase (`proof_pending` / `recovery_pending`), progress against thresholds (QLE count and pipeline value), days remaining, and an on-track/at-risk/failing status badge. Use this daily to catch at-risk clients before the window closes.
-2. Check Criterion A: is there a logged attributed opportunity?
-3. If not, check Criterion B: did `probablePipelineValue` reach $5,000? (visible in the client dashboard pipeline summary and bi-weekly reports)
-4. **If either passes:** Guarantee met. Use in retention pitch: &quot;In 90 days, the system built $X in your pipeline.&quot;
-5. **If neither passes:** Refund most recent month. Provide full data export. Have an exit conversation — either fix and re-engage, or part professionally.
+2. Check Criterion A: is there a system-engaged lead with a booked estimate appointment? A system-engaged lead means the platform captured their first contact (missed call, text, form) OR re-contacted them via automation, AND delivered at least one automated message before the outcome. Check the call-prep attribution evidence panel &mdash; it shows AI interaction count per won lead.
+3. If not, check Criterion B: did `probablePipelineValue` reach $5,000? (visible in the client dashboard pipeline summary and bi-weekly reports). Only system-engaged leads count toward pipeline value.
+4. **If either passes:** Guarantee met. Use in retention pitch: &quot;In 90 days, the system built $X in your pipeline from leads it captured and engaged.&quot;
+5. **If neither passes:** Refund most recent month. Provide full data export. Have an exit conversation &mdash; either fix and re-engage, or part professionally.
+6. **If contractor disputes a specific deal:** Pull the lead&apos;s conversation log from the admin dashboard. If the system captured the lead and sent at least one automated message before the outcome, attribution is confirmed. If not, honor the refund on that deal.
 
 ---
 
