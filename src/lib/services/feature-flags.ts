@@ -22,6 +22,11 @@ import {
 /** System_settings key for the global automation pause flag */
 const GLOBAL_PAUSE_KEY = 'global.automationPause';
 
+/** Per-flag hardcoded defaults. Flags not listed here default to false. */
+const SYSTEM_FLAG_DEFAULTS: Partial<Record<SystemFeatureFlag, boolean>> = {
+  inboundReplyExemptionEnabled: true,
+};
+
 /** Build the system_settings key for a given flag */
 function flagSettingsKey(flag: SystemFeatureFlag): string {
   return `feature.${flag}.enabled`;
@@ -88,8 +93,8 @@ export async function resolveFeatureFlag(
     return settingRow.value === 'true';
   }
 
-  // Step 4: safe default
-  return false;
+  // Step 4: per-flag default (or false)
+  return SYSTEM_FLAG_DEFAULTS[flag] ?? false;
 }
 
 /**
@@ -170,7 +175,7 @@ export async function resolveFeatureFlags(
       // Fall back to system_settings or hardcoded default
       const key = flagSettingsKey(flag);
       const raw = settingsMap[key];
-      acc[flag] = raw !== undefined ? raw === 'true' : false;
+      acc[flag] = raw !== undefined ? raw === 'true' : (SYSTEM_FLAG_DEFAULTS[flag] ?? false);
       return acc;
     },
     {} as Record<SystemFeatureFlag, boolean>
