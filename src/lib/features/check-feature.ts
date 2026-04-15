@@ -39,7 +39,8 @@ export type SystemFeatureFlag =
   | 'forwardingVerification'
   | 'opsHealthMonitor'
   | 'callPrep'
-  | 'capacityTracking';
+  | 'capacityTracking'
+  | 'inboundReplyExemptionEnabled';
 
 /** Union of all feature flags in the platform */
 export type FeatureFlag = LegacyFeatureFlag | SystemFeatureFlag;

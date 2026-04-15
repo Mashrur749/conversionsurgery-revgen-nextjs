@@ -13,6 +13,8 @@ import {
   type QuietHoursMessageClassification,
 } from '@/lib/compliance/quiet-hours-policy';
 import { isOpsKillSwitchEnabled, OPS_KILL_SWITCH_KEYS } from '@/lib/services/ops-kill-switches';
+import { resolveFeatureFlag } from '@/lib/services/feature-flags';
+import { QUIET_HOURS_MESSAGE_CLASSIFICATIONS } from '@/lib/compliance/quiet-hours-policy';
 
 /**
  * Consent basis for first-contact messages.
@@ -266,15 +268,28 @@ export async function sendCompliantMessage(
     intendedSendAt
   );
   const quietHoursPolicy = await getQuietHoursPolicy(clientId, { trackModeChanges: true });
+
+  // FMA 6.4: When inboundReplyExemptionEnabled is off for this client, treat
+  // inbound_reply messages as proactive_outreach so quiet-hours enforcement
+  // applies identically to all outbound. This preserves the default (strict)
+  // behavior and lets operators opt specific clients into the exemption.
+  let effectiveClassification = messageClassification;
+  if (messageClassification === QUIET_HOURS_MESSAGE_CLASSIFICATIONS.INBOUND_REPLY) {
+    const exemptionEnabled = await resolveFeatureFlag(clientId, 'inboundReplyExemptionEnabled');
+    if (!exemptionEnabled) {
+      effectiveClassification = QUIET_HOURS_MESSAGE_CLASSIFICATIONS.PROACTIVE_OUTREACH;
+    }
+  }
+
   const quietHoursDecision = resolveQuietHoursDecision({
     isQuietHours: quietHoursResult.isQuietHours,
     queueOnQuietHours,
     policyMode: quietHoursPolicy.mode,
-    messageClassification,
+    messageClassification: effectiveClassification,
   });
   const quietHoursAuditMetadata = buildQuietHoursDecisionAuditMetadata({
     policyMode: quietHoursPolicy.mode,
-    messageClassification,
+    messageClassification: effectiveClassification,
     decision: quietHoursDecision.decision,
     quietHoursReason: quietHoursResult.reason,
   });
