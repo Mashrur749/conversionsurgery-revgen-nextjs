@@ -2,10 +2,12 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TriageClientRow, TriageTrigger, StageDistribution } from '@/app/api/admin/triage/route';
+import { OperatorActionsPanel } from './operator-actions-panel';
 
 // Health configuration
 const HEALTH_CONFIG = {
@@ -442,46 +444,51 @@ function TriageCard({ row }: { row: TriageClientRow }) {
   const config = HEALTH_CONFIG[row.healthStatus];
   const Icon = config.Icon;
   return (
-    <Link href={`/admin/clients/${row.id}?from=triage`}>
-      <Card className={`hover:shadow-md transition-shadow ${config.rowClass}`}>
-        <CardContent className="py-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Icon className={`h-4 w-4 shrink-0 ${config.iconClass}`} />
-              <span className="font-semibold text-sm">{row.businessName}</span>
-            </div>
-            <Badge className={config.badgeClass}>{config.label}</Badge>
+    <Card className={`hover:shadow-md transition-shadow ${config.rowClass}`}>
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <Link href={`/admin/clients/${row.id}?from=triage`} className="flex items-center gap-2 min-w-0">
+            <Icon className={`h-4 w-4 shrink-0 ${config.iconClass}`} />
+            <span className="font-semibold text-sm hover:underline">{row.businessName}</span>
+          </Link>
+          <Badge className={config.badgeClass}>{config.label}</Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <span className="text-muted-foreground text-xs">Escalations</span>
+            <div className="font-medium">{row.openEscalations}</div>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="text-muted-foreground text-xs">Escalations</span>
-              <div className="font-medium">{row.openEscalations}</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-xs">KB Gaps</span>
-              <div className="font-medium">{row.openKbGaps}</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-xs">Days Since Estimate</span>
-              <div className="font-medium">{row.daysSinceEstimate ?? '&mdash;'}</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-xs">Days Since Win/Lost</span>
-              <div className="font-medium">{row.daysSinceWonOrLost ?? '&mdash;'}</div>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-xs">Pending Drafts</span>
-              <div className={`font-medium ${row.pendingSmartAssistDrafts > 0 ? 'text-sienna font-semibold' : ''}`}>
-                {row.pendingSmartAssistDrafts > 0 ? row.pendingSmartAssistDrafts : '&mdash;'}
-              </div>
+          <div>
+            <span className="text-muted-foreground text-xs">KB Gaps</span>
+            <div className="font-medium">{row.openKbGaps}</div>
+          </div>
+          <div>
+            <span className="text-muted-foreground text-xs">Days Since Estimate</span>
+            <div className="font-medium">{row.daysSinceEstimate ?? '&mdash;'}</div>
+          </div>
+          <div>
+            <span className="text-muted-foreground text-xs">Days Since Win/Lost</span>
+            <div className="font-medium">{row.daysSinceWonOrLost ?? '&mdash;'}</div>
+          </div>
+          <div>
+            <span className="text-muted-foreground text-xs">Pending Drafts</span>
+            <div className={`font-medium ${row.pendingSmartAssistDrafts > 0 ? 'text-sienna font-semibold' : ''}`}>
+              {row.pendingSmartAssistDrafts > 0 ? row.pendingSmartAssistDrafts : '&mdash;'}
             </div>
           </div>
-          {row.triggers.length > 0 && (
-            <TriggerList triggers={row.triggers} daysAtCurrentStatus={row.daysAtCurrentStatus} />
-          )}
-        </CardContent>
-      </Card>
-    </Link>
+        </div>
+        {row.triggers.length > 0 && (
+          <TriggerList triggers={row.triggers} daysAtCurrentStatus={row.daysAtCurrentStatus} />
+        )}
+        {/* Prep Call CTA */}
+        <Button asChild variant="outline" size="sm" className="w-full">
+          <Link href={`/admin/clients/${row.id}/call-prep`}>
+            <Phone className="h-3.5 w-3.5 mr-1.5" />
+            Prep Call
+          </Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -496,6 +503,7 @@ export default async function TriagePage() {
   const redCount = rows.filter((r) => r.healthStatus === 'red').length;
   const yellowCount = rows.filter((r) => r.healthStatus === 'yellow').length;
   const greenCount = rows.filter((r) => r.healthStatus === 'green').length;
+  const activeClients = rows.length;
 
   return (
     <div className="space-y-6">
@@ -507,7 +515,10 @@ export default async function TriagePage() {
         </p>
       </div>
 
-      {/* Summary KPIs */}
+      {/* KPI summary cards + Operator Actions panel (client component — fetches actions) */}
+      <OperatorActionsPanel clientsAtRisk={redCount} activeClients={activeClients} />
+
+      {/* Health distribution summary */}
       <div className="grid gap-4 grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
@@ -585,6 +596,9 @@ export default async function TriagePage() {
                       </th>
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">
                         Triggers
+                      </th>
+                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -672,13 +686,21 @@ export default async function TriagePage() {
                                 />
                               )}
                             </td>
+                            <td className="px-4 py-3 text-center">
+                              <Button asChild variant="outline" size="sm">
+                                <Link href={`/admin/clients/${row.id}/call-prep`}>
+                                  <Phone className="h-3.5 w-3.5 mr-1.5" />
+                                  Prep Call
+                                </Link>
+                              </Button>
+                            </td>
                           </tr>
                           {/* Health metrics summary sub-row */}
                           <tr
                             key={`${row.id}-metrics`}
                             className={`bg-muted/10 ${config.rowClass}`}
                           >
-                            <td colSpan={8} className="px-4 pb-3 pt-0">
+                            <td colSpan={9} className="px-4 pb-3 pt-0">
                               <div className="grid grid-cols-4 gap-2 text-xs">
                                 <div>
                                   <span className="text-muted-foreground">Active leads:</span>
