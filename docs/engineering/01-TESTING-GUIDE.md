@@ -342,7 +342,7 @@ Expected:
 
 Run in order. Do not skip prerequisites.
 
-This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Jobs We Helped Win card / Revenue page ROI summary in client portal (the standalone Revenue Recovered dashboard card was removed; confirmed revenue is now in the Jobs We Helped Win card and the Revenue page 4-column ROI summary). Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify. Step 66 covers four features shipped after Step 65: CASL consent attestation on CSV import (admin and portal), help center seed articles, portal lead action buttons (Mark Estimate Sent, Mark Won, Mark Lost), and KB gap SMS deep link (auto-opens add form with question pre-filled). Step 67 covers SPEC-07 through SPEC-12 features: Weekly Pipeline SMS (dollar values + needs-attention count), ROI Calculator public endpoint, Jobber webhook integration (inbound job_completed triggers review, outbound appointment_booked fires to Jobber), and Voice AI default-on for new clients.
+This section follows the **operator&apos;s managed-service delivery journey** &mdash; from creating a client through ongoing operations to offboarding. Steps 1-14 mirror the chronological delivery timeline from the offer doc. Steps 15-21 cover platform administration and infrastructure checks. Steps 22-25 cover revenue-engine automations (payment collection, review generation, no-show recovery, win-back). Steps 26-28 cover subscription checkout, CSV import (including quote reactivation), and AI safety. Step 29 covers AI attribution. Step 30 covers self-serve phone provisioning. Step 31 covers AI message flagging. Step 32 covers decision confidence and model routing. Step 33 covers pre-launch conversation scenario tests. Step 34 covers AI criteria tests (the pre-launch quality gate). Steps 35-37 cover AI effectiveness, per-client automation pause, and AI quality review. Step 38 is the capstone end-to-end smoke. Step 53 covers Tier 3 UX polish (breadcrumbs, tooltips, progress indicators, SLA countdown, reports filtering, empty states, unsaved changes warnings, collapsible sections, cancellation layout). Step 54 covers Wave 1-2 operational and polish fixes (agency voice webhook, operator alerting, command palette, onboarding checklist improvements, sticky header, escalation auto-refresh, message pagination, booking email fallback). Step 55 covers Wave 4 consensus fixes (estimate nudge timing, confirmed revenue field, log-based guarantee attribution, report auto-follow-up SMS, KB gap &quot;Ask Contractor&quot; button). Step 56 covers Google Calendar two-way sync (CON-01): OAuth connect/disconnect, sync cron, slot blocking, and appointment push. Step 57 covers Wave 7 additions: operator triage dashboard, KB intake questionnaire, engagement health check cron, dormant re-engagement cron, and Jobs We Helped Win card / Revenue page ROI summary in client portal (the standalone Revenue Recovered dashboard card was removed; confirmed revenue is now in the Jobs We Helped Win card and the Revenue page 4-column ROI summary). Step 58 covers post-launch additions: Probable Wins Nudge, Since Your Last Visit card, webhook export on lead status change, Voice AI missed transfer recovery, AI Preview/Sandbox panel, and Calendar sync status improvements. Step 59 covers flow reply-rate tracking: verifies that inbound SMS from leads with active flow executions records reply counts and response time in template metrics. Step 65 covers the 9 self-serve features shipped post-Wave 7: KB onboarding wizard, AI auto-progression cron, portal quote import, review response approval in portal, KB empty nudge, Day 3 check-in SMS, and KB gap auto-notify. Step 66 covers four features shipped after Step 65: CASL consent attestation on CSV import (admin and portal), help center seed articles, portal lead action buttons (Mark Estimate Sent, Mark Won, Mark Lost), and KB gap SMS deep link (auto-opens add form with question pre-filled). Step 67 covers SPEC-07 through SPEC-12 features: Weekly Pipeline SMS (dollar values + needs-attention count), ROI Calculator public endpoint, Jobber webhook integration (inbound job_completed triggers review, outbound appointment_booked fires to Jobber), and Voice AI default-on for new clients. Step 83 covers FMA Wave 4 system health: ops health monitor (circuit breakers, health badge, rate anomaly), capacity API (utilization percent, alert levels, KPI card), monthly health digest (`/admin/system-health`, 5-section digest), heartbeat check cron (verifies all crons fired), and quiet-hours inbound-reply exemption flag.
 
 > **Self-serve signup testing** (the public `/signup` flow) is covered separately in [`TESTING-SELF-SERVE.md`](./TESTING-SELF-SERVE.md).
 
@@ -3241,6 +3241,97 @@ Expected:
 - Estimate reply triggers follow-up sequence.
 - Non-matching numbers produce no state change (graceful no-op).
 
+### Step 83: FMA Wave 4 — System Health (Ops Monitor, Capacity, Digest, Quiet Hours)
+
+Combined verification for all FMA Wave 4 features.
+
+#### 83a: Ops health monitor — health badge and circuit breaker
+
+1. Seed 3+ automation error records for a test client within the past 24 hours (insert directly into `audit_log` with type `automation_error` and the target `clientId`).
+2. Call the operator actions endpoint:
+
+```bash
+curl -i http://localhost:3000/api/admin/operator-actions \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+3. Verify a `circuit_breaker_tripped` action appears for that client in the response array.
+4. Verify the health badge for that client is `red`.
+5. Clear the seeded errors and re-call the endpoint — verify the client is no longer flagged.
+6. Seed a client with today&apos;s outbound message count &gt; 2x the 7-day daily average. Verify a rate-anomaly flag appears on that client.
+
+Expected:
+- 3+ errors in 24h → `circuit_breaker_tripped` in actions queue, `red` health badge.
+- Rate anomaly detected and surfaced.
+- No false positives when error count is below threshold.
+
+#### 83b: Capacity API
+
+```bash
+curl -i http://localhost:3000/api/admin/capacity \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+1. Verify the response includes: `totalWeeklyHours`, `utilizationPercent`, `alertLevel` (`green`/`yellow`/`red`), and a `perClient` array.
+2. Verify `alertLevel` is `green` when utilization &lt; 80%, `yellow` when 80-99%, `red` when &ge; 100%.
+3. Check that a client in onboarding phase contributes ~5h base, autonomous phase ~1.5h base, assist phase ~2.5h base, manual mode ~3h base.
+4. Add an open escalation past SLA to a test client — re-call the endpoint and verify that client&apos;s hours increased by 0.5h.
+5. Disable `capacityTrackingEnabled` flag system-wide — verify the endpoint still returns data (flag controls KPI card visibility, not the API).
+
+Expected:
+- Correct phase-based hour contributions per client.
+- Correct alert level thresholds.
+- Per-client breakdown matches active client list.
+
+#### 83c: Monthly health digest
+
+```bash
+curl -i http://localhost:3000/api/admin/system-health \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+1. Verify the response contains exactly 5 sections: `clientOverview`, `capacityUtilization`, `automationHealth`, `guaranteeTracker`, `keyMetrics`.
+2. `clientOverview`: verify counts for active, paused, cancelled, newThisMonth, churnedThisMonth.
+3. `automationHealth`: verify each entry includes cron name, last-run time, last-run status (`success`/`failed`/`missed`), and consecutive failure count.
+4. `guaranteeTracker`: verify each client in a guarantee window appears with phase, QLE count, pipeline value, days remaining, and status badge.
+5. Navigate to `/admin/system-health` in the browser — verify the page renders all 5 sections without errors.
+
+Expected:
+- All 5 sections present in response.
+- Automation health table matches the known cron list.
+- Guarantee tracker shows only clients currently in a guarantee window.
+
+#### 83d: Heartbeat check cron
+
+```bash
+curl -i http://localhost:3000/api/cron/heartbeat-check \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+1. Verify the cron runs without error and returns a JSON summary of checked jobs.
+2. Artificially backdate the `last_run` timestamp for one cron in the `cron_cursors` table to simulate a missed run.
+3. Re-run the heartbeat check — verify the operator receives an SMS alert identifying the missed cron by name.
+4. Restore the `last_run` timestamp — verify subsequent heartbeat run produces no alert for that job.
+
+Expected:
+- Heartbeat check completes for all registered crons.
+- Missed cron (stale cursor) triggers operator SMS alert.
+- No false alerts when all crons are within expected window.
+
+#### 83e: Quiet hours inbound-reply exemption flag
+
+1. Configure a test client with quiet hours active (set system clock or test lead timezone to place current time in 9pm-10am window).
+2. With `inboundReplyExemptionEnabled = false` (default): send an inbound SMS from the test lead. Verify the AI reply is **queued** (not sent immediately) due to quiet hours.
+3. Enable `inboundReplyExemptionEnabled = true` for that client via admin Configuration tab.
+4. Send another inbound SMS from the test lead during quiet hours. Verify the AI reply is **sent immediately** (bypasses quiet-hours queue).
+5. Confirm the audit log records the exemption reason for the sent message.
+6. For a proactive outbound (e.g., scheduled follow-up): verify it is **still queued** during quiet hours even when the flag is enabled (exemption applies only to inbound replies, not proactive outreach).
+
+Expected:
+- Flag off (default): all outbound, including replies, queued during quiet hours.
+- Flag on: direct replies sent immediately; proactive outbound still queued.
+- Audit log reflects correct exemption classification.
+
 ---
 
 ## 3. Useful Commands
@@ -3302,6 +3393,7 @@ curl -i http://localhost:3000/api/cron/guarantee-alert -H "Authorization: Bearer
 curl -i http://localhost:3000/api/cron/onboarding-reminder -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/onboarding-priming -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/forwarding-verification -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/heartbeat-check -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core

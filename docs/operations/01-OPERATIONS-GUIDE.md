@@ -167,6 +167,62 @@ If the alert fires on Day 1: resolve before moving forward — leads are being l
 
 The contractor also receives a signal via the daily digest SMS. When they reply to a KB gap item number, the gap moves to `in_review`. This is your cue to check the gap queue and finalize the KB entry.
 
+### FMA Wave 4: System Health Monitor, Capacity Tracking, Monthly Digest
+
+**73a. Responding to a tripped circuit breaker:**
+
+A circuit breaker trips when a client accumulates 3+ automation errors in a 24-hour window. The client appears in the operator actions queue with action type `circuit_breaker_tripped` and a `red` health badge.
+
+1. Open `/admin/triage` — locate the `circuit_breaker_tripped` action for the client.
+2. Click through to the client detail page. Check the audit log (Audit Log tab or `/admin/audit`) for the specific automation errors that triggered the breaker — look for the error type, message, and which cron/automation fired.
+3. Common causes: Twilio number misconfiguration (sending to an invalid number), compliance gateway edge case, failed calendar sync, third-party webhook timeout.
+4. Fix the underlying issue before resetting. Do not reset blindly — another error wave will re-trip the breaker immediately.
+5. Once the cause is resolved, the breaker automatically clears when no new errors are recorded in the next 24-hour window. No manual reset is required.
+6. If the cause is unclear after 15 minutes of investigation: disable the client&apos;s automation temporarily (per-client pause) and investigate at the next scheduled maintenance block.
+
+**73b. Responding to a heartbeat check alert:**
+
+The `heartbeat-check` cron runs daily and verifies all expected cron jobs fired within their window (checked against `cron_cursors`). If a cron is missed, the operator receives an SMS: &ldquo;Heartbeat: [cron-name] has not run in [N] hours. Expected every [interval].&rdquo;
+
+1. Verify the Cloudflare Workers cron trigger is configured for the missed job (`wrangler.toml` or Cloudflare dashboard).
+2. Manually trigger the missed cron:
+   ```bash
+   curl -i http://localhost:3000/api/cron/<cron-name> -H "Authorization: Bearer $CRON_SECRET"
+   ```
+3. Check for exceptions in the Cloudflare Workers log for that job.
+4. If the trigger is misconfigured, redeploy with the correct schedule (`npm run cf:deploy`).
+5. After resolving, manually run the heartbeat check to confirm all jobs are current:
+   ```bash
+   curl -i http://localhost:3000/api/cron/heartbeat-check -H "Authorization: Bearer $CRON_SECRET"
+   ```
+
+**73c. Capacity management — reading utilization:**
+
+The `GET /api/admin/capacity` endpoint and the &ldquo;Operator Capacity&rdquo; KPI card on the triage dashboard show total estimated weekly hours across all active clients.
+
+| Alert level | What it means | Action |
+|-------------|---------------|--------|
+| Green (&lt;80%) | Healthy headroom | Normal operations |
+| Yellow (80-99%) | Approaching limit | Pause new onboarding intake; prioritize autonomous-mode clients |
+| Red (&ge;100%) | Over capacity | Immediately pause new client onboarding; begin hiring planning |
+
+**When to pause onboarding:** as soon as capacity reaches yellow (80%). Signing a new client at 90% utilization creates a gap-delivery risk — the onboarding window (first 30 days, 5h/week) is the most operator-intensive phase.
+
+**Hiring trigger:** if capacity stays red (&ge;100%) for 2 consecutive weeks, or the agency reaches 8 active clients, start the hiring process. The capacity model surfaces a `hiring_trigger` flag in the actions queue as a reminder.
+
+**Reducing capacity pressure:** the fastest levers are (1) move more clients to autonomous mode by completing KB sprint, and (2) shift KB gap resolution to the contractor via &ldquo;Ask Contractor&rdquo; button instead of doing it yourself.
+
+**73d. Monthly system health review workflow:**
+
+Run on the first business day of every month. Takes approximately 20 minutes.
+
+1. Open `/admin/system-health`.
+2. **Client overview:** confirm active count matches expected roster. Investigate any unexpected churn (cancelled) or pause.
+3. **Capacity utilization:** review the per-client breakdown. Clients in onboarding should be approaching assist or autonomous mode by Day 30 — flag any that are still in onboarding past Day 45.
+4. **Automation health:** scan the cron job table for any `failed` or `missed` status entries. For any failures: check if the operator alert fired (audit log), verify the issue is resolved, and confirm the cron ran successfully in the current month.
+5. **Guarantee tracker:** identify any client where status is `at_risk` or `failing`. For at-risk clients, confirm the Day 80 alert fired. For failing clients, begin the guarantee evaluation process (see Playbook Section 5).
+6. **Key metrics:** compare messages sent and leads responded to against the prior month. Significant drops (&gt;30%) warrant investigation — check for compliance blocks, subscription status, or cron failures.
+
 ### Notification Feature Flags (FMA Wave 1)
 66a. **Automation feature flags** control 8 notification and automation behaviors. Unlike the 18 feature toggles above (which control core product capabilities), these flags control notification *frequency and batching*. They have system-wide defaults configurable in `system_settings` and can be overridden per client:
 

@@ -702,7 +702,17 @@ If no visible win yet, skip the referral ask. Don&apos;t force it.
 
 **When:** First of every month, per client.
 
-**Review:**
+**Start with `/admin/system-health`** — this page (FMA Wave 4) provides a structured 5-section platform digest that replaces most of the manual checklist below. Review the digest first, then drill into individual client pages for items flagged.
+
+**Digest sections to check:**
+
+1. **Client overview** — confirm active/paused/cancelled/new/churned counts. Unexpected churn warrants a same-day call.
+2. **Capacity utilization** — if red (&ge;100%), pause new onboarding intake immediately and review per-client breakdown to identify which clients can be moved to autonomous mode sooner.
+3. **Automation health** — any cron job showing `failed` or `missed` requires an immediate investigation (see Operations Guide 73b).
+4. **Guarantee tracker** — any client in `at_risk` or `failing` status needs the Day 80 alert confirmed and the guarantee process initiated (Section 5 of this playbook).
+5. **Key metrics** — month-over-month comparison for messages sent, leads responded to, revenue attributed. Drops &gt;30% warrant investigation.
+
+**Per-client drill-down (after digest review):**
 
 | Metric | Where to check | Action if bad |
 |--------|---------------|---------------|
@@ -713,6 +723,9 @@ If no visible win yet, skip the referral ask. Don&apos;t force it.
 | Win rate (quoted to won) | Revenue dashboard | If declining, review AI follow-up messaging quality |
 | Guarantee status | Client detail | If approaching deadline without hitting threshold, investigate |
 | Churn signals | Conversation tone, report engagement | If contractor stopped replying to check-ins, proactive call |
+| Health badge | Triage dashboard / client detail | Red badge = circuit breaker tripped — investigate before the next biweekly call |
+
+**Capacity note:** if total operator capacity (across all clients) is at yellow or red on the `GET /api/admin/capacity` endpoint, prioritize moving the highest-hours clients (onboarding or manual mode) toward autonomous mode before signing new clients.
 
 ---
 

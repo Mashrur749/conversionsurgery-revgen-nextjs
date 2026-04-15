@@ -213,3 +213,15 @@ Five operator-cockpit items shipped to give the solo operator a single daily sta
 ### Deferred: Auto-Resolve UI on escalations page
 
 The service (`auto-resolve KB gaps`) and API endpoints are complete. The UI panel on the escalations page — where operators and contractors can review and accept/reject suggestions inline — is deferred to a future enhancement. The current workflow requires navigating to the gap queue and using the API directly.
+
+## Recently Implemented (FMA Wave 4: System Health, April 2026)
+
+Four system-health items shipped to give the solo operator automated failure detection, capacity awareness, and a structured monthly review workflow.
+
+| Item | Feature | Status |
+|------|---------|--------|
+| FMA-W4-1 | Ops Health Monitor — per-client health badge (green/yellow/red), per-client circuit breaker (3+ automation errors in 24h → trip), rate anomaly detection (today &gt; 2x 7-day avg). Feature flag: `opsHealthMonitorEnabled`. `circuit_breaker_tripped` action type added to operator actions queue. | **Implemented** |
+| FMA-W4-2 | Heartbeat Check Cron (`heartbeat-check`, daily) — verifies all cron jobs fired within their expected window by checking `cron_cursors`. Sends operator SMS alert for any missed cron. Catches silent cron failures the standard failure-alert path misses. | **Implemented** |
+| FMA-W4-3 | Capacity Tracking — per-client weekly hours estimation (onboarding 5h, assist 2.5h, autonomous 1.5h, manual 3h) + activity adjustments. Alert levels: green &lt;80%, yellow 80-99%, red &ge;100%. Max 40h/week. &ldquo;Operator Capacity&rdquo; KPI card on triage dashboard. Hiring-trigger flag when red for 2 weeks or 8+ clients. API: `GET /api/admin/capacity`. Feature flag: `capacityTrackingEnabled`. | **Implemented** |
+| FMA-W4-4 | Monthly Health Digest — system health page at `/admin/system-health` with 5 sections: client overview (active/paused/cancelled/new/churned), capacity utilization, automation health (cron job status table), guarantee tracker, key metrics (messages/leads/revenue). API: `GET /api/admin/system-health`. | **Implemented** |
+| FMA-W4-5 | Quiet Hours Inbound-Reply Classification — `inboundReplyExemptionEnabled` feature flag. When enabled, direct inbound-reply messages bypass quiet-hours queuing. When disabled (default), all outbound messages subject to quiet hours. All 34 call sites audited and classified; flag wired in compliance gateway. | **Implemented** |

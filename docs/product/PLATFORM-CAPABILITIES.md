@@ -837,6 +837,7 @@ CASL and CRTC compliant by default — the contractor never has to think about i
 - **Re-opt-in:** START, YES, SUBSCRIBE, OPTIN &rarr; re-consent recorded, lead status restored to contacted
 - **HELP/INFO keywords:** auto-reply with business name, owner phone, and STOP instructions (sent even to opted-out numbers)
 - **Quiet hours:** 9pm-10am recipient local time. Two modes: strict (all outbound queued) and inbound-reply-allowed (direct replies sent, proactive outreach queued)
+- **Inbound-reply exemption feature flag (`inboundReplyExemptionEnabled`):** When enabled, messages classified as direct replies to an inbound homeowner message bypass quiet-hours queuing and are sent immediately. When disabled (default), all outbound messages — including replies — are subject to quiet hours. All 34 call sites in the compliance gateway are classified; the flag is resolved per-client via `resolveFeatureFlag`. Toggle via admin client detail page (Configuration tab) or system-wide via `system_settings`.
 - **DNC list:** global + per-client do-not-contact registry with expiry and source tracking
 - **Platform-level DNC:** if a homeowner opts out from any client on the platform, all other clients are blocked from texting them too &mdash; prevents the same number being re-contacted by a different contractor after opting out
 - **Blocked numbers:** per-client number blocking
@@ -1341,7 +1342,56 @@ Eval results saved to `.scratch/eval-history.json` (rolling 50 runs). HTML repor
 
 ### Cron Orchestrator
 
-41 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), KB empty nudge (daily), day 3 check-in (daily), KB gap auto-notify (daily), AI auto-progression (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, daily contractor digest (hourly), billing reminder (daily midnight), guarantee Day 80 alert (daily midnight), onboarding call reminder (every 30 min), onboarding priming SMS (daily 7am UTC), and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
+42 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), KB empty nudge (daily), day 3 check-in (daily), KB gap auto-notify (daily), AI auto-progression (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, daily contractor digest (hourly), billing reminder (daily midnight), guarantee Day 80 alert (daily midnight), onboarding call reminder (every 30 min), onboarding priming SMS (daily 7am UTC), heartbeat check (daily — verifies all cron jobs fired within expected window), and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
+
+### Ops Health Monitor (FMA Wave 4)
+
+Per-client and platform-wide health detection that surfaces problems before they cause visible failures.
+
+- **Health badge (green/yellow/red):** computed per client based on recent automation errors and anomaly signals. Green = healthy, yellow = elevated errors or anomalies, red = circuit breaker tripped. Visible in the operator actions queue and triage dashboard.
+- **Per-client circuit breaker:** trips automatically when 3+ automation errors are recorded for a client within a 24-hour window. Tripped clients are surfaced in the operator actions queue with action type `circuit_breaker_tripped`. Operator investigates and manually resets after resolving the root cause.
+- **Rate anomaly detection:** flags a client when today&apos;s outbound message volume exceeds 2x the 7-day daily average. Prevents runaway automation from blasting leads due to misconfiguration.
+- **Daily heartbeat check cron (`heartbeat-check`):** runs once per day and verifies that all expected cron jobs have fired within their expected window (checked against `cron_cursors` table). Any cron that has not fired within its window generates an operator SMS alert. Catches silent cron failures that the standard failure-alert path would miss (e.g., if a job completes but produces no output).
+- Feature flag: `opsHealthMonitorEnabled`. API: `GET /api/admin/operator-actions` includes `circuit_breaker_tripped` action type for affected clients.
+
+### Capacity Tracking (FMA Wave 4)
+
+Per-client weekly hours estimation enabling the solo operator to know when they are approaching the limit of what one person can manage without adding headcount.
+
+**Estimation model:** each active client contributes a base weekly operator-hours estimate based on lifecycle phase:
+
+| Phase | Base weekly hours |
+|-------|------------------|
+| Onboarding (first 30 days) | 5h |
+| Assist mode (AI assist, active supervision) | 2.5h |
+| Autonomous mode | 1.5h |
+| Manual mode (AI off) | 3h |
+
+Activity adjustments add on top of the base: +0.5h per open escalation past SLA, +0.25h per unresolved high-priority KB gap. Totals are summed across all active clients.
+
+**Alert levels:** green = &lt;80% of max capacity, yellow = 80-99%, red = &ge;100%.
+**Max capacity:** 40 hours/week for a single operator.
+**KPI card:** &ldquo;Operator Capacity&rdquo; card appears on the triage dashboard cockpit alongside open escalations, pending drafts, at-risk clients, and KB gaps. Shows utilization percentage and alert level.
+**Smart Assist queue depth:** the capacity model also tracks Smart Assist queue depth (pending draft count) as a leading indicator of time demand.
+**Hiring trigger:** when capacity reaches red (&ge;100%) for 2 consecutive weeks or the agency reaches 8+ active clients, the system surfaces a hiring-trigger flag in the operator actions queue.
+API: `GET /api/admin/capacity` returns total estimated weekly hours, utilization percent, alert level, and per-client breakdown.
+Feature flag: `capacityTrackingEnabled`.
+
+### Monthly System Health Digest (FMA Wave 4)
+
+System health page at `/admin/system-health` providing a structured monthly internal review of platform health across all clients.
+
+**5 sections:**
+
+| Section | Contents |
+|---------|---------|
+| **Client overview** | Active, paused, cancelled counts; new clients this month; churned clients this month |
+| **Capacity utilization** | Total weekly hours estimate, utilization %, alert level, per-client breakdown |
+| **Automation health** | Cron job status table — each cron with last-run time, last-run status (success/failed/missed), and consecutive failure count |
+| **Guarantee tracker** | All clients in guarantee window: phase, QLE progress, pipeline value, days remaining, on-track/at-risk/failing status |
+| **Key metrics** | Platform totals for the month: messages sent, leads responded to, revenue attributed |
+
+API: `GET /api/admin/system-health` returns the 5-section digest. Page is linked in the Reporting nav group under &ldquo;Platform Health.&rdquo;
 
 ### Help Center Seed Articles
 
