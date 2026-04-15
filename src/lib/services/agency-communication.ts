@@ -6,6 +6,7 @@ import {
   leads,
   dailyStats,
   notificationPreferences,
+  knowledgeGaps,
 } from "@/db/schema";
 import { eq, and, desc, gte, lte, lt, sql, inArray } from "drizzle-orm";
 import { isNumberedReply, parseNumberedReply } from "./numbered-reply-parser";
@@ -464,6 +465,23 @@ export async function handleAgencyInboundSMS(payload: {
     }
   }
 
+  // ── Handle numbered reply for daily_digest prompts (options use 'id' not 'leadId') ──
+  const digestOptionCount = getDigestOptionCount(pendingPrompt.actionPayload);
+  if (payloadOptions.length === 0 && digestOptionCount > 0 && isNumberedReply(body)) {
+    const parsed = parseNumberedReply(body, digestOptionCount);
+    if (parsed.matched) {
+      const result = await executeNumberedReply(
+        client.id,
+        client.phone,
+        pendingPrompt,
+        [],
+        parsed,
+        inboundMsg.id,
+      );
+      if (result) return;
+    }
+  }
+
   // ── Handle "1" / "2" as YES / NO for binary prompts (no numbered options) ──
   if (payloadOptions.length === 0 && (normalizedReply === "1" || normalizedReply === "2")) {
     // Treat "1" as YES and "2" as NO for any pending prompt
@@ -729,6 +747,19 @@ interface PromptOption {
   action?: string; // e.g., 'start_estimate', 'skip'
 }
 
+/**
+ * Returns the number of options in a daily_digest payload, or 0 if not a
+ * daily_digest prompt. Used so callers can route numbered replies into
+ * executeNumberedReply() even when there are no standard PromptOptions.
+ */
+function getDigestOptionCount(actionPayload: unknown): number {
+  if (!actionPayload || typeof actionPayload !== "object") return 0;
+  const payload = actionPayload as Record<string, unknown>;
+  if (payload.interactionType !== "daily_digest") return 0;
+  if (!Array.isArray(payload.options)) return 0;
+  return payload.options.length;
+}
+
 function extractPromptOptions(
   actionPayload: unknown,
 ): PromptOption[] {
@@ -941,6 +972,103 @@ async function executeNumberedReply(
       });
       return true;
     }
+  }
+
+  // ── daily_digest: numbered selections across mixed option types ──
+  if (interactionType === "daily_digest") {
+    const digestPayload = pendingPrompt.actionPayload as Record<string, unknown>;
+    const digestOptions = Array.isArray(digestPayload?.options)
+      ? (digestPayload.options as Array<{
+          index: number;
+          type: string;
+          id: string;
+          label: string;
+        }>)
+      : [];
+
+    if (digestOptions.length === 0) return false;
+
+    const confirmations: string[] = [];
+
+    for (const sel of parsed.selections) {
+      const option = digestOptions.find((o) => o.index === sel.index);
+      if (!option) continue;
+
+      if (option.type === "estimate_prompt") {
+        // Trigger estimate follow-up for this lead
+        try {
+          const result = await triggerEstimateFollowup({
+            clientId,
+            leadId: option.id,
+            source: "prompt_quick_reply",
+          });
+          confirmations.push(
+            result.success
+              ? `Follow-up started for ${option.label}.`
+              : `Follow-up already running for ${option.label}.`,
+          );
+        } catch {
+          confirmations.push(`Could not start follow-up for ${option.label}.`);
+        }
+      } else if (option.type === "won_lost_prompt") {
+        // sel.action: 'won' (WN) or 'lost' (LN)
+        const outcome = sel.action === "won" ? "won" : "lost";
+        await db2
+          .update(leads)
+          .set({ status: outcome as "won" | "lost", updatedAt: new Date() })
+          .where(
+            and(eq(leads.id, option.id), eq(leads.clientId, clientId)),
+          );
+
+        if (outcome === "won") {
+          try {
+            const { trackFunnelEvent } = await import("./funnel-tracking");
+            await trackFunnelEvent({
+              clientId,
+              leadId: option.id,
+              eventType: "job_won",
+            });
+          } catch {}
+        }
+
+        confirmations.push(`${option.label} marked as ${outcome}.`);
+      } else if (option.type === "kb_gap") {
+        // Acknowledge engagement — mark gap as in_review
+        await db2
+          .update(knowledgeGaps)
+          .set({ status: "in_review" })
+          .where(
+            and(
+              eq(knowledgeGaps.id, option.id),
+              eq(knowledgeGaps.clientId, clientId),
+            ),
+          );
+
+        confirmations.push(
+          `Got it - we will review and update the knowledge base for: ${option.label}.`,
+        );
+      }
+    }
+
+    if (confirmations.length === 0) return false;
+
+    await db2
+      .update(agencyMessages)
+      .set({
+        actionStatus: "executed",
+        clientReply: parsed.selections.map((s) => String(s.index)).join(" "),
+      })
+      .where(eq(agencyMessages.id, pendingPrompt.id));
+
+    await sendAgencySMS({
+      clientId,
+      toPhone: clientPhone,
+      body: confirmations.join(" "),
+      category: "reply",
+      inReplyTo: pendingPrompt.id,
+    });
+
+    return true;
   }
 
   // ── est_disambiguation: bare digit selects lead ──
@@ -1212,6 +1340,26 @@ export async function tryResolveAgencyPromptCrossRoute(params: {
         clientPhone,
         pendingPrompt,
         payloadOptions,
+        parsed,
+        pendingPrompt.id,
+      );
+      if (handled) return true;
+    }
+  }
+
+  // Check for numbered reply for daily_digest prompts (options use 'id' not 'leadId')
+  const digestOptionCount = getDigestOptionCount(pendingPrompt.actionPayload);
+  if (payloadOptions.length === 0 && digestOptionCount > 0 && isNumberedReply(body)) {
+    const parsed = parseNumberedReply(body, digestOptionCount);
+    if (parsed.matched) {
+      console.log(
+        `[Agency CrossRoute] Handling daily_digest numbered reply on business channel: client=${clientBusinessName}, reply=${body}`,
+      );
+      const handled = await executeNumberedReply(
+        clientId,
+        clientPhone,
+        pendingPrompt,
+        [],
         parsed,
         pendingPrompt.id,
       );
