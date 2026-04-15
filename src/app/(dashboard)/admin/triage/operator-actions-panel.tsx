@@ -9,6 +9,16 @@ import { AlertTriangle, Clock, ChevronDown, ChevronUp, Zap } from 'lucide-react'
 import type { OperatorActionsResult, OperatorAction } from '@/lib/services/operator-actions';
 
 // ---------------------------------------------------------------------------
+// Capacity data type (mirrors CapacityEstimate from capacity-tracking service)
+// ---------------------------------------------------------------------------
+
+interface CapacityData {
+  utilizationPercent: number;
+  alertLevel: string;
+  smartAssistQueueDepth: number;
+}
+
+// ---------------------------------------------------------------------------
 // Time formatting helper
 // ---------------------------------------------------------------------------
 
@@ -119,53 +129,136 @@ function ActionsSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
-// KPI summary bar (3 stat cards)
+// Health badge dot (derived from operator actions summary)
+// ---------------------------------------------------------------------------
+
+function HealthBadge({ red, yellow }: { red: number; yellow: number }) {
+  const color =
+    red > 0 ? '#C15B2E' : yellow > 0 ? '#6B7E54' : '#3D7A50';
+  const label =
+    red > 0 ? 'Urgent' : yellow > 0 ? 'Warning' : 'Healthy';
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-xs font-medium"
+      title={`Overall health: ${label}`}
+    >
+      <span
+        className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+        style={{ backgroundColor: color }}
+        aria-hidden="true"
+      />
+      <span style={{ color }}>{label}</span>
+    </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// KPI summary bar (4 stat cards)
 // ---------------------------------------------------------------------------
 
 export function KpiSummaryBar({
   redActions,
+  yellowActions,
   clientsAtRisk,
   activeClients,
+  capacityData,
   loading,
+  capacityLoading,
 }: {
   redActions: number;
+  yellowActions: number;
   clientsAtRisk: number;
   activeClients: number;
+  capacityData: CapacityData | null;
   loading: boolean;
+  capacityLoading: boolean;
 }) {
+  // Capacity color by alert level
+  const capacityColor =
+    capacityData?.alertLevel === 'red'
+      ? '#C15B2E'
+      : capacityData?.alertLevel === 'yellow'
+        ? '#6B7E54'
+        : '#3D7A50';
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Actions Due</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <Skeleton className="h-8 w-12" />
-          ) : (
-            <div className="text-2xl font-bold text-[#C15B2E]">{redActions}</div>
-          )}
-          <p className="text-xs text-muted-foreground mt-1">require immediate attention</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Clients at Risk</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-[#C15B2E]">{clientsAtRisk}</div>
-          <p className="text-xs text-muted-foreground mt-1">health status: urgent</p>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Active Clients</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-[#1B2F26]">{activeClients}</div>
-          <p className="text-xs text-muted-foreground mt-1">currently on platform</p>
-        </CardContent>
-      </Card>
+    <div className="space-y-3 mb-6">
+      {/* Health badge row */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-semibold text-foreground">Operator Cockpit</span>
+        {!loading && (
+          <HealthBadge red={redActions} yellow={yellowActions} />
+        )}
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Actions Due</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-12" />
+            ) : (
+              <div className="text-2xl font-bold text-[#C15B2E]">{redActions}</div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">require immediate attention</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Clients at Risk</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-[#C15B2E]">{clientsAtRisk}</div>
+            <p className="text-xs text-muted-foreground mt-1">health status: urgent</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Clients</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-[#1B2F26]">{activeClients}</div>
+            <p className="text-xs text-muted-foreground mt-1">currently on platform</p>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:bg-muted/20 transition-colors">
+          <Link href="/admin/system-health" className="block h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Capacity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {capacityLoading ? (
+                <Skeleton className="h-8 w-16" />
+              ) : capacityData ? (
+                <>
+                  <div
+                    className="text-2xl font-bold"
+                    style={{ color: capacityColor }}
+                  >
+                    {capacityData.utilizationPercent}%
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">weekly hours utilized</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    SA queue: {capacityData.smartAssistQueueDepth}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-muted-foreground">&mdash;</div>
+                  <p className="text-xs text-muted-foreground mt-1">weekly hours utilized</p>
+                </>
+              )}
+            </CardContent>
+          </Link>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -185,6 +278,8 @@ export function OperatorActionsPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false); // set to true once we know there are red items
+  const [capacityData, setCapacityData] = useState<CapacityData | null>(null);
+  const [capacityLoading, setCapacityLoading] = useState(true);
 
   const fetchActions = useCallback(async () => {
     try {
@@ -201,24 +296,43 @@ export function OperatorActionsPanel({
     }
   }, []);
 
+  const fetchCapacity = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/capacity');
+      if (!res.ok) throw new Error('Failed to load capacity');
+      const json = (await res.json()) as CapacityData;
+      setCapacityData(json);
+    } catch {
+      // Capacity is non-critical — show "—" on failure
+      setCapacityData(null);
+    } finally {
+      setCapacityLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    void fetchActions();
+    // Run both fetches in parallel on mount and on each poll interval
+    void Promise.all([fetchActions(), fetchCapacity()]);
     const interval = setInterval(() => {
-      void fetchActions();
+      void Promise.all([fetchActions(), fetchCapacity()]);
     }, 15_000);
     return () => clearInterval(interval);
-  }, [fetchActions]);
+  }, [fetchActions, fetchCapacity]);
 
   const redActions = data?.summary.red ?? 0;
+  const yellowActions = data?.summary.yellow ?? 0;
 
   return (
     <>
       {/* KPI summary cards */}
       <KpiSummaryBar
         redActions={redActions}
+        yellowActions={yellowActions}
         clientsAtRisk={clientsAtRisk}
         activeClients={activeClients}
+        capacityData={capacityData}
         loading={loading}
+        capacityLoading={capacityLoading}
       />
 
       {/* Operator Actions collapsible section */}
