@@ -167,7 +167,7 @@ CC-5 (Phone Setup) saw the most dramatic reduction — forwarding verification c
 | 11 | NFM-03 | Readiness Check | Checklist blocks legitimate autonomous transition | 4 | 3 | 3 | 3.6 | 2.9% | 0.12 |
 | 12 | NFM-10 | Daily Digest | Digest suppresses P2 but digest is empty — notifications lost | 5 | 2 | 6 | 6.0 | 1.8% | 0.09 |
 
-**Total new FM RPN: 113** (vs 805 RPN eliminated from original FMs — net positive by 692)
+**Total new FM RPN: 49.5** (post-resolution, down from 113 pre-resolution — 10 of 12 resolved, 2 accepted at low RPN)
 
 **Highest-concern new FMs**:
 
@@ -348,18 +348,18 @@ The EST trigger dependency (FM-40, still RPN 38.4) could be partially eliminated
 
 | ID | Component | Failure Mode | S | P(%) | D | RPN |
 |:--:|-----------|-------------|:-:|:----:|:-:|:---:|
-| NFM-01 | Ops Health Monitor | Circuit breaker false positive | 5 | 5 | 4 | 10.0 |
-| NFM-02 | Daily Digest | Reply disambiguation error | 6 | 5 | 5 | 15.0 |
-| NFM-03 | Readiness Check | Blocks legitimate transition | 4 | 3 | 3 | 3.6 |
-| NFM-04 | Forwarding Verification | AMD false negative | 4 | 8 | 2 | 6.4 |
-| NFM-05 | Engagement Signals | Seasonal false alarm | 3 | 10 | 3 | 9.0 |
-| NFM-06 | Auto-Resolve | Wrong suggestion approved | 8 | 2 | 6 | 9.6 |
-| NFM-07 | Feature Flags | Flag silently misconfigured | 5 | 3 | 7 | 10.5 |
-| NFM-08 | Heartbeat Check | Meta-cron fails | 6 | 2 | 8 | 9.6 |
-| NFM-09 | Capacity Tracking | Hours underestimate | 5 | 5 | 6 | 15.0 |
-| NFM-10 | Daily Digest | P2 suppressed but digest empty | 5 | 2 | 6 | 6.0 |
-| NFM-11 | Onboarding Checklist | Over-blocks ready client | 3 | 5 | 2 | 3.0 |
-| NFM-12 | Operator Actions | Action queue alert fatigue | 6 | 5 | 5 | 15.0 |
+| NFM-01 | Ops Health Monitor | Circuit breaker false positive | 5 | 2 | 4 | 4.0 | 10-min error spread confirmation |
+| NFM-02 | Daily Digest | Reply disambiguation error | 6 | 2 | 5 | 6.0 | Clarifying SMS fallback |
+| NFM-03 | Readiness Check | Blocks legitimate transition | 4 | 3 | 3 | 3.6 | Accepted (low RPN) |
+| NFM-04 | Forwarding Verification | AMD false negative | 4 | 3 | 2 | 2.4 | Inconclusive status + retry |
+| NFM-05 | Engagement Signals | Seasonal false alarm | 3 | 4 | 3 | 3.6 | Volume-aware dampening |
+| NFM-06 | Auto-Resolve | Wrong suggestion approved | 8 | 1 | 6 | 4.8 | 0.70 similarity threshold |
+| NFM-07 | Feature Flags | Flag silently misconfigured | 5 | 3 | 4 | 6.0 | console.warn on disabled |
+| NFM-08 | Heartbeat Check | Meta-cron fails | 6 | 1 | 4 | 2.4 | Self-health cursor |
+| NFM-09 | Capacity Tracking | Hours underestimate | 5 | 2 | 6 | 6.0 | Graduated formula |
+| NFM-10 | Daily Digest | P2 suppressed but digest empty | 5 | 1 | 3 | 1.5 | 48h audit_log dedup |
+| NFM-11 | Onboarding Checklist | Over-blocks ready client | 3 | 5 | 2 | 3.0 | Accepted (low RPN) |
+| NFM-12 | Operator Actions | Action queue alert fatigue | 6 | 2 | 5 | 6.0 | Red/yellow/all filter |
 
 ---
 
