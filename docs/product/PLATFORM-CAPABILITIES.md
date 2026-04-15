@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-14 (FMA Wave 2: exclusion list gate, autonomous readiness checklist, ICP qualification fields, onboarding checklist, forwarding verification)
+Last updated: 2026-04-14 (FMA Waves 1-4: exclusion list gate, autonomous readiness checklist, ICP qualification fields, onboarding checklist, forwarding verification, operator cockpit KPI cards, auto-resolve suggestions, triage capacity badge, multi-operator data model)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -1259,6 +1259,10 @@ The admin nav has 5 groups. `/admin` redirects to `/admin/triage`. Updated 2026-
 **Key changes (2026-04-09):** Template Performance merged into Flow Analytics. Compliance moved from Settings to Reporting. Roles/Users collapsed into Team sub-tabs. Discussions renamed to Support. AI Quality renamed to AI Flagged Responses. AI Effectiveness renamed to AI Performance. Platform Analytics no longer duplicates MRR/churn from Billing. Voice AI uses client selector instead of per-client accordion.
 
 **Key changes (2026-04-10):** Agency Summary added to Reporting (cross-client weekly stats). KB Gap Queue added to Optimization (cross-client knowledge gaps). Client detail: Schedule page added (visual dispatch/calendar view with team member appointment reassignment).
+
+### Multi-Operator Readiness
+
+Multi-operator readiness: `primaryOperatorPersonId` column on clients table supports client-to-operator assignment. UI deferred until client count reaches 6-7.
 
 ### Admin Client Detail Page Structure
 

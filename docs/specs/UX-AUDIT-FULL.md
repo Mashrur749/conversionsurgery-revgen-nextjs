@@ -66,6 +66,10 @@ Items identified in initial UX pass, code changes shipped and verified:
 | F52 | Admin client detail had 4 tabs with Activity tab holding both Smart Assist drafts and quarterly campaigns in a dense layout | Restructured to 5 tabs: Overview, Knowledge, Configuration, Team &amp; Billing, Campaigns. Smart Assist pending drafts are in Campaigns tab; configuration tools (DNC, integrations, Smart Assist settings) in Configuration tab. Actions card removed; Payment Link and Export Data moved to page header. | Done |
 | F53 | Admin nav had Dashboard inside Clients group and AI Quality inside Optimization — mismatched grouping | Admin nav restructured to 5 groups: Clients (Triage, Clients, Escalations, AI Quality, Discussions), Reporting (Billing, Reports, Platform Health, Costs &amp; Usage), Optimization, Team &amp; Access, Settings. /admin now redirects to /admin/triage. | Done |
 | F54 | Contractor nav had 9+ items including separate Knowledge Base, Billing, Help, and Discussions items | Contractor nav consolidated to 9 items: Dashboard, Conversations, Reviews, Revenue, Reports, Flows, Team, Settings, Help &amp; Support. Knowledge Base and Billing moved into Settings. Discussions merged into Help &amp; Support. | Done |
+| F55 | Admin client detail onboarding checklist showed only 3 items inline — insufficient visibility into full setup state | 10-item onboarding checklist card on admin client detail Overview tab replaces the old 3-item inline checklist. Shows all setup milestones with pass/fail status and blocking indicators. Auto-hides for established clients past the onboarding window. | Done |
+| F56 | No readiness gate before switching client to Autonomous mode — operators could enable autonomous on underprepared clients | Readiness checklist shown inline in feature toggles when Autonomous mode is selected: 6 items (KB populated, pricing configured, Smart Assist review period, escalation rate, exclusion list reviewed, business hours). Critical items block save; warnings allow with notice. API: GET /api/admin/clients/{id}/readiness. | Done |
+| F57 | Triage page lacked cross-client KPI visibility — operators had to open individual client pages to assess workload | Triage dashboard upgraded with KPI cards (open escalations, Smart Assist pending drafts, at-risk clients, high-priority KB gaps), operator actions panel sorted by urgency, call prep links on client rows, and capacity badge showing Smart Assist queue depth. | Done |
+| F58 | Escalations page had no auto-resolve workflow — KB gaps identified via escalation required manual KB lookup and copy-paste | Auto-resolve suggestions shown on escalation cards when a KB entry matches the gap (similarity &ge; 0.7). One-click resolve action applies the suggestion and closes the gap. Source label distinguishes website-sourced vs KB-sourced suggestions. | Done |
 
 ---
 
@@ -284,14 +288,15 @@ All Tier 1 items (1.1 through 1.6) have been implemented. See the "Already Fixed
 
 ## Summary
 
-**Total issues found: 33** (plus 11 pre-audit fixes = 44 tracked items, plus 3 post-audit P0 fixes = 47 total)
+**Total issues found: 33** (plus 11 pre-audit fixes = 44 tracked items, plus 3 post-audit P0 fixes = 47 total, plus 4 FMA Wave UI items = 51 total)
 - Tier 1 (Dealbreakers): 6 &mdash; all fixed (F12-F17)
 - Tier 2 (High Friction): 10 &mdash; all fixed (F18-F20 + 3 resolved by P0, F21-F24)
 - Tier 3 (Moderate Friction): 10 &mdash; all fixed (F25-F34, including 3.3)
 - Tier 4 (Polish): 7 &mdash; all done (F35-F40 + 4.5 resolved by F21)
 - Post-audit P0 fixes: 3 &mdash; all fixed (F44-F46)
+- FMA Wave UI items: 4 &mdash; all fixed (F55-F58)
 
-**All UX audit items are now done.** Total tracked items including pre-audit and post-audit fixes: 46 (F1-F43 + F44-F46). Zero open UX items remain.
+**All UX audit items are now done.** Total tracked items including pre-audit, post-audit, and FMA wave fixes: 58 (F1-F54 + F55-F58). Zero open UX items remain.
 
 **Biggest single improvement:** Split-pane conversation view with real-time polling (1.1 + 1.2). This is the product&apos;s daily driver screen.
 

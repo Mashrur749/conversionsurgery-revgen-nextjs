@@ -186,6 +186,33 @@ No auth surfaces changed &mdash; existing role/user permissions, escalation prev
 - AI effectiveness summary is automatically embedded in biweekly reports via `roiSummary.aiEffectiveness` — no new auth surface (uses existing report generation pipeline).
 - No new portal/client-facing permission scopes were introduced.
 
+## FMA Resolution Access Note (April 2026)
+
+Failure-mode analysis resolution waves (1-4) added the following routes. All agency-facing routes use the `adminRoute` / `adminClientRoute` wrappers with the listed permission. All cron routes use `verifyCronSecret`. Webhook routes use signature verification.
+
+### New Routes
+
+| Route | Method | Permission | Notes |
+|-------|--------|-----------|-------|
+| `/api/admin/operator-actions` | GET | CLIENTS_VIEW | Aggregated operator action queue |
+| `/api/admin/clients/{id}/engagement-signals` | GET | CLIENTS_VIEW | Per-client engagement signals |
+| `/api/admin/clients/{id}/readiness` | GET | CLIENTS_VIEW | Autonomous readiness checklist |
+| `/api/admin/clients/{id}/onboarding-checklist` | GET | CLIENTS_VIEW | Onboarding checklist state |
+| `/api/admin/clients/{id}/auto-resolve/{gapId}` | GET | CLIENTS_EDIT | Auto-resolve suggestion |
+| `/api/admin/clients/{id}/auto-resolve/{gapId}` | POST | CLIENTS_EDIT | Apply auto-resolution |
+| `/api/admin/clients/{id}/auto-resolve/search` | GET | CLIENTS_VIEW | KB search for escalation context |
+| `/api/admin/escalations/{id}` | PATCH | CLIENTS_EDIT | Resolve/dismiss escalation |
+| `/api/admin/capacity` | GET | CLIENTS_VIEW | Capacity utilization estimate |
+| `/api/admin/system-health` | GET | CLIENTS_VIEW | Monthly health digest |
+| `/api/cron/billing-reminder` | GET | Cron secret | Day 25 billing reminder |
+| `/api/cron/guarantee-alert` | GET | Cron secret | Day 80 guarantee alert |
+| `/api/cron/onboarding-reminder` | GET | Cron secret | 2h before onboarding call |
+| `/api/cron/onboarding-priming` | GET | Cron secret | Pre-onboarding priming SMS |
+| `/api/cron/daily-digest` | GET | Cron secret | Daily contractor digest |
+| `/api/cron/forwarding-verification` | GET | Cron secret | Forwarding test calls |
+| `/api/cron/heartbeat-check` | GET | Cron secret | Automation health check |
+| `/api/webhooks/twilio/verification-status` | POST | Twilio signature | Forwarding verification callback |
+
 ## Webhook Routes
 
 Webhook endpoints use signature verification instead of session-based auth. No permission wrapper is used — each webhook validates the inbound signature before processing.

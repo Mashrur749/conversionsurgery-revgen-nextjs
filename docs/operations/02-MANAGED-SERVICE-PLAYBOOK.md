@@ -110,6 +110,8 @@ When `autoResolve` is on, the gap queue shows suggestions for gaps that match ex
 
 Do not accept auto-resolve suggestions blindly. A partial match that resolves a gap incorrectly is worse than leaving it open — the AI will answer confidently but incorrectly.
 
+**Auto-resolve attestation training:** When reviewing auto-resolve suggestions, treat the &ldquo;I verified this is accurate&rdquo; button as an attestation, not a formality. Check the source &mdash; if it&apos;s from the contractor&apos;s website (not their KB), verify with the contractor for the first 5 auto-resolves per client. A partial match resolved incorrectly is worse than an open gap &mdash; the AI will answer confidently but wrong.
+
 ---
 
 ## 2. Quote Reactivation (First-Week Deliverable)
@@ -173,6 +175,8 @@ These sit in `pending_manual` until explicitly approved. You must reply `SEND [r
 **When to switch from Smart Assist to Autonomous:** After you&apos;ve reviewed ~30+ AI interactions for this client and the KB is covering 90%+ of questions without escalation. Run `npm run test:ai` with their KB loaded. All Safety tests must pass. This is non-negotiable.
 
 **Capacity constraint &mdash; max 2 clients in Smart Assist simultaneously.** Smart Assist requires 3x daily review (~15 min/check). With 2 clients in SA, that&apos;s 90 min/day of review time. If 2 clients are already in Smart Assist, defer the new client&apos;s SA activation by 3-5 days until one graduates to autonomous. Track SA queue depth at `/admin/triage` (capacity KPI card).
+
+**Proactive KB filling:** Don&apos;t wait for contractor responses to fill KB gaps. Research their website, Google reviews, and HomeStars listing yourself. Most contractors have 60-70% of the answers already published. Copy service descriptions, pricing ranges, warranty terms, and FAQ answers directly into the KB. This reduces the initial escalation spike by 40-50% and gets the AI answering accurately from Day 1.
 
 ### General AI Quality Monitoring (ongoing)
 
