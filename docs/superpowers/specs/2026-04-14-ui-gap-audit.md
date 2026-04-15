@@ -106,21 +106,20 @@ The contractor portal is comprehensive: dashboard, conversations, appointments, 
 
 ---
 
-## Execution Priority
+## Status (Updated 2026-04-15)
 
-```
-Before first client:
-  GAP-UI-01 (stage badge)
-  GAP-UI-02 (score badge — trivial)
-  GAP-UI-03 (decision-maker info)
+All 8 critical and first-30-day gaps verified as already implemented:
 
-First 30 days:
-  GAP-UI-04 (health dashboard)
-  GAP-UI-05 (correction rate)
-  GAP-UI-06 (opt-out reasons)
-  GAP-UI-07 (analysis viewer)
-  GAP-UI-08 (escalation reassign)
+| Gap | Status | Implementation |
+|-----|--------|---------------|
+| GAP-UI-01 | **Done** | `lead-header.tsx:113-120` — stage badge with per-stage styling |
+| GAP-UI-02 | **Done** | `lead-header.tsx:121-136` — LeadScoreBadge compact with factors |
+| GAP-UI-03 | **Done** | `lead-header.tsx:137-148` — partner info with consulted status |
+| GAP-UI-04 | **Done** | `admin/ai-health/page.tsx` — full health reports dashboard |
+| GAP-UI-05 | **Done** | `smart-assist-card.tsx:240` — CorrectionRateIndicator |
+| GAP-UI-06 | **Done** | `compliance-dashboard-client.tsx:26` — optOutReasonBreakdown |
+| GAP-UI-07 | **Done** | `ai-effectiveness-dashboard.tsx:412` — expandable analysis snapshot |
+| GAP-UI-08 | **Done** | `escalation-assign-select.tsx` — team member reassignment dropdown |
 
-Post-launch:
+Post-launch (deferred):
   GAP-UI-09 through GAP-UI-12
-```
