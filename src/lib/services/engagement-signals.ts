@@ -143,7 +143,7 @@ export async function getEngagementSignals(
   const db = getDb();
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  // Run all 6 underlying queries in parallel
+  // Run all underlying queries in parallel (including volume check)
   const [
     estRecencyRow,
     wonLostRecencyRow,
@@ -152,6 +152,7 @@ export async function getEngagementSignals(
     nudgeTotalRow,
     nudgeRespondedRow,
     contractorContactRow,
+    recentLeadCountRow,
   ] = await Promise.all([
     // 1. Estimate trigger recency — latest updatedAt for active leads
     db
@@ -242,6 +243,18 @@ export async function getEngagementSignals(
         )
       )
       .then((rows) => rows[0] ?? null),
+
+    // 6. Volume check — new leads in last 30 days (for low-volume dampening)
+    db
+      .select({ value: count() })
+      .from(leads)
+      .where(
+        and(
+          eq(leads.clientId, clientId),
+          gte(leads.createdAt, thirtyDaysAgo)
+        )
+      )
+      .then((rows) => rows[0] ?? { value: 0 }),
   ]);
 
   // ── Build signals ─────────────────────────────────────────────────────────
@@ -292,6 +305,16 @@ export async function getEngagementSignals(
     value: formatDays(contactDays),
     threshold: 'Green < 7d, Yellow 7-14d, Red > 14d',
   };
+
+  // ── Volume-awareness dampening ─────────────────────────────────────────────
+  // During seasonal slowdowns with very low lead volume (< 3 leads in 30 days),
+  // recency signals can fire red purely from inactivity — not genuine disengagement.
+  // Cap est_recency and won_lost_recency at yellow in that case.
+  const recentLeadCount = Number(recentLeadCountRow.value);
+  if (recentLeadCount < 3) {
+    if (signal1.status === 'red') signal1.status = 'yellow';
+    if (signal2.status === 'red') signal2.status = 'yellow';
+  }
 
   const signals = [signal1, signal2, signal3, signal4, signal5];
 

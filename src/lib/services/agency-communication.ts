@@ -1050,7 +1050,22 @@ async function executeNumberedReply(
       }
     }
 
-    if (confirmations.length === 0) return false;
+    if (confirmations.length === 0) {
+      // parsed.skipAll is already handled above (returns early at line ~793)
+      // Reaching here means selections were present but none matched a digest option index
+      console.warn('[DailyDigest] Ambiguous reply could not be matched', {
+        clientId,
+        selectionsCount: parsed.selections.length,
+      });
+      await sendAgencySMS({
+        clientId,
+        toPhone: clientPhone,
+        body: 'Could not match your reply to a pending item. Reply 0 to skip, or wait for tomorrow morning update.',
+        category: 'reply',
+        inReplyTo: pendingPrompt.id,
+      });
+      return false;
+    }
 
     await db2
       .update(agencyMessages)

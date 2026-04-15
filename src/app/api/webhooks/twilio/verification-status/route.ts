@@ -9,10 +9,18 @@ import { logInternalError, logSanitizedConsoleError } from '@/lib/services/inter
  * Machine detection (AMD) answer values from Twilio that indicate voicemail.
  */
 const VOICEMAIL_ANSWERED_BY = new Set([
-  'machine_start',
   'machine_end_beep',
   'machine_end_silence',
   'machine_end_other',
+]);
+
+/**
+ * AMD answer values where Twilio could not conclusively determine the answer.
+ * These should be retried tomorrow rather than marked as definitively failed.
+ */
+const INCONCLUSIVE_ANSWERED_BY = new Set([
+  'unknown',
+  'machine_start',
 ]);
 
 /**
@@ -78,14 +86,17 @@ export async function POST(request: NextRequest): Promise<Response> {
     const { clientId } = phoneRecord;
 
     // Determine verification result
-    let verificationResult: 'passed' | 'failed';
+    let verificationResult: 'passed' | 'failed' | 'inconclusive';
 
     if (callStatus === 'completed') {
       // AMD result present — voicemail means forwarding did not connect to a person
       if (answeredBy && VOICEMAIL_ANSWERED_BY.has(answeredBy)) {
         verificationResult = 'failed';
+      } else if (answeredBy && INCONCLUSIVE_ANSWERED_BY.has(answeredBy)) {
+        // AMD started but could not determine — retry tomorrow instead of hard failing
+        verificationResult = 'inconclusive';
       } else {
-        // human, unknown, or no AMD result → forwarding likely works
+        // human or no AMD result → forwarding likely works
         verificationResult = 'passed';
       }
     } else {
@@ -99,6 +110,7 @@ export async function POST(request: NextRequest): Promise<Response> {
       .update(clients)
       .set({
         forwardingVerificationStatus: verificationResult,
+        // Only stamp verifiedAt on a definitive pass — inconclusive leaves it unchanged
         ...(verificationResult === 'passed' ? { forwardingVerifiedAt: now } : {}),
         updatedAt: now,
       })

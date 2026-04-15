@@ -36,6 +36,20 @@ export async function runHeartbeatCheck(): Promise<{ healthy: boolean; issues: s
   const windowMs = 26 * 60 * 60 * 1000; // 26-hour window with timing drift buffer
   const cutoff = new Date(Date.now() - windowMs);
 
+  // Record that the heartbeat itself is running — makes staleness detectable by external monitors
+  await db
+    .insert(cronJobCursors)
+    .values({
+      jobKey: 'heartbeat_check',
+      periodType: 'daily',
+      lastRunAt: new Date(),
+      status: 'running',
+    })
+    .onConflictDoUpdate({
+      target: cronJobCursors.jobKey,
+      set: { lastRunAt: new Date(), status: 'running', updatedAt: new Date() },
+    });
+
   try {
     // Step 1: Query all cron job cursors
     const cursors = await db.select().from(cronJobCursors);
@@ -77,6 +91,29 @@ export async function runHeartbeatCheck(): Promise<{ healthy: boolean; issues: s
   } catch (err) {
     logSanitizedConsoleError('[HeartbeatCheck] Error running heartbeat check:', err);
     issues.push(`heartbeat_check: internal error - ${err instanceof Error ? err.message : 'unknown'}`);
+  }
+
+  // Update cursor to completed (best-effort — don't let this fail the health result)
+  try {
+    await db
+      .insert(cronJobCursors)
+      .values({
+        jobKey: 'heartbeat_check',
+        periodType: 'daily',
+        lastRunAt: new Date(),
+        lastSuccessAt: issues.length === 0 ? new Date() : undefined,
+        status: 'completed',
+      })
+      .onConflictDoUpdate({
+        target: cronJobCursors.jobKey,
+        set: {
+          lastSuccessAt: issues.length === 0 ? new Date() : undefined,
+          status: 'completed',
+          updatedAt: new Date(),
+        },
+      });
+  } catch (cursorErr) {
+    logSanitizedConsoleError('[HeartbeatCheck] Failed to update cursor status:', cursorErr);
   }
 
   // Step 8: Return result

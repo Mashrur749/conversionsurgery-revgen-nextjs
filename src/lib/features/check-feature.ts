@@ -93,7 +93,11 @@ export async function isFeatureEnabled(
     .where(eq(clients.id, clientId))
     .limit(1);
 
-  return (client?.enabled as boolean) ?? false;
+  const result = (client?.enabled as boolean) ?? false;
+  if (!result) {
+    console.warn(`[FeatureFlag] ${feature} disabled for client ${clientId}`);
+  }
+  return result;
 }
 
 /**

@@ -93,9 +93,11 @@ export async function getCapacityEstimate(): Promise<CapacityEstimate> {
     const escalations = escalationByClient.get(client.id) ?? 0;
     const gaps = gapsByClient.get(client.id) ?? 0;
 
-    let activityAdjustment = 0;
-    if (escalations > 5) activityAdjustment += 1.0;
-    if (gaps > 5) activityAdjustment += 0.5;
+    // Graduated scaling: 5 escalations = 0.75h, 10 = 1.5h, 13+ caps at 2.0h.
+    // KB gaps: 5 = 0.4h, 12+ caps at 1.0h. Max combined = 3.0h.
+    const escalationAdjustment = Math.min(escalations * 0.15, 2.0);
+    const kbGapAdjustment = Math.min(gaps * 0.08, 1.0);
+    const activityAdjustment = escalationAdjustment + kbGapAdjustment;
 
     return {
       clientId: client.id,

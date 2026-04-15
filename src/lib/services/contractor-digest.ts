@@ -15,8 +15,8 @@
  */
 
 import { getDb } from '@/db';
-import { knowledgeGaps, leads, appointments } from '@/db/schema';
-import { eq, and, notInArray, inArray, lt, lte, desc } from 'drizzle-orm';
+import { knowledgeGaps, leads, appointments, auditLog } from '@/db/schema';
+import { eq, and, notInArray, inArray, lt, lte, desc, gte } from 'drizzle-orm';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -24,6 +24,7 @@ const ESTIMATE_STALE_DAYS = 14;
 const APPOINTMENT_AGE_DAYS = 7;
 const MAX_DIGEST_ITEMS = 8;
 const RESOLVED_STATUSES = ['won', 'lost', 'closed'] as const;
+const DIGEST_DEDUP_HOURS = 48;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -50,19 +51,43 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
   const now = new Date();
   const items: DigestItem[] = [];
 
+  // ── 0. Dedup: fetch item IDs already included in a digest in the last 48h ─
+  const dedupCutoff = new Date(now.getTime() - DIGEST_DEDUP_HOURS * 60 * 60 * 1000);
+
+  const recentlyDigested = await db
+    .select({ resourceId: auditLog.resourceId })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.clientId, clientId),
+        eq(auditLog.action, 'digest_item_included'),
+        gte(auditLog.createdAt, dedupCutoff)
+      )
+    );
+
+  const recentlyDigestedIds = new Set(
+    recentlyDigested.map((r) => r.resourceId).filter((id): id is string => id !== null)
+  );
+
   // ── 1. KB gaps (status = 'new', ordered by priorityScore desc) ───────────
+  const recentlyDigestedIdsArray = [...recentlyDigestedIds];
+
+  const gapWhere =
+    recentlyDigestedIdsArray.length > 0
+      ? and(
+          eq(knowledgeGaps.clientId, clientId),
+          eq(knowledgeGaps.status, 'new'),
+          notInArray(knowledgeGaps.id, recentlyDigestedIdsArray)
+        )
+      : and(eq(knowledgeGaps.clientId, clientId), eq(knowledgeGaps.status, 'new'));
+
   const gaps = await db
     .select({
       id: knowledgeGaps.id,
       question: knowledgeGaps.question,
     })
     .from(knowledgeGaps)
-    .where(
-      and(
-        eq(knowledgeGaps.clientId, clientId),
-        eq(knowledgeGaps.status, 'new')
-      )
-    )
+    .where(gapWhere)
     .orderBy(desc(knowledgeGaps.priorityScore))
     .limit(MAX_DIGEST_ITEMS);
 
@@ -93,11 +118,13 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
     .limit(MAX_DIGEST_ITEMS);
 
   for (const lead of staleEstimates) {
-    items.push({
-      type: 'estimate_prompt',
-      id: lead.id,
-      label: abbreviateName(lead.name),
-    });
+    if (!recentlyDigestedIds.has(lead.id)) {
+      items.push({
+        type: 'estimate_prompt',
+        id: lead.id,
+        label: abbreviateName(lead.name),
+      });
+    }
   }
 
   // ── 3. Post-appointment unresolved leads (7+ days old appointment) ───────
@@ -120,12 +147,14 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
   const appointmentLeadIds = [...new Set(qualifyingAppointments.map((a) => a.leadId))];
 
   if (appointmentLeadIds.length > 0) {
-    // Exclude leads already in stale estimates (dedup)
+    // Exclude leads already in stale estimates (dedup across type)
     const estimateLeadIds = new Set(
       items.filter((i) => i.type === 'estimate_prompt').map((i) => i.id)
     );
 
-    const unresolvedLeadIds = appointmentLeadIds.filter((id) => !estimateLeadIds.has(id));
+    const unresolvedLeadIds = appointmentLeadIds.filter(
+      (id) => !estimateLeadIds.has(id) && !recentlyDigestedIds.has(id)
+    );
 
     if (unresolvedLeadIds.length > 0) {
       const unresolvedLeads = await db
@@ -155,7 +184,22 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
   if (items.length === 0) return null;
 
   // Cap at MAX_DIGEST_ITEMS
-  return { items: items.slice(0, MAX_DIGEST_ITEMS) };
+  const cappedItems = items.slice(0, MAX_DIGEST_ITEMS);
+
+  // ── Dedup write: mark each included item so it won't reappear for 48h ────
+  if (cappedItems.length > 0) {
+    await db.insert(auditLog).values(
+      cappedItems.map((item) => ({
+        clientId,
+        action: 'digest_item_included' as const,
+        resourceType: item.type,
+        resourceId: item.id,
+        metadata: { label: item.label } as Record<string, unknown>,
+      }))
+    );
+  }
+
+  return { items: cappedItems };
 }
 
 // ── Format digest SMS ─────────────────────────────────────────────────────────

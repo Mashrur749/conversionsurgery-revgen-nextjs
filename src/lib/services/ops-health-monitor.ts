@@ -7,7 +7,7 @@
 
 import { getDb } from '@/db';
 import { cronJobCursors, auditLog, agencyMessages } from '@/db/schema';
-import { eq, and, gte, gt, or, like, count } from 'drizzle-orm';
+import { eq, and, gte, gt, or, like, count, min, max } from 'drizzle-orm';
 import {
   isOpsKillSwitchEnabled,
   OPS_KILL_SWITCH_KEYS,
@@ -113,8 +113,13 @@ export async function checkClientCircuitBreaker(
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   // Count distinct action values matching error/failed patterns for this client in last 24h
+  // Also capture the time spread to require a 10-minute confirmation window
   const rows = await db
-    .select({ action: auditLog.action })
+    .select({
+      action: auditLog.action,
+      firstErrorAt: min(auditLog.createdAt),
+      lastErrorAt: max(auditLog.createdAt),
+    })
     .from(auditLog)
     .where(
       and(
@@ -132,6 +137,19 @@ export async function checkClientCircuitBreaker(
   const distinctCount = distinctActions.size;
 
   if (distinctCount >= 3) {
+    // Confirmation window: errors must span at least 10 minutes to rule out transient bursts
+    const firstErrorAt = rows[0]?.firstErrorAt;
+    const lastErrorAt = rows[0]?.lastErrorAt;
+    const spreadMs =
+      firstErrorAt && lastErrorAt
+        ? lastErrorAt.getTime() - firstErrorAt.getTime()
+        : 0;
+
+    if (spreadMs < 10 * 60 * 1000) {
+      // All errors clustered within 10 minutes — likely a transient burst, do not trip
+      return { tripped: false };
+    }
+
     return {
       tripped: true,
       reason: `${distinctCount} distinct automation errors in last 24h`,

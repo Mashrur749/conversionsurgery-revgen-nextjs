@@ -280,6 +280,7 @@ export function OperatorActionsPanel({
   const [expanded, setExpanded] = useState(false); // set to true once we know there are red items
   const [capacityData, setCapacityData] = useState<CapacityData | null>(null);
   const [capacityLoading, setCapacityLoading] = useState(true);
+  const [urgencyFilter, setUrgencyFilter] = useState<'all' | 'red' | 'yellow'>('all');
 
   const fetchActions = useCallback(async () => {
     try {
@@ -387,19 +388,70 @@ export function OperatorActionsPanel({
 
             {!loading && !error && data && data.actions.length > 0 && (
               <>
-                {/* Desktop list */}
-                <div className="hidden sm:block divide-y">
-                  {data.actions.map((action) => (
-                    <ActionRow key={action.id} action={action} />
-                  ))}
+                {/* Urgency filter bar */}
+                <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap border-b">
+                  {(
+                    [
+                      { value: 'all', label: 'All', count: data.actions.length },
+                      { value: 'red', label: 'Red', count: data.actions.filter((a) => a.urgency === 'red').length },
+                      { value: 'yellow', label: 'Yellow', count: data.actions.filter((a) => a.urgency === 'yellow').length },
+                    ] as const
+                  ).map(({ value, label, count }) => {
+                    const isActive = urgencyFilter === value;
+                    const baseStyle: React.CSSProperties =
+                      value === 'red'
+                        ? { borderColor: '#C15B2E', color: isActive ? '#fff' : '#C15B2E', backgroundColor: isActive ? '#C15B2E' : 'transparent' }
+                        : value === 'yellow'
+                          ? { borderColor: '#D4754A', color: isActive ? '#fff' : '#D4754A', backgroundColor: isActive ? '#D4754A' : 'transparent' }
+                          : { borderColor: '#1B2F26', color: isActive ? '#fff' : '#1B2F26', backgroundColor: isActive ? '#1B2F26' : 'transparent' };
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setUrgencyFilter(value)}
+                        className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-xs font-medium transition-colors"
+                        style={baseStyle}
+                        aria-pressed={isActive}
+                      >
+                        {label}
+                        <span className="ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+                          style={{ backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.08)' }}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {/* Mobile card stack */}
-                <div className="sm:hidden space-y-3 p-4">
-                  {data.actions.map((action) => (
-                    <ActionCard key={action.id} action={action} />
-                  ))}
-                </div>
+                {(() => {
+                  const filtered = data.actions.filter(
+                    (a) => urgencyFilter === 'all' || a.urgency === urgencyFilter
+                  );
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                        No {urgencyFilter} actions pending.
+                      </div>
+                    );
+                  }
+                  return (
+                    <>
+                      {/* Desktop list */}
+                      <div className="hidden sm:block divide-y">
+                        {filtered.map((action) => (
+                          <ActionRow key={action.id} action={action} />
+                        ))}
+                      </div>
+
+                      {/* Mobile card stack */}
+                      <div className="sm:hidden space-y-3 p-4">
+                        {filtered.map((action) => (
+                          <ActionCard key={action.id} action={action} />
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </>
             )}
           </CardContent>

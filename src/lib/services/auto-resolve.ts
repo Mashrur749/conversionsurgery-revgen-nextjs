@@ -12,6 +12,8 @@ import { eq, and, count } from 'drizzle-orm';
 import { semanticSearch, addKnowledgeEntry } from '@/lib/services/knowledge-base';
 import { resolveFeatureFlag } from '@/lib/services/feature-flags';
 
+const MIN_SIMILARITY_THRESHOLD = 0.70;
+
 export interface AutoResolveSuggestion {
   found: boolean;
   reason?: string;
@@ -50,7 +52,7 @@ export async function getAutoResolveSuggestion(
   // Semantic search against the client&apos;s KB
   const matches = await semanticSearch(clientId, gap.question);
 
-  if (matches.length === 0 || (matches[0].similarity !== undefined && matches[0].similarity <= 0)) {
+  if (matches.length === 0 || (matches[0].similarity ?? 0) < MIN_SIMILARITY_THRESHOLD) {
     return { found: false, reason: 'No matching KB entry found' };
   }
 
