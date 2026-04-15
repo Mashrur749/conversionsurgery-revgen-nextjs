@@ -13,8 +13,10 @@ import type { OperatorActionsResult, OperatorAction } from '@/lib/services/opera
 // ---------------------------------------------------------------------------
 
 interface CapacityData {
-  utilizationPercent: number;
-  alertLevel: string;
+  totalClients: number;
+  byPhase: { onboarding: number; assist: number; autonomous: number; manual: number };
+  openEscalations: number;
+  openKbGaps: number;
   smartAssistQueueDepth: number;
 }
 
@@ -174,14 +176,6 @@ export function KpiSummaryBar({
   loading: boolean;
   capacityLoading: boolean;
 }) {
-  // Capacity color by alert level
-  const capacityColor =
-    capacityData?.alertLevel === 'red'
-      ? '#C15B2E'
-      : capacityData?.alertLevel === 'yellow'
-        ? '#6B7E54'
-        : '#3D7A50';
-
   return (
     <div className="space-y-3 mb-6">
       {/* Health badge row */}
@@ -238,21 +232,20 @@ export function KpiSummaryBar({
                 <Skeleton className="h-8 w-16" />
               ) : capacityData ? (
                 <>
-                  <div
-                    className="text-2xl font-bold"
-                    style={{ color: capacityColor }}
-                  >
-                    {capacityData.utilizationPercent}%
+                  <div className="text-2xl font-bold text-[#1B2F26]">
+                    {capacityData.totalClients}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">weekly hours utilized</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Onboarding: {capacityData.byPhase.onboarding}, Assist: {capacityData.byPhase.assist}, Auto: {capacityData.byPhase.autonomous}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    SA queue: {capacityData.smartAssistQueueDepth}
+                    Escalations: {capacityData.openEscalations} | KB Gaps: {capacityData.openKbGaps}
                   </p>
                 </>
               ) : (
                 <>
                   <div className="text-2xl font-bold text-muted-foreground">&mdash;</div>
-                  <p className="text-xs text-muted-foreground mt-1">weekly hours utilized</p>
+                  <p className="text-xs text-muted-foreground mt-1">clients on platform</p>
                 </>
               )}
             </CardContent>

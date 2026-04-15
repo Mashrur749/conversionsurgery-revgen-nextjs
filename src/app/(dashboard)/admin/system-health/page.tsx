@@ -37,30 +37,6 @@ function StatusBadge({ status, backlog }: { status: string; backlog: number }) {
   );
 }
 
-function UtilizationBar({ percent, alertLevel }: { percent: number; alertLevel: string }) {
-  let barColor = '#3D7A50';
-  if (alertLevel === 'yellow') barColor = '#D4754A';
-  if (alertLevel === 'red') barColor = '#C15B2E';
-
-  const clamped = Math.min(percent, 100);
-
-  return (
-    <div className="mt-3">
-      <div className="flex justify-between text-sm mb-1">
-        <span style={{ color: '#6B7E54' }}>Utilization</span>
-        <span className="font-semibold" style={{ color: '#1B2F26' }}>
-          {percent}%
-        </span>
-      </div>
-      <div className="h-2 rounded-full bg-[#E3E9E1] overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${clamped}%`, backgroundColor: barColor }}
-        />
-      </div>
-    </div>
-  );
-}
 
 export default async function SystemHealthPage() {
   const session = await auth();
@@ -158,19 +134,33 @@ export default async function SystemHealthPage() {
           <CardContent>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <div>
-                <dt className="text-muted-foreground">Weekly hours</dt>
+                <dt className="text-muted-foreground">Total clients</dt>
                 <dd className="text-xl font-bold mt-0.5" style={{ color: '#1B2F26' }}>
-                  {capacity.totalWeeklyHours.toFixed(1)}h
+                  {capacity.totalClients}
                 </dd>
               </div>
               <div>
-                <dt className="text-muted-foreground">Max capacity</dt>
+                <dt className="text-muted-foreground">SA queue depth</dt>
                 <dd className="text-xl font-bold mt-0.5" style={{ color: '#1B2F26' }}>
-                  {capacity.maxHours}h
+                  {capacity.smartAssistQueueDepth}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Open escalations</dt>
+                <dd className="text-xl font-bold mt-0.5" style={{ color: capacity.openEscalations > 0 ? '#C15B2E' : '#3D7A50' }}>
+                  {capacity.openEscalations}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Open KB gaps</dt>
+                <dd className="text-xl font-bold mt-0.5" style={{ color: capacity.openKbGaps > 0 ? '#D4754A' : '#3D7A50' }}>
+                  {capacity.openKbGaps}
                 </dd>
               </div>
             </dl>
-            <UtilizationBar percent={capacity.utilizationPercent} alertLevel={capacity.alertLevel} />
+            <p className="text-xs text-muted-foreground mt-3">
+              Onboarding: {capacity.byPhase.onboarding} &middot; Assist: {capacity.byPhase.assist} &middot; Auto: {capacity.byPhase.autonomous} &middot; Manual: {capacity.byPhase.manual}
+            </p>
           </CardContent>
         </Card>
       </div>

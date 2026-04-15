@@ -1,7 +1,7 @@
 import { getDb } from '@/db';
 import { clients, cronJobCursors, subscriptions, agencyMessages, leads } from '@/db/schema';
 import { eq, gte, and, count, sum, sql } from 'drizzle-orm';
-import { getCapacityEstimate } from '@/lib/services/capacity-tracking';
+import { getCapacitySnapshot } from '@/lib/services/capacity-tracking';
 
 export interface MonthlyDigest {
   generatedAt: string;
@@ -14,10 +14,11 @@ export interface MonthlyDigest {
       churnedThisMonth: number;
     };
     capacity: {
-      totalWeeklyHours: number;
-      maxHours: number;
-      utilizationPercent: number;
-      alertLevel: string;
+      totalClients: number;
+      byPhase: { onboarding: number; assist: number; autonomous: number; manual: number };
+      openEscalations: number;
+      openKbGaps: number;
+      smartAssistQueueDepth: number;
     };
     automationHealth: {
       totalJobs: number;
@@ -53,7 +54,7 @@ export async function generateMonthlyDigest(): Promise<MonthlyDigest> {
     clientStatusRows,
     newThisMonthRows,
     churnedThisMonthRows,
-    capacityEstimate,
+    capacitySnapshot,
     allCronJobs,
     guaranteeRows,
     messageCountRows,
@@ -87,7 +88,7 @@ export async function generateMonthlyDigest(): Promise<MonthlyDigest> {
       ),
 
     // Capacity
-    getCapacityEstimate(),
+    getCapacitySnapshot(),
 
     // All cron job cursors
     db.select().from(cronJobCursors),
@@ -148,10 +149,11 @@ export async function generateMonthlyDigest(): Promise<MonthlyDigest> {
 
   // --- Capacity ---
   const capacity = {
-    totalWeeklyHours: capacityEstimate.totalWeeklyHours,
-    maxHours: capacityEstimate.maxCapacityHours,
-    utilizationPercent: capacityEstimate.utilizationPercent,
-    alertLevel: capacityEstimate.alertLevel,
+    totalClients: capacitySnapshot.totalClients,
+    byPhase: capacitySnapshot.byPhase,
+    openEscalations: capacitySnapshot.openEscalations,
+    openKbGaps: capacitySnapshot.openKbGaps,
+    smartAssistQueueDepth: capacitySnapshot.smartAssistQueueDepth,
   };
 
   // --- Automation Health ---
