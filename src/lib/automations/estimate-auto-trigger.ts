@@ -1,6 +1,6 @@
 import { getDb } from '@/db';
-import { leads, scheduledMessages, auditLog } from '@/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { leads, scheduledMessages, auditLog, conversations } from '@/db/schema';
+import { eq, and, desc } from 'drizzle-orm';
 import { startEstimateFollowup } from '@/lib/automations/estimate-followup';
 
 // ─── Signal detection ────────────────────────────────────────────────────────
@@ -59,6 +59,30 @@ export function detectEstimateSentSignal(message: string): boolean {
   return SIGNAL_PATTERNS.some((pattern) => pattern.test(message));
 }
 
+// ─── Competitor-chosen detection ─────────────────────────────────────────────
+
+/**
+ * Patterns that indicate the homeowner has already selected another contractor.
+ * Mirrors SOFT_REJECTION_PHRASES in incoming-sms.ts but expressed as regexes
+ * for programmatic use inside this module.
+ */
+const COMPETITOR_CHOSEN_PATTERNS: RegExp[] = [
+  /(?:went|going)\s+with\s+(?:someone|another|a\s+different)/i,
+  /(?:chose|chosen|picked|hired|found)\s+(?:another|someone|a\s+different)/i,
+  /already\s+(?:hired|found|got|have)\s+(?:someone|another|a\s+contractor|a\s+company)/i,
+  /(?:not\s+interested|no\s+longer\s+(?:interested|need|looking))/i,
+  /decided\s+(?:to\s+go|not\s+to|against)/i,
+];
+
+/**
+ * Returns true if the message content suggests the homeowner has already chosen
+ * a competitor or is no longer in the market.
+ */
+export function detectCompetitorChosenSignal(message: string): boolean {
+  if (!message.trim()) return false;
+  return COMPETITOR_CHOSEN_PATTERNS.some((pattern) => pattern.test(message));
+}
+
 // ─── Auto-trigger ─────────────────────────────────────────────────────────────
 
 export interface AutoTriggerResult {
@@ -114,14 +138,35 @@ export async function maybeAutoTriggerEstimateFollowup(
     return { triggered: false, reason: 'already_estimate_sent_status' };
   }
 
-  // 4. Start the follow-up sequence
+  // 4. Competitor-chosen guard: scan last 5 inbound messages for rejection signals
+  const recentConversations = await db
+    .select({ content: conversations.content })
+    .from(conversations)
+    .where(
+      and(
+        eq(conversations.leadId, leadId),
+        eq(conversations.direction, 'inbound')
+      )
+    )
+    .orderBy(desc(conversations.createdAt))
+    .limit(5);
+
+  const competitorDetected = recentConversations.some(
+    (conv) => conv.content !== null && detectCompetitorChosenSignal(conv.content)
+  );
+
+  if (competitorDetected) {
+    return { triggered: false, reason: 'competitor_chosen_detected' };
+  }
+
+  // 5. Start the follow-up sequence
   const result = await startEstimateFollowup({ leadId, clientId });
 
   if (!result.success) {
     return { triggered: false, reason: result.reason ?? 'start_failed' };
   }
 
-  // 5. Audit log
+  // 6. Audit log
   await db.insert(auditLog).values({
     clientId,
     action: 'estimate_auto_triggered',

@@ -16,7 +16,7 @@
 
 import { getDb } from '@/db';
 import { leads, clients, conversations, consentRecords } from '@/db/schema';
-import { eq, and, lte, gte } from 'drizzle-orm';
+import { eq, and, lte, gte, inArray } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { addMonths } from 'date-fns';
@@ -108,8 +108,9 @@ export async function runDormantReengagement(): Promise<DormantReengagementResul
     );
 
   // Filter out leads with no phone (already enforced by schema but be explicit)
+  // FM-66: Also skip non-E.164 North American numbers (Calgary ICP)
   const actionable = dormantLeads.filter(({ lead, client }) => {
-    if (!lead.phone) {
+    if (!lead.phone || !/^\+1\d{10}$/.test(lead.phone)) {
       skipped++;
       return false;
     }
@@ -175,6 +176,25 @@ export async function runDormantReengagement(): Promise<DormantReengagementResul
               return;
             }
           }
+        }
+
+        // FM-66: Skip numbers with recent delivery failures
+        const deliveryFailures = await db
+          .select({ id: conversations.id })
+          .from(conversations)
+          .where(
+            and(
+              eq(conversations.leadId, lead.id),
+              eq(conversations.direction, 'outbound'),
+              inArray(conversations.deliveryStatus, ['failed', 'undelivered']),
+              gte(conversations.createdAt, new Date(Date.now() - 90 * 24 * 60 * 60 * 1000))
+            )
+          )
+          .limit(1);
+
+        if (deliveryFailures.length > 0) {
+          skipped++;
+          return;
         }
 
         const firstName = lead.name ? lead.name.split(' ')[0] : 'there';

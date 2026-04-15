@@ -1,6 +1,6 @@
 # Platform Capabilities
 
-Last updated: 2026-04-14 (FMA Waves 1-4: exclusion list gate, autonomous readiness checklist, ICP qualification fields, onboarding checklist, forwarding verification, operator cockpit KPI cards, auto-resolve suggestions, triage capacity badge, multi-operator data model)
+Last updated: 2026-04-14 (FMA Surfaced FM resolution: attribution evidence in call prep, competitor-chosen guard on estimate auto-trigger, web form verification checklist item, listing migration tracking + cockpit action, phone validation for dormant reengagement, payment capture cockpit action)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
 
 ---
@@ -131,6 +131,7 @@ Trigger phrases include: &ldquo;waiting on the quote&rdquo;, &ldquo;comparing pr
 - Auto-trigger is logged in `audit_log` as `estimate_auto_triggered`
 - Deduped per lead — only fires once per lead regardless of how many trigger messages are received
 - Applies only to leads in `new` or `contacted` status with no active estimate flow
+- **Competitor-chosen guard:** before triggering, checks the last 5 inbound messages for competitor-chosen signals (&ldquo;went with someone else&rdquo;, &ldquo;already hired another&rdquo;, &ldquo;not interested&rdquo;, etc.). If detected, skips the trigger entirely. Prevents follow-up on leads that have already chosen a competitor.
 
 ### Booking Aggressiveness Calibration
 
@@ -433,6 +434,7 @@ Follow-on stage after standard win-back for leads that have been dormant 6+ mont
 - Single-touch attempt with no additional follow-up
 - Runs weekly on Wednesdays via `engagement-health-check` and `dormant-reengagement` cron jobs
 - Send window is timezone-aware (same rules as win-back: 10am-2pm local time, Monday/Friday constraints)
+- **Phone validation:** skips numbers that are not valid E.164 North American format (`+1XXXXXXXXXX`) and numbers with recent delivery failures (failed/undelivered outbound messages in the last 90 days)
 - Prevents permanent loss of re-contact opportunity once the initial win-back pool is exhausted
 
 ---
@@ -1077,22 +1079,25 @@ When monthly lead volume is &lt; 15, the wizard displays a mandatory disclosure:
 
 ### Onboarding Checklist
 
-The client detail page shows a platform-enforced 10-item onboarding progress card. Incomplete items block Smart Assist or Autonomous mode advancement until resolved. Items display as green (complete), gray (incomplete), or locked (blocked by dependency).
+The client detail page shows a platform-enforced 11-item onboarding progress card. Incomplete items block Smart Assist or Autonomous mode advancement until resolved. Items display as green (complete), gray (incomplete), or locked (blocked by dependency).
 
-The 10 checklist items are:
+The 11 checklist items are:
 
-1. Phone number provisioned
-2. Call forwarding configured and tested
-3. Business hours set
-4. Knowledge base populated (&ge; 10 entries)
-5. Pricing configured on at least 1 service
-6. Exclusion list reviewed with contractor
-7. Team member added (or confirmed solo)
-8. AI tone configured and approved
-9. Voice AI playground QA completed
-10. Quote reactivation batch sent
+| # | Item | Blocks |
+|---|------|--------|
+| 1 | Phone number assigned | Advisory |
+| 2 | Operator phone configured (escalation member with phone) | Smart Assist |
+| 3 | Call forwarding verified (AMD test passed) | Smart Assist |
+| 4 | Voicemail disabled (confirmed via forwarding test) | Smart Assist |
+| 5 | KB entries &ge; 5 | Smart Assist |
+| 6 | Pricing range configured on &ge; 1 service | Autonomous |
+| 7 | Exclusion list reviewed | Autonomous |
+| 8 | Payment captured (subscription exists) | Advisory |
+| 9 | Quote import completed | Advisory |
+| 10 | Revenue Leak Audit sent | Advisory |
+| 11 | Web form integration tested | Advisory |
 
-API: `GET /api/admin/clients/{id}/onboarding-checklist` returns all 10 items with status and blocking reason. Items that block AI activation are marked `blocking: true`.
+API: `GET /api/admin/clients/{id}/onboarding-checklist` returns all 11 items with status and blocking reason. Items that block AI activation are marked with their `blocking` capability.
 
 **Legacy UI checklist entries (onboarding UX improvements):**
 - **Actionable steps:** each incomplete checklist item links directly to the relevant settings page (phone setup, business hours, team configuration, etc.)
@@ -1286,7 +1291,7 @@ The service model badge (Managed/Self-Serve) in the client header is clickable &
 - AI settings: mode, tone, guardrails, smart assist delay, send policy
 - Team management with role-based access
 - Phone number provisioning and webhook configuration (admin and self-serve client portal). All number writes (purchase, assign, release, reassign) go through the `client-phone-management` service, which keeps `clients.twilioNumber` and the `client_phone_numbers` table in sync. UI labels distinguish &ldquo;Owner&apos;s Phone&rdquo; (private, for escalation alerts) from &ldquo;AI Business Line&rdquo; (lead-facing Twilio number).
-- **Call prep sheet:** One-click &ldquo;Prep for Call&rdquo; button on each client detail page generates a structured briefing for biweekly strategy calls: 14-day performance metrics, active pipeline by stage, attention items (high correction rate, opt-outs, KB gaps), and auto-generated talking points. Print-friendly layout.
+- **Call prep sheet:** One-click &ldquo;Prep for Call&rdquo; button on each client detail page generates a structured briefing for biweekly strategy calls: 14-day performance metrics, active pipeline by stage, attention items (high correction rate, opt-outs, KB gaps), **attribution evidence** (won leads with documented AI interactions, attribution rate, up to 3 examples with days-between-first-AI-and-WON), and auto-generated talking points. Attribution talking points auto-surface when rate is low (&lt;50% warns about guarantee dispute risk) or high (&ge;70% provides value defense data). Print-friendly layout.
 - **Onboarding progress tracker:** Client detail page shows a visual timeline of AI mode progression (off &rarr; assist &rarr; autonomous) with quality gate status (passed/failed per gate), blocking indicators, and days remaining. Auto-hides for established clients past the onboarding window.
 
 ### AI Preview / Sandbox
@@ -1463,6 +1468,8 @@ A unified operator cockpit layer that aggregates all pending work across clients
 | `guarantee_approaching` | Client is within 10 days of guarantee deadline with insufficient pipeline |
 | `engagement_flagged` | Engagement signals service has flagged the client (4/5 indicators yellow/red) |
 | `call_prep_due` | Biweekly strategy call is due and call prep has not been run |
+| `listing_migration_pending` | Listing migration still pending 7+ days after onboarding |
+| `payment_not_captured` | Client active 24+ hours without a subscription |
 
 Actions are sorted by urgency (escalations first, guarantee deadlines next, then KB/engagement items). Each action card includes the client name, specific trigger detail, and a direct link to the relevant page. **&ldquo;Prep Call&rdquo; buttons** per client link directly to `/admin/clients/{id}/call-prep/`.
 

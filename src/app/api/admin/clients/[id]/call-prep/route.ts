@@ -7,6 +7,7 @@ import {
   leadContext,
   agentDecisions,
   knowledgeGaps,
+  conversations,
 } from '@/db/schema';
 import { eq, and, gte, isNull, ne, sql, not, inArray } from 'drizzle-orm';
 import { getSmartAssistCorrectionRate } from '@/lib/services/smart-assist-learning';
@@ -32,6 +33,16 @@ export type CallPrepData = {
     optOuts: Array<{ reason: string | null; count: number }>;
     unresolvedKbGaps: Array<{ question: string; occurrences: number }>;
   };
+  attributionEvidence: {
+    aiInteractedLeads: number;
+    totalWonLeads: number;
+    aiAttributionRate: number;
+    examples: Array<{
+      leadName: string;
+      aiMessages: number;
+      daysBetweenFirstAIAndWon: number;
+    }>;
+  };
   talkingPoints: string[];
 };
 
@@ -55,6 +66,7 @@ export const GET = adminClientRoute<{ id: string }>(
       optOutsResult,
       kbGapsResult,
       correctionRateResult,
+      attributionResult,
     ] = await Promise.allSettled([
       // 1a. Performance: messages sent + leads created (daily stats)
       db
@@ -158,6 +170,34 @@ export const GET = adminClientRoute<{ id: string }>(
 
       // 4c. Correction rate
       getSmartAssistCorrectionRate(clientId, fourteenDaysAgo),
+
+      // 5. Attribution evidence: won leads with 2+ AI interactions
+      db
+        .select({
+          leadId: leads.id,
+          leadName: leads.name,
+          wonAt: leads.updatedAt,
+          aiMessageCount: sql<number>`count(${conversations.id})`,
+          firstAiMessageAt: sql<Date>`min(${conversations.createdAt})`,
+        })
+        .from(leads)
+        .innerJoin(
+          conversations,
+          and(
+            eq(conversations.leadId, leads.id),
+            eq(conversations.direction, 'outbound'),
+            eq(conversations.messageType, 'ai_response')
+          )
+        )
+        .where(
+          and(
+            eq(leads.clientId, clientId),
+            eq(leads.status, 'won'),
+            gte(leads.updatedAt, fourteenDaysAgo)
+          )
+        )
+        .groupBy(leads.id, leads.name, leads.updatedAt)
+        .having(sql`count(${conversations.id}) >= 2`),
     ]);
 
     // Parse results safely
@@ -171,6 +211,7 @@ export const GET = adminClientRoute<{ id: string }>(
     const correctionRate = correctionRateResult.status === 'fulfilled'
       ? correctionRateResult.value
       : { rate: 0, total: 0, corrected: 0 };
+    const attributionRows = attributionResult.status === 'fulfilled' ? attributionResult.value : [];
 
     // Build pipeline map
     const activePipeline: Record<string, number> = {};
@@ -218,6 +259,35 @@ export const GET = adminClientRoute<{ id: string }>(
       );
     }
 
+    // Attribution evidence
+    const totalWonLeads = Number(wins?.winsCount ?? 0);
+    const aiInteractedLeads = attributionRows.length;
+    const aiAttributionRate = totalWonLeads > 0
+      ? Math.round((aiInteractedLeads / totalWonLeads) * 100)
+      : 0;
+
+    const attributionExamples = attributionRows.slice(0, 3).map((row) => {
+      const firstName = row.leadName ? row.leadName.split(' ')[0] : 'Unknown';
+      const wonDate = row.wonAt ? new Date(row.wonAt).getTime() : now.getTime();
+      const firstAiDate = row.firstAiMessageAt ? new Date(row.firstAiMessageAt).getTime() : wonDate;
+      const daysBetween = Math.max(0, Math.floor((wonDate - firstAiDate) / (24 * 60 * 60 * 1000)));
+      return {
+        leadName: firstName,
+        aiMessages: Number(row.aiMessageCount),
+        daysBetweenFirstAIAndWon: daysBetween,
+      };
+    });
+
+    if (totalWonLeads > 0 && aiAttributionRate < 50) {
+      talkingPoints.push(
+        `Attribution evidence: Only ${aiAttributionRate}% of won leads have documented AI interactions — review WON marking during the call to prevent guarantee disputes.`
+      );
+    } else if (totalWonLeads > 0 && aiAttributionRate >= 70) {
+      talkingPoints.push(
+        `Strong attribution evidence: ${aiAttributionRate}% of won leads show clear AI engagement trail — use this data if contractor questions service value.`
+      );
+    }
+
     const data: CallPrepData = {
       generatedAt: now.toISOString(),
       performance: {
@@ -243,6 +313,12 @@ export const GET = adminClientRoute<{ id: string }>(
           question: g.question,
           occurrences: g.occurrences,
         })),
+      },
+      attributionEvidence: {
+        aiInteractedLeads,
+        totalWonLeads,
+        aiAttributionRate,
+        examples: attributionExamples,
       },
       talkingPoints,
     };

@@ -277,7 +277,7 @@ The EST trigger dependency (FM-40, still RPN 38.4) could be partially eliminated
 | FM-01 | Sales Qualification | Wrong ICP signed | 7 | 10→4 | 8 | 56→22 | Wave 2: ICP fields |
 | FM-02 | Sales Qualification | Volume disclosure skipped | 5 | 8→3 | 9 | 36→14 | Wave 2: disclosure gate |
 | FM-03 | Sales Demo | Demo fails | 6 | 5→5 | 1 | 3→3 | Process only |
-| FM-04 | Payment Capture | Card not captured | 8 | 15→15 | 1 | 12→12 | Process only |
+| FM-04 | Payment Capture | Card not captured | 8 | 15→10 | 1 | 12→8 | Surfaced: cockpit action (payment_not_captured) |
 | FM-05 | Payment Capture | Trial charge surprise | 6 | 10→3 | 7 | 42→13 | Wave 1: billing reminder |
 | FM-06 | Onboarding Call | Contractor vague on KB | 7 | 15→8 | 3 | 32→17 | Wave 2: onboarding gates |
 | FM-07 | Onboarding Call | No-show | 5 | 8→3 | 1 | 4→2 | Wave 1: reminder SMS |
@@ -302,9 +302,9 @@ The EST trigger dependency (FM-40, still RPN 38.4) could be partially eliminated
 | FM-18 | Day-1 | Text-back fails | 8 | 5→1 | 3 | 12→2 | Wave 2: verification |
 | FM-20 | Week 1 | Zero leads 48h | 5 | 12→8 | 6 | 36→24 | Wave 3: volume context |
 | FM-21 | Audit | Audit overdue | 5 | 10→4 | 5 | 25→10 | Wave 3: cockpit |
-| FM-23 | Week 1 | Web form fails | 5 | 10→10 | 4 | 20→20 | Process only |
+| FM-23 | Week 1 | Web form fails | 5 | 10→6 | 4 | 20→12 | Surfaced: onboarding checklist item 11 |
 | FM-24 | Week 1 | Zero volume Week 1 | 4 | 8→5 | 6 | 19→12 | Wave 3: signals |
-| FM-25 | Migration | Contractor refuses | 4 | 25→20 | 3 | 30→24 | Process only |
+| FM-25 | Migration | Contractor refuses | 4 | 25→15 | 3 | 30→18 | Surfaced: cockpit action (listing_migration_pending) |
 | FM-27 | Migration | Day 7 zero data | 4 | 10→5 | 4 | 16→8 | Wave 3: cockpit |
 | FM-28 | Smart Assist | SA overwhelmed | 7 | 8→3 | 3 | 17→6 | Wave 4: capacity |
 | FM-29 | Smart Assist | SMS to contractor | 5 | 5→1 | 2 | 5→1 | Wave 2: gate |
@@ -315,7 +315,7 @@ The EST trigger dependency (FM-40, still RPN 38.4) could be partially eliminated
 | FM-38 | AI | Quiet hours gap | 5 | 25→10 | 8 | 100→40 | Wave 4: classification |
 | FM-39 | AI | Engages spam | 2 | 15→15 | 5 | 15→15 | Existing screening |
 | FM-40 | Estimate | EST never used | 8 | 20→8 | 6 | 96→38 | Wave 1+3: digest+signals |
-| FM-42 | Estimate | Post-competitor follow-up | 4 | 10→10 | 6 | 24→24 | Existing detection |
+| FM-42 | Estimate | Post-competitor follow-up | 4 | 10→5 | 6 | 24→12 | Surfaced: competitor-chosen guard in auto-trigger |
 | FM-43 | Booking | No GCal | 6 | 15→12 | 3 | 27→22 | Process: push adoption |
 | FM-44 | Booking | Confirmation timeout | 5 | 10→6 | 3 | 15→9 | Wave 3: cockpit |
 | FM-45 | Booking | Wrong timezone | 6 | 3→3 | 4 | 7→7 | Existing handling |
@@ -327,13 +327,13 @@ The EST trigger dependency (FM-40, still RPN 38.4) could be partially eliminated
 | FM-54 | Strategy Call | Call skipped | 7 | 10→4 | 5 | 35→14 | Wave 3: cockpit |
 | FM-56 | Revenue | WON/LOST never marked | 8 | 15→6 | 6 | 72→29 | Wave 1+3: digest+signals |
 | FM-58 | Guarantee | L1 fails on legit | 9 | 5→2 | 3 | 14→5 | Wave 1: Day 80 alert |
-| FM-59 | Guarantee | L2 attribution dispute | 7 | 8→8 | 7 | 39→39 | **Unchanged — policy** |
+| FM-59 | Guarantee | L2 attribution dispute | 7 | 8→5 | 7 | 39→25 | Surfaced: attribution evidence in call prep |
 | FM-61 | Guarantee | False refund ($0 data) | 9 | 5→2 | 8 | 36→14 | Wave 1+3: alert+digest |
 | FM-62 | Billing | Card declines Day 31 | 5 | 5→2 | 2 | 5→2 | Wave 1: billing reminder |
 | FM-63 | Billing | Disputes Day 31 charge | 6 | 5→2 | 3 | 9→4 | Wave 1: billing reminder |
 | FM-64 | Day 45 | Retention call missed | 6 | 10→4 | 5 | 30→12 | Wave 3: cockpit |
 | FM-65 | Growth Blitz | Dormant list empty | 5 | 12→6 | 4 | 24→12 | Wave 1: priming SMS |
-| FM-66 | Growth Blitz | Reassigned 6mo+ numbers | 5 | 8→6 | 7 | 28→21 | Process: opt-out |
+| FM-66 | Growth Blitz | Reassigned 6mo+ numbers | 5 | 8→3 | 7 | 28→11 | Surfaced: E.164 validation + delivery failure check |
 | FM-67 | Pipeline SMS | Alarming numbers | 5 | 10→6 | 3 | 15→9 | Wave 3: signals |
 | FM-70 | At-Risk | Churn signals missed | 8 | 10→3 | 8 | 64→19 | Wave 3: engagement signals |
 | FM-68 | Escalation | Queue overwhelmed | 7 | 8→3 | 3 | 17→6 | Wave 3+4: auto-resolve |

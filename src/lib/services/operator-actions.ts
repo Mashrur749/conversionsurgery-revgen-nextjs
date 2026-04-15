@@ -317,6 +317,45 @@ async function fetchGuaranteeApproaching(): Promise<OperatorAction[]> {
 // engagement_flagged: skip for now — depends on Task 2 (engagement signals service).
 // Will be wired after `getEngagementSignals()` exists in engagement-signals.ts.
 
+async function fetchPaymentNotCaptured(): Promise<OperatorAction[]> {
+  const db = getDb();
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const rows = await db
+    .select({
+      clientId: clients.id,
+      businessName: clients.businessName,
+      createdAt: clients.createdAt,
+    })
+    .from(clients)
+    .leftJoin(subscriptions, eq(subscriptions.clientId, clients.id))
+    .where(
+      and(
+        eq(clients.status, 'active'),
+        lte(clients.createdAt, twentyFourHoursAgo),
+        isNull(subscriptions.id)
+      )
+    );
+
+  const now = Date.now();
+
+  return rows.map((row): OperatorAction => {
+    const days = Math.floor((now - row.createdAt.getTime()) / (24 * 60 * 60 * 1000));
+
+    return {
+      id: `payment_not_captured_${row.clientId}`,
+      type: 'payment_not_captured',
+      clientId: row.clientId,
+      clientName: row.businessName,
+      urgency: 'yellow',
+      title: 'Payment not yet captured',
+      detail: `Client active for ${days} day${days !== 1 ? 's' : ''} without payment`,
+      actionUrl: `/admin/clients/${row.clientId}`,
+      createdAt: row.createdAt,
+    };
+  });
+}
+
 async function fetchCallPrepDue(): Promise<OperatorAction[]> {
   const db = getDb();
   const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
@@ -371,6 +410,46 @@ async function fetchCallPrepDue(): Promise<OperatorAction[]> {
     }));
 }
 
+async function fetchListingMigrationPending(): Promise<OperatorAction[]> {
+  const db = getDb();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const rows = await db
+    .select({
+      clientId: clients.id,
+      businessName: clients.businessName,
+      createdAt: clients.createdAt,
+    })
+    .from(clients)
+    .where(
+      and(
+        eq(clients.status, 'active'),
+        eq(clients.listingMigrationStatus, 'pending'),
+        lte(clients.createdAt, sevenDaysAgo)
+      )
+    );
+
+  const now = Date.now();
+
+  return rows.map((row): OperatorAction => {
+    const daysSinceOnboarding = Math.floor(
+      (now - row.createdAt.getTime()) / (24 * 60 * 60 * 1000)
+    );
+
+    return {
+      id: `listing_migration_pending_${row.clientId}`,
+      type: 'listing_migration_pending',
+      clientId: row.clientId,
+      clientName: row.businessName,
+      urgency: 'yellow',
+      title: 'Listing migration pending',
+      detail: `${daysSinceOnboarding} day${daysSinceOnboarding !== 1 ? 's' : ''} since onboarding — migration not yet completed`,
+      actionUrl: `/admin/clients/${row.clientId}`,
+      createdAt: row.createdAt,
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Main aggregation function
 // ---------------------------------------------------------------------------
@@ -384,6 +463,8 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
     digestResponseActions,
     guaranteeActions,
     callPrepActions,
+    listingMigrationActions,
+    paymentNotCapturedActions,
   ] = await Promise.all([
     fetchEscalationPending().catch((err: unknown) => {
       logSanitizedConsoleError('[OperatorActions] escalation_pending query failed:', err, {});
@@ -413,6 +494,14 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
       logSanitizedConsoleError('[OperatorActions] call_prep_due query failed:', err, {});
       return [] as OperatorAction[];
     }),
+    fetchListingMigrationPending().catch((err: unknown) => {
+      logSanitizedConsoleError('[OperatorActions] listing_migration_pending query failed:', err, {});
+      return [] as OperatorAction[];
+    }),
+    fetchPaymentNotCaptured().catch((err: unknown) => {
+      logSanitizedConsoleError('[OperatorActions] payment_not_captured query failed:', err, {});
+      return [] as OperatorAction[];
+    }),
   ]);
 
   const all: OperatorAction[] = [
@@ -423,6 +512,8 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
     ...digestResponseActions,
     ...guaranteeActions,
     ...callPrepActions,
+    ...listingMigrationActions,
+    ...paymentNotCapturedActions,
   ];
 
   // Sort: red first, then yellow, then by oldest createdAt ascending

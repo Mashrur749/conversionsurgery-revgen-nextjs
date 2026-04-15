@@ -81,6 +81,7 @@ export async function getOnboardingChecklist(
       .select({
         forwardingVerificationStatus: clients.forwardingVerificationStatus,
         exclusionListReviewed: clients.exclusionListReviewed,
+        webFormVerified: clients.webFormVerified,
       })
       .from(clients)
       .where(eq(clients.id, clientId))
@@ -170,6 +171,7 @@ export async function getOnboardingChecklist(
   const client = clientRow[0];
   const forwardingStatus = client?.forwardingVerificationStatus ?? null;
   const exclusionListReviewed = client?.exclusionListReviewed ?? false;
+  const webFormVerified = client?.webFormVerified ?? false;
 
   const kbEntryCount = kbCount[0]?.value ?? 0;
   const quoteImports = quoteImportCount[0]?.value ?? 0;
@@ -279,6 +281,15 @@ export async function getOnboardingChecklist(
         rlaRow.length > 0
           ? 'Revenue Leak Audit has been created and delivered.'
           : 'No Revenue Leak Audit on file — create and deliver the audit to complete onboarding.',
+    },
+    {
+      key: 'web_form_verified',
+      label: 'Web form integration tested',
+      completed: webFormVerified,
+      blocking: null,
+      description: webFormVerified
+        ? 'Web form webhook has been tested and verified.'
+        : 'Web form integration not yet tested — submit a test form on the contractor website and verify the webhook fires.',
     },
   ];
 

@@ -157,6 +157,12 @@ export const clients = pgTable(
     forwardingVerifiedAt: timestamp('forwarding_verified_at'),
     forwardingVerificationStatus: varchar('forwarding_verification_status', { length: 20 }),
 
+    // ============================================
+    // FMA SURFACED: Web form + listing migration
+    // ============================================
+    webFormVerified: boolean('web_form_verified').default(false),
+    listingMigrationStatus: varchar('listing_migration_status', { length: 20 }).default('not_applicable'), // 'not_applicable' | 'pending' | 'completed' | 'declined'
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
