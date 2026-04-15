@@ -141,6 +141,32 @@ If the alert fires on Day 1: resolve before moving forward — leads are being l
 
 71d. **Onboarding checklist tracking:** The 10-item onboarding checklist on the client detail page is the primary tool for tracking new client setup progress. Check it during the daily operations review for clients in their first 14 days (`API: GET /api/admin/clients/{id}/onboarding-checklist`). Items that are incomplete and `blocking: true` prevent AI mode advancement — clear them before the Day 7 check-in call. If the contractor hasn&apos;t completed self-serve items (KB entries, pricing), complete them on their behalf using information from the onboarding call notes. The checklist auto-updates in real time — no manual sync needed.
 
+### FMA Wave 3: Operator Cockpit
+
+72a. **Morning triage workflow — start with the actions panel:** Open `/admin/triage`. The top of the page shows 4 KPI cards (open escalations, Smart Assist pending drafts, at-risk clients, high-priority KB gaps). Below is the actions panel listing all pending work sorted by urgency. Work through the list top to bottom:
+1. `escalation_pending` — open the escalation and resolve or assign it (see Section 1 of the Playbook).
+2. `onboarding_gate_pending` — check which gate is blocking and complete it before the Day 7 check-in call.
+3. `forwarding_failed` — follow the forwarding verification resolution steps (71c above).
+4. `kb_gaps_accumulating` — open the KB gap queue for that client and clear the top-priority items.
+5. `guarantee_approaching` — check the client&apos;s Guarantee Status card and take action before the deadline.
+6. `engagement_flagged` — review engagement signals (see 72b below) and schedule a proactive check-in call.
+7. `call_prep_due` — click the &ldquo;Prep Call&rdquo; button for that client row, review the brief, then dial.
+
+72b. **Interpreting engagement signals:** Each client has 5 deterministic signals (green/yellow/red): estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, and contractor contact recency. A client is flagged when 4/5 are yellow or red. When a client is flagged:
+- **Yellow signals:** contractor is still engaged but a specific area is lagging. Address on the next biweekly call — ask directly about that signal (&ldquo;I noticed you haven&apos;t marked any outcomes in a few weeks &mdash; what&apos;s been going on?&rdquo;).
+- **Red signals across the board:** treat as a churn risk. Schedule a proactive call within 48 hours. Do not wait for the next biweekly cycle.
+- Check signals via `GET /api/admin/clients/{id}/engagement-signals` or see the engagement health badge on the client detail Overview tab.
+
+72c. **Using auto-resolve suggestions for KB gaps:** When the `autoResolve` flag is on, the system surfaces a suggested answer for unresolved gaps (up to 5 per client) by matching against existing KB entries. To use a suggestion:
+1. Navigate to the gap queue (`/admin/clients/{id}/knowledge` &rarr; Gaps tab).
+2. Open a gap that has a suggestion (similarity score shown on the card).
+3. Review the suggested KB entry text. Ask: does this actually answer the customer&apos;s question with enough detail?
+4. If yes: accept the suggestion — the gap transitions to `resolved` and the entry is linked automatically.
+5. If no: reject it and either write a new KB entry from scratch or use the &ldquo;Ask Contractor&rdquo; button.
+6. Do not accept suggestions with similarity score below 0.7 — they are likely partial matches that will produce weak AI responses.
+
+The contractor also receives a signal via the daily digest SMS. When they reply to a KB gap item number, the gap moves to `in_review`. This is your cue to check the gap queue and finalize the KB entry.
+
 ### Notification Feature Flags (FMA Wave 1)
 66a. **Automation feature flags** control 8 notification and automation behaviors. Unlike the 18 feature toggles above (which control core product capabilities), these flags control notification *frequency and batching*. They have system-wide defaults configurable in `system_settings` and can be overridden per client:
 
@@ -218,6 +244,10 @@ More detail = higher AI confidence = fewer future deferrals on that topic.
 ### Auto-reopen
 
 If a gap was resolved but leads keep asking the same question and the AI still can&apos;t answer confidently, the gap auto-reopens. This means the KB entry wasn&apos;t detailed enough. Improve it and re-resolve.
+
+### Auto-resolve suggestions
+
+When `autoResolve` is on, gaps with a matching KB entry are highlighted with a similarity score. Review and accept or reject via the gap card. Accept only if the suggestion clearly answers the customer&apos;s question — partial matches (score &lt; 0.7) should be rejected and resolved manually. Accepting links the KB entry and transitions the gap to `resolved` automatically. The contractor also triggers `in_review` status by replying to the KB gap item in the daily digest SMS — when you see `in_review`, it means the contractor has acknowledged the gap and is waiting for you to finalize the KB entry.
 
 ### Cron alerts
 

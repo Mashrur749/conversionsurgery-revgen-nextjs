@@ -197,3 +197,19 @@ Five failure-mode-analysis items shipped to enforce onboarding quality gates and
 | FMA-W2-3 | ICP Qualification Fields — required on client creation wizard: estimated monthly lead volume, average project value, dead quote count. Sub-15 volume triggers mandatory disclosure. | **Implemented** |
 | FMA-W2-4 | Onboarding Checklist — 10-item platform-enforced checklist on client detail page. Items block Smart Assist or Autonomous mode. Progress card with green/gray/lock icons. API: `GET /api/admin/clients/{id}/onboarding-checklist`. | **Implemented** |
 | FMA-W2-5 | Forwarding Verification — daily Twilio outbound call to contractor&apos;s business number for first 7 days. AMD detects voicemail intercept. Operator alert on detection. Feature flag: `forwardingVerificationEnabled`. Cron: `forwarding-verification` (daily). Cost: ~$0.14/client. | **Implemented** |
+
+## Recently Implemented (FMA Wave 3: Operator Cockpit, April 2026)
+
+Five operator-cockpit items shipped to give the solo operator a single daily starting point, deterministic engagement visibility, and semi-automated KB gap resolution.
+
+| Item | Feature | Status |
+|------|---------|--------|
+| FMA-W3-1 | Operator Actions Queue — aggregation service collecting 7 action types (`escalation_pending`, `onboarding_gate_pending`, `forwarding_failed`, `kb_gaps_accumulating`, `guarantee_approaching`, `engagement_flagged`, `call_prep_due`) into a single urgency-sorted list. Triage dashboard enhanced with KPI cards (open escalations, pending drafts, at-risk clients, high-priority KB gaps) and an actions panel with per-client &ldquo;Prep Call&rdquo; links. API: `GET /api/admin/operator-actions`. | **Implemented** |
+| FMA-W3-2 | Engagement Signals — 5 deterministic indicators per client (estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, contractor contact recency). Each green/yellow/red. Client flagged when 4/5 are yellow/red. Feature flag: `engagementSignals`. API: `GET /api/admin/clients/{id}/engagement-signals`. | **Implemented** |
+| FMA-W3-3 | Call Prep links on triage — triage dashboard now surfaces &ldquo;Prep Call&rdquo; buttons per client, linking directly to the existing `/admin/clients/{id}/call-prep/` page. No new page; triage surfaces the existing feature. | **Implemented** |
+| FMA-W3-4 | Auto-Resolve KB Gaps — semantic search suggests KB-entry answers for unanswered questions. First 5 per client require contractor confirmation before the gap resolves. Feature flag: `autoResolve`. API: `GET /api/admin/clients/{id}/auto-resolve/{gapId}` (get suggestion), `POST /api/admin/clients/{id}/auto-resolve/{gapId}` (accept/reject). UI on escalations page deferred — service and API are ready. | **Implemented (service + API only; escalations-page UI deferred)** |
+| FMA-W3-5 | SMS-Reply KB Entry — daily digest KB gap selections (numbered reply) are now handled in `executeNumberedReply()`. Estimate prompts trigger the follow-up sequence; WON/LOST prompts update lead status; KB gap number selections mark the gap as `in_review`. Part of `dailyDigestEnabled`. | **Implemented** |
+
+### Deferred: Auto-Resolve UI on escalations page
+
+The service (`auto-resolve KB gaps`) and API endpoints are complete. The UI panel on the escalations page — where operators and contractors can review and accept/reject suggestions inline — is deferred to a future enhancement. The current workflow requires navigating to the gap queue and using the API directly.

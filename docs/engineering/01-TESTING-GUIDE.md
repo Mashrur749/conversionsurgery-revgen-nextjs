@@ -3145,6 +3145,102 @@ Expected:
 - Blocking items prevent AI mode advancement when incomplete.
 - UI card matches API response.
 
+### Step 82: FMA Wave 3 — Operator Cockpit (Actions Queue, Engagement Signals, Auto-Resolve, SMS-Reply KB)
+
+Combined verification for all FMA Wave 3 features.
+
+#### 82a: Operator actions queue
+
+1. Ensure the test agency has at least one client with an open escalation past deadline.
+
+```bash
+curl -i http://localhost:3000/api/admin/operator-actions \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+2. Verify the response is an array of action objects, each with `type`, `clientId`, `clientName`, `detail`, and `urgency` fields.
+3. Confirm `escalation_pending` items appear before `kb_gaps_accumulating` items (urgency sort).
+4. Create a client with 3+ unresolved high-priority KB gaps — re-call the endpoint and verify a `kb_gaps_accumulating` action appears.
+5. Navigate to `/admin/triage` — verify KPI cards (open escalations, pending drafts, at-risk clients, high-priority KB gaps) appear at the top.
+6. Verify &ldquo;Prep Call&rdquo; buttons appear per client row and link to `/admin/clients/{id}/call-prep/`.
+
+Expected:
+- Actions array returned with correct types and urgency ordering.
+- KPI cards match the underlying data.
+- Prep Call buttons navigate correctly.
+
+#### 82b: Engagement signals
+
+1. For a test client with no recent estimate activity (none in 30+ days) and low KB gap response rate:
+
+```bash
+curl -i http://localhost:3000/api/admin/clients/$CLIENT_ID/engagement-signals \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+2. Verify the response contains exactly 5 signal objects, each with `name`, `value`, `status` (green/yellow/red), and `threshold`.
+3. Confirm signals include: `estimate_recency`, `won_lost_recency`, `kb_gap_response_rate`, `nudge_response_rate`, `contractor_contact_recency`.
+4. Simulate a client with 4/5 signals yellow or red — verify the client appears as `engagement_flagged` in the operator actions queue (Step 82a).
+5. Set `engagementSignals` feature flag to false for the client — verify the API still returns signals but the client is excluded from the actions queue.
+
+Expected:
+- Always returns exactly 5 signals.
+- Statuses match the threshold table (green/yellow/red).
+- 4/5 yellow/red triggers `engagement_flagged` action.
+- Feature flag controls action queue inclusion, not signal computation.
+
+#### 82c: Auto-resolve KB gap suggestions
+
+1. Ensure the test client has at least one unresolved KB gap and at least one KB entry that matches the gap question semantically.
+
+```bash
+curl -i http://localhost:3000/api/admin/clients/$CLIENT_ID/auto-resolve/$GAP_ID \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+2. Verify the response includes `suggestion` (the KB entry text), `kbEntryId`, and `similarityScore` (0-1).
+3. Accept the suggestion:
+
+```bash
+curl -i -X POST http://localhost:3000/api/admin/clients/$CLIENT_ID/auto-resolve/$GAP_ID \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"accept":true}'
+```
+
+4. Verify the gap status transitions to `resolved` and the linked KB entry is set.
+5. Reject a suggestion (`{"accept":false}`) — verify the gap remains `new` and is not linked.
+6. Disable `autoResolve` feature flag — verify the GET endpoint returns 404 or empty (no suggestion surfaced).
+
+Expected:
+- GET returns suggestion with similarity score.
+- Accept resolves the gap with linked entry.
+- Reject leaves gap unchanged.
+- Feature flag gates suggestion surfacing.
+
+#### 82d: SMS-reply KB entry pipeline (digest numbered reply)
+
+1. Ensure a test client has `dailyDigestEnabled = true` and at least one unresolved KB gap.
+2. Run the daily digest cron to generate a digest including the KB gap item:
+
+```bash
+curl -i http://localhost:3000/api/cron/daily-digest \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+3. Verify the contractor receives a digest SMS including a numbered KB gap item (e.g., &ldquo;3) A customer asked: Do you offer financing?&rdquo;).
+4. Simulate the contractor replying with the KB gap item number (e.g., &ldquo;3&rdquo;) via an inbound SMS webhook to the agency number.
+5. Verify the gap status changes to `in_review`.
+6. Simulate a WON/LOST item reply — verify the corresponding lead status updates to `won` or `lost`.
+7. Simulate an estimate prompt reply — verify the estimate follow-up sequence is triggered for the indicated lead.
+
+Expected:
+- Digest includes numbered KB gap items.
+- Numbered reply to KB gap item transitions gap to `in_review`.
+- WON/LOST reply updates lead status.
+- Estimate reply triggers follow-up sequence.
+- Non-matching numbers produce no state change (graceful no-op).
+
 ---
 
 ## 3. Useful Commands

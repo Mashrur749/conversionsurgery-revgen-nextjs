@@ -1,6 +1,6 @@
 # Managed Service Delivery Playbook
 
-Last updated: 2026-04-08
+Last updated: 2026-04-14
 Audience: Solo operator delivering ConversionSurgery at $1,000/mo
 Purpose: Every business scenario a contractor generates, and exactly how you handle it.
 
@@ -10,7 +10,7 @@ Purpose: Every business scenario a contractor generates, and exactly how you han
 
 **What triggers it:** AI encounters a frustrated customer, legal threat, pricing negotiation, complex technical question, or explicit request to speak to someone. Lead gets flagged `action_required` and enters the escalation queue.
 
-**How you know:** Your daily triage starts at `/admin/escalations` — the cross-client escalation queue that surfaces unresolved items across all clients, sorted by priority. SLA clock starts ticking (priority 1 = respond same day, priority 2 = next business day). When you are already viewing a specific client, the per-client `/escalations` view shows only that client&apos;s queue.
+**How you know:** Your daily triage starts at `/admin/triage` — the operator cockpit that surfaces all pending work across clients in a single urgency-sorted actions panel. Open this first. The KPI cards at the top show open escalations, Smart Assist pending drafts, at-risk clients, and high-priority KB gaps. Work through the actions panel before opening individual client pages. For escalations specifically, the per-client `/escalations` view shows only that client&apos;s queue when you are already inside a client record. SLA clock starts ticking (priority 1 = respond same day, priority 2 = next business day).
 
 **Process:**
 
@@ -67,6 +67,46 @@ Keep it short. Contractors are on job sites. They&apos;ll reply in 10 seconds if
 - Not a survey. &ldquo;How would you rate your experience?&rdquo; is for SaaS, not managed services.
 
 **Source:** Pre-launch Markov simulation (2026-04-11) identified At-Risk &rarr; Churned as the single highest-leverage transition. Reducing it by 30% is worth +$80/client &mdash; 5x more impact than any upstream fix.
+
+---
+
+## 1.6. Operator Cockpit — Daily Workflow (FMA Wave 3)
+
+**When:** Every morning, before opening individual client pages.
+
+**The routine (10-15 minutes total):**
+
+1. Open `/admin/triage`. The actions panel lists all pending work across every client, sorted by urgency.
+2. Scan the KPI cards at the top: open escalations, Smart Assist pending drafts, at-risk clients (engagement_flagged), high-priority KB gaps.
+3. Work through the actions panel in order:
+   - `escalation_pending` → handle via Section 1 above (same day)
+   - `guarantee_approaching` → check Guarantee Status card, action before deadline
+   - `onboarding_gate_pending` → clear the blocking gate before Day 7 call
+   - `forwarding_failed` → call contractor, fix forwarding
+   - `engagement_flagged` → review signals (see below), schedule check-in call within 48 hours
+   - `kb_gaps_accumulating` → clear top 3-5 gaps for that client (5 minutes)
+   - `call_prep_due` → click &ldquo;Prep Call&rdquo; on the client row, review the brief, dial
+
+**Interpreting engagement signals (when `engagement_flagged` appears):**
+
+The 5 signals are: estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, and contractor contact recency. A client is flagged when 4/5 are yellow or red.
+
+| Pattern | What it means | What to do |
+|---------|--------------|-----------|
+| All 5 yellow | Contractor is engaged but slower than expected | Normal for busy periods — ask on the next biweekly call |
+| 4-5 red | Contractor has disengaged from the service | Proactive call within 48 hours — do not wait for biweekly |
+| Only nudge response rate red | Contractor is skipping the digest SMS | Simplify the digest content or switch to individual notifications |
+| Only KB gap response rate red | Contractor not answering gap questions | Use &ldquo;Ask Contractor&rdquo; button more aggressively; consider a 15-min KB sprint on the next call |
+
+**Using auto-resolve for KB gaps:**
+
+When `autoResolve` is on, the gap queue shows suggestions for gaps that match existing KB entries. The contractor also signals acknowledgment via the daily digest: when they reply to a KB gap item number, the gap moves to `in_review`.
+
+- Gaps with a suggestion and similarity score &ge; 0.7: review the suggested text, accept if it clearly answers the question, reject if it is a partial match.
+- Gaps in `in_review` (contractor replied to digest): contractor has acknowledged it — add the KB entry from their implied answer or follow up to get the exact wording.
+- Gaps with no suggestion: use &ldquo;Ask Contractor&rdquo; button or resolve manually.
+
+Do not accept auto-resolve suggestions blindly. A partial match that resolves a gap incorrectly is worse than leaving it open — the AI will answer confidently but incorrectly.
 
 ---
 

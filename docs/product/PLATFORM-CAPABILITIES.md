@@ -628,6 +628,18 @@ Every lead accumulates:
 
 Takeover/handback is per-lead and tracked with timestamps.
 
+### SMS-Reply KB Entry Pipeline (FMA Wave 3)
+
+Contractors can resolve KB gaps directly by replying to the daily digest SMS — no portal login required.
+
+When the daily digest includes a KB gap item (e.g., &ldquo;A customer asked: Do you offer financing?&rdquo;), the contractor replies with the item number. The `executeNumberedReply()` handler routes the reply:
+
+- **Estimate prompt selection** → triggers the estimate follow-up sequence for the indicated lead
+- **WON/LOST prompt selection** → updates the lead&apos;s pipeline status to `won` or `lost`
+- **KB gap selection** → marks the gap as `in_review`, signalling to the operator that the contractor has acknowledged it and a KB entry should be added
+
+This turns the digest from a passive notification into an action surface: the contractor acknowledges the gap and the operator sees the `in_review` status as the next step to draft the KB entry. Part of the `dailyDigestEnabled` feature flag.
+
 ---
 
 ## 5. Client Portal
@@ -1364,6 +1376,7 @@ Articles appear in the contractor portal Help section and reduce first-week supp
 - **&quot;Ask Contractor&quot; button:** each gap card has a button that sends an SMS to the contractor: &quot;[Business Name] &mdash; a customer asked about [question]. How should we answer this?&quot; Sets the gap to `in_progress`. API: `POST /api/admin/clients/[id]/knowledge/gaps/[gapId]/ask`.
 - Stale gap alerts via daily cron email to agency owners
 - **KB Intake Questionnaire:** structured onboarding questionnaire on the admin client detail page (Overview tab) that pre-populates the knowledge base at client setup — reduces cold-start AI deferrals in Weeks 1-2. Answers are converted to KB entries automatically.
+- **Auto-Resolve suggestions (FMA Wave 3):** For each unresolved gap, the system runs a semantic search against existing KB entries and suggests the best matching answer. Up to 5 gaps per client are queued for suggestion at a time. The operator or contractor must confirm the suggestion before the gap resolves — no automatic resolution without human approval. Feature flag: `autoResolve`. API: `GET /api/admin/clients/{id}/auto-resolve/{gapId}` returns the suggested KB entry and similarity score; `POST /api/admin/clients/{id}/auto-resolve/{gapId}` accepts (`accept: true`) or rejects the suggestion. On acceptance, the gap transitions to `resolved` and the suggested KB entry is linked. UI on the escalations page is deferred — the service and API are operational.
 
 ### Operator Triage Dashboard
 
@@ -1377,6 +1390,44 @@ Unified cross-client triage view at `/admin/triage` (Clients group in admin nav)
 - Designed as a daily starting point for the solo operator — open this before the full daily checklist
 - Replaces the need to open each client separately to find what needs attention
 - Accessible via admin nav: Clients &rarr; Triage
+
+### Operator Actions Queue (FMA Wave 3)
+
+A unified operator cockpit layer that aggregates all pending work across clients into a single urgency-sorted list. Displayed as an actions panel on the triage dashboard alongside KPI summary cards.
+
+**KPI cards (top of triage page):** Open escalations, Smart Assist pending drafts, at-risk clients (engagement signals flagged), and high-priority KB gaps — at a glance without scrolling.
+
+**7 action types collected:**
+
+| Action type | Triggers when |
+|-------------|--------------|
+| `escalation_pending` | Open escalation past SLA deadline |
+| `onboarding_gate_pending` | Critical onboarding gate blocking AI mode advancement |
+| `forwarding_failed` | Forwarding verification AMD detected voicemail intercept |
+| `kb_gaps_accumulating` | Client has 3+ unresolved high-priority KB gaps |
+| `guarantee_approaching` | Client is within 10 days of guarantee deadline with insufficient pipeline |
+| `engagement_flagged` | Engagement signals service has flagged the client (4/5 indicators yellow/red) |
+| `call_prep_due` | Biweekly strategy call is due and call prep has not been run |
+
+Actions are sorted by urgency (escalations first, guarantee deadlines next, then KB/engagement items). Each action card includes the client name, specific trigger detail, and a direct link to the relevant page. **&ldquo;Prep Call&rdquo; buttons** per client link directly to `/admin/clients/{id}/call-prep/`.
+
+API: `GET /api/admin/operator-actions` — returns the current actions array for the authenticated operator&apos;s agency.
+
+### Engagement Signals (FMA Wave 3)
+
+5 deterministic per-client health indicators, each scored green/yellow/red. Gives the operator an objective read on contractor engagement without relying on gut feel.
+
+| Signal | Green | Yellow | Red |
+|--------|-------|--------|-----|
+| **Estimate recency** | EST follow-up sent &lt; 14d ago | 14-28d | 28d+ |
+| **WON/LOST recency** | Outcome recorded &lt; 21d ago | 21-42d | 42d+ |
+| **KB gap response rate** | &ge; 70% of gaps resolved or in-progress | 40-70% | &lt; 40% |
+| **Nudge response rate** | Contractor replied to &ge; 60% of daily digests | 30-60% | &lt; 30% |
+| **Contractor contact recency** | Last inbound message or reply &lt; 14d | 14-30d | 30d+ |
+
+**Flagging rule:** client is flagged when 4 or more of the 5 signals are yellow or red. Flagged clients appear in the Operator Actions Queue with action type `engagement_flagged` and feed into the triage dashboard.
+
+Feature flag: `engagementSignals`. API: `GET /api/admin/clients/{id}/engagement-signals` — returns the 5 indicators with their current value, threshold, and status.
 
 ### Engagement Health Monitoring
 
