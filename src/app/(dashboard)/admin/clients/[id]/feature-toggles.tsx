@@ -13,6 +13,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { AI_ASSIST_CATEGORIES, AI_ASSIST_CATEGORY } from '@/lib/services/ai-send-policy';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import type { ReadinessResult } from '@/lib/services/readiness-check';
@@ -63,6 +71,8 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
   const [readinessLoading, setReadinessLoading] = useState(false);
   const [readinessError, setReadinessError] = useState('');
   const [exclusionConfirmLoading, setExclusionConfirmLoading] = useState(false);
+  const [readinessDialogOpen, setReadinessDialogOpen] = useState(false);
+  const [previousAgentMode, setPreviousAgentMode] = useState<string>(flags.aiAgentMode ?? 'assist');
   const [formData, setFormData] = useState({
     missedCallSmsEnabled: flags.missedCallSmsEnabled ?? true,
     aiResponseEnabled: flags.aiResponseEnabled ?? true,
@@ -214,10 +224,15 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
             <Select
               value={formData.aiAgentMode}
               onValueChange={(value) => {
-                setFormData((prev) => ({ ...prev, aiAgentMode: value }));
                 if (value === 'autonomous') {
+                  setPreviousAgentMode(formData.aiAgentMode);
+                  setFormData((prev) => ({ ...prev, aiAgentMode: value }));
+                  setReadinessData(null);
+                  setReadinessError('');
+                  setReadinessDialogOpen(true);
                   void fetchReadiness();
                 } else {
+                  setFormData((prev) => ({ ...prev, aiAgentMode: value }));
                   setReadinessData(null);
                   setReadinessError('');
                 }
@@ -233,116 +248,6 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
               </SelectContent>
             </Select>
           </div>
-
-          {/* Autonomous Readiness Checklist */}
-          {formData.aiAgentMode === 'autonomous' && (
-            <div className="space-y-3 rounded-lg border p-3 bg-[#F8F9FA]">
-              {readinessLoading && (
-                <div className="space-y-2">
-                  <div className="h-4 bg-[#E3E9E1] rounded animate-pulse w-1/2" />
-                  <div className="h-4 bg-[#E3E9E1] rounded animate-pulse w-3/4" />
-                  <div className="h-4 bg-[#E3E9E1] rounded animate-pulse w-2/3" />
-                </div>
-              )}
-              {readinessError && !readinessLoading && (
-                <p className="text-sm text-[#C15B2E]">{readinessError}</p>
-              )}
-              {readinessData && !readinessLoading && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      {readinessData.passedCount} of {readinessData.totalCount} requirements met
-                    </span>
-                    {!readinessData.allCriticalPassed && (
-                      <span className="text-sm text-[#C15B2E] font-medium">
-                        Save blocked
-                      </span>
-                    )}
-                  </div>
-                  {!readinessData.allCriticalPassed && (
-                    <p className="text-sm text-[#C15B2E]">
-                      Resolve the following before enabling autonomous mode:
-                    </p>
-                  )}
-                  <ul className="space-y-2">
-                    {readinessData.items.map((item) => (
-                      <li key={item.key} className="space-y-1">
-                        <div className="flex items-start gap-2">
-                          {item.passed ? (
-                            <CheckCircle2
-                              className="h-4 w-4 mt-0.5 shrink-0"
-                              style={{ color: '#3D7A50' }}
-                            />
-                          ) : item.severity === 'critical' ? (
-                            <XCircle
-                              className="h-4 w-4 mt-0.5 shrink-0"
-                              style={{ color: '#C15B2E' }}
-                            />
-                          ) : (
-                            <AlertTriangle
-                              className="h-4 w-4 mt-0.5 shrink-0"
-                              style={{ color: '#6B7E54' }}
-                            />
-                          )}
-                          <div>
-                            <span
-                              className="text-sm font-medium"
-                              style={{
-                                color: item.passed
-                                  ? '#3D7A50'
-                                  : item.severity === 'critical'
-                                    ? '#C15B2E'
-                                    : '#6B7E54',
-                              }}
-                            >
-                              {item.label}
-                            </span>
-                            {!item.passed && (
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {item.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        {!item.passed && item.key === 'exclusion_list' && (
-                          <div className="ml-6 mt-1">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              disabled={exclusionConfirmLoading}
-                              onClick={async () => {
-                                setExclusionConfirmLoading(true);
-                                try {
-                                  const res = await fetch(
-                                    `/api/admin/clients/${clientId}`,
-                                    {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ exclusionListReviewed: true }),
-                                    }
-                                  );
-                                  if (res.ok) {
-                                    await fetchReadiness();
-                                  }
-                                } finally {
-                                  setExclusionConfirmLoading(false);
-                                }
-                              }}
-                            >
-                              {exclusionConfirmLoading
-                                ? 'Saving...'
-                                : 'I have reviewed the exclusion list with the contractor'}
-                            </Button>
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
 
           <FeatureToggle
             id="autoEscalationEnabled"
@@ -516,13 +421,6 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
           />
         </div>
 
-        {formData.aiAgentMode === 'autonomous' &&
-          readinessData &&
-          !readinessData.allCriticalPassed && (
-            <p className="text-sm text-[#C15B2E] text-center">
-              Cannot save &mdash; resolve critical requirements above
-            </p>
-          )}
         <Button
           onClick={handleSave}
           disabled={
@@ -536,6 +434,170 @@ export function FeatureTogglesCard({ clientId, flags }: Props) {
           {loading ? 'Saving...' : 'Save Feature Settings'}
         </Button>
       </CardContent>
+
+      {/* Autonomous Mode Readiness Dialog */}
+      <Dialog
+        open={readinessDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            // Cancel: revert to previous mode
+            setFormData((prev) => ({ ...prev, aiAgentMode: previousAgentMode }));
+            setReadinessData(null);
+            setReadinessError('');
+          }
+          setReadinessDialogOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Autonomous Mode Requirements</DialogTitle>
+            <DialogDescription>
+              Review all requirements before enabling autonomous AI mode. The agent will
+              send messages on the contractor&apos;s behalf without operator review.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 pb-2 space-y-4">
+            {readinessLoading && (
+              <div className="space-y-2">
+                <div className="h-4 bg-[#E3E9E1] rounded animate-pulse w-1/2" />
+                <div className="h-4 bg-[#E3E9E1] rounded animate-pulse w-3/4" />
+                <div className="h-4 bg-[#E3E9E1] rounded animate-pulse w-2/3" />
+                <div className="h-4 bg-[#E3E9E1] rounded animate-pulse w-3/5" />
+              </div>
+            )}
+
+            {readinessError && !readinessLoading && (
+              <p className="text-sm text-[#C15B2E]">{readinessError}</p>
+            )}
+
+            {readinessData && !readinessLoading && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    {readinessData.passedCount} of {readinessData.totalCount} requirements met
+                  </span>
+                  {readinessData.allCriticalPassed ? (
+                    <span className="text-sm font-medium" style={{ color: '#3D7A50' }}>
+                      Ready to enable
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium" style={{ color: '#C15B2E' }}>
+                      Critical items unmet
+                    </span>
+                  )}
+                </div>
+
+                <ul className="space-y-3">
+                  {readinessData.items.map((item) => (
+                    <li key={item.key} className="space-y-1">
+                      <div className="flex items-start gap-2">
+                        {item.passed ? (
+                          <CheckCircle2
+                            className="h-4 w-4 mt-0.5 shrink-0"
+                            style={{ color: '#3D7A50' }}
+                          />
+                        ) : item.severity === 'critical' ? (
+                          <XCircle
+                            className="h-4 w-4 mt-0.5 shrink-0"
+                            style={{ color: '#C15B2E' }}
+                          />
+                        ) : (
+                          <AlertTriangle
+                            className="h-4 w-4 mt-0.5 shrink-0"
+                            style={{ color: '#6B7E54' }}
+                          />
+                        )}
+                        <div>
+                          <span
+                            className="text-sm font-medium"
+                            style={{
+                              color: item.passed
+                                ? '#3D7A50'
+                                : item.severity === 'critical'
+                                  ? '#C15B2E'
+                                  : '#6B7E54',
+                            }}
+                          >
+                            {item.label}
+                          </span>
+                          {!item.passed && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {!item.passed && item.key === 'exclusion_list' && (
+                        <div className="ml-6 mt-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={exclusionConfirmLoading}
+                            onClick={async () => {
+                              setExclusionConfirmLoading(true);
+                              try {
+                                const res = await fetch(
+                                  `/api/admin/clients/${clientId}`,
+                                  {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ exclusionListReviewed: true }),
+                                  }
+                                );
+                                if (res.ok) {
+                                  await fetchReadiness();
+                                }
+                              } finally {
+                                setExclusionConfirmLoading(false);
+                              }
+                            }}
+                          >
+                            {exclusionConfirmLoading
+                              ? 'Saving...'
+                              : 'I have reviewed the exclusion list with the contractor'}
+                          </Button>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setFormData((prev) => ({ ...prev, aiAgentMode: previousAgentMode }));
+                setReadinessData(null);
+                setReadinessError('');
+                setReadinessDialogOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!readinessData || readinessLoading || !readinessData.allCriticalPassed}
+              style={
+                readinessData?.allCriticalPassed
+                  ? { backgroundColor: '#3D7A50', color: '#fff' }
+                  : undefined
+              }
+              onClick={() => {
+                setReadinessDialogOpen(false);
+              }}
+            >
+              Apply Autonomous Mode
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

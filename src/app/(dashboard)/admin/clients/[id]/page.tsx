@@ -335,7 +335,13 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
     cancelled: 'bg-[#FDEAE4] text-sienna',
   };
 
-  const onboardingChecklist = <OnboardingChecklistCard clientId={client.id} />;
+  // Only show onboarding checklist for clients in onboarding phase
+  const isInOnboarding = client.status !== 'active' ||
+    (Date.now() - new Date(client.createdAt).getTime()) < 30 * 24 * 60 * 60 * 1000;
+
+  const onboardingChecklist = isInOnboarding
+    ? <OnboardingChecklistCard clientId={client.id} />
+    : null;
 
   return (
     <div className="space-y-6">

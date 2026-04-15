@@ -8,6 +8,7 @@ import { AlertTriangle, CheckCircle, Clock, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TriageClientRow, TriageTrigger, StageDistribution } from '@/app/api/admin/triage/route';
 import { OperatorActionsPanel } from './operator-actions-panel';
+import { CollapsibleSection } from './collapsible-section';
 
 // Health configuration
 const HEALTH_CONFIG = {
@@ -515,226 +516,241 @@ export default async function TriagePage() {
         </p>
       </div>
 
-      {/* KPI summary cards + Operator Actions panel (client component — fetches actions) */}
-      <OperatorActionsPanel clientsAtRisk={redCount} activeClients={activeClients} />
-
-      {/* Health distribution summary */}
-      <div className="grid gap-4 grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Urgent</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-sienna">{redCount}</div>
-            <p className="text-xs text-muted-foreground">need action now</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Attention</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold" style={{ color: '#C15B2E' }}>
-              {yellowCount}
-            </div>
-            <p className="text-xs text-muted-foreground">need follow-up soon</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Healthy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[#3D7A50]">{greenCount}</div>
-            <p className="text-xs text-muted-foreground">no action needed</p>
-          </CardContent>
-        </Card>
+      {/* Priority Actions — operator acts here first */}
+      <div className="space-y-2">
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">Priority Actions</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Items requiring your attention now &mdash; red actions auto-expand.
+          </p>
+        </div>
+        <OperatorActionsPanel clientsAtRisk={redCount} activeClients={activeClients} />
       </div>
 
-      {rows.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <CheckCircle className="h-8 w-8 text-[#3D7A50] mx-auto mb-3" />
-            <p className="text-muted-foreground">No active clients found.</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Active clients will appear here once onboarded.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Mobile: card layout */}
-          <div className="space-y-3 sm:hidden">
-            {rows.map((row) => (
-              <TriageCard key={row.id} row={row} />
-            ))}
-          </div>
-
-          {/* Desktop: table layout */}
-          <div className="hidden sm:block">
-            <Card>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/30">
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Client</th>
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Health</th>
-                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">
-                        Escalations
-                      </th>
-                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">
-                        KB Gaps
-                      </th>
-                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">
-                        Days Since Estimate
-                      </th>
-                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">
-                        Days Since Win/Lost
-                      </th>
-                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">
-                        Pending Drafts
-                      </th>
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">
-                        Triggers
-                      </th>
-                      <th className="text-center px-4 py-3 font-medium text-muted-foreground">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => {
-                      const config = HEALTH_CONFIG[row.healthStatus];
-                      const Icon = config.Icon;
-                      return (
-                        <>
-                          <tr
-                            key={row.id}
-                            className={`hover:bg-muted/20 transition-colors cursor-pointer border-t ${config.rowClass}`}
-                          >
-                            <td className="px-4 py-3">
-                              <Link
-                                href={`/admin/clients/${row.id}?from=triage`}
-                                className="font-medium hover:underline"
-                              >
-                                {row.businessName}
-                              </Link>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="space-y-1">
-                                <span
-                                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${config.badgeClass}`}
-                                >
-                                  <Icon className="h-3 w-3" />
-                                  {config.label}
-                                </span>
-                                {row.daysAtCurrentStatus !== null && (
-                                  <div className="text-xs text-muted-foreground italic">
-                                    {formatTrendDuration(row.daysAtCurrentStatus)}
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <span
-                                className={
-                                  row.overdueEscalations > 0
-                                    ? 'font-semibold text-sienna'
-                                    : row.openEscalations > 0
-                                    ? 'font-medium'
-                                    : 'text-muted-foreground'
-                                }
-                              >
-                                {row.openEscalations}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <span
-                                className={
-                                  row.openKbGaps >= 5
-                                    ? 'font-semibold text-sienna'
-                                    : row.openKbGaps > 0
-                                    ? 'font-medium'
-                                    : 'text-muted-foreground'
-                                }
-                              >
-                                {row.openKbGaps}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <MetricCell value={row.daysSinceEstimate} label="d" />
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <MetricCell value={row.daysSinceWonOrLost} label="d" />
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              {row.pendingSmartAssistDrafts > 0 ? (
-                                <span className="font-semibold text-sienna">
-                                  {row.pendingSmartAssistDrafts}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground">&mdash;</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              {row.triggers.length === 0 ? (
-                                <span className="text-muted-foreground text-xs">None</span>
-                              ) : (
-                                <TriggerList
-                                  triggers={row.triggers}
-                                  daysAtCurrentStatus={null}
-                                />
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <Button asChild variant="outline" size="sm">
-                                <Link href={`/admin/clients/${row.id}/call-prep`}>
-                                  <Phone className="h-3.5 w-3.5 mr-1.5" />
-                                  Prep Call
-                                </Link>
-                              </Button>
-                            </td>
-                          </tr>
-                          {/* Health metrics summary sub-row */}
-                          <tr
-                            key={`${row.id}-metrics`}
-                            className={`bg-muted/10 ${config.rowClass}`}
-                          >
-                            <td colSpan={9} className="px-4 pb-3 pt-0">
-                              <div className="grid grid-cols-4 gap-2 text-xs">
-                                <div>
-                                  <span className="text-muted-foreground">Active leads:</span>
-                                  <span className="ml-1 font-medium">{row.stageDistribution.total}</span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">In qualifying:</span>
-                                  <span className="ml-1 font-medium">{row.stageDistribution.qualifying}</span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Correction rate:</span>
-                                  <span className={cn('ml-1 font-medium', row.correctionRate > 30 ? 'text-[#C15B2E]' : '')}>
-                                    {row.correctionRate}%
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Opt-outs (7d):</span>
-                                  <span className={cn('ml-1 font-medium', row.recentOptOuts > 0 ? 'text-[#C15B2E]' : '')}>
-                                    {row.recentOptOuts}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        </>
-                      );
-                    })}
-                  </tbody>
-                </table>
+      {/* All Clients — monitoring overview, collapsible */}
+      <CollapsibleSection
+        label="All Clients"
+        count={activeClients}
+        defaultExpanded={redCount === 0}
+      >
+        {/* Health distribution summary */}
+        <div className="grid gap-4 grid-cols-3 mb-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Urgent</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-sienna">{redCount}</div>
+              <p className="text-xs text-muted-foreground">need action now</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Attention</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold" style={{ color: '#C15B2E' }}>
+                {yellowCount}
               </div>
-            </Card>
-          </div>
-        </>
-      )}
+              <p className="text-xs text-muted-foreground">need follow-up soon</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Healthy</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-[#3D7A50]">{greenCount}</div>
+              <p className="text-xs text-muted-foreground">no action needed</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {rows.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <CheckCircle className="h-8 w-8 text-[#3D7A50] mx-auto mb-3" />
+              <p className="text-muted-foreground">No active clients found.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Active clients will appear here once onboarded.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Mobile: card layout */}
+            <div className="space-y-3 sm:hidden">
+              {rows.map((row) => (
+                <TriageCard key={row.id} row={row} />
+              ))}
+            </div>
+
+            {/* Desktop: table layout */}
+            <div className="hidden sm:block">
+              <Card>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/30">
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Client</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Health</th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                          Escalations
+                        </th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                          KB Gaps
+                        </th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                          Days Since Estimate
+                        </th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                          Days Since Win/Lost
+                        </th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                          Pending Drafts
+                        </th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">
+                          Triggers
+                        </th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => {
+                        const config = HEALTH_CONFIG[row.healthStatus];
+                        const Icon = config.Icon;
+                        return (
+                          <>
+                            <tr
+                              key={row.id}
+                              className={`hover:bg-muted/20 transition-colors cursor-pointer border-t ${config.rowClass}`}
+                            >
+                              <td className="px-4 py-3">
+                                <Link
+                                  href={`/admin/clients/${row.id}?from=triage`}
+                                  className="font-medium hover:underline"
+                                >
+                                  {row.businessName}
+                                </Link>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="space-y-1">
+                                  <span
+                                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${config.badgeClass}`}
+                                  >
+                                    <Icon className="h-3 w-3" />
+                                    {config.label}
+                                  </span>
+                                  {row.daysAtCurrentStatus !== null && (
+                                    <div className="text-xs text-muted-foreground italic">
+                                      {formatTrendDuration(row.daysAtCurrentStatus)}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span
+                                  className={
+                                    row.overdueEscalations > 0
+                                      ? 'font-semibold text-sienna'
+                                      : row.openEscalations > 0
+                                      ? 'font-medium'
+                                      : 'text-muted-foreground'
+                                  }
+                                >
+                                  {row.openEscalations}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span
+                                  className={
+                                    row.openKbGaps >= 5
+                                      ? 'font-semibold text-sienna'
+                                      : row.openKbGaps > 0
+                                      ? 'font-medium'
+                                      : 'text-muted-foreground'
+                                  }
+                                >
+                                  {row.openKbGaps}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <MetricCell value={row.daysSinceEstimate} label="d" />
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <MetricCell value={row.daysSinceWonOrLost} label="d" />
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {row.pendingSmartAssistDrafts > 0 ? (
+                                  <span className="font-semibold text-sienna">
+                                    {row.pendingSmartAssistDrafts}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">&mdash;</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3">
+                                {row.triggers.length === 0 ? (
+                                  <span className="text-muted-foreground text-xs">None</span>
+                                ) : (
+                                  <TriggerList
+                                    triggers={row.triggers}
+                                    daysAtCurrentStatus={null}
+                                  />
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <Button asChild variant="outline" size="sm">
+                                  <Link href={`/admin/clients/${row.id}/call-prep`}>
+                                    <Phone className="h-3.5 w-3.5 mr-1.5" />
+                                    Prep Call
+                                  </Link>
+                                </Button>
+                              </td>
+                            </tr>
+                            {/* Health metrics summary sub-row */}
+                            <tr
+                              key={`${row.id}-metrics`}
+                              className={`bg-muted/10 ${config.rowClass}`}
+                            >
+                              <td colSpan={9} className="px-4 pb-3 pt-0">
+                                <div className="grid grid-cols-4 gap-2 text-xs">
+                                  <div>
+                                    <span className="text-muted-foreground">Active leads:</span>
+                                    <span className="ml-1 font-medium">{row.stageDistribution.total}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">In qualifying:</span>
+                                    <span className="ml-1 font-medium">{row.stageDistribution.qualifying}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Correction rate:</span>
+                                    <span className={cn('ml-1 font-medium', row.correctionRate > 30 ? 'text-[#C15B2E]' : '')}>
+                                      {row.correctionRate}%
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Opt-outs (7d):</span>
+                                    <span className={cn('ml-1 font-medium', row.recentOptOuts > 0 ? 'text-[#C15B2E]' : '')}>
+                                      {row.recentOptOuts}
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          </>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          </>
+        )}
+      </CollapsibleSection>
     </div>
   );
 }

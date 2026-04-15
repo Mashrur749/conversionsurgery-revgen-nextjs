@@ -47,26 +47,17 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
       return;
     }
 
-    // Validate ICP fields
+    // Validate ICP fields — all optional, but no partial fills
     const leadVolume = data.estimatedLeadVolume ? Number(data.estimatedLeadVolume) : 0;
-    const projectValue = data.averageProjectValue ? Number(data.averageProjectValue) : 0;
-    const deadQuotes = data.deadQuoteCount ? Number(data.deadQuoteCount) : 0;
 
-    if (!data.estimatedLeadVolume || leadVolume <= 0) {
-      setError('Estimated monthly leads is required');
-      return;
-    }
-    if (!data.averageProjectValue || projectValue <= 0) {
-      setError('Average project value is required');
-      return;
-    }
-    if (!data.deadQuoteCount || deadQuotes <= 0) {
-      setError('Dead quotes available is required');
+    const icpFilledCount = [data.estimatedLeadVolume, data.averageProjectValue, data.deadQuoteCount].filter(Boolean).length;
+    if (icpFilledCount > 0 && icpFilledCount < 3) {
+      setError('Please fill in all three ICP fields or leave them all blank');
       return;
     }
 
-    // Low volume disclosure gate
-    if (leadVolume < 15 && !data.lowVolumeDisclosureAcknowledged) {
+    // Low volume disclosure gate — only when lead volume is filled
+    if (data.estimatedLeadVolume && leadVolume < 15 && !data.lowVolumeDisclosureAcknowledged) {
       setError('You must confirm you disclosed the low lead volume to the contractor before continuing');
       return;
     }
@@ -185,30 +176,6 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
             </SelectContent>
           </Select>
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="googleBusinessUrl">Google Review URL</Label>
-          <Input
-            id="googleBusinessUrl"
-            type="url"
-            value={data.googleBusinessUrl}
-            onChange={(e) => updateData({ googleBusinessUrl: e.target.value })}
-            placeholder="https://g.page/r/XXXXX/review"
-          />
-          <p className="text-xs text-muted-foreground">
-            Go to{' '}
-            <a
-              href="https://business.google.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-[#D4754A] hover:text-[#C15B2E]"
-            >
-              business.google.com
-            </a>
-            {' '}&rarr; Home &rarr; &quot;Get more reviews&quot; &rarr; copy the share link.
-            It should look like <span className="font-mono">g.page/r/.../review</span>
-          </p>
-        </div>
       </div>
 
       {/* Lead Volume & Pipeline */}
@@ -216,13 +183,13 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
         <div>
           <h3 className="text-sm font-semibold text-foreground">Lead Volume &amp; Pipeline</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Used to set realistic expectations and configure guarantee windows.
+            Optional &mdash; fill during or after the sales call. Required for guarantee configuration.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="estimatedLeadVolume">Estimated Monthly Leads *</Label>
+            <Label htmlFor="estimatedLeadVolume">Estimated Monthly Leads</Label>
             <Input
               id="estimatedLeadVolume"
               type="number"
@@ -237,7 +204,7 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="averageProjectValue">Average Project Value ($) *</Label>
+            <Label htmlFor="averageProjectValue">Average Project Value ($)</Label>
             <Input
               id="averageProjectValue"
               type="number"
@@ -252,7 +219,7 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="deadQuoteCount">Dead Quotes Available *</Label>
+            <Label htmlFor="deadQuoteCount">Dead Quotes Available</Label>
             <Input
               id="deadQuoteCount"
               type="number"
@@ -298,6 +265,30 @@ export function StepBusinessInfo({ data, updateData, onNext }: Props) {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="googleBusinessUrl">Google Review URL</Label>
+        <Input
+          id="googleBusinessUrl"
+          type="url"
+          value={data.googleBusinessUrl}
+          onChange={(e) => updateData({ googleBusinessUrl: e.target.value })}
+          placeholder="https://g.page/r/XXXXX/review"
+        />
+        <p className="text-xs text-muted-foreground">
+          Go to{' '}
+          <a
+            href="https://business.google.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-[#D4754A] hover:text-[#C15B2E]"
+          >
+            business.google.com
+          </a>
+          {' '}&rarr; Home &rarr; &quot;Get more reviews&quot; &rarr; copy the share link.
+          It should look like <span className="font-mono">g.page/r/.../review</span>
+        </p>
       </div>
 
       <div className="flex justify-end pt-4">

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, BookOpen, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, BookOpen, CheckCircle2, Search } from 'lucide-react';
 
 export interface EscalationActionsProps {
   escalationId: string;
@@ -52,30 +52,27 @@ export function EscalationActions({
   const [kbMatch, setKbMatch] = useState<KbMatch | null>(null);
   const [kbLoading, setKbLoading] = useState(false);
   const [kbExpanded, setKbExpanded] = useState(false);
-  const fetchedRef = useRef(false);
 
   const isComplexTechnical = reason === 'complex_technical';
 
-  useEffect(() => {
-    if (!isComplexTechnical || !reasonDetails || fetchedRef.current) return;
-    fetchedRef.current = true;
+  async function searchKb() {
+    if (!reasonDetails) return;
     setKbLoading(true);
-
-    fetch(
-      `/api/admin/clients/${clientId}/auto-resolve/search?q=${encodeURIComponent(reasonDetails)}`
-    )
-      .then((r) => r.json() as Promise<SearchResult>)
-      .then((data) => {
-        if (data.found && data.entry) {
-          setKbMatch(data.entry);
-          setKbExpanded(true);
-        }
-      })
-      .catch(() => {
-        // Silent fail — KB suggestion is best-effort
-      })
-      .finally(() => setKbLoading(false));
-  }, [isComplexTechnical, reasonDetails, clientId]);
+    try {
+      const res = await fetch(
+        `/api/admin/clients/${clientId}/auto-resolve/search?q=${encodeURIComponent(reasonDetails)}`
+      );
+      const data = (await res.json()) as SearchResult;
+      if (data.found && data.entry) {
+        setKbMatch(data.entry);
+        setKbExpanded(true);
+      }
+    } catch {
+      // Silent fail — KB suggestion is best-effort
+    } finally {
+      setKbLoading(false);
+    }
+  }
 
   async function handleResolve(e: React.FormEvent) {
     e.preventDefault();
@@ -115,8 +112,22 @@ export function EscalationActions({
       {/* KB Suggestion — complex_technical only */}
       {isComplexTechnical && (
         <div>
+          {!kbLoading && !kbMatch && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full border-[#6B7E54]/40 text-[#6B7E54] hover:bg-[#E3E9E1]/60 hover:text-[#6B7E54]"
+              onClick={searchKb}
+            >
+              <Search className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+              Search KB for suggestion
+            </Button>
+          )}
           {kbLoading && (
-            <div className="h-4 w-32 rounded bg-muted/50 animate-pulse" />
+            <div className="h-9 rounded-md border border-[#6B7E54]/40 bg-transparent flex items-center px-3 py-1 animate-pulse">
+              <div className="h-3 w-24 rounded bg-muted/50" />
+            </div>
           )}
           {!kbLoading && kbMatch && (
             <div className="rounded-md border border-[#6B7E54]/30 bg-[#E3E9E1]/40 text-sm">
