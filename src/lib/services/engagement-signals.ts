@@ -10,7 +10,7 @@
 
 import { getDb } from '@/db';
 import { leads, knowledgeGaps, agencyMessages } from '@/db/schema';
-import { eq, and, gte, inArray, max, count, isNotNull } from 'drizzle-orm';
+import { eq, and, gte, lt, inArray, max, count, isNotNull } from 'drizzle-orm';
 import { resolveFeatureFlag } from '@/lib/services/feature-flags';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -89,6 +89,16 @@ function nudgeStatus(numerator: number, denominator: number): SignalStatus {
 /** Same thresholds as estRecency: < 7d green, 7-14d yellow, > 14d red */
 const contractorContactStatus = estRecencyStatus;
 
+function volumeTrendStatus(currentCount: number, priorCount: number): SignalStatus {
+  // No baseline — new client, can't compare
+  if (priorCount === 0) return 'green';
+  // Severe drop: volume went to zero from 5+, or dropped 75%+
+  if ((currentCount === 0 && priorCount >= 5) || currentCount < priorCount * 0.25) return 'red';
+  // Significant drop: 50%+ decline AND at least 3 fewer leads
+  if (currentCount < priorCount * 0.5 && priorCount - currentCount >= 3) return 'yellow';
+  return 'green';
+}
+
 // ── All-green result (used when feature flag is disabled) ─────────────────────
 
 function allGreenResult(): EngagementSignalsResult {
@@ -128,8 +138,15 @@ function allGreenResult(): EngagementSignalsResult {
       value: 'N/A',
       threshold: 'Green < 7d, Yellow 7-14d, Red > 14d',
     },
+    {
+      key: 'lead_volume_trend',
+      label: 'Lead volume trend (30d vs prior 30d)',
+      status: 'green',
+      value: 'N/A',
+      threshold: 'Green: stable/growing, Yellow: -50%+ (3+ drop), Red: -75%+ or zero from 5+',
+    },
   ];
-  return { signals, flagged: false, greenCount: 5, yellowCount: 0, redCount: 0 };
+  return { signals, flagged: false, greenCount: 6, yellowCount: 0, redCount: 0 };
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -153,6 +170,7 @@ export async function getEngagementSignals(
     nudgeRespondedRow,
     contractorContactRow,
     recentLeadCountRow,
+    priorLeadCountRow,
   ] = await Promise.all([
     // 1. Estimate trigger recency — latest updatedAt for active leads
     db
@@ -255,6 +273,19 @@ export async function getEngagementSignals(
         )
       )
       .then((rows) => rows[0] ?? { value: 0 }),
+
+    // 7. Prior period lead count (31-60 days ago) — for volume trend signal
+    db
+      .select({ value: count() })
+      .from(leads)
+      .where(
+        and(
+          eq(leads.clientId, clientId),
+          gte(leads.createdAt, new Date(Date.now() - 60 * 24 * 60 * 60 * 1000)),
+          lt(leads.createdAt, thirtyDaysAgo)
+        )
+      )
+      .then((rows) => rows[0] ?? { value: 0 }),
   ]);
 
   // ── Build signals ─────────────────────────────────────────────────────────
@@ -306,17 +337,25 @@ export async function getEngagementSignals(
     threshold: 'Green < 7d, Yellow 7-14d, Red > 14d',
   };
 
+  const currentLeadCount = Number(recentLeadCountRow.value);
+  const priorLeadCount = Number(priorLeadCountRow.value);
+  const signal6: EngagementSignal = {
+    key: 'lead_volume_trend',
+    label: 'Lead volume trend (30d vs prior 30d)',
+    status: volumeTrendStatus(currentLeadCount, priorLeadCount),
+    value: `${currentLeadCount} vs ${priorLeadCount}`,
+    threshold: 'Green: stable/growing, Yellow: -50%+ (3+ drop), Red: -75%+ or zero from 5+',
+  };
+
   // ── Volume-awareness dampening ─────────────────────────────────────────────
-  // During seasonal slowdowns with very low lead volume (< 3 leads in 30 days),
-  // recency signals can fire red purely from inactivity — not genuine disengagement.
-  // Cap est_recency and won_lost_recency at yellow in that case.
-  const recentLeadCount = Number(recentLeadCountRow.value);
-  if (recentLeadCount < 3) {
+  // Only dampen when there are literally zero leads — volume-trend signal now
+  // captures genuine seasonal decline, so dampening threshold is tightened.
+  if (currentLeadCount < 1) {
     if (signal1.status === 'red') signal1.status = 'yellow';
     if (signal2.status === 'red') signal2.status = 'yellow';
   }
 
-  const signals = [signal1, signal2, signal3, signal4, signal5];
+  const signals = [signal1, signal2, signal3, signal4, signal5, signal6];
 
   const greenCount = signals.filter((s) => s.status === 'green').length;
   const yellowCount = signals.filter((s) => s.status === 'yellow').length;
