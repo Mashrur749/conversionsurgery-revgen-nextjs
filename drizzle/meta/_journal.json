@@ -176,6 +176,13 @@
       "when": 1776206834419,
       "tag": "0024_opposite_black_bird",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1776224447233,
+      "tag": "0025_tricky_william_stryker",
+      "breakpoints": true
     }
   ]
 }

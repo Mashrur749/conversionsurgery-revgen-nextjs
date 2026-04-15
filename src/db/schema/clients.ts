@@ -136,6 +136,14 @@ export const clients = pgTable(
     ),
 
     // ============================================
+    // FMA WAVE 2.4: Multi-operator data model
+    // ============================================
+    // Which operator "owns" this client (for display and assignment purposes)
+    primaryOperatorPersonId: uuid('primary_operator_person_id').references(() => people.id, {
+      onDelete: 'set null',
+    }),
+
+    // ============================================
     // FMA WAVE 2: ICP qualification
     // ============================================
     estimatedLeadVolume: integer('estimated_lead_volume'),
