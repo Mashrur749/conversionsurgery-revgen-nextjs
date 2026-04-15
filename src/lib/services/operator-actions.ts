@@ -450,6 +450,56 @@ async function fetchListingMigrationPending(): Promise<OperatorAction[]> {
   });
 }
 
+/**
+ * Items included in 3+ daily digests in the last 10 days without contractor response.
+ */
+async function fetchDigestNoResponse(): Promise<OperatorAction[]> {
+  const db = getDb();
+  const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+
+  const repeatedItems = await db
+    .select({
+      resourceId: auditLog.resourceId,
+      clientId: auditLog.clientId,
+      appearances: count(auditLog.id),
+    })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.action, 'digest_item_included'),
+        gte(auditLog.createdAt, tenDaysAgo)
+      )
+    )
+    .groupBy(auditLog.resourceId, auditLog.clientId)
+    .having(sql`count(${auditLog.id}) >= 3`);
+
+  if (repeatedItems.length === 0) return [];
+
+  const clientIds = [...new Set(repeatedItems.map((r) => r.clientId).filter((id): id is string => id !== null))];
+  if (clientIds.length === 0) return [];
+
+  const clientRows = await db
+    .select({ id: clients.id, businessName: clients.businessName })
+    .from(clients)
+    .where(inArray(clients.id, clientIds));
+
+  const clientNameMap = new Map(clientRows.map((c) => [c.id, c.businessName]));
+
+  return repeatedItems
+    .filter((r) => r.clientId !== null && r.resourceId !== null)
+    .map((r) => ({
+      id: `digest_no_response_${r.clientId}_${r.resourceId}`,
+      type: 'digest_no_response',
+      clientId: r.clientId!,
+      clientName: clientNameMap.get(r.clientId!) ?? 'Unknown',
+      urgency: 'yellow' as const,
+      title: 'Digest item ignored 3+ times',
+      detail: `Item appeared in ${Number(r.appearances)} digests without response`,
+      actionUrl: `/admin/clients/${r.clientId}`,
+      createdAt: new Date(),
+    }));
+}
+
 // ---------------------------------------------------------------------------
 // Main aggregation function
 // ---------------------------------------------------------------------------
@@ -465,6 +515,7 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
     callPrepActions,
     listingMigrationActions,
     paymentNotCapturedActions,
+    digestNoResponseActions,
   ] = await Promise.all([
     fetchEscalationPending().catch((err: unknown) => {
       logSanitizedConsoleError('[OperatorActions] escalation_pending query failed:', err, {});
@@ -502,6 +553,10 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
       logSanitizedConsoleError('[OperatorActions] payment_not_captured query failed:', err, {});
       return [] as OperatorAction[];
     }),
+    fetchDigestNoResponse().catch((err: unknown) => {
+      logSanitizedConsoleError('[OperatorActions] digest_no_response query failed:', err, {});
+      return [] as OperatorAction[];
+    }),
   ]);
 
   const all: OperatorAction[] = [
@@ -514,6 +569,7 @@ export async function getOperatorActions(): Promise<OperatorActionsResult> {
     ...callPrepActions,
     ...listingMigrationActions,
     ...paymentNotCapturedActions,
+    ...digestNoResponseActions,
   ];
 
   // Sort: red first, then yellow, then by oldest createdAt ascending

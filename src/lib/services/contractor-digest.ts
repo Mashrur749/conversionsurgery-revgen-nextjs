@@ -24,7 +24,7 @@ const ESTIMATE_STALE_DAYS = 14;
 const APPOINTMENT_AGE_DAYS = 7;
 const MAX_DIGEST_ITEMS = 8;
 const RESOLVED_STATUSES = ['won', 'lost', 'closed'] as const;
-const DIGEST_DEDUP_HOURS = 48;
+const DIGEST_DEDUP_HOURS = 24;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -49,9 +49,8 @@ export interface DigestResult {
 export async function buildDigest(clientId: string): Promise<DigestResult | null> {
   const db = getDb();
   const now = new Date();
-  const items: DigestItem[] = [];
 
-  // ── 0. Dedup: fetch item IDs already included in a digest in the last 48h ─
+  // ── 0. Dedup: fetch item IDs already included in a digest in the last 24h ─
   const dedupCutoff = new Date(now.getTime() - DIGEST_DEDUP_HOURS * 60 * 60 * 1000);
 
   const recentlyDigested = await db
@@ -69,9 +68,10 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
     recentlyDigested.map((r) => r.resourceId).filter((id): id is string => id !== null)
   );
 
-  // ── 1. KB gaps (status = 'new', ordered by priorityScore desc) ───────────
+  // ── 1. Query all types independently ──────────────────────────────────────
   const recentlyDigestedIdsArray = [...recentlyDigestedIds];
 
+  // 1a. KB gaps
   const gapWhere =
     recentlyDigestedIdsArray.length > 0
       ? and(
@@ -82,31 +82,23 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
       : and(eq(knowledgeGaps.clientId, clientId), eq(knowledgeGaps.status, 'new'));
 
   const gaps = await db
-    .select({
-      id: knowledgeGaps.id,
-      question: knowledgeGaps.question,
-    })
+    .select({ id: knowledgeGaps.id, question: knowledgeGaps.question })
     .from(knowledgeGaps)
     .where(gapWhere)
     .orderBy(desc(knowledgeGaps.priorityScore))
     .limit(MAX_DIGEST_ITEMS);
 
-  for (const gap of gaps) {
-    items.push({
-      type: 'kb_gap',
-      id: gap.id,
-      label: gap.question,
-    });
-  }
+  const kbItems: DigestItem[] = gaps.map((gap) => ({
+    type: 'kb_gap' as const,
+    id: gap.id,
+    label: gap.question,
+  }));
 
-  // ── 2. Stale estimate_sent leads (14+ days, unresolved) ──────────────────
+  // 1b. Stale estimate_sent leads
   const estimateCutoff = new Date(now.getTime() - ESTIMATE_STALE_DAYS * 24 * 60 * 60 * 1000);
 
   const staleEstimates = await db
-    .select({
-      id: leads.id,
-      name: leads.name,
-    })
+    .select({ id: leads.id, name: leads.name })
     .from(leads)
     .where(
       and(
@@ -117,24 +109,20 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
     )
     .limit(MAX_DIGEST_ITEMS);
 
-  for (const lead of staleEstimates) {
-    if (!recentlyDigestedIds.has(lead.id)) {
-      items.push({
-        type: 'estimate_prompt',
-        id: lead.id,
-        label: abbreviateName(lead.name),
-      });
-    }
-  }
+  const estimateItems: DigestItem[] = staleEstimates
+    .filter((lead) => !recentlyDigestedIds.has(lead.id))
+    .map((lead) => ({
+      type: 'estimate_prompt' as const,
+      id: lead.id,
+      label: abbreviateName(lead.name),
+    }));
 
-  // ── 3. Post-appointment unresolved leads (7+ days old appointment) ───────
+  // 1c. Post-appointment unresolved leads
   const appointmentCutoff = new Date(now.getTime() - APPOINTMENT_AGE_DAYS * 24 * 60 * 60 * 1000);
   const cutoffDate = appointmentCutoff.toISOString().split('T')[0];
 
   const qualifyingAppointments = await db
-    .select({
-      leadId: appointments.leadId,
-    })
+    .select({ leadId: appointments.leadId })
     .from(appointments)
     .where(
       and(
@@ -145,23 +133,17 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
     );
 
   const appointmentLeadIds = [...new Set(qualifyingAppointments.map((a) => a.leadId))];
+  let wonLostItems: DigestItem[] = [];
 
   if (appointmentLeadIds.length > 0) {
-    // Exclude leads already in stale estimates (dedup across type)
-    const estimateLeadIds = new Set(
-      items.filter((i) => i.type === 'estimate_prompt').map((i) => i.id)
-    );
-
+    const estimateLeadIds = new Set(estimateItems.map((i) => i.id));
     const unresolvedLeadIds = appointmentLeadIds.filter(
       (id) => !estimateLeadIds.has(id) && !recentlyDigestedIds.has(id)
     );
 
     if (unresolvedLeadIds.length > 0) {
       const unresolvedLeads = await db
-        .select({
-          id: leads.id,
-          name: leads.name,
-        })
+        .select({ id: leads.id, name: leads.name })
         .from(leads)
         .where(
           and(
@@ -171,25 +153,43 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
         )
         .limit(MAX_DIGEST_ITEMS);
 
-      for (const lead of unresolvedLeads) {
-        items.push({
-          type: 'won_lost_prompt',
-          id: lead.id,
-          label: abbreviateName(lead.name),
-        });
-      }
+      wonLostItems = unresolvedLeads.map((lead) => ({
+        type: 'won_lost_prompt' as const,
+        id: lead.id,
+        label: abbreviateName(lead.name),
+      }));
     }
+  }
+
+  // ── 2. Priority-balanced slot allocation ──────────────────────────────────
+  const wonLostSlots = Math.min(2, wonLostItems.length);
+  const estimateSlots = Math.min(2, estimateItems.length);
+  const kbSlots = MAX_DIGEST_ITEMS - wonLostSlots - estimateSlots;
+
+  const items: DigestItem[] = [
+    ...wonLostItems.slice(0, wonLostSlots),
+    ...estimateItems.slice(0, estimateSlots),
+    ...kbItems.slice(0, kbSlots),
+  ];
+
+  // Fill remaining slots if any type had fewer items than reserved
+  const remaining = MAX_DIGEST_ITEMS - items.length;
+  if (remaining > 0) {
+    const usedIds = new Set(items.map((i) => i.id));
+    const overflow = [
+      ...wonLostItems.filter((i) => !usedIds.has(i.id)),
+      ...estimateItems.filter((i) => !usedIds.has(i.id)),
+      ...kbItems.filter((i) => !usedIds.has(i.id)),
+    ];
+    items.push(...overflow.slice(0, remaining));
   }
 
   if (items.length === 0) return null;
 
-  // Cap at MAX_DIGEST_ITEMS
-  const cappedItems = items.slice(0, MAX_DIGEST_ITEMS);
-
-  // ── Dedup write: mark each included item so it won't reappear for 48h ────
-  if (cappedItems.length > 0) {
+  // ── Dedup write: mark each included item so it won't reappear for 24h ────
+  if (items.length > 0) {
     await db.insert(auditLog).values(
-      cappedItems.map((item) => ({
+      items.map((item) => ({
         clientId,
         action: 'digest_item_included' as const,
         resourceType: item.type,
@@ -199,7 +199,7 @@ export async function buildDigest(clientId: string): Promise<DigestResult | null
     );
   }
 
-  return { items: cappedItems };
+  return { items };
 }
 
 // ── Format digest SMS ─────────────────────────────────────────────────────────
