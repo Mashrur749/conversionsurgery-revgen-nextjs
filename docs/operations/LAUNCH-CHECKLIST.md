@@ -504,27 +504,36 @@ Phase 2 taught you the product. Phase 3 is where you learn to deliver and sell i
 
 ### 3.1 Read These Docs (in order)
 
-Do this in two evenings or one focused day (~4.5 hours total).
+~2.5 hours total. The docs are designed to layer: read each one ONCE, not cover-to-cover on repeated topics. Where content overlaps (guarantee terms, objection handling, onboarding), the first doc you encounter is the one to absorb. Later docs add tactical depth, not repeat the concept.
 
-**Evening 1 &mdash; How to deliver the service (2.5 hours):**
+**Block 1 &mdash; Understand the service (45 min):**
 
-1. `docs/operations/00-OPERATOR-GUIDE.md` (60 min) &mdash; big picture: what the contractor gets, what you do, how the system works
-2. `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (60 min) &mdash; all 22 sections: every client scenario, onboarding script, payment capture
-3. `docs/operations/01-OPERATIONS-GUIDE.md` (30 min) &mdash; daily ops: what to check, what to fix, cron health
+1. `docs/operations/00-OPERATOR-GUIDE.md` (45 min) &mdash; the ONE doc that covers everything: what you sell, how it works, how you deliver, what you check daily. After this, you should be able to describe the service without notes.
 
-After Evening 1 you should be able to describe the full service delivery without looking at notes.
+**Block 2 &mdash; Know your buyer and your pitch (45 min):**
 
-**Evening 2 &mdash; How to sell it (2 hours):**
+2. `docs/business-intel/ICP-DEFINITION.md` (10 min) &mdash; your target buyer. Memorize the 30-second qualifier.
+3. `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` (30 min) &mdash; **your primary sales doc.** Cold call script, demo flow, 10 objection handlers, leave-behind, practice guide. This is what you open on every sales call.
+4. `docs/operations/ACQUISITION-PLAYBOOK-0-TO-5.md` (5 min) &mdash; skim for the phase structure. This is your outreach strategy, not a reading assignment.
 
-4. `docs/business-intel/ICP-DEFINITION.md` (10 min) &mdash; **your target buyer**: Calgary basement development contractors. Memorize the 30-second qualifier.
-5. `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` (30 min) &mdash; **your complete sales toolkit**: cold call script with guardrails, DM templates, instant demo flow, 10 objection handlers, leave-behind one-pager, practice call guide. This is your primary sales doc.
-6. `docs/business-intel/OFFER-APPROVED-COPY.md` (20 min) &mdash; approved sales copy for proposals and emails
-7. `docs/operations/ACQUISITION-PLAYBOOK-0-TO-5.md` (20 min) &mdash; broader strategy for landing first 5 clients
-8. `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` (20 min) &mdash; deep-dive objection handling
-9. `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` (10 min) &mdash; known risks acknowledged before first client
-10. `docs/operations/templates/CS-PLUS-YOUR-TOOL.md` (5 min) &mdash; how to position CS alongside Jobber/BuilderTrend/etc.
+**Block 3 &mdash; Reference depth (30 min):**
 
-After Evening 2 you should be able to pitch the service and handle the top 5 objections.
+5. `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` &mdash; **don&apos;t read all 22 sections.** Read these 4 now, bookmark the rest:
+   - Section 10: Onboarding call script (you&apos;ll practice this in 3.2)
+   - Section 4: Bi-weekly strategy call (you&apos;ll practice this in 3.2)
+   - Section 5: Guarantee evaluation (you&apos;ll practice this in 3.2)
+   - Section 8: Opt-out handling (quick read)
+   - The remaining 18 sections are reference &mdash; read them when those scenarios happen with a real client.
+6. `docs/legal/03-RISK-ACCEPTANCE-PRE-5-CLIENTS.md` (5 min) &mdash; risks accepted before legal counsel. Quick read.
+7. `docs/operations/templates/CS-PLUS-YOUR-TOOL.md` (5 min) &mdash; positioning alongside Jobber/BuilderTrend. Quick reference.
+
+**Don&apos;t read cover-to-cover (bookmark for reference):**
+
+- `docs/business-intel/OFFER-APPROVED-COPY.md` &mdash; pull from it when writing proposals/emails. Don&apos;t memorize &mdash; the Sales Toolkit has the same language in conversation form.
+- `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` &mdash; deep-dive psychological framework. The Sales Toolkit already has 10 handlers. Read this only after your first 3 real objection calls, when you want deeper strategies.
+- `docs/operations/01-OPERATIONS-GUIDE.md` &mdash; daily ops checklist. Reference it on Day 1 with a real client, not before.
+
+After these 3 blocks you should be able to: pitch the service in 60 seconds, handle the top 5 objections, and walk through the onboarding call script.
 
 **Bookmark these for sales calls (don&apos;t memorize &mdash; just know where they are):**
 
@@ -537,9 +546,8 @@ After Evening 2 you should be able to pitch the service and handle the top 5 obj
 - `docs/product/ROI-CALCULATOR-GUIDE.md` &mdash; how to use the calculator during calls
 - `docs/product/PLATFORM-CAPABILITIES.md` &mdash; when a contractor asks &ldquo;can it do X?&rdquo;
 
-- [ ] Evening 1 reading done
-- [ ] Evening 2 reading done
-- [ ] Service agreement filled in with my details
+- [ ] Blocks 1-3 reading done (~2.5 hours)
+- [ ] Service agreement filled in with my details (`docs/legal/SERVICE-AGREEMENT-TEMPLATE.md`)
 
 ---
 
