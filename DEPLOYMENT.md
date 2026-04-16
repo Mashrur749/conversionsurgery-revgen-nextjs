@@ -146,7 +146,7 @@ openssl rand -hex 32
 1. Create account at [console.neon.tech](https://console.neon.tech)
 2. Create a new project (free tier: 3 GB storage, 0.5 GB RAM)
 3. Copy the connection string → `DATABASE_URL`
-4. Run `npm run db:push` to create all 95+ tables
+4. Run `npm run db:push` to create all 105+ tables
 
 ### Twilio
 
@@ -179,23 +179,34 @@ openssl rand -hex 32
 4. Create webhook endpoint in Stripe Dashboard:
    - URL: `https://yourdomain.com/api/webhooks/stripe`
    - Events to listen for:
+     - `checkout.session.completed`
      - `customer.subscription.created`
      - `customer.subscription.updated`
      - `customer.subscription.deleted`
+     - `customer.subscription.paused`
+     - `customer.subscription.resumed`
+     - `customer.subscription.trial_will_end`
      - `invoice.paid`
      - `invoice.payment_failed`
-     - `payment_intent.succeeded`
+     - `invoice.payment_action_required`
+     - `charge.refunded`
+     - `charge.dispute.created`
+     - `charge.dispute.closed`
+     - `payment_method.attached`
    - Copy signing secret → `STRIPE_WEBHOOK_SECRET`
 
-### Google Business Profile (optional)
+### Google (Calendar + Business Profile) (optional)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Create a new project
-3. Enable APIs: **My Business API**, **Places API**
+3. Enable APIs: **My Business API**, **Places API**, **Google Calendar API**
 4. Create OAuth 2.0 credentials:
    - Type: Web application
-   - Authorized redirect URI: `https://yourdomain.com/api/auth/callback/google-business`
+   - Authorized redirect URIs:
+     - Calendar: `https://yourdomain.com/api/auth/callback/google-calendar`
+     - Business: `https://yourdomain.com/api/auth/callback/google-business`
    - Copy Client ID → `GOOGLE_CLIENT_ID`, Client Secret → `GOOGLE_CLIENT_SECRET`
+   - Both Calendar and Business Profile use the same Google Cloud project credentials
 5. Create API key (restrict to Places API) → `GOOGLE_PLACES_API_KEY`
 
 ### ElevenLabs (optional)
@@ -220,7 +231,7 @@ openssl rand -hex 32
 ### First-time setup
 
 ```bash
-# Push schema to create all tables (95+ tables)
+# Push schema to create all tables (105+ tables)
 npm run db:push
 ```
 
@@ -355,10 +366,20 @@ After deployment, update callback URLs in third-party dashboards:
 |---------|-----------|
 | Twilio SMS | `https://yourdomain.com/api/webhooks/twilio/sms` |
 | Twilio Voice | `https://yourdomain.com/api/webhooks/twilio/voice` |
-| Twilio Status | `https://yourdomain.com/api/webhooks/twilio/status` |
+| Twilio Status Callback | `https://yourdomain.com/api/webhooks/twilio/status` |
+| Twilio Ring Status | `https://yourdomain.com/api/webhooks/twilio/ring-status` |
+| Twilio Ring Connect | `https://yourdomain.com/api/webhooks/twilio/ring-connect` |
+| Twilio Ring Result | `https://yourdomain.com/api/webhooks/twilio/ring-result` |
+| Twilio Member Answered | `https://yourdomain.com/api/webhooks/twilio/member-answered` |
+| Twilio Verification Status | `https://yourdomain.com/api/webhooks/twilio/verification-status` |
+| Twilio Agency SMS | `https://yourdomain.com/api/webhooks/twilio/agency-sms` |
+| Twilio Agency Voice | `https://yourdomain.com/api/webhooks/twilio/agency-voice` |
 | Stripe | `https://yourdomain.com/api/webhooks/stripe` |
-| Google OAuth callback | `https://yourdomain.com/api/auth/callback/google-business` |
+| Google OAuth callback (Calendar) | `https://yourdomain.com/api/auth/callback/google-calendar` |
+| Google OAuth callback (Business) | `https://yourdomain.com/api/auth/callback/google-business` |
 | Form providers | `POST https://yourdomain.com/api/webhooks/form` (with `Authorization: Bearer <FORM_WEBHOOK_SECRET>`) |
+
+**Note:** Ring Status, Ring Connect, Ring Result, Member Answered, and Verification Status webhooks are configured automatically by the platform during call routing. Only SMS, Voice, Status Callback, Agency SMS, and Agency Voice require manual configuration in the Twilio Console.
 
 ---
 
@@ -394,7 +415,12 @@ curl -X POST https://yourdomain.com/api/webhooks/form \
 ### Cron Jobs
 1. Cloudflare Dashboard → Workers → Your Worker → Monitoring
 2. Look for cron trigger executions (every 5 min + Monday 7am UTC)
-3. The master orchestrator at `POST /api/cron` dispatches 19 sub-jobs
+3. The master orchestrator at `POST /api/cron` dispatches 40+ sub-jobs
+
+### Health Endpoint
+1. `curl https://yourdomain.com/api/health`
+2. Should return `{"status":"ok","lastHeartbeat":"..."}` with HTTP 200
+3. Configure external monitor (Cloudflare Health Checks or BetterUptime) to ping this every 5 minutes
 
 ### Post-Launch Checklist
 
@@ -412,6 +438,7 @@ curl -X POST https://yourdomain.com/api/webhooks/form \
 [ ] Form webhook → lead creation works
 [ ] Stripe webhooks → subscription lifecycle works
 [ ] Cron jobs execute (check Cloudflare monitoring)
+[ ] External health monitor pinging /api/health every 5 minutes
 [ ] ElevenLabs voice preview works (if configured)
 [ ] Google OAuth connect/disconnect works (if configured)
 [ ] No errors in: npx wrangler tail
@@ -497,7 +524,7 @@ npm run cf-typegen
 | Neon PostgreSQL | 3 GB storage, 0.5 GB RAM | Free tier sufficient |
 | Resend Email | 3k emails/month | Free tier sufficient |
 | Twilio | — | ~$15/number + $0.0079/SMS |
-| Anthropic | — | ~$20-50 (Claude Haiku/Sonnet) |
+| Anthropic | — | ~$50-150 at 5-7 clients (Claude Haiku/Sonnet) |
 | Stripe | 2.9% + $0.30 per transaction | Usage-based |
 | ElevenLabs | 10k chars/month free | $5-22/month |
 
@@ -520,6 +547,6 @@ Cloudflare keeps previous versions:
 
 ## Documentation
 
-- Feature inventory: [BUSINESS-CASE.md](./BUSINESS-CASE.md)
-- 104 use cases: [docs/USE_CASES.md](./docs/USE_CASES.md)
-- Gap audit (all resolved): [docs/GAPS.md](./docs/GAPS.md)
+- Platform capabilities: [docs/product/PLATFORM-CAPABILITIES.md](./docs/product/PLATFORM-CAPABILITIES.md)
+- Launch checklist: [docs/operations/LAUNCH-CHECKLIST.md](./docs/operations/LAUNCH-CHECKLIST.md)
+- Operations guide: [docs/operations/01-OPERATIONS-GUIDE.md](./docs/operations/01-OPERATIONS-GUIDE.md)
