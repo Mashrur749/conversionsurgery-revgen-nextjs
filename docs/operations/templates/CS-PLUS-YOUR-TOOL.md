@@ -30,9 +30,9 @@ They do not compete. They hand off.
 
 ### Housecall Pro
 
-> "We don't have a direct Housecall Pro integration yet, but here is how it works: we handle the lead response and follow-up — the part Housecall Pro doesn&apos;t do. When we book an appointment, you create the job in Housecall Pro. When you finish the job, let us know and we&apos;ll request a review. Think of us as your front desk that feeds leads into your pipeline."
+> "We do not currently integrate directly with Housecall Pro. The platform works alongside it &mdash; contractor manages their schedule in Housecall Pro, ConversionSurgery handles lead capture and follow-up. When we book an appointment, you create the job in Housecall Pro. When you finish the job, let us know and we&apos;ll request a review."
 
-**Notes for rep:** No native integration — be upfront. The handoff is one step (create the job). Most HCP users are already doing this manually anyway. This is not a blocker.
+**Notes for rep:** No native integration &mdash; be upfront. The handoff is one step (create the job). Most HCP users are already doing this manually anyway. This is not a blocker.
 
 ---
 

@@ -1,6 +1,6 @@
 # Operations Guide
 
-Last updated: 2026-04-01
+Last updated: 2026-04-15
 Audience: Founder (solo operator), operations monitor
 Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 

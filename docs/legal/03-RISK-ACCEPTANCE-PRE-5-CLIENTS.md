@@ -1,5 +1,7 @@
 # Risk Acceptance: Pre-Legal Launch (Clients 1-5)
 
+**Status:** In execution. Original decision made 2026-04-01. These accepted risks apply through the first 5 clients. Review and update after client #5 or when engaging legal counsel, whichever comes first.
+
 Date: 2026-04-01
 Decision by: Mashrur Rahman (founder)
 Status: Active until legal counsel is engaged (target: after client #5)

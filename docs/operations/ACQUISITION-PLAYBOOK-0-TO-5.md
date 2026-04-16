@@ -2,7 +2,9 @@
 
 **Target ICP:** Calgary basement development contractors. See `docs/business-intel/ICP-DEFINITION.md` for the canonical profile, sub-segment priority, 30-second qualifier, and avoidance criteria.
 
-Target: $5,000/month (5 clients &times; $1,000/month) Timeline: 30 days to first client, 90 days to five Stage: Pre-first-client &mdash; everything here is manual, low-cost, high-touch
+Target: $5,000/month (5 clients &times; $1,000/month)
+Phases: Phase 0 (setup) &rarr; Phase 1 (first client) &rarr; Phase 2 (to 5 clients)
+Stage: Pre-first-client &mdash; everything here is manual, low-cost, high-touch
 
 ---
 

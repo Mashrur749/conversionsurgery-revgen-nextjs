@@ -1,5 +1,7 @@
 # Basement Development — Knowledge Base Preset
 
+**Scope:** This preset is for basement development and secondary suite contractors only. For kitchen, bathroom, or other renovation trades, create custom KB entries based on the guided interview during onboarding.
+
 **For:** Calgary-area basement development and secondary suite contractors
 **Purpose:** Pre-loaded AI knowledge base so the AI can answer common homeowner questions competently from Day 1, without the contractor having to fill out anything first.
 **Customization required:** 4-5 entries marked below. Everything else is Calgary-standard and can stay as-is.
