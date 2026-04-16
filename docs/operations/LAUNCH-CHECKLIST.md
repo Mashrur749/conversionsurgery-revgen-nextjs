@@ -537,6 +537,108 @@ These WILL happen with real clients. Practice now so you&apos;re not figuring it
 
 - [ ] I understand the review approval flow
 
+**After-hours lead experience (FM-38):**
+
+This is a key selling point: &ldquo;Your leads get a reply in 30 seconds, even at 10pm.&rdquo; Test it yourself.
+
+1. Set your test client&apos;s timezone so that the current time falls inside quiet hours (9pm-10am).
+2. From Dev Phone #2, text the business number: &ldquo;Hi, I need a quote for a basement renovation. About 1,000 sq ft.&rdquo;
+3. Verify: AI responds IMMEDIATELY (not queued until morning). This is the inbound-reply exemption &mdash; direct replies to inbound contacts bypass quiet hours.
+4. Now trigger a proactive automation (e.g., estimate follow-up). Verify: proactive messages ARE queued until morning. Only direct inbound replies bypass quiet hours.
+5. **Sales talking point:** &ldquo;Your competitor&apos;s leads text at 10pm and get nothing until 9am. Yours get an answer in 30 seconds. Who do you think they call back?&rdquo;
+
+- [ ] After-hours inbound reply works immediately
+- [ ] Proactive automations still respect quiet hours
+- [ ] I can explain the difference on a sales call
+
+**Appointment-based follow-up trigger (FM-40):**
+
+This is the platform&apos;s most valuable automation &mdash; post-estimate follow-up that fires automatically without the contractor doing anything.
+
+1. Create a test lead on Dev Phone #2. Send a text and let the AI respond.
+2. In admin, create a test appointment for this lead with a date 4 days ago and status &ldquo;completed.&rdquo;
+3. Trigger the appointment-followup cron:
+   ```bash
+   curl -X GET http://localhost:3000/api/cron/appointment-followup -H "Authorization: Bearer YOUR_CRON_SECRET"
+   ```
+4. Verify: lead status changed to `estimate_sent`. Check **Client View** &rarr; **Scheduled** &mdash; estimate follow-up messages should be queued at Day 2/5/10/14 from trigger.
+5. **Sales talking point:** &ldquo;Every estimate you give at an appointment &mdash; the system automatically follows up with the homeowner at Day 5, 8, 13, and 17. You don&apos;t have to remember, text, or do anything. It just happens.&rdquo;
+
+- [ ] Appointment-age follow-up triggered automatically
+- [ ] Follow-up sequence scheduled
+- [ ] I can explain this without using technical language
+
+**Daily digest reply flow (contractor perspective):**
+
+The contractor receives one SMS per morning with pending items. Practice receiving and replying from THEIR perspective.
+
+1. Trigger the daily-digest cron:
+   ```bash
+   curl -X GET http://localhost:3000/api/cron/daily-digest -H "Authorization: Bearer YOUR_CRON_SECRET"
+   ```
+2. On Dev Phone #3 (contractor), read the digest SMS. Note the format: numbered items, reply syntax (W2/L2 for won/lost, free text for KB answers).
+3. Reply `W1` to mark the first lead as won. Verify in admin: lead status changed to `won`.
+4. Reply `L2` to mark the second lead as lost. Verify in admin.
+5. If there&apos;s a KB gap item, reply with a plain text answer. Verify: KB entry created.
+6. Reply `0` to skip all remaining items. Verify: nothing changes, no error.
+7. **Key learning:** the digest replaces 40-60 individual SMS/month with one morning batch. Contractors only need to reply with numbers. If they ignore 3+ digests, you get a `digest_no_response` alert in the action queue.
+
+- [ ] Received digest on contractor phone
+- [ ] Replied W/L to mark outcomes
+- [ ] Replied with KB answer
+- [ ] I can walk a contractor through the digest in 30 seconds
+
+**Operator SMS alerts:**
+
+You WILL receive these alerts with real clients. Test them now so the first one doesn&apos;t surprise you.
+
+1. Verify `operator_phone` is set at `/admin/agency` (should be your real phone number).
+2. **Payment failure alert:** In Stripe test mode, create a subscription with a card that declines on renewal (e.g., `4000 0000 0000 0341`). Trigger the billing cron. Verify: you receive an SMS about the payment failure.
+3. **Escalation SLA alert:** Create a test escalation and let it sit for 2+ hours past SLA. Trigger the escalation SLA cron. Verify: you receive an SMS.
+4. **AI quality alert (hourly):** This fires when AI confidence drops or output guard blocks too many messages. You can&apos;t easily trigger it in test &mdash; but verify the cron runs:
+   ```bash
+   curl -X GET http://localhost:3000/api/cron/ai-quality-alert -H "Authorization: Bearer YOUR_CRON_SECRET"
+   ```
+   Response should be `{"checked":true,"alerted":false}` (no issues in test).
+5. **Key learning:** These alerts are deduplicated (max 1 per subject per hour). If you get an alert, something real happened &mdash; check the admin dashboard immediately.
+
+- [ ] I know what alerts I&apos;ll receive and what each one means
+- [ ] Payment failure alert tested (or understood)
+- [ ] AI quality alert cron runs without error
+
+**Guarantee evaluation drill (Playbook Section 5):**
+
+On a sales call, contractors will ask: &ldquo;What happens at 90 days?&rdquo; You need to walk through this confidently.
+
+1. Open the playbook at `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 5.
+2. On your test client, click **Clients** &rarr; **Clients** &rarr; Peak Basements YYC &rarr; Overview tab &rarr; look for the **Guarantee Status** card. Note: phase (`proof_pending` / `recovery_pending`), progress, days remaining.
+3. Practice the Day 80 conversation out loud (pretend the guarantee is about to fail):
+   - &ldquo;Hey [Name], I&apos;m looking at your numbers and we&apos;re at $3,200 pipeline against the $5,000 threshold with 10 days left. Here&apos;s what I want to try &mdash; let&apos;s import any quotes you&apos;ve sent in the last 2 months that haven&apos;t closed yet. The system will follow up automatically.&rdquo;
+4. Practice the guarantee-met conversation:
+   - &ldquo;Great news &mdash; your 90-day guarantee passed. The system booked 2 appointments from old leads and built $8,400 in pipeline. That&apos;s $8,400 in revenue you weren&apos;t going to see without this.&rdquo;
+5. Practice the guarantee-failed conversation:
+   - &ldquo;I want to be upfront &mdash; we didn&apos;t hit the $5,000 pipeline target. Your most recent month is refunded. Here&apos;s what I think happened: [diagnosis]. I&apos;d like to offer [extension/fix]. But if you&apos;d rather part ways, you keep every lead and conversation we captured.&rdquo;
+6. **Attribution question:** If the contractor asks &ldquo;How do you know the system helped close that?&rdquo; &mdash; practice: &ldquo;Every lead interaction is logged with timestamps. If the system captured the lead and sent at least one automated message before you closed the deal, that&apos;s system-attributed. You can see every message in your dashboard. If the logs don&apos;t show system engagement, we don&apos;t count it &mdash; and we honor the refund.&rdquo;
+
+- [ ] I can walk through the guarantee card in the admin dashboard
+- [ ] I can handle the Day 80 intervention conversation
+- [ ] I can explain attribution without jargon
+- [ ] I can have the guarantee-failed conversation honestly
+
+**At-risk client detection (engagement signals):**
+
+With 5-7 clients, you need to catch the one who&apos;s mentally checking out before they cancel.
+
+1. Click **Clients** &rarr; **Triage** &mdash; look at the engagement signals section.
+2. Understand the 6 signals: estimate recency, WON/LOST recency, KB gap response rate, nudge response rate, contractor contact, lead volume trend.
+3. A client is &ldquo;flagged&rdquo; when 4 of 6 signals are yellow or red.
+4. Practice the at-risk intervention out loud: &ldquo;Hey [Name], I noticed you haven&apos;t been responding to the digest the last couple weeks. Everything okay? Want me to adjust anything about how the system works for you?&rdquo;
+5. **Key learning:** the volume-trend signal compares 30-day vs prior 30-day lead count. A contractor whose leads dropped 50%+ shows yellow. This catches seasonal dips AND disengagement. During Calgary winters, expect some yellow &mdash; the important thing is whether the contractor is still responding to prompts.
+
+- [ ] I can read the 6 engagement signals and know what each means
+- [ ] I can explain at-risk status in plain language
+- [ ] I know the difference between seasonal yellow and disengagement red
+
 ### 3.6 Billing Lifecycle
 
 **Trial reminders:**
@@ -583,7 +685,19 @@ You should now be able to:
 - [ ] Explain DNC vs opt-out
 - [ ] Deliver a Revenue Leak Audit in under 15 minutes
 
-If you can check all of those, you&apos;ve practiced the ENTIRE client lifecycle: close &rarr; onboard &rarr; deliver &rarr; retain. Move to Phase 4.
+**After-hours and automations:**
+- [ ] After-hours inbound reply works immediately (quiet hours bypassed)
+- [ ] Appointment-based follow-up fires automatically without contractor action
+- [ ] Daily digest received and replied to from contractor perspective
+
+**Operator awareness:**
+- [ ] I know what SMS alerts I&apos;ll receive and when
+- [ ] I can walk through the guarantee evaluation at Day 80 and Day 90
+- [ ] I can explain attribution in plain English
+- [ ] I can read engagement signals and spot an at-risk client
+- [ ] I can have the guarantee-failed conversation honestly
+
+If you can check all of those, you&apos;ve practiced the ENTIRE client lifecycle from all three perspectives (homeowner, contractor, operator): close &rarr; onboard &rarr; deliver &rarr; retain &rarr; evaluate guarantee &rarr; handle churn. Move to Phase 4.
 
 ---
 
