@@ -34,7 +34,7 @@ Every call follows three beats: **Question** (open with curiosity, not a pitch),
 
 ### Opening (You Have 8 Seconds)
 
-> "Hey, is this [Name]? ... Hey [Name], it's Mashrur calling from Calgary. Quick question -- when you're in a basement framing out a wall and your phone buzzes, what happens to that call?"
+> "Hey, is this [Name]? ... Hey [Name], it's Mashrur calling from Calgary. Quick question -- when you're on a job and your phone buzzes with a new lead, what usually happens to that call?"
 
 Then STOP. Do not say another word. Let them answer.
 
@@ -132,7 +132,7 @@ Always state the guarantee before the price. Every time.
 
 **When to use:** They post finished basement photos, before/after shots, or job site progress. This is your warmest cold outreach -- you're complimenting real work.
 
-**Expected response rate:** 15-25% (higher than any other channel because it's personal and tied to their work).
+**Expected response rate:** 10-20% (warmer than other channels because you're complimenting specific work, not pitching blind).
 
 > "Hey [Name] -- saw your basement work on [street/neighborhood if visible, or "your recent post"]. Clean finish. Quick question: when homeowners call you for a quote and you're on site, what happens to those calls? I built something for basement guys in Calgary that catches every one. Worth a 2-min call?"
 
@@ -146,7 +146,7 @@ Always state the guarantee before the price. Every time.
 
 **When to use:** They have a Facebook business page with reviews, photos, or recent activity. Works well for contractors who are more established (40+, been in business 10+ years).
 
-**Expected response rate:** 10-15%. Facebook messages from strangers often go to "message requests" -- they may not see it immediately.
+**Expected response rate:** 3-8%; lower because messages often go to filtered inbox.
 
 > "Hey [Name], I'm Mashrur -- I'm local here in Calgary. I help basement contractors catch the leads they miss when they're on a job. Not a marketing company -- just a system that texts homeowners back in 5 seconds when you can't answer. First month free. Open to a quick chat?"
 
@@ -164,7 +164,7 @@ After that, move on.
 
 **When to use:** You found their number on their website, Google listing, or HomeStars profile. This is a cold text to a business number -- keep it short and professional.
 
-**Expected response rate:** 20-30%. Texts get read. The key is keeping it under 3 sentences so they read the whole thing.
+**Expected response rate:** 8-15%; higher if the research-driven opener references something specific to their business. Texts get read. The key is keeping it under 3 sentences so they read the whole thing.
 
 > "Hey [Name] -- Mashrur here from Calgary. I help basement contractors catch missed calls and follow up on estimates automatically. Built it specifically for guys who are on site all day and can't get to the phone. First month free, no contract. Worth a quick call this week?"
 
@@ -321,7 +321,29 @@ For each objection: what they say, what they really mean, what to say, and what 
 
 > "Can I show you what a real conversation looks like? I'll pull up an actual exchange -- you tell me if you'd be comfortable with that going to your customers. If the answer is no, I'll shake your hand and we're done."
 
-Then show the sample conversation from the objection playbook.
+Then show this sample conversation:
+
+> **Lead (Sarah T.):** Hi, I found your number online. We're looking to do a full kitchen renovation, probably $40-60k range. Are you taking on projects this spring?
+>
+> **[Business Name]'s assistant:** Hi Sarah, thanks for reaching out. Yes, [Business Name] is scheduling spring projects now. A $40-60k kitchen reno is definitely in our wheelhouse. To make sure we're a good fit, can I ask -- are you in [service area], and do you have a rough timeline in mind?
+>
+> **Lead:** Yes, we're in [area]. Looking to start around May.
+>
+> **[Business Name]'s assistant:** Perfect. May works well. The next step would be a free estimate visit -- [contractor name] comes out, walks the space, and gives you a detailed quote. It usually takes about 30-45 minutes. What does your schedule look like this week or next?
+>
+> **Lead:** We're pretty flexible. Thursday afternoons or Friday mornings work.
+>
+> **[Business Name]'s assistant:** Great. I have Thursday the 15th at 2pm or Friday the 16th at 10am available. Which works better?
+>
+> **Lead:** Thursday at 2 works.
+>
+> **[Business Name]'s assistant:** Confirmed -- Thursday at 2pm. You'll get a reminder the morning of. If anything changes, just reply here. Looking forward to it.
+>
+> **Lead:** Quick question -- do you do permits? Our last contractor skipped them and it was a nightmare.
+>
+> **[Business Name]'s assistant:** Really glad you asked that -- it's an important one. I want to make sure [contractor name] gives you a complete answer on that directly, since permit requirements can vary by project scope. I'll flag this for him and have him reach out before the visit. Is this number the best way to reach you?
+
+Point out message 6: the AI hit a boundary, said so honestly, and escalated without breaking the flow. That's the handoff in practice -- the system handles the easy 80%, flags the 20% that needs a human.
 
 ---
 
@@ -415,8 +437,9 @@ The Math:
 One recovered $80K basement development covers 6.7 years of the service. If the system recovers even one lost lead per month, the ROI is 5-7x. Most contractors have 15-20 quiet estimates sitting in their phone right now. We reactivate those in Week 1.
 
 The Guarantee:
-- First month is completely free -- you see results before you pay a dollar
-- 90-day guarantee -- if it doesn't book at least one estimate from a previously cold lead, you get your most recent month refunded
+- First month is completely free -- the system runs for 30 days before you pay a dollar
+- 30-day proof: if the system doesn't deliver at least 5 qualified lead engagements in your free month, you owe nothing
+- 90-day guarantee: if after 90 days the system hasn't booked at least one estimate from a cold lead or generated $5,000 in probable pipeline value, you get your most recent month refunded
 - Month-to-month, no contract, cancel anytime with 30 days notice
 - No setup fee. No message limits. No overage charges.
 
@@ -438,7 +461,7 @@ Or reply to this message.
 Not in your head. Out loud. Standing up. The words need to come from your mouth, not your eyes. Don't memorize -- internalize. You should know the FLOW (question, value, CTA), not the exact words.
 
 **Step 2: Record your opener on your phone.**
-Say the opening line: "Hey, is this [Name]? ... Hey [Name], it's Mashrur calling from Calgary. Quick question -- when you're in a basement framing out a wall and your phone buzzes, what happens to that call?"
+Say the opening line: "Hey, is this [Name]? ... Hey [Name], it's Mashrur calling from Calgary. Quick question -- when you're on a job and your phone buzzes with a new lead, what usually happens to that call?"
 
 Listen back. Fix anything that sounds scripted or rushed. You should sound like you're asking a friend a genuine question, not reading off a card.
 
@@ -476,7 +499,7 @@ Adjust the script. Then start the real outreach.
 
 **Rejection is data, not failure.** "Not interested" means "not right now" or "bad timing" -- not "you're bad at this." Write down what they said and move on. The information is more valuable than the outcome of any single call.
 
-**Your close rate will be around 30%.** That means 7 out of 10 say no. That's NORMAL. The 3 who say yes pay your rent. If you're closing 3 out of 10, you're performing at the level of experienced sales professionals. Do not judge yourself by the 7.
+**Expect 1 paying client per 80-120 outreach attempts in your first month.** That's normal without case studies. Volume beats polish. Do not judge your skill from the attempts that didn't close -- judge it from the 1 that did. (Funnel math: ~20% connect, ~50% of connects become conversations, ~40% of those book demos, ~20% of demos close.)
 
 **Contractors respect directness.** Don't be overly polite or apologetic. Don't say "I'm sorry to bother you" or "I know you're busy." You're a peer -- a local guy in Calgary who built something useful. Talk to them like you'd talk to a buddy's dad who runs a business. Respectful, direct, no filler.
 
@@ -520,13 +543,29 @@ By the end of Week 1, you'll have talked to 13+ contractors, sent 5 DMs, and you
 
 ---
 
+## Section 6.5: Pre-Call Research Checklist (3 min per prospect)
+
+Before dialing, have these 5 data points in front of you. Takes 3 minutes per prospect. Transforms a cold call into a warm one.
+
+1. **GBP review count and rating** -- "I saw you've got X reviews at Y stars"
+2. **Most recent Google review date** -- tells you if their pipeline is active
+3. **Website response claim** -- "We respond in 24 hours" is a pitch opening
+4. **Services listed on website** -- basement only? Basement + suites? Full reno?
+5. **One specific detail** -- a recent project photo, a team page, a founder story
+
+Your personalized opener uses one of these: "Hey [Name], saw you did that suite conversion in Bridgeland last month -- clean work. Quick question..."
+
+The 3 minutes of research is the difference between being a telemarketer and being a local guy who did his homework. Contractors can tell the difference in the first 5 seconds.
+
+---
+
 ## Section 7: Voicemail Script
 
 You will hit voicemail 75-80% of calls. This is normal. A good voicemail gets a callback 10-15% of the time. A rambling one gets 0%.
 
 **The script (15 seconds max -- they stop listening after that):**
 
-> "Hey [Name], it's Mashrur from Calgary. I help basement contractors catch the calls they miss on site. Thought you might be interested -- first month's free. I'll shoot you a text. Talk soon."
+> "Hey [Name], it's Mashrur from Calgary. Most basement guys I talk to are losing 3-4 jobs a year to slow callbacks. Built something that fixes that. I'll shoot you a text. Talk soon."
 
 Then IMMEDIATELY send the cold text template from Section 2. The voicemail + text combo converts 2-3x better than either alone.
 
@@ -551,11 +590,7 @@ After a demo that ends with "let me think about it" or "let me talk to my wife,"
 ### Day 3:
 
 **Text:**
-> "Hey [Name], quick follow-up. Just signed up another basement contractor in [quadrant -- e.g., NW Calgary] this week. If you want to get going before things get busier, I've got a slot this [Saturday/weekday]. No pressure either way."
-
-*Note: Only mention another client if it's true. If you don't have one yet, use this instead:*
-
-> "Hey [Name], just following up from [day]. Any questions I can answer? Happy to hop on a quick call if it's easier."
+> "Hey [Name], following up from [day]. One thing I forgot to mention -- most basement guys have 10-15 quotes sitting in their phone that went quiet. We reactivate those in Week 1. Worth a quick call?"
 
 ### Day 7:
 
@@ -661,7 +696,7 @@ Move prospects through these statuses. At any point you should be able to answer
 
 ## Section 12: How to Use Claude to Execute Faster
 
-You have Claude Code. Use it. Here's how it accelerates your sales process:
+You have Claude.ai. Use it for drafting, research, and analysis. (Claude Code is a separate CLI tool for coding tasks -- different use case.) Here's how it accelerates your sales process:
 
 ### Before a call session (5 min):
 
@@ -782,6 +817,26 @@ If they say "let me think" -- go to Section 8 (follow-up sequence).
 
 They said YES. This is the most important 5 minutes. Don't fumble it.
 
+### Variant: Hot Close on a Cold Call (not a demo)
+
+Sometimes a cold call goes straight to yes. They don't need a demo -- they get it, they want it, they want to start. Don't navigate the demo-close flow. Close in under 8 minutes:
+
+1. Confirm the yes: "Let's get you set up. I'm going to send a payment link to the number I'm calling -- the first month is free, you'll see the terms right on the checkout page."
+2. Send payment link immediately via admin (Stripe Checkout SMS)
+3. While they wait for the text, walk through 5 terms fast:
+   - "First month is free. System runs 30 days before you pay a dollar."
+   - "Month-to-month after that. Cancel anytime with 30 days notice."
+   - "Two guarantees: 5 real lead engagements in your free month or you owe nothing. After 90 days, at least one estimate from a cold lead or $5K in pipeline -- or your last month refunded."
+   - "Your data is yours. Full export if you ever leave."
+   - "$1,000/month flat. No hidden fees, no message caps."
+4. Stay on the line until they tap the link. If they want to read before entering their card, tell them the link stays active -- follow up in 24 hours.
+5. If they complete checkout on the call, book the onboarding call immediately (30 min, within 48 hours)
+6. End the call, send welcome text from step 9 below
+
+The difference from a post-demo close is: no demo recap, no minute-by-minute structure, no lingering. Move fast and professionally. A ready buyer cools in minutes, not hours.
+
+---
+
 ### On the call (5 minutes):
 
 **1. Celebrate briefly (2 seconds):**
@@ -793,9 +848,9 @@ Not "Oh my god that's amazing!" -- be a peer, not a grateful salesperson.
 > "I'm sending you the payment link now. While it hits your phone, let me walk you through the key terms real quick so there are no surprises."
 
 Hit these 5 points:
-1. "First month is free. You pay nothing for 30 days."
+1. "First month is free. The system runs for 30 days before you pay a dollar."
 2. "Month-to-month after that. No annual contract. Cancel anytime with 30 days notice."
-3. "If it doesn't work, you're covered. 90-day guarantee -- if we don't book at least one estimate from a cold lead or generate $5K in pipeline, you get your last month refunded."
+3. "Two guarantees. First: if you don't see at least 5 real lead engagements in your free month, you owe nothing. Second: if after 90 days the system hasn't booked at least one estimate from a cold lead or generated $5,000 in pipeline, you get your last month refunded."
 4. "Your data is yours. If you ever leave, full export of every lead and conversation within 5 business days."
 5. "No hidden fees. $1,000/month flat. No message caps, no overage charges."
 
@@ -874,3 +929,7 @@ Follow `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 10 exactly. It c
 - Day 7 check-in booking
 
 After onboarding, move the client from Onboarding Queue to **Client Delivery** (duplicate the Active Client Card template).
+
+---
+
+*Guarantee language in Sections 5 and 14 is aligned to `docs/business-intel/OFFER-APPROVED-COPY.md` Section 3 (canonical). Last synced: April 2026.*

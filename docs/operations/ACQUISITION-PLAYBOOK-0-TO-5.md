@@ -24,7 +24,9 @@ The "call your own number" live demo is your closer. The audit opens the door. T
 
 ### Build your prospect list
 
-You need 30 qualified contractors. **Basement development and finishing only** &mdash; do not mix in kitchen, bath, or general reno at this stage. For the full list of where to find them and who to avoid, see `docs/business-intel/ICP-DEFINITION.md`.
+**Start here:** `docs/operations/templates/calgary-basement-prospects.csv` &mdash; 62 Calgary basement contractors, pre-researched and tiered by ICP fit. Tier 1 (20 contractors) are your first calls. Tier 3 need phone verification. Tier 4 are backup.
+
+If you need more, source from the channels below. **Basement development and finishing only** &mdash; do not mix in kitchen, bath, or general reno at this stage. For the full list of where to find them and who to avoid, see `docs/business-intel/ICP-DEFINITION.md`.
 
 **Source 1: Google Maps (primary)**
 
@@ -92,7 +94,7 @@ Then score each prospect. You want contractors who meet at least 3 of these 5:
 
 ### Rank your list
 
-Put your top 10 at the top — these are the ones with the clearest gaps and the most visible pain. You'll audit these first.
+The prospect CSV is already ranked by tier (1 = strongest ICP fit, 4 = likely too large). Within Tier 1, start with contractors who have the clearest pain signal: low review counts (referral-dependent), no website (zero online presence), or Gmail as business email (no office admin). You&apos;ll audit these first.
 
 ### Set up your demo line
 
@@ -263,6 +265,96 @@ Position yourself as the person who understands the basement development market.
 
 ---
 
+## Pre-Outreach Practice (Do Once, Before First Real Call)
+
+Complete these before contacting anyone. Budget 60 minutes.
+
+**Prerequisite:** Launch Checklist Phase 3 completed (scripts practiced, Revenue Leak Audits done for 3 contractors, self-test passed).
+
+### Practice the ROI Math (10 min)
+
+You will do this live on calls. Practice with these scenarios until you can run the numbers in your head:
+
+**Scenario A &mdash; Outstanding quotes:**
+Contractor has 15 old quotes, average job $60K. Recovery rate 15% &rarr; 2.25 jobs &rarr; $135K recovered. Service cost: $12K/year. ROI: 11x.
+
+**Scenario B &mdash; Missed calls:**
+Contractor misses 3 calls/week on site, average job $70K. Even 1 recovered per month &rarr; $70K/month. Service cost: $1K/month. ROI: 70x.
+
+**Scenario C &mdash; Reviews:**
+Contractor has 30 Google reviews, competitor has 85. At 1 review request per completed job, 2 jobs/month &rarr; +24 reviews/year. No direct ROI &mdash; but &ldquo;85 reviews beats 30 reviews on Google every time.&rdquo;
+
+- [ ] I can run estimate-recovery math in my head for any numbers they give me
+- [ ] I can run missed-call math in my head
+- [ ] I have the anchor numbers memorized: $60-80K per basement, 3-4 missed calls/week, 15-20% recovery rate
+
+### Practice the Voicemail (5 min)
+
+Record yourself with a timer:
+
+&gt; &ldquo;Hey [Name], it&apos;s Mashrur from Calgary. Most basement guys I talk to are losing 3-4 jobs a year to slow callbacks. Built something that fixes that. I&apos;ll shoot you a text. Talk soon.&rdquo;
+
+- [ ] Under 15 seconds (use a stopwatch)
+- [ ] Sounds casual, not scripted
+- [ ] I practiced 3 times
+
+---
+
+## Weekly Execution Rhythm (Once You&apos;re Outreaching)
+
+### Outreach Schedule
+
+You have two outreach modes running in parallel. Use both &mdash; the audit opens doors with higher-value prospects, cold calls create volume.
+
+| Day | Activity | Volume | Reference |
+|-----|----------|--------|-----------|
+| Morning (daily) | Send queued audit emails + follow up Day 3/7 prospects | 2 new audits + all pending follow-ups | Phase 1 above |
+| Tuesday lunch | Cold call session | 8-10 calls | Sales Toolkit Section 1 |
+| Wednesday lunch | Cold call session | 8-10 calls | Sales Toolkit Section 1 |
+| Thursday evening | Instagram DMs + cold texts | 5 DMs, 5 texts | Sales Toolkit Section 2 |
+| Friday | Follow-ups (Day 3/7 texts, callback promises) | All pending | Sales Toolkit Section 8 |
+| Saturday 9am | Call session (callbacks + new) | 5-8 calls | Sales Toolkit Section 1 |
+
+**Weekly targets:**
+- 10 audit emails sent (Phase 1 cadence)
+- 20-25 cold outreach attempts (calls + DMs + texts)
+- 1-2 demos booked
+- All follow-up sequences maintained
+
+### Sunday Evening Pipeline Review (15 min)
+
+Open your tracking sheet. Answer these 5 questions:
+
+1. How many prospects are in each status? (new / contacted / responded / demo booked / demo done / follow-up / signed / pass)
+2. Who is closest to closing? Call them first this week.
+3. Who is going cold? (7+ days since last contact, no response &rarr; move to &ldquo;pass&rdquo; or 30-day nurture list)
+4. How many demos do I have booked this week?
+5. Do I need to replenish my prospect list? (Refill when below 15 untouched names)
+
+Use Claude.ai: &ldquo;Here&apos;s my prospect spreadsheet [paste]. What should I focus on this week? Who&apos;s going cold? Who&apos;s closest to closing?&rdquo;
+
+- [ ] I reviewed the pipeline
+- [ ] I know exactly who I am calling first on Tuesday
+
+### After Every Call Session: Debrief (2 min)
+
+Use the template from Sales Toolkit Section 10. Fill it out after every session (not every call). By Week 3, you will have 6-8 of these and can see patterns no script can teach you.
+
+---
+
+## Milestones
+
+| Milestone | Target | How you know |
+|-----------|--------|-------------|
+| Pre-outreach practice done | Before first real call | ROI math, voicemail, and scripts practiced |
+| First outreach week done | End of Week 1 | 10+ audits sent, 13+ calls, 5+ DMs, at least 1 demo booked (stretch) |
+| First demo delivered | Week 1-2 | Revenue Leak Audit shown, live demo ran, close attempted |
+| First client signed | Week 2-4 | Payment captured, onboarding call booked |
+| Weekly rhythm locked | Week 3+ | 30+ outreach attempts/week without thinking about process |
+| Five clients | Month 2-3 | $5K MRR, referrals starting, case study available |
+
+---
+
 ## Daily Routine (Once You're Executing)
 
 | Time | Activity | Duration |
@@ -295,22 +387,20 @@ Position yourself as the person who understands the basement development market.
 
 ## Tracking
 
-Keep it dead simple. A Google Sheet with these columns:
+**Start from:** `docs/operations/templates/calgary-basement-prospects.csv` &mdash; import into a Google Sheet or use directly. The CSV already has: Tier, Business Name, Contact Name, Phone, Email, Website, GBP Rating/Reviews, Trade, Pain Angle, and Personalization Note.
+
+**Add these columns as you work the list:**
 
 | Column | Purpose |
 | --- | --- |
-| Business name | Who |
-| Contact name | Who specifically |
-| Sub-segment | Small Crew Developer / Suite Specialist / Solo Finisher |
-| Google reviews | Quick-reference for priority |
-| Audit sent date | When you sent the outreach |
-| Channels used | Email, FB, IG, etc. |
-| Response? | Yes/No/Date |
-| Demo scheduled? | Date or N/A |
-| Demo result | Closed / Follow-up / Not interested |
-| Status | Active prospect / Nurture / Client / Dead |
+| Call Status | new / voicemail / connected / demo booked / demo done / follow-up / signed / pass |
+| Call Date | When you last contacted them |
+| Audit Sent? | Yes/No + date |
+| Channels Used | Phone, email, IG DM, FB, text |
+| Demo Date | When scheduled |
+| Notes | What they said, objections, follow-up reminders |
 
-Don't overcomplicate this. Don't build a CRM for yourself. A spreadsheet with 30 rows is all you need until you have 5 paying clients.
+Don&apos;t overcomplicate this. Don&apos;t build a CRM for yourself. The pre-built CSV + 6 tracking columns is all you need until you have 5 paying clients.
 
 ---
 

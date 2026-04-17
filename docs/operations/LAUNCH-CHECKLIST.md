@@ -858,9 +858,9 @@ Before you contact anyone:
 
 ### 5.2 Start Outreach
 
-**Open:** `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` &mdash; your primary sales doc with scripts, DM templates, demo flow, and objection handlers.
+**Open:** `docs/operations/ACQUISITION-PLAYBOOK-0-TO-5.md` &mdash; your end-to-end acquisition playbook. It covers: prospect list building, audit-based outreach, cold call/DM cadence, weekly rhythm, pipeline review, and milestones. Follow it top to bottom.
 
-Also reference: `docs/operations/ACQUISITION-PLAYBOOK-0-TO-5.md` for the broader strategy of landing your first 5 Calgary basement clients.
+**On every call, have open:** `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` &mdash; scripts, DM templates, demo flow, objection handlers, leave-behind, and follow-up sequences.
 
 **Your ICP:** `docs/business-intel/ICP-DEFINITION.md` &mdash; the 30-second qualifier, where to find prospects, and which sub-segments to prioritize.
 
