@@ -118,6 +118,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `GOOGLE_CLIENT_ID` | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) | Google Business OAuth (review auto-response) |
 | `GOOGLE_CLIENT_SECRET` | Google Cloud Console | Google Business OAuth |
 | `GOOGLE_PLACES_API_KEY` | Google Cloud Console (enable Places API) | Search businesses by name for review sources |
+| `VOYAGE_API_KEY` | [Voyage AI](https://dash.voyageai.com/api-keys) | KB semantic search embeddings (voyage-3-lite, 1024 dims) |
 | `ELEVENLABS_API_KEY` | [ElevenLabs](https://elevenlabs.io/app/settings/api-keys) | AI voice synthesis on phone calls |
 | `R2_ACCOUNT_ID` | [Cloudflare Dashboard](https://dash.cloudflare.com) → R2 | Media/MMS file storage |
 | `R2_ACCESS_KEY_ID` | Cloudflare → R2 → Manage API Tokens | R2 API access |
@@ -298,6 +299,9 @@ npx wrangler secret put FORM_WEBHOOK_SECRET
 npx wrangler secret put STRIPE_SECRET_KEY
 npx wrangler secret put NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 npx wrangler secret put STRIPE_WEBHOOK_SECRET
+
+# Recommended (KB semantic search)
+npx wrangler secret put VOYAGE_API_KEY
 
 # Optional (set only what you use)
 npx wrangler secret put GOOGLE_CLIENT_ID
@@ -526,6 +530,7 @@ npm run cf-typegen
 | Twilio | — | ~$15/number + $0.0079/SMS |
 | Anthropic | — | ~$50-150 at 5-7 clients (Claude Haiku/Sonnet) |
 | Stripe | 2.9% + $0.30 per transaction | Usage-based |
+| Voyage AI | — | ~$5-15 (embedding calls for KB search) |
 | ElevenLabs | 10k chars/month free | $5-22/month |
 
 ### Updating Code
