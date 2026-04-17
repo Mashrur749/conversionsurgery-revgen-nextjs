@@ -100,6 +100,88 @@ When evaluating feature requests, weight "does this reduce dependency on externa
 
 ## 3. Lead Magnet Capture (Evaluation — not committed)
 
+**Status:** Idea stage. Documented 2026-04-17 for future evaluation. Not yet scoped or scheduled.
+
+### The Problem
+
+Contractor websites typically have one conversion path: "Call Now." Visitors who aren't ready to call leave with no way to stay connected. These are the "buy later" leads — interested but not urgent. They disappear and the contractor never hears from them again.
+
+### The Concept
+
+Embeddable widgets on contractor websites that offer something useful in exchange for contact info:
+
+- **Pricing calculator**: "How much does a new AC unit cost?" → 4-5 questions → ballpark range → captures name, email, phone
+- **Service quiz**: "Which pest control plan fits your home?" → short quiz → personalized recommendation → captures contact info
+- **Seasonal checklist**: "Is your home ready for winter?" → interactive checklist → tips + offer → captures contact info
+
+Submissions flow into the existing lead pipeline with quiz answers as structured context. SMS automations take over immediately — but now the AI agent has personalized context from their answers, making the nurture dramatically more relevant.
+
+### Why This Fits the Platform
+
+The platform already handles everything downstream of lead capture:
+
+- Lead pipeline with scoring, context, and stage tracking
+- AI-personalized SMS nurture sequences
+- Multi-step flow engine with scheduling
+- Compliance gateway for outbound messages
+- Attribution and ROI reporting
+
+Lead magnets solve the upstream problem — **more leads entering the pipeline.** The existing automation engine does the rest.
+
+### Differentiator
+
+Generic form builders (Typeform, Jotform) capture leads into a spreadsheet. This captures leads into an AI-powered nurture engine. The follow-up SMS isn't "Thanks for visiting" — it's "Hey Sarah, you mentioned your AC is 15+ years old and your energy bills jumped. Most homeowners in that situation save 30-40% after replacement. Want a free estimate this week?"
+
+No other tool in the home services space connects lead magnet → AI-personalized SMS nurture. That's the moat.
+
+### Revenue Impact
+
+- **For contractors:** Captures the "buy later" audience they're currently losing. Increases total lead volume without increasing ad spend.
+- **For ConversionSurgery:** Strengthens the ROI story ("we don't just recover your dead pipeline, we capture leads you're currently losing"). Could justify a higher tier or add-on pricing.
+
+### ICP Fit Assessment
+
+Mixed. Home services skews toward urgent/reactive ("my toilet is leaking NOW"), where lead nurture adds less value. But some trades have longer consideration cycles:
+
+| High fit (longer consideration) | Lower fit (urgent/reactive) |
+|---------------------------------|----------------------------|
+| HVAC replacement | Emergency plumbing |
+| Kitchen/bath remodel | Pest control (active infestation) |
+| Roofing | Locksmith |
+| Solar installation | Drain cleaning |
+| Landscaping design | Appliance repair |
+
+**Conclusion:** Not universally valuable for all contractor types. Best positioned as an add-on for trades with a "shopping" phase, not a core platform feature.
+
+### Build vs. Wait Decision
+
+**Arguments to wait:**
+- No clients yet — build it after landing 3-5 managed clients and learning what they actually need
+- Only matters once you control the contractor's website (or can embed on it)
+- Adds scope to an already-complete platform that needs sales, not features
+
+**Arguments to build:**
+- Strengthens pitch: "we capture leads your website is losing" is a compelling differentiator
+- Technical lift is moderate — embeddable iframe + new lead source type + template library
+- Quiz answers feeding AI context is genuinely novel in this space
+
+**Recommendation:** Wait until Phase 1 has 3+ active clients. Use client conversations to validate which trades have a "buy later" audience worth capturing. Build it as a Phase 2 add-on if validated.
+
+### Implementation Sketch (for future reference)
+
+1. **Lead magnet templates** — pre-built for common trades (HVAC cost calculator, pest control quiz, etc.)
+2. **Embeddable widget** — iframe or script tag contractor adds to their site
+3. **New lead source type** — `lead_source: 'lead_magnet'` with structured quiz/calculator answers in context
+4. **AI context integration** — quiz answers injected into agent prompt for personalized first-touch
+5. **Email channel** — optional addition to flow engine alongside SMS (lower priority, SMS is superior for this ICP)
+6. **Analytics** — conversion rate on widget, lead-to-customer rate vs other sources
+
+Estimated effort: 2-3 weeks. Not trivial, not massive.
+
+---
+
+## 4. Agency Onboarding Gaps
+
 ### Twilio Number SID is not self-serve
 
 External agencies won't have access to the platform's Twilio console to look up their Number SID. Current form requires manual entry.
