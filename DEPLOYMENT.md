@@ -125,6 +125,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 | `R2_SECRET_ACCESS_KEY` | Cloudflare → R2 → Manage API Tokens | R2 API access |
 | `R2_BUCKET_NAME` | Cloudflare → R2 → Create Bucket | R2 bucket name |
 | `R2_PUBLIC_URL` | Cloudflare → R2 → Bucket → Settings → Public URL | Public media URLs |
+| `VOICE_WS_URL` | Voice Agent Worker URL (after deploying `packages/voice-agent`) | Voice AI WebSocket endpoint |
 | `SLACK_WEBHOOK_URL` | [Slack API](https://api.slack.com/messaging/webhooks) | Alert notifications to Slack |
 | `ADMIN_PHONE_NUMBER` | Your phone | SMS alerts for critical events |
 
