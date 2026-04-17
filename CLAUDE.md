@@ -9,17 +9,42 @@
 - shadcn/ui + Tailwind 4 + Radix UI
 - Deploy: Cloudflare via OpenNext (`@opennextjs/cloudflare`)
 
-## Autonomy Policy
+## Autonomy & Assumptions
 
-**Default: just do the work.** Don't ask clarifying questions for things you can resolve by reading the codebase or following the checklists below.
+**Default: just do the work.** But state your assumptions when they matter.
 
-Resolve ambiguity yourself by:
+Three tiers of ambiguity — handle each differently:
 
-1. Reading the codebase (grep for existing patterns, check similar files)
-2. Following the checklists below (they answer most "which approach?" questions)
-3. Picking the simplest approach that fits existing patterns
+1. **Resolvable by codebase** → decide silently. Grep for existing patterns, check similar files, follow checklists below. No need to announce.
+2. **Multiple valid approaches, low stakes** → state your assumption briefly ("Assuming this is admin-only since the route is under `/api/admin/`") and proceed. If wrong, easy to correct.
+3. **Multiple valid approaches, architectural impact** → present the options and ask. One precise question, not a list of five. Example: "Should this be admin-only or client-facing? Both are plausible but the answer changes the data model."
 
-**Do ask when:** you genuinely cannot determine the user's intent — e.g., "should this be admin-only or client-facing?" when both are plausible and the answer changes the architecture, or when requirements are contradictory. Ask one precise question, not a list of five.
+If a simpler approach exists than what was requested, say so. Push back when warranted.
+
+## Coding Principles
+
+Derived from [Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls. Biases toward caution over speed — use judgment on trivial tasks.
+
+### Surgical Changes
+
+- Every changed *code* line must trace directly to the user's request.
+- Don't "improve" adjacent code, comments, or formatting.
+- Match existing style, even if you'd do it differently.
+- When your changes create orphans: remove imports/variables/functions YOUR changes made unused. Don't remove pre-existing dead code — mention it instead.
+- **Scope boundary:** Doc sync, quality gates, and checklist items are process obligations, not scope creep. Surgical Changes governs *code* — process rules still apply alongside it.
+
+### Goal-Driven Execution
+
+- Transform tasks into verifiable goals before coding:
+  - "Add validation" → write tests for invalid inputs, then make them pass
+  - "Fix the bug" → write a test that reproduces it, then make it pass
+  - "Refactor X" → ensure tests pass before and after
+- For multi-step tasks, state a brief plan with verification at each step:
+  ```
+  1. [Step] → verify: [check]
+  2. [Step] → verify: [check]
+  ```
+- Strong success criteria let you loop independently. Weak criteria ("make it work") require clarification.
 
 ## Key Patterns
 
@@ -74,6 +99,11 @@ Resolve ambiguity yourself by:
 
 ### UI/UX Change (modify existing page or component)
 
+**Proportionality:** Not every change needs the full checklist. Match effort to scope:
+- **Small fix** (color, copy, spacing, single element): typecheck + visual check + doc sync only (items 3, 9)
+- **Component change** (new behavior, layout shift, interactive element): items 1-3, 8-9
+- **New page or major rework**: full checklist
+
 1. Read `.claude/skills/ux-standards/SKILL.md` first — it defines patterns, anti-patterns, and brand conventions
 2. Check `docs/specs/UX-AUDIT-FULL.md` — is this change tracking an open audit item? If yes, mark it Done in the "Already Fixed" table after implementation
 3. Mobile-first: test every change at 375px width. Use `sm:hidden` / `hidden sm:block` for responsive variants
@@ -113,16 +143,18 @@ Before writing integration code, query Context7 for current API patterns:
 - `npm run quality:no-regressions` — required gate (`ms:gate` + build + tests + runtime smoke)
 - `npm run quality:feature-sweep` — release/refactor gate with extended smoke profile
 - `npm run quality:logging-guard` — blocks direct API error-detail leaks (`error.message`/`error.stack`)
+- `npm run quality:code-review` — automated code review via `claude -p` against diff from main (fresh context window)
 - `npm run quality:install-agent-hooks` — installs repo-enforced pre-commit + pre-push checks
 
 ## After Making Changes
 
-Two-tier verification protocol (mandatory):
+Three-tier verification protocol (mandatory):
 
 1. **Fast gate during implementation:** run `npm run ms:gate` and `npm run quality:logging-guard` frequently.
 2. **Completion gate for every coding task:** run `npm run quality:no-regressions`.
-3. **Release/refactor/deletion gate:** run `npm run quality:feature-sweep`.
-4. Never mark a task done with a red gate.
+3. **Code review before merge:** run `npm run quality:code-review` from the feature branch. Fresh context window catches overcomplicated code, dead code, and bugs that the author's context is blind to.
+4. **Release/refactor/deletion gate:** run `npm run quality:feature-sweep`.
+5. Never mark a task done with a red gate.
 
 ## Session Discipline
 

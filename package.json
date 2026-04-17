@@ -32,6 +32,7 @@
     "quality:no-regressions": "./scripts/quality/no-regressions.sh",
     "quality:feature-sweep": "./scripts/quality/feature-sweep.sh",
     "quality:logging-guard": "./scripts/quality/logging-guard.sh",
+    "quality:code-review": "./scripts/quality/code-review.sh",
     "quality:install-pre-commit-hook": "./scripts/quality/install-pre-commit-hook.sh",
     "quality:install-pre-push-hook": "./scripts/quality/install-pre-push-hook.sh",
     "quality:install-agent-hooks": "./scripts/quality/install-agent-hooks.sh",
