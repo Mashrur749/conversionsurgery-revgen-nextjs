@@ -53,7 +53,6 @@ export * from './review-responses';
 export * from './calendar-integrations';
 export * from './calendar-events';
 export * from './voice-calls';
-export * from './subscription-plans';
 export * from './system-settings';
 export * from './agency-messages';
 export * from './quarterly-campaign-enums';

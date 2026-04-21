@@ -1,5 +1,5 @@
 import { getDb } from '@/db';
-import { reviews, reviewSources, clients, reviewMetrics } from '@/db/schema';
+import { reviews, reviewSources, clients } from '@/db/schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { syncGoogleReviews } from './google-places';
 import { sendSMS } from './twilio';
@@ -198,80 +198,6 @@ Review from ${review.authorName || 'a customer'} (${review.rating} stars):
  * @param period - The aggregation period: 'daily', 'weekly', or 'monthly'
  * @param date - The reference date for calculating the period bounds (defaults to now)
  */
-export async function calculateReviewMetrics(
-  clientId: string,
-  period: 'daily' | 'weekly' | 'monthly',
-  date: Date = new Date()
-): Promise<void> {
-  const db = getDb();
-
-  let periodStart: Date;
-  let periodEnd: Date;
-
-  if (period === 'daily') {
-    periodStart = new Date(date);
-    periodStart.setHours(0, 0, 0, 0);
-    periodEnd = new Date(date);
-    periodEnd.setHours(23, 59, 59, 999);
-  } else if (period === 'weekly') {
-    periodStart = new Date(date);
-    periodStart.setDate(date.getDate() - date.getDay());
-    periodStart.setHours(0, 0, 0, 0);
-    periodEnd = new Date(periodStart);
-    periodEnd.setDate(periodStart.getDate() + 6);
-    periodEnd.setHours(23, 59, 59, 999);
-  } else {
-    periodStart = new Date(date.getFullYear(), date.getMonth(), 1);
-    periodEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
-  }
-
-  // Get reviews in period
-  const periodReviews: Review[] = await db
-    .select()
-    .from(reviews)
-    .where(
-      and(
-        eq(reviews.clientId, clientId),
-        gte(reviews.reviewDate, periodStart),
-        lte(reviews.reviewDate, periodEnd)
-      )
-    );
-
-  if (periodReviews.length === 0) return;
-
-  // Calculate metrics
-  const metrics = {
-    totalReviews: periodReviews.length,
-    averageRating: periodReviews.reduce((sum, r) => sum + r.rating, 0) / periodReviews.length,
-    fiveStarCount: periodReviews.filter((r) => r.rating === 5).length,
-    fourStarCount: periodReviews.filter((r) => r.rating === 4).length,
-    threeStarCount: periodReviews.filter((r) => r.rating === 3).length,
-    twoStarCount: periodReviews.filter((r) => r.rating === 2).length,
-    oneStarCount: periodReviews.filter((r) => r.rating === 1).length,
-    googleCount: periodReviews.filter((r) => r.source === 'google').length,
-    yelpCount: periodReviews.filter((r) => r.source === 'yelp').length,
-    positiveCount: periodReviews.filter((r) => r.sentiment === 'positive').length,
-    neutralCount: periodReviews.filter((r) => r.sentiment === 'neutral').length,
-    negativeCount: periodReviews.filter((r) => r.sentiment === 'negative').length,
-    respondedCount: periodReviews.filter((r) => r.hasResponse).length,
-  };
-
-  // Upsert metrics
-  await db
-    .insert(reviewMetrics)
-    .values({
-      clientId,
-      period,
-      periodStart: periodStart.toISOString().split('T')[0],
-      periodEnd: periodEnd.toISOString().split('T')[0],
-      ...metrics,
-    })
-    .onConflictDoUpdate({
-      target: [reviewMetrics.clientId, reviewMetrics.period, reviewMetrics.periodStart],
-      set: metrics,
-    });
-}
-
 /**
  * Get a high-level review summary for a client, including total counts,
  * average rating, recent activity, and per-source breakdown.

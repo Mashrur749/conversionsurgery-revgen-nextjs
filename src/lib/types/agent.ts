@@ -75,20 +75,3 @@ export interface LeadSignals {
   sentiment: 'positive' | 'neutral' | 'negative' | 'frustrated';
 }
 
-// Lead state for LangGraph
-export interface LeadState {
-  leadId: string;
-  clientId: string;
-  stage: LeadStage;
-  signals: LeadSignals;
-  conversationHistory: Array<{
-    role: 'lead' | 'agent' | 'human';
-    content: string;
-    timestamp: string;
-  }>;
-  objections: string[];
-  extractedInfo: Record<string, unknown>;
-  bookingAttempts: number;
-  lastAction: AgentAction | null;
-  humanNeededReason?: EscalationReason;
-}

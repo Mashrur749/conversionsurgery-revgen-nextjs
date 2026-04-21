@@ -1,7 +1,7 @@
 /**
  * Default message templates for various automation scenarios
  */
-export const DEFAULT_TEMPLATES: Record<string, string> = {
+const DEFAULT_TEMPLATES: Record<string, string> = {
   // Automation 1: Missed Call
   missed_call: 'Hey, this is {{ownerName}} from {{businessName}}. Sorry I missed your call — I\'m with a customer right now. Call me back at {{businessPhone}} or reply and I\'ll get back to you. Reply STOP to opt out.',
 

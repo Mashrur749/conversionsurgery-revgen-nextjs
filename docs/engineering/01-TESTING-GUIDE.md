@@ -212,7 +212,7 @@ npm run db:seed -- --lean
 
 > **Migration note (XDOM-23):** the `db:migrate` step above must be run before deployment to apply the `casl_consent_attested` and `casl_consent_attested_at` columns to the `leads` table. Both columns are backward-compatible (nullable/defaulted) — existing rows are unaffected. Without the migration, the import routes will attempt to insert values into non-existent columns and fail.
 
-The `--lean` flag seeds only reference data the product needs to function (subscription plans, role templates, flow templates, system settings, admin account, template variants) — no demo clients, leads, or conversations. You create everything else through the product UI, exactly like a real delivery.
+The `--lean` flag seeds only reference data the product needs to function (billing plans, role templates, flow templates, system settings, admin account, template variants) — no demo clients, leads, or conversations. You create everything else through the product UI, exactly like a real delivery.
 
 Why this matters:
 
@@ -618,11 +618,7 @@ npx vitest run src/lib/compliance/quiet-hours-policy.test.ts
 - override count
 - override rows (if any)
 
-3. Verify diagnostics endpoint permissions from an agency admin session:
-
-```bash
-curl -i http://localhost:3000/api/admin/compliance/quiet-hours-policy
-```
+3. Verify diagnostics by checking the admin compliance page (server component calls `getQuietHoursPolicyDiagnostics()` directly — no separate API route).
 
 4. In staging, set `QUIET_HOURS_POLICY_MODE=INBOUND_REPLY_ALLOWED` and restart app.
 5. Re-run one inbound-reply path (incoming SMS response) during quiet hours and one proactive path (scheduled follow-up) during quiet hours.

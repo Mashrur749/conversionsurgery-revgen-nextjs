@@ -36,42 +36,6 @@ export async function recordExecutionStart(
 }
 
 /**
- * Record a flow execution completion
- */
-export async function recordExecutionComplete(
-  templateId: string | null,
-  converted: boolean,
-  conversionValue?: number
-): Promise<void> {
-  if (!templateId) return;
-
-  const db = getDb();
-  const today = format(new Date(), 'yyyy-MM-dd');
-
-  await db
-    .insert(templateMetricsDaily)
-    .values({
-      templateId,
-      date: today,
-      executionsCompleted: 1,
-      conversions: converted ? 1 : 0,
-      conversionValue: conversionValue?.toString() || '0',
-    })
-    .onConflictDoUpdate({
-      target: [templateMetricsDaily.templateId, templateMetricsDaily.date],
-      set: {
-        executionsCompleted: sql`${templateMetricsDaily.executionsCompleted} + 1`,
-        conversions: converted
-          ? sql`${templateMetricsDaily.conversions} + 1`
-          : templateMetricsDaily.conversions,
-        conversionValue: conversionValue
-          ? sql`${templateMetricsDaily.conversionValue} + ${conversionValue}`
-          : templateMetricsDaily.conversionValue,
-      },
-    });
-}
-
-/**
  * Record a message sent from a flow step
  */
 export async function recordStepMessageSent(
@@ -163,30 +127,6 @@ export async function recordLeadResponse(
       target: [templateStepMetrics.templateId, templateStepMetrics.stepNumber, templateStepMetrics.date],
       set: {
         responsesReceived: sql`${templateStepMetrics.responsesReceived} + 1`,
-      },
-    });
-}
-
-/**
- * Record opt-out (STOP message)
- */
-export async function recordOptOut(templateId: string | null): Promise<void> {
-  if (!templateId) return;
-
-  const db = getDb();
-  const today = format(new Date(), 'yyyy-MM-dd');
-
-  await db
-    .insert(templateMetricsDaily)
-    .values({
-      templateId,
-      date: today,
-      optOuts: 1,
-    })
-    .onConflictDoUpdate({
-      target: [templateMetricsDaily.templateId, templateMetricsDaily.date],
-      set: {
-        optOuts: sql`${templateMetricsDaily.optOuts} + 1`,
       },
     });
 }

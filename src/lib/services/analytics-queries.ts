@@ -195,18 +195,3 @@ export async function getResponseTimeDistribution(
  * @param months - Number of months to fetch (default 6)
  * @returns Array of monthly analytics records
  */
-export async function getMonthlyComparison(
-  clientId: string,
-  months: number = 6
-) {
-  const db = getDb();
-
-  const data = await db
-    .select()
-    .from(analyticsMonthly)
-    .where(eq(analyticsMonthly.clientId, clientId))
-    .orderBy(desc(analyticsMonthly.month))
-    .limit(months);
-
-  return data.reverse();
-}

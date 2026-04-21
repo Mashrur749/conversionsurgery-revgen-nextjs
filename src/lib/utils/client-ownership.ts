@@ -83,25 +83,6 @@ export async function assertSameClient(
  * Batch-verify multiple references belong to the same client.
  * Skips null/undefined IDs (nullable FKs).
  */
-export async function assertAllSameClient(
-  db: Database,
-  expectedClientId: string,
-  checks: Array<{
-    table: ValidTable;
-    id: string | null | undefined;
-    label: string;
-  }>
-): Promise<void> {
-  const activeChecks = checks.filter(
-    (c): c is typeof c & { id: string } => c.id != null
-  );
-  await Promise.all(
-    activeChecks.map((c) =>
-      assertSameClient(db, c.table, c.id, expectedClientId, c.label)
-    )
-  );
-}
-
 export class ClientOwnershipError extends Error {
   constructor(message: string) {
     super(message);

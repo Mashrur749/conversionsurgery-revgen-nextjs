@@ -43,6 +43,3 @@ export async function isOpsKillSwitchEnabled(key: OpsKillSwitchKey): Promise<boo
   return parsed;
 }
 
-export function clearOpsKillSwitchCache(): void {
-  valueCache.clear();
-}

@@ -163,14 +163,3 @@ export async function validateAndRedeemCoupon(
   };
 }
 
-/**
- * Increment redemption count after a coupon is used.
- * @deprecated Use validateAndRedeemCoupon() instead for atomic validate+redeem.
- */
-export async function redeemCoupon(code: string): Promise<void> {
-  const db = getDb();
-  await db
-    .update(coupons)
-    .set({ timesRedeemed: sql`coalesce(${coupons.timesRedeemed}, 0) + 1`, updatedAt: new Date() })
-    .where(eq(coupons.code, code.toUpperCase()));
-}

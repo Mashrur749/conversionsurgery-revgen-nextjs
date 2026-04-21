@@ -90,9 +90,7 @@ No auth surfaces changed &mdash; existing role/user permissions, escalation prev
 3. Download endpoint requires both client session scope and matching expiring token.
 
 ## MS-08 Access Note
-- Quiet-hours policy diagnostics endpoint is agency-only and permission-wrapped:
-1. `GET /api/admin/compliance/quiet-hours-policy` requires `agency.settings.manage`.
-2. Visibility is read-only from admin compliance dashboard; no policy mutation route was introduced.
+- Quiet-hours policy diagnostics are rendered server-side on the admin compliance page via direct service import (`getQuietHoursPolicyDiagnostics()`). No separate API route — access is governed by the page-level auth check.
 
 ## MS-09 Access Note
 - Day-One activation workflow adds one agency-only client-scoped route:

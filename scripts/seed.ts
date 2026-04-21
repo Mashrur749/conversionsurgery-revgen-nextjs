@@ -2,7 +2,6 @@
 import "dotenv/config";
 import { getDb } from "@/db";
 import {
-  subscriptionPlans,
   flowTemplates,
   flowTemplateSteps,
   systemSettings,
@@ -36,73 +35,7 @@ import { agencies } from "@/db/schema";
 const db = getDb();
 
 // ============================================
-// 1. SUBSCRIPTION PLANS (subscriptionPlans table)
-// ============================================
-
-const PLANS = [
-  {
-    name: "Managed Service",
-    slug: "managed",
-    description: "Full revenue recovery managed service — we handle everything",
-    priceMonthly: 100000, // $1,000 in cents
-    priceYearly: 1000000, // $10,000 (2 months free)
-    stripePriceIdMonthly:
-      process.env.STRIPE_PRICE_MANAGED_MONTHLY || "price_managed_monthly",
-    stripePriceIdYearly:
-      process.env.STRIPE_PRICE_MANAGED_YEARLY || "price_managed_yearly",
-    stripeProductId: process.env.STRIPE_PRODUCT_MANAGED || "prod_managed",
-    includedLeads: null, // unlimited
-    includedMessages: null, // unlimited
-    includedTeamMembers: 5,
-    includedPhoneNumbers: 3,
-    features: [
-      "Near-instant lead response",
-      "AI conversation agent",
-      "Voice AI call handling",
-      "Automated follow-up flows (estimate, payment, review, win-back, no-show)",
-      "Appointment booking + calendar sync",
-      "Payment collection with one-click links",
-      "Review generation + auto-response",
-      "Dormant client reactivation",
-      "Quarterly growth blitz campaigns",
-      "Bi-weekly performance reports",
-      "Dedicated business phone number (up to 3)",
-      "Team management (up to 5 members)",
-      "Unlimited conversations and messaging",
-    ],
-    sortOrder: 1,
-    isPublic: true,
-    isPopular: true,
-  },
-];
-
-async function seedSubscriptionPlans() {
-  console.log("Seeding subscription plans...");
-
-  for (const plan of PLANS) {
-    const existing = await db
-      .select()
-      .from(subscriptionPlans)
-      .where(eq(subscriptionPlans.slug, plan.slug))
-      .limit(1);
-
-    if (existing.length > 0) {
-      console.log(`  Plan "${plan.slug}" exists, updating...`);
-      await db
-        .update(subscriptionPlans)
-        .set(plan)
-        .where(eq(subscriptionPlans.slug, plan.slug));
-    } else {
-      console.log(`  Creating plan "${plan.slug}"...`);
-      await db.insert(subscriptionPlans).values(plan);
-    }
-  }
-
-  console.log("  ✓ Subscription plans seeded");
-}
-
-// ============================================
-// 2. BILLING PLANS (plans table)
+// 1. BILLING PLANS (plans table)
 // ============================================
 
 const BILLING_PLANS = [
@@ -2812,7 +2745,6 @@ export async function seed(options: { lean?: boolean } = {}) {
   try {
     // Reference data (always required)
     await seedAgency();
-    await seedSubscriptionPlans();
     await seedBillingPlans();
     await seedFlowTemplates();
     await seedRoleTemplates(); // Must run before admin/team member seeding

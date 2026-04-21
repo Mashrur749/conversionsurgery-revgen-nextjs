@@ -27,7 +27,7 @@ interface TodayAppointment {
   status: string | null;
 }
 
-export async function getDailyStats(clientId: string, date: string): Promise<DailyStats> {
+async function getDailyStats(clientId: string, date: string): Promise<DailyStats> {
   const db = getDb();
 
   const [stats] = await db
@@ -75,7 +75,7 @@ export async function getDailyStats(clientId: string, date: string): Promise<Dai
   };
 }
 
-export async function getLeadsNeedingAttention(clientId: string): Promise<LeadNeedingAttention[]> {
+async function getLeadsNeedingAttention(clientId: string): Promise<LeadNeedingAttention[]> {
   const db = getDb();
   const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
@@ -99,7 +99,7 @@ export async function getLeadsNeedingAttention(clientId: string): Promise<LeadNe
   return needsAttention;
 }
 
-export async function getTodayAppointments(clientId: string, date: string): Promise<TodayAppointment[]> {
+async function getTodayAppointments(clientId: string, date: string): Promise<TodayAppointment[]> {
   const db = getDb();
 
   const todayAppts = await db
