@@ -227,14 +227,10 @@ This powers the full review lifecycle (request → sync → alert → auto-respo
 
 ---
 
-## 4. Agency Onboarding Gaps
+## 5. Terminology Clarifications
 
 ### Win-back vs Quarterly Campaigns
 
 - **Win-back** (`/api/cron/win-back`): always-on automation targeting stale leads (25-35 days inactive). Runs continuously.
 - **Quarterly Growth Blitz**: manual ops planning tool. Targeted push on top of always-on automations.
 - Both can run simultaneously. Offer docs should clarify: "Always-on win-back runs continuously; the quarterly campaign is a targeted manual push on top of that."
-
----
-
-## 5. Terminology Clarifications

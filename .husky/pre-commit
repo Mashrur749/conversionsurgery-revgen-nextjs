@@ -9,10 +9,10 @@ STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
 # TypeScript / config changes → run typecheck + logging guard
 if echo "$STAGED" | grep -qE '\.(ts|tsx|js|jsx|json)$'; then
   echo "[pre-commit] Running typecheck..."
-  npm run typecheck
+  pnpm run typecheck
 
   echo "[pre-commit] Running logging guard..."
-  npm run quality:logging-guard
+  pnpm run quality:logging-guard
 else
   echo "[pre-commit] No TS/JS changes — skipping typecheck + logging guard"
 fi

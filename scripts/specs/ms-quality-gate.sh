@@ -11,16 +11,16 @@ echo "==> Running MS doc structure checks"
 ./scripts/specs/check-no-legacy-spec-refs.sh
 
 echo "==> Running typecheck"
-npm run typecheck
+pnpm run typecheck
 
 if [ "${1:-}" = "--with-build" ]; then
   echo "==> Running build"
-  npm run build
+  pnpm run build
 fi
 
 if [ "${2:-}" = "--with-tests" ]; then
   echo "==> Running tests"
-  npm run test
+  pnpm run test
 fi
 
 echo "OK: quality gate passed"

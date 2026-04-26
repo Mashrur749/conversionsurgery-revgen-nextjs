@@ -1,5 +1,11 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# MCP server config (contains auth tokens)
+.mcp.json
+
+# n8n API credentials (used by Claude Code for workflow CRUD)
+.n8n-credentials
+
 # dependencies
 /node_modules
 /.pnp

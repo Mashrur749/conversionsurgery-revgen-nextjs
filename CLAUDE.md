@@ -8,6 +8,18 @@
 - Twilio (SMS/Voice), Stripe (billing), Anthropic (AI responses)
 - shadcn/ui + Tailwind 4 + Radix UI
 - Deploy: Cloudflare via OpenNext (`@opennextjs/cloudflare`)
+- n8n automation: `n8n-internal.conversionsurgery.io` (customer acquisition pipeline)
+
+## n8n Acquisition Automation
+
+Six workflows (CS 0-5) automate lead sourcing, AI enrichment, audit generation, Instantly.ai campaigns, and outreach orchestration for Calgary basement contractor acquisition.
+
+- **Full docs:** `docs/operations/N8N-ACQUISITION-AUTOMATION.md` — workflow IDs, sheet columns, credential IDs, execution flow
+- **MCP access:** `.mcp.json` (gitignored — contains bearer token). Provides `search_workflows`, `get_workflow_details`, `execute_workflow`
+- **REST API:** For creating/updating workflows via `curl`. Load key with `source .n8n-credentials` then use `$N8N_API_KEY` and `$N8N_BASE_URL`. File is gitignored
+- **Google Sheet:** `1p4IbPtuJjftVIViUmFfz0iWuCxu5JakiTEn4F9pBm4Q` — 5 tabs (Leads, Audits, Campaigns, DailyBriefs, FollowUps)
+- **AI nodes** use n8n credential auth (httpHeaderAuth), not env vars. Credential IDs in the docs
+- **Playbook alignment:** Maps to `ACQUISITION-PLAYBOOK-0-TO-5.md` and `templates/SALES-TOOLKIT-BASEMENT.md`
 
 ## Autonomy & Assumptions
 

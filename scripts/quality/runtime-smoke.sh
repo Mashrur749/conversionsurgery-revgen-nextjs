@@ -52,7 +52,7 @@ curl_status() {
 }
 
 echo "==> Starting production server on ${BASE_URL}"
-npm run start -- --port "${PORT}" >"${LOG_FILE}" 2>&1 &
+pnpm run start --port "${PORT}" >"${LOG_FILE}" 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 "${STARTUP_TIMEOUT_SECONDS}"); do

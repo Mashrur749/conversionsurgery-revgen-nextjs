@@ -5,8 +5,8 @@ set -euo pipefail
 # Runs against the diff between current branch and main (or a specified base).
 #
 # Usage:
-#   npm run quality:code-review            # diff against main
-#   npm run quality:code-review -- develop  # diff against develop
+#   pnpm run quality:code-review            # diff against main
+#   pnpm run quality:code-review -- develop  # diff against develop
 
 BASE="${1:-main}"
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"

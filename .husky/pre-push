@@ -12,4 +12,4 @@ echo "[pre-push] Checking docs changes for local Docmost sync..."
 cat "${REFS_FILE}" | "${ROOT_DIR}/scripts/docmost-sync/pre-push-docs-sync.sh"
 
 echo "[pre-push] Running no-regressions gate..."
-npm run quality:no-regressions
+pnpm run quality:no-regressions
