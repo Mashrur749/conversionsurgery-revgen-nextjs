@@ -50,7 +50,7 @@ If they say yes, go to **Section 3: Instant Demo**.
 
 If they say "yeah tell me more" but don't want the demo yet:
 
-> "So here's the short version. When a homeowner calls and you can't answer, the system picks up, takes their info, answers their questions about your services, and books the estimate visit into your calendar. Then it follows up on every quote you send until you get a yes or a no. You don't manage anything -- I run the whole thing for you. First month is free. Want to try it on your next busy week?"
+> "So here's the short version. When a homeowner calls and you can't answer, the system picks up, takes their info, answers their questions about your services, and books the estimate visit into your calendar. Then it follows up on every quote you send until you get a yes or a no. You don't manage anything -- I run the whole thing for you. Want to see exactly how it works?"
 
 ---
 
@@ -84,7 +84,7 @@ If they say "yeah we're good" or hang up, move on. No hard feelings.
 
 Always state the guarantee before the price. Every time.
 
-> "First month is free -- you pay nothing until you see it working. After that it's a thousand a month. Month-to-month, no contract, cancel anytime. And one recovered basement job covers the whole year. The real question is: how many quotes are sitting in your phone right now that went quiet?"
+> "There&apos;s a one-time setup fee and a monthly fee after that. We have a few tiers depending on your situation -- the entry point is $3,500 to get you live and $1,500 a month after that. That&apos;s a 90-day minimum -- after that, month-to-month. And one recovered basement job covers the setup fee and then some. The real question is: how many quotes are sitting in your phone right now that went quiet?"
 
 ---
 
@@ -148,7 +148,7 @@ Always state the guarantee before the price. Every time.
 
 **Expected response rate:** 3-8%; lower because messages often go to filtered inbox.
 
-> "Hey [Name], I'm Mashrur -- I'm local here in Calgary. I help basement contractors catch the leads they miss when they're on a job. Not a marketing company -- just a system that texts homeowners back in 5 seconds when you can't answer. First month free. Open to a quick chat?"
+> "Hey [Name], I&apos;m Mashrur -- I&apos;m local here in Calgary. I help basement contractors catch the leads they miss when they&apos;re on a job. Not a marketing company -- just a system that texts homeowners back in 5 seconds when you can&apos;t answer. Worth a quick chat?"
 
 **When they reply:** Same approach -- move to a phone call. If they say "tell me more," give 2-3 sentences max, then ask for 15 minutes on the phone.
 
@@ -166,7 +166,7 @@ After that, move on.
 
 **Expected response rate:** 8-15%; higher if the research-driven opener references something specific to their business. Texts get read. The key is keeping it under 3 sentences so they read the whole thing.
 
-> "Hey [Name] -- Mashrur here from Calgary. I help basement contractors catch missed calls and follow up on estimates automatically. Built it specifically for guys who are on site all day and can't get to the phone. First month free, no contract. Worth a quick call this week?"
+> "Hey [Name] -- Mashrur here from Calgary. I help basement contractors catch missed calls and follow up on estimates automatically. Built it specifically for guys who are on site all day and can&apos;t get to the phone. Worth a quick call this week?"
 
 **When they reply:** If they say "sure" or "tell me more" -- call them immediately. Not in an hour. Right now. Speed matters.
 
@@ -211,7 +211,7 @@ Now hit them with the ROI math:
 
 Then close:
 
-> "First month is free. Want to try it on your real number?"
+> "Want to get you live on your real number and see the results?"
 
 ### If They CAN'T Do the Demo Right Now
 
@@ -269,29 +269,29 @@ For each objection: what they say, what they really mean, what to say, and what 
 
 [Let them talk. Don't interrupt. Listen for: was it software they had to manage? Was there a long contract? Did they actually get leads but couldn't follow up?]
 
-> "That makes sense. Here's the thing -- what you're describing sounds like you bought software and they left you to figure it out. This is different in one specific way: I run it. I set it up, I monitor it, I fix it when something's off, and I send you a report every two weeks showing exactly what happened. You don't manage anything. But I don't expect you to take my word for that -- that's why the first month is free. You see it working before you pay anything. No contract, no setup fee. If it doesn't work, you walk away and you keep every lead we captured."
+> "That makes sense. Here&apos;s the thing -- what you&apos;re describing sounds like you bought software and they left you to figure it out. This is different in one specific way: I run it. I set it up, I monitor it, I fix it when something&apos;s off, and I send you a report every two weeks showing exactly what happened. You don&apos;t manage anything. The 90-day minimum gives us time to actually prove results -- most guys see leads re-engaging in Week 1. What did the last company guarantee you?"
 
 **If they push back:** "That's what the last guy said too."
 
-> "The last guy probably locked you into a 6-month contract with a $2,500 setup fee. I'm offering a free month, month-to-month after, and a guarantee: if you don't see 5 real leads engage in 30 days, you owe nothing. The risk is entirely on my side. What did the last company guarantee you?"
+> "Fair. The last guy probably locked you into 12 months with vague deliverables. I have a 90-day minimum, then month-to-month. And I guarantee the system operates -- leads get responded to, estimates get followed up, reviews get requested. It either works and you see it in 90 days, or we part ways. That&apos;s a different deal than what burned you before."
 
 ---
 
-### 4. "$1,000/month is a lot"
+### 4. "That's a lot of money"
 
-**What they really mean:** "I don't know if the ROI is real. I'm not paying $1,000/month for something that might not work."
+**What they really mean:** "I don&apos;t know if the ROI is real. I&apos;m not paying setup plus monthly for something that might not work."
 
 **What to say:**
 
-> "Fair. Let me give you two numbers. One recovered basement job -- the kind you already do -- is probably $60K-$80K in revenue. At your margins, that's $12K-$16K in profit. One job you would have lost to slow follow-up covers the service for the entire year. The more relevant number is your outstanding quotes. How many estimates have you sent in the last 90 days that went quiet?"
+> "Fair. Let me give you two numbers. One recovered basement job -- the kind you already do -- is probably $60K-$80K in revenue. At your margins, that&apos;s $12K-$16K in profit. One job you would have lost to slow follow-up covers the setup fee and months of service. The more relevant number is your outstanding quotes. How many estimates have you sent in the last 90 days that went quiet?"
 
 [Get the number. Do the math with them.]
 
-> "If you've got 15 quotes sitting there at $60K average, and even 2 come back -- that's $120K. The service costs $12K for the whole year. And the first month is free, so you see results before you pay a dollar."
+> "If you&apos;ve got 15 quotes sitting there at $60K average, and even 2 come back -- that&apos;s $120K. The setup is $3,500 and service is $1,500 a month. The math isn&apos;t close. And you see the results inside the 90-day term before you decide whether to continue month-to-month."
 
 **If they push back:** "I just can't justify it right now."
 
-> "I hear you. What if we do this: the first month is free. If after 30 days you look at the results and think 'this isn't worth a thousand a month,' you tell me and we're done. No contract, no cancellation fee, no hard feelings. You keep every lead. Can I set up the free month and let the results do the talking?"
+> "I get it. The 90-day minimum exists because results take time to compound -- Week 1 you&apos;re reactivating old quotes, Week 4 you&apos;re catching new leads, Week 8 you&apos;re seeing the pipeline fill. If after 90 days it hasn&apos;t clearly paid for itself, we part ways. But that&apos;s the conversation to have at Day 90, not Day 0."
 
 ---
 
@@ -371,9 +371,9 @@ Point out message 6: the AI hit a boundary, said so honestly, and escalated with
 
 [This forces them to name the real objection. Then handle that objection directly.]
 
-If they can't articulate it:
+If they can&apos;t articulate it:
 
-> "Here's what I'd suggest: the first month is free. Instead of thinking about whether it might work, just try it. If after 30 days you're not impressed, you tell me and we're done. There's literally no cost to finding out. Can I get you set up this week?"
+> "Here&apos;s what I&apos;d suggest: the 90-day term is designed specifically for this. You&apos;re not committing forever -- you&apos;re committing to 90 days to see if it works. If the results aren&apos;t there by Day 90, you walk away. That&apos;s a much smaller decision than whatever you&apos;re worried about. What specifically would need to be true for you to say yes?"
 
 **If they push back:** "I'll call you back."
 
@@ -389,7 +389,7 @@ Get a specific date. If they won't commit to a date, they're a no -- move on gra
 
 **What to say:**
 
-> "I will -- what's your best email? And honestly, the info is pretty simple: first month free, $1,000/month after, no contract, it catches your missed calls and follows up on your estimates. The one thing a PDF can't show you is what happens when a homeowner actually calls. Got 60 seconds for me to show you live?"
+> "I will -- what&apos;s your best email? And honestly, the info is pretty simple: setup fee to get live, then a monthly fee after, 90-day minimum then month-to-month. It catches your missed calls and follows up on your estimates. The one thing a PDF can&apos;t show you is what happens when a homeowner actually calls. Got 60 seconds for me to show you live?"
 
 If they say yes, run the **Instant Demo** (Section 3).
 
@@ -407,7 +407,7 @@ Send the **Leave-Behind** (Section 5) immediately. Follow up on the exact day yo
 
 **What to say:**
 
-> "Makes total sense. What would help them understand it? I can send a one-page summary with the ROI math -- most spouses want to see the numbers. [Send Leave-Behind.] And here's the thing to mention: the first month is free. So the decision right now isn't 'should we spend $1,000.' It's 'should we try this for free and see if it works.' That's an easier conversation."
+> "Makes total sense. What would help them understand it? I can send a one-page summary with the ROI math -- most spouses want to see the numbers. [Send Leave-Behind.] The thing to frame for them: this is a 90-day commitment to see if it works, not a forever decision. One recovered basement job covers it. That&apos;s an easier conversation."
 
 **If they push back:** "We'll discuss it and get back to you."
 
@@ -434,22 +434,26 @@ The Solution:
 - Every finished job gets an automatic Google review request -- your reviews grow on autopilot
 
 The Math:
-One recovered $80K basement development covers 6.7 years of the service. If the system recovers even one lost lead per month, the ROI is 5-7x. Most contractors have 15-20 quiet estimates sitting in their phone right now. We reactivate those in Week 1.
+One recovered $80K basement development covers the setup fee plus years of monthly service. If the system recovers even one lost lead per quarter, the ROI is 5-10x. Most contractors have 15-20 quiet estimates sitting in their phone right now. We reactivate those in Week 1.
 
 The Guarantee:
-- First month is completely free -- the system runs for 30 days before you pay a dollar
-- 30-day proof: if the system doesn't deliver at least 5 qualified lead engagements in your free month, you owe nothing
-- 90-day guarantee: if after 90 days the system hasn't booked at least one estimate from a cold lead or generated $5,000 in probable pipeline value, you get your most recent month refunded
-- Month-to-month, no contract, cancel anytime with 30 days notice
-- No setup fee. No message limits. No overage charges.
+- Operational guarantee: the system responds to leads, follows up on estimates, and requests reviews reliably -- guaranteed
+- 90-day minimum term, then month-to-month with 30 days notice
+- No message limits. No overage charges.
 
 Who Built This:
 Mashrur Rahman, Calgary. Built this after watching a local contractor lose jobs to slow follow-up. Not a marketing agency. Not a chatbot company. A managed service that runs your lead response so you can focus on the work.
 
+Pricing:
+- Pilot: $3,500 setup + $1,500/month (limited availability)
+- Standard: $5,500 setup + $2,000/month
+- Premium: $9,500 setup + $3,500/month
+90-day minimum term. Month-to-month after that. No message caps. No overage charges.
+
 Next Step:
 Call or text Mashrur: [phone number]
 Or reply to this message.
-15-minute setup call. Live on your number within 24 hours.
+15-minute call to find the right tier. Live on your number within 24 hours of setup.
 
 ---
 
@@ -585,7 +589,7 @@ After a demo that ends with "let me think about it" or "let me talk to my wife,"
 ### Day 0 (same day, 1-2 hours after the demo):
 
 **Text:**
-> "Hey [Name], good talking today. Here's the quick summary I mentioned you can show your wife: [paste leave-behind one-pager from Section 5]. First month free, month to month, one basement job covers the whole year. Let me know if you have questions."
+> "Hey [Name], good talking today. Here&apos;s the quick summary I mentioned you can show your wife: [paste leave-behind one-pager from Section 5]. 90-day term to prove results, then month-to-month. One basement job covers it. Let me know if you have questions."
 
 ### Day 3:
 
@@ -595,7 +599,7 @@ After a demo that ends with "let me think about it" or "let me talk to my wife,"
 ### Day 7:
 
 **Text:**
-> "Last check-in from me, [Name]. The free month offer is open whenever you're ready. If the timing isn't right, totally understand -- I'm easy to find. Have a good one."
+> "Last check-in from me, [Name]. Happy to get you started whenever the timing is right. If it&apos;s not for you, totally understand -- I&apos;m easy to find. Have a good one."
 
 **Rules:**
 - 3 touches max. After Day 7, stop. If they want it, they know where to find you.
@@ -625,7 +629,7 @@ When they say "send me something" on the call, send this within 30 minutes. Spee
 >
 > You don't manage anything. I handle the setup, the AI training, the reporting -- everything. Your only job is to keep doing great work.
 >
-> First month is free. $1,000/month after that. Month to month, cancel anytime. One recovered basement job covers the entire year.
+> Setup fee to get you live, then a monthly fee after that. 90-day minimum, then month-to-month. One recovered basement job covers the setup and most of a year.
 >
 > Want to see it work? I can do a quick 10-minute demo -- call your own number and watch the AI pick up. [Suggest a specific time.]
 >
@@ -821,14 +825,14 @@ They said YES. This is the most important 5 minutes. Don't fumble it.
 
 Sometimes a cold call goes straight to yes. They don't need a demo -- they get it, they want it, they want to start. Don't navigate the demo-close flow. Close in under 8 minutes:
 
-1. Confirm the yes: "Let's get you set up. I'm going to send a payment link to the number I'm calling -- the first month is free, you'll see the terms right on the checkout page."
+1. Confirm the yes: "Let&apos;s get you set up. I&apos;m going to send a payment link to the number I&apos;m calling -- you&apos;ll see the setup fee and monthly rate right on the checkout page."
 2. Send payment link immediately via admin (Stripe Checkout SMS)
 3. While they wait for the text, walk through 5 terms fast:
-   - "First month is free. System runs 30 days before you pay a dollar."
-   - "Month-to-month after that. Cancel anytime with 30 days notice."
-   - "Two guarantees: 5 real lead engagements in your free month or you owe nothing. After 90 days, at least one estimate from a cold lead or $5K in pipeline -- or your last month refunded."
+   - "Setup fee gets you live within 24 hours. Monthly fee kicks in after that."
+   - "90-day minimum, then month-to-month. Cancel anytime after that with 30 days notice."
+   - "Operational guarantee: the system responds to leads, follows up on estimates, and requests reviews -- or we fix it immediately."
    - "Your data is yours. Full export if you ever leave."
-   - "$1,000/month flat. No hidden fees, no message caps."
+   - "No hidden fees, no message caps."
 4. Stay on the line until they tap the link. If they want to read before entering their card, tell them the link stays active -- follow up in 24 hours.
 5. If they complete checkout on the call, book the onboarding call immediately (30 min, within 48 hours)
 6. End the call, send welcome text from step 9 below
@@ -848,26 +852,26 @@ Not "Oh my god that's amazing!" -- be a peer, not a grateful salesperson.
 > "I'm sending you the payment link now. While it hits your phone, let me walk you through the key terms real quick so there are no surprises."
 
 Hit these 5 points:
-1. "First month is free. The system runs for 30 days before you pay a dollar."
-2. "Month-to-month after that. No annual contract. Cancel anytime with 30 days notice."
-3. "Two guarantees. First: if you don't see at least 5 real lead engagements in your free month, you owe nothing. Second: if after 90 days the system hasn't booked at least one estimate from a cold lead or generated $5,000 in pipeline, you get your last month refunded."
+1. "Setup fee gets you live within 24 hours. Monthly fee starts after that."
+2. "90-day minimum. After that, month-to-month. Cancel anytime with 30 days notice."
+3. "Operational guarantee: the system responds to leads, follows up on estimates, and requests reviews reliably. If it goes down or misfires, I fix it same day."
 4. "Your data is yours. If you ever leave, full export of every lead and conversation within 5 business days."
-5. "No hidden fees. $1,000/month flat. No message caps, no overage charges."
+5. "No hidden fees. No message caps, no overage charges."
 
 > "That's it. The full terms are on the checkout page if you want to read them. Go ahead and tap the link."
 
 Click **Send Payment Link** in admin while you're talking. They get a Stripe checkout SMS + email.
 
-The checkout page shows: plan details, trial info, and a "I agree to the Terms of Service" checkbox with a link to your `/terms` page. They read it, check the box, enter their card. Done.
+The checkout page shows: plan details, setup fee, monthly rate, and an &quot;I agree to the Terms of Service&quot; checkbox with a link to your `/terms` page. They read it, check the box, enter their card. Done.
 
 **3. Stay on the line while they enter their card:**
 > "Got it? ... Great, tap the link and enter your card. I'll wait."
 
 If they want to read the terms:
-> "Absolutely -- tap the 'Terms of Service' link right on the checkout page. It's short. Month-to-month, first month free, cancel anytime with 30 days notice, full data export if you ever leave."
+> "Absolutely -- tap the &apos;Terms of Service&apos; link right on the checkout page. It&apos;s short. 90-day minimum, then month-to-month, cancel anytime after that with 30 days notice, full data export if you ever leave."
 
 If they hesitate on the card:
-> "Totally understand. The link stays active -- show your wife tonight, she can read the terms right there. When you're ready, just tap it and I'll have your number live within 24 hours."
+> "Totally understand. The link stays active -- show your wife tonight, she can read the terms right there. When you&apos;re ready, just tap it and I&apos;ll have your number live within 24 hours."
 
 If they want to think about it:
 > "No pressure at all. The payment link is in your texts. Terms are on the page. When you're ready, just click it."
@@ -875,7 +879,7 @@ If they want to think about it:
 (Follow up in 24 hours. If no card by Day 3, they're unlikely to convert.)
 
 **4. Confirm payment went through:**
-> "Perfect, I can see that went through. Your free month starts today. Billing kicks in on [date]. Sound good?"
+> "Perfect, I can see that went through. Your 90-day term starts today. We&apos;ll check in at Day 30, Day 60, and Day 90. Sound good?"
 
 **5. Book the onboarding call:**
 > "Now let's get you live. I need 30 minutes with you to set up your business number and train the AI on your business. What works -- [specific time options from your schedule]?"
@@ -892,19 +896,19 @@ Book it for the earliest available slot. Ideally within 48 hours.
 
 **8. Verify payment received:**
 
-Confirm in Stripe that the trial subscription was created. The terms were accepted as part of checkout -- no separate signing needed.
+Confirm in Stripe that the subscription was created. The terms were accepted as part of checkout -- no separate signing needed.
 
-If they DIDN'T complete payment on the call (said "let me think"), the payment link stays active in their texts. Follow up in 24 hours:
+If they DIDN&apos;T complete payment on the call (said "let me think"), the payment link stays active in their texts. Follow up in 24 hours:
 
-> "Hey [Name], just checking in from yesterday. The payment link is in your texts whenever you're ready -- first month free, terms are right on the page. Once you tap it, I'll have your number live within 24 hours."
+> "Hey [Name], just checking in from yesterday. The payment link is in your texts whenever you&apos;re ready -- terms are right on the page. Once you tap it, I&apos;ll have your number live within 24 hours."
 
 **9. Send welcome text:**
-> "Hey [Name], welcome to ConversionSurgery. Your free month starts today. I just emailed you the service agreement for your records. Onboarding call: [day] at [time]. Before that call, think of 5 people you quoted in the last 6 months that never got back to you -- just first names and what the project was. That's all I need. Talk soon. -- Mashrur"
+> "Hey [Name], welcome to ConversionSurgery. Your 90-day term starts today. I just emailed you the service agreement for your records. Onboarding call: [day] at [time]. Before that call, think of 5 people you quoted in the last 6 months that never got back to you -- just first names and what the project was. That&apos;s all I need. Talk soon. -- Mashrur"
 
 **10. Update ClickUp:**
 - Move prospect to "Signed" in Prospect Pipeline
 - Create new task in **Onboarding Queue** (duplicate the template)
-- Fill in: Owner Phone, Email, Signed Date, Trial End Date, MRR ($1,000)
+- Fill in: Owner Phone, Email, Signed Date, 90-Day Term End Date, Plan Tier, MRR
 - Set onboarding call date
 
 **10. Prep for onboarding (do this before the onboarding call, not now):**
@@ -932,4 +936,4 @@ After onboarding, move the client from Onboarding Queue to **Client Delivery** (
 
 ---
 
-*Guarantee language in Sections 5 and 14 is aligned to `docs/business-intel/OFFER-APPROVED-COPY.md` Section 3 (canonical). Last synced: April 2026.*
+*Pricing and guarantee language aligned to `docs/business-intel/OFFER-APPROVED-COPY.md` (canonical). Last synced: May 2026. Pricing: Pilot $3,500 setup + $1,500/mo (first 3 clients); Standard $5,500 + $2,000/mo; Premium $9,500 + $3,500/mo. All tiers: 90-day minimum, operational guarantee.*

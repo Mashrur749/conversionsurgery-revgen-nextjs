@@ -41,7 +41,7 @@ This is the same outcome stated as dominance rather than defense. The contractor
 
 ### What the Contractor Is Actually Buying
 
-**A full-time, 24/7 revenue recovery team — for less than the cost of a part-time hire.**
+**A full-time, 24/7 revenue recovery team — for less than the cost of a part-time hire, with implementation included.**
 
 Not software. Not automations. Not an app. A team that captures every lead, follows up on every estimate, collects every payment, builds their reputation, and reactivates past clients — while they're on the job site doing what they're best at.
 
@@ -92,7 +92,7 @@ Implementation priority: SMS reply trigger and fallback nudge should be availabl
 
 **Hormozi lever:** Dream Outcome — this IS the core result they're paying for.
 
-**What this kills:** "What do I actually get for $1,000?" — Everything a full-time office manager would do for lead management, follow-up, appointment coordination, payment collection, and reputation building — except the system runs around the clock, never quits, never calls in sick, and costs 75% less.
+**What this kills:** "What do I actually get for this?" — Everything a full-time office manager would do for lead management, follow-up, appointment coordination, payment collection, and reputation building — except the system runs around the clock, never quits, never calls in sick, and costs a fraction of a hire.
 
 ---
 
@@ -114,7 +114,7 @@ This gives them separation between personal and business, a complete history of 
 **Voice AI &mdash; Included (v3.0 update):**
 Voice AI is included in the base price for all clients &mdash; `voiceEnabled` defaults to `true` on signup. No per-minute charges. No extra fees. No opt-in step required. The contractor gets a fully answering business line from Day 1: when they miss a call, Voice AI picks up, qualifies the lead, and books the estimate. This is the core value proposition &mdash; not an upsell.
 
-**Internal cost note:** Twilio voice minutes are a pass-through cost to the operator (~$0.01-0.02/min for standard calls). At typical contractor volumes (15-20 calls/month, ~5 handled by Voice AI, avg 3 min each), the monthly cost per client is $0.75-$3.00. This is absorbed into the $1,000/mo price, not passed to the contractor.
+**Internal cost note:** Twilio voice minutes are a pass-through cost to the operator (~$0.01-0.02/min for standard calls). At typical contractor volumes (15-20 calls/month, ~5 handled by Voice AI, avg 3 min each), the monthly cost per client is $0.75-$3.00. This is absorbed into the monthly fee, not passed to the contractor.
 
 **Hormozi lever:** Dream Outcome + Effort Minimizer — one place for everything, zero management required.
 
@@ -187,23 +187,25 @@ The AI's conversation quality depends entirely on the knowledge base, and a sing
 
 ---
 
-### COMPONENT 4: The 90-Day Revenue Recovery Guarantee (RISK REVERSAL)
+### COMPONENT 4: The 90-Day Operational Guarantee (RISK REVERSAL)
 
-**THIS REPLACES THE OLD 30-DAY "RECOVERED LEAD" GUARANTEE.**
+**THIS IS AN OPERATIONAL GUARANTEE — NOT A REVENUE GUARANTEE.**
 
-**Why the old guarantee was weak:**
+We do not guarantee specific revenue outcomes. Renovation project close rates depend on factors outside our control (lead quality, pricing, contractor responsiveness, market conditions). What we guarantee is that the system will be set up, running, and actively working within defined operational parameters.
+
+**Why the old revenue guarantee framing was problematic:**
 
 1. "Recovered lead" was ambiguous. Who defines "recovered"? What counts?
 2. 30 days isn't enough time for renovation results. Kitchen projects take 2-3 months to close.
-3. Refunding one month didn't feel like real confidence.
+3. Revenue attribution is contested territory — we can't guarantee what we don't control.
 
 **The new guarantee — two layers:**
 
 #### Layer 1: The 30-Day Proof-of-Life Guarantee
 
-> "Your first month is free. If the system doesn&apos;t deliver at least 5 Qualified Lead Engagements in those 30 days, you owe nothing and we part as friends."
+> "If the system doesn&apos;t deliver at least 5 Qualified Lead Engagements in those 30 days, we credit your next month&apos;s fee."
 
-**Pricing change (v3.0):** Restructured from "pay first, refund if fails" to "first month free, billing starts Day 31." This removes all financial risk from trying. Card is captured on the onboarding call with a 30-day Stripe trial. If Layer 1 fails, the contractor simply cancels before Day 31 &mdash; no refund process needed.
+**Structure (v3.0 — three-tier model):** Setup fee is non-refundable (covers implementation work already done). Monthly fee credit applies if the system fails to engage 5 qualified leads in the first 30 days. This is an operational proof of life — the system either fires or it doesn&apos;t, and the logs prove it either way.
 
 **"Qualified Lead Engagement" is defined as:**
 
@@ -214,11 +216,11 @@ The AI's conversation quality depends entirely on the knowledge base, and a sing
 
 This is concrete, measurable, and almost impossible to fail if the contractor has any lead volume at all.
 
-#### Layer 2: The 90-Day Revenue Recovery Guarantee
+#### Layer 2: The 90-Day Operational Guarantee
 
-> "If after 90 days, the system hasn&apos;t booked at least one estimate appointment from a lead that had previously gone cold &mdash; or generated at least $5,000 in probable pipeline value from system-engaged leads &mdash; we refund your most recent month&apos;s payment. You keep a full export of every lead and conversation we captured. You leave with everything."
+> "If after 90 days the system has not demonstrably engaged leads &mdash; meaning at least one estimate appointment booked from a system-engaged lead OR $5,000 in tracked probable pipeline value &mdash; we credit your most recent month&apos;s fee. You keep a full export of every lead and conversation we captured. You leave with everything."
 
-**Language change (v3.0):** Tightened from subjective "one project you can point to" to objective, contractor-verifiable outcomes: "1 booked estimate from a cold lead OR $5K probable pipeline." Attribution is now defined as "Attributed Result" &mdash; purely log-based, no subjective confirmation needed.
+**Note:** This is an operational credit, not a revenue guarantee. The guarantee covers system performance (did the automation fire, engage leads, and book appointments as designed) — not deal outcomes (whether the contractor won the job). Lead-to-close is outside system control.
 
 **The guarantee passes if EITHER of the following is true:**
 
@@ -276,9 +278,9 @@ This formula eliminates ad hoc judgment calls during guarantee disputes. Both pa
 
 **What this kills:**
 
-- "$1,000 is a lot — what if it doesn't work?" — Then you get your money back AND keep everything we built. What's the risk?
-- "I need to think about it." — The guarantee means if it doesn't produce results, you pay nothing. The only risk is waiting another month and losing more leads.
-- "Can I try it free?" &mdash; Your first month IS free. Full service from Day 1. Card goes on file so billing starts automatically on Day 31 if you keep it. Cancel anytime before then, zero charge.
+- "What if it doesn't work?" — The system either fires or it doesn&apos;t — the logs prove it. If it doesn&apos;t engage leads in 30 days, you get a credit. If it doesn&apos;t produce pipeline in 90 days, you get another credit and keep all your data.
+- "I need to think about it." — The guarantee means if the system doesn&apos;t perform, you don&apos;t pay for months that didn&apos;t deliver. The only risk is waiting another month and losing more leads.
+- "Can I try it first?" &mdash; The Pilot tier (first 3 clients) is the lowest-risk entry point. Full service, case study commitment in exchange.
 
 ---
 
@@ -383,7 +385,7 @@ Reporting rules:
 
 **What this kills:**
 
-- "I'm not sure it's worth $1,000." — Here's exactly what $1,000 bought you this month.
+- "I'm not sure it's worth it." — Here's exactly what the service delivered this month, in concrete numbers.
 - "I could probably do this myself." — Could you respond to 23 leads near-instantly while you're on a job site?
 
 ---
@@ -428,34 +430,35 @@ Reporting rules:
 
 ---
 
-### COMPONENT 8: Month-to-Month, Cancel Anytime (STRUCTURAL RISK REVERSAL)
+### COMPONENT 8: 90-Day Minimum, Then Month-to-Month (STRUCTURAL RISK REVERSAL)
 
 This is structural risk reversal — not a "bonus," not a marketing line, but a fundamental feature of how the offer works.
 
 **Terms:**
 
-- No annual contract
-- No setup fees
-- No cancellation penalties
-- 30 calendar days written notice to cancel
+- One-time setup fee (tier-dependent: $3,500 / $5,500 / $9,500) — covers implementation, non-refundable
+- 90-day minimum term — aligned to the renovation sales cycle; results compound over 60-90 days
+- Month-to-month after the 90-day minimum
+- No cancellation penalties after minimum term
+- 30 calendar days written notice to cancel (after minimum)
 - Full data export on request
 - Export delivery: within 5 business days of request
 - Export format: CSV (lead records, conversation history, pipeline status)
 
 **Exact language for all client-facing documents:**
 
-"Month-to-month service. Cancel anytime. Effective 30 calendar days after written notice. No cancellation penalties. Full data export available on request."
+"One-time setup fee covers implementation. 90-day minimum term. Month-to-month thereafter. Cancel anytime after the minimum with 30 calendar days written notice. No cancellation penalties. Full data export available on request."
 
 **Frame it this way:**
 
-> "We don't lock you in because we don't need to. If the system is recovering more than $1,000 in value every month — and for most clients, it recovers that in the first week — you'd be crazy to cancel. We earn your business every single month."
+> "We don't lock you in beyond the 90-day minimum — because we don't need to. Renovation projects take 60-90 days to close. If we haven't produced results in that window, we haven't done our job. After Day 90, it's month-to-month. We earn your business every single month."
 
-**Hormozi lever:** Perceived Likelihood (removes the "what if I'm stuck" fear) + Effort & Sacrifice (leaving is painless, so staying is a choice, not a trap).
+**Hormozi lever:** Perceived Likelihood (removes the "what if I'm stuck" fear) + Effort & Sacrifice (leaving is painless after minimum, so staying is a choice, not a trap).
 
 **What this kills:**
 
-- "What if I'm stuck in a contract?" — You're not. Month-to-month. If it stops working, you leave.
-- "That's a big commitment." — It's $1,000/month that you can end any time. One kitchen estimate covers it.
+- "What if I'm stuck in a contract?" — 90-day minimum only. After that, month-to-month, cancel anytime.
+- "That's a big commitment." — The setup fee covers real implementation work. The 90-day term matches how long renovation results actually take to show up.
 
 ---
 
@@ -475,15 +478,15 @@ Here's what you get when you start with ConversionSurgery:
 
 **Complete Done-For-You Service** — We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week.
 
-**First Month Free + 90-Day Guarantee** &mdash; Your first month costs nothing. The system runs for 30 days before you pay a dollar. If after 90 days the system hasn&apos;t booked at least one estimate from a cold lead or generated $5,000 in probable pipeline, we refund your last month and you keep every lead and conversation we captured. If your lead volume runs below 15/month, guarantee windows extend proportionally &mdash; you&apos;re never penalized for a slow period.
+**90-Day Operational Guarantee** &mdash; If the system doesn&apos;t engage 5 qualified leads in the first 30 days, we credit your next month. If after 90 days the system hasn&apos;t booked at least one estimate from a system-engaged lead or generated $5,000 in tracked pipeline, we credit your last month and you keep every lead and conversation we captured. If your lead volume runs below 15/month, guarantee windows extend proportionally &mdash; you&apos;re never penalized for a slow period.
 
 **Weekly Pipeline Update** &mdash; Every Monday, a text on your phone showing your pipeline in dollars. No login required.
 
-**Month-to-month, no contract, no setup fee, no message limits, no overage charges.** We earn your business every single month.
+**90-day minimum term, then month-to-month. No cancellation penalties after the minimum. No message limits. No overage charges.** We earn your business every single month.
 
-**First month free. Then $1,000/month.**
+**One-time setup fee + monthly service fee (tier-dependent).** One recovered project covers the setup and months of service. Most clients see measurable pipeline activity within the first 30 days.
 
-One recovered kitchen project pays for the entire year. Most clients see results before they ever pay.
+Pilot tier ($3,500 setup + $1,500/mo) is available to the first 3 clients only, in exchange for participating in a 90-day outcome review.
 
 ---
 
@@ -531,19 +534,33 @@ One recovered kitchen project pays for the entire year. Most clients see results
 
 ## PART 5: PRICING PSYCHOLOGY
 
-### Why $1,000 Is Right
+### Three-Tier Model (Business Reference v1.0)
 
-1. **Round number signals confidence and transparency.** Research (Troll et al. 2024 meta-analysis, Wadhwa & Zhang 2015) shows charm pricing ($997, $999) underperforms round pricing in B2B and professional services contexts. Round numbers communicate honest, calculated pricing — not a marketing trick. Contractors quote kitchens at $50,000, not $49,997. We price the same way.
+| Tier         | Setup Fee  | Monthly Fee | Availability                        |
+| ------------ | ---------- | ----------- | ----------------------------------- |
+| **Pilot**    | $3,500     | $1,500/mo   | First 3 clients only (case studies) |
+| **Standard** | $5,500     | $2,000/mo   | General availability                |
+| **Premium**  | $9,500     | $3,500/mo   | General availability                |
 
-2. **Less than half a part-time employee** ($1,500-$2,500/month) and a fraction of a full-time hire ($4,000+/month). This is the primary price anchor.
+**Setup fee rationale:** Covers implementation, onboarding, AI configuration, and knowledge base build. One-time. Non-refundable. Signals commitment from both sides and ensures the operator is compensated for the Day-One Activation work regardless of outcome.
 
-3. **One project pays for the entire year.** At $45K-$65K average project value, $1,000/month ($12,000/year) is paid back 4-5x by a single recovered job.
+**90-day minimum term:** All tiers carry a 90-day minimum. This aligns with the renovation sales cycle — results take 60-90 days to compound. Month-to-month after the minimum.
 
-4. **Month-to-month neutralizes price resistance.** The real objection isn't "it costs too much" — it's "what if I'm stuck paying for something that doesn't work." Month-to-month + guarantee eliminates that.
+**Pilot tier:** Capped at 3 clients. Purpose is to generate documented case studies and refine the managed service delivery model before scaling to Standard/Premium pricing. Pilot clients receive full service in exchange for agreeing to participate in a post-90-day outcome review.
+
+### Why Round Numbers Work
+
+1. **Round numbers signal confidence and transparency.** Research (Troll et al. 2024 meta-analysis, Wadhwa & Zhang 2015) shows charm pricing ($997, $999) underperforms round pricing in B2B and professional services contexts. Contractors quote kitchens at $50,000, not $49,997. We price the same way.
+
+2. **Setup fee plus monthly is honest pricing.** It communicates that implementation has real cost — and that the monthly fee is for ongoing delivery, not amortized setup.
+
+3. **One project pays for the entire engagement.** At $45K-$65K average project value, even the Premium tier ($9,500 setup + $3,500/mo × 3 months = $20,000) is paid back by a single recovered basement or kitchen project.
+
+4. **90-day minimum neutralizes early cancellation.** The real objection isn't "it costs too much" — it's "what if I'm stuck paying for something that doesn't work." The operational guarantee addresses this directly.
 
 5. **Unlimited messaging justifies premium.** No caps, no overages, no surprises. Flat-rate simplicity that competitors don't offer.
 
-6. **Quarterly Growth Blitz justifies premium.** Agency-level service at SaaS-level pricing. No competitor at $1,000 offers proactive quarterly campaigns.
+6. **Quarterly Growth Blitz justifies premium.** Agency-level service at SaaS-level pricing. No competitor offers proactive quarterly campaigns.
 
 ### Price Anchors
 
@@ -552,8 +569,8 @@ One recovered kitchen project pays for the entire year. Most clients see results
 | Full-time office employee | $4,000-5,000/month                   | "And they can't work at 11 PM on a Saturday."                                                       |
 | Part-time hire            | $1,500-2,500/month                   | "Still more than us, and you have to manage them."                                                  |
 | Answering service         | $500-1,500/month                     | "They take messages. We book appointments. And they charge per minute. We're flat rate, unlimited." |
-| One basement project      | $9,000-16,000 profit (at 20% margin) | "One recovered basement covers the service for over a year. Always talk profit, not revenue &mdash; they know their margins."  |
-| One kitchen project       | $7,000-13,000 profit (at 20% margin) | "One recovered kitchen covers 7-13 months."                                                         |
+| One basement project      | $9,000-16,000 profit (at 20% margin) | "One recovered basement covers the setup fee and months of service. Always talk profit, not revenue &mdash; they know their margins."  |
+| One kitchen project       | $7,000-13,000 profit (at 20% margin) | "One recovered kitchen covers the setup and 2-3 months."                                            |
 | Doing nothing             | $10,000-40,000/year in lost profit   | "The most expensive option is the one you're choosing now."                                         |
 
 ---
@@ -562,22 +579,23 @@ One recovered kitchen project pays for the entire year. Most clients see results
 
 Every component is tagged to the specific objection it preemptively kills:
 
-| Objection                               | Primary killer                                                       | Supporting                                                             |
-| --------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| "$1,000 is too expensive"                 | 90-Day Guarantee (what's the risk?), ROI math (one project = a year) | Bi-Weekly Scoreboard, unlimited messaging (no surprise costs)          |
-| "I need to think about it"              | Day-One Activation (value starts immediately, waiting costs leads)   | Month-to-month (not a commitment, it's a test drive with full service) |
-| "What if it doesn't work?"              | 90-Day Guarantee (refund + keep everything)                          | 30-Day Proof-of-Life (you'll see it working in weeks)                  |
-| "I've tried CRM/software before"        | Managed Service (we run it, not you)                                 | 15 min/week (nothing to learn or operate)                              |
-| "I can hire someone instead"            | Revenue Engine (24/7, $12K/year vs $50K+, no management)             | Day-One Activation (employee takes weeks to hire and train)            |
-| "What about slow months?"               | Quarterly Growth Blitz (slow months = reactivation/pipeline months)  | Dormant Client Reactivation (revenue at zero acquisition cost)         |
-| "Can I try it free?"                    | 90-Day Guarantee (this IS a trial — full service, money-back)        | Month-to-month (you can leave anytime)                                 |
-| "What if AI says something wrong?"      | Managed Service (assist mode first week, guardrails, escalation)     | Bi-Weekly Scoreboard (you see what it's saying and doing)              |
-| "I don't have time for onboarding"      | Day-One Activation (30-min call + we do rest, value day 1)           | 15 min/week ongoing                                                    |
-| "What if I want to cancel?"             | Month-to-month + full data export (CSV, 5 business days)             | No penalty, no lock-in                                                 |
-| "My leads are fine / I don't need this" | Revenue Leak Audit (personalized, shows THEIR specific gaps)         | Industry data (42-min avg response, 80% don't leave voicemail)         |
-| "What makes you different?"             | Managed service + renovation-specific AI + quarterly campaigns       | Unlimited messaging — no one else offers flat rate with no caps        |
-| "Let me talk to my wife/partner"        | Revenue Leak Audit (tangible doc to share) + Leave-behind email      | Guarantee removes financial risk from the spousal conversation         |
-| "What if I run out of messages?"        | Eliminated. Unlimited. No caps. No overages.                         | N/A — the objection no longer exists                                   |
+| Objection                               | Primary killer                                                                         | Supporting                                                                          |
+| --------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| "It's too expensive"                    | ROI math (one recovered project covers setup + months of service)                      | Bi-Weekly Scoreboard, unlimited messaging (no surprise costs)                       |
+| "Why a setup fee?"                      | Setup fee covers real implementation work (AI config, KB, onboarding) — not a markup  | Day-One Activation (phone number + missed-call text-back live Day 1)                |
+| "I need to think about it"              | Day-One Activation (value starts immediately, waiting costs leads)                     | 90-day minimum aligns with renovation cycle — short relative to project payback     |
+| "What if it doesn't work?"              | 90-Day Operational Guarantee (credit + keep everything)                                | 30-Day Proof-of-Life (you'll see it working in weeks)                               |
+| "I've tried CRM/software before"        | Managed Service (we run it, not you)                                                   | 15 min/week (nothing to learn or operate)                                           |
+| "I can hire someone instead"            | Revenue Engine (24/7, comparable monthly cost, no management overhead)                 | Day-One Activation (employee takes weeks to hire and train)                         |
+| "What about slow months?"               | Quarterly Growth Blitz (slow months = reactivation/pipeline months)                   | Dormant Client Reactivation (revenue at zero acquisition cost)                      |
+| "Can I try it free?"                    | Pilot tier available (first 3 clients — case study program)                            | Operational guarantee means if it doesn&apos;t engage leads, you get a credit       |
+| "What if AI says something wrong?"      | Managed Service (assist mode first week, guardrails, escalation)                       | Bi-Weekly Scoreboard (you see what it's saying and doing)                           |
+| "I don't have time for onboarding"      | Day-One Activation (30-min call + we do rest, value day 1)                             | 15 min/week ongoing                                                                 |
+| "What if I want to cancel?"             | 90-day minimum only, then month-to-month + full data export (CSV, 5 business days)     | No penalty after minimum, no lock-in                                                |
+| "My leads are fine / I don't need this" | Revenue Leak Audit (personalized, shows THEIR specific gaps)                           | Industry data (42-min avg response, 80% don't leave voicemail)                      |
+| "What makes you different?"             | Managed service + renovation-specific AI + quarterly campaigns                         | Unlimited messaging — no one else offers flat rate with no caps                     |
+| "Let me talk to my wife/partner"        | Revenue Leak Audit (tangible doc to share) + Leave-behind email                        | Guarantee removes financial risk from the spousal conversation                      |
+| "What if I run out of messages?"        | Eliminated. Unlimited. No caps. No overages.                                           | N/A — the objection no longer exists                                                |
 
 ---
 
@@ -615,9 +633,9 @@ These exist to protect service quality and margins. They are invisible to the cl
 | High-volume ICP (50-80 leads/month) | 50-80         | 4,000-7,000      | $55-85           |
 | Outlier (investigate)               | 80+           | 8,000+           | $85+             |
 
-At $1,000/month revenue, even outlier usage maintains 90%+ gross margin on API costs.
+At $1,500-$3,500/month revenue (depending on tier), even outlier usage maintains strong gross margin on API costs.
 
-**Enterprise trigger:** If a client consistently exceeds 100 leads/month for 2+ consecutive months, they are outgrowing the Professional plan. This is a revenue opportunity — introduce the Enterprise tier conversation naturally. Do NOT throttle them.
+**Enterprise trigger:** If a client consistently exceeds 100 leads/month for 2+ consecutive months, they are outgrowing the Standard/Premium tier. This is a revenue opportunity — introduce a custom enterprise conversation naturally. Do NOT throttle them.
 
 ### Scope Boundaries
 
@@ -810,6 +828,6 @@ The following changes affect client-facing promises and have NOT yet been update
 
 ---
 
-_ConversionSurgery Grand Slam Offer Architecture v2.2_
-_Consolidated from v1.0 (strategic architecture), v1.1 (operational refinements), Unlimited Messaging Update, Gap Resolution (estimate triggers, quiet hours, smart assist, KB quality, voice AI, customer list extraction, claims boundary, unlimited qualifier, guarantee formula), and Wave 6 updates (ROI calculator, pre-sale audit, Jobber integration, voice default-on, weekly pipeline SMS, guarantee pipeline floor)_
-_Last updated: April 2026_
+_ConversionSurgery Grand Slam Offer Architecture v3.0_
+_Consolidated from v1.0 (strategic architecture), v1.1 (operational refinements), Unlimited Messaging Update, Gap Resolution (estimate triggers, quiet hours, smart assist, KB quality, voice AI, customer list extraction, claims boundary, unlimited qualifier, guarantee formula), Wave 6 updates (ROI calculator, pre-sale audit, Jobber integration, voice default-on, weekly pipeline SMS, guarantee pipeline floor), and Business Reference v1.0 alignment (three-tier pricing, setup fee, 90-day minimum term, operational guarantee, Pilot cap)_
+_Last updated: May 2026_

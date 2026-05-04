@@ -1,7 +1,7 @@
 # ConversionSurgery — Approved Copy Bank
 
-Version 1.8
-Date: April 4, 2026
+Version 2.0
+Date: May 4, 2026
 Status: Approved for use in proposals, agreements, emails, leave-behinds, and website copy
 
 ---
@@ -122,49 +122,47 @@ The following lines are approved for live sales conversations, landing page head
 
 ## SECTION 3: GUARANTEE
 
-> **Your first month is free.**
+> **Our Operational Guarantee**
 >
-> The system is live and working for 30 days before you pay a dollar. If you don&apos;t see value, you walk away with zero cost and keep every lead we captured.
+> We don&apos;t promise revenue results we can&apos;t control. We guarantee the work gets done.
 >
-> **How it works:**
+> **Day 21 &mdash; Go-Live Guarantee:**
+> Your system is fully operational within 21 days of signup. If it takes longer &mdash; for any reason on our end &mdash; we continue working at no additional charge until you&apos;re live.
 >
-> - **Month 1 (free):** We set everything up, import your old quotes, and run the system. You see results before you pay. Billing starts on Day 31.
-> - **30-Day Proof of Life:** If the system doesn&apos;t deliver at least 5 Qualified Lead Engagements in your free month, you owe nothing and we part as friends.
-> - **90-Day Revenue Recovery Guarantee:** If after 90 days (counting from signup), the system hasn&apos;t booked at least one estimate appointment from a lead that had previously gone cold &mdash; or generated at least $5,000 in probable pipeline value from system-engaged leads &mdash; we refund your most recent month&apos;s payment. You keep a full export of every lead and conversation we captured. You leave with everything.
+> **Day 30 &mdash; Logging Compliance Gate:**
+> By day 30, at least 80% of your inquiries are logged in the system with source, status, and follow-up activity. If we fall below that threshold, your monthly billing pauses automatically until we bring it back up. You don&apos;t pay for a system that isn&apos;t tracking your leads.
 >
-> A Qualified Lead Engagement means: an inbound inquiry (call, form, or text) that received an automated response from our system, where the lead replied at least once. All engagements are visible in your dashboard with timestamps and full conversation logs.
+> **Low-Volume Exception:** If your business receives fewer than 7 inquiries in 30 days, the logging gate is deferred &mdash; we don&apos;t penalize you for a slow market.
 >
-> A system-engaged lead is any lead where the system captured their first contact (missed call, text, or form submission) or re-contacted them through automation (dormant reactivation, old quote follow-up), AND delivered at least one automated message before the outcome. Every engagement is logged with timestamps in your dashboard.
->
-> An Attributed Result means either: (a) an estimate appointment booked through the system from a system-engaged lead that was previously unresponsive &mdash; visible in your calendar with full conversation log, or (b) $5,000 or more in probable pipeline value from system-engaged leads &mdash; calculated automatically from appointments booked and quotes re-engaged, visible in your dashboard and bi-weekly reports.
->
-> **Volume Condition**
->
-> Both guarantees assume a minimum of 15 inbound inquiries per month. If your lead volume averages below that threshold during the guarantee period &mdash; due to seasonal slowdown, reduced marketing, or market conditions &mdash; the guarantee windows extend proportionally:
->
-> Adjusted window = standard window &times; (15 &divide; your actual monthly average)
->
-> Example: 10 leads/month average &rarr; 30-day window becomes 45 days, 90-day window becomes 135 days. Below 8 leads/month, we&apos;ll review your situation individually &mdash; at that volume, the system needs more data to demonstrate its value.
->
-> **If there&apos;s a question about attribution:** If our platform logs show the system captured or re-contacted the lead AND delivered at least one automated message before the outcome, attribution is confirmed. If the logs don&apos;t show that, we honor the refund. We&apos;d rather refund a borderline case than lose your trust.
+> These are operational commitments, not revenue promises. We control the system, so we guarantee the system. Results depend on your market, your close process, and your lead quality &mdash; but the system will be running, tracking, and following up on every inquiry.
 
 ---
 
 ## SECTION 4: PRICING
 
-> **First month free. Then $1,000/month.**
+> **Three tiers. One system. Pick what fits.**
 >
-> Try it for 30 days at zero cost. Billing starts Day 31. Month-to-month after that. No contract. No setup fee. No message limits. No overage charges.
+> | Tier | Setup Fee | Monthly | Best For |
+> | --- | --- | --- | --- |
+> | **Pilot** | $3,500 | $1,500/mo | First 3 clients &mdash; foundational system, case-study partnership |
+> | **Standard** | $5,500 | $2,000/mo | Main offer &mdash; full managed service with complete automation |
+> | **Premium** | $9,500 | $3,500/mo | Full attribution, estimator-level reporting, CRM integration |
 >
-> One recovered kitchen or basement project pays for the entire year of service. Most clients see results before they ever pay.
+> All tiers include: unlimited messaging, no overage charges, dedicated business number, voice included, bi-weekly reporting, operational guarantee.
+>
+> Setup fee covers: implementation, business knowledge base configuration, phone number provisioning, automation setup, Revenue Leak Audit, and 21-day go-live onboarding.
+>
+> **Why a setup fee?** We invest 15-20 hours configuring the system specifically for your business in the first three weeks. The setup fee covers that work. Once you&apos;re live, the monthly fee covers ongoing management, optimization, and support.
+>
+> One recovered kitchen or basement project pays for the entire year of service.
 
 ### Price Comparison Context (for verbal sales and proposals)
 
 | Comparison                | Cost               | Our advantage                                                                                       |
 | ------------------------- | ------------------ | --------------------------------------------------------------------------------------------------- |
 | Full-time office employee | $4,000-5,000/month | The system runs around the clock, never quits, never calls in sick, and costs a fraction of a hire. |
-| Part-time hire            | $1,500-2,500/month | Still more than us, and you have to manage them.                                                    |
-| Answering service         | $500-1,500/month   | They take messages. We book appointments. They charge per minute. We're flat rate.                  |
+| Part-time hire            | $1,500-2,500/month | More than our Standard tier, and you have to manage them.                                           |
+| Answering service         | $500-1,500/month   | They take messages. We book appointments. They charge per minute. We&apos;re flat rate.             |
 | One basement project      | $9,000-16,000 profit (at 20% margin) | One recovered project covers the service for over a year.                              |
 | One kitchen project       | $7,000-13,000 profit (at 20% margin) | One recovered project covers the service for 7-13 months.                              |
 
@@ -174,14 +172,15 @@ The following lines are approved for live sales conversations, landing page head
 
 > **Service Terms**
 >
-> - Month-to-month service — no annual contract, no long-term commitment
-> - $1,000/month, billed monthly
-> - Cancel anytime with 30 calendar days' written notice
-> - No cancellation penalties or early termination fees
-> - No setup fees
-> - Full data export available on request — delivered within 5 business days in CSV format (lead records, conversation history, pipeline status)
+> - 90-day initial term &mdash; after that, month-to-month with 30 calendar days&apos; written notice to cancel
+> - Setup fee + first month billed at signup (single checkout)
+> - No cancellation penalties or early termination fees after the initial 90 days
+> - No message limits or overage charges
+> - Full data export available on request &mdash; delivered within 5 business days in CSV format (lead records, conversation history, pipeline status)
 >
-> We earn your business every month. If the service stops delivering value, you leave with your data and owe nothing further.
+> **Why 90 days?** The system needs time to build your knowledge base, calibrate the follow-up sequences, and accumulate enough data to show results. Contractors who leave before 90 days never see the full picture. After that, we earn your business every month.
+>
+> **Pilot clients (first 3):** Same 90-day minimum. We ask for a brief case study and feedback session at the end of your first 90 days &mdash; your experience helps us improve the service for everyone.
 
 ### Unlimited Messaging — Contract Clause
 
@@ -240,29 +239,33 @@ Use this when scope questions come up. Present as a straightforward boundary, no
 
 Use this as the complete offer summary in proposals, pitch decks, or leave-behind documents.
 
-> **Here's what you get when you start with ConversionSurgery:**
+> **Here&apos;s what you get when you start with ConversionSurgery:**
 >
-> **The Revenue Recovery Engine** — Every lead gets a near-instant response during permitted hours. A system configured with your business information that has real conversations, books appointments into your Google Calendar, and follows up on every estimate with a 4-touch sequence over 14 days. When leads call and you can&apos;t answer, the system picks up and captures the inquiry. Payment collection, review generation, dormant lead reactivation. Unlimited conversations and messaging. All managed by us.
+> **The Revenue Recovery Engine** &mdash; Every lead gets a near-instant response during permitted hours. A system configured with your business information that has real conversations, books appointments into your Google Calendar, and follows up on every estimate with a 4-touch sequence over 14 days. When leads call and you can&apos;t answer, the system picks up and captures the inquiry. Payment collection, review generation, dormant lead reactivation. Unlimited conversations and messaging. All managed by us.
 >
-> **Your Own Dedicated Business Number + Lead CRM** — Everything in one place. Every conversation, every lead, every status. Separate from your personal phone.
+> **Your Own Dedicated Business Number + Lead CRM** &mdash; Everything in one place. Every conversation, every lead, every status. Separate from your personal phone.
 >
-> **Day-One Activation** — Your number is live and catching missed calls within 24 hours. Before the full system is even configured, you&apos;re already capturing leads you&apos;d have lost. Plus a personalized Revenue Leak Audit showing exactly where money is falling through your business.
+> **Day-One Activation** &mdash; Your number is live and catching missed calls within 24 hours. Before the full system is even configured, you&apos;re already capturing leads you&apos;d have lost. Plus a personalized Revenue Leak Audit showing exactly where money is falling through your business.
 >
-> **Quarterly Growth Blitz** — Every 90 days, a new strategic campaign: dormant client reactivation, review acceleration, pipeline building for busy season, annual strategy review. This isn't static — it gets more valuable every quarter.
+> **Quarterly Growth Blitz** &mdash; Every 90 days, a new strategic campaign: dormant client reactivation, review acceleration, pipeline building for busy season, annual strategy review. This isn&apos;t static &mdash; it gets more valuable every quarter.
 >
-> **Bi-Weekly Performance Scoreboard** — Every two weeks, a report showing what the system did, how much revenue it impacted, and what would have happened without it. Full transparency.
+> **Bi-Weekly Performance Scoreboard** &mdash; Every two weeks, a report showing what the system did, how much revenue it impacted, and what would have happened without it. Full transparency.
 >
 > **Weekly Pipeline Update** &mdash; Every Monday, a text on your phone showing your pipeline in dollars. No login required.
 >
-> **Complete Done-For-You Service** — We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week once calibrated.
+> **Complete Done-For-You Service** &mdash; We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week once calibrated.
 >
-> **First Month Free + 90-Day Guarantee** &mdash; Your first month costs nothing. The system runs for 30 days before you pay a dollar. If after 90 days the system hasn&apos;t booked at least one estimate from a cold lead or generated $5,000 in probable pipeline, we refund your last month and you keep every lead and conversation we captured. If your lead volume runs below 15/month, guarantee windows extend proportionally &mdash; you&apos;re never penalized for a slow period.
+> **Operational Guarantee** &mdash; Live by day 21 or we continue at no charge. 80% of inquiries logged by day 30 or billing pauses automatically. We guarantee the work gets done.
 >
-> **Month-to-month, no contract, no setup fee, no message limits, no overage charges.** We earn your business every single month.
+> **90-day initial term, then month-to-month. No message limits, no overage charges.** After 90 days, we earn your business every single month.
 >
-> **First month free. Then $1,000/month.**
+> | Tier | Setup | Monthly |
+> | --- | --- | --- |
+> | Pilot (first 3 clients) | $3,500 | $1,500/mo |
+> | Standard | $5,500 | $2,000/mo |
+> | Premium | $9,500 | $3,500/mo |
 >
-> One recovered kitchen or basement project pays for the entire year. Most clients see results before they ever pay.
+> One recovered kitchen or basement project pays for the entire year.
 
 ---
 
@@ -283,7 +286,13 @@ The following are approved written answers for the questions prospects ask most 
 > No lead is ignored. The system monitors around the clock and queues responses for delivery at the next compliant window (10 AM). Evening form fills and missed calls receive a response first thing the following morning — typically before any competitor has responded.
 
 > **Can I cancel if it&apos;s not working?**
-> Yes. Month-to-month service, cancel with 30 days&apos; written notice, no penalties. You also receive a full export of every lead and conversation we captured. The 90-day guarantee provides an additional safety net &mdash; if after 90 days the system hasn&apos;t booked at least one estimate appointment from a cold lead or generated $5,000 in probable pipeline, your most recent month is refunded.
+> After the initial 90-day term, yes &mdash; cancel with 30 days&apos; written notice, no penalties. You also receive a full export of every lead and conversation we captured. The 90-day minimum exists because the system needs time to build your knowledge base and show results. Most clients see clear value well before day 90.
+>
+> **Why is there a setup fee and a monthly fee?**
+> The setup fee covers 15-20 hours of implementation work specific to your business: configuring your knowledge base, provisioning your phone number, building your automation sequences, and delivering your Revenue Leak Audit. The monthly fee covers ongoing management, optimization, compliance monitoring, and support. You&apos;re paying for done-for-you managed service, not software access.
+>
+> **Can I just use software instead of paying for a managed service?**
+> Software exists, but it requires someone on your team to set it up, learn it, configure it, monitor it, and fix it when something breaks. Most contractors try that route first and end up back where they started. ConversionSurgery is a managed service &mdash; we do all of it for you. Your only job is to keep building great projects.
 
 > **How many contractors do you work with in my area?**
 > We limit the number of contractors we work with per trade per city &mdash; typically one to three &mdash; to avoid conflicts and to give each client the best possible results. If your trade and area are available, we&apos;ll confirm that during the initial conversation.
@@ -303,9 +312,10 @@ The following are approved written answers for the questions prospects ask most 
 | 1.6     | April 2, 2026     | Section 2 (Bi-Weekly Performance Scoreboard): updated to describe auto-tracked pipeline proof metrics in the report (leads responded to, missed calls caught, appointments booked, probable pipeline value). Additive factual change — no guarantee, pricing, or compliance language changed. |
 | 1.7     | April 4, 2026     | Four changes from competitive offer analysis: (1) Voice AI changed from optional add-on to included in base price. (2) 90-day guarantee tightened: now triggers on "1 booked estimate from a cold lead OR $5,000 probable pipeline" instead of vague "project you can point to." Attribution definition updated to "Attributed Result." (3) Weekly Pipeline Update added to Section 2 and Section 9 — Monday SMS with dollar pipeline values. (4) Capacity/exclusivity FAQ added: "one to three contractors per trade per city." Section 9 full offer updated to reflect voice + guarantee + weekly SMS. |
 | 1.8     | April 4, 2026     | Language alignment: replaced "AI" with "the system" throughout all client-facing copy per ICP psychology research (7/10 agents: contractors associate "AI" with chatbots they&apos;ve been burned by). "AI Conversation Agent" → "Intelligent Conversation Agent." "Voice AI" → "Voice." All action descriptions now use "the system" instead of "the AI." FAQ question reframed from "What if the AI says something wrong" to "What if the system says something wrong." Estimate follow-up in Section 9 now specifies "4-touch sequence over 14 days." |
+| 2.0     | May 4, 2026       | **Business Reference v1.0 alignment (Wave A).** Complete rewrite of pricing, guarantee, and terms to three-tier model: Pilot ($3,500+$1,500/mo), Standard ($5,500+$2,000/mo), Premium ($9,500+$3,500/mo). Setup fee added. 90-day minimum term replaces month-to-month from day one. Guarantee rewritten from revenue-based (30-Day Proof-of-Life + 90-Day Revenue Recovery) to operational (21-day go-live + 30-day logging gate with auto-pause). Pilot "first 3 clients" callout added. Three new FAQ entries: "why both fees," "can I self-serve," cancellation updated for 90-day minimum. Founder authorized 2026-05-04. |
 
 ---
 
-_ConversionSurgery — Client-Facing Approved Copy v1.8_
-_Source: Grand Slam Offer Architecture v2.1 + Quality Review_
-_April 2026_
+_ConversionSurgery — Client-Facing Approved Copy v2.0_
+_Source: Business Reference v1.0 + Grand Slam Offer Architecture_
+_May 2026_

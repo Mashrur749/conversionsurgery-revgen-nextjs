@@ -414,8 +414,8 @@ You are refactoring a module in a large Next.js codebase. Work autonomously — 
 STEP 1 — UNDERSTAND (read before you touch anything):
   a) Read .claude/feature-plan.md (foundation patterns, frozen files, rules)
   b) Read .claude/module-plan.md (this module's scope, files, frozen exports, goals)
-  c) Read ALL files listed in the module plan's FILE MANIFEST — use parallel reads where possible
-  d) Understand the full picture before making any edits
+  c) Read the module plan's FILE MANIFEST, then read only the files and ranges needed for this refactor
+  d) Use rg, graphify, and compact planning docs to target context before full file reads
 
 STEP 2 — PLAN (think, then act):
   Before editing, decide what changes each file needs. Group related changes.
@@ -447,13 +447,14 @@ AGENT_PROMPT
     local prompt_file="${wt_dir}/.agent-prompt.txt"
     printf '%s' "$prompt" > "$prompt_file"
 
-    # Scale --max-turns by module size: 8 turns per file, minimum 40, no upper cap
-    # Generous to avoid cutting off mid-work — a failed partial run wastes MORE tokens than
-    # a slightly longer successful run (retry = full overhead again)
+    # Scale --max-turns by module size, but cap it to avoid runaway token usage.
+    # Override with MAX_TURNS_CAP when a genuinely larger module needs it.
     local file_count max_turns model
     file_count=$(get_module_file_count "$module")
     max_turns=$(( file_count * 8 ))
     if [[ $max_turns -lt 40 ]]; then max_turns=40; fi
+    local max_turns_cap="${MAX_TURNS_CAP:-80}"
+    if [[ $max_turns -gt $max_turns_cap ]]; then max_turns=$max_turns_cap; fi
     model=$(get_module_model "$module")
 
     # Launch Claude in --print mode for non-interactive operation (B2)
@@ -462,7 +463,7 @@ AGENT_PROMPT
     # --dangerously-skip-permissions: avoids permission prompts that would block automation
     # --max-turns: caps tool calls to prevent runaway token usage
     tmux send-keys -t "$TMUX_SESSION:0.$pane_id" \
-        "cd '${wt_dir}' && claude --print --model ${model} --dangerously-skip-permissions --verbose --max-turns ${max_turns} \"\$(cat .agent-prompt.txt)\" 2>&1 | tee '${log_file}'; echo 'AGENT_EXIT_CODE='\$?" Enter
+        "cd '${wt_dir}' && claude --print --model ${model} --dangerously-skip-permissions --max-turns ${max_turns} \"\$(cat .agent-prompt.txt)\" 2>&1 | tee '${log_file}'; echo 'AGENT_EXIT_CODE='\$?" Enter
 
     json_update '.modules[$m].pane = ($p | tonumber) | .modules[$m].launched_at = $t | .modules[$m].model = $model' \
         --arg m "$module" --arg p "$pane_id" --arg t "$(date +%s)" --arg model "$model"
