@@ -83,3 +83,18 @@ All launch blockers verified against codebase on 2026-04-09. Claims confirmed ac
 | OUT-06 | Knowledge Base | KB answer quality scoring (track which entries lead to escalations) | 1 week | todo |
 | OUT-07 | Compliance | CASL consent expiry dashboard for operator | 1 week | todo |
 | OUT-08 | Lead Capture | Facebook Lead Ad integration | 2 weeks | todo |
+
+## WAVE 5 — Premium Tier (Booked Estimate OS) Gaps
+
+Source: Business Reference v1.0 §6.4, registered in `docs/product/02-OFFER-PARITY-GAPS.md` as `PG-101..PG-106`. Do not sell the Premium tier ($9,500 setup + $3,500/mo) until Wave 5 is closed.
+
+| ID | Domain | Gap | Effort | Status | Parity ID |
+|----|--------|-----|--------|--------|-----------|
+| W5-01 | Lead Capture / Reporting | `leads.source` accepts free text but only `missed_call`/`form`/`manual` are populated. Channel-level capture (google/houzz/lsa/meta/referral/organic) missing. | 3 days | todo | `PG-101`, `PG-002` |
+| W5-02 | Lead Capture | GCLID / GBRAID / WBRAID capture — no schema columns, no capture path on inbound forms | 1 week | todo | `PG-102` |
+| W5-03 | Voice / Reporting | Call tracking with dynamic number insertion — per-source tracking numbers; rotation; attribution back to lead | 1-2 weeks | todo | `PG-103` |
+| W5-04 | Reporting | Offline conversion export to Google Ads / Meta — won-job and booked-consult upload pipelines | 2 weeks | todo | `PG-104`, `OUT-08` |
+| W5-05 | Reporting | Revenue-by-source dashboard surface in bi-weekly report and client portal | 3 days | todo | `PG-105`, `BL-11` |
+| W5-06 | Booking / Reporting | Service-line taxonomy on `leads.projectType` (kitchen/bath/basement/addition/whole-home) + per-service-line reporting | 1 week | todo | `PG-106` |
+| W5-07 | Lead / Reporting | Won/lost reason capture on `leads` (currently only on `jobs`); structured objection categories | 3 days | todo | `PG-003`, `BL-14` |
+| W5-08 | Booking / Lead | `assignedEstimatorId` FK on leads/appointments + estimator filter in portal | 3 days | todo | `PG-004` |

@@ -143,6 +143,184 @@ The onboarding wizard and edit client form ask for the Google Review URL (`g.pag
 
 ---
 
+## FB-04: Channel-level lead source capture
+
+**Priority:** High (P0 if selling Standard with source-visibility promise; otherwise P1)
+**Area:** Lead Capture / Reporting
+**Parity ID:** `PG-002`, `PG-101`
+**Gap register:** `W5-01`
+
+### Context
+
+The Business Reference promises a "Lead-source map across website forms, calls, texts, Google Business Profile, Houzz, referrals, and paid lead sources" at Pilot and Standard tiers (§6.2, §6.3). The platform has `leads.source` as `varchar(50)` but only writes `missed_call`, `form`, or `manual`. No code path captures or reports channel (Google / Houzz / LSA / Meta / referral / organic / direct).
+
+### Current behavior
+
+- `leads.source` set at creation by inbound channel (call vs. form vs. manual entry)
+- `funnel_events.source` mirrors the same shallow set
+- Source-aware AI opening strategy uses entry channel only
+- No analytics aggregation by channel; no portal filter; no report dimension
+
+### Desired behavior
+
+1. Define channel enum: `google_organic`, `google_ads`, `google_lsa`, `houzz`, `meta_ads`, `referral`, `direct`, `webform`, `phone`, `other`
+2. Capture path:
+   - Web forms: parse `utm_source`, `utm_medium`, `gclid`, `referrer` → derive channel
+   - Calls: tracking-number lookup (depends on FB-05) or manual operator tag at first response
+   - Manual entry: dropdown in admin "Add Lead" form
+3. Reporting:
+   - Revenue-by-source row in bi-weekly report
+   - Channel breakdown card on client portal dashboard
+   - Filter on lead list page
+
+### Key files
+
+- `src/db/schema/leads.ts` — extend or replace `source` column
+- `src/db/schema/funnel-events.ts` — same
+- `src/app/api/public/leads/route.ts` — inbound web form capture
+- `src/lib/services/lead-creation.ts` (verify path) — channel derivation logic
+- `src/app/(dashboard)/admin/leads/new/` — admin form dropdown
+- `src/lib/services/reports/biweekly.ts` (verify path) — add channel dimension
+
+---
+
+## FB-05: Ad attribution capture (GCLID / GBRAID / WBRAID / UTM)
+
+**Priority:** Medium (Premium tier only)
+**Area:** Lead Capture / Premium Reporting
+**Parity ID:** `PG-102`
+**Gap register:** `W5-02`
+
+### Context
+
+Booked Estimate OS (Premium, $9,500 + $3,500/mo) promises "GCLID / GBRAID / WBRAID capture where paid ad traffic and site access support it" (§6.4). Required for offline conversion upload (FB-06). Not built.
+
+### Desired behavior
+
+1. Capture `gclid`, `gbraid`, `wbraid`, `fbclid`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` from inbound web form submissions
+2. Persist to a new `lead_ad_attribution` table keyed to `lead_id`
+3. Surface ad-platform identifiers in lead detail (admin and portal)
+4. Feed offline conversion export pipeline (FB-06)
+
+### Notes
+
+- Do not build until 1+ Premium-tier prospect signed
+- Microsite builder is out of scope (`OFFER-APPROVED-COPY` §8) so capture path is on contractor's existing landing pages — confirm scoping before promising
+
+---
+
+## FB-06: Offline conversion export to ad platforms
+
+**Priority:** Medium (Premium tier only)
+**Area:** Premium Reporting
+**Parity ID:** `PG-104`
+**Gap register:** `W5-04`, `OUT-08`
+
+### Context
+
+Premium tier promises "Offline conversion export/upload to ad platforms where feasible" (§6.4). Closes the loop for paid-ad clients: when a lead becomes a booked consult or won job, push the conversion back to Google Ads / Meta with the captured GCLID/FBCLID.
+
+### Desired behavior
+
+1. Daily cron exports won-job and booked-consult events with attribution payload
+2. Google Ads Offline Conversions API integration (per-client OAuth)
+3. Meta Conversions API integration (per-client pixel + access token)
+4. Operator dashboard for export status and failures
+
+### Prerequisites
+
+- FB-05 (attribution capture) shipped
+- Per-client ad-platform credentials onboarding flow
+
+---
+
+## FB-07: Channel-aware reporting (revenue-by-source dashboard)
+
+**Priority:** Medium
+**Area:** Reporting
+**Parity ID:** `PG-105`
+**Gap register:** `W5-05`, `BL-11`
+
+### Context
+
+Premium tier promises "Revenue-by-source dashboard" (§6.4). Even Standard-tier buyers ask "which source produced this revenue?" — current reports show aggregate only. Depends on FB-04 (channel-level source capture) shipping first.
+
+### Desired behavior
+
+1. Bi-weekly report adds channel breakdown table: leads / appointments / probable pipeline / confirmed revenue per channel
+2. Client portal dashboard adds channel breakdown card
+3. Admin client detail page surfaces same breakdown
+
+### Prerequisites
+
+- FB-04 (channel-level source) shipped
+
+---
+
+## FB-08: Service-line segmentation and dashboard
+
+**Priority:** Low (Premium add-on)
+**Area:** Reporting
+**Parity ID:** `PG-106`, `PG-203`
+**Gap register:** `W5-06`
+
+### Context
+
+Add-on offer §6.5: "Extra Service-Line Dashboard ($500-$1,500 setup) — additional dashboard segment and reporting views" for kitchens/baths/basements/additions. Currently `leads.projectType` is free-text varchar(255) with no taxonomy.
+
+### Desired behavior
+
+1. Define service-line taxonomy per client (each contractor configures their own services, e.g., kitchen-remodel, basement-finish, addition, whole-home)
+2. Add `service_line_id` FK on leads; AI extracts service-line from conversation
+3. Per-service-line filter and reporting card on dashboard
+
+### Notes
+
+- Skill `client-services.ts` schema already exists — use as taxonomy host
+- Defer until Premium tier has 2+ paying clients with multiple service lines
+
+---
+
+## FB-09: Estimator-level reporting
+
+**Priority:** Medium (Premium-tier deliverable; useful at Standard for multi-estimator firms)
+**Area:** Reporting / Booking
+**Parity ID:** `PG-004`
+**Gap register:** `W5-08`
+
+### Context
+
+Premium tier promises "Estimator-level reporting and pipeline visibility" (§6.4). Standard tier mentions "improved routing rules by project type or estimator" (§6.3). Estimator-specific briefing on appointment reminder is built, but no `assignedEstimatorId` FK on `leads` or `appointments` — pipeline cannot be filtered by estimator.
+
+### Desired behavior
+
+1. Add `assignedEstimatorId` (FK to `team_members`) on `leads` and `appointments`
+2. Auto-assign on appointment booking when one estimator owns the time slot
+3. Manual reassign in admin and portal
+4. Pipeline filter and per-estimator scoreboard in reports
+
+---
+
+## FB-10: Won/lost reason capture on leads
+
+**Priority:** Medium
+**Area:** Reporting / Lead
+**Parity ID:** `PG-003`
+**Gap register:** `W5-07`, `BL-14`
+
+### Context
+
+KPI list (§12) calls for "Won/lost reasons logged." `lostReason` exists on `jobs` table (varchar 255) but not on `leads`. WON/LOST SMS commands set status but don't capture reason. Win-back AI uses conversation history but doesn't classify objections.
+
+### Desired behavior
+
+1. Add `lostReason` (enum + free text) and `wonNotes` to `leads`
+2. WON/LOST SMS commands prompt for one-line reason after status update ("LOST 4A — pricing too high")
+3. Structured objection categories: `price`, `timeline`, `chose_competitor`, `scope_changed`, `unresponsive`, `other`
+4. Reason breakdown in bi-weekly report and admin lead-list
+
+---
+
 ## Recently Implemented (SPEC-07 through SPEC-12, April 2026)
 
 These items were shipped and are no longer backlog. Documented here for traceability.
