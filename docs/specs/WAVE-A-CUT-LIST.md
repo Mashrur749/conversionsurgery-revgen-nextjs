@@ -249,10 +249,10 @@ Logic:
 5. **A9** — tests + quality gates as items land
 6. **Final pass** — manual end-to-end: create test client, generate Pilot Checkout link, complete payment in Stripe test mode, verify subscription created, verify both line items charged, verify onboarding kicks off
 
-## Open questions
+## Decisions (confirmed 2026-05-04)
 
-1. **Trial period?** Business Reference doesn't mention a trial — first invoice is setup + first month due immediately. Confirm: no trial days on Stripe side. (Existing platform has 14-day default; we override to 0 for these tiers.)
-2. **Failed setup payment?** If the customer's card fails on the bundled checkout, the entire transaction fails (Stripe behavior). They retry. Acceptable?
-3. **Day-30 logging gate threshold?** Proposed 80% of inquiries logged. Adjust?
-4. **Low-volume defer threshold?** Proposed 5 inquiries in 30 days. Adjust?
-5. **Stripe test mode first?** Yes — recommend full Wave A passes Stripe test mode E2E before any live plan creation in production Stripe.
+1. **Trial period: none.** Per Business Reference §7 ("Avoid first-month-free with no setup fee"). First invoice = setup + first month, due immediately. Override Stripe default 14-day trial to 0 for all tiers.
+2. **Failed setup payment: standard Stripe failure.** Bundled checkout is one transaction — card declines → entire checkout fails → no client record, no subscription. Customer retries. No partial state.
+3. **Day-30 logging gate threshold: 80%** of inquiries in last 7 days have `source`, `status`, and ≥1 follow-up activity logged.
+4. **Low-volume defer threshold: 7 inquiries** in 30 days. Below this, defer the gate evaluation and surface on operator dashboard as "low-volume — gate deferred." If volume stays <7/month for 60+ days, treat as ICP-fit problem (separate from billing).
+5. **Stripe test mode first.** Full Wave A passes test mode E2E before any production Stripe product creation. Sequence: build → test mode E2E → founder review → live Stripe configuration → first sale.
