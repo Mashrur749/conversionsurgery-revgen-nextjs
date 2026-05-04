@@ -190,6 +190,13 @@
       "when": 1776228337256,
       "tag": "0026_robust_nitro",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1777898506619,
+      "tag": "0027_freezing_colleen_wing",
+      "breakpoints": true
     }
   ]
 }
