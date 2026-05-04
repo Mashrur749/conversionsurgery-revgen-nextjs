@@ -323,6 +323,17 @@ Files you must NOT modify: [list]
 After implementation, run: pnpm run typecheck
 ```
 
+## Agent Command Routing
+
+When multiple agent plugins or slash-command systems overlap, use this ownership order so Codex and Claude Code behave consistently:
+
+1. **Project delivery:** Use GSD and the project worktree commands for planned implementation: `/gsd-*`, `/plan`, `/scaffold`, `/implement`, `/resume`, `/review`, `/merge`, `/status`, `/cleanup`.
+2. **Codex parity aliases:** In Codex, prefer `/cc-*`, `/cs-*`, or `/claude-*` aliases when a Claude command name collides with a Codex built-in command. Example: use `/cc-plan` for the project Claude `/plan` workflow.
+3. **Ruflo / swarm tooling:** Use Ruflo explicitly for swarm orchestration, SPARC experiments, workflow automation, or multi-agent research. Do not let Ruflo replace the default project GSD workflow unless the user asks for it.
+4. **Review:** Use the repo `/review` or `/cc-review` workflow for worktree slices. Use Codex native review for normal diffs and one-off review requests.
+5. **UI/UX:** For this repo, read the project `ux-standards` skill first. Use `ui-ux-pro-max` as a secondary design intelligence layer, not as a replacement for project rules.
+6. **Memory/context:** Do not paste volatile memory exports into `AGENTS.md` or `CLAUDE.md`. Keep memory in the memory tool/context-mode layer so quality gates are not polluted by stale text.
+
 ## Worktree Workflow
 
 For large features (3+ files), use slash commands: `/plan`, `/scaffold`, `/implement`, `/resume`, `/review`, `/merge`, `/status`, `/cleanup`. Script: `.Codex/scripts/worktree-manager.sh`. Each worktree tracks progress in `.Codex/progress.md`.
