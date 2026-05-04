@@ -24,6 +24,74 @@ function resolveMonthlyMessageLimit(plan: Plan): number | null {
 }
 
 /**
+ * Create a Stripe Checkout Session that bundles setup fee (one-time) + monthly subscription.
+ * Returns the checkout URL for the contractor to complete payment.
+ */
+export async function createCheckoutSession(
+  clientId: string,
+  planId: string,
+): Promise<{ url: string; sessionId: string }> {
+  const db = getDb();
+  const stripe = getStripeClient();
+
+  const [client] = await db.select().from(clients).where(eq(clients.id, clientId)).limit(1);
+  if (!client) throw new Error('Client not found');
+
+  const [plan] = await db.select().from(plans).where(eq(plans.id, planId)).limit(1);
+  if (!plan) throw new Error('Plan not found');
+  if (!plan.isActive) throw new Error('Plan is not active');
+  if (!plan.stripePriceIdMonthly) throw new Error('No monthly Stripe price configured for this plan');
+
+  // Create or reuse Stripe customer
+  let stripeCustomerId = client.stripeCustomerId;
+  if (!stripeCustomerId) {
+    const customer = await stripe.customers.create({
+      email: client.email || undefined,
+      name: client.businessName,
+      metadata: { clientId: client.id },
+    }, {
+      idempotencyKey: `cust_create_${clientId}`,
+    });
+    stripeCustomerId = customer.id;
+
+    await db.update(clients).set({
+      stripeCustomerId,
+      updatedAt: new Date(),
+    }).where(eq(clients.id, clientId));
+  }
+
+  // Build line items: recurring subscription + optional one-time setup fee
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+    { price: plan.stripePriceIdMonthly, quantity: 1 },
+  ];
+
+  if (plan.stripePriceIdSetup && plan.priceSetupCents > 0) {
+    lineItems.push({ price: plan.stripePriceIdSetup, quantity: 1 });
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.conversionsurgery.com';
+
+  const session = await stripe.checkout.sessions.create({
+    customer: stripeCustomerId,
+    mode: 'subscription',
+    line_items: lineItems,
+    subscription_data: {
+      metadata: { clientId, planId, planSlug: plan.slug },
+      trial_period_days: 0,
+    },
+    metadata: { clientId, planId, planSlug: plan.slug },
+    success_url: `${appUrl}/portal/billing?checkout=success`,
+    cancel_url: `${appUrl}/portal/billing?checkout=cancelled`,
+  }, {
+    idempotencyKey: `checkout_${clientId}_${planId}_${Date.now()}`,
+  });
+
+  if (!session.url) throw new Error('Stripe did not return a checkout URL');
+
+  return { url: session.url, sessionId: session.id };
+}
+
+/**
  * Create a new subscription for a client
  */
 export async function createSubscription(
@@ -329,6 +397,9 @@ export async function provisionSubscriptionFromCheckout(
     }).returning();
 
     await tx.update(clients).set({
+      status: 'active',
+      stripeCustomerId,
+      stripeSubscriptionId,
       monthlyMessageLimit: resolveMonthlyMessageLimit(plan),
       updatedAt: new Date(),
     }).where(eq(clients.id, clientId));
