@@ -3,6 +3,12 @@ main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
+# Production route — Twilio ConversationRelay connects to wss://voice.conversionsurgery.io/ws
+# Requires DNS CNAME: voice.conversionsurgery.io → voice-agent.<account>.workers.dev
+routes = [
+  { pattern = "voice.conversionsurgery.io/*", zone_name = "conversionsurgery.io" }
+]
+
 [durable_objects]
 bindings = [
   { name = "VOICE_SESSION", class_name = "VoiceSession" }
@@ -14,8 +20,16 @@ new_classes = ["VoiceSession"]
 
 [vars]
 # Non-secret config
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 
 # Secrets (set via `wrangler secret put`):
 # ANTHROPIC_API_KEY
 # DATABASE_URL (Neon connection string)
+
+# ── Development overrides ─────────────────────────────
+[env.dev]
+name = "voice-agent-dev"
+routes = []  # Use workers.dev subdomain for dev
+
+[env.dev.vars]
+ENVIRONMENT = "development"

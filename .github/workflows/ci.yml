@@ -19,14 +19,28 @@ jobs:
       CRON_SECRET: "ci-smoke-cron-secret"
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci
-      - run: npm run quality:feature-sweep
-      - run: npm audit --audit-level=moderate
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run quality:feature-sweep
+      - run: pnpm audit --audit-level=moderate
         continue-on-error: true
+
+  voice-agent-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @conversionsurgery/voice-agent typecheck
 
   ai-evals:
     runs-on: ubuntu-latest
@@ -42,11 +56,12 @@ jobs:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
 
       - name: Check if AI files changed
         id: ai-files
@@ -71,6 +86,25 @@ jobs:
 
       - name: Run full AI eval suite
         if: steps.ai-files.outputs.ai == 'true' && env.ANTHROPIC_API_KEY != ''
-        run: npm run test:ai
+        run: pnpm run test:ai
         continue-on-error: true
         # Full suite is informational -- quality regressions logged but don't block
+
+  deploy-voice-agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [check, voice-agent-typecheck]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Deploy Voice Agent Worker
+        working-directory: packages/voice-agent
+        run: pnpm wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

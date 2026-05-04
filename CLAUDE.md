@@ -37,6 +37,21 @@ If a simpler approach exists than what was requested, say so. Push back when war
 
 Derived from [Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls. Biases toward caution over speed — use judgment on trivial tasks.
 
+### Think Before Coding
+
+- State assumptions explicitly before implementing. If uncertain, ask.
+- If multiple interpretations exist, present them — don't pick silently.
+- If something is unclear, stop. Name what's confusing. Ask one precise question.
+- This interacts with the Autonomy tiers above: tier 1 (codebase-resolvable) = decide silently, tier 2/3 = surface assumptions or ask.
+
+### Simplicity First
+
+- No features beyond what was asked. No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+- Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
 ### Surgical Changes
 
 - Every changed *code* line must trace directly to the user's request.
@@ -68,7 +83,7 @@ Derived from [Karpathy's observations](https://x.com/karpathy/status/20158838574
 - Phone numbers: normalize with `normalizePhoneNumber()` from `@/lib/utils/phone`
 - Validation: Zod schemas for all API input, return validation error details on 400
 - Schema files: one table per file in `src/db/schema/`, re-exported from `src/db/schema/index.ts`
-- UI components: shadcn/ui in `src/components/ui/`, install new ones with `npx shadcn@latest add <component>`
+- UI components: shadcn/ui in `src/components/ui/`, install new ones with `pnpm dlx shadcn@latest add <component>`
 - Services: business logic in `src/lib/services/`, automations in `src/lib/automations/`
 
 ## Auto-Checklists (follow these — don't ask)
@@ -95,12 +110,12 @@ Derived from [Karpathy's observations](https://x.com/karpathy/status/20158838574
 4. Indexes: add on columns used in WHERE/JOIN
 5. Export types: `export type Foo = typeof foos.$inferSelect; export type NewFoo = typeof foos.$inferInsert;`
 6. Re-export from `src/db/schema/index.ts`
-7. Run `npm run db:generate` → review SQL → ask user before `db:push`/`db:migrate`
+7. Run `pnpm run db:generate` → review SQL → ask user before `db:push`/`db:migrate`
 
 ### New UI Page
 
 1. Layout: client portal = `max-w-3xl`, admin = `max-w-7xl`
-2. Components: shadcn/ui from `src/components/ui/`, install missing with `npx shadcn@latest add <name>`
+2. Components: shadcn/ui from `src/components/ui/`, install missing with `pnpm dlx shadcn@latest add <name>`
 3. Stat cards: max 4 per row, always include context line ("+12% vs last week")
 4. Empty states: explanation + next action button
 5. Loading: Skeleton fallbacks matching content shape (use Suspense)
@@ -140,32 +155,32 @@ Before writing integration code, query Context7 for current API patterns:
 
 ## Commands
 
-- `npm run dev` — local dev server (port 3000)
-- `npm run build` — production build (must pass with 0 TypeScript errors)
-- `npm run lint` — ESLint check (next/core-web-vitals + next/typescript)
-- `npm run db:generate` — generate Drizzle migrations after schema changes
-- `npm run db:push` — push schema directly to database (use with caution)
-- `npm run db:migrate` — run generated migrations
-- `npm run typecheck` — fast TypeScript type-check only (~13s, no build output)
-- `npm test` — run Vitest test suite (312 deterministic tests: agent scenarios, guardrails, graph routing, model routing, route-handler, permissions, etc.)
-- `npm run test:ai` — run AI criteria + scenario tests (29 tests, requires ANTHROPIC_API_KEY, real LLM calls — pre-launch quality gate)
-- `npm run test:ai:visual` — run AI scenario tests with color-coded terminal output + HTML report (standalone runner, not vitest)
-- `npm run test:watch` — run Vitest in watch mode
-- `npm run db:studio` — open Drizzle Studio for visual database browsing
-- `npm run quality:no-regressions` — required gate (`ms:gate` + build + tests + runtime smoke)
-- `npm run quality:feature-sweep` — release/refactor gate with extended smoke profile
-- `npm run quality:logging-guard` — blocks direct API error-detail leaks (`error.message`/`error.stack`)
-- `npm run quality:code-review` — automated code review via `claude -p` against diff from main (fresh context window)
-- `npm run quality:install-agent-hooks` — installs repo-enforced pre-commit + pre-push checks
+- `pnpm run dev` — local dev server (port 3000)
+- `pnpm run build` — production build (must pass with 0 TypeScript errors)
+- `pnpm run lint` — ESLint check (next/core-web-vitals + next/typescript)
+- `pnpm run db:generate` — generate Drizzle migrations after schema changes
+- `pnpm run db:push` — push schema directly to database (use with caution)
+- `pnpm run db:migrate` — run generated migrations
+- `pnpm run typecheck` — fast TypeScript type-check only (~13s, no build output)
+- `pnpm test` — run Vitest test suite (312 deterministic tests: agent scenarios, guardrails, graph routing, model routing, route-handler, permissions, etc.)
+- `pnpm run test:ai` — run AI criteria + scenario tests (29 tests, requires ANTHROPIC_API_KEY, real LLM calls — pre-launch quality gate)
+- `pnpm run test:ai:visual` — run AI scenario tests with color-coded terminal output + HTML report (standalone runner, not vitest)
+- `pnpm run test:watch` — run Vitest in watch mode
+- `pnpm run db:studio` — open Drizzle Studio for visual database browsing
+- `pnpm run quality:no-regressions` — required gate (`ms:gate` + build + tests + runtime smoke)
+- `pnpm run quality:feature-sweep` — release/refactor gate with extended smoke profile
+- `pnpm run quality:logging-guard` — blocks direct API error-detail leaks (`error.message`/`error.stack`)
+- `pnpm run quality:code-review` — automated code review via `claude -p` against diff from main (fresh context window)
+- `pnpm run quality:install-agent-hooks` — installs repo-enforced pre-commit + pre-push checks
 
 ## After Making Changes
 
 Three-tier verification protocol (mandatory):
 
-1. **Fast gate during implementation:** run `npm run ms:gate` and `npm run quality:logging-guard` frequently.
-2. **Completion gate for every coding task:** run `npm run quality:no-regressions`.
-3. **Code review before merge:** run `npm run quality:code-review` from the feature branch. Fresh context window catches overcomplicated code, dead code, and bugs that the author's context is blind to.
-4. **Release/refactor/deletion gate:** run `npm run quality:feature-sweep`.
+1. **Fast gate during implementation:** run `pnpm run ms:gate` and `pnpm run quality:logging-guard` frequently.
+2. **Completion gate for every coding task:** run `pnpm run quality:no-regressions`.
+3. **Code review before merge:** run `pnpm run quality:code-review` from the feature branch. Fresh context window catches overcomplicated code, dead code, and bugs that the author's context is blind to.
+4. **Release/refactor/deletion gate:** run `pnpm run quality:feature-sweep`.
 5. Never mark a task done with a red gate.
 
 ## Session Discipline
@@ -192,7 +207,7 @@ Three-tier verification protocol (mandatory):
 
 ### Rules
 
-1. **Code goes straight to `src/`** — never draft source code in `.scratch/`. Code is validated by `npm run build`, not by staging it.
+1. **Code goes straight to `src/`** — never draft source code in `.scratch/`. Code is validated by `pnpm run build`, not by staging it.
 2. **Docs start in `.scratch/drafts/` if large** (50+ lines) — move to `docs/` when done. Small edits go directly to `docs/`.
 3. **Never create files at root** — no loose `.md`, `.png`, `.log`, or `.json` files in the project root. If it's not config or one of the 4 root docs, it doesn't belong there.
 4. **Cleanup is automatic** — the Stop hook runs `.claude/scripts/cleanup.sh` on session end. It purges `.scratch/`, stale artifacts, `.DS_Store` files, and warns about untracked root files.
@@ -265,7 +280,7 @@ When you change code, check whether the affected docs need updating. This is man
 
 - Read or edit `.env` files — they contain production secrets
 - Run `db:push` or `db:migrate` without explicit user confirmation
-- Modify `package-lock.json` or `node_modules/`
+- Modify `pnpm-lock.yaml` or `node_modules/`
 - Skip admin auth checks on `/api/admin/*` routes
 - Implement one-off client-specific code paths; always use reusable config/policy/template mechanisms
 - Use `any` TypeScript type — always use proper types. Use schema-inferred types (`Lead`, `Client`, etc.), generic parameters, `unknown` with type guards, or explicit interfaces. Zero tolerance for `any`.
@@ -286,8 +301,8 @@ For multi-item execution (UX fixes, edge cases, feature batches), use the work t
 4. Check the Depends On column — don't start dependent items until prerequisites are done
 5. Group items that share files into the same agent (e.g., all team-escalation.ts fixes together)
 6. Max 4 agents in parallel
-7. After all agents in a wave complete: run `npm run quality:no-regressions`, update tracker (in_progress → done), update docs per Change-to-Doc table
-8. Each agent prompt must include: the specific items to fix, the files they can touch, and a reminder to run `npm run typecheck` before finishing
+7. After all agents in a wave complete: run `pnpm run quality:no-regressions`, update tracker (in_progress → done), update docs per Change-to-Doc table
+8. Each agent prompt must include: the specific items to fix, the files they can touch, and a reminder to run `pnpm run typecheck` before finishing
 
 **Model selection per agent:**
 - `model: "haiku"` — single-file fixes, try-catch, class changes (< 20 lines)
@@ -305,7 +320,7 @@ Files you must NOT modify: [list]
 
 [Requirements — what to do, not how to code]
 
-After implementation, run: npm run typecheck
+After implementation, run: pnpm run typecheck
 ```
 
 ## Worktree Workflow
@@ -327,7 +342,7 @@ Rules are appended when corrections happen. Format: `N. [CATEGORY] Instruction �
 3. [CODE] Radix `Select` does NOT work with FormData forms — use native `<select>` with standard styling instead.
 4. [CODE] Custom `DialogTrigger` does NOT support `asChild` — pass `className` directly.
 5. [CODE] Use `as unknown as T` for jsonb→domain type narrowing — `as any` is banned project-wide.
-6. [ARCH] AI test files use `*.ai-test.ts` naming convention — excluded from `npm test`, run only via `npm run test:ai`.
+6. [ARCH] AI test files use `*.ai-test.ts` naming convention — excluded from `pnpm test`, run only via `pnpm run test:ai`.
 7. [PROCESS] Doc sync is mandatory — check the Change→Doc mapping table before marking any task done.
 8. [CODE] `compliance-gateway.ts` has a pre-existing block-scoped variable redeclaration typecheck warning — ignore it, don't try to fix.
 9. [ARCH] Attribution is event-driven (NOT cron) — `trackFunnelEvent()` triggers `attributeFunnelEvent()` synchronously.
@@ -336,3 +351,12 @@ Rules are appended when corrections happen. Format: `N. [CATEGORY] Instruction �
 12. [UX] No emojis in SMS notifications, email subjects, or any user-facing text — use professional text labels (URGENT:, REMINDER:, Claimed:).
 13. [UX] Mobile layouts must use flex + min-h-0 + dvh — never `h-[calc(100vh-Xrem)]` which breaks on iOS with dynamic browser chrome.
 14. [UX] Tables on mobile (< 640px) must use card layout fallback — `hidden sm:block` for table, `sm:hidden` for cards.
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)

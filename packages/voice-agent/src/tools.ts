@@ -109,10 +109,6 @@ export const VOICE_TOOLS = [
           type: 'string',
           description: 'Type of project',
         },
-        estimated_value: {
-          type: 'string',
-          description: 'Estimated project value if mentioned',
-        },
         address: {
           type: 'string',
           description: 'Project address if mentioned',
@@ -170,27 +166,39 @@ async function handleCheckAvailability(
     const { neon } = await import('@neondatabase/serverless');
     const sql = neon(env.DATABASE_URL);
 
-    // Get existing appointments for the requested date
     const startOfDay = `${date}T00:00:00`;
     const endOfDay = `${date}T23:59:59`;
 
+    // appointments table uses appointment_date (date) + appointment_time (time) + duration_minutes
+    // calendar_events table uses start_time/end_time timestamps
     const [appointments, calendarEvents] = await Promise.all([
-      sql`SELECT start_time, end_time FROM appointments
+      sql`SELECT appointment_time, duration_minutes FROM appointments
           WHERE client_id = ${ctx.clientId}
-          AND start_time >= ${startOfDay}::timestamp
-          AND start_time <= ${endOfDay}::timestamp
+          AND appointment_date = ${date}
           AND status != 'cancelled'`,
       sql`SELECT start_time, end_time FROM calendar_events
           WHERE client_id = ${ctx.clientId}
           AND start_time >= ${startOfDay}::timestamp
-          AND start_time <= ${endOfDay}::timestamp`,
+          AND start_time <= ${endOfDay}::timestamp
+          AND status != 'cancelled'`,
     ]);
 
     // Build set of busy hours (simplified: 1-hour blocks)
     const busyHours = new Set<number>();
-    for (const appt of [...appointments, ...calendarEvents]) {
-      const start = new Date(appt.start_time as string);
-      const end = new Date(appt.end_time as string);
+
+    for (const appt of appointments) {
+      const timeParts = (appt.appointment_time as string).split(':');
+      const startHour = parseInt(timeParts[0], 10);
+      const duration = (appt.duration_minutes as number) || 60;
+      const endHour = startHour + Math.ceil(duration / 60);
+      for (let h = startHour; h < endHour; h++) {
+        busyHours.add(h);
+      }
+    }
+
+    for (const evt of calendarEvents) {
+      const start = new Date(evt.start_time as string);
+      const end = new Date(evt.end_time as string);
       for (let h = start.getHours(); h < end.getHours(); h++) {
         busyHours.add(h);
       }
@@ -232,7 +240,7 @@ async function handleBookAppointment(
   env: Env,
 ): Promise<ToolExecutionResult> {
   const date = input.date as string;
-  const time = input.time as string;
+  const time = input.time as string; // HH:MM (24-hour)
   const callerName = input.caller_name as string;
   const projectType = input.project_type as string;
   const notes = (input.notes as string) || '';
@@ -244,13 +252,13 @@ async function handleBookAppointment(
     const startTime = new Date(`${date}T${time}:00`);
     const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour
 
-    // Insert appointment
-    await sql`INSERT INTO appointments (client_id, lead_id, title, description, start_time, end_time, status, sync_status)
-              VALUES (${ctx.clientId}, ${ctx.leadId}, ${`Estimate: ${projectType}`}, ${notes}, ${startTime.toISOString()}, ${endTime.toISOString()}, 'scheduled', 'pending')`;
+    // Insert appointment (uses appointment_date + appointment_time columns)
+    await sql`INSERT INTO appointments (client_id, lead_id, appointment_date, appointment_time, status, duration_minutes)
+              VALUES (${ctx.clientId}, ${ctx.leadId}, ${date}, ${time}, 'scheduled', 60)`;
 
-    // Insert calendar event for sync
-    await sql`INSERT INTO calendar_events (client_id, lead_id, title, description, start_time, end_time, event_type, status, sync_status)
-              VALUES (${ctx.clientId}, ${ctx.leadId}, ${`Estimate: ${projectType} - ${callerName}`}, ${notes}, ${startTime.toISOString()}, ${endTime.toISOString()}, 'appointment', 'scheduled', 'pending')`;
+    // Insert calendar event for external calendar sync
+    await sql`INSERT INTO calendar_events (client_id, lead_id, title, description, start_time, end_time, event_type, status, sync_status, timezone)
+              VALUES (${ctx.clientId}, ${ctx.leadId}, ${`Estimate: ${projectType} - ${callerName}`}, ${notes}, ${startTime.toISOString()}, ${endTime.toISOString()}, 'estimate', 'scheduled', 'pending', ${ctx.timezone})`;
 
     // Update lead with name and project type
     await sql`UPDATE leads SET name = ${callerName}, project_type = ${projectType}, status = 'appointment_scheduled', updated_at = NOW()
@@ -350,7 +358,6 @@ async function handleCaptureProjectDetails(
 ): Promise<ToolExecutionResult> {
   const name = input.name as string | undefined;
   const projectType = input.project_type as string | undefined;
-  const estimatedValue = input.estimated_value as string | undefined;
   const address = input.address as string | undefined;
   const notes = input.notes as string | undefined;
 
@@ -358,21 +365,11 @@ async function handleCaptureProjectDetails(
     const { neon } = await import('@neondatabase/serverless');
     const sql = neon(env.DATABASE_URL);
 
-    // Build dynamic update — only set fields that were provided
-    const updates: string[] = [];
-    const values: unknown[] = [];
+    const hasUpdates = name || projectType || address || notes;
 
-    if (name) { updates.push('name'); values.push(name); }
-    if (projectType) { updates.push('project_type'); values.push(projectType); }
-    if (estimatedValue) { updates.push('estimated_value'); values.push(estimatedValue); }
-    if (address) { updates.push('address'); values.push(address); }
-    if (notes) { updates.push('notes'); values.push(notes); }
-
-    if (updates.length > 0) {
-      // Use a simple approach — update each field individually
+    if (hasUpdates) {
       if (name) await sql`UPDATE leads SET name = ${name}, updated_at = NOW() WHERE id = ${ctx.leadId}`;
       if (projectType) await sql`UPDATE leads SET project_type = ${projectType}, updated_at = NOW() WHERE id = ${ctx.leadId}`;
-      if (estimatedValue) await sql`UPDATE leads SET estimated_value = ${estimatedValue}, updated_at = NOW() WHERE id = ${ctx.leadId}`;
       if (address) await sql`UPDATE leads SET address = ${address}, updated_at = NOW() WHERE id = ${ctx.leadId}`;
       if (notes) await sql`UPDATE leads SET notes = ${notes}, updated_at = NOW() WHERE id = ${ctx.leadId}`;
     }

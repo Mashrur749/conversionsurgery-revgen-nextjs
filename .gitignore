@@ -7,7 +7,8 @@
 .n8n-credentials
 
 # dependencies
-/node_modules
+node_modules
+package-lock.json
 /.pnp
 .pnp.*
 .yarn/*
@@ -84,3 +85,6 @@ external-backups/
 *.png
 .docmost-sync-artifacts/
 .husky/_/
+
+# graphify knowledge graph (generated output)
+graphify-out/

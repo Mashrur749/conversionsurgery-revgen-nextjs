@@ -7,9 +7,11 @@
 3. [Third-Party Service Setup](#third-party-service-setup)
 4. [Database Setup](#database-setup)
 5. [Production Deployment (Cloudflare)](#production-deployment-cloudflare)
-6. [Post-Deploy Verification](#post-deploy-verification)
-7. [Security Hardening](#security-hardening)
-8. [Monitoring & Troubleshooting](#monitoring--troubleshooting)
+6. [Voice Agent Worker](#voice-agent-worker)
+7. [CI/CD Pipeline](#cicd-pipeline)
+8. [Post-Deploy Verification](#post-deploy-verification)
+9. [Security Hardening](#security-hardening)
+10. [Monitoring & Troubleshooting](#monitoring--troubleshooting)
 
 ---
 
@@ -18,7 +20,7 @@
 ### Prerequisites
 
 - Node.js 20+
-- npm 10+
+- pnpm 9+ (`pnpm install -g pnpm`)
 - A Neon PostgreSQL database ([free tier](https://console.neon.tech))
 - Accounts for: Twilio, Anthropic, Resend (all have free/trial tiers)
 
@@ -26,7 +28,7 @@
 
 ```bash
 # 1. Install dependencies
-npm install
+pnpm install
 
 # 2. Copy environment template
 cp .env.example .env.local
@@ -36,10 +38,10 @@ cp .env.example .env.local
 #    RESEND_API_KEY, TWILIO_*, ANTHROPIC_API_KEY, CRON_SECRET, FORM_WEBHOOK_SECRET
 
 # 4. Push schema to database (first time only)
-npm run db:push
+pnpm run db:push
 
 # 5. Start dev server
-npm run dev
+pnpm run dev
 ```
 
 Visit `http://localhost:3000`. First user to log in via magic link becomes admin.
@@ -69,13 +71,13 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 
 | Command | Purpose |
 |---------|---------|
-| `npm run dev` | Start local dev server (port 3000) |
-| `npm run build` | Production build (verify 0 TS errors) |
-| `npm run lint` | ESLint check |
-| `npm run db:generate` | Generate Drizzle migrations after schema changes |
-| `npm run db:push` | Push schema directly to database |
-| `npm run db:migrate` | Run generated migrations |
-| `npm run db:studio` | Visual database browser (Drizzle Studio) |
+| `pnpm run dev` | Start local dev server (port 3000) |
+| `pnpm run build` | Production build (verify 0 TS errors) |
+| `pnpm run lint` | ESLint check |
+| `pnpm run db:generate` | Generate Drizzle migrations after schema changes |
+| `pnpm run db:push` | Push schema directly to database |
+| `pnpm run db:migrate` | Run generated migrations |
+| `pnpm run db:studio` | Visual database browser (Drizzle Studio) |
 
 ---
 
@@ -148,7 +150,7 @@ openssl rand -hex 32
 1. Create account at [console.neon.tech](https://console.neon.tech)
 2. Create a new project (free tier: 3 GB storage, 0.5 GB RAM)
 3. Copy the connection string → `DATABASE_URL`
-4. Run `npm run db:push` to create all 105+ tables
+4. Run `pnpm run db:push` to create all 105+ tables
 
 ### Twilio
 
@@ -234,29 +236,29 @@ openssl rand -hex 32
 
 ```bash
 # Push schema to create all tables (105+ tables)
-npm run db:push
+pnpm run db:push
 ```
 
 ### After schema changes
 
 ```bash
 # Generate migration files
-npm run db:generate
+pnpm run db:generate
 
 # Apply migrations
-npm run db:migrate
+pnpm run db:migrate
 ```
 
 ### Browse data
 
 ```bash
-npm run db:studio
+pnpm run db:studio
 # Opens Drizzle Studio at https://local.drizzle.studio
 ```
 
 ### Seed initial admin user
 
-After running `npm run dev`, visit `http://localhost:3000/login` and log in with your email. The first user becomes admin automatically via the NextAuth adapter.
+After running `pnpm run dev`, visit `http://localhost:3000/login` and log in with your email. The first user becomes admin automatically via the NextAuth adapter.
 
 ---
 
@@ -281,47 +283,47 @@ All sensitive values must be set as Wrangler secrets (not in `wrangler.toml`):
 
 ```bash
 # Required
-npx wrangler secret put DATABASE_URL
-npx wrangler secret put AUTH_SECRET
-npx wrangler secret put CLIENT_SESSION_SECRET
-npx wrangler secret put NEXTAUTH_URL
-npx wrangler secret put RESEND_API_KEY
-npx wrangler secret put EMAIL_FROM
-npx wrangler secret put ADMIN_EMAIL
-npx wrangler secret put TWILIO_ACCOUNT_SID
-npx wrangler secret put TWILIO_AUTH_TOKEN
-npx wrangler secret put TWILIO_PHONE_NUMBER
-npx wrangler secret put TWILIO_WEBHOOK_BASE_URL
-npx wrangler secret put ANTHROPIC_API_KEY
-npx wrangler secret put CRON_SECRET
-npx wrangler secret put FORM_WEBHOOK_SECRET
+pnpm wrangler secret put DATABASE_URL
+pnpm wrangler secret put AUTH_SECRET
+pnpm wrangler secret put CLIENT_SESSION_SECRET
+pnpm wrangler secret put NEXTAUTH_URL
+pnpm wrangler secret put RESEND_API_KEY
+pnpm wrangler secret put EMAIL_FROM
+pnpm wrangler secret put ADMIN_EMAIL
+pnpm wrangler secret put TWILIO_ACCOUNT_SID
+pnpm wrangler secret put TWILIO_AUTH_TOKEN
+pnpm wrangler secret put TWILIO_PHONE_NUMBER
+pnpm wrangler secret put TWILIO_WEBHOOK_BASE_URL
+pnpm wrangler secret put ANTHROPIC_API_KEY
+pnpm wrangler secret put CRON_SECRET
+pnpm wrangler secret put FORM_WEBHOOK_SECRET
 
 # Recommended (billing)
-npx wrangler secret put STRIPE_SECRET_KEY
-npx wrangler secret put NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-npx wrangler secret put STRIPE_WEBHOOK_SECRET
+pnpm wrangler secret put STRIPE_SECRET_KEY
+pnpm wrangler secret put NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+pnpm wrangler secret put STRIPE_WEBHOOK_SECRET
 
 # Recommended (KB semantic search)
-npx wrangler secret put VOYAGE_API_KEY
+pnpm wrangler secret put VOYAGE_API_KEY
 
 # Optional (set only what you use)
-npx wrangler secret put GOOGLE_CLIENT_ID
-npx wrangler secret put GOOGLE_CLIENT_SECRET
-npx wrangler secret put GOOGLE_PLACES_API_KEY
-npx wrangler secret put ELEVENLABS_API_KEY
-npx wrangler secret put R2_ACCOUNT_ID
-npx wrangler secret put R2_ACCESS_KEY_ID
-npx wrangler secret put R2_SECRET_ACCESS_KEY
-npx wrangler secret put R2_BUCKET_NAME
-npx wrangler secret put R2_PUBLIC_URL
-npx wrangler secret put SLACK_WEBHOOK_URL
-npx wrangler secret put ADMIN_PHONE_NUMBER
+pnpm wrangler secret put GOOGLE_CLIENT_ID
+pnpm wrangler secret put GOOGLE_CLIENT_SECRET
+pnpm wrangler secret put GOOGLE_PLACES_API_KEY
+pnpm wrangler secret put ELEVENLABS_API_KEY
+pnpm wrangler secret put R2_ACCOUNT_ID
+pnpm wrangler secret put R2_ACCESS_KEY_ID
+pnpm wrangler secret put R2_SECRET_ACCESS_KEY
+pnpm wrangler secret put R2_BUCKET_NAME
+pnpm wrangler secret put R2_PUBLIC_URL
+pnpm wrangler secret put SLACK_WEBHOOK_URL
+pnpm wrangler secret put ADMIN_PHONE_NUMBER
 ```
 
 ### Step 3: Build
 
 ```bash
-npm run cf:build
+pnpm run cf:build
 ```
 
 Creates `.open-next/` directory with the compiled worker.
@@ -329,7 +331,7 @@ Creates `.open-next/` directory with the compiled worker.
 ### Step 4: Test Locally (Cloudflare runtime)
 
 ```bash
-npm run cf:dev
+pnpm run cf:dev
 ```
 
 Visit `http://localhost:8787`.
@@ -337,31 +339,8 @@ Visit `http://localhost:8787`.
 ### Step 5: Deploy Main App
 
 ```bash
-npm run cf:deploy
+pnpm run cf:deploy
 ```
-
-### Step 5b: Deploy Voice Agent Worker
-
-The Voice AI uses a separate Cloudflare Worker with Durable Objects (`packages/voice-agent/`).
-
-```bash
-# Set secrets (one-time)
-cd packages/voice-agent
-wrangler secret put ANTHROPIC_API_KEY
-wrangler secret put DATABASE_URL   # Neon connection string
-
-# Deploy
-wrangler deploy
-```
-
-After deployment, note the Worker URL (e.g., `https://voice-agent.your-account.workers.dev`). Set this as the `VOICE_WS_URL` environment variable on the main app:
-
-```bash
-# In the main app's Cloudflare dashboard or .dev.vars
-VOICE_WS_URL=https://voice-agent.your-account.workers.dev
-```
-
-For production, point a custom domain (e.g., `voice-ws.yourdomain.com`) at the Worker via a Cloudflare Workers Route or CNAME.
 
 ### Step 6: Configure External Webhooks
 
@@ -385,6 +364,145 @@ After deployment, update callback URLs in third-party dashboards:
 | Form providers | `POST https://yourdomain.com/api/webhooks/form` (with `Authorization: Bearer <FORM_WEBHOOK_SECRET>`) |
 
 **Note:** Ring Status, Ring Connect, Ring Result, Member Answered, and Verification Status webhooks are configured automatically by the platform during call routing. Only SMS, Voice, Status Callback, Agency SMS, and Agency Voice require manual configuration in the Twilio Console.
+
+---
+
+## Voice Agent Worker
+
+The Voice AI runs as a **separate Cloudflare Worker** (`packages/voice-agent/`) with Durable Objects for stateful WebSocket call sessions. It deploys independently from the main Next.js app.
+
+### Architecture
+
+```
+Twilio ConversationRelay → wss://voice.conversionsurgery.io/ws → Voice Agent Worker (Durable Object)
+                                                                         ↓
+                                                                   Neon DB (shared)
+                                                                   Anthropic API
+```
+
+- **Entry point:** `packages/voice-agent/src/index.ts` — routes `/ws` to Durable Objects, `/health` for monitoring
+- **Durable Object:** `VoiceSession` — one instance per active call, garbage-collected on WebSocket close
+- **Tools:** Calendar availability check, appointment booking, transfer-to-human, callback scheduling, project detail capture
+- **Shared DB:** Same Neon database as the main app (appointments, calendar_events, leads, voice_calls, etc.)
+
+### First-time Setup
+
+#### 1. DNS (one-time)
+
+Add a CNAME record in Cloudflare DNS:
+
+```
+voice.conversionsurgery.io → voice-agent.<account-subdomain>.workers.dev
+```
+
+#### 2. Secrets (one-time)
+
+```bash
+cd packages/voice-agent
+pnpm wrangler secret put ANTHROPIC_API_KEY   # Same key as main app
+pnpm wrangler secret put DATABASE_URL        # Neon connection string (same DB)
+```
+
+#### 3. Deploy
+
+```bash
+cd packages/voice-agent
+pnpm wrangler deploy
+```
+
+#### 4. Wire to Main App
+
+Set `VOICE_WS_URL` on the main app so the Twilio voice webhook connects ConversationRelay to the Worker:
+
+```bash
+# In Cloudflare dashboard (main app secrets) or .dev.vars
+VOICE_WS_URL=wss://voice.conversionsurgery.io
+```
+
+The main app webhook at `/api/webhooks/twilio/voice/ai` reads `VOICE_WS_URL` and builds the TwiML `<ConversationRelay url="...">` tag.
+
+### Development
+
+```bash
+cd packages/voice-agent
+pnpm run dev          # Local Worker on port 8787
+pnpm run typecheck    # TypeScript check (no build output)
+pnpm run tail         # Stream production logs
+```
+
+For local voice testing, use an ngrok tunnel to expose the Worker WebSocket:
+
+```bash
+ngrok http 8787
+# Set VOICE_WS_URL=wss://xxxx.ngrok-free.app in main app .env.local
+```
+
+### Environments
+
+| Environment | Domain | Config |
+|-------------|--------|--------|
+| Production | `voice.conversionsurgery.io` | `pnpm wrangler deploy` (default) |
+| Development | `voice-agent-dev.<account>.workers.dev` | `pnpm wrangler deploy --env dev` |
+
+### Wrangler Config
+
+`packages/voice-agent/wrangler.toml` defines:
+- **Route:** `voice.conversionsurgery.io/*` (production)
+- **Durable Object:** `VoiceSession` binding
+- **Compatibility flags:** `nodejs_compat` (required for `@neondatabase/serverless`)
+- **Dev env override:** No custom route, uses `workers.dev` subdomain
+
+### Monitoring
+
+```bash
+# Stream real-time logs
+cd packages/voice-agent
+pnpm run tail
+
+# Or from Cloudflare Dashboard:
+# Workers & Pages → voice-agent → Logs
+```
+
+Key log prefixes: `[VoiceSession]` (call lifecycle), `[Tools]` (tool execution errors).
+
+---
+
+## CI/CD Pipeline
+
+CI runs on GitHub Actions (`.github/workflows/ci.yml`). Two deployment targets:
+
+### Pipeline Overview
+
+```
+Push to main ──┬── check (quality:feature-sweep + audit)
+               ├── voice-agent-typecheck
+               └── deploy-voice-agent (after check + typecheck pass)
+
+PR to main ────┬── check
+               └── ai-evals (if AI files changed, after check)
+```
+
+### Jobs
+
+| Job | Trigger | What it does |
+|-----|---------|-------------|
+| `check` | Push + PR | `pnpm install` → `quality:feature-sweep` (build + lint + tests + smoke) → `audit` |
+| `voice-agent-typecheck` | Push + PR | TypeScript check on `packages/voice-agent` |
+| `ai-evals` | PR only (if AI files changed) | AI safety evals (zero-tolerance) + full AI test suite (informational) |
+| `deploy-voice-agent` | Push to main only | `wrangler deploy` for the voice agent Worker |
+
+### Required Secrets
+
+Set these in GitHub → Settings → Secrets and variables → Actions:
+
+| Secret | Purpose |
+|--------|---------|
+| `CLOUDFLARE_API_TOKEN` | Deploys voice-agent Worker (needs Workers Scripts:Edit permission) |
+| `ANTHROPIC_API_KEY` | Runs AI eval tests in PRs |
+
+### Main App Deployment
+
+The main Next.js app is **not** deployed via CI — it uses Cloudflare Pages with Git integration (auto-deploys on push to main) or manual `pnpm run cf:deploy`. The voice-agent Worker is deployed via CI because Cloudflare Pages does not support Durable Objects.
 
 ---
 
@@ -430,9 +548,9 @@ curl -X POST https://yourdomain.com/api/webhooks/form \
 ### Post-Launch Checklist
 
 ```
-[ ] All env vars set in Cloudflare (npx wrangler secret list)
-[ ] Build succeeds: npm run cf:build
-[ ] Deploy succeeds: npm run cf:deploy
+[ ] All env vars set in Cloudflare (pnpm wrangler secret list)
+[ ] Build succeeds: pnpm run cf:build
+[ ] Deploy succeeds: pnpm run cf:deploy
 [ ] Magic link login works
 [ ] Client OTP login works
 [ ] Admin dashboard loads correctly
@@ -446,7 +564,14 @@ curl -X POST https://yourdomain.com/api/webhooks/form \
 [ ] External health monitor pinging /api/health every 5 minutes
 [ ] ElevenLabs voice preview works (if configured)
 [ ] Google OAuth connect/disconnect works (if configured)
-[ ] No errors in: npx wrangler tail
+[ ] Voice Agent Worker deployed: cd packages/voice-agent && pnpm wrangler deploy
+[ ] Voice Agent secrets set: ANTHROPIC_API_KEY, DATABASE_URL
+[ ] Voice Agent health check: curl https://voice.conversionsurgery.io/health
+[ ] VOICE_WS_URL set on main app: wss://voice.conversionsurgery.io
+[ ] Voice AI call test: call Twilio number → AI answers via ConversationRelay
+[ ] GitHub secret CLOUDFLARE_API_TOKEN set for CI deploys
+[ ] No errors in main app logs: pnpm wrangler tail
+[ ] No errors in voice agent logs: cd packages/voice-agent && pnpm run tail
 ```
 
 ---
@@ -492,28 +617,28 @@ Configure in Cloudflare Dashboard → Security → WAF → Rate limiting rules:
 ### View Logs
 
 ```bash
-npx wrangler tail
+pnpm wrangler tail
 ```
 
 ### Build Fails
 
 ```bash
 rm -rf .open-next .next
-npm run cf:build
+pnpm run cf:build
 ```
 
 ### Environment Variables Not Available
 
 ```bash
-npx wrangler secret list
-npm run cf-typegen
+pnpm wrangler secret list
+pnpm run cf-typegen
 ```
 
 ### Database Connection Fails
 
 1. Verify `DATABASE_URL` is correct
 2. Check [Neon dashboard](https://console.neon.tech) for status
-3. Test: `npm run db:studio`
+3. Test: `pnpm run db:studio`
 
 ### Cron Jobs Not Running
 
@@ -525,7 +650,8 @@ npm run cf-typegen
 
 | Service | Free Tier | Typical Monthly |
 |---------|-----------|----------------|
-| Cloudflare Workers | 100k requests/day | Free for most |
+| Cloudflare Workers (main app) | 100k requests/day | Free for most |
+| Cloudflare Workers (voice agent) | 100k requests/day + Durable Objects | ~$0.15/million DO requests |
 | Neon PostgreSQL | 3 GB storage, 0.5 GB RAM | Free tier sufficient |
 | Resend Email | 3k emails/month | Free tier sufficient |
 | Twilio | — | ~$15/number + $0.0079/SMS |
@@ -539,7 +665,7 @@ npm run cf-typegen
 ```bash
 git add .
 git commit -m "Your changes"
-npm run cf:deploy
+pnpm run cf:deploy
 ```
 
 ### Rollback
@@ -547,7 +673,7 @@ npm run cf:deploy
 Cloudflare keeps previous versions:
 
 1. Dashboard → Workers → Your Worker → Rollback to previous version
-2. Or: `git checkout <previous-commit> && npm run cf:deploy`
+2. Or: `git checkout <previous-commit> && pnpm run cf:deploy`
 
 ---
 
