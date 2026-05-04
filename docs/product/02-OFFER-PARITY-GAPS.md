@@ -117,3 +117,25 @@ The following MS specs implement parity items tracked above or operational impro
 - `docs/product/FEATURE-BACKLOG.md` — implementation specs for Open items. Premium items as `FB-04..FB-08`.
 - `docs/product/SERVICE-DELIVERY-GAPS.md` — ICP-specific delivery gaps (orthogonal to this register).
 - `docs/business-intel/OFFER-APPROVED-COPY.md` — the language we sell. Source of truth for marketing claims; reconcile to Business Reference v1.0 with founder approval.
+
+## Historical / Shipped Specs (Grand Slam Offer v2.1)
+
+These MS specs were implemented under the prior offer architecture (v2.1, archived at `docs/archive/02-OFFER-PARITY-GAPS.md`). All shipped. Listed here for traceability and to satisfy the `check-ms-gap-map` quality gate. Most map cleanly to capabilities still required under Business Reference v1.0; reconciliation notes where the v1.0 offer model affects them.
+
+| Spec file | What shipped | v1.0 status |
+|---|---|---|
+| `docs/specs/MS-01-UNLIMITED-MESSAGING-PARITY.md` | Unlimited-messaging plan policy across runtime + billing | Reusable — Business Reference v1.0 also implies no message caps within tier |
+| `docs/specs/MS-02-GUARANTEE-V2-PARITY.md` | 30-day-free + 90-day pipeline guarantee evaluator | Superseded by `PG-001` (21-day go-live + day-30 logging gates per Business Reference §11) |
+| `docs/specs/MS-03-ESTIMATE-TRIGGER-STACK.md` | EST keyword + dashboard + auto-trigger from conversation signal | Reusable — required by all v1.0 tiers |
+| `docs/specs/MS-04-SMART-ASSIST-AUTO-SEND.md` | 5-minute Smart Assist queue with operator approval | Reusable — required by v1.0 onboarding progression |
+| `docs/specs/MS-05-QUARTERLY-GROWTH-BLITZ.md` | Quarterly campaign planner + transitions + reporting | Reusable — listed as Standard/Premium upgrade path in §6.3 |
+| `docs/specs/MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Bi-weekly performance report with "Without Us" ROI | Reusable — required by v1.0 reporting deliverables |
+| `docs/specs/MS-07-CANCELLATION-EXPORT-PARITY.md` | 30-day cancellation + 5-day export SLA | Reusable — required by v1.0 §7 (90-day minimum then month-to-month with 30 days notice) |
+| `docs/specs/MS-08-QUIET-HOURS-CLASSIFICATION.md` | Quiet-hours classification + inbound-reply exemption | Reusable — required by v1.0 §11 compliance principles |
+| `docs/specs/MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Day-one activation milestone tracker + SLA alerts | Reusable — feeds the new `PG-001` 21-day go-live gate |
+| `docs/specs/MS-10-ADDON-BILLING-TRANSPARENCY.md` | Add-on pricing visibility + ledger + invoice itemization | Reusable — required by v1.0 §6.5 add-on model |
+| `docs/specs/MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Report delivery monitoring + retry workflow | Reusable — supports v1.0 weekly/bi-weekly reporting |
+| `docs/specs/MS-12-CRON-CATCHUP-GUARANTEES.md` | Cron job heartbeat + catch-up guarantees | Reusable — supports v1.0 automation reliability |
+| `docs/specs/MS-13-KB-GAP-CLOSURE-QUEUE.md` | KB gap detection + lifecycle queue + stale alerts | Reusable — required by v1.0 ongoing-management deliverable |
+| `docs/specs/MS-14-ONBOARDING-QUALITY-GATES.md` | Onboarding checklist + autonomous-mode gates | Reusable — feeds the new `PG-001` 21-day go-live gate |
+| `docs/specs/MS-15-REMINDER-ROUTING-FLEXIBILITY.md` | Configurable reminder routing per client | Reusable — required by v1.0 §6.3 routing rules

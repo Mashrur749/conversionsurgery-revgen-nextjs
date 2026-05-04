@@ -25,11 +25,17 @@ export const plans = pgTable(
     // Pricing (in cents)
     priceMonthly: integer('price_monthly').notNull(),
     priceYearly: integer('price_yearly'),
+    priceSetupCents: integer('price_setup_cents').default(0).notNull(),
 
     // Stripe IDs
     stripePriceIdMonthly: varchar('stripe_price_id_monthly', { length: 100 }),
     stripePriceIdYearly: varchar('stripe_price_id_yearly', { length: 100 }),
+    stripePriceIdSetup: varchar('stripe_price_id_setup', { length: 100 }),
     stripeProductId: varchar('stripe_product_id', { length: 100 }),
+
+    // Tier availability
+    maxActiveClients: integer('max_active_clients'),
+    publiclyVisible: boolean('publicly_visible').default(false).notNull(),
 
     // Features/limits
     features: jsonb('features').$type<{
@@ -68,6 +74,8 @@ export const plans = pgTable(
     index('idx_plans_slug').on(table.slug),
     index('idx_plans_display_order').on(table.displayOrder),
     check('plans_price_monthly_non_negative', sql`${table.priceMonthly} >= 0`),
+    check('plans_price_setup_non_negative', sql`${table.priceSetupCents} >= 0`),
+    check('plans_max_active_clients_positive', sql`${table.maxActiveClients} IS NULL OR ${table.maxActiveClients} > 0`),
   ]
 );
 
