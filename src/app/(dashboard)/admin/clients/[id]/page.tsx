@@ -35,6 +35,7 @@ import { loadStructuredKnowledge } from '@/lib/services/structured-knowledge';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { LeadsNeedingFollowupCard } from './leads-needing-followup-card';
 import { SendPaymentLink } from './send-payment-link';
+import { GenerateCheckoutLink } from './generate-checkout-link';
 import { DataExportButton } from './data-export-button';
 import { DncCard } from './dnc-card';
 import { SmartAssistCard } from './smart-assist-card';
@@ -76,11 +77,37 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
 
   // Load available plans and check for existing subscription (for payment link UI)
   const [availablePlans, existingSubscription] = await Promise.all([
-    db.select({ id: plans.id, name: plans.name }).from(plans).where(eq(plans.isActive, true)),
+    db.select({
+      id: plans.id,
+      name: plans.name,
+      slug: plans.slug,
+      priceSetupCents: plans.priceSetupCents,
+      priceMonthly: plans.priceMonthly,
+      maxActiveClients: plans.maxActiveClients,
+    }).from(plans).where(eq(plans.isActive, true)),
     db.select({ id: subscriptions.id }).from(subscriptions).where(eq(subscriptions.clientId, id)).limit(1),
   ]);
   const hasSubscription = existingSubscription.length > 0;
   const showPaymentLink = client.serviceModel === 'managed' && !hasSubscription;
+
+  // Enrich plans with active subscription counts (for Pilot cap display)
+  const checkoutPlans = await Promise.all(
+    availablePlans.map(async (plan) => {
+      if (plan.maxActiveClients === null) {
+        return { ...plan, activeCount: 0 };
+      }
+      const [result] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.planId, plan.id),
+            sql`${subscriptions.status} IN ('active', 'trialing')`
+          )
+        );
+      return { ...plan, activeCount: result?.count ?? 0 };
+    })
+  );
 
   const { getTeamMembers } = await import('@/lib/services/team-bridge');
   const [membersResult, quarterlyCampaignsResult, dayOneSummaryResult, engagementHealthResult, guaranteeSubResult] = await Promise.allSettled([
@@ -384,6 +411,13 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
               {client.twilioNumber ? 'Manage Number' : 'Assign Number'}
             </Link>
           </Button>
+          {showPaymentLink && checkoutPlans.length > 0 && (
+            <GenerateCheckoutLink
+              clientId={client.id}
+              clientName={client.businessName}
+              plans={checkoutPlans}
+            />
+          )}
           {showPaymentLink && availablePlans.length > 0 && (
             <SendPaymentLink
               clientId={client.id}
