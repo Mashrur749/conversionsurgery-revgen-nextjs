@@ -371,3 +371,85 @@ Rules:
 - Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
 - If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
 - After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)
+
+
+<claude-mem-context>
+# Memory Context
+
+# [conversionsurgery-revgen-nextjs] recent context, 2026-05-04 9:32am MDT
+
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
+Format: ID TIME TYPE TITLE
+Fetch details: get_observations([IDs]) | Search: mem-search skill
+
+Stats: 31 obs (12,772t read) | 336,958t work | 96% savings
+
+### May 3, 2026
+433 11:19a 🔵 GSD verify-work workflow: UAT session management and automated testing pipeline
+434 11:21a 🔵 PLATFORM-CAPABILITIES.md: 413 capabilities across 11 modules
+435 11:22a 🔵 Revenue Recovery System Business Reference Document Completed
+436 11:23a 🔵 PLATFORM-CAPABILITIES.md Structure Mapped
+437 " 🔵 Platform Capabilities Deep Dive: Sections 1-3 Fully Documented
+438 11:24a 🔵 Full PLATFORM-CAPABILITIES.md Subsection Map Extracted
+439 11:25a 🔵 Gap Analysis: Pricing Tiers and Add-Ons Not Documented in PLATFORM-CAPABILITIES.md
+474 10:27p 🔵 Pre-push quality gate blocking git push due to unmapped MS spec docs
+475 " 🔵 ms-quality-gate.sh delegates mapping check to check-ms-gap-map.sh
+476 " 🔵 check-ms-gap-map.sh requires MS spec filenames literally present in 02-OFFER-PARITY-GAPS.md
+477 10:28p 🔴 Fixed ms:gate pre-push failure by adding Managed-Service Spec Mapping table to 02-OFFER-PARITY-GAPS.md
+478 " 🔵 Legacy spec file still exists on disk alongside active MS-xx spec series
+479 " ✅ Scrubbed remaining legacy SPEC-xx references from 02-OFFER-PARITY-GAPS.md
+480 " 🔵 Widespread legacy spec references remain in docs — will fail check-no-legacy-spec-refs.sh
+481 10:29p 🔵 Full inventory of legacy spec references to fix across 5 docs files
+482 " 🔵 Pre-push gate failing: MS spec files not mapped in OFFER-PARITY-GAPS doc
+483 10:33p 🔵 Pre-push hook structure: Docmost sync + no-regressions gate
+484 " 🔵 no-regressions.sh gate: 5-step code quality pipeline
+485 10:34p ✅ Doc validation removed from pre-push hook; --skip-docs flag added to no-regressions gate
+486 10:37p ✅ Business Reference Documents Updated for ConversionSurgery RevGen
+488 " 🔵 ConversionSurgery RevGen — Project Scaffold State (Minimal)
+487 " 🔵 ConversionSurgery Revenue Recovery System — Full Business Model Documented
+S287 Wave A Implementation Start — ConversionSurgery Revenue Recovery: Read cut list, reviewed A1 migration SQL, awaiting db:push confirmation (May 3 at 10:38 PM)
+### May 4, 2026
+489 7:39a ⚖️ Wave A Implementation Scope and Constraints Established
+S288 gsd-map-codebase — conversionsurgery-revgen-nextjs full codebase mapping (May 4 at 7:40 AM)
+490 7:50a ✅ A1 Schema Migration Applied to Dev Database
+491 7:51a ✅ Wave A Feature Branch Created
+492 " 🔵 A2 Pre-Work: Checkout Infrastructure Partially Exists
+493 " 🔵 subscription.ts Full Contents: A2 Scope Confirmed — createCheckoutSession Missing
+496 7:52a 🟣 Codebase map created for conversionsurgery-revgen-nextjs
+494 " 🔵 Webhook Handler Full Scope and Billing Permission Constant Confirmed
+497 " 🟣 A2: createCheckoutSession Service and checkout-link Endpoint Implemented
+495 7:53a 🔵 Stripe Client Uses API Version 2026-01-28.clover with Module-Level Singleton
+S289 Codebase mapping (gsd-map-codebase) — deep-dive inline analysis pass refreshing ARCHITECTURE.md, CONVENTIONS.md, TESTING.md with direct file exploration findings (May 4 at 7:53 AM)
+S295 Wave A billing implementation — A5/A6 guarantee gate crons created, typecheck clean (May 4 at 7:54 AM)
+S290 Codebase mapping (gsd-map-codebase) — inline analysis pass writing all 7 .planning/codebase/ docs for conversionsurgery-revgen-nextjs (May 4 at 7:55 AM)
+S291 Codebase mapping (gsd-map-codebase) — final doc CONCERNS.md written, all 7 planning docs now complete (May 4 at 7:56 AM)
+S292 gsd-map-codebase — full codebase mapping of conversionsurgery-revgen-nextjs, all 7 planning docs written and committed (May 4 at 7:56 AM)
+S294 GSD new-project initialization for conversionsurgery-revgen-nextjs brownfield project (May 4 at 7:57 AM)
+S293 gsd-new-project initialization for conversionsurgery-revgen-nextjs brownfield project (May 4 at 7:57 AM)
+S296 Wave A billing — A5/A6 guarantee gate crons created, typecheck clean, preparing to commit A2-A7 batch (May 4 at 8:01 AM)
+**Investigated**: - `leads.ts` schema confirmed: `source: varchar(50)` (missed_call/form/manual), `status: varchar(50).default('new')` (new/contacted/estimate_sent/won/completed/lost/opted_out)
+    - `clients.ts`: `aiAgentMode` = varchar 20, default 'assist', values: off/assist/autonomous
+    - `onboarding-day-one.ts`: `onboardingMilestoneStatusEnum`, `onboardingMilestones` table with `clientId`, `status` fields
+    - `git status`: working tree shows modified `subscription.ts` (+71 lines) and 6 untracked new files/dirs
+    - `git log`: last commit was `feat(schema): add setup fee + tier availability columns to plans (A1)`
+    - `git diff --stat`: only `subscription.ts` modified (71 insertions)
+
+**Learned**: - All A5/A6 files pass targeted typecheck (`No errors in A5/A6 files`)
+    - `guarantee-gates.ts` imports unused `plans` from `@/db/schema` — lint warning risk before commit
+    - Stripe pause/resume: `pause_collection: { behavior: 'mark_uncollectible' }` to pause; `pause_collection: ''` (with type cast) to clear/resume
+    - Go-live signal: `aiAgentMode === 'autonomous'` OR (`aiAgentMode === 'assist'` AND zero incomplete onboarding milestones)
+    - Logging gate "logged" definition: `source IS NOT NULL` AND `status != 'new'`
+    - Low-volume defer: `< 7` inquiries in rolling 30-day window → skip gate, no Stripe action
+
+**Completed**: - **A5** ✅ `src/lib/automations/guarantee-gates.ts` — `processGoLiveGate()` scans active subs, checks day-21 signal, appends to `guaranteeNotes`, alerts operator if not live
+    - **A6** ✅ `processLoggingGate()` in same file — day-30 80% logging check, Stripe pause/resume, low-volume defer, operator alerts
+    - **A5 route** ✅ `src/app/api/cron/guarantee-21day/route.ts` — GET with `verifyCronSecret`, returns `{ checked, live, extended }`
+    - **A6 route** ✅ `src/app/api/cron/guarantee-30day/route.ts` — GET with `verifyCronSecret`, returns `{ checked, met, paused, resumed, deferred }`
+    - **Previously completed:** A1 (db:push), A2 (createCheckoutSession + checkout-link endpoint + provisionSubscriptionFromCheckout fix), A4 (isPlanAvailable + Pilot cap guard), A7 (seed-plans.ts)
+    - All Wave A files typecheck clean (targeted grep confirms no errors in A2/A4/A5/A6/A7 files)
+
+**Next Steps**: Primary session proposing to commit A2+A4+A5+A6+A7 batch now (natural boundary before A8), then proceed to A8 doc reconciliation. Pre-commit cleanup needed: remove unused `plans` import from `guarantee-gates.ts`. Post-commit: A8 (OFFER-APPROVED-COPY.md reconciliation + flag `payment-link/route.ts` trial days conflict), then A9 (tests). A3 (admin UI plan picker) deferred — requires dev server.
+
+
+Access 337k tokens of past work via get_observations([IDs]) or mem-search skill.
+</claude-mem-context>

@@ -1,7 +1,7 @@
 # Managed Service Delivery Playbook
 
-Last updated: 2026-04-14
-Audience: Solo operator delivering ConversionSurgery at $1,000/mo
+Last updated: 2026-05-04
+Audience: Solo operator delivering ConversionSurgery (Pilot $1,500/mo, Standard $2,000/mo, Premium $3,500/mo)
 Purpose: Every business scenario a contractor generates, and exactly how you handle it.
 
 ---
@@ -287,31 +287,29 @@ The report is data. The call is context. A contractor who reads &ldquo;$42K prob
 
 ## 5. Guarantee Evaluation
 
-**When:** Day 30 (Layer 1) and Day 90 (Layer 2).
+**When:** Day 21 (go-live gate) and Day 30 (logging gate). These are operational guarantees — they confirm the system is live and logging, not revenue thresholds.
 
-**Guarantee terms:** 30-Day Proof (5 qualified lead engagements) and 90-Day Recovery (1 booked estimate from cold lead OR $5,000 probable pipeline). Full terms, volume conditions, and extension formula: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 3.
+**Guarantee terms:** Operational guarantee only — 21-day go-live gate and 30-day logging gate with auto-pause. Full terms: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 3.
 
-### Layer 1: 30-Day Check
+### Layer 1: 21-Day Go-Live Gate
 
-The guarantee cron checks daily. At day 30:
+The guarantee cron checks daily. At day 21:
 
 1. Open the client&apos;s guarantee status at `/admin/clients/[id]` &rarr; Guarantee section.
-2. Check: did 5+ leads have a two-way interaction (lead replied at least once after system response)?
-3. **If yes:** Proof of life passed. Billing starts Day 31 at $1,000/month. No action needed.
-4. **If no:** Proof of life failed. The contractor owes nothing. They walk away with every lead captured.
-   - Before letting them go, investigate: Did they have any lead volume? If zero inbound in 30 days, the issue is their marketing. Have an honest conversation.
-   - If they had leads but the system didn&apos;t engage them, that&apos;s a real failure. Apologize and fix the root cause. Offer to extend the free period.
+2. Check: is the system live? Criteria: phone forwarding active, AI in at least Smart Assist mode, at least one outbound message sent.
+3. **If yes:** Go-live gate passed. No action needed.
+4. **If no:** Go-live failed — this is an operator delivery failure. Pause billing, fix the root cause immediately, and do not resume until verified live.
+   - Common causes: forwarding not set up, KB too sparse for AI to engage, no dead quotes imported.
+   - Notify the contractor proactively — don&apos;t wait for them to ask.
 
-### Layer 2: 90-Day Check
+### Layer 2: 30-Day Logging Gate
 
 **Evaluation process:**
 
-1. Check the client&apos;s guarantee progress in the admin dashboard: client detail page &rarr; Overview tab &rarr; Guarantee Status card. It shows the current phase (`proof_pending` / `recovery_pending`), progress against thresholds (QLE count and pipeline value), days remaining, and an on-track/at-risk/failing status badge. Use this daily to catch at-risk clients before the window closes.
-2. Check Criterion A: is there a system-engaged lead with a booked estimate appointment? A system-engaged lead means the platform captured their first contact (missed call, text, form) OR re-contacted them via automation, AND delivered at least one automated message before the outcome. Check the call-prep attribution evidence panel &mdash; it shows AI interaction count per won lead.
-3. If not, check Criterion B: did `probablePipelineValue` reach $5,000? (visible in the client dashboard pipeline summary and bi-weekly reports). Only system-engaged leads count toward pipeline value.
-4. **If either passes:** Guarantee met. Use in retention pitch: &quot;In 90 days, the system built $X in your pipeline from leads it captured and engaged.&quot;
-5. **If neither passes:** Refund most recent month. Provide full data export. Have an exit conversation &mdash; either fix and re-engage, or part professionally.
-6. **If contractor disputes a specific deal:** Pull the lead&apos;s conversation log from the admin dashboard. If the system captured the lead and sent at least one automated message before the outcome, attribution is confirmed. If not, honor the refund on that deal.
+1. Check the client&apos;s guarantee status in the admin dashboard: client detail page &rarr; Overview tab &rarr; Guarantee Status card. Verify the system has logged at least one AI-handled conversation and one automation event in the trailing 7 days.
+2. **If logging is active:** Gate passed. No action needed.
+3. **If logging has stalled (no events in 7+ days):** Trigger auto-pause. Billing suspends until the operator confirms root cause and restores activity. Notify the contractor.
+4. **Contractor disputes setup quality:** Pull conversation logs and automation event history. If the system was live and actively logging, delivery is confirmed. If not, honor a prorated adjustment for the silent period.
 
 ---
 
@@ -536,35 +534,45 @@ The &ldquo;your number is already working&rdquo; framing converts no-shows at 80
 
 **Minute 30-33: Trust Neutralizer (Closing)**
 
-&gt; &quot;Last thing &mdash; I know you&apos;ve probably tried something like this before and it didn&apos;t work out. This is month-to-month. No contract. You can cancel by texting me. The only reason you&apos;d stay is because it&apos;s working. Every two weeks you get a report your accountant can look at. If the math doesn&apos;t work, we stop. Fair?&quot;
+&gt; &quot;Last thing &mdash; I know you&apos;ve probably tried something like this before and it didn&apos;t work out. There&apos;s a 90-day minimum, then it&apos;s month-to-month with 30 days notice. The only reason you&apos;d stay is because it&apos;s working. Every two weeks you get a report your accountant can look at. If the math doesn&apos;t work after 90 days, we stop. Fair?&quot;
 
 This addresses the agency trauma directly, at the end, after they&apos;ve already seen the system work. It&apos;s not a sales tactic &mdash; it&apos;s honest reassurance after proof.
 
 ### Payment Capture (During Onboarding Call)
 
-**Why now:** Getting the card during the onboarding call &mdash; while the contractor is excited and engaged &mdash; is standard managed-service practice. Trial-to-paid conversion is 60-80% with card upfront vs. 20-30% when you invoice later. You also avoid a second awkward &quot;time to pay&quot; conversation on Day 31.
+**Why now:** Setup fee + first month are due at signup — no trial period. Getting full payment during the onboarding call (or immediately after) avoids a second awkward conversation and ensures billing is confirmed before ops time is invested.
+
+**Pricing tiers (confirm which applies before the call):**
+
+| Tier | Setup Fee | Monthly | Notes |
+|------|-----------|---------|-------|
+| Pilot | $3,500 | $1,500/mo | First 3 clients only; case-study expectation |
+| Standard | $5,500 | $2,000/mo | Default tier |
+| Premium | $9,500 | $3,500/mo | High-touch, priority support |
+
+**Terms:** 90-day minimum commitment, then month-to-month with 30 days notice.
 
 **The script (after the &quot;wow moment&quot;, before expectations):**
 
-&gt; &quot;Alright, everything&apos;s looking great. Let me get the billing piece out of the way so we can focus on results. I&apos;m going to send you a quick link right now &mdash; your first month is completely free. The card is just so billing starts automatically on [exact date, 30 days out] if you decide to keep it. You can cancel anytime before then and you&apos;ll never be charged.&quot;
+&gt; &quot;Alright, everything&apos;s looking great. Let me get the billing piece out of the way so we can focus on results. I&apos;m going to send you a link right now &mdash; it covers the setup fee and your first month together. Once that&apos;s through, we&apos;re locked in and I start the clock on your go-live.&quot;
 
 **How to do it:**
 
 1. While on the call, go to the contractor&apos;s client detail page in admin.
-2. Click **&ldquo;Send Payment Link&rdquo;** in the page header &mdash; select the plan, click Send. The system creates a Stripe Checkout Session with the 30-day free trial and texts + emails the link to the contractor instantly. No portal login needed &mdash; they tap the link, enter their card on Stripe&apos;s page, done. Takes 30 seconds.
-3. Confirm you see the subscription created: &quot;Perfect, I can see that went through. Your free month starts today, and if everything&apos;s working like we planned, billing kicks in on [date]. Sound good?&quot;
+2. Click **&ldquo;Send Payment Link&rdquo;** in the page header &mdash; select the correct tier, click Send. The system creates a Stripe Checkout Session (setup fee + first month, no trial) and texts + emails the link to the contractor instantly. No portal login needed &mdash; they tap the link, enter their card on Stripe&apos;s page, done. Takes 30 seconds.
+3. Confirm you see the subscription created: &quot;Perfect, I can see that went through. You&apos;re locked in. I&apos;ll have the system live within 21 days — that&apos;s the go-live guarantee.&quot;
 
-**If they hesitate:**
+**If they hesitate on the setup fee:**
 
-&gt; &quot;Totally understand. Think of it like a gym membership with a 30-day money-back guarantee &mdash; except you keep everything we set up. The card is just a placeholder. If you don&apos;t see results in 30 days, cancel from your dashboard or just text me and I&apos;ll cancel it for you. Zero charge.&quot;
+&gt; &quot;The setup fee covers the full onboarding: number configuration, AI tuning, KB build, dead-quote import, and your first bi-weekly review. It&apos;s not a retainer &mdash; it&apos;s delivery work. After the 90-day minimum, you&apos;re month-to-month with 30 days notice.&quot;
 
-**If they refuse to put a card down:**
+**If they refuse to pay upfront:**
 
-Don&apos;t force it. Say:
+Do not proceed with onboarding. The no-trial model is firm. Say:
 
-&gt; &quot;No problem at all. Let&apos;s get everything set up and I&apos;ll send you the link after. You can do it when you&apos;re ready.&quot;
+&gt; &quot;I get it &mdash; setup investment feels different from a trial. We removed the trial because it was creating bad outcomes: contractors wouldn&apos;t fully engage, and the system couldn&apos;t prove itself. Full commitment upfront is how we get you real results in 90 days.&quot;
 
-Then follow up in 24-48 hours with the link. Most contractors who refuse on the call will convert after seeing the system work for a day. If they still don&apos;t add a card by Day 7, they&apos;re unlikely to convert &mdash; don&apos;t invest heavy ops time.
+If they still won&apos;t pay, add to a warm nurture list. Do not invest ops time without confirmed payment.
 
 **After the call (operator, same day, 30 min max):**
 - Complete all KB entries from call notes (or encourage the self-serve KB wizard at `/client/onboarding`). Note: the admin onboarding wizard also prompts for KB setup on completion &mdash; if you ran onboarding setup from the admin side, the KB wizard link appears automatically when you finish.
@@ -574,7 +582,7 @@ Then follow up in 24-48 hours with the link. Most contractors who refuse on the 
 - **Run Voice AI Playground QA:** Open `/admin/voice-ai`, expand the client. Preview the greeting (hear it in their voice). Run the KB Test (all 10 questions should be answered or deferred, not gapped). Run the Guardrail Test (all 8 should pass). Complete QA Checklist &rarr; click &ldquo;Go Live.&rdquo;
 - **KB embedding:** After saving structured knowledge, entries are automatically embedded for semantic search. No action needed &mdash; the system handles this in the background. If the Voyage AI service is down, search falls back to keyword matching until embeddings complete.
 - Verify call forwarding with a test call to XYZ &mdash; confirm it rings 3 times then forwards to Twilio.
-- Verify subscription was created in Stripe Dashboard (trial active, card on file).
+- Verify subscription was created in Stripe Dashboard (setup fee + first month charged, card on file, no trial).
 - Add exclusion list contacts to the DNC/skip list in admin.
 - **Mark exclusion list reviewed** in admin (Configuration tab → Exclusion List → &ldquo;Mark as Reviewed&rdquo;) — required before autonomous mode can be enabled.
 - **Check onboarding checklist** on the client detail page. Verify items 1-5 (phone, forwarding, hours, KB, pricing) are green before closing the post-call session. Any red items are Day 1 blockers.
@@ -682,7 +690,7 @@ Do not offer a referral incentive yet. At this stage the social currency (&quot;
 
 ## 10b. Day 45 Proactive Retention Call
 
-**When:** Day 45 of the client relationship &mdash; midpoint between 30-day proof and 90-day guarantee. This is NOT a reactive call triggered by a problem &mdash; it is a PROACTIVE call that prevents Month 2-4 churn.
+**When:** Day 45 of the client relationship &mdash; midpoint of the 90-day minimum commitment. This is NOT a reactive call triggered by a problem &mdash; it is a PROACTIVE call that prevents churn at the Month 3 decision point.
 
 **Why Day 45:** The 8-agent consensus simulation identified this as the decision point. Every contractor who locks in before Day 60 becomes a 12+ month client. Every contractor who drifts past Day 60 without a strong retention anchor is at risk.
 
@@ -690,7 +698,7 @@ Do not offer a referral incentive yet. At this stage the social currency (&quot;
 
 **1. Guarantee progress check (3 min):**
 
-&gt; &quot;Quick update on your guarantee &mdash; you&apos;re at [X] qualified engagements out of 5 for the 30-day proof. [That passed on Day [X] / You&apos;re on track.] For the 90-day guarantee, your probable pipeline is at $[X] &mdash; we need $5K, so you&apos;re [on track / ahead / let&apos;s push on this].&quot;
+&gt; &quot;Quick update on where we are &mdash; the system has been live since Day [X], logging is active, and here&apos;s what it&apos;s done in your first 45 days. At Day 90, you have the option to continue month-to-month or give 30 days notice. I want to make sure the numbers make that decision easy.&quot;
 
 Show the guarantee status card in the admin dashboard. Make the progress visible and concrete.
 
@@ -756,6 +764,34 @@ If no visible win yet, skip the referral ask. Don&apos;t force it.
 
 ---
 
+## 11b. Pilot Tier Handling
+
+**Who gets Pilot:** The first 3 clients only. Pilot is a limited-availability tier to build case studies, not a permanent discount tier. Once 3 Pilot clients are onboarded, remove it from your offer entirely.
+
+**Pilot pricing:** $3,500 setup + $1,500/month. Same 90-day minimum and 30-day notice terms as other tiers.
+
+**Case-study expectation (set at signup):**
+
+> &ldquo;One thing I want to be upfront about &mdash; you&apos;re one of the first three clients on this platform. In exchange for the Pilot rate, I&apos;m going to ask you for a short written or video testimonial at Day 90 if the results are there. No obligation to say anything you don&apos;t mean &mdash; if the numbers aren&apos;t there, I won&apos;t ask. Fair?&rdquo;
+
+Get verbal agreement on the call. Note it in the client record under Configuration &rarr; Notes.
+
+**Operational obligations (same as Standard):** The go-live gate (21 days) and logging gate (30 days) apply identically. Pilot pricing does not reduce delivery quality or timeline obligations.
+
+**Collecting the case study at Day 90:**
+1. Pull the bi-weekly report covering the full 90-day period.
+2. Identify 2&ndash;3 specific wins (recovered quote value, booked appointments, leads engaged).
+3. Send the contractor a short prompt: &ldquo;Can you write 3&ndash;4 sentences on what changed for your business? I&apos;ll clean it up.&rdquo;
+4. If they prefer video: &ldquo;A 60-second voice note or Loom works fine.&rdquo;
+5. Store in `docs/business-intel/case-studies/` (create folder if absent).
+
+**Transitioning Pilot clients to Standard:** At Day 90 renewal, offer the transition:
+> &ldquo;Your Pilot rate was locked in for the first term. Going forward it&apos;s the Standard rate &mdash; $5,500 setup is already paid, so it&apos;s $2,000/month from here. Everything else stays the same.&rdquo;
+
+The setup fee is not charged again on renewal &mdash; only the monthly rate changes.
+
+---
+
 ## 12. Sales Conversation Guide
 
 **When:** Before and during a sales call with a prospective contractor.
@@ -766,7 +802,7 @@ If no visible win yet, skip the referral ask. Don&apos;t force it.
 |------|:---------:|------|---------------|
 | **Missed calls on job sites** | 10/10 | **SELLS** (closes the deal) | Lead with this on cold calls. Every contractor has a specific memory of THE call they missed. &quot;Do you ever lose jobs because you can&apos;t answer your phone on a job site?&quot; |
 | **Dead quotes going silent** | 8/10 | **RETAINS** (keeps them paying) | Pivot to this after opening. The $40K kitchen that walked back through the door is what makes them a believer and a referrer. |
-| **Burned by agencies before** | 9/10 | **Trust wound** (not sellable) | Don&apos;t sell against this. Neutralize it: month-to-month early, guarantee before price, show results before asking for trust. |
+| **Burned by agencies before** | 9/10 | **Trust wound** (not sellable) | Don&apos;t sell against this. Neutralize it: operational guarantee + 90-day minimum framing (not open-ended), show results before asking for trust. |
 
 **The flow:** Lead with missed calls to OPEN. Pivot to dead quotes to CLOSE. The guarantee neutralizes the trust wound.
 
@@ -792,7 +828,7 @@ What you&apos;re looking for:
 
 Call opener when you have audit data: &ldquo;I did some research before reaching out &mdash; you have [X] Google reviews and the top contractor in [City] has [Y]. I can show you what that review gap is probably costing you, and what it would take to close it.&rdquo;
 
-**Have the ROI Calculator ready.** During the call, when price comes up (and it will), use `POST /api/public/roi-calculator` with their numbers. If you&apos;re not at a computer, use the worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`. The goal is to shift the conversation from &ldquo;$1,000/month is expensive&rdquo; to &ldquo;I&apos;m leaving $X/month on the table.&rdquo;
+**Have the ROI Calculator ready.** During the call, when price comes up (and it will), use `POST /api/public/roi-calculator` with their numbers. If you&apos;re not at a computer, use the worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`. The goal is to shift the conversation from &ldquo;the setup fee is expensive&rdquo; to &ldquo;I&apos;m leaving $X/month on the table.&rdquo;
 
 ---
 
@@ -808,7 +844,7 @@ These contractors will get massive value. Prioritize them. **Primary ICP: Calgar
 | **Currently does zero systematic follow-up** on estimates | The 4-touch sequence over 14 days is pure incremental value. | Basement contractors are underground &mdash; no signal to reply | 10-20x |
 | **Phone goes to voicemail on job sites** | Speed-to-lead gap is massive. System responds in 2&ndash;8 seconds. | &ldquo;Underground = no cell signal&rdquo; is the core pitch | 15-25x |
 | **Has a Google Business Profile** with fewer than 60 reviews | Review generation compounds over 6&ndash;12 months. | Most Calgary basement contractors have 10&ndash;60 reviews | Long-term |
-| **Owner + 1&ndash;3 crew, no office manager** | Right-size for $1K/month, nobody else handling follow-up | This IS the primary ICP profile | 10-20x |
+| **Owner + 1&ndash;3 crew, no office manager** | Right-size for Pilot/Standard tier, nobody else handling follow-up | This IS the primary ICP profile | 10-20x |
 
 **The ideal client has 3+ of these signals.** One signal is enough if the project value is high enough (one $80K basement suite = $16K profit = 16 months of the service).
 
@@ -823,9 +859,9 @@ Be honest with these prospects. Signing them wastes their money and your time, a
 | **100% word-of-mouth, zero inbound, zero estimates sent** | No digital lead flow = no SMS conversations = AI has nothing to do. | &ldquo;Your business runs on relationships, which is great. This system works on leads that come through your phone or website. If you ever start getting inbound inquiries, we&apos;d be a great fit.&rdquo; |
 | **Already has a receptionist or office manager handling all follow-ups** | Incremental value is low if follow-up is already systematic. Speed advantage is the only differentiator. | &ldquo;It sounds like you&apos;ve already solved the follow-up problem. The main value for you would be the after-hours speed advantage and review automation. Worth discussing, but only if those gaps are real for you.&rdquo; |
 | **Contractor who doesn&apos;t use a smartphone or text** | The system communicates via SMS. A contractor who only uses phone calls has no interaction path. | &ldquo;The system works through text messaging. Voice AI is included and handles calls too, but the follow-up and conversation engine runs on SMS. If your customers only use phone calls and never text, the system still catches missed calls via Voice AI.&rdquo; |
-| **Contractor in active financial distress** | $1,000/month when they can&apos;t make payroll is irresponsible to sell. | &ldquo;I&apos;d rather wait until your cash flow stabilizes. This service pays for itself, but not if the $1,000 is money you need for materials this week.&rdquo; |
+| **Contractor in active financial distress** | A $3,500+ setup fee when they can&apos;t make payroll is irresponsible to sell. | &ldquo;I&apos;d rather wait until your cash flow stabilizes. This service pays for itself, but not if the setup fee is money you need for materials this week.&rdquo; |
 
-**The rule:** If you wouldn&apos;t feel good explaining to their spouse why they should pay $1,000/month, don&apos;t sign them.
+**The rule:** If you wouldn&apos;t feel good explaining to their spouse why they should pay the setup fee plus 90 days of monthly fees, don&apos;t sign them.
 
 ### The Gray Zone (Proceed with Caution)
 
@@ -835,7 +871,7 @@ Be honest with these prospects. Signing them wastes their money and your time, a
 | **Referral-only but sends 8+ estimates/month** | Great fit for estimate follow-up + review generation. Skip the speed-to-lead pitch entirely. |
 | **Seasonal contractor** (roofing, concrete, landscaping) | Discuss the seasonal pause option upfront. Sign them in spring when volume is high, not in November. |
 | **Contractor with existing CRM** (Jobber, ServiceTitan) | Position as front-of-funnel complement. Webhook integration sends won leads to their CRM. Not a replacement. |
-| **Contractor doing $1M+** with a full office staff | The managed service at $1,000/mo may feel low-touch for their expectations. Consider whether they need a higher-touch engagement or if the automation alone is enough. |
+| **Contractor doing $1M+** with a full office staff | Consider Premium tier — Standard may feel low-touch for their expectations. Confirm the automation value-add is real before committing. |
 
 ---
 
@@ -858,12 +894,12 @@ Below 15/month: the guarantee windows will extend substantially, and Week 1 reac
 **ICP qualification fields on wizard:** When creating the client record, the wizard requires: estimated monthly lead volume, average project value, and dead quote count. The lead volume field directly controls the sub-15 disclosure below — fill it in accurately during or immediately after the sales call.
 
 **Required disclosure for sub-15 lead volume prospects:**
-If the contractor reports fewer than 15 inbound leads per month, explicitly state the adjusted guarantee window during the close:
-- 10 leads/month &rarr; 30-day proof becomes 45 days, 90-day guarantee becomes 135 days
-- 8 leads/month &rarr; 30-day proof becomes 56 days, 90-day guarantee becomes 168 days
+If the contractor reports fewer than 15 inbound leads per month, explicitly state the adjusted time-to-ROI expectations during the close. The operational guarantee (21-day go-live, 30-day logging) is unchanged, but visible results take longer:
+- 10 leads/month &rarr; results build more slowly; quote reactivation is the near-term ROI story
+- 8 leads/month &rarr; reactivation batch is the only reliable Day 1 win; confirm they have 10+ dead quotes before signing
 - Below 8: &ldquo;We&rsquo;ll review your situation individually&rdquo;
 
-Say it plainly: &ldquo;At your lead volume, the guarantee window extends to [X] days instead of 30. That&rsquo;s built into the terms so you&rsquo;re never penalized for a slow period.&rdquo;
+Say it plainly: &ldquo;At your lead volume, the system will take longer to show results. The go-live guarantee is unchanged &mdash; we&rsquo;ll be live in 21 days. But the ROI timeline is longer, and you should expect to see traction around Month 2.&rdquo;
 
 **2. Referral vs. inbound ratio**
 
@@ -904,7 +940,7 @@ Full scripts are in `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`. This is t
 | "I don&apos;t want a robot talking to my customers" | Show disclosure, show escalation, emphasize 80/20 split | Tier 3, #5 |
 | "I&apos;ll look at this in spring" | Outstanding quote ROI math; setup takes one 30-min call | Tier 3, #6 |
 | "I already use Jobber/HubSpot" | Front-of-funnel complement, not replacement | Tier 3, #7 |
-| "$1,000/month is expensive" | ROI math on outstanding quotes; risk is one month | Tier 3, #8 |
+| "The setup fee is expensive" | ROI math on outstanding quotes; setup is a one-time delivery cost, 90-day commitment de-risks it | Tier 3, #8 |
 | "I don&apos;t have many leads right now" | Dormant reactivation is the pitch | Tier 3, #9 |
 | "Customers have my personal cell" | Supplement not replace; call forwarding setup | Tier 3, #10 |
 
@@ -912,9 +948,9 @@ Full scripts are in `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`. This is t
 
 ### Post-Call Follow-Up Templates
 
-**Day 25 billing reminder (automated):** At Day 25 of the trial, the system automatically sends the contractor an SMS via the agency line: &ldquo;Your free trial ends in 5 days. Your card on file will be charged [amount] on [date]. Reply HELP to reach us.&rdquo; This is automated — you do not need to send a manual outreach at Day 25. However, if the contractor calls or texts with billing questions after receiving this reminder, handle it proactively: confirm the trial end date, offer to walk through the plan, and remind them they can cancel anytime.
+**No trial period &mdash; payment is due at signup.** The system does not send a Day 25 trial-end reminder. Payment (setup fee + first month) is collected via Stripe Checkout before onboarding begins.
 
-**If card was captured on the sales/onboarding call (preferred path):**
+**If payment was captured on the sales/onboarding call (standard path):**
 
 Send within two hours. Confirm next steps &mdash; no payment ask needed.
 
@@ -924,38 +960,38 @@ Send within two hours. Confirm next steps &mdash; no payment ask needed.
 >
 > Good talking today. Quick recap:
 >
-> - Your number is live &mdash; missed call text-back is already working.
+> - Payment confirmed. Onboarding starts now.
+> - Your number will be live within 21 days &mdash; that&apos;s the go-live guarantee.
 > - [One sentence on what resonated most &mdash; estimate follow-up, reactivation, or response speed based on their profile]
-> - Your free month runs through [date]. I&apos;ll check in every two weeks with a report showing exactly what the system is doing.
 > - Next from you: send me those old quotes when you get a chance. I&apos;ll get them working this week.
 >
 > Questions anytime &mdash; reply here or text [your number].
 >
 > [Your name]
 
-**If card was NOT captured (follow-up needed):**
+**If payment was NOT captured (follow-up needed):**
 
-Send within two hours of the sales call. Include the payment link.
+Send within two hours of the sales call. Include the payment link. No onboarding begins without payment.
 
-> Subject: ConversionSurgery &mdash; what we covered
+> Subject: ConversionSurgery &mdash; next step
 >
 > [Name],
 >
 > Good talking today. Here&apos;s a quick summary:
 >
 > - [One sentence on what resonated most &mdash; estimate follow-up, reactivation, or response speed based on their profile]
-> - First month is completely free. Month-to-month after that, cancel anytime.
-> - Next step: [payment link] &mdash; takes 60 seconds. Once that&apos;s done, I&apos;ll schedule your 30-minute onboarding call and your number goes live within 24 hours.
+> - Setup fee + first month via this link: [payment link] &mdash; takes 60 seconds. Once that&apos;s confirmed, I&apos;ll schedule your onboarding call and your number goes live within 21 days.
+> - 90-day commitment, then month-to-month with 30 days notice.
 >
 > If you have questions, reply here or text [your number].
 >
 > [Your name]
 
-**Text follow-up if no card after 24 hours:**
+**Text follow-up if no payment after 24 hours:**
 
-&gt; Hey [Name] &mdash; just checking in from yesterday. Here&apos;s the link to get started whenever you&apos;re ready: [payment link]. First month is free, and I&apos;ll have your number live within 24 hours of setup. No rush.
+&gt; Hey [Name] &mdash; just checking in from yesterday. Here&apos;s the link whenever you&apos;re ready: [payment link]. Once that&apos;s through I&apos;ll book your onboarding call same day.
 
-**Final follow-up at Day 3 (if still no card):**
+**Final follow-up at Day 3 (if still no payment):**
 
 &gt; Last nudge from me on this &mdash; the link is here if you want to get started: [payment link]. If the timing isn&apos;t right, totally understand. Just let me know either way.
 
@@ -983,8 +1019,8 @@ Adjust the middle bullet to the specific objection they raised. If they were ske
 | Bi-weekly strategy call due | You schedule | 30-min call: revenue capture, report walkthrough, action items, business challenges (Section 4) |
 | Contractor wants to pause | You handle | Pause subscription + automations (Section 6) |
 | Contractor wants to cancel | You handle | Retention call, then process if confirmed (Section 7) |
-| 30-day guarantee check | System flags, you review | Check 5 qualified engagements (Section 5) |
-| 90-day guarantee check | System flags, you review | Check 1 attributed opportunity (Section 5) |
+| 21-day go-live gate | System flags, you review | Confirm system live: forwarding active, AI mode set, first message sent (Section 5) |
+| 30-day logging gate | System flags, you review | Confirm active logging; trigger auto-pause if stalled (Section 5) |
 | Old quotes not collected on Day 1 | Operator schedules Day 2-3 | Quote Import Call &mdash; 15 min (Section 10) |
 | Old quotes imported | You handle | CSV import with estimate_sent status (Section 2) |
 | New month starts | You review | Monthly health check (Section 11) |
@@ -1479,7 +1515,7 @@ Never say these to a contractor. They trigger agency trauma, tech anxiety, or id
 |----------|-------------|
 | &quot;Your leads get followed up on even when you&apos;re mid-job&quot; | Paints the picture. No jargon. |
 | &quot;Texts back missed calls in 5 seconds&quot; | Specific, tangible, measurable |
-| &quot;Month-to-month, cancel anytime&quot; | Neutralizes agency trauma immediately |
+| &ldquo;90-day commitment, then month-to-month with 30 days notice&rdquo; | Sets honest expectations while neutralizing agency trauma |
 | &quot;Runs in the background&quot; | No management burden implied |
 | &quot;You built the estimate. You shouldn&apos;t have to beg for the job.&quot; | Names the dignity issue of follow-up |
 | &quot;Like having a receptionist who answers on the first ring&quot; | Mental model they understand |
@@ -1487,7 +1523,7 @@ Never say these to a contractor. They trigger agency trauma, tech anxiety, or id
 ### Framing Rules
 
 - **Additive, not corrective:** &quot;This doesn&apos;t replace what you&apos;re doing. It catches what falls through the cracks.&quot; Never imply they&apos;re doing something wrong.
-- **Guarantee before price, every time:** State the guarantee first, then the cost. &quot;If we don&apos;t recover at least 5 real leads in 30 days, you don&apos;t pay. The service is $1,000/month after the free first month.&quot;
+- **Guarantee before price, every time:** State the operational guarantee first, then the cost. &ldquo;We guarantee the system is live in 21 days. If it&rsquo;s not, billing pauses until it is. The [Pilot/Standard/Premium] plan is [setup fee] to get started and [monthly] per month after that, with a 90-day minimum.&rdquo;
 - **Loss frame for urgency, gain frame for aspiration:** &quot;You left $20K on the table last month from missed calls&quot; (loss) &rarr; &quot;What would a full calendar through winter look like?&quot; (gain).
 - **Externalize the problem:** &quot;The follow-up gap isn&apos;t a contractor problem &mdash; it&apos;s a capacity problem. You can&apos;t text leads from a roof.&quot; Preserve their identity as a competent tradesman.
 
@@ -1495,11 +1531,11 @@ Never say these to a contractor. They trigger agency trauma, tech anxiety, or id
 
 Every contractor is running these through their head during the pitch:
 
-1. &quot;Is this person going to waste my time and money like the last agency?&quot; &rarr; Month-to-month, cancel anytime. Guarantee.
+1. &quot;Is this person going to waste my time and money like the last agency?&quot; &rarr; Operational guarantee: live in 21 days or billing pauses. 90-day minimum, then month-to-month with 30 days notice.
 2. &quot;Does this person actually understand my business?&quot; &rarr; Mention their trade, city, and a specific detail from their Google listing.
 3. &quot;Is this going to make me look more professional or less?&quot; &rarr; Show the message copy. &quot;Sound like you?&quot;
 4. &quot;Is this going to require me to manage another thing?&quot; &rarr; &quot;You do nothing different. 15 minutes a week, max.&quot;
-5. &quot;Can I get out if it doesn&apos;t work?&quot; &rarr; &quot;Text me and I cancel it. That&apos;s it.&quot;
+5. &quot;Can I get out if it doesn&apos;t work?&quot; &rarr; &quot;After 90 days, give me 30 days notice and we close it out. That&apos;s it.&quot;
 
 ### The Referral Story (What Spreads)
 

@@ -109,6 +109,11 @@ Follow this sequence to test the entire platform end-to-end. Steps are grouped b
 | I8 | Guarantee workflow (30-day proof + 90-day recovery) | 10 |
 | I9 | Guarantee status card (admin) | 68c |
 | I10 | Cancellation + data export | 14 |
+| I11 | Wave A: Checkout link (setup fee + recurring bundle) | 84a |
+| I12 | Wave A: 21-day go-live gate cron | 84b |
+| I13 | Wave A: 30-day logging compliance gate cron | 84c |
+| I14 | Wave A: Pilot tier capacity guard | 84d |
+| I15 | Wave A: Plan seeding (seed-plans script) | 84e |
 
 ### Phase J: Reporting + Analytics
 | # | What | Steps |
@@ -3400,6 +3405,120 @@ Expected:
 
 ---
 
+### Step 84: Wave A — Billing features (checkout link, guarantee gates, Pilot capacity, plan seeding)
+
+#### 84a: Checkout link generation (setup fee + recurring bundle)
+
+**Prerequisites:** `STRIPE_SECRET_KEY` set, at least one plan row in DB (run `84e` first if starting fresh).
+
+1. Create or identify a test client without an active subscription.
+2. Call the checkout link endpoint:
+
+```bash
+curl -i -X POST http://localhost:3000/api/admin/clients/<CLIENT_ID>/checkout-link \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"planId":"<PLAN_ID>"}'
+```
+
+3. Verify the response returns `200` with a `url` field pointing to `checkout.stripe.com`.
+4. Open the URL in a browser — verify the session shows two line items: a one-time setup fee and a recurring monthly subscription.
+5. Complete checkout with Stripe test card `4242 4242 4242 4242`.
+6. Verify the client&apos;s subscription status updates to `active` in the DB and in `/admin/clients/<id>/billing`.
+7. Call the endpoint again for the same client (already subscribed) — verify `409` or appropriate error indicating subscription already active.
+
+Expected:
+- Response includes a valid Stripe Checkout URL.
+- Checkout session bundles setup fee (one-time) + subscription (recurring) in a single session.
+- Webhook `checkout.session.completed` provisions the subscription and logs a `subscription_created` billing event.
+- Duplicate call is rejected cleanly.
+
+If blocked:
+- `Stripe pricing not configured`: price IDs are placeholder values — create real products in Stripe Dashboard and update plan rows.
+
+#### 84b: 21-day go-live gate cron
+
+**Purpose:** Checks each client on day 21 post-activation to confirm go-live quality gate is met.
+
+```bash
+curl -i http://localhost:3000/api/cron/guarantee-21day \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+1. Create a test client with `activatedAt` set to 21 days ago (or backdate in DB).
+2. Run the cron and verify:
+   - Client meets go-live gate (e.g., KB has entries, first lead processed): no alert, gate passes.
+   - Client does NOT meet go-live gate: operator receives alert SMS and an event is logged.
+3. Run the cron a second time immediately — verify no duplicate alerts for the same client on the same day.
+4. Verify a client with `activatedAt` only 20 days ago is NOT evaluated (premature).
+
+Expected:
+- Day-21 clients evaluated exactly once per day.
+- Go-live failures generate operator alert and audit log entry.
+- No duplicate processing or premature evaluation.
+
+#### 84c: 30-day logging compliance gate cron
+
+**Purpose:** Checks logging coverage at day 30; auto-pauses billing if coverage &lt; 80%.
+
+```bash
+curl -i http://localhost:3000/api/cron/guarantee-30day \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+1. Create a test client with `activatedAt` set to 30 days ago.
+2. Scenario A — compliant (≥ 80% logging coverage): run the cron and verify billing remains active, gate-pass event logged.
+3. Scenario B — non-compliant (< 80% logging coverage): simulate by reducing logged message count in DB below threshold. Run the cron and verify:
+   - Client billing is auto-paused (subscription set to `paused` or equivalent).
+   - Operator SMS alert sent.
+   - Audit log entry with reason `logging_compliance_gate_failed`.
+4. Verify a client with `activatedAt` only 29 days ago is NOT evaluated.
+5. Run the cron twice for the same client on the same day — verify no duplicate pause action.
+
+Expected:
+- 30-day clients evaluated exactly once per day.
+- ≥ 80% coverage: billing continues, gate-pass logged.
+- < 80% coverage: billing auto-paused, operator alerted, audit log entry created.
+- No premature evaluation or duplicate actions.
+
+#### 84d: Pilot tier capacity guard
+
+**Purpose:** Prevents onboarding a 4th active client on the Pilot plan (max 3).
+
+1. Ensure the Pilot plan row exists (run `84e` first if needed).
+2. Create 3 active clients on the Pilot plan.
+3. Attempt to create or onboard a 4th client on the Pilot plan via the admin UI or API.
+4. Verify the request is rejected with a clear error (e.g., `Pilot plan is at capacity. Maximum 3 active clients.`).
+5. Switch one existing Pilot client to `inactive` or `cancelled` status.
+6. Retry onboarding the 4th client on Pilot — verify it succeeds (capacity freed).
+7. Verify Standard and Premium plans are NOT subject to the 3-client cap.
+
+Expected:
+- Pilot plan blocks onboarding when 3 active clients exist.
+- Error message clearly states the capacity limit.
+- Cap enforced at API level (not just UI).
+- Deactivating a Pilot client frees a slot.
+
+#### 84e: Plan seeding (seed-plans script)
+
+**Prerequisites:** DB connection available (`DATABASE_URL` set).
+
+```bash
+pnpm tsx scripts/seed-plans.ts
+```
+
+1. Run the script and verify it completes without error.
+2. Verify 3 plan rows exist in the `plans` table: Pilot, Standard, Premium.
+3. Confirm each plan has the correct columns populated: `name`, `monthlyPrice`, `setupFee`, `stripePriceId` (or placeholder), `maxActiveClients` (Pilot = 3, Standard/Premium = null).
+4. Run the script again — verify it is idempotent (no duplicate rows, no errors).
+
+Expected:
+- Three plan rows created on first run.
+- Re-running is safe (upsert or skip if exists).
+- Plan data matches the offer: Pilot (max 3 active clients), Standard and Premium (no client cap).
+
+---
+
 ## 3. Useful Commands
 
 ```bash
@@ -3461,6 +3580,8 @@ curl -i http://localhost:3000/api/cron/onboarding-priming -H "Authorization: Bea
 curl -i http://localhost:3000/api/cron/forwarding-verification -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/heartbeat-check -H "Authorization: Bearer $CRON_SECRET"
 curl -i http://localhost:3000/api/cron/appointment-followup-trigger -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/guarantee-21day -H "Authorization: Bearer $CRON_SECRET"
+curl -i http://localhost:3000/api/cron/guarantee-30day -H "Authorization: Bearer $CRON_SECRET"
 
 # Deterministic replay helpers
 ./scripts/ops/replay.sh all-core

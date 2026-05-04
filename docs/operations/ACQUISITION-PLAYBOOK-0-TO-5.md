@@ -2,9 +2,15 @@
 
 **Target ICP:** Calgary basement development contractors. See `docs/business-intel/ICP-DEFINITION.md` for the canonical profile, sub-segment priority, 30-second qualifier, and avoidance criteria.
 
-Target: $5,000/month (5 clients &times; $1,000/month)
+Target: $10,000/month MRR (5 clients &times; $2,000/month Standard) + setup revenue
 Phases: Phase 0 (setup) &rarr; Phase 1 (first client) &rarr; Phase 2 (to 5 clients)
 Stage: Pre-first-client &mdash; everything here is manual, low-cost, high-touch
+
+**Pricing tiers:**
+- **Pilot** (first 3 clients only): $3,500 setup + $1,500/month
+- **Standard**: $5,500 setup + $2,000/month
+- **Premium**: $9,500 setup + $3,500/month
+- 90-day minimum term. No trial period. Operational guarantee: 21-day go-live + 30-day logging gate.
 
 ---
 
@@ -77,7 +83,7 @@ Then score each prospect. You want contractors who meet at least 3 of these 5:
 | Has a website with contact form | Getting web leads they need to respond to | Visit their site |
 | Running Google Ads or HomeStars | Paying for leads &mdash; makes your ROI pitch concrete | Search their name + &ldquo;Calgary&rdquo; |
 | Hasn&rsquo;t responded to recent Google reviews | Follow-up gap is visible | Scroll their reviews |
-| Owner + 1&ndash;3 crew (no office manager) | Right size for $1K/month to make sense | Website &ldquo;About&rdquo; page, team photos |
+| Owner + 1&ndash;3 crew (no office manager) | Right size for Pilot tier to make sense | Website &ldquo;About&rdquo; page, team photos |
 
 **Sub-segment priority:** Small Crew Developer ($800K&ndash;$1.2M, 20&ndash;25 leads/mo) first. Suite Specialist ($1M+) second. Solo Finisher third. Referral Veteran &mdash; avoid as primary.
 
@@ -145,7 +151,7 @@ Body (email version):
 
 **Cold call opener** (phone, when you can reach them directly):
 
-&ldquo;Hey [Name], this is Mashrur from Calgary. Quick one &mdash; I built something for basement contractors that texts back every missed call in 5 seconds, follows up on every estimate for 2 weeks, and books the site visit while you&rsquo;re still on the job. Most guys I talk to are losing 3&ndash;4 basement jobs a year just from leads that went cold. First month&rsquo;s free. You got 15 minutes this week?&rdquo;
+&ldquo;Hey [Name], this is Mashrur from Calgary. Quick one &mdash; I run a managed service for basement contractors that texts back every missed call in 5 seconds, follows up on every estimate for 2 weeks, and books the site visit while you&rsquo;re still on the job. Most guys I talk to are losing 3&ndash;4 basement jobs a year just from leads that went cold. I&rsquo;m only taking three founding clients right now. You got 15 minutes this week?&rdquo;
 
 ### Channel strategy (multi-touch, same asset)
 
@@ -186,7 +192,7 @@ Most responses will be one of three types:
 
 **"This is interesting, tell me more"**→ Book a 15-minute call. Not 30, not an hour. 15 minutes. Frame it as: "I'll show you something live — it takes 2 minutes — and then we can talk about whether it makes sense for your business."
 
-**"How much does it cost?"**→ Don't answer in text. Say: "It's $1,000/month, month-to-month, no contract. But before we talk pricing I want to show you something — it takes 2 minutes on a call and it'll tell you more than any pricing page. When's good for 15 minutes this week?"
+**"How much does it cost?"**→ Don't answer in text. Say: "For our founding client tier it's $3,500 to set everything up and $1,500/month after that. But before we talk pricing I want to show you something — it takes 2 minutes on a call and it'll tell you more than any pricing page. When's good for 15 minutes this week?"
 
 **"I'm not interested right now"**→ "No problem at all. The audit is yours to keep. If anything changes, I'm here." Add to nurture list.
 
@@ -204,12 +210,13 @@ This is your entire sales process. It's not a discovery call. It's not a consult
 
 4. **(3 min) Explain what just happened.** &ldquo;That text went out in under 5 seconds. If that was a homeowner looking for a basement quote, you just captured them before they called the next contractor on Google. Now imagine that happening for every missed call while you&rsquo;re underground &mdash; and then the AI follows up on every estimate you send for 2 weeks straight. A $80K suite job that would have gone cold just got recovered.&rdquo;
 
-5. **(3 min) The pitch.** &ldquo;It&rsquo;s $1,000/month. Month-to-month, cancel anytime. No setup fee. We run the whole thing for you &mdash; your only job is to keep building. The system responds to leads, follows up on estimates, books appointments into your Google Calendar, collects payments, and asks for reviews. You spend about 15 minutes a week on it. If after 30 days you haven&rsquo;t seen 5 real lead conversations, your first month is free. If after 90 days you can&rsquo;t point to a single project it helped you win, we refund your last month and you keep every lead.&rdquo;
+5. **(3 min) The pitch.** &ldquo;We&rsquo;re taking our first three clients at a founding rate &mdash; $3,500 to set everything up, then $1,500/month. After that our standard rate is $5,500 setup and $2,000/month. We run the whole thing for you &mdash; your only job is to keep building. The system responds to leads, follows up on estimates, books appointments into your Google Calendar, collects payments, and asks for reviews. You spend about 15 minutes a week on it. We guarantee the system is live within 21 days and fully operational within 30 &mdash; we document every step so you can see exactly what was built. Minimum term is 90 days, no discounts, no trial period &mdash; because this is a real operational system, not a software subscription.&rdquo;
 
 6. **(3 min) Handle objections.** Use the quick-reference from your playbook Section 12. The three most common at this stage:
 
    - "What if the AI says something wrong?" → Smart Assist review window in Week 2, guardrails, escalation.
-   - &ldquo;$1,000 is a lot.&rdquo; &rarr; One basement job ($80K at 20% margin = $16K profit) covers 16 months. The risk is one month.
+   - &ldquo;$3,500 setup plus monthly is a lot.&rdquo; &rarr; One basement job ($80K at 20% margin = $16K profit) covers your setup and 6 months of service. The setup builds you a permanent operational system &mdash; it&rsquo;s not a fee that disappears, it&rsquo;s infrastructure you own. Standard market rate for this kind of build is $15K+. You&rsquo;re getting it at a founding discount.
+   - &ldquo;Why not just monthly?&rdquo; &rarr; The setup covers onboarding, AI training on your business, Twilio provisioning, and workflow configuration. That work happens once and takes 20+ hours &mdash; it can&rsquo;t be baked into $1,500/month and remain sustainable. Every serious operator charges setup.
    - "I need to think about it." → "Totally fair. The audit is yours regardless. But every week without this, the gap it describes keeps costing you."
 
 7. **Close or schedule next step.** Either they say yes and you schedule the onboarding call, or they need time. If they need time, send the post-call follow-up email from your playbook within 2 hours.
@@ -237,9 +244,11 @@ Referrals from active clients close at 3–5× the rate of cold outreach. One ha
 
 That's Month 1. To hit 5 by Month 3:
 
-- Month 1: 40 audits → 1–3 clients
-- Month 2: 40 audits + referrals from Month 1 clients → 1–3 more
-- Month 3: 20 audits + referrals → fill remaining spots
+- Month 1: 40 audits → 1–3 clients (Pilot tier: $3,500 setup + $1,500/mo each)
+- Month 2: 40 audits + referrals from Month 1 clients → 1–3 more (Pilot closes; Standard opens)
+- Month 3: 20 audits + referrals → fill remaining spots at Standard or Premium
+
+After 3 Pilot clients are signed, all new clients go on Standard ($5,500 + $2,000/mo). Surface this transition naturally: &ldquo;We&rsquo;ve filled our founding spots &mdash; new clients are at our standard rate.&rdquo;
 
 This is conservative. The audit-based outreach will likely outperform generic cold email by a wide margin because it's genuinely useful even if they never buy.
 
@@ -276,10 +285,10 @@ Complete these before contacting anyone. Budget 60 minutes.
 You will do this live on calls. Practice with these scenarios until you can run the numbers in your head:
 
 **Scenario A &mdash; Outstanding quotes:**
-Contractor has 15 old quotes, average job $60K. Recovery rate 15% &rarr; 2.25 jobs &rarr; $135K recovered. Service cost: $12K/year. ROI: 11x.
+Contractor has 15 old quotes, average job $60K. Recovery rate 15% &rarr; 2.25 jobs &rarr; $135K recovered. Service cost (Pilot): $3,500 setup + $18K/year = $21,500 year 1. ROI: 6x year 1, 7.5x recurring.
 
 **Scenario B &mdash; Missed calls:**
-Contractor misses 3 calls/week on site, average job $70K. Even 1 recovered per month &rarr; $70K/month. Service cost: $1K/month. ROI: 70x.
+Contractor misses 3 calls/week on site, average job $70K. Even 1 recovered per month &rarr; $70K recovered. Service cost (Pilot): $3,500 + $1,500/month. Payback: less than one job.
 
 **Scenario C &mdash; Reviews:**
 Contractor has 30 Google reviews, competitor has 85. At 1 review request per completed job, 2 jobs/month &rarr; +24 reviews/year. No direct ROI &mdash; but &ldquo;85 reviews beats 30 reviews on Google every time.&rdquo;
@@ -292,7 +301,7 @@ Contractor has 30 Google reviews, competitor has 85. At 1 review request per com
 
 Record yourself with a timer:
 
-&gt; &ldquo;Hey [Name], it&apos;s Mashrur from Calgary. Most basement guys I talk to are losing 3-4 jobs a year to slow callbacks. Built something that fixes that. I&apos;ll shoot you a text. Talk soon.&rdquo;
+&gt; &ldquo;Hey [Name], it&apos;s Mashrur from Calgary. Most basement guys I talk to are losing 3-4 jobs a year to slow callbacks. Built a managed system that fixes it &mdash; I run the whole thing. I&apos;ll shoot you a text. Talk soon.&rdquo;
 
 - [ ] Under 15 seconds (use a stopwatch)
 - [ ] Sounds casual, not scripted
@@ -351,7 +360,7 @@ Use the template from Sales Toolkit Section 10. Fill it out after every session 
 | First demo delivered | Week 1-2 | Revenue Leak Audit shown, live demo ran, close attempted |
 | First client signed | Week 2-4 | Payment captured, onboarding call booked |
 | Weekly rhythm locked | Week 3+ | 30+ outreach attempts/week without thinking about process |
-| Five clients | Month 2-3 | $5K MRR, referrals starting, case study available |
+| Five clients | Month 2-3 | $7,500&ndash;$10K MRR + setup revenue collected, referrals starting, case study available |
 
 ---
 
@@ -377,7 +386,7 @@ Use the template from Sales Toolkit Section 10. Fill it out after every session 
 
 3. **Don't pitch via text/email.** The audit opens the conversation. The demo closes it. Never try to sell the service in writing — it's too complex and the "call your number" moment can't happen in an email.
 
-4. **Don't discount.** $1,000/month with month-to-month and a guarantee is already the lowest-risk version of this offer. If someone wants a discount, they're not your ICP — move on.
+4. **Don't discount.** The Pilot tier is already a founding discount off standard rates. If someone wants further discount, they&rsquo;re not your ICP &mdash; move on. The setup fee is non-negotiable; it reflects real labor.
 
 5. **Don't try to close on the first touch.** The audit is the first touch. It's not a pitch. It's a gift. The pitch happens on the demo call, if they want one.
 
@@ -419,4 +428,4 @@ If your response rate is below 10% after 20 audits, the audit content needs work
 
 ---
 
-*This playbook is for the 0-to-5 stage only (Calgary basement contractors). Once you hit 5 clients and $5K/month, the acquisition strategy shifts &mdash; referrals, case studies, and possibly content marketing replace cold audit outreach as the primary channel. For expansion to kitchen/bath (Month 4+) or Edmonton (Month 6+), see the expansion path in `docs/business-intel/ICP-DEFINITION.md`.*
+*This playbook is for the 0-to-5 stage only (Calgary basement contractors). Once you hit 5 clients and $7,500&ndash;$10K MRR, the acquisition strategy shifts &mdash; referrals, case studies, and possibly content marketing replace cold audit outreach as the primary channel. For expansion to kitchen/bath (Month 4+) or Edmonton (Month 6+), see the expansion path in `docs/business-intel/ICP-DEFINITION.md`.*

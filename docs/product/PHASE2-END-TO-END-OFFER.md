@@ -1,3 +1,10 @@
+> **DEPRECATED (May 2026):** This document describes the original single-tier $1,000/mo offer model. It has been superseded by the three-tier pricing model (Pilot/Standard/Premium) documented in:
+> - `docs/business-intel/OFFER-APPROVED-COPY.md` (v2.0) — client-facing copy
+> - `docs/business-intel/conversionsurgery_business_reference.md` — business strategy
+> - `docs/specs/WAVE-A-CUT-LIST.md` — implementation scope
+>
+> Do not use this document for sales or implementation decisions.
+
 # Phase 2: End-to-End Offer Architecture
 
 Status: Planning (not building until 5-7 paying managed clients)

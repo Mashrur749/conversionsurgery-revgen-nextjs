@@ -330,12 +330,102 @@
     line-height: 1.6;
   }
 
+  /* -- Pricing Tiers -- */
+  .tiers {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .tier {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+  }
+
+  .tier--featured {
+    border-color: var(--accent);
+    border-width: 2px;
+  }
+
+  .tier__badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--surface);
+    background: var(--accent);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-bottom: 12px;
+  }
+
+  .tier__name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .tier__availability {
+    font-size: 13px;
+    color: var(--highlight);
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+
+  .tier__price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .tier__setup {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+
+  .tier__setup strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .tier__amount {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .tier__period {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .tier__terms {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .tier__terms strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
   /* -- Mobile -- */
   @media (max-width: 520px) {
     .page { padding: 40px 20px 60px; }
     .headline { font-size: 28px; }
-    .price-block__amount { font-size: 42px; }
-    .your-part, .anchor-block, .guarantee { padding: 20px; }
+    .tier__amount { font-size: 30px; }
+    .your-part, .anchor-block, .guarantee, .tier { padding: 20px; }
   }
 </style>
 </head>
@@ -465,24 +555,66 @@
 
   <!-- Guarantee -->
   <div class="guarantee">
-    <div class="guarantee__title">The Guarantee</div>
+    <div class="guarantee__title">Operational Guarantee</div>
     <div class="guarantee__text">
-      <strong>Your first month is free.</strong> The system runs for 30 days before you pay a dollar. If the system doesn&apos;t deliver at least 5 qualified lead engagements in that first month &mdash; meaning inbound inquiries that received a response and where the lead replied at least once &mdash; you owe nothing and we part as friends.
+      <strong>Go-live by Day 21.</strong> Your system is fully configured and live within 21 days of your onboarding call &mdash; or we extend your first month at no charge.
+      <br><br>
+      <strong>80% conversation logging by Day 30.</strong> At least 80% of all inbound inquiries are captured and logged in your CRM within the first 30 days. If we miss this threshold, we credit one week of your monthly fee.
       <br><br>
       <strong>90-Day Revenue Recovery Guarantee.</strong> If after 90 days the system hasn&apos;t booked at least one estimate from a lead that had previously gone cold &mdash; or generated at least $5,000 in probable pipeline from system-engaged leads &mdash; we refund your most recent month. You keep every lead and conversation we captured. You leave with everything.
       <br><br>
-      <span style="font-size: 13px;">Both guarantees assume a minimum of 15 inbound inquiries per month. Lower volume extends the window proportionally &mdash; you&apos;re never penalized for a slow period.</span>
+      <span style="font-size: 13px;">The 90-day guarantee assumes a minimum of 15 inbound inquiries per month. Lower volume extends the window proportionally &mdash; you&apos;re never penalized for a slow period.</span>
     </div>
   </div>
 
   <div class="divider--thick"></div>
 
-  <!-- Price -->
-  <div class="price-block">
-    <div class="price-block__context">First month free. Then &mdash;</div>
-    <div class="price-block__amount">$1,000</div>
-    <div class="price-block__period">per month</div>
-    <div class="price-block__terms">Month-to-month. No contract. No setup fee.<br>No message limits. No overage charges. Cancel anytime.</div>
+  <!-- Pricing Tiers -->
+  <div class="section-label">Investment</div>
+  <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; line-height: 1.7;">Setup fee + first month collected at signup. No trial period &mdash; we start immediately.</p>
+
+  <div class="tiers">
+
+    <div class="tier">
+      <div class="tier__badge">Pilot</div>
+      <div class="tier__name">Pilot</div>
+      <div class="tier__availability">3 spots only &mdash; 90-day minimum</div>
+      <div class="tier__price-row">
+        <span class="tier__amount">$1,500</span>
+        <span class="tier__period">/month</span>
+      </div>
+      <div class="tier__setup"><strong>$3,500 setup fee</strong> collected at signup with first month</div>
+      <div class="tier__terms">
+        Full Revenue Recovery Engine + infrastructure. 90-day initial commitment, then month-to-month. Reserved for first three clients only.
+      </div>
+    </div>
+
+    <div class="tier tier--featured">
+      <div class="tier__badge">Standard</div>
+      <div class="tier__name">Standard</div>
+      <div class="tier__price-row">
+        <span class="tier__amount">$2,000</span>
+        <span class="tier__period">/month</span>
+      </div>
+      <div class="tier__setup"><strong>$5,500 setup fee</strong> collected at signup with first month</div>
+      <div class="tier__terms">
+        Full Revenue Recovery Engine + infrastructure. <strong>90-day initial commitment</strong>, then month-to-month. No message limits. No overage charges.
+      </div>
+    </div>
+
+    <div class="tier">
+      <div class="tier__badge">Premium</div>
+      <div class="tier__name">Premium</div>
+      <div class="tier__price-row">
+        <span class="tier__amount">$3,500</span>
+        <span class="tier__period">/month</span>
+      </div>
+      <div class="tier__setup"><strong>$9,500 setup fee</strong> collected at signup with first month</div>
+      <div class="tier__terms">
+        Everything in Standard, plus <strong>full attribution tracking</strong> and advanced reporting &mdash; pipeline-to-close attribution, revenue dashboards, and quarterly strategy reviews.
+      </div>
+    </div>
+
   </div>
 
   <div class="divider"></div>
@@ -507,14 +639,14 @@
       <span class="anchor-row__cost">$35,000&ndash;65,000</span>
     </div>
     <div class="anchor-row anchor-row--highlight">
-      <span class="anchor-row__label">ConversionSurgery</span>
-      <span class="anchor-row__cost">$1,000/mo</span>
+      <span class="anchor-row__label">ConversionSurgery Standard</span>
+      <span class="anchor-row__cost">$2,000/mo</span>
     </div>
   </div>
 
   <div style="height: 32px;"></div>
 
-  <p class="close-line">One recovered project pays for the entire year.<br><strong>Most clients see results before they ever pay.</strong></p>
+  <p class="close-line">One recovered project pays for the year &mdash; and then some.<br><strong>The system starts working on day one.</strong></p>
 
   <!-- Footer -->
   <div class="footer">

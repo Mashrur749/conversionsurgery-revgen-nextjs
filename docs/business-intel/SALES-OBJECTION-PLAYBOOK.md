@@ -30,7 +30,7 @@ Tier 1 objections (10/10 and 7/10 agent consensus) will come up in almost every 
 
 **The line that stops contractors cold:** &ldquo;You built the estimate. You shouldn&apos;t have to beg for the job.&rdquo;
 
-**Guarantee before price, every time.** State the guarantee and month-to-month terms before you say $1,000. Always.
+**Guarantee before price, every time.** State the guarantee and the operational guarantee (go-live by day 21, logging compliance by day 30) before you quote setup fees or monthly fees. Always.
 
 ---
 
@@ -101,7 +101,7 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 >
 > The question isn't whether you trust me yet. The question is: do you have 15-20 old quotes sitting there who never called you back? Because in the first week, we're going to text all of them. If even one of them responds, you've already covered the first month."
 
-**Proof point:** Pull up Section 3 of the offer (guarantee terms). Read Layer 1 out loud — "5 Qualified Lead Engagements in your first 30 days or your first month is refunded." Then show Section 5 — "month-to-month, cancel anytime with 30 days' notice, no cancellation fees."
+**Proof point:** Pull up Section 3 of the offer (guarantee terms). Read Layer 1 out loud — "5 Qualified Lead Engagements in your first 30 days or your first month is refunded." Then show Section 5 — "90-day initial term, then month-to-month with 30 days&apos; notice, no cancellation fees, full data export."
 
 ---
 
@@ -125,7 +125,7 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 >
 > This isn't about speed-to-lead. It's about the revenue that's already in your pipeline that's going quiet."
 
-**Proof point:** Ask them to estimate how many sent quotes are sitting unresponded from the past 90 days. Walk through the ROI math: if they have 20 old quotes at an average value of $30k, and even 2 come back — that's $60k. One month of service is $1,000.
+**Proof point:** Ask them to estimate how many sent quotes are sitting unresponded from the past 90 days. Walk through the ROI math: if they have 20 old quotes at an average value of $30k, and even 2 come back — that&apos;s $60k recovered. At $1,500 to $2,000/month, the service pays for itself many times over.
 
 ---
 
@@ -203,21 +203,25 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 
 ---
 
-### Objection 8: "$1,000/month is expensive when I don't know if it works"
+### Objection 8: "The price feels high — setup fee plus monthly?"
 
-**Why they say it:** It's not actually about the price. It's about the risk-adjusted cost. If the system delivered $10k in recovered revenue every month, $1,000 would feel cheap. The real objection is uncertainty about ROI.
+**Why they say it:** It's not actually about the price. It's about the risk-adjusted cost. Two numbers — a setup fee and an ongoing monthly — can feel like a double charge when they don&apos;t understand what each covers. The real objection is uncertainty about ROI and what they&apos;re buying.
 
 **The wrong response:** "Think about what you'd pay a full-time hire." — Comparison pricing doesn't address the fear of paying for nothing.
 
 **The right response:**
 
-> "Fair. Let me give you two numbers.
+> "Fair. Let me separate the two.
 >
-> One recovered kitchen project — the kind you already do — is probably $40,000 to $65,000 in revenue. At your margins, that&apos;s $8,000 to $13,000 in profit. One project you&apos;d have lost to slow follow-up covers the service for the better part of a year.
+> The setup fee — $3,500 to $9,500 depending on the plan — covers 15 to 20 hours of implementation work specific to your business. Configuring the AI on your services, your pricing, your service area, your tone. Importing your existing contacts. Connecting your tools. Building your knowledge base. That&apos;s a one-time cost, not a subscription.
 >
-> The more relevant number is your outstanding quotes. How many estimates have you sent in the last 90 days that went quiet? [Get the number.] Even if we get two of those back — what's the revenue?
+> The monthly fee covers ongoing management: monitoring every conversation, correcting the AI when it gets something wrong, sending you bi-weekly reports, and making sure the system keeps getting sharper. That&apos;s $1,500 to $3,500 per month depending on the plan.
 >
-> On the risk side: there's no contract. Month-to-month, cancel with 30 days' notice. And the guarantee: if you don't see 5 real leads engage in the first 30 days, you get that first month back. The risk on your side is one month."
+> The other number that matters: one recovered kitchen project is probably $40,000 to $65,000 in revenue. At your margins, that&apos;s $8,000 to $13,000 in profit. One project you&apos;d have lost to slow follow-up covers the monthly fee for the better part of a year.
+>
+> How many estimates have you sent in the last 90 days that went quiet? Even if we get two of those back — that&apos;s the math.
+>
+> And on protection: 90-day initial term, then month-to-month with 30 days&apos; notice, no penalties, full data export. We also guarantee go-live by day 21 and logging compliance by day 30 — or we make it right."
 
 **Proof point:** Run the ROI calculator live with the prospect's numbers. Ask: "How many leads do you get a month? What's your average project value? What percentage of quotes go quiet without a follow-up?" Then hit `POST /api/public/roi-calculator` with those numbers and show the output — annual revenue at risk and months to break even. If you're not at a computer, use the worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md` and do it manually. At a 10% reactivation rate, one recovered project typically covers the entire year.
 
@@ -256,6 +260,62 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 > We can also set up call forwarding from the business number to your cell — so if someone calls the new number and it rings through, you can answer it yourself. The system only steps in if you don't pick up."
 
 **Proof point:** Show the call forwarding configuration on the settings page. Make it clear the business number can be configured to behave exactly like their cell during their available hours — the AI only catches the gaps.
+
+---
+
+### Objection 11: "Why both a setup fee and monthly fee?"
+
+**Why they say it:** They&apos;re trying to understand the value split. It can feel like they&apos;re being charged twice for the same thing if the distinction isn&apos;t clear.
+
+**The wrong response:** "That&apos;s just how we price it." — No explanation, no trust built.
+
+**The right response:**
+
+> "Good question — they cover two completely different things.
+>
+> The setup fee is 15 to 20 hours of implementation work specific to your business. We&apos;re not plugging you into a generic template. We configure the AI on your services, your prices, your service area, your tone. We import your contacts. We connect your tools. We build out your knowledge base so the AI knows your business inside out. That work happens once, upfront, and it&apos;s yours.
+>
+> The monthly fee is ongoing management. Someone — me — monitors every conversation, corrects the AI when it misses something, sends you bi-weekly reports, and keeps the system improving. That&apos;s not software maintenance. That&apos;s active service delivery.
+>
+> Most contractors find the setup pays for itself before month one is over — because the first reactivation campaign runs during setup."
+
+**Proof point:** Walk through what happens week by week during setup. Show the onboarding timeline: KB configuration days 1-5, supervised mode weeks 1-2, autonomous go-live day 21.
+
+---
+
+### Objection 12: "Can&apos;t I just use self-serve software?"
+
+**Why they say it:** They&apos;ve seen GoHighLevel, HouseCall Pro, or similar platforms. They think the difference is just price and they can DIY it cheaper.
+
+**The wrong response:** "Our software is better." — Doesn&apos;t address the real question, which is whether they want to manage it themselves.
+
+**The right response:**
+
+> "Yes, the software exists. GoHighLevel, Jobber, a handful of others. Most contractors I talk to have tried at least one of them. Here&apos;s what actually happens: you spend a few weeks setting it up, your team has to learn it, someone has to configure it for your business, someone has to monitor it, someone has to fix it when it gets a response wrong. Then a busy week hits and nobody has time for that, so it sits half-configured.
+>
+> What you&apos;re buying from us isn&apos;t software access. You&apos;re buying the outcome: leads followed up on, reviews collected, estimates reactivated — without you managing any of it. I run the system. You run your jobs.
+>
+> Most contractors try the software route first. A lot of them end up talking to us after."
+
+**Proof point:** Ask directly: "Have you tried any of those tools?" If yes, let them tell you what happened — that story is usually the best closing argument for a managed service.
+
+---
+
+### Objection 13: "What if I cancel after 90 days?"
+
+**Why they say it:** They want to know if there&apos;s a trap. Long contracts with no exit are the most common complaint about SaaS and agency deals. They&apos;re not planning to cancel — they&apos;re checking whether you&apos;re confident enough to not need a lock-in.
+
+**The wrong response:** "We&apos;re confident you won&apos;t want to cancel." — Dismisses the question and sounds defensive.
+
+**The right response:**
+
+> "After the initial 90-day term, it&apos;s month-to-month with 30 days&apos; notice. No penalties, no clawbacks. You own your data — full export whenever you want it.
+>
+> The 90 days exists because it takes about 60 days to see real reactivation patterns and 30 days to hit operational stability. Cancelling at day 15 doesn&apos;t give the system a fair shot. After 90 days, you&apos;ve seen exactly what it delivers. If it&apos;s not worth the monthly fee, you leave with your data and no bad feelings.
+>
+> That&apos;s also why we back it with an operational guarantee: go-live by day 21, logging compliance by day 30. If we miss either of those, we make it right."
+
+**Proof point:** Show the terms section of the offer document. Point to the cancellation clause specifically — 30 days&apos; notice, month-to-month after term, full data export.
 
 ---
 
@@ -323,7 +383,9 @@ Get the CRTC inbound-reply exemption legal opinion before the second client conv
 | Has staff / assistant | Consistency gaps, follow-up depth (Objection 4) |
 | Had bad agency experience | Lead with guarantee, differentiate managed vs. software (Objection 2) |
 | Worried about AI quality | Smart Assist demo, sample conversation (Objection 1) |
-| Price-sensitive | ROI math on outstanding quotes (Objection 8) |
+| Price-sensitive / fee confusion | ROI math on outstanding quotes, fee split explanation (Objection 8, 11) |
+| Comparing to self-serve software | Managed vs. DIY distinction (Objection 12) |
+| Worried about commitment / lock-in | 90-day term + month-to-month terms (Objection 13) |
 | Seasonal / slow right now | Dormant reactivation is the pitch (Objection 9) |
 | Heavy personal-cell user | Supplement not replace, call forwarding setup (Objection 10) |
 | Uses Jobber/HubSpot | Front-of-funnel complement positioning (Objection 7) |
@@ -395,7 +457,7 @@ Before the call, gather:
 3. **Google reviews**: Check their Google Business Profile review count vs. top 3 competitors (already done in pre-sale audit)
 4. **Current tools**: &ldquo;Do you use Jobber, ServiceTitan, or anything for lead management?&rdquo;
 5. **Guarantee window**: If below 15 leads/month, calculate the adjusted guarantee window and state it explicitly during the call: &ldquo;Your guarantee window would be X days, not 30, based on your lead volume.&rdquo;
-6. **Loss ceiling**: State it plainly: &ldquo;Your maximum risk is $1,000. One month. If 5 leads don&apos;t engage in 30 days, you get it back. One recovered project&apos;s profit covers the service for over a year.&rdquo;
+6. **Loss ceiling**: State it plainly: &ldquo;Your maximum financial exposure is the setup fee plus the first month. The setup fee covers real implementation work. If 5 leads don&apos;t engage in the first 30 days, you get that first month back. One recovered project&apos;s profit covers the service for over a year.&rdquo;
 7. **ROI Calculator**: Have the calculator ready at `POST /api/public/roi-calculator` or the ROI worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`. Enter their numbers live during the call if price comes up.
 
 ---

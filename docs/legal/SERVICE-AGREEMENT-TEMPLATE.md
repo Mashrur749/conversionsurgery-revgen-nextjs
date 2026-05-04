@@ -2,8 +2,10 @@
 
 ---
 
+> **LEGAL REVIEW REQUIRED before sending to first client.**
+>
 > **OPERATOR NOTE:** Fill in every [bracketed] field before sending. Delete this note block prior to sending.
-> This is a draft template — it is not legal advice. All sections marked [PENDING COUNSEL REVIEW] contain draft language that has not been reviewed by a licensed lawyer. Get counsel review before or at client #5.
+> This is a draft template — it is not legal advice. All sections marked [PENDING COUNSEL REVIEW] contain draft language that has not been reviewed by a licensed lawyer. Have counsel review before sending to any client.
 > Delivery: send as a PDF for digital signature (DocuSign, HelloSign) or as a plain-text email requesting written confirmation.
 
 ---
@@ -59,38 +61,58 @@ Unlimited lead conversations and automated messaging are included for normal, in
 
 ---
 
-## 4. Service Fee
+## 4. Service Fee [PENDING COUNSEL REVIEW]
 
-**First month free. Then $1,000 per month**, plus applicable taxes.
+Client has selected the following service tier:
 
-Month 1 is provided at no charge. Billing begins on Day 31 of the service start date. Billed monthly thereafter. No setup fee. No message caps. No overage charges.
+| Tier | Setup Fee | Monthly Fee |
+|------|-----------|-------------|
+| Pilot | $3,500 | $1,500/mo |
+| Standard | $5,500 | $2,000/mo |
+| Premium | $9,500 | $3,500/mo |
+
+**Selected tier:** [Pilot / Standard / Premium] — Setup Fee: $[Amount] + Monthly Fee: $[Amount]/mo, plus applicable taxes.
+
+The Setup Fee is due at signing and covers implementation, configuration, onboarding, and go-live preparation. The first monthly fee is due at signing and covers the first calendar month of service. No free trial period. No message caps. No overage charges.
 
 Add-ons (if applicable):
 - Voice AI: $0.15/minute (opt-in only — will not appear unless explicitly enabled)
 - Additional phone numbers: $15/month each
 - Additional team members: $20/month each
 
+> **[COUNSEL NOTE]** Confirm whether the setup fee should be characterized as non-refundable upon signing or whether any partial refund applies if go-live is not achieved. See Section 6 operational guarantee.
+
 ---
 
 ## 5. Service Term and Cancellation [PENDING COUNSEL REVIEW]
 
-This Agreement is month-to-month, effective [Start Date].
+This Agreement has an initial minimum term of ninety (90) calendar days from the service start date ("Minimum Term"), effective [Start Date]. After the Minimum Term, this Agreement continues on a month-to-month basis.
 
-Cancellation becomes effective thirty (30) calendar days after written notice to [Operator Email]. No cancellation penalty applies. Client may request a data export; export is provided in CSV format within five (5) business days where reasonably practicable. Export includes lead records, conversation history, and pipeline status.
+Cancellation during the Minimum Term: Client may not cancel during the first 90 days except as provided under Section 6 (Performance Guarantees). Fees paid for the Minimum Term are non-refundable except as expressly stated in Section 6.
+
+Cancellation after the Minimum Term: Either party may terminate by providing thirty (30) calendar days written notice to [Operator Email]. No additional cancellation penalty applies beyond the 30-day notice period.
+
+Client may request a data export; export is provided in CSV format within five (5) business days where reasonably practicable. Export includes lead records, conversation history, and pipeline status.
+
+> **[COUNSEL NOTE]** Confirm enforceability of the 90-day minimum term in Alberta/BC and whether any consumer-protection carve-outs apply to B2B service contracts.
 
 ---
 
 ## 6. Performance Guarantees [PENDING COUNSEL REVIEW]
 
-**Layer 1 — 30-Day Proof-of-Life Guarantee**
+**Layer 1 — Operational Go-Live Guarantee**
 
-Month 1 is provided at no charge. If Client does not receive at least five (5) Qualified Lead Engagements within the first 30 days, Client may terminate this Agreement with no further obligation.
+ConversionSurgery commits to completing platform go-live (all automations active, AI configured, phone number operational) by Day 21 from the service start date. If go-live is not achieved by Day 21 due to ConversionSurgery's failure (not Client's failure to complete onboarding), monthly billing will be paused and no monthly fee will be charged until go-live is confirmed. The Setup Fee is not refundable under this guarantee.
 
-A Qualified Lead Engagement means: (a) an inbound lead received by the system, (b) a first automated system response timestamped in platform logs, and (c) at least one recipient reply after the system response.
+ConversionSurgery further commits that at least 80% of eligible conversations will be logged in the platform by Day 30. If this threshold is not met by Day 30 due to ConversionSurgery's failure, monthly billing will automatically pause until the threshold is met for a full 7-day period.
+
+> **[COUNSEL NOTE]** Define "go-live" precisely (what systems must be operational), "eligible conversations" (inbound SMS/calls only, or web form too?), and how billing-pause resumption is triggered. Confirm whether billing-pause is the sole remedy or whether Client can also terminate.
 
 **Layer 2 — 90-Day Revenue Recovery Guarantee**
 
-If, by the end of the applicable recovery window, neither of the following Attributed Results has occurred, Client is eligible for a refund of the most recent monthly service fee and may request export of all captured lead and conversation records.
+If, by the end of the 90-day Minimum Term, neither of the following Attributed Results has occurred, Client is eligible for a refund of the most recent monthly service fee and may terminate this Agreement with no further monthly obligation. The Setup Fee is non-refundable. Client may also request export of all captured lead and conversation records.
+
+> **[COUNSEL NOTE]** Confirm whether refund of "most recent monthly fee" is the intended remedy or whether it should be a different amount (e.g., one month's fee regardless of when in the term the guarantee is invoked). Confirm that Setup Fee non-refundability is enforceable as drafted.
 
 A System-Engaged Lead means any lead where (a) the lead&apos;s first contact was captured by the platform (inbound SMS, missed-call text-back, or web-form response) OR the lead was re-contacted through platform automation (dormant reactivation, old-quote follow-up), AND (b) at least one (1) automated platform message was delivered to the lead prior to the attributed outcome, as evidenced by platform conversation logs with timestamps.
 
@@ -100,7 +122,7 @@ If platform logs do not establish that the lead was captured or re-contacted by 
 
 **Volume Condition — Low-Volume Extension Formula** [PENDING COUNSEL REVIEW]
 
-Both guarantees assume a baseline of fifteen (15) inbound inquiries per 30-day period. If actual inbound inquiry volume averages below 15 per 30-day period during the applicable guarantee window, guarantee timelines adjust proportionally:
+The Layer 2 guarantee assumes a baseline of fifteen (15) inbound inquiries per 30-day period. If actual inbound inquiry volume averages below 15 per 30-day period during the applicable guarantee window, guarantee timelines adjust proportionally:
 
 > Adjusted Window = Base Window &times; (15 &divide; Actual Monthly Volume)
 
@@ -168,4 +190,4 @@ Signature: ___________________________
 
 ---
 
-*Draft template — not legal advice. Sections marked [PENDING COUNSEL REVIEW] contain draft language awaiting review by a licensed lawyer. Get counsel review before or at client #5.*
+*Draft template — not legal advice. LEGAL REVIEW REQUIRED before sending to first client. Sections marked [PENDING COUNSEL REVIEW] contain draft language awaiting review by a licensed lawyer. Sections marked [COUNSEL NOTE] flag specific issues for legal counsel to resolve.*

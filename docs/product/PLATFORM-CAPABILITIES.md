@@ -974,15 +974,19 @@ Every funnel event is automatically linked to the agent decision that contribute
 
 ### Plans
 
-- Month-to-month, no contract, no setup fee
-- Configurable plan tiers with included quotas (leads, SMS, team members, phone numbers)
-- **Pre-subscription usage:** usage limits (team members, phone numbers, leads) are not enforced until a plan is assigned. This allows the admin setup wizard to configure team members, provision numbers, etc. before billing is active. Limits take effect once a subscription is created.
-- Free first month (30-day trial); billing starts day 31. Configurable trial days, waived for returning clients.
-- **Trial billing notification:** Before billing starts (Day 28 and Day 30), the contractor receives both an SMS notification and an email with their plan details, pricing, and a link to manage billing
-- **Trial reminder emails:** automated cron sends at days 7, 14, 25, 28, and 30. Days 28 and 30 also send an SMS alert via the agency communication channel.
-- **Day 25 billing reminder SMS:** 5 days before trial ends, the contractor receives a dedicated SMS via the agency channel: "Your free trial ends in 5 days. Your card on file will be charged [amount] on [date]. Reply HELP to reach us." Feature flag: `billingReminderEnabled` (per-client, system default: on). Cron: `billing-reminder` runs daily at midnight UTC.
+Three-tier pricing, each with a one-time setup fee bundled into the Stripe Checkout session alongside the first monthly payment. No free trial &mdash; setup fee and first month are charged at signup.
+
+| Tier | Setup Fee | Monthly | Max Active Clients | Minimum Term |
+|------|-----------|---------|-------------------|--------------|
+| **Pilot** | $3,500 | $1,500 | 3 | 90 days |
+| **Standard** | $5,500 | $2,000 | Unlimited | 90 days initial, then month-to-month |
+| **Premium** | $9,500 | $3,500 | Unlimited | 90 days initial, then month-to-month |
+
+- Premium full attribution and estimator reporting is deferred to Wave B; the tier and pricing are active in the schema
+- **Pre-subscription usage:** usage limits (team members, phone numbers, leads) are not enforced until a plan is assigned. Limits take effect once a subscription is created.
 - Pause/resume capability
 - Coupon system (percentage/fixed, one-time/recurring, plan restrictions)
+- Configurable plan tiers with included quotas (leads, SMS, team members, phone numbers) via `features` jsonb column on `plans` table
 
 ### Add-On Billing
 
@@ -1017,17 +1021,18 @@ Every funnel event is automatically linked to the agent decision that contribute
 
 ### Guarantee Workflow
 
-| Phase | Window | Threshold | Outcome if not met |
-|-------|--------|-----------|-------------------|
-| **30-Day Proof** | First 30 days | 5 qualified lead engagements | Refund first month |
-| **90-Day Recovery** | Next 90 days | 1 attributed project opportunity OR $5,000+ probable pipeline value | Refund most recent month |
+Two operational guarantee gates replace the revenue-based guarantee. Both run as daily crons; neither requires contractor confirmation.
 
-- **Layer 2 has two passing criteria (OR logic):** the guarantee passes if EITHER (1) 1 attributed project opportunity is confirmed via platform logs, OR (2) the auto-calculated `probablePipelineValue` reaches $5,000 or more within the window. The pipeline floor gives contractors with longer renovation sales cycles a concrete, measurable standard even before a job is formally won.
-- **Layer 2 attribution is fully log-based:** A system-engaged lead is one where (a) the platform captured the first contact (missed call, inbound SMS, form) OR re-contacted the lead via automation (dormant reactivation, old-quote follow-up), AND (b) at least one automated platform message was delivered before the outcome. No subjective contractor confirmation is required. If logs do not establish system engagement, the result is inconclusive and the refund is honored.
-- Volume condition: if &lt;15 leads/month, windows extend proportionally
-- State machine with automatic daily evaluation via cron
-- Metrics tracked: qualified engagements, attributed opportunities, probable pipeline value
-- **Contractor-facing guarantee card:** billing page shows plain-English status per phase (e.g., &ldquo;We need to see 5 leads engage with your AI. You have 3/5 so far.&rdquo;), progress bars for proof (X/5 engagements) and recovery (X/1 opportunities or $/pipeline), a 3-column timeline strip (Free Month / Proof Window / Recovery Window) with extension notices, and a loading skeleton during fetch
+| Gate | Window | Threshold | Outcome if not met |
+|------|--------|-----------|-------------------|
+| **Day-21 Go-Live Gate** | Day 21 from signup | System live (number provisioned, first message sent) | Operator continues service at no charge until live |
+| **Day-30 Logging Gate** | Day 30 from signup | 80% of inquiries logged with source, status, and follow-up | Billing auto-pauses until gate is met |
+
+- **Low-volume exception (Day-30):** if fewer than 7 inquiries were received in the 30-day window, the logging gate is deferred rather than triggered
+- **Day-21 cron:** `GET /api/cron/guarantee-21day` — runs daily, calls `processGoLiveGate()`. Returns `checked`, `live`, `extended` counts
+- **Day-30 cron:** `GET /api/cron/guarantee-30day` — runs daily, calls `processLoggingGate()`. Returns `checked`, `met`, `paused`, `resumed`, `deferred` counts
+- State machine with automatic daily evaluation; billing pause/resume is handled automatically on gate status change
+- **Contractor-facing guarantee card:** billing page shows plain-English status per gate with progress indicators and a loading skeleton during fetch
 
 ### Cancellation
 

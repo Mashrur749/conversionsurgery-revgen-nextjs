@@ -281,11 +281,11 @@ Switch roles: you are now the contractor (the person using the portal day to day
 **Portal pages:**
 
 11. In the contractor portal, check:
-    - **Settings** &rarr; Billing: plan, trial countdown, guarantee status card
+    - **Settings** &rarr; Billing: plan, billing dates, guarantee status card
     - **Reviews**: any pending AI-drafted responses?
     - **Conversations**: threads from Step 2
 
-- [ ] Billing page shows plan and trial countdown
+- [ ] Billing page shows plan, setup fee paid, and next billing date
 - [ ] Guarantee status card visible in Settings &rarr; Billing
 
 ---
@@ -372,15 +372,18 @@ Switch roles: you are now the operator managing the account.
 1. In admin, click **Clients** &rarr; **Clients** &rarr; click your test client &rarr; click **Send Payment Link**
 2. Dev Phone #3 (Owner) should receive an SMS with a Stripe checkout link
 3. Open the link. Use test card: `4242 4242 4242 4242`, any future expiry, any CVC. Verify Terms of Service checkbox appears on checkout page.
-4. Complete checkout. Verify: 30-day trial starts.
+4. Complete checkout. Verify: setup fee + first month charged immediately (no trial). The 90-day minimum term begins on this date.
 5. Check welcome email and welcome SMS (Dev Phone #3).
-6. In contractor portal &rarr; **Settings** &rarr; Billing &mdash; plan and trial countdown should show.
+6. In contractor portal &rarr; **Settings** &rarr; Billing &mdash; plan, setup fee paid, and next billing date should show.
+
+> **Pilot tier:** limited to the first 3 clients. Once 3 Pilot clients are active, the Pilot option should not be offered.
 
 - [ ] Payment link SMS received on contractor phone
 - [ ] Checkout completed with test card and ToS accepted
+- [ ] Setup fee + first month charged (no trial period shown)
 - [ ] Welcome email received
 - [ ] Welcome SMS received
-- [ ] Trial active in contractor billing page (Settings &rarr; Billing)
+- [ ] Billing page shows plan and next billing date (Settings &rarr; Billing)
 
 ---
 
@@ -440,11 +443,15 @@ On a sales call, contractors will ask: &ldquo;What happens at 90 days?&rdquo; Yo
 3. Note: the phase (`proof_pending` / `recovery_pending`), progress bar, days remaining.
 4. Understand: proof_pending = system is building evidence of pipeline value. recovery_pending = $5K pipeline threshold was not met, recovery window is open.
 5. Know where to find pipeline value: Overview tab, the guarantee card shows the running total.
+6. **Operational guarantee gates** (both must be met for the guarantee to be evaluable):
+   - **21-day go-live gate:** system must be live and processing leads by Day 21. If onboarding is not completed within 21 days (contractor delay), the guarantee clock pauses.
+   - **30-day logging gate:** contractor must log WON/LOST outcomes via SMS commands for at least 30 days before the pipeline floor is evaluated. No logging = no pipeline evidence = guarantee cannot be honored.
 
 - [ ] I can find the guarantee card and read the phase
 - [ ] I know the $5,000 pipeline floor threshold
 - [ ] I can explain proof_pending vs recovery_pending in plain language
 - [ ] I know where to find the pipeline value number
+- [ ] I understand the 21-day go-live gate and 30-day logging gate requirements
 
 ---
 
@@ -561,14 +568,14 @@ Say these out loud as if you are on the call with a contractor who just said yes
 
 1. &ldquo;Awesome. Let&apos;s get you set up.&rdquo;
 2. Walk through the 5 key terms (say them out loud):
-   - First month free
-   - Month-to-month, cancel anytime with 30 days notice
-   - 90-day guarantee
+   - Setup fee + first month collected today via Stripe Checkout
+   - 90-day minimum term, then month-to-month
+   - 90-day guarantee: 21-day go-live + $5K pipeline floor
    - Your data is yours, full export if you leave
-   - $1,000/month flat, no hidden fees
+   - Flat monthly rate ([Pilot $1,500 / Standard $2,000 / Premium $3,500]) &mdash; no hidden fees
 3. &ldquo;I&apos;m sending you the payment link now. The full terms are on the checkout page.&rdquo;
 4. (Send payment link &mdash; from admin client detail page &rarr; Send Payment Link)
-5. &ldquo;Perfect, I can see that went through. Your free month starts today. Billing kicks in on [date]. Sound good?&rdquo;
+5. &ldquo;Perfect, I can see that went through. Your 90-day term starts today. Next monthly billing is [date+30d]. Sound good?&rdquo;
 6. &ldquo;Now let&apos;s get you live. I need 30 minutes with you to set up your business number and train the AI on your business. What works &mdash; [time options]?&rdquo;
 7. &ldquo;Here&apos;s what happens next. On our onboarding call I&apos;ll set up your business number, train the AI with your services, and import your old quotes so we can start following up immediately. You&apos;ll start catching leads the same day.&rdquo;
 8. Practice the welcome text: &ldquo;Hey [Name], welcome to ConversionSurgery. Your free month starts today. Onboarding call: [day] at [time]. Before that call, think of 5 people you quoted in the last 6 months that never got back to you &mdash; just first names and what the project was. Talk soon. &mdash; Mashrur&rdquo;
@@ -703,7 +710,7 @@ This is the deliverable you give every client within 48 hours. Practice on real 
 ### 3.4 Self-Test (answer ALL without looking)
 
 - [ ] What does the contractor get for their money?
-- [ ] What&apos;s the deal? First month free, then what?
+- [ ] What&apos;s the deal? Setup fee + first month at signup, then what?
 - [ ] What&apos;s the 4-touch estimate follow-up timing?
 - [ ] What happens when the AI doesn&apos;t know something?
 - [ ] Name 3 things the system does NOT do.
@@ -747,14 +754,29 @@ Work through each service. Don&apos;t skip &mdash; each one powers a specific pa
 
 **Stripe (30 min) &mdash; this is how you get paid:**
 
-1. Go to [Stripe Dashboard](https://dashboard.stripe.com)
-2. Create a product: &ldquo;ConversionSurgery Managed Service&rdquo;, $1,000/month, 30-day free trial
-3. Copy the Price ID (starts with `price_`)
-4. Go to Developers &rarr; Webhooks &rarr; Add endpoint: `https://yourdomain.com/api/webhooks/stripe`
-5. Select these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`, `customer.subscription.paused`, `customer.subscription.resumed`, `customer.subscription.trial_will_end`, `payment_method.attached`
-6. Copy the webhook signing secret (starts with `whsec_`)
+**Prerequisites (do this before Phase 4 setup, in Stripe test mode first):**
 
-- [ ] `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MANAGED_MONTHLY`, `STRIPE_WEBHOOK_SECRET` set in production env
+1. In Stripe **test mode**, create three products with setup fees + recurring prices:
+   - **Pilot** &mdash; setup fee: $3,500 one-time, recurring: $1,500/month (limit: first 3 clients only)
+   - **Standard** &mdash; setup fee: $5,500 one-time, recurring: $2,000/month
+   - **Premium** &mdash; setup fee: $9,500 one-time, recurring: $3,500/month
+2. Copy all six Price IDs (one setup + one recurring per tier)
+3. Run `pnpm tsx scripts/seed-plans.ts` to seed plan rows into the database with the correct Price IDs
+4. Verify plan rows exist in the DB before proceeding
+
+**Production setup:**
+
+5. Switch to Stripe **live mode** and repeat steps 1&ndash;3 for production
+6. Go to Developers &rarr; Webhooks &rarr; Add endpoint: `https://yourdomain.com/api/webhooks/stripe`
+7. Select these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`, `customer.subscription.paused`, `customer.subscription.resumed`, `customer.subscription.trial_will_end`, `payment_method.attached`
+8. Copy the webhook signing secret (starts with `whsec_`)
+
+> **No trial period.** Setup fee + first month is collected at signup via Stripe Checkout. The 90-day minimum term begins on the day of payment.
+
+- [ ] Stripe test-mode products created for all three tiers (Pilot/Standard/Premium)
+- [ ] `scripts/seed-plans.ts` run in test mode &mdash; plan rows in DB confirmed
+- [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` set in production env
+- [ ] Stripe live-mode products created and `seed-plans.ts` run for production
 
 **Email (10 min):**
 
@@ -1080,12 +1102,12 @@ This runs 29 tests covering safety, quality, and adversarial scenarios. All safe
 2. Click **Send Payment Link**
 3. Dev Phone #3 (Owner) should receive SMS with a Stripe checkout link
 4. Open the link. Use test card: `4242 4242 4242 4242`, any future expiry, any CVC
-5. Complete checkout. Verify 30-day trial starts.
-6. Check contractor portal &rarr; **Settings** &rarr; Billing &mdash; plan and trial countdown should show
+5. Complete checkout. Verify setup fee + first month charged immediately (no trial).
+6. Check contractor portal &rarr; **Settings** &rarr; Billing &mdash; plan and next billing date should show
 
 - [ ] Payment link SMS received
 - [ ] Checkout completed with test card
-- [ ] Trial active in contractor billing page
+- [ ] Setup fee + first month charged; billing page shows next billing date
 
 ### A.16 Welcome Communications
 
