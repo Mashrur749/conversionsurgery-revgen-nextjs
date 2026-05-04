@@ -169,24 +169,29 @@ Before writing integration code, query Context7 for current API patterns:
 - `pnpm run db:studio` — open Drizzle Studio for visual database browsing
 - `pnpm run quality:no-regressions` — required gate (`ms:gate` + build + tests + runtime smoke)
 - `pnpm run quality:feature-sweep` — release/refactor gate with extended smoke profile
+- `pnpm run quality:smart-gate` — diff-aware gate: classifies staged files, runs minimum checks (auto-runs via pre-commit hook)
 - `pnpm run quality:logging-guard` — blocks direct API error-detail leaks (`error.message`/`error.stack`)
 - `pnpm run quality:code-review` — automated code review via `claude -p` against diff from main (fresh context window)
 - `pnpm run quality:install-agent-hooks` — installs repo-enforced pre-commit + pre-push checks
 
 ## After Making Changes
 
-Three-tier verification protocol (mandatory):
+Verification is hook-driven. Do NOT run gate commands manually — hooks handle it automatically, saving tokens and time.
 
-1. **Fast gate during implementation:** run `pnpm run ms:gate` and `pnpm run quality:logging-guard` frequently.
-2. **Completion gate for every coding task:** run `pnpm run quality:no-regressions`.
-3. **Code review before merge:** run `pnpm run quality:code-review` from the feature branch. Fresh context window catches overcomplicated code, dead code, and bugs that the author's context is blind to.
-4. **Release/refactor/deletion gate:** run `pnpm run quality:feature-sweep`.
-5. Never mark a task done with a red gate.
+- **Pre-commit hook** (`smart-gate.sh`): diff-aware, runs minimum checks based on staged files. UI-only = typecheck (~8s). Logic changes = typecheck + tests. Docs-only = skip. Quiet on success (1 line). You see output only if it fails — fix the error shown.
+- **Pre-push hook**: runs full `no-regressions` gate (ms:gate + logging-guard + build + tests + runtime smoke). Nothing leaves the machine without passing.
+- **Code review before merge:** run `pnpm run quality:code-review` from feature branch. This is the one manual gate — fresh context window catches what the author's context is blind to.
+- **Release/refactor/deletion gate:** run `pnpm run quality:feature-sweep`.
+- Never mark a task done with a red hook.
+
+**Manual override** (rare — only when debugging a gate failure):
+- `pnpm run quality:smart-gate` — run the diff-aware gate manually
+- `pnpm run quality:no-regressions` — run full pipeline manually
 
 ## Session Discipline
 
-- Commit working code frequently — small commits, not one giant commit at the end
-- Before stopping (for any reason): ensure the build passes and all changes are committed
+- Commit working code frequently — small commits, not one giant commit at the end. Hooks verify each commit automatically.
+- Before stopping (for any reason): ensure all changes are committed (hooks verify on commit + push)
 - When using worktrees: update `.claude/progress.md` before the session ends
 
 ## File Organization
@@ -215,66 +220,12 @@ Three-tier verification protocol (mandatory):
 
 ## Documentation Sync
 
-When you change code, check whether the affected docs need updating. This is mandatory — stale docs are worse than no docs.
+When code changes affect product behavior, operator workflows, UI, permissions, billing, automations, AI behavior, schema, routes, or tests, consult `.claude/references/doc-sync-map.md` and update the mapped docs in the same change.
 
-### Change → Doc mapping
-
-| What you changed | Check / update these docs |
-|-----------------|--------------------------|
-| Any automation (estimate, payment, review, win-back, no-show, appointment) | `docs/product/PLATFORM-CAPABILITIES.md` (Section 2: Follow-Up Automation) |
-| Any automation schedule or touch count | `docs/engineering/01-TESTING-GUIDE.md` (matching test step) |
-| Voice AI flow, modes, or transfer logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 3: Voice AI) |
-| Voice AI webhooks or kill switch | `docs/engineering/01-TESTING-GUIDE.md` (Step 16) |
-| Lead pipeline stages, scoring, or context fields | `docs/product/PLATFORM-CAPABILITIES.md` (Section 4: Communication Hub) |
-| Client portal pages, permissions, or nav | `docs/product/PLATFORM-CAPABILITIES.md` (Section 5: Client Portal) |
-| Compliance rules, consent types, quiet hours, or gateway logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 6: Compliance) |
-| Compliance behavior | `docs/business-intel/OFFER-APPROVED-COPY.md` (Sections 6-7: Quiet Hours + Compliance) |
-| Reporting metrics, Without Us model, or delivery | `docs/product/PLATFORM-CAPABILITIES.md` (Section 7: Reporting) |
-| Billing, plans, add-ons, guarantee, or cancellation | `docs/product/PLATFORM-CAPABILITIES.md` (Section 8: Billing) |
-| Billing terms or pricing | `docs/business-intel/OFFER-APPROVED-COPY.md` (Sections 4-5: Pricing + Terms) |
-| Onboarding milestones, quality gates, or progressive activation | `docs/product/PLATFORM-CAPABILITIES.md` (Section 9: Onboarding) |
-| Quarterly campaign types or planner logic | `docs/product/PLATFORM-CAPABILITIES.md` (Section 10: Quarterly Growth Blitz) |
-| AI agent behavior, guardrails, model routing, or decision pipeline | `docs/product/PLATFORM-CAPABILITIES.md` (Section 1: AI Conversation Agent + Section 11: Observability) |
-| AI agent tests or evaluation criteria | `docs/engineering/01-TESTING-GUIDE.md` (Steps 32-35: model routing, scenarios, AI criteria, effectiveness) |
-| AI effectiveness metrics, attribution, or dashboard | `docs/product/PLATFORM-CAPABILITIES.md` (Section 11: Observability), `docs/operations/01-OPERATIONS-GUIDE.md` (items 28-30) |
-| Admin tools, kill switches, cron jobs, or observability | `docs/product/PLATFORM-CAPABILITIES.md` (Section 11: Agency Operations) |
-| New cron job added or removed | `docs/engineering/01-TESTING-GUIDE.md` (Section 3: Useful Commands — cron list) |
-| Review monitoring, auto-response, or Google integration | `docs/product/PLATFORM-CAPABILITIES.md` (Section 12: Review Monitoring) |
-| New API route or webhook | `docs/engineering/01-TESTING-GUIDE.md` (add test step if user-facing) |
-| Schema migration (new table, dropped column, FK change) | `docs/engineering/01-TESTING-GUIDE.md` (preflight — `db:migrate` step) |
-| Permission changes (new permission, route guard change) | `docs/engineering/02-ACCESS-MANAGEMENT.md` |
-| Feature added, removed, or substantially changed | `docs/product/PLATFORM-CAPABILITIES.md` (relevant section) |
-| Feature removed that was in the offer | `docs/product/02-OFFER-PARITY-GAPS.md` |
-| Feature backlog item implemented | `docs/product/FEATURE-BACKLOG.md` (mark resolved or remove) |
-| Client portal page layout, nav, or UX change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 5: Client Portal), `docs/specs/UX-AUDIT-FULL.md` (mark item Done if tracked) |
-| Admin dashboard layout, nav, or UX change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 11: Agency Operations), `docs/specs/UX-AUDIT-FULL.md` (mark item Done if tracked) |
-| New UI component used across pages (breadcrumbs, notification bell, etc.) | `docs/product/PLATFORM-CAPABILITIES.md` (relevant section) |
-| SMS/notification copy or tone change | `docs/product/PLATFORM-CAPABILITIES.md` (relevant automation section), review `docs/business-intel/OFFER-APPROVED-COPY.md` for consistency |
-| Onboarding wizard, self-serve signup, or day-one flow change | `docs/product/PLATFORM-CAPABILITIES.md` (Section 9: Onboarding), `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (Section 10: Onboarding Call) |
-| Change that affects how operator delivers managed service | `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` (relevant section), `docs/operations/01-OPERATIONS-GUIDE.md` |
-| Change that affects how contractor uses the portal day-to-day | `docs/operations/LAUNCH-CHECKLIST.md` (Phase 3: First Client Delivery — if onboarding steps change) |
-
-### Key docs (quick reference)
-
-| Doc | Purpose | When it gets stale |
-|-----|---------|-------------------|
-| `docs/product/PLATFORM-CAPABILITIES.md` | **What the platform does** — complete feature inventory | Any feature add/change/remove |
-| `docs/business-intel/OFFER-APPROVED-COPY.md` | **What we promise clients** — approved sales language | Pricing, compliance, or capability changes that affect claims |
-| `docs/engineering/01-TESTING-GUIDE.md` | **How to verify it works** — manual + automated test steps | New features, changed flows, new crons |
-| `docs/product/02-OFFER-PARITY-GAPS.md` | **What's promised vs built** — gap register | Features shipped or descoped |
-| `docs/product/FEATURE-BACKLOG.md` | **What's planned** — future work with context | Backlog items implemented or deprioritized |
-| `docs/engineering/02-ACCESS-MANAGEMENT.md` | **Who can do what** — permissions and routes | Permission or auth changes |
-| `docs/operations/01-OPERATIONS-GUIDE.md` | **How to run the platform** — operator playbook | Workflow or ops process changes |
-| `docs/specs/UX-AUDIT-FULL.md` | **UX issue tracker** — all identified UX issues with status | Any UI/UX change (mark items Done) |
-| `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` | **How to deliver the service** — every client scenario | Changes affecting operator or contractor workflows |
-| `docs/operations/LAUNCH-CHECKLIST.md` | **Go-to-market checklist** — Phase 0 through Phase 4 | New prerequisites, onboarding steps, or delivery process changes |
-
-### Rules
-
-1. **Check before marking done.** After completing a coding task, scan the table above. If your change maps to a doc, update it in the same commit or immediately after.
-2. **Don't update offer docs without asking.** `OFFER-APPROVED-COPY.md` is approved sales copy — flag the discrepancy to the user rather than editing directly.
-3. **Capabilities doc is ground truth.** `PLATFORM-CAPABILITIES.md` reflects what's *built*, not what's *planned*. Only add features that are implemented and passing tests.
-4. **Testing guide stays runnable.** Every test step must be executable as written. If you change a flow, update the step so someone following the guide doesn't hit a wall.
+Rules:
+- Do not update `docs/business-intel/OFFER-APPROVED-COPY.md` without asking; flag discrepancies instead.
+- `docs/product/PLATFORM-CAPABILITIES.md` reflects built behavior only, not planned work.
+- Keep `docs/engineering/01-TESTING-GUIDE.md` runnable when changing verification steps.
 
 ## Do NOT
 
@@ -292,36 +243,7 @@ When you change code, check whether the affected docs need updating. This is man
 
 ## Parallel Agent Execution
 
-For multi-item execution (UX fixes, edge cases, feature batches), use the work tracker at `.claude/work-tracker.md`.
-
-**Orchestration rules:**
-1. Read `.claude/work-tracker.md` to see what's todo/in_progress/done
-2. Before dispatching agents, update item status to `in_progress` and fill the Assigned Agent column
-3. Check the Files Touched column — never assign two agents to the same file
-4. Check the Depends On column — don't start dependent items until prerequisites are done
-5. Group items that share files into the same agent (e.g., all team-escalation.ts fixes together)
-6. Max 4 agents in parallel
-7. After all agents in a wave complete: run `pnpm run quality:no-regressions`, update tracker (in_progress → done), update docs per Change-to-Doc table
-8. Each agent prompt must include: the specific items to fix, the files they can touch, and a reminder to run `pnpm run typecheck` before finishing
-
-**Model selection per agent:**
-- `model: "haiku"` — single-file fixes, try-catch, class changes (< 20 lines)
-- `model: "sonnet"` — multi-file features, new components, API endpoints (20-200 lines)
-- Default (Opus) — architectural changes, rewrites, complex state (200+ lines)
-
-**Agent prompt template (keep lean — don't repeat CLAUDE.md rules):**
-```
-Fix [ITEM-IDs]: [brief description]
-
-Read `.claude/skills/ux-standards/SKILL.md` for patterns and rules.
-
-Files you may modify: [list]
-Files you must NOT modify: [list]
-
-[Requirements — what to do, not how to code]
-
-After implementation, run: pnpm run typecheck
-```
+For multi-item execution, use `.claude/work-tracker.md` as the source of truth. Keep agent prompts lean: assign item IDs, disjoint files, requirements, and `pnpm run typecheck`. Do not repeat this full `CLAUDE.md` in subagent prompts.
 
 ## Worktree Workflow
 
@@ -357,6 +279,7 @@ Rules are appended when corrections happen. Format: `N. [CATEGORY] Instruction �
 This project has a graphify knowledge graph at graphify-out/.
 
 Rules:
-- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
-- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- Use graphify as an index for broad architecture/codebase questions, not as a mandatory prelude to routine `Grep`/`Glob`.
+- Prefer `.planning/codebase/` docs for compact architecture orientation.
+- Read only the relevant section of `graphify-out/GRAPH_REPORT.md`; do not load the full report for narrow symbol/file searches.
 - After modifying code files in this session, run `graphify update .` to keep the graph current (AST-only, no API cost)

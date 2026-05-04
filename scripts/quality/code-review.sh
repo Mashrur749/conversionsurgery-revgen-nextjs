@@ -23,6 +23,15 @@ if [[ -z "${DIFF}" ]]; then
   exit 0
 fi
 
+MAX_REVIEW_DIFF_BYTES="${MAX_REVIEW_DIFF_BYTES:-200000}"
+DIFF_BYTES="$(printf '%s' "${DIFF}" | wc -c | tr -d ' ')"
+if [[ "${DIFF_BYTES}" -gt "${MAX_REVIEW_DIFF_BYTES}" ]]; then
+  echo "[code-review] Diff is ${DIFF_BYTES} bytes, above MAX_REVIEW_DIFF_BYTES=${MAX_REVIEW_DIFF_BYTES}."
+  echo "[code-review] Split the branch or rerun with a higher MAX_REVIEW_DIFF_BYTES value."
+  git diff --stat "${BASE}"...HEAD
+  exit 1
+fi
+
 STAT="$(git diff --stat "${BASE}"...HEAD)"
 COMMITS="$(git log --oneline "${BASE}"..HEAD)"
 
