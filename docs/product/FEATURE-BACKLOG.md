@@ -321,18 +321,18 @@ KPI list (§12) calls for "Won/lost reasons logged." `lostReason` exists on `job
 
 ---
 
-## Recently Implemented (SPEC-07 through SPEC-12, April 2026)
+## Recently Implemented (Wave 6, April 2026)
 
 These items were shipped and are no longer backlog. Documented here for traceability.
 
-| SPEC | Feature | Status |
-|------|---------|--------|
-| SPEC-07 | Pre-Sale Revenue Leak Audit — operator process + template at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` | **Implemented** |
-| SPEC-08 | Weekly Activity Digest — Monday SMS with adaptive cadence (weekly/biweekly/monthly based on activity). Contractor-friendly format, not pipeline math. Includes jobs to close out for review engine. | **Implemented** (redesigned 2026-04-09) |
-| SPEC-09 | Voice AI Default-On — `voiceEnabled` defaults to `true` for new clients; per-minute billing unchanged | **Implemented** |
-| SPEC-10 | Revenue Floor Guarantee — 90-day guarantee now passes with $5,000+ probable pipeline OR 1 attributed opportunity | **Implemented** |
-| SPEC-11 | ROI Calculator API — `POST /api/public/roi-calculator` for pre-sale revenue-at-risk calculations | **Implemented** |
-| SPEC-12 | Jobber Integration — basic webhook: outbound `appointment_booked` events + inbound `job_completed` triggers review generation | **Implemented** |
+| Feature | Status |
+|---------|--------|
+| Pre-Sale Revenue Leak Audit — operator process + template at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` | **Implemented** |
+| Weekly Activity Digest — Monday SMS with adaptive cadence (weekly/biweekly/monthly based on activity). Contractor-friendly format, not pipeline math. Includes jobs to close out for review engine. | **Implemented** (redesigned 2026-04-09) |
+| Voice AI Default-On — `voiceEnabled` defaults to `true` for new clients; per-minute billing unchanged | **Implemented** |
+| Revenue Floor Guarantee — 90-day guarantee now passes with $5,000+ probable pipeline OR 1 attributed opportunity | **Implemented** |
+| ROI Calculator API — `POST /api/public/roi-calculator` for pre-sale revenue-at-risk calculations | **Implemented** |
+| Jobber Integration — basic webhook: outbound `appointment_booked` events + inbound `job_completed` triggers review generation | **Implemented** |
 
 ## Recently Implemented (GAP-1 through GAP-6, April 2026)
 
@@ -347,7 +347,7 @@ Six admin UI tools shipped as part of the operator tooling gap closure. All are 
 | GAP-5 | Integration Webhook Config UI — Configuration tab for Jobber/ServiceTitan/Housecall Pro/Zapier/generic webhooks with CRUD; API: `/api/admin/clients/[id]/integrations` | **Implemented** |
 | GAP-6 | Admin Data Export Trigger — Export Data button in client detail page header (Actions card removed) with AlertDialog confirmation; API: POST `/api/admin/clients/[id]/export` | **Implemented** |
 
-Note: The Jobber/FSM auto-detect integration referenced in COMPONENT 1 of the offer doc (auto-detect when estimate is created in Jobber) remains a future enhancement. SPEC-12 covers review and appointment sync; Jobber estimate webhook auto-detection is still a roadmap item. However, **conversation-based estimate auto-detection is now implemented** — the AI detects when a lead's message implies a quote was sent ("waiting on the quote", "comparing prices") and auto-starts the follow-up sequence without contractor action. This closes the trigger gap for the majority of cases where the contractor forgets to send the EST keyword.
+Note: The Jobber/FSM auto-detect integration referenced in COMPONENT 1 of the offer doc (auto-detect when estimate is created in Jobber) remains a future enhancement. The Jobber integration covers review and appointment sync; Jobber estimate webhook auto-detection is still a roadmap item. However, **conversation-based estimate auto-detection is now implemented** — the AI detects when a lead's message implies a quote was sent ("waiting on the quote", "comparing prices") and auto-starts the follow-up sequence without contractor action. This closes the trigger gap for the majority of cases where the contractor forgets to send the EST keyword.
 
 ## Recently Implemented (FMA Wave 1, April 2026)
 

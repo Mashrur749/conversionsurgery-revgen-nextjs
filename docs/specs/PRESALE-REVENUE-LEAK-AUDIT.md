@@ -1,4 +1,4 @@
-# SPEC-07: Pre-Sale Revenue Leak Audit
+# Pre-Sale Revenue Leak Audit
 
 **Status:** Approved
 **Last Updated:** 2026-04-03

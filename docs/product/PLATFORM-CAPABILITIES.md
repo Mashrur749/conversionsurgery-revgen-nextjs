@@ -1048,7 +1048,7 @@ Every funnel event is automatically linked to the agent decision that contribute
 
 Before the sales call, the operator runs a lightweight pre-sale audit using publicly available data (Google Business Profile, website, competitor review counts). This produces a personalized opener and pre-qualifies the prospect.
 
-- **Pre-Sale Revenue Leak Audit:** 15-20 minute research process. Template at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`. Spec: `docs/specs/SPEC-07.md`.
+- **Pre-Sale Revenue Leak Audit:** 15-20 minute research process. Template at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`. Spec: `docs/specs/PRESALE-REVENUE-LEAK-AUDIT.md`.
 - **ROI Calculator:** Public endpoint `POST /api/public/roi-calculator` accepts contractor inputs (lead volume, avg project value, follow-up gap) and returns annual revenue at risk, monthly recovery potential, and months-to-break-even. Used live during the sales call to replace manual math.
 
 ### Day-One Milestones
@@ -1584,7 +1584,7 @@ Each client has a `reviewApprovalMode` field controlling who approves AI-drafted
 
 ## 13. External Integrations
 
-### Jobber Webhook Integration (SPEC-12)
+### Jobber Webhook Integration
 
 Basic bidirectional webhook integration with Jobber for clients who use it for job management.
 
@@ -1600,7 +1600,7 @@ Basic bidirectional webhook integration with Jobber for clients who use it for j
 
 **Sales positioning:** CS is the front end of the contractor&apos;s pipeline. Jobber handles job management; CS handles getting the work and closing the loop on reviews. The Jobber integration makes this concrete — no duplicate data entry, no manual review requests.
 
-### ROI Calculator (SPEC-11)
+### ROI Calculator
 
 Public API endpoint for pre-sale conversations:
 

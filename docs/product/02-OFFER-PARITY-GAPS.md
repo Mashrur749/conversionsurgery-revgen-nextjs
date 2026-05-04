@@ -16,7 +16,7 @@ Objective: Track every promise in the Business Reference against platform realit
 
 | Tier | Public price | Readiness |
 |---|---|---|
-| Estimate Recovery Audit (free) | n/a | Ready — operator process documented at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md` (SPEC-07). |
+| Estimate Recovery Audit (free) | n/a | Ready — operator process documented at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`. |
 | Pilot Revenue Recovery System | $3,500 setup + $1,500/mo | **Ready to sell** once `PG-001` is resolved. All operational deliverables built. |
 | Standard Revenue Recovery System | $5,500 setup + $2,000/mo | **Ready to sell** once `PG-001`, `PG-002` are resolved. |
 | Booked Estimate OS (Premium) | $9,500 setup + $3,500/mo | **Do not sell yet.** 6 of 11 attribution / CRM-depth deliverables open (`PG-101..PG-106`). |
@@ -30,7 +30,7 @@ Objective: Track every promise in the Business Reference against platform realit
 
 | ID | Promise (Business Reference §) | Platform reality | Status | Owner |
 |---|---|---|---|---|
-| `PG-001` | Operational guarantee: "If core system is not live within 21 days, we continue working at no additional charge until it is live. If connected inquiries and flagged estimates are not being logged with source, status, and follow-up activity by day 30, we pause monthly billing until fixed." (§11) | Platform implements a different guarantee: 30-day free + 90-day pipeline guarantee (`SPEC-02`, `SPEC-10`). No 21-day go-live gate. No day-30 logging gate. `OFFER-APPROVED-COPY.md` §3 reflects the platform's guarantee, not the Business Reference's. | Open | Founder must reconcile: (a) implement 21-day / day-30 gates, or (b) update Business Reference §11 to match platform guarantee. **Do not edit `OFFER-APPROVED-COPY.md` without explicit approval.** |
+| `PG-001` | Operational guarantee: "If core system is not live within 21 days, we continue working at no additional charge until it is live. If connected inquiries and flagged estimates are not being logged with source, status, and follow-up activity by day 30, we pause monthly billing until fixed." (§11) | Platform implements a different guarantee: 30-day free + 90-day pipeline guarantee (`MS-02-GUARANTEE-V2-PARITY.md`). No 21-day go-live gate. No day-30 logging gate. `OFFER-APPROVED-COPY.md` §3 reflects the platform's guarantee, not the Business Reference's. | Open | Founder must reconcile: (a) implement 21-day / day-30 gates, or (b) update Business Reference §11 to match platform guarantee. **Do not edit `OFFER-APPROVED-COPY.md` without explicit approval.** |
 | `PG-002` | Source visibility on the Standard-tier dashboard: "Lead-source map across website forms, calls, texts, Google Business Profile, Houzz, referrals, and paid lead sources where relevant." (§6.2 Pilot, §6.3 Standard) | `leads.source` is a free-text varchar(50). Codebase only writes `missed_call`, `form`, `manual`. No channel-level capture (Google / Houzz / LSA / Meta / referral / organic). No reporting dimension surfaces channel-level breakdown. | Open | If selling Standard with the lead-source promise: implement minimum channel-level enum + capture path. If deferring: rewrite the Pilot/Standard offer line to "entry channel" (call vs. form vs. manual) and reserve channel attribution for Premium. |
 
 ### P1 — Standard-tier deliverable gaps (open while selling Standard)
@@ -70,13 +70,13 @@ Every Pilot-tier and Standard-tier operational deliverable is built. See `docs/p
 | 4-6 touch estimate follow-up over 14-30 days | 4-touch sequence, pause-on-reply, soft-rejection cancellation |
 | Stale estimate reactivation | Probable-wins nudge (cron), 21+ day stuck-estimate callout, proactive 3-day quote SMS |
 | Pipeline stages | `leads.status` enum: `new`, `contacted`, `estimate_sent`, `won`, `lost`, `completed` |
-| Weekly Pipeline Pulse | Monday SMS — `SPEC-08` (redesigned 2026-04-09) |
+| Weekly Pipeline Pulse | Monday SMS (redesigned 2026-04-09) |
 | Dedicated business number | Twilio provisioning, up to 3 numbers in base plan |
 | Dormant lead reactivation | Win-back automation (25-35 day stale leads) |
 | Appointment reminders + no-show recovery | 2h reminder + 4h operator escalation + AI-personalized homeowner recovery |
 | Review request workflow | Auto-trigger on `status=completed`, CTIA rate cap |
 | Payment / deposit reminders | Stripe links + deposit→final chaining + "Mark Paid" portal action |
-| AI voice receptionist | `SPEC-09` — included in base, no per-minute charge |
+| AI voice receptionist | Included in base, no per-minute charge |
 | A2P 10DLC / consent / quiet hours / STOP | `MS-08` quiet-hours classification, CASL attestation, instant STOP, audit trail |
 | 21-day onboarding workflow | 3-week progression + 11-item checklist (`FMA-W2-4`) |
 | Booked consult rate (primary KPI) | Auto-pipeline proof + bi-weekly report + operator capacity KPI |
@@ -88,6 +88,28 @@ Every Pilot-tier and Standard-tier operational deliverable is built. See `docs/p
 - **On every offer copy change**: re-verify `PG-001` through `PG-006` are still aligned. Sales claims and platform behavior must agree.
 - **Do not edit `OFFER-APPROVED-COPY.md`** without explicit founder approval — it is approved sales language. Changes there require sign-off.
 - **Numbering**: `PG-001..099` for Pilot/Standard scope, `PG-101..199` for Premium tier, `PG-201..299` for add-ons. Do not reuse archived `GAP-XXX` IDs from v2.1.
+
+## Managed-Service Spec Mapping
+
+The following MS specs implement parity items tracked above or operational improvements:
+
+| Spec | Title | Resolves |
+|---|---|---|
+| `MS-01-UNLIMITED-MESSAGING-PARITY.md` | Unlimited Messaging Parity | Operational — messaging cost model |
+| `MS-02-GUARANTEE-V2-PARITY.md` | Guarantee v2 Parity (30-Day Proof + 90-Day Recovery) | `PG-001` |
+| `MS-03-ESTIMATE-TRIGGER-STACK.md` | Estimate Trigger Stack Parity | Operational — automation coverage |
+| `MS-04-SMART-ASSIST-AUTO-SEND.md` | Smart Assist Auto-Send Parity | Operational — AI draft delivery |
+| `MS-05-QUARTERLY-GROWTH-BLITZ.md` | Quarterly Growth Blitz Productization | Operational — campaign system |
+| `MS-06-BIWEEKLY-WITHOUT-US-MODEL.md` | Bi-Weekly "Without Us" Model Parity | Operational — reporting |
+| `MS-07-CANCELLATION-EXPORT-PARITY.md` | Cancellation and Data Export Parity | Operational — offboarding |
+| `MS-08-QUIET-HOURS-CLASSIFICATION.md` | Quiet-Hours Classification Switch | Operational — compliance |
+| `MS-09-DAY-ONE-ACTIVATION-TRACKING.md` | Day-One Activation and Revenue Leak Audit Tracking | Operational — onboarding |
+| `MS-10-ADDON-BILLING-TRANSPARENCY.md` | Add-On Billing Transparency Parity | Operational — billing UX |
+| `MS-11-REPORT-DELIVERY-OBSERVABILITY.md` | Report Delivery Observability and Retry UX | Operational — observability |
+| `MS-12-CRON-CATCHUP-GUARANTEES.md` | Cron Catch-Up Guarantees | Operational — reliability |
+| `MS-13-KB-GAP-CLOSURE-QUEUE.md` | Knowledge Gap Closure Queue | Operational — AI knowledge |
+| `MS-14-ONBOARDING-QUALITY-GATES.md` | Onboarding Quality Gates | Operational — onboarding |
+| `MS-15-REMINDER-ROUTING-FLEXIBILITY.md` | Reminder Recipient Routing Flexibility | Operational — automation |
 
 ## Related registers
 

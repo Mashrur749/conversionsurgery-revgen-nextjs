@@ -758,11 +758,11 @@ Items 4, 5, and 7 should be reviewed before scaling but can be addressed in the 
 
 ---
 
-## PART 11: SPEC-DRIVEN UPDATES (April 2026)
+## PART 11: WAVE 6 UPDATES (April 2026)
 
-The following capability and policy updates were shipped as part of SPEC-07 through SPEC-12 and are reflected in this document:
+The following capability and policy updates were shipped as part of Wave 6 (April 2026) and are reflected in this document:
 
-### Pre-Sale ROI Calculator (SPEC-11)
+### Pre-Sale ROI Calculator
 
 A public API endpoint (`POST /api/public/roi-calculator`) accepts contractor inputs (monthly lead volume, average project value, estimated follow-up gap, quote-to-win rate) and returns a personalized revenue-at-risk estimate. Use this during the sales call instead of doing the math on paper.
 
@@ -773,14 +773,14 @@ Output: annual revenue at risk, monthly recovery potential, months-to-break-even
 
 Template for manual calculation if API is unavailable: `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`.
 
-### Pre-Sale Revenue Leak Audit (SPEC-07)
+### Pre-Sale Revenue Leak Audit
 
 Before any sales call, run a 15-20 minute lightweight audit using publicly available data. This changes the call opener from a pitch to a discovery conversation: "I already did some research on your business — can I share what I found?"
 
 Audit process and template: `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`
-Spec reference: `docs/specs/SPEC-07.md`
+Spec reference: `docs/specs/PRESALE-REVENUE-LEAK-AUDIT.md`
 
-### Jobber Integration (SPEC-12)
+### Jobber Integration
 
 Basic webhook integration is live:
 - **Outbound (CS → Jobber):** CS fires an `appointment_booked` event to a configured Jobber webhook URL when an appointment is created
@@ -790,7 +790,7 @@ This integration is optional (off by default, enabled per client). It resolves t
 
 The integration architecture uses a generic `integration_webhooks` table, so future providers (HubSpot, ServiceTitan, Housecall Pro) follow the same pattern.
 
-### Voice AI Included by Default (SPEC-09)
+### Voice AI Included by Default
 
 Voice AI is no longer an opt-in add-on for new clients. `voiceEnabled` defaults to `true` on client creation. Per-minute usage ($0.15/min pass-through) is invoiced as a transparent line item, but no setup step is required. See Component 2 update above.
 
@@ -811,5 +811,5 @@ The following changes affect client-facing promises and have NOT yet been update
 ---
 
 _ConversionSurgery Grand Slam Offer Architecture v2.2_
-_Consolidated from v1.0 (strategic architecture), v1.1 (operational refinements), Unlimited Messaging Update, Gap Resolution (estimate triggers, quiet hours, smart assist, KB quality, voice AI, customer list extraction, claims boundary, unlimited qualifier, guarantee formula), and SPEC-07–12 updates (ROI calculator, pre-sale audit, Jobber integration, voice default-on, weekly pipeline SMS, guarantee pipeline floor)_
+_Consolidated from v1.0 (strategic architecture), v1.1 (operational refinements), Unlimited Messaging Update, Gap Resolution (estimate triggers, quiet hours, smart assist, KB quality, voice AI, customer list extraction, claims boundary, unlimited qualifier, guarantee formula), and Wave 6 updates (ROI calculator, pre-sale audit, Jobber integration, voice default-on, weekly pipeline SMS, guarantee pipeline floor)_
 _Last updated: April 2026_
