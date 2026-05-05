@@ -4,6 +4,12 @@
  * Voice AI is included free in all tiers (up to 1,000 min/mo fair-use).
  * No per-minute charge unless client exceeds fair-use threshold.
  *
+ * IMPORTANT — Setup fee is split 50/50 (signing/go-live). The
+ * `priceSetupCents` field below stores the TOTAL setup fee. The Stripe
+ * price for the "setup at signing" line item must equal 50% of this
+ * value. The remaining 50% is invoiced manually at go-live, and the
+ * monthly subscription is activated at go-live (not at signing).
+ *
  * Usage:  pnpm tsx scripts/seed-plans.ts
  *
  * Stripe price IDs must be created in the Stripe Dashboard first (test mode),

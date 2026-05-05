@@ -179,11 +179,11 @@ After signature is in hand:
 
 Use **Send Payment Link** (one click → contractor receives SMS + email). Stay on the line if you're on a sales call. Confirm receipt verbally.
 
-The link covers the **first half of the setup fee + first month's monthly retainer pre-authorized for go-live**, per the payment structure in OFFER-APPROVED-COPY §4 / §5:
-- Pilot: $1,750 setup half + monthly $1,500 starts at go-live
-- Standard: $2,750 setup half + monthly $2,000 starts at go-live
+The link covers the **first 50% of the setup fee only**. Per the payment structure in OFFER-APPROVED-COPY §4 / §5 and SERVICE-AGREEMENT-TEMPLATE §4:
+- Pilot: $1,750 setup half charged at signing. Remaining $1,750 setup invoiced at go-live. Monthly $1,500 subscription activated at go-live (Day 21 max).
+- Standard: $2,750 setup half charged at signing. Remaining $2,750 setup invoiced at go-live. Monthly $2,000 subscription activated at go-live.
 
-Wait — the current platform Stripe checkout collects setup fee + first month at signing per `LAUNCH-CHECKLIST.md` §4.1 ("Setup fee + first month is collected at signup. The 90-day minimum term begins on the day of payment."). Confirm in your Stripe Dashboard which structure your prices reflect, and reconcile with the contractor verbally before they pay. **Do not let this discrepancy reach the client without resolving.**
+**Stripe price configuration requirement:** the &ldquo;setup at signing&rdquo; Stripe price must equal 50% of the total setup fee (not the full setup). Verify your Stripe Dashboard prices match this structure before sending a real client a payment link. The 90-day minimum term clock starts at signing.
 
 ### 3.3 Verify Payment Received in Stripe
 

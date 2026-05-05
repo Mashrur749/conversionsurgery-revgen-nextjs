@@ -372,15 +372,18 @@ Switch roles: you are now the operator managing the account.
 1. In admin, click **Clients** &rarr; **Clients** &rarr; click your test client &rarr; click **Send Payment Link**
 2. Dev Phone #3 (Owner) should receive an SMS with a Stripe checkout link
 3. Open the link. Use test card: `4242 4242 4242 4242`, any future expiry, any CVC. Verify Terms of Service checkbox appears on checkout page.
-4. Complete checkout. Verify: setup fee + first month charged immediately (no trial). The 90-day minimum term begins on this date.
+4. Complete checkout. Verify: 50% of setup fee charged at signing ($1,750 Pilot / $2,750 Standard). Monthly retainer does NOT auto-charge yet — it begins at go-live (Day 21 max). Remaining 50% of setup is invoiced at go-live.
 5. Check welcome email and welcome SMS (Dev Phone #3).
-6. In contractor portal &rarr; **Settings** &rarr; Billing &mdash; plan, setup fee paid, and next billing date should show.
+6. In contractor portal &rarr; **Settings** &rarr; Billing &mdash; plan, first 50% setup paid, and go-live date should show.
 
 > **Pilot tier:** limited to the first 3 clients. Once 3 Pilot clients are active, the Pilot option should not be offered.
 
+> **Stripe price configuration note:** the Stripe Checkout price for the &ldquo;setup at signing&rdquo; line item must equal 50% of the total setup fee. The remaining 50% setup + monthly subscription start are triggered at go-live (manually invoiced for setup-half-2 and monthly subscription activated via Stripe API). The 90-day minimum term clock starts at signing.
+
 - [ ] Payment link SMS received on contractor phone
 - [ ] Checkout completed with test card and ToS accepted
-- [ ] Setup fee + first month charged (no trial period shown)
+- [ ] First 50% setup charged ($1,750 Pilot / $2,750 Standard)
+- [ ] Monthly subscription NOT charged yet (begins at go-live)
 - [ ] Welcome email received
 - [ ] Welcome SMS received
 - [ ] Billing page shows plan and next billing date (Settings &rarr; Billing)
@@ -568,9 +571,9 @@ Say these out loud as if you are on the call with a contractor who just said yes
 
 1. &ldquo;Awesome. Let&apos;s get you set up.&rdquo;
 2. Walk through the 5 key terms (say them out loud):
-   - Setup fee + first month collected today via Stripe Checkout
-   - 90-day minimum term, then month-to-month
-   - 90-day guarantee: 21-day go-live + $5K pipeline floor
+   - 50% of setup fee collected today via Stripe Checkout. Remaining 50% at go-live. Setup non-refundable after Day 7. Monthly retainer begins at go-live.
+   - 90-day minimum term, then month-to-month with 30-day notice
+   - Operational guarantee: 21-day go-live (or work continues at no charge), 30-day logging gate (or billing pauses)
    - Your data is yours, full export if you leave
    - Flat monthly rate ([Pilot $1,500 / Standard $2,000 / Premium $3,500]) &mdash; no hidden fees
 3. &ldquo;I&apos;m sending you the payment link now. The full terms are on the checkout page.&rdquo;
@@ -710,7 +713,7 @@ This is the deliverable you give every client within 48 hours. Practice on real 
 ### 3.4 Self-Test (answer ALL without looking)
 
 - [ ] What does the contractor get for their money?
-- [ ] What&apos;s the deal? Setup fee + first month at signup, then what?
+- [ ] What&apos;s the deal? 50% setup at signing, 50% at go-live, monthly retainer starts at go-live, 90-day minimum.
 - [ ] What&apos;s the 4-touch estimate follow-up timing?
 - [ ] What happens when the AI doesn&apos;t know something?
 - [ ] Name 3 things the system does NOT do.
@@ -771,7 +774,7 @@ Work through each service. Don&apos;t skip &mdash; each one powers a specific pa
 7. Select these events: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`, `invoice.payment_action_required`, `charge.refunded`, `charge.dispute.created`, `charge.dispute.closed`, `customer.subscription.paused`, `customer.subscription.resumed`, `customer.subscription.trial_will_end`, `payment_method.attached`
 8. Copy the webhook signing secret (starts with `whsec_`)
 
-> **No trial period.** Setup fee + first month is collected at signup via Stripe Checkout. The 90-day minimum term begins on the day of payment.
+> **No trial period.** Stripe Checkout at signing collects 50% of setup ($1,750 Pilot / $2,750 Standard). Remaining 50% setup is invoiced at go-live. Monthly subscription is activated at go-live (Day 21 max). The 90-day minimum term begins on the day of signing payment.
 
 - [ ] Stripe test-mode products created for all three tiers (Pilot/Standard/Premium)
 - [ ] `scripts/seed-plans.ts` run in test mode &mdash; plan rows in DB confirmed
@@ -1117,12 +1120,12 @@ This runs 29 tests covering safety, quality, and adversarial scenarios. All safe
 2. Click **Send Payment Link**
 3. Dev Phone #3 (Owner) should receive SMS with a Stripe checkout link
 4. Open the link. Use test card: `4242 4242 4242 4242`, any future expiry, any CVC
-5. Complete checkout. Verify setup fee + first month charged immediately (no trial).
+5. Complete checkout. Verify 50% of setup fee charged immediately. Monthly subscription does NOT activate yet (begins at go-live).
 6. Check contractor portal &rarr; **Settings** &rarr; Billing &mdash; plan and next billing date should show
 
 - [ ] Payment link SMS received
 - [ ] Checkout completed with test card
-- [ ] Setup fee + first month charged; billing page shows next billing date
+- [ ] First 50% setup charged; billing page shows go-live date (monthly not yet active)
 
 ### A.16 Welcome Communications
 
