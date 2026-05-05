@@ -38,6 +38,11 @@ Walk this checklist before doing anything in Phase 1. If anything below is unche
 - [ ] **Operator phone + name** set at `/admin/agency`.
 - [ ] **Service agreement template** filled with your business name + email. Have counsel review the [PENDING COUNSEL REVIEW] sections before client #1. See `docs/legal/SERVICE-AGREEMENT-TEMPLATE.md`.
 - [ ] **Test contractor identity ready** — pick a name, business name, owner email (one you can read), and a real cell phone number you control. You will play this contractor through Phases 1-7. Suggested test profile: "Peak Basements YYC" — Calgary basement contractor, $1.5M revenue, 18 leads/month, $55K average project. Use this when the wizard asks for ICP qualification numbers.
+- [ ] **App deployed to production** — real domain (not localhost), SSL active, `NEXT_PUBLIC_APP_URL` set to deployed URL in env. Stripe webhook endpoint, Twilio SMS/Voice webhooks, and contractor portal links must all resolve to this domain. See `LAUNCH-CHECKLIST.md` Phase 5 (Production Deployment).
+- [ ] **Error monitoring configured** — Sentry (or equivalent) DSN set in env. Cron failure SMS alerts wired to operator phone. Database backup strategy in place. See `LAUNCH-CHECKLIST.md` Phase 5.
+- [ ] **Operator Loom account ready** — Loom Pro account with one recorded template (3-7 min audit format) saved as reference. Required for Phase 1.2.
+- [ ] **Prospect list refined** — at least 20 qualified Calgary/Edmonton design-build contractors with name, business, contact, GBP rating, trade, pain angle, and personalization notes. See `docs/operations/templates/calgary-basement-prospects.csv` as starting point.
+- [ ] **n8n acquisition automation** (optional, non-blocking) — credentials loaded for Apollo, Instantly.ai, Google Sheets OAuth, Claude API. Manual outreach works for first 10-20 prospects without this. See `docs/operations/N8N-ACQUISITION-AUTOMATION.md`.
 
 ---
 
