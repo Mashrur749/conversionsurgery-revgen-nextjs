@@ -161,15 +161,65 @@ Screen-share the actual SMS threads. Walk through 1-2 of the strongest. Pause fo
 1. Schedule 15-min Zoom or phone call with all three present.
 2. Open with: &ldquo;Thanks for joining. I&apos;m not here to sell harder. I&apos;m here to answer whatever questions are on your mind. What are you wondering about?&rdquo;
 3. LET THE PARTNER LEAD. They will. Answer in plain language. Cite specifics from the agreement &mdash; Day-14 cancel right, 30-day pause right, operational guarantee, data export.
-4. Common partner concerns and responses:
-   - &ldquo;What if it doesn&apos;t work?&rdquo; → Day-14 cancel right. Maximum exposure $1,750.
-   - &ldquo;What does the AI say to our customers?&rdquo; → offer to text-demo on the call to a number they control.
-   - &ldquo;What happens to our data?&rdquo; → Data export within 5 business days, full CSV, theirs forever.
-   - &ldquo;What if we need a slow month?&rdquo; → 30-day pause right after Day 90.
+4. Common partner concerns and responses (have plain-language answers ready):
+
+   **Money fears:**
+
+   - &ldquo;What if it doesn&apos;t work?&rdquo; → Day-14 cancel right. Maximum exposure $1,750 Pilot / $2,750 Standard. One phone call, no questions.
+   - &ldquo;That&apos;s a lot of money up front.&rdquo; → Setup is split 50/50. $1,750 today (Pilot), $1,750 at go-live around Day 21. Monthly retainer doesn&apos;t start until go-live, not at signing.
+   - &ldquo;What if we have a slow January?&rdquo; → After the first 90 days, you can pause for up to 30 days a year. One pause per 12 months, 7 days notice. Slow month? Pause it.
+   - &ldquo;How do we know it&apos;s actually working?&rdquo; → Every Friday at 4pm, a text lands on {firstName}&apos;s phone with the week&apos;s numbers &mdash; leads, appointments, pipeline. Forwardable to you. No login required. The first time the system recovers a missed call you would have lost, you both see it on his phone within minutes.
+
+   **Trust fears:**
+
+   - &ldquo;What does the AI actually say to our customers?&rdquo; → I&apos;ll text-demo right now to a number you control. You&apos;ll see the response in 5 seconds. We can do it on this call.
+   - &ldquo;What if the AI says something wrong and embarrasses us?&rdquo; → For the first two weeks, every response is reviewed by our team before it reaches your customers. Smart Assist mode. Nothing goes out without a human check. After two weeks of clean responses, the system progresses to autonomous &mdash; and the safety net stays: any flagged response is reviewed.
+   - &ldquo;Who are you and why should we trust you?&rdquo; → Local Calgary. {operatorName}. You can find me. The 21-day go-live guarantee and Day-14 cancel right are in the contract &mdash; if I disappear, your money is protected by the contract terms, not by my word.
+
+   **Time and control fears:**
+
+   - &ldquo;Is this going to be another thing {firstName} has to manage?&rdquo; → No. The whole point is the opposite. He flags estimates as sent (10 seconds, by SMS), marks jobs won or lost (30 seconds), and answers when the system escalates a complex question. That&apos;s it. We handle the rest.
+   - &ldquo;What happens to our existing customers and their data?&rdquo; → Their data is yours. Always. Full CSV export available within 5 business days on request, and on cancellation. We&apos;re a processor, not an owner.
+   - &ldquo;I&apos;ve seen these contracts before &mdash; there&apos;s always a catch.&rdquo; → 90-day minimum term, then month-to-month with 30 days notice. Day-14 cancel anytime. 30-day pause anytime after the first 90. No auto-renewal trap, no escalating fees, no exit penalty. The contract is on the agreement we sent &mdash; read every line.
 5. End with: &ldquo;Want me to send the agreement, or do you both want a few days to talk it over?&rdquo;
 6. Do NOT close on this call. Let them decide together off-call. Closing on the spouse call feels predatory and tanks trust.
 
 **Sign of success:** They book the agreement signing within 48 hours. If they go silent for 5+ days, follow up once: &ldquo;No pressure &mdash; just checking if you&apos;ve had a chance to talk it through.&rdquo;
+
+---
+
+## 1.9. First Missed Lead Replay SMS (post-go-live trust accelerant)
+
+**Auto-fires once per client within 30 days post-Day-21 go-live**, the moment the system catches its first recovery event (missed call recovered, dormant lead reactivated who replied, after-hours form responded to and replied within 7 days). One-shot. Tracked in `clients.firstRecoveryReplaySentAt`.
+
+**Why:** Solves the &ldquo;vendors take my money and disappear&rdquo; wound. Push proof to the contractor&apos;s phone the first time the system catches money he would have lost.
+
+**Approved template** (sent from operator&apos;s number to `client.ownerPhone`):
+
+&gt; Caught one. {firstName} called {X} days ago, no response. System followed up &mdash; he replied. Look at the thread when you get a chance: {portalLink}
+
+Variables:
+- `{firstName}` &mdash; lead&apos;s first name from `leads.name` (first token only)
+- `{X}` &mdash; whole days between original missed contact and reply (Math.floor of hours / 24)
+- `{portalLink}` &mdash; direct deep link to the conversation: `${NEXT_PUBLIC_APP_URL}/admin/clients/${clientId}/conversations/${leadId}` (or contractor portal equivalent if firing to contractor)
+
+**Timing rules:**
+- Window opens at Day 21 of subscription (post-go-live).
+- Window closes at Day 51 (30 days after go-live).
+- Fires only once per client. Persisted via `clients.firstRecoveryReplaySentAt`.
+- Skipped silently if recovery event happens outside the window or after the SMS already fired.
+- Sent through compliance gateway (`sendCompliantMessage`) &mdash; never direct Twilio.
+
+**Sender identity:** SMS appears to come from the contractor&apos;s dedicated business number (`client.twilioNumber`), not the operator&apos;s personal cell. The contractor reads this as their system reporting in.
+
+**Operator visibility:** When the SMS fires, also write a one-line note to `clientNotes` so the operator sees it on the client detail timeline. No additional alert needed &mdash; this is a positive-signal event, not an exception.
+
+**Edge cases:**
+- If `client.ownerPhone` is empty: skip and log internal warning.
+- If compliance gateway blocks (quiet hours, opt-out, kill switch): set `firstRecoveryReplaySentAt` anyway to prevent repeated retries flooding when the gate clears later. Operator picks it up via the manual recovery report.
+- Multi-recovery in same minute: only the first qualifying event triggers; subsequent ones are no-ops via the persisted flag.
+
+**Why this is one-shot, not weekly:** the pattern is a trust accelerant in the first 30 days. After that, the Friday Pulse SMS becomes the ongoing signal. We don&apos;t want the operator competing with their own automation for contractor attention.
 
 ---
 
@@ -797,48 +847,94 @@ Do not offer a referral incentive yet. At this stage the social currency (&quot;
 
 ---
 
-## 10b. Day 45 Proactive Retention Call
+## 10a. Day-7 Listing Migration Call (15-20 min)
 
-**When:** Day 45 of the client relationship &mdash; midpoint of the 90-day minimum commitment. This is NOT a reactive call triggered by a problem &mdash; it is a PROACTIVE call that prevents churn at the Month 3 decision point.
+**When:** Day 7 of contract, scheduled at the end of the onboarding call (per §10).
 
-**Why Day 45:** The 8-agent consensus simulation identified this as the decision point. Every contractor who locks in before Day 60 becomes a 12+ month client. Every contractor who drifts past Day 60 without a strong retention anchor is at risk.
+**Why:** Every contractor&apos;s Google Business Profile, HomeStars, and Yelp listings still point to their old phone number. Until those are updated to the new dedicated business number, the AI agent only handles inbound from the contractor&apos;s website + direct dials. Listings are the leak that day-1 phone forwarding doesn&apos;t cover. This call closes that leak permanently.
 
-**Agenda (15-20 minutes):**
+**Pre-call prep (5 min, operator-side):**
 
-**1. Guarantee progress check (3 min):**
+1. Pull up the contractor&apos;s GBP at maps.google.com &mdash; confirm it&apos;s claimed and the operator-account has manager access (asked for during onboarding).
+2. Note current listed phone number, current photo count, last review date.
+3. Have the contractor&apos;s HomeStars + Yelp pages open in tabs.
+4. Have the new Twilio business number ready to paste.
 
-&gt; &quot;Quick update on where we are &mdash; the system has been live since Day [X], logging is active, and here&apos;s what it&apos;s done in your first 45 days. At Day 90, you have the option to continue month-to-month or give 30 days notice. I want to make sure the numbers make that decision easy.&quot;
+**On the call (15-20 min):**
 
-Show the guarantee status card in the admin dashboard. Make the progress visible and concrete.
+1. **Min 0-2: Frame.** &ldquo;Today we update three places where homeowners find your number &mdash; Google Business Profile, HomeStars, Yelp. Five minutes each. You watch me do it; from then on every lead from those sources comes through the new system.&rdquo;
+2. **Min 2-7: Google Business Profile.**
+   - Share screen. Sign in with the contractor&apos;s GBP account or have them sign in.
+   - Edit profile → Phone → replace with new Twilio number.
+   - Save. Confirm green &ldquo;saved&rdquo; toast.
+   - While there: check photo count. If &lt;10 photos, ask &ldquo;Do you have 5-10 recent project photos on your phone? Send them to me right now via the contractor portal upload.&rdquo; Push them in same call if available.
+   - Check most recent review date. If &gt;60 days old, flag a Quarterly Growth Blitz review acceleration campaign for next quarter.
+3. **Min 7-12: HomeStars.**
+   - Sign in to the contractor&apos;s HomeStars dashboard.
+   - Update listed phone number to new Twilio number.
+   - Update bio if it mentions old number.
+   - Confirm &ldquo;Hire Me&rdquo; button is enabled and points to the right contact form.
+4. **Min 12-15: Yelp / other.**
+   - Update phone on Yelp business page.
+   - Quick check: BBB profile, Houzz Pro if applicable, BILD Calgary directory.
+5. **Min 15-18: Verify routing.**
+   - Place a test call from your phone to the new number listed on GBP.
+   - Confirm Voice AI picks up OR call routes to contractor per their setup.
+   - Send a test SMS to the same number. Confirm the AI replies within 5 seconds.
+6. **Min 18-20: Close.**
+   - &ldquo;All three listings now route to your business number. From this point forward, every Google search, every HomeStars match, every Yelp lookup goes through the system. You&apos;ll see it in next week&apos;s report.&rdquo;
+   - Confirm next touch point: bi-weekly strategy call at Day 14.
 
-**2. ROI summary so far (5 min):**
+**If contractor can&apos;t access a listing during the call:**
+- GBP unclaimed: book a 30-min follow-up call to claim + verify. Don&apos;t try to claim live (postcard verification can take 5-7 days).
+- HomeStars password lost: have them reset during the call. Do not skip.
+- Yelp not yet claimed: skip Yelp, note for follow-up. It&apos;s the lowest-yield platform; not blocking go-live.
 
-&gt; &quot;In the first 45 days, your system responded to [X] leads, followed up on [Y] estimates, and booked [Z] appointments. That&apos;s $[pipeline value] in your pipeline right now. If even one of those closes, that&apos;s [X] months of the service paid for.&quot;
+**Done when:** GBP phone updated, HomeStars phone updated, Yelp phone updated (if claimable), test SMS + test call routed correctly through new number.
 
-Use the bi-weekly report data. Frame as &quot;what would have happened without us&quot; &mdash; these leads would have gone to the next contractor on Google.
+**Operator note:** Document in `clientNotes` exactly what was updated and what&apos;s pending. Day-21 go-live gate audit checks this.
 
-**3. What&apos;s working, what&apos;s not (3 min):**
+---
 
-&gt; &quot;Is there anything the AI is saying that doesn&apos;t sound right to you? Any leads that got a response you weren&apos;t happy with?&quot;
+## 10b. Day-45 Proactive Retention Call (15-20 min)
 
-This surfaces tone or KB issues before they become silent churn drivers.
+**When:** Day 45 of contract, scheduled at the bi-weekly call on Day 28-30.
 
-**4. Expansion opportunity (2 min):**
+**Why:** Day-30 logging gate just cleared. Day-90 renewal pressure hasn&apos;t arrived. Day 45 is the structurally safest moment to reinforce value before any retention risk emerges. Skip this call and the operator finds themselves in a &ldquo;prove your worth&rdquo; defense by Day 75.
 
-If they have team members not yet on the platform:
-&gt; &quot;You mentioned your crew lead handles some site visits. Want to add them so they get booking notifications directly?&quot;
+**Pre-call prep (10 min):**
 
-If they&apos;re on booking confirmation mode (Path C):
-&gt; &quot;How&apos;s the booking confirmation working? Would you like to try Google Calendar so bookings go straight to your schedule?&quot;
+1. Open `/admin/clients/[id]/call-prep` &mdash; pre-loaded metrics for trailing 14 days.
+2. Pull the bi-weekly report at `/admin/reports`.
+3. Note specific wins: a recovered lead that booked, a stale quote that came back, a missed call the system caught.
+4. Note any signals worth raising: KB gaps unfilled, escalations the contractor didn&apos;t respond to, declining estimate-flagging discipline.
 
-**5. Referral ask (if results are strong) (2 min):**
+**On the call (15-20 min):**
 
-Only if they have a visible win (recovered lead, booked appointment, or confirmed WON):
-&gt; &quot;That&apos;s the kind of result that gets people talking. Know any other basement contractors who&apos;d want to see this? I&apos;m taking one or two more in Calgary right now.&quot;
+1. **Min 0-3: Frame.** &ldquo;Halfway through your 90-day term. Wanted to check in on what&apos;s working and what&apos;s not, while we still have time to adjust before we talk about month four.&rdquo;
+2. **Min 3-8: Wins recap.**
+   - Walk one specific recovered lead with names + numbers. &ldquo;Sarah from the Bridgeland reno &mdash; she went quiet after your estimate, system followed up at Day 12, she replied, you booked the consult on the 15th.&rdquo;
+   - State the running total: leads captured, response time, estimates followed up, appointments booked.
+   - If revenue has been confirmed: state it. &ldquo;System has touched $X of pipeline. You&apos;ve confirmed $Y won.&rdquo;
+3. **Min 8-12: Friction surfacing.**
+   - &ldquo;Anything I should know about that&apos;s not working?&rdquo;
+   - Listen. Don&apos;t defend. Capture verbatim.
+   - Common Day-45 friction: KB gap unfilled (homeowner asks something AI can&apos;t answer), estimate-flagging discipline slipping, contractor wants to override AI tone, request for new automation.
+4. **Min 12-16: One commitment each.**
+   - You: one specific operator action this week (fill a KB gap, tune a template, set up a new flow).
+   - Them: one specific contractor action this week (flag the next 5 estimates within 24h of sending, return one escalation, send 3 photos for the GBP listing).
+5. **Min 16-20: Forward look.**
+   - &ldquo;On Day 75 we&apos;ll set the agenda for month four. Between now and then, the goal is to lock in the muscle memory we built &mdash; your flagging discipline, my optimization. Same time in two weeks for the next bi-weekly?&rdquo;
 
-If no visible win yet, skip the referral ask. Don&apos;t force it.
+**Post-call (5 min):**
 
-**Post-call:** Note any issues raised. Update client health in ClickUp. If referral was given, follow up within 48 hours.
+1. Document the friction items + commitments in `clientNotes`.
+2. Schedule operator-side action in your task list.
+3. If the contractor surfaced a churn-risk signal (cost concerns, &ldquo;I&apos;m not seeing it&rdquo;, request to pause): flag the client as at-risk in admin and follow `02-MANAGED-SERVICE-PLAYBOOK.md` §1.5 (At-Risk Detection &amp; Recovery).
+
+**Why a structured call beats an SMS check-in:**
+
+Day 45 is the moment a contractor either solidifies as a long-term client or quietly starts mentally drafting a Day 90 cancellation. An SMS gets a &ldquo;yeah it&apos;s fine&rdquo; reply that tells you nothing. A 15-minute call surfaces the doubt, the quiet frustration, the unmet expectation &mdash; early enough to fix it. Skip this call and you don&apos;t know there was a problem until cancellation notice arrives.
 
 ---
 

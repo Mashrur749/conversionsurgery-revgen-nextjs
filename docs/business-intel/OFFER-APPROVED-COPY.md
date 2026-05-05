@@ -303,6 +303,71 @@ The following are approved written answers for the questions prospects ask most 
 
 ---
 
+## SECTION 12: POST-SIGNATURE COMMUNICATIONS
+
+These fire automatically when `checkout.session.completed` webhook from Stripe lands. Both go to the contractor&apos;s email + phone on file. Approved copy &mdash; do not edit without re-approval.
+
+### 12.1 Welcome SMS (sent within 5 min of payment)
+
+&gt; {firstName}, you&apos;re in. We&apos;ll be in touch within 24 hours to schedule your 30-min onboarding call. Your dedicated business number activates within 1 business day. Reply with any questions &mdash; this number is mine. &mdash; {operatorName}
+
+Variables:
+- `{firstName}` &mdash; contractor first name from `clients.contactName` (first token)
+- `{operatorName}` &mdash; from `agencies.operatorName`
+
+Sender identity: operator&apos;s personal Twilio number (the relationship line), not the dedicated business line.
+
+### 12.2 Welcome Email (sent within 5 min of payment)
+
+Subject: `Welcome to ConversionSurgery — next steps for {businessName}`
+
+Body:
+
+&gt; Hi {firstName},
+&gt;
+&gt; Welcome aboard. Your subscription is active and your tier is **{tierName}**. Here&apos;s what happens next:
+&gt;
+&gt; **Within 24 hours:** I&apos;ll text you to schedule a 30-min onboarding call. Bring 5-10 dead quotes from the past 90 days &mdash; names, phone numbers, project type. We&apos;ll feed those into the system on the call. They become your first reactivation campaign.
+&gt;
+&gt; **Within 1 business day:** Your dedicated business phone number goes live. We&apos;ll set up call forwarding from your existing line on the onboarding call so nothing changes for callers, but every lead now flows into the system.
+&gt;
+&gt; **Day 7:** 15-min listing migration call. We update Google Business Profile, HomeStars, and Yelp to your new number. After this, every public listing routes to the system.
+&gt;
+&gt; **Day 21:** Go-live. The system runs autonomously. You see leads, conversations, and pipeline in your dashboard. First Pipeline Pulse SMS lands the following Monday.
+&gt;
+&gt; **Your safety net:**
+&gt;
+&gt; - Day-14 cancel right &mdash; one phone call, no questions asked. Maximum exposure ${tierExposure}.
+&gt; - 21-day go-live guarantee &mdash; if we&apos;re not live by Day 21, work continues at no charge.
+&gt; - 30-day logging guarantee &mdash; if we&apos;re not capturing 80%+ of inquiries by Day 30, billing pauses until we are.
+&gt;
+&gt; Login to your portal: {portalUrl}
+&gt;
+&gt; Anything urgent &mdash; reply to this email or text the number that just messaged you.
+&gt;
+&gt; &mdash; {operatorName}
+&gt; ConversionSurgery
+
+Variables:
+- `{firstName}` &mdash; contractor first name
+- `{businessName}` &mdash; from `clients.businessName`
+- `{tierName}` &mdash; &ldquo;Pilot&rdquo; or &ldquo;Standard&rdquo; (literal capitalization)
+- `{tierExposure}` &mdash; &ldquo;1,750&rdquo; for Pilot, &ldquo;2,750&rdquo; for Standard
+- `{portalUrl}` &mdash; `${NEXT_PUBLIC_APP_URL}/client`
+- `{operatorName}` &mdash; from `agencies.operatorName`
+
+Sender: `EMAIL_FROM` env var, must be on the verified Resend domain.
+
+### 12.3 Pre-Onboarding Priming SMS (24-48 hours before scheduled onboarding call)
+
+&gt; {firstName} &mdash; quick prep for our call tomorrow. Think of 5 to 10 homeowners you quoted in the last 6 months that never got back to you. Just first names + project type. We&apos;ll text them all on the call and you&apos;ll see replies start coming in within 24-48 hours. &mdash; {operatorName}
+
+Variables: same as above.
+
+This is the highest-ROI single SMS in the entire onboarding flow. It converts the onboarding call from a setup chore into a wow moment.
+
+---
+
 ## CHANGE LOG
 
 | Version | Date              | Changes                                                                                                                                                         |
