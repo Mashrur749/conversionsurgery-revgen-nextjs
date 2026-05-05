@@ -346,7 +346,7 @@ export function ConversationsShell({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ----- Poll conversation list every 15s -----
+  // ----- Poll conversation list every 5s -----
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
@@ -360,7 +360,7 @@ export function ConversationsShell({
       } catch {
         // Ignore polling errors
       }
-    }, 15000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -1036,7 +1036,7 @@ export function ConversationsShell({
                           disabled={loadingEarlier}
                           className="text-xs text-forest border border-forest/30 bg-moss-light px-3 py-1 rounded-full hover:bg-sage-light transition-colors disabled:opacity-50"
                         >
-                          {loadingEarlier ? 'Loading&hellip;' : 'Load earlier messages'}
+                          {loadingEarlier ? 'Loading\u2026' : 'Load earlier messages'}
                         </button>
                       </div>
                     )}

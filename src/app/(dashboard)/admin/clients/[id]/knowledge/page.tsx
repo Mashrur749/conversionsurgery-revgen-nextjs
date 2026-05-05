@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { KnowledgeList } from './knowledge-list';
 import KnowledgeForm from './knowledge-form';
 import KnowledgeGapQueue from './knowledge-gap-queue';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -41,6 +42,13 @@ export default async function KnowledgeBasePage({ params, searchParams }: Props)
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: 'Clients', href: '/admin/clients' },
+          { label: client.businessName, href: `/admin/clients/${id}` },
+          { label: 'Knowledge Base' },
+        ]}
+      />
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Knowledge Base</h1>

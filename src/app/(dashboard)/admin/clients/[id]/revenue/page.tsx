@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { RevenueMetrics } from './revenue-metrics';
 import { JobsList } from './jobs-list';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -42,6 +43,13 @@ export default async function RevenuePage({ params }: Props) {
 
   return (
     <div className="space-y-6">
+      <Breadcrumbs
+        items={[
+          { label: 'Clients', href: '/admin/clients' },
+          { label: client.businessName, href: `/admin/clients/${id}` },
+          { label: 'Revenue' },
+        ]}
+      />
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Revenue Attribution</h1>

@@ -40,22 +40,62 @@ export default async function DashboardPage() {
   const db = getDb();
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-  const stats = await db
-    .select({
-      missedCalls: sql<number>`COALESCE(SUM(${dailyStats.missedCallsCaptured}), 0)`,
-      forms: sql<number>`COALESCE(SUM(${dailyStats.formsResponded}), 0)`,
-      messages: sql<number>`COALESCE(SUM(${dailyStats.messagesSent}), 0)`,
-      appointments: sql<number>`COALESCE(SUM(${dailyStats.appointmentsReminded}), 0)`,
-      estimates: sql<number>`COALESCE(SUM(${dailyStats.estimatesFollowedUp}), 0)`,
-    })
-    .from(dailyStats)
-    .where(and(
-      eq(dailyStats.clientId, clientId),
-      gte(dailyStats.date, sevenDaysAgo.toISOString().split('T')[0])
-    ));
+  const [stats, prevStats] = await Promise.all([
+    db
+      .select({
+        missedCalls: sql<number>`COALESCE(SUM(${dailyStats.missedCallsCaptured}), 0)`,
+        forms: sql<number>`COALESCE(SUM(${dailyStats.formsResponded}), 0)`,
+        messages: sql<number>`COALESCE(SUM(${dailyStats.messagesSent}), 0)`,
+        appointments: sql<number>`COALESCE(SUM(${dailyStats.appointmentsReminded}), 0)`,
+        estimates: sql<number>`COALESCE(SUM(${dailyStats.estimatesFollowedUp}), 0)`,
+      })
+      .from(dailyStats)
+      .where(and(
+        eq(dailyStats.clientId, clientId),
+        gte(dailyStats.date, sevenDaysAgo.toISOString().split('T')[0])
+      )),
+    db
+      .select({
+        missedCalls: sql<number>`COALESCE(SUM(${dailyStats.missedCallsCaptured}), 0)`,
+        forms: sql<number>`COALESCE(SUM(${dailyStats.formsResponded}), 0)`,
+        messages: sql<number>`COALESCE(SUM(${dailyStats.messagesSent}), 0)`,
+        appointments: sql<number>`COALESCE(SUM(${dailyStats.appointmentsReminded}), 0)`,
+        estimates: sql<number>`COALESCE(SUM(${dailyStats.estimatesFollowedUp}), 0)`,
+      })
+      .from(dailyStats)
+      .where(and(
+        eq(dailyStats.clientId, clientId),
+        gte(dailyStats.date, fourteenDaysAgo.toISOString().split('T')[0]),
+        sql`${dailyStats.date} < ${sevenDaysAgo.toISOString().split('T')[0]}`
+      )),
+  ]);
 
   const weekStats = stats[0] || {};
+  const prevWeekStats = prevStats[0] || {};
+
+  function trendInfo(current: number, previous: number) {
+    if (previous === 0 && current === 0) return { pct: 0, direction: 'neutral' as const };
+    if (previous === 0) return { pct: 100, direction: 'up' as const };
+    const pct = Math.round(((current - previous) / previous) * 100);
+    if (pct > 0) return { pct, direction: 'up' as const };
+    if (pct < 0) return { pct: Math.abs(pct), direction: 'down' as const };
+    return { pct: 0, direction: 'neutral' as const };
+  }
+
+  const leadsCurrent = Number(weekStats.missedCalls || 0) + Number(weekStats.forms || 0);
+  const leadsPrev = Number(prevWeekStats.missedCalls || 0) + Number(prevWeekStats.forms || 0);
+  const leadsTrend = trendInfo(leadsCurrent, leadsPrev);
+
+  const messagesCurrent = Number(weekStats.messages || 0);
+  const messagesPrev = Number(prevWeekStats.messages || 0);
+  const messagesTrend = trendInfo(messagesCurrent, messagesPrev);
+
+  const followUpsCurrent = Number(weekStats.estimates || 0) + Number(weekStats.appointments || 0);
+  const followUpsPrev = Number(prevWeekStats.estimates || 0) + Number(prevWeekStats.appointments || 0);
+  const followUpsTrend = trendInfo(followUpsCurrent, followUpsPrev);
 
   const actionLeads = await db
     .select()
@@ -78,6 +118,30 @@ export default async function DashboardPage() {
       )),
     getRevenueStats(clientId),
   ]);
+
+  const scheduledCurrent = Number(pendingCount[0]?.count || 0);
+
+  function TrendIndicator({ trend }: { trend: { pct: number; direction: 'up' | 'down' | 'neutral' } }) {
+    if (trend.direction === 'neutral') {
+      return (
+        <span className="text-xs text-muted-foreground">
+          &#8212; No change vs last week
+        </span>
+      );
+    }
+    if (trend.direction === 'up') {
+      return (
+        <span className="text-xs text-[#3D7A50]">
+          &#9650; +{trend.pct}% vs last week
+        </span>
+      );
+    }
+    return (
+      <span className="text-xs text-sienna">
+        &#9660; -{trend.pct}% vs last week
+      </span>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -102,64 +166,7 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Leads Captured
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Number(weekStats.missedCalls || 0) + Number(weekStats.forms || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {weekStats.missedCalls} calls, {weekStats.forms} forms
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Messages Sent
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{weekStats.messages || 0}</div>
-            <p className="text-xs text-muted-foreground">Automated responses</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Follow-ups
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Number(weekStats.estimates || 0) + Number(weekStats.appointments || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {weekStats.estimates} estimates, {weekStats.appointments} appts
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Scheduled
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingCount[0]?.count || 0}</div>
-            <p className="text-xs text-muted-foreground">Messages pending</p>
-          </CardContent>
-        </Card>
-      </div>
-
+      {/* Action Required — shown before stat cards */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -200,6 +207,63 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Leads Captured
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{leadsCurrent}</div>
+            <p className="text-xs text-muted-foreground">
+              {weekStats.missedCalls} calls, {weekStats.forms} forms
+            </p>
+            <TrendIndicator trend={leadsTrend} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Messages Sent
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{messagesCurrent}</div>
+            <p className="text-xs text-muted-foreground">Automated responses</p>
+            <TrendIndicator trend={messagesTrend} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Follow-ups
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{followUpsCurrent}</div>
+            <p className="text-xs text-muted-foreground">
+              {weekStats.estimates} estimates, {weekStats.appointments} appts
+            </p>
+            <TrendIndicator trend={followUpsTrend} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Scheduled
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{scheduledCurrent}</div>
+            <p className="text-xs text-muted-foreground">Messages pending</p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
