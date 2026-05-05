@@ -715,6 +715,19 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
     twilioSid: MessageSid,
   }).returning();
 
+  // First Missed Lead Replay SMS — fires once per client within 30 days post
+  // go-live the first time the system rescues a would-be-lost lead. The helper
+  // is idempotent and self-gates on the recovery-event criteria, so it's safe
+  // to invoke on every inbound reply.
+  try {
+    const { checkAndSendFirstRecoveryReplay } = await import(
+      '@/lib/automations/first-recovery-replay'
+    );
+    await checkAndSendFirstRecoveryReplay(client.id, lead.id);
+  } catch (replayError) {
+    console.error('[IncomingSMS] First recovery replay check failed:', replayError);
+  }
+
   // 5.1 Process media attachments from MMS
   const savedMedia: MediaAttachment[] = [];
   if (NumMedia > 0 && MediaItems.length > 0) {

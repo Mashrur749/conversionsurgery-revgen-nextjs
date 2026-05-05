@@ -580,7 +580,7 @@ Implementation: cron `/api/cron/check-missed-calls` already detects these events
 Template (sent to contractor):
 > "This week — [N] new leads, [N] booked, $[X] probable pipeline. Your system worked while you were on site. Reply with any questions."
 
-Implementation: cron `/api/cron/weekly-digest` already exists. Verify it sends 4pm Friday in client timezone. If portal `weeklyDigestEnabled = true`, message fires.
+Implementation: cron `/api/cron/friday-pulse` (dispatched from the every-5-minute orchestrator). Self-gates by client timezone — only fires for clients whose local time is Friday 16:00–16:04. Uses the `weeklyDigestEnabled` flag (shared with Monday Pipeline Pulse).
 
 Together these solve the dashboard-aversion problem: contractors don't have to log in. Proof arrives on their phone where they live. Forwardable to spouse/partner — closes the silent veto without the spouse line being needed.
 
@@ -784,6 +784,9 @@ Before declaring "this client is fully onboarded and the system delivers as prom
 - [ ] Tier correctly chosen per Phase 2.3 rules
 - [ ] First setup half charged via Stripe Checkout
 - [ ] Day-7 non-refundable note added to client record
+- [ ] Client verbalized awareness of Day-14 cancel right on onboarding call (operator confirms)
+- [ ] Day-14 cancel countdown showing on admin client detail page
+- [ ] Four Irresistibility Levers (Dead Lead demo, Day-14 cancel, 30-day pause, Spouse Line) all walked through pre-signing per E2E §2.4.5
 
 **Onboarding:**
 - [ ] 30-min onboarding call completed using Playbook §10 script
@@ -812,6 +815,10 @@ Before declaring "this client is fully onboarded and the system delivers as prom
 - [ ] First bi-weekly report delivered (email + SMS)
 - [ ] First bi-weekly strategy call held using Playbook §4 script
 - [ ] Operator daily routine running (Phase 7.1)
+- [ ] First Missed Lead Replay SMS test-fired in staging before client #1 go-live (smoke test)
+- [ ] Friday Pulse SMS confirmed firing 4pm local on first Friday post-go-live (verify in Twilio logs)
+- [ ] Client knows about 30-day pause right (mentioned on Day 75 strategy call prep)
+- [ ] Cancel-reason capture form available in admin (for Day-14 + later cancels)
 
 If anything above is unchecked at Day 30, do not move on. Either fix it or document why the exception applies.
 
@@ -839,6 +846,7 @@ All routes live under `src/app/api/cron/*`. Cron trigger fires every 5 minutes p
 **Contractor communication:**
 - `daily-digest` — daily summary SMS with reply syntax (W1/L1/free text/0)
 - `weekly-digest` — Monday Pipeline Pulse
+- `friday-pulse` — Friday 4pm local-time trust-accelerant SMS
 - `weekly-summary` / `daily-summary` — alternate cadence
 - `day3-checkin` — Day 3 check-in
 - `agency-digest` — operator-side digest

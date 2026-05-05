@@ -163,6 +163,11 @@ export const clients = pgTable(
     webFormVerified: boolean('web_form_verified').default(false),
     listingMigrationStatus: varchar('listing_migration_status', { length: 20 }).default('not_applicable'), // 'not_applicable' | 'pending' | 'completed' | 'declined'
 
+    // First Missed Lead Replay SMS — fires once per client within 30 days of go-live
+    // when the system rescues a lead the contractor would have lost. Builds trust by
+    // proving the system works without forcing the contractor into the dashboard.
+    firstRecoveryReplaySentAt: timestamp('first_recovery_replay_sent_at'),
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

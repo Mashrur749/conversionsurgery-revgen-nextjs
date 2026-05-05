@@ -36,6 +36,7 @@ export * from './knowledge-base';
 export * from './knowledge-gaps';
 export * from './notification-preferences';
 export * from './cancellation-requests';
+export * from './client-cancellations';
 export * from './data-export-requests';
 export * from './onboarding-day-one';
 export * from './onboarding-quality';

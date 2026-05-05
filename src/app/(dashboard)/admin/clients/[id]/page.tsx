@@ -11,7 +11,7 @@ import { formatPhoneNumber } from '@/lib/utils/phone';
 import { EditClientForm } from './edit-client-form';
 import { OnboardingChecklistCard } from './onboarding-checklist-card';
 import { TeamManager } from './team-manager';
-import { DeleteButton } from './delete-button';
+import { CancelClientForm } from './cancel-client-form';
 import { FeatureTogglesCard } from './feature-toggles';
 import { KnowledgeTabContent } from './knowledge-tab-content';
 import { ROIDashboard } from './roi-dashboard';
@@ -36,6 +36,7 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { LeadsNeedingFollowupCard } from './leads-needing-followup-card';
 import { SendPaymentLink } from './send-payment-link';
 import { GenerateCheckoutLink } from './generate-checkout-link';
+import { Day14CancelBanner } from './day-14-cancel-banner';
 import { DataExportButton } from './data-export-button';
 import { DncCard } from './dnc-card';
 import { SmartAssistCard } from './smart-assist-card';
@@ -85,10 +86,20 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
       priceMonthly: plans.priceMonthly,
       maxActiveClients: plans.maxActiveClients,
     }).from(plans).where(eq(plans.isActive, true)),
-    db.select({ id: subscriptions.id }).from(subscriptions).where(eq(subscriptions.clientId, id)).limit(1),
+    db
+      .select({
+        id: subscriptions.id,
+        currentPeriodStart: subscriptions.currentPeriodStart,
+        planSlug: plans.slug,
+      })
+      .from(subscriptions)
+      .leftJoin(plans, eq(subscriptions.planId, plans.id))
+      .where(eq(subscriptions.clientId, id))
+      .limit(1),
   ]);
   const hasSubscription = existingSubscription.length > 0;
   const showPaymentLink = client.serviceModel === 'managed' && !hasSubscription;
+  const subscriptionDetails = existingSubscription[0] ?? null;
 
   // Enrich plans with active subscription counts (for Pilot cap display)
   const checkoutPlans = await Promise.all(
@@ -429,6 +440,13 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
         </div>
       </div>
 
+      {client.status !== 'cancelled' && subscriptionDetails && (
+        <Day14CancelBanner
+          serviceStartDate={subscriptionDetails.currentPeriodStart}
+          tier={subscriptionDetails.planSlug ?? ''}
+        />
+      )}
+
       <ClientDetailTabs
         teamMemberCount={members.length}
         onboardingChecklist={onboardingChecklist}
@@ -649,7 +667,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
               <CardTitle className="text-destructive">Danger Zone</CardTitle>
             </CardHeader>
             <CardContent>
-              <DeleteButton clientId={client.id} clientName={client.businessName} status={client.status} />
+              <CancelClientForm clientId={client.id} clientName={client.businessName} status={client.status} />
             </CardContent>
           </Card>
         }

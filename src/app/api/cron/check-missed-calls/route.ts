@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb, activeCalls, clients } from '@/db';
 import { eq, and, lte } from 'drizzle-orm';
 import { handleMissedCall } from '@/lib/automations/missed-call';
+import { checkAndSendFirstRecoveryReplay } from '@/lib/automations/first-recovery-replay';
 import twilio from 'twilio';
 import { verifyCronSecret } from '@/lib/utils/cron';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
@@ -87,12 +88,31 @@ export async function GET(request: NextRequest) {
           console.log('[Check Missed Calls - FALLBACK] Processing via polling (action callback must have failed)');
 
           // Process as missed call via polling fallback
-          await handleMissedCall({
+          const missedResult = await handleMissedCall({
             From: call.callerPhone,
             To: call.twilioNumber,
             CallStatus: callData.status,
             CallSid: call.callSid,
           });
+
+          // First Missed Lead Replay SMS — fires once per client within 30 days
+          // post go-live when the system rescues a would-be-lost lead. Safe to
+          // call here: the function checks idempotency, window, and reply state
+          // internally and is a no-op when the lead hasn't replied yet.
+          if (missedResult.processed && missedResult.clientId && missedResult.leadId) {
+            try {
+              await checkAndSendFirstRecoveryReplay(
+                missedResult.clientId,
+                missedResult.leadId
+              );
+            } catch (replayError) {
+              logSanitizedConsoleError(
+                '[Check Missed Calls] First recovery replay check failed:',
+                replayError,
+                { clientId: missedResult.clientId, leadId: missedResult.leadId }
+              );
+            }
+          }
 
           missedDetected++;
         } else {

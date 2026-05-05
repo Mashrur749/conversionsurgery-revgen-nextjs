@@ -118,6 +118,9 @@ export async function POST(request: NextRequest) {
     results.scheduled = await dispatch(baseUrl, '/api/cron/process-scheduled', cronSecret!, 'GET', failedJobs);
     results.missedCalls = await dispatch(baseUrl, '/api/cron/check-missed-calls', cronSecret!, 'GET', failedJobs);
     results.escalationRenotify = await dispatch(baseUrl, '/api/cron/escalation-renotify', cronSecret!, 'POST', failedJobs);
+    // Friday Pulse self-gates by client timezone — fires only for clients whose
+    // local time is Friday 16:00–16:04. Safe to dispatch every 5 minutes.
+    results.fridayPulse = await dispatch(baseUrl, '/api/cron/friday-pulse', cronSecret!, 'GET', failedJobs);
 
     // ── Every 30 minutes (minute 0-4 or 30-34) ──────────────
     if (minute < 5 || (minute >= 30 && minute < 35)) {
