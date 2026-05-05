@@ -139,6 +139,30 @@ Open `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md` and pre-read these 7 (Tie
 
 **Always state the operational guarantee before quoting price** (Playbook intro): "21-day go-live, 30-day logging gate, billing pauses automatically if we miss either."
 
+### 2.4.5 The Four Irresistibility Levers (insert before quoting price)
+
+These are the four offer enhancements that converted the offer from 6/10 to 8-9/10 in stress simulation. Use ALL FOUR before naming the tier price. Order matters.
+
+**Lever 1 — Dead Lead Resurrection Demo (pre-call prep + on-call delivery)**
+
+Before the discovery call, ask the prospect to send 5-10 dead quotes from the past 90 days (name, phone, project type, last contact date). Run them through the system in test mode using a staging Twilio number. On the call, share screen and show the actual SMS threads — replies, booked calls, or at minimum delivery receipts. He watches his own dead pipeline come back to life.
+
+Script: *"Before I tell you what this costs, I want to show you something. You sent me 7 dead quotes yesterday. I ran them through the system overnight on a test number. Three of them texted back. One booked a call. Here are the threads. Look — that&apos;s your guy from the Bridgeland reno project. He&apos;s asking when you can come back and look at the kitchen. That happened while you were sleeping."*
+
+**Lever 2 — The Day-14 Cancel Right**
+
+Script: *"Here&apos;s the safety net: you&apos;ve got 14 days from when we sign to cancel with one phone call. No forms, no fight, no questions. The first setup payment of $1,750 stays — it covers our setup work — but everything else stops. No second setup, no monthly. Maximum you&apos;re ever out is $1,750."*
+
+**Lever 3 — The 30-Day Pause Right**
+
+Script: *"Real businesses have slow months. After the first 90 days, you can pause for up to 30 days a year. One pause per 12 months, 7 days notice. Inbound capture keeps running, outbound automations stop, billing pauses. Slow January? Pause it. We don&apos;t penalize you for seasonality."*
+
+**Lever 4 — The Spouse Line**
+
+Script: *"One more thing — if your wife or business partner wants to talk this through with both of us before you decide, I&apos;m happy to do a 15-minute call with the three of us. No hard sell. Just answer questions plainly. Most contractors find that conversation makes the decision easier."*
+
+After all four: pause for reaction. THEN name the price.
+
 ### 2.5 Closing the Deal — Demo Close Script
 
 From `COLD-START-PLAYBOOK.md` Script F (Demo Call), close (5 min):
@@ -538,6 +562,28 @@ Reference: `01-TESTING-GUIDE.md` Step 58a + LAUNCH-CHECKLIST A.18.
 
 ## Phase 7: Day-to-Day Operations
 
+### 7.0 Push Artifacts (post-go-live trust accelerants)
+
+These are SMS-pushed proof artifacts. They run automatically; the operator just confirms they fire on schedule. Both solve the "vendors take my money and disappear" wound that came up unanimously in the offer simulation.
+
+**First Missed Lead Replay SMS** (auto-fires on first recovery event after Day-21 go-live)
+
+Trigger: any lead the system catches that the contractor would have lost (missed call recovered, dormant quote re-engaged, after-hours form responded to) within first 30 days post go-live.
+
+Template (sent from operator's number to contractor):
+> "Caught one. [First name], called [X] days ago, no response. System followed up. He replied. Look at the thread when you get a chance: [portal link]"
+
+Implementation: cron `/api/cron/check-missed-calls` already detects these events. Add an SMS branch that sends this template to `client.ownerPhone` once per client (max one per onboarding period). Track via `clientNotes` to prevent duplicate sends.
+
+**Friday Pulse SMS** (auto-fires every Friday 4pm local time)
+
+Template (sent to contractor):
+> "This week — [N] new leads, [N] booked, $[X] probable pipeline. Your system worked while you were on site. Reply with any questions."
+
+Implementation: cron `/api/cron/weekly-digest` already exists. Verify it sends 4pm Friday in client timezone. If portal `weeklyDigestEnabled = true`, message fires.
+
+Together these solve the dashboard-aversion problem: contractors don't have to log in. Proof arrives on their phone where they live. Forwardable to spouse/partner — closes the silent veto without the spouse line being needed.
+
 ### 7.1 Operator Daily Routine (15-30 min)
 
 Reference: `02-MANAGED-SERVICE-PLAYBOOK.md` §1.6 (Operator Cockpit).
@@ -597,6 +643,28 @@ Reference: `01-TESTING-GUIDE.md` Step 12 + OFFER-APPROVED-COPY §2 (Quarterly Gr
 ---
 
 ## Phase 8: Edge Cases & Recovery
+
+### 8.0a What If Client Invokes the Day-14 Cancel Right?
+
+Per Service Agreement §5: client may cancel within 14 days of service start with one call. No forms, no questions.
+
+1. Acknowledge cancellation in writing (email or SMS) within 24 hours.
+2. Set client status = `cancelled` in admin. Block all outbound automation.
+3. Stripe: cancel the second setup invoice (do not charge). Do not initiate the monthly subscription.
+4. First signing-fee installment ($1,750 Pilot / $2,750 Standard) is retained per Section 4 (covers setup work performed).
+5. Generate data export within 5 business days. Deliver via secure link.
+6. Send a single follow-up email at Day 21: "If you ever want to revisit, your data export is still good for 30 days. No pressure — just letting you know."
+7. Document reason in CRM. Day-14 cancels are the highest-signal feedback you'll ever get. Use them.
+
+### 8.0b What If Client Invokes the 30-Day Pause Right?
+
+Per Service Agreement §5: after Minimum Term, client may pause up to 30 days/year, once per 12 months, 7 days notice.
+
+1. Acknowledge pause request in writing within 24 hours. Set pause start date (notice + 7 days).
+2. On pause start: Stripe — pause subscription. Admin — disable outbound automations for client. Inbound capture stays live (missed-call text-back, AI conversation agent, lead logging).
+3. Calendar reminder for 7 days before pause end → check in: "Pause ending in a week. Want to resume on schedule, or extend? Note: extension counts as next year's pause."
+4. On resume date: re-enable outbound, resume Stripe subscription, send "back online" SMS to contractor.
+5. Track pause history in `clientNotes` — one pause per 12-month rolling window.
 
 ### 8.1 What If Client Doesn't Pay Setup Second Half (at Day 21 go-live)?
 

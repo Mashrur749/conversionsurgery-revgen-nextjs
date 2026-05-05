@@ -93,13 +93,17 @@ Add-ons (if applicable):
 
 This Agreement has an initial minimum term of ninety (90) calendar days from the service start date ("Minimum Term"), effective [Start Date]. After the Minimum Term, this Agreement continues on a month-to-month basis.
 
-Cancellation during the Minimum Term: Client may not cancel during the first 90 days except as provided under Section 6 (Performance Guarantees). Fees paid for the Minimum Term are non-refundable except as expressly stated in Section 6.
+**Day-14 Cancellation Right (no questions asked):** Notwithstanding the Minimum Term, Client may cancel this Agreement within fourteen (14) calendar days of the service start date by a single phone call or email to [Operator Email/Phone]. No forms, no process, no explanation required. If Client exercises this right: (a) the first signing-fee installment ($1,750 Pilot / $2,750 Standard) is non-refundable per Section 4; (b) the second signing-fee installment is not invoiced; (c) the monthly retainer does not begin; (d) data export is delivered within 5 business days. Client&apos;s maximum exposure under this Day-14 right is the first signing-fee installment.
+
+Cancellation during the Minimum Term (Day 15+): Client may not cancel except as provided under Section 6 (Performance Guarantees). Fees paid for the Minimum Term are non-refundable except as expressly stated in Section 6.
+
+**30-Day Service Pause Right:** After the Minimum Term, Client may pause service for up to thirty (30) calendar days, once per twelve (12) month period, by providing seven (7) calendar days written notice. While paused: monthly billing is paused, all outbound automations are suspended, and the dedicated business number remains active for inbound capture only. Service resumes automatically thirty days after pause start, or earlier on Client&apos;s written request. Pause does not extend the Minimum Term.
 
 Cancellation after the Minimum Term: Either party may terminate by providing thirty (30) calendar days written notice to [Operator Email]. No additional cancellation penalty applies beyond the 30-day notice period.
 
 Client may request a data export; export is provided in CSV format within five (5) business days where reasonably practicable. Export includes lead records, conversation history, and pipeline status.
 
-> **[COUNSEL NOTE]** Confirm enforceability of the 90-day minimum term in Alberta/BC and whether any consumer-protection carve-outs apply to B2B service contracts.
+> **[COUNSEL NOTE]** Confirm enforceability of the 90-day minimum term in Alberta/BC and whether any consumer-protection carve-outs apply to B2B service contracts. Confirm Day-14 cancellation right wording does not inadvertently void the Minimum Term in Alberta.
 
 ---
 

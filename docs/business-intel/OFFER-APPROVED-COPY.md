@@ -174,13 +174,15 @@ The following lines are approved for live sales conversations, landing page head
 
 > **Service Terms**
 >
+> - **Day-14 cancel right.** Cancel anytime in the first 14 days with one call. No forms, no process, no explanation required. Second setup invoice is cancelled, monthly retainer never starts, full data export within 5 business days. Maximum exposure: first signing-fee installment.
 > - 90-day initial term &mdash; after that, month-to-month with 30 calendar days&apos; written notice to cancel
 > - Setup fee: 50% due at signing, 50% due at go-live. Setup fee is non-refundable after Day 7. Monthly retainer auto-charges starting at go-live (not at signing).
+> - **30-day pause right.** After the initial term, you can pause service up to 30 days per year (one pause per 12 months, 7 days notice). Slow January? Pause it. Inbound capture stays live; outbound automations suspend; billing pauses. Service resumes automatically at 30 days or earlier on request.
 > - No cancellation penalties or early termination fees after the initial 90 days
 > - No message limits or overage charges
 > - Full data export available on request &mdash; delivered within 5 business days in CSV format (lead records, conversation history, pipeline status)
 >
-> **Why 90 days?** The system needs time to build your knowledge base, calibrate the follow-up sequences, and accumulate enough data to show results. Contractors who leave before 90 days never see the full picture. After that, we earn your business every month.
+> **Why 90 days?** The system needs time to build your knowledge base, calibrate the follow-up sequences, and accumulate enough data to show results. Contractors who leave before 90 days never see the full picture. After that, we earn your business every month. The 14-day cancel and 30-day pause are the relief valves real businesses need.
 >
 > **Pilot clients (first 3):** Same 90-day minimum. We ask for a brief case study and feedback session at the end of your first 90 days &mdash; your experience helps us improve the service for everyone.
 
