@@ -156,6 +156,8 @@ The following lines are approved for live sales conversations, landing page head
 >
 > One recovered kitchen or basement project pays for the entire year of service.
 
+> **Internal note (not client-facing copy):** The Premium tier remains in this document as the upper anchor of the offer ladder, but Premium must NOT be presented in proposals until at least one Standard-tier case study exists. Until then, sales conversations and proposals lead with Pilot (clients 1-3) and Standard (client 4+). Premium remains visible on the public offer page as an aspirational anchor.
+
 ### Price Comparison Context (for verbal sales and proposals)
 
 | Comparison                | Cost               | Our advantage                                                                                       |
@@ -173,7 +175,7 @@ The following lines are approved for live sales conversations, landing page head
 > **Service Terms**
 >
 > - 90-day initial term &mdash; after that, month-to-month with 30 calendar days&apos; written notice to cancel
-> - Setup fee + first month billed at signup (single checkout)
+> - Setup fee: 50% due at signing, 50% due at go-live. Setup fee is non-refundable after Day 7. Monthly retainer auto-charges starting at go-live (not at signing).
 > - No cancellation penalties or early termination fees after the initial 90 days
 > - No message limits or overage charges
 > - Full data export available on request &mdash; delivered within 5 business days in CSV format (lead records, conversation history, pipeline status)

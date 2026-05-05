@@ -500,6 +500,8 @@ Pilot tier ($3,500 setup + $1,500/mo) is available to the first 3 clients only, 
 
 **Pilot tier:** Capped at 3 clients. Purpose is to generate documented case studies and refine the managed service delivery model before scaling to Standard/Premium pricing. Pilot clients receive full service in exchange for agreeing to participate in a post-90-day outcome review.
 
+**Hard rule &mdash; Pilot-to-Standard transition at client 4:** Clients 1-3 are Pilot, no exceptions. Client 4 and beyond are Standard ($5,500 setup + $2,000/mo), no exceptions, regardless of objection or sales pressure. This is a hard rule, not a negotiating position &mdash; do not re-litigate it on a sales call. If client 4 cannot afford Standard, they are not the right fit and should be passed on.
+
 ### Why Round Numbers Work
 
 1. **Round numbers signal confidence and transparency.** Research (Troll et al. 2024 meta-analysis, Wadhwa & Zhang 2015) shows charm pricing ($997, $999) underperforms round pricing in B2B and professional services contexts. Contractors quote kitchens at $50,000, not $49,997. We price the same way.

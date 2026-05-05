@@ -488,16 +488,20 @@ This funds proper onboarding, filters serious clients, and protects fulfillment 
 
 ## 12.4 Payment Structure
 
-Recommended:
+Standard payment terms (all tiers):
 
-- 100% setup due at agreement signing, or
-- 50% setup at signing / 50% at go-live for Standard and Premium
-- monthly billing begins immediately or after go-live depending on deal terms
+- 50% of the setup fee due at signing
+- 50% of the setup fee due at go-live
+- Setup fee non-refundable after Day 7
+- Monthly retainer auto-charges via Stripe starting at go-live (not at signing)
 
-For Pilot:
+Per-tier breakdown:
 
-- setup due upfront
-- monthly begins at go-live or within 30 days
+- Pilot: $1,750 at signing + $1,750 at go-live (total $3,500 setup) + $1,500/mo starting at go-live
+- Standard: $2,750 at signing + $2,750 at go-live (total $5,500 setup) + $2,000/mo starting at go-live
+- Premium: $4,750 at signing + $4,750 at go-live (total $9,500 setup) + $3,500/mo starting at go-live
+
+Annual prepay: ~15% discount on monthly fees if 12 months prepaid at signing. Mentioned only if asked.
 
 ---
 
@@ -933,11 +937,11 @@ Targets:
 
 If the current version does not land, pivot in this order:
 
-1. Sell audit-only sprint for $2,500-$3,500.
-2. Narrow to basement/kitchen contractors only.
-3. Offer first 3 pilots at $2,500 setup + $995/mo for case studies.
-4. White-label to renovation marketing agencies.
-5. Move the same offer to cosmetic dentistry or implant dentistry.
+1. Move the same offer to cosmetic dentistry or implant dentistry.
+2. Sell audit-only sprint for $2,500-$3,500.
+3. Narrow to basement/kitchen contractors only.
+4. Offer first 3 pilots at $2,500 setup + $995/mo for case studies.
+5. White-label to renovation marketing agencies. Note: this option carries CM (consulting/management) non-solicit risk and direct market overlap with active clients — only consider after current contractor pipeline is exhausted and CM contracts permit.
 
 ---
 

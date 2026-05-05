@@ -549,9 +549,11 @@ Thesis: High-ticket renovation contractors do not only need more leads. Many alr
 
 - Setup fee pays for implementation. Monthly fee pays for management, optimization, reporting, and support.
 
+- Setup fee is split 50/50: 50% at signing, 50% at go-live. Setup fee becomes non-refundable 7 calendar days after signing. Monthly retainer auto-charges via Stripe starting at go-live (not at signing).
+
 - Avoid first-month-free with no setup fee. It is too weak for cash flow and underfunds proper onboarding.
 
-- Annual prepay can be offered at 10% off monthly fees after the setup fee is paid.
+- Annual prepay can be offered at approximately 15% off monthly fees after the setup fee is paid. Mentioned only if asked.
 
 - Custom work is scoped separately at a premium rate or declined.
 
@@ -560,7 +562,7 @@ Thesis: High-ticket renovation contractors do not only need more leads. Many alr
 | First 3 clients | $3,500 setup + $1,500/mo, 90-day minimum, case-study expectation. |
 | Main standard offer | $5,500 setup + $2,000/mo, 90-day minimum, then month-to-month. |
 | Premium / complex | $9,500 setup + $3,500/mo, with explicit scope and integration boundaries. |
-| Annual prepay | Setup fee + 12 months prepaid at 10% discount. |
+| Annual prepay | Setup fee + 12 months prepaid at approximately 15% discount. |
 | Customer asks for setup waived | No. Offer split payment if needed, not a waived setup. |
 | Customer wants only audit | Offer paid audit or implementation sprint, but avoid becoming a one-off consulting shop. |
 

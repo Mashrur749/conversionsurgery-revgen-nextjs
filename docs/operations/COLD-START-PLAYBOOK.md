@@ -16,6 +16,10 @@ Zero network. Zero clients. Zero social proof. Here is the exact plan.
 
 Running all three: **75-85% probability** in 21 days.
 
+### Email Outreach Floor
+
+In addition to the calls/DMs/replies above, hold a **50 cold emails/week minimum floor** &mdash; this is a floor, not a target. If you are operating against the accelerated 4-month personal-savings timeline, the operative target is **100 emails/week**. Track sends weekly and review the count every Friday alongside pipeline review.
+
 ---
 
 ## Before Every Outreach: Run the Pre-Sale Revenue Leak Audit

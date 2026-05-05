@@ -33,6 +33,10 @@ Goal: 15 paying clients. Timeline: 4-5 months.
 
 **Friday evenings: OFF.** Non-negotiable. Burnout prevention.
 
+### Outreach Floor
+
+**50 emails/week minimum floor.** This is a floor, not a target. If you are targeting the 4-month personal-savings timeline, the operative target is **100 emails/week**. Track outreach volume weekly and review the count every Friday during the pipeline review &mdash; if you fell below the floor, that is the first thing to fix the following Monday.
+
 ---
 
 ## Phase 0: Platform Ready (Today + Tomorrow)
@@ -231,7 +235,7 @@ Before you sell anything, the platform must work and you must have confidence in
 | $8K | Start interviewing VAs. Have someone ready to start at $10K. |
 | $10K | **Hire the VA.** $800-1K/month. Train them on the playbook for 2 weeks. |
 | $12K | Evaluate day-job exit. Do you have 3+ months personal runway saved? |
-| $15K | **Exit trigger.** Sustained for 4+ weeks with case study + VA in place = quit the day job. |
+| $15K | **Exit trigger (testimonial-anchored).** 7 stable clients = 60+ days paid AND 2+ written testimonials AND $30k+ in personal savings. All three conditions, not MRR alone. |
 
 ---
 

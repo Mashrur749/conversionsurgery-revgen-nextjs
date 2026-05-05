@@ -69,7 +69,9 @@ At 5 clients, your weekly time is ~5-7 hours. At 10 clients, ~10-14 hours.
 | **Standard** | $5,500 | $2,000/mo | Most design-build renovators ($1M-$5M) |
 | **Premium** | $9,500 | $3,500/mo | High-volume firms ($5M-$10M), priority support |
 
-Billing starts at signup. No trial. No free month. Voice AI included in all tiers.
+**Payment structure (all tiers):** Setup fee is split 50/50 &mdash; 50% due at signing, 50% due at go-live. Setup fee is non-refundable after Day 7. Monthly retainer auto-charges via Stripe starting at go-live (not at signing). No trial. No free month. Voice AI included in all tiers.
+
+**Hard rule &mdash; client 4+ = Standard, no exceptions:** Clients 1-3 are Pilot. Client 4 and every client after that signs at Standard ($5,500 setup + $2,000/mo), regardless of objection. Do not re-litigate this on a sales call. If they cannot afford Standard, they are not the right fit &mdash; pass.
 
 Full pricing details and approved comparison language: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 4.
 

@@ -798,6 +798,21 @@ Work through each service. Don&apos;t skip &mdash; each one powers a specific pa
 
 - [ ] `ELEVENLABS_API_KEY` set in production env
 
+**A2P / 10DLC Registration (before client #1 signs):**
+
+This must be filed BEFORE your first client signs, not after. Run it in parallel with outreach.
+
+1. Go to Twilio Console &rarr; Messaging &rarr; Trust Hub &rarr; Brand Registrations
+2. Register your business brand (requires EIN/business registration, address, contact info)
+3. Create a campaign registration for the use case (e.g., &ldquo;Customer Care&rdquo; or &ldquo;Mixed&rdquo; for lead follow-up messaging)
+4. Wait for approval (can take 1-5 business days)
+5. Once approved, associate your Twilio phone numbers with the campaign
+
+- [ ] Twilio brand registration filed
+- [ ] A2P/10DLC campaign registration approved
+- [ ] Phone numbers associated with the approved campaign
+- [ ] All completed BEFORE first client signs
+
 ### 4.2 Production Database
 
 1. Point to your Neon production branch (see `docs/engineering/03-NEON-BRANCH-SETUP.md` if needed)
