@@ -25,6 +25,9 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # quality:feature-sweep is a superset of quality:no-regressions:
+      # both run ms:gate + logging-guard + build + tests, but feature-sweep
+      # adds the full runtime smoke profile. Running both is redundant.
       - run: pnpm run quality:feature-sweep
       - run: pnpm audit --audit-level=moderate
         continue-on-error: true
@@ -90,11 +93,135 @@ jobs:
         continue-on-error: true
         # Full suite is informational -- quality regressions logged but don't block
 
+  agent-infra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/dummy"
+      NEXTAUTH_SECRET: "ci-build-secret"
+      NEXTAUTH_URL: "http://127.0.0.1:4100"
+      AUTH_SECRET: "ci-build-secret"
+      CRON_SECRET: "ci-smoke-cron-secret"
+      CLIENT_SESSION_SECRET: "ci-client-session-secret"
+      STRIPE_SECRET_KEY: "sk_test_ci_placeholder"
+      STRIPE_WEBHOOK_SECRET: "whsec_ci_placeholder"
+      RESEND_API_KEY: "re_ci_placeholder"
+      ANTHROPIC_API_KEY: "ci-anthropic-key"
+      TWILIO_ACCOUNT_SID: "AC00000000000000000000000000000000"
+      TWILIO_AUTH_TOKEN: "ci-twilio-token"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Verify agent scripts are executable
+        run: |
+          for script in scripts/agent/*.sh; do
+            if [ ! -x "$script" ]; then
+              echo "ERROR: $script is not executable"
+              exit 1
+            fi
+            echo "OK: $script is executable"
+          done
+
+      - name: Verify agent script syntax
+        run: |
+          for script in scripts/agent/*.sh; do
+            bash -n "$script"
+            echo "OK: $script syntax valid"
+          done
+
+      - name: Check .Codex markdown validity (if modified)
+        if: github.event_name == 'pull_request'
+        run: |
+          CHANGED_CODEX=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '^\.Codex/' || true)
+          if [ -n "$CHANGED_CODEX" ]; then
+            echo "Checking markdown files in .Codex/:"
+            for f in $CHANGED_CODEX; do
+              if [[ "$f" == *.md ]]; then
+                if [ ! -s "$f" ]; then
+                  echo "ERROR: $f is empty"
+                  exit 1
+                fi
+                # Check for markdown indicators (headers, tables, lists, links)
+                if ! grep -qE '^# |^\| |^- |^\* |^\[.*\]\(.*\)' "$f"; then
+                  echo "WARNING: $f may not be valid markdown (no headers/tables/lists/links detected)"
+                fi
+                echo "OK: $f"
+              fi
+            done
+          else
+            echo "No .Codex/ files modified — skipping"
+          fi
+
+      - name: Check AGENTS.md still has Agent Orchestration section (if modified)
+        if: github.event_name == 'pull_request'
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q '^AGENTS\.md$'; then
+            if grep -q '^## Agent Orchestration$' AGENTS.md; then
+              echo "OK: AGENTS.md contains ## Agent Orchestration section"
+            else
+              echo "ERROR: AGENTS.md is missing the ## Agent Orchestration section"
+              exit 1
+            fi
+          else
+            echo "AGENTS.md not modified — skipping"
+          fi
+
+      - name: Prepare progress.md for agent:check
+        run: |
+          mkdir -p .Codex
+          echo "# Session Progress" > .Codex/progress.md
+          echo "" >> .Codex/progress.md
+          echo "## Current Session" >> .Codex/progress.md
+          echo "" >> .Codex/progress.md
+          echo "| Field | Value |" >> .Codex/progress.md
+          echo "|---|---|" >> .Codex/progress.md
+          echo "| Date | CI |" >> .Codex/progress.md
+          echo "| Branch | main |" >> .Codex/progress.md
+          echo "| Agent Model | github-actions |" >> .Codex/progress.md
+          echo "" >> .Codex/progress.md
+          echo "## Active Task" >> .Codex/progress.md
+          echo "" >> .Codex/progress.md
+          echo "| Field | Value |" >> .Codex/progress.md
+          echo "|---|---|" >> .Codex/progress.md
+          echo "| Task ID | CI-agent-infra |" >> .Codex/progress.md
+          echo "| Description | Agent infrastructure validation |" >> .Codex/progress.md
+          echo "| Files Touched | List files modified so far in this session |" >> .Codex/progress.md
+          echo "| Started At | n/a |" >> .Codex/progress.md
+          echo "" >> .Codex/progress.md
+          echo "## Verification Status" >> .Codex/progress.md
+          echo "" >> .Codex/progress.md
+          echo "| Gate | Status | Notes |" >> .Codex/progress.md
+          echo "|---|---|---|" >> .Codex/progress.md
+          echo "| pnpm run typecheck | pass | |" >> .Codex/progress.md
+          echo "| pnpm run lint | pass | |" >> .Codex/progress.md
+          echo "| pnpm run build | pass | |" >> .Codex/progress.md
+          echo "| pnpm test | pass | |" >> .Codex/progress.md
+          echo "| pnpm run quality:no-regressions | pass | |" >> .Codex/progress.md
+          echo "| pnpm run quality:logging-guard | pass | |" >> .Codex/progress.md
+          echo "" >> .Codex/progress.md
+          echo "## Commit State" >> .Codex/progress.md
+          echo "" >> .Codex/progress.md
+          echo "| Field | Value |" >> .Codex/progress.md
+          echo "|---|---|" >> .Codex/progress.md
+          echo "| Last Commit Hash | n/a |" >> .Codex/progress.md
+          echo "| Last Commit Message | CI check |" >> .Codex/progress.md
+          echo "| Uncommitted Files | .Codex/progress.md |" >> .Codex/progress.md
+          echo "| Uncommitted Note | Created by CI for agent:check validation |" >> .Codex/progress.md
+
+      - name: Run agent:check
+        run: pnpm run agent:check
+
   deploy-voice-agent:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [check, voice-agent-typecheck]
+    needs: [check, voice-agent-typecheck, agent-infra]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
