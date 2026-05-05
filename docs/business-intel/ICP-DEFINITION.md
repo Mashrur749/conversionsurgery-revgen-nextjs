@@ -98,7 +98,7 @@ All six must pass (Q1-Q4 are dealbreakers, Q5-Q6 are flags):
 | **Standard** | $5,500 | $2,000/mo | General availability, 90-day minimum then month-to-month |
 | **Premium / Booked Estimate OS** | $9,500 | $3,500/mo | Larger firms, 90-day minimum then month-to-month |
 
-Setup fee always charged (can split 50/50 for Standard/Premium). Voice AI included free in all tiers. No trial period, no free month.
+Setup fee split 50/50 (signing/go-live) for all tiers. Setup non-refundable after Day 7. Monthly retainer auto-charges via Stripe starting at go-live. Voice AI included free in all tiers (1,000 min/mo fair-use, $0.15/min above). No trial period, no free month. Annual prepay option at ~15% discount on monthly fee, mentioned only on request.
 
 ---
 
