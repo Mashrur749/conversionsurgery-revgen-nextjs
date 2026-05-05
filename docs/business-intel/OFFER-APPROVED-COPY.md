@@ -277,7 +277,7 @@ The following are approved written answers for the questions prospects ask most 
 > For the first two weeks, every response is reviewed by our team before it reaches your customers. Nothing goes out without a human check. When the system encounters a question it cannot answer confidently, it tells the lead it will follow up rather than guessing. Inaccuracies are flagged immediately and corrected in the knowledge base. You don&apos;t review messages &mdash; we do.
 
 > **I tried a similar service before and it didn&apos;t work. How is this different?**
-> ConversionSurgery is a managed service, not software. We set it up, run it, monitor it, and fix it when something&apos;s off. You don&apos;t manage anything. Your first month is free &mdash; you see proof before you pay a dollar.
+> ConversionSurgery is a managed service, not software. We set it up, run it, monitor it, and fix it when something&apos;s off. You don&apos;t manage anything. If the system isn&apos;t live within 21 days, we keep working at no extra charge. If inquiries aren&apos;t being logged by day 30, we pause billing until they are. You see proof before your second invoice.
 
 > **I get most of my work from referrals. Is this relevant to me?**
 > Yes — the highest-ROI parts of the service are estimate follow-up, review generation, and dormant reactivation. These work regardless of how leads find you. Most referral contractors have outstanding quotes that went quiet; recovering even a fraction of those covers the service fee many times over.
