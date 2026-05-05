@@ -1,6 +1,9 @@
 /**
  * Seed the three-tier plan structure for Wave A.
  *
+ * Voice AI is included free in all tiers (up to 1,000 min/mo fair-use).
+ * No per-minute charge unless client exceeds fair-use threshold.
+ *
  * Usage:  pnpm tsx scripts/seed-plans.ts
  *
  * Stripe price IDs must be created in the Stripe Dashboard first (test mode),

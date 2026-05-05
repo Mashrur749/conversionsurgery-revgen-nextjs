@@ -75,8 +75,9 @@ Client has selected the following service tier:
 
 The Setup Fee is due at signing and covers implementation, configuration, onboarding, and go-live preparation. The first monthly fee is due at signing and covers the first calendar month of service. No free trial period. No message caps. No overage charges.
 
+**Voice AI** is included at no additional cost up to 1,000 inbound minutes per month. Usage above 1,000 minutes/month is billed at $0.15/minute. Service Provider will notify Client in writing if monthly usage exceeds 800 minutes for two consecutive months.
+
 Add-ons (if applicable):
-- Voice AI: $0.15/minute (opt-in only — will not appear unless explicitly enabled)
 - Additional phone numbers: $15/month each
 - Additional team members: $20/month each
 
@@ -108,25 +109,9 @@ ConversionSurgery further commits that at least 80% of eligible conversations wi
 
 > **[COUNSEL NOTE]** Define "go-live" precisely (what systems must be operational), "eligible conversations" (inbound SMS/calls only, or web form too?), and how billing-pause resumption is triggered. Confirm whether billing-pause is the sole remedy or whether Client can also terminate.
 
-**Layer 2 — 90-Day Revenue Recovery Guarantee**
+**Scope of Guarantees**
 
-If, by the end of the 90-day Minimum Term, neither of the following Attributed Results has occurred, Client is eligible for a refund of the most recent monthly service fee and may terminate this Agreement with no further monthly obligation. The Setup Fee is non-refundable. Client may also request export of all captured lead and conversation records.
-
-> **[COUNSEL NOTE]** Confirm whether refund of "most recent monthly fee" is the intended remedy or whether it should be a different amount (e.g., one month's fee regardless of when in the term the guarantee is invoked). Confirm that Setup Fee non-refundability is enforceable as drafted.
-
-A System-Engaged Lead means any lead where (a) the lead&apos;s first contact was captured by the platform (inbound SMS, missed-call text-back, or web-form response) OR the lead was re-contacted through platform automation (dormant reactivation, old-quote follow-up), AND (b) at least one (1) automated platform message was delivered to the lead prior to the attributed outcome, as evidenced by platform conversation logs with timestamps.
-
-An Attributed Result means either: (i) at least one (1) estimate appointment booked through the Service from a System-Engaged Lead that was previously unresponsive, visible in the Client&apos;s calendar with full conversation log; or (ii) five thousand dollars ($5,000) or more in probable pipeline value from System-Engaged Leads, calculated automatically from appointments booked and quotes re-engaged, visible in the Client&apos;s dashboard and bi-weekly reports.
-
-If platform logs do not establish that the lead was captured or re-contacted by the platform with at least one automated message, the result is inconclusive and ConversionSurgery will honor the refund.
-
-**Volume Condition — Low-Volume Extension Formula** [PENDING COUNSEL REVIEW]
-
-The Layer 2 guarantee assumes a baseline of fifteen (15) inbound inquiries per 30-day period. If actual inbound inquiry volume averages below 15 per 30-day period during the applicable guarantee window, guarantee timelines adjust proportionally:
-
-> Adjusted Window = Base Window &times; (15 &divide; Actual Monthly Volume)
-
-Actual Monthly Volume is the arithmetic average inbound inquiry count per 30-day period across the measured guarantee window. An inbound inquiry includes a missed call, form submission, or inbound SMS. Partial days round up to the next whole day. If average volume falls below 8 inquiries per month, ConversionSurgery will review the account individually.
+These are operational guarantees. ConversionSurgery does not guarantee specific revenue outcomes, closed jobs, pipeline values, or close-rate improvements. Closed revenue depends on Client&apos;s pricing, sales process, market conditions, and operational follow-through. The guarantees above ensure the system is live and working as designed.
 
 ---
 
