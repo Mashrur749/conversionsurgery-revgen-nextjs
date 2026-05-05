@@ -14,7 +14,7 @@ Obtain written legal guidance from a licensed Canadian lawyer on four must-have 
 - Company: ConversionSurgery
 - Offer: Managed service for renovation contractors in Alberta/Canada
 - Primary channel: SMS + phone + workflow automation
-- Contract model: month-to-month, cancellation with 30-day notice
+- Contract model: 90-day minimum term, then month-to-month with 30-day cancellation notice
 - Planned launch timing: immediate sales start; legal signoff required before first paid signature
 
 ## Must-Have Questions (Counsel Decision Required)
@@ -25,10 +25,10 @@ Obtain written legal guidance from a licensed Canadian lawyer on four must-have 
 - Needed output: permitted / not permitted / conditionally permitted, with exact conditions and required disclosure language.
 
 2. Guarantee enforceability
-- Question: Are the 30-Day Proof-of-Life and 90-Day Revenue Recovery guarantees enforceable as drafted?
-- Definitions to validate:
-  - Qualified Lead Engagement
-  - Attributed Result (replaced "Attributed Project Opportunity" &mdash; now defined as: 1 booked estimate from a cold lead OR $5,000 probable pipeline)
+- Question: Are the operational guarantees enforceable as drafted?
+- Guarantees to validate:
+  - 21-Day Go-Live Gate: system live within 21 calendar days or work continues at no charge until live
+  - 30-Day Logging Gate: 80% of inbound inquiries logged within 30 days of go-live or monthly billing pauses until fixed
 - Needed output: enforceability edits and exact contract-safe wording.
 
 3. Low-volume extension formula enforceability

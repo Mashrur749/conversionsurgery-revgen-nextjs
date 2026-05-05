@@ -20,7 +20,7 @@ Fill in the prospect&apos;s numbers live — let them see the math.
 **Example:** 20 quotes x $40,000 x 10% = $80,000 in recoverable pipeline
              20 quotes x $40,000 x 15% = $120,000 in recoverable pipeline
 
-**ConversionSurgery annual cost:** $12,000/year
+**ConversionSurgery annual cost:** $18,000/year (Pilot tier: $1,500/mo)
 **Break-even:** One project covers the entire year of service.
 
 ---

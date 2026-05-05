@@ -109,7 +109,7 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 ### Voice AI Operations (per client with voice enabled)
 57. **Activation mode verification:** Confirm each voice-enabled client&apos;s mode matches their preference: always-on, after-hours, or overflow. Check the client feature configuration in admin. A misconfigured mode can result in the AI answering calls that should go directly to the contractor.
 58. **Post-call transcript review (weekly):** Review recent call transcripts for quality. Flag calls where the AI provided incorrect information, made promises outside scope, or failed to transfer when the caller requested a human. Feed patterns back into KB entries.
-59. **Voice usage cost monitoring:** Check the admin billing page weekly for voice minutes consumed per client. Alert contractors approaching their plan&apos;s voice allocation before they hit an overage.
+59. **Voice AI is included free in all tiers.** No per-minute billing or allocation caps. Monitor call volume and transcript quality for operational awareness, but there are no overages to manage.
 
 ### Speed-to-Lead Monitoring (weekly)
 60. **Average response time audit:** Review average lead response time across all active clients. Investigate any client whose average exceeds 5 minutes — this is the primary conversion driver and the guarantee anchor. If degraded, check: cron orchestrator health, Anthropic API latency, and Twilio webhook delivery logs.
@@ -231,7 +231,7 @@ Run on the first business day of every month. Takes approximately 20 minutes.
 | Flag | Default | What it controls |
 |------|---------|-----------------|
 | `dailyDigestEnabled` | on | Contractor P2 notifications are batched into one 10am SMS daily |
-| `billingReminderEnabled` | on | Day 25 trial-end billing reminder SMS |
+| `billingReminderEnabled` | on | Billing reminder SMS (e.g., upcoming renewal) |
 | `engagementSignalsEnabled` | on | Weekly engagement health signals to contractor |
 | `autoResolveEnabled` | on | KB gaps auto-resolve when a matching entry is added |
 | `forwardingVerificationEnabled` | on | Call-forwarding health check nudges |
@@ -253,9 +253,9 @@ To override a flag for a specific client: admin client detail page → Configura
 69. **Message limit monitoring:** For clients not on unlimited plans, check weekly whether they are approaching their plan&apos;s message limit. Proactively notify before they hit the cap to avoid unexpected send failures.
 70. **Plan change processing:** For upgrade or downgrade requests, process via the admin client billing page and verify Stripe reflects the change within 60 seconds. If Stripe does not update, check for webhook delivery failures in the Stripe dashboard.
 
-### Trial Management
-71. **Trial expiry outreach:** Monitor clients in trial status and proactively reach out at least 3 days before trial expiry to convert to paid. Waiting until expiry day risks losing the client to inertia.
-72. **Post-expiry behavior verification:** If a trial expires without payment, verify the system correctly transitions the client (features disabled or grace period active per current policy). Check the client status in admin and confirm no automation sequences are still firing for an expired trial client.
+### Subscription Lifecycle
+71. **90-day minimum term:** All clients are on a 90-day minimum term. Monitor clients approaching the end of their initial term and proactively reach out to confirm continuation or discuss any concerns before the term converts to month-to-month.
+72. **Cancellation processing:** After the 90-day minimum, clients may cancel with 30 days written notice. When a cancellation notice is received, confirm the effective date (30 days from notice), process data export per SLA, and verify the system correctly transitions the client (features disabled, no automation sequences firing after the effective date).
 
 ## Knowledge Gap Resolution Process
 

@@ -1,5 +1,7 @@
 # Voice Alignment Audit (Founder Voice OS)
 
+> **⚠️ SUPERSEDED** — This document predates the Revenue Recovery System Business Reference (May 2026). Pricing, guarantee, and offer structure described here are outdated. See `docs/business-intel/Revenue_Recovery_System_Business_Reference.md` for current direction. Retained for historical reference only.
+
 Date: February 24, 2026
 Scope: `content/blog-posts/*.json` and `scripts/create-email-templates.py`
 Source policy: `docs/business-intel/FOUNDER-VOICE-OPERATING-SYSTEM.md` + `docs/business-intel/VOICE.md`

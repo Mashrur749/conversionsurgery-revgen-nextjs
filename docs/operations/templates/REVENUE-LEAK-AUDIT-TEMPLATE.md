@@ -122,14 +122,14 @@ Ask directly on the onboarding call: "After you send a quote, what do you do to 
 Use the data from Sections 3–5 to build a conservative one-paragraph ROI statement. Pull one specific project type the contractor mentioned during the onboarding call (e.g., kitchen remodel, roof replacement, HVAC install) and anchor the math to a real number.
 
 Formula:
-- Monthly service fee: $1,000
+- Monthly service fee: $1,500 (Pilot tier)
 - One recovered project value: $[avg job value from Section 3]
-- Months of service covered by one project: $[job value] / $1,000
+- Months of service covered by one project: $[job value] / $1,500
 
 Keep the math conservative. Do not imply certainty. Use "could" and "approximately."
 
 **Research notes (internal only):**
-- Service fee per month: $1,000
+- Service fee per month: $1,500 (Pilot tier)
 - Average job value used: $___________
 - Months covered by one project: ___________
 - Specific project type to reference: ___________

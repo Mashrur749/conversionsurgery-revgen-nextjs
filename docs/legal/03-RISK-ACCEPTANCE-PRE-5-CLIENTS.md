@@ -27,16 +27,16 @@ Proceed with selling to the first 5 clients WITHOUT formal legal counsel review 
 
 ### Item 2: Guarantee Enforceability
 
-**Risk**: Guarantee terms may not be enforceable as drafted.
-**Mitigation**: For clients 1-5, treat the guarantee as a goodwill commitment, not a legal obligation. The guarantee is designed to be generous (refund the month, keep all data), so disputes are unlikely. If a client triggers the guarantee, honor it immediately without argument.
-**Operational rule**: If ANY ambiguity exists in attribution, default to refunding. The cost of one month's refund ($1,000) is far less than the cost of a dispute or negative word-of-mouth.
-**Documented in**: OFFER-APPROVED-COPY.md Section 3 (attribution language is already log-based and objective).
+**Risk**: Operational guarantee terms (21-day go-live gate, 30-day logging gate) may not be enforceable as drafted.
+**Mitigation**: For clients 1-5, treat the guarantees as goodwill commitments, not legal obligations. The guarantees are operationally generous (work continues free until go-live; billing pauses until logging threshold met), so disputes are unlikely. If a client triggers either guarantee, honor it immediately without argument.
+**Operational rule**: If ANY ambiguity exists in whether the go-live or logging threshold was met, default to the client-favorable interpretation. The cost of paused billing (one month at $1,500-$3,500 depending on tier) is far less than the cost of a dispute or negative word-of-mouth.
+**Documented in**: OFFER-APPROVED-COPY.md Section 3 (guarantee language is log-based and objective).
 
 ### Item 3: Low-Volume Extension Formula
 
 **Risk**: Formula may not be sufficiently clear for enforcement.
 **Mitigation**: The Playbook now requires explicit verbal disclosure of adjusted windows for sub-15 lead volume prospects (added in Tier 2). The operator states the exact adjusted day count during the close. This creates mutual understanding before signing.
-**Operational rule**: If a low-volume client disputes the extension, honor the shorter (standard) window. The $1,000 refund is not worth the argument.
+**Operational rule**: If a low-volume client disputes the extension, honor the shorter (standard) window. The cost of paused billing is not worth the argument.
 **Documented in**: 02-MANAGED-SERVICE-PLAYBOOK.md Section 12 (guarantee volume disclosure script).
 
 ### Item 4: "Unlimited Messaging" Claim
@@ -76,7 +76,8 @@ Proceed with selling to the first 5 clients WITHOUT formal legal counsel review 
 | Item | Risk Level (1-5 clients) | Worst Case | Cost of Worst Case |
 |------|-------------------------|------------|-------------------|
 | Quiet hours | **Low** — we use strictest possible mode | Homeowner complains about a 10 AM text | Apology + note in conversation |
-| Guarantee | **Low** — we honor all refunds generously | Client disputes attribution at Day 90 | $1,000 refund (budgeted) |
+| Go-live gate | **Low** — we continue work at no charge | System not live at Day 21 | Continued free setup until live |
+| Logging gate | **Low** — we pause billing generously | Sub-80% logging at Day 30 post go-live | Billing pauses (budgeted) |
 | Volume extension | **Low** — we disclose verbally + written | Client expects 30 days, gets 45 | Honor the 30-day window anyway |
 | Unlimited messaging | **Very low** — operator controls all messaging | N/A at this scale | N/A |
 

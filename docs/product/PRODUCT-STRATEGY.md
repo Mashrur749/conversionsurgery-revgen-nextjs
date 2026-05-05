@@ -8,9 +8,19 @@ Living document for product direction, business model, and strategic decisions. 
 
 **Goal:** $1M/year ARR, solo, location-free, ~20 hrs/week
 
-### Pricing (locked 2026-03-31)
+### Pricing (updated 2026-05-04)
 
-- Managed service: $1,000/month, no contract, no setup fee
+Three managed-service tiers, all with setup fee + monthly retainer, 90-day minimum then month-to-month:
+
+| Tier | Setup Fee | Monthly | Includes |
+|------|-----------|---------|----------|
+| Pilot | $3,500 | $1,500/mo | Core recovery engine, Voice AI, 1 phone number |
+| Standard | $5,500 | $2,000/mo | + advanced automations, priority support |
+| Premium | $9,500 | $3,500/mo | + dedicated onboarding, custom integrations |
+
+- No trial, no free month — setup fee always charged
+- Voice AI included in all tiers at no per-minute charge
+- Operational guarantee: 21-day go-live, 30-day logging (not a revenue guarantee)
 - First 3-5 clients: case study commitment requested, no fee concession
 - Agency licensing: TBD, targeting $3,000-5,000/month per agency partner
 
@@ -18,15 +28,16 @@ Living document for product direction, business model, and strategic decisions. 
 
 | Phase | Timeline | Focus | Revenue |
 |-------|----------|-------|---------|
-| 1 | Months 1-4 | Managed clients for proof + runway (5-10 at $1,000) | $5-10K MRR |
+| 1 | Months 1-4 | Managed clients for proof + runway (5-10 across tiers) | $10-20K MRR |
 | 2 | Months 4-8 | Agency licensing as primary growth engine | $20-40K MRR |
-| 3 | Months 8-18 | Scale to 15-20 agencies + premium managed + self-serve | $85K MRR |
+| 3 | Months 8-18 | Scale to 15-20 agencies + premium managed | $85K MRR |
 
 ### End State Revenue Mix
 
 - 15 agency partners x $3,500/mo = $52,500 MRR (10 hrs/week)
-- 10 premium managed x $2,000/mo = $20,000 MRR (8 hrs/week)
-- ~25 self-serve x $497/mo = $12,400 MRR (2 hrs/week)
+- 5 Premium managed x $3,500/mo = $17,500 MRR (5 hrs/week)
+- 5 Standard managed x $2,000/mo = $10,000 MRR (3 hrs/week)
+- 5 Pilot managed x $1,500/mo = $7,500 MRR (2 hrs/week)
 
 ### Hard Constraints (non-negotiable)
 
@@ -38,7 +49,6 @@ Living document for product direction, business model, and strategic decisions. 
 
 - Agency licensing pricing structure (flat fee vs per-seat vs hybrid)
 - Agency white-label UI scope (subdomain routing, branding per agency)
-- Self-serve tier timing (month 8-12, not month 1 — needs inbound source first)
 - Legal counsel signoff on 4 must-have items before first client
 
 ### Pressure Points
@@ -221,7 +231,7 @@ Currently the onboarding wizard asks the contractor to paste their Google Review
 
 **Current state (2026-04-07):** The wizard field now shows the expected `g.page/r/.../review` format as placeholder, and includes helper text with step-by-step instructions linking to business.google.com. The edit client form has the same guidance. This is adequate for managed-service onboarding where the operator fills in the form.
 
-**Better approach (backlog — FB-03):** Typeahead search using Google Places Autocomplete API. Contractor types their business name, the UI shows matching businesses in a dropdown ("Did you mean XYZ Construction & Co.?"), they select theirs. On selection, the API returns the place ID, URL, rating, and review count — pre-populating everything needed for review sync in one click. No manual URL hunting. This becomes critical when self-serve signup launches (Phase 3) — contractors filling in their own setup shouldn't need to know how Google Business Profile works.
+**Better approach (backlog — FB-03):** Typeahead search using Google Places Autocomplete API. Contractor types their business name, the UI shows matching businesses in a dropdown ("Did you mean XYZ Construction & Co.?"), they select theirs. On selection, the API returns the place ID, URL, rating, and review count — pre-populating everything needed for review sync in one click. No manual URL hunting. This becomes critical as client volume grows — contractors filling in their own setup shouldn't need to know how Google Business Profile works.
 
 This powers the full review lifecycle (request → sync → alert → auto-respond → report), so getting it right during onboarding is critical.
 

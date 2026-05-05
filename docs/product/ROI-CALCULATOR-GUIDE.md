@@ -11,7 +11,7 @@ The ROI Calculator takes a contractor's business inputs — how many estimates t
 1. **How much revenue they're losing annually** to slow response and poor follow-up
 2. **How much of that is recoverable** with ConversionSurgery
 
-The goal is to make the problem visceral and personal before asking for a booking. When someone sees "$480,000 left on the table per year," the $1,000/month price stops looking like a cost and starts looking like a no-brainer.
+The goal is to make the problem visceral and personal before asking for a booking. When someone sees "$480,000 left on the table per year," the $1,500/month Pilot price stops looking like a cost and starts looking like a no-brainer.
 
 Every submission is stored in the database for follow-up. If the prospect books a call, the salesperson (you) already has their numbers before the conversation starts.
 
@@ -163,12 +163,18 @@ Potential Recovery (annual) = Lost Revenue x Follow-Up Recovery Rate
 ### Step 3: Projected ROI
 
 ```
-Projected ROI = Potential Recovery / Annual Service Cost ($12,000)
+Projected ROI = Potential Recovery / Annual Service Cost
 ```
 
-**Example:** $1,575,000 / $12,000 = **131x**
+The annual service cost depends on tier. The calculator defaults to the Pilot tier ($1,500/month, $18,000/year) as the entry-level pricing:
 
-The annual service cost is always $12,000 ($1,000/month x 12). This is hardcoded in the calculator.
+| Tier | Monthly | Annual |
+|------|---------|--------|
+| Pilot | $1,500 | $18,000 |
+| Standard | $2,000 | $24,000 |
+| Premium | $3,500 | $42,000 |
+
+**Example:** $1,575,000 / $18,000 = **87.5x** (Pilot tier)
 
 ---
 
@@ -208,9 +214,9 @@ Content-Type: application/json
   "results": {
     "lostRevenueAnnual": 4500000,
     "potentialRecoveryAnnual": 1575000,
-    "projectedRoi": 131.25,
-    "monthlyServiceCost": 1000,
-    "annualServiceCost": 12000
+    "projectedRoi": 87.5,
+    "monthlyServiceCost": 1500,
+    "annualServiceCost": 18000
   }
 }
 ```
@@ -254,12 +260,12 @@ Use these on the results page or inline after form submission. Replace the bold 
 > With instant response and systematic follow-up, the estimated recoverable revenue is **$[potentialRecoveryAnnual formatted]** per year.
 
 **ROI line:**
-> At $1,000/month, that is a projected **[projectedRoi]x return** on your investment.
+> At $1,500/month (Pilot tier), that is a projected **[projectedRoi]x return** on your investment.
 
 **Payback line:**
 > One recovered [trade] project at $[avgProjectValue formatted] covers **[months to break even] months** of service.
 
-To calculate months to break even: `Math.ceil(1000 / (potentialRecoveryAnnual / 12))`
+To calculate months to break even: `Math.ceil(monthlyServiceCost / (potentialRecoveryAnnual / 12))`
 
 **Disclaimer (include below all results — non-negotiable):**
 > Estimates are based on industry response-time data and the inputs you provided. Actual results vary by market, competition, close process, and lead quality.

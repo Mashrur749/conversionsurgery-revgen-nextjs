@@ -447,7 +447,7 @@ Follow-on stage after standard win-back for leads that have been dormant 6+ mont
 
 ## 3. Voice AI
 
-Included by default for all new clients — `voiceEnabled` defaults to `true` on client creation. Voice AI is part of the base $1,000/month price; there are no per-minute charges for new clients. Usage is measured internally for cost monitoring but is not invoiced separately. Existing clients who had voice AI disabled before April 2026 are unchanged — they can opt in from portal Settings or the admin client detail page.
+Included by default for all new clients — `voiceEnabled` defaults to `true` on client creation. Voice AI is included in all tiers (Pilot, Standard, Premium) with no per-minute charges. Usage is measured internally for cost monitoring but is not invoiced separately. Existing clients who had voice AI disabled before April 2026 are unchanged — they can opt in from portal Settings or the admin client detail page.
 
 Voice AI answers inbound calls with a natural-sounding conversational AI powered by Twilio ConversationRelay.
 
@@ -526,7 +526,7 @@ File: `src/app/api/webhooks/twilio/voice/ai/dial-complete/route.ts`
 - AI summary generated (via `generateCallSummary`)
 - Contractor notified via SMS with call summary, duration, intent, and callback flag
 - Outcome tracked: qualified, scheduled, transferred, voicemail, dropped
-- Voice usage aggregated for billing (per-minute via `voice-usage-rollup` cron)
+- Voice usage aggregated for internal cost monitoring (via `voice-usage-rollup` cron) — not billed to clients
 
 ### Voice AI Playground (Admin QA &amp; Demo)
 
@@ -994,7 +994,7 @@ Three-tier pricing, each with a one-time setup fee bundled into the Stripe Check
 |--------|---------|----------|
 | Extra team members | $20/month each (above included) | Per-seat ledger event |
 | Extra phone numbers | $15/month each (above included) | Per-number ledger event |
-| Voice AI minutes | $0.15/minute (usage billed when voice is active — included by default for new clients) | Usage rollup cron |
+| Voice AI minutes | Included in all tiers — no per-minute charge | Usage rollup cron (internal cost monitoring) |
 
 - Immutable billing event ledger with idempotency keys
 - Add-on charges visible on client billing page with CSV export
@@ -1614,7 +1614,7 @@ Public API endpoint for pre-sale conversations:
 - **Output:** annual revenue at risk, monthly recovery potential, months-to-break-even
 - **Auth:** public (no auth required — intended for use during sales calls or embedded in marketing)
 
-Use during sales calls to replace manual ROI math. Enter the prospect&apos;s numbers live; show the output on screen. Converts the price objection from &ldquo;$1,000 is expensive&rdquo; to &ldquo;I&apos;m leaving $X per month on the table.&rdquo;
+Use during sales calls to replace manual ROI math. Enter the prospect&apos;s numbers live; show the output on screen. Converts the price objection from &ldquo;$1,500/month is expensive&rdquo; to &ldquo;I&apos;m leaving $X per month on the table.&rdquo;
 
 ### Existing: Zapier / Webhook Export
 

@@ -91,11 +91,11 @@ Outcome: speed-to-lead is preserved without losing operator control.
 
 ### U7b. Dual-layer guarantee automation
 1. A new subscription starts with guarantee window metadata.
-2. Daily guarantee cron evaluates 30-day proof-of-life and low-volume extension windows.
-3. Qualified subscriptions transition into 90-day recovery tracking with attributed-opportunity checks.
-4. Subscription is automatically marked `fulfilled` or `refund_review_required`, with billing events logged for audit and operator action.
+2. Daily guarantee cron evaluates 21-day go-live gate (system operational) and 30-day logging gate (80% inquiries logged).
+3. Go-live gate failure: implementation continues at no additional charge. Logging gate failure: billing pauses until standard met.
+4. Subscription status and billing events logged for audit and operator action.
 
-Outcome: 30-day + 90-day guarantee promise is enforced operationally instead of manual tracking.
+Outcome: operational guarantee (go-live + logging) is enforced automatically instead of manual tracking.
 
 ## 4. SaaS Transition Use Cases (Near-Term)
 

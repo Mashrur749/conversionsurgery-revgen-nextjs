@@ -32,19 +32,15 @@ For each section:
 
 ---
 
-## 2) 30-Day + 90-Day Guarantee Language
+## 2) Operational Guarantee Language
 
 ### Draft Clause (Service Agreement)
-"30-Day Proof-of-Life Guarantee: If Client does not receive at least five (5) Qualified Lead Engagements within the applicable proof window, Client is eligible for a refund of the first month service fee.
+"21-Day Go-Live Gate: If the Service is not operational (receiving and responding to inbound inquiries via configured channels) within twenty-one (21) calendar days of contract execution, ConversionSurgery will continue setup work at no additional charge until the system is live. No monthly billing begins until go-live is confirmed.
 
-90-Day Revenue Recovery Guarantee: If, by the end of the applicable recovery window, neither of the following Attributed Results has occurred, Client is eligible for a refund of the most recent monthly service fee, and may request export of captured lead and conversation records.
-
-Qualified Lead Engagement means: (a) inbound lead source, (b) first system response timestamped in platform logs, and (c) at least one recipient reply after system response.
-
-Attributed Result means either: (a) at least one (1) estimate appointment booked through the Service from a lead that was previously unresponsive, visible in the Client&apos;s calendar with full conversation log; or (b) five thousand dollars ($5,000) or more in probable pipeline value from leads the Service engaged, calculated automatically from appointments booked and quotes re-engaged, visible in the Client&apos;s dashboard and bi-weekly reports. If platform logs are inconclusive, ConversionSurgery will honor the refund."
+30-Day Logging Gate: If, within thirty (30) calendar days following go-live, the Service has not logged at least eighty percent (80%) of Client&apos;s inbound inquiries as verified by platform logs, monthly billing pauses until the logging threshold is met. Billing resumes on the first day of the month following the month in which the 80% threshold is achieved."
 
 ### Counsel Decision Needed
-- Are these definitions sufficiently objective and enforceable?
+- Are these operational guarantees sufficiently objective and enforceable?
 - Required wording changes for consumer/commercial enforceability.
 - Any required dispute/claims process language.
 

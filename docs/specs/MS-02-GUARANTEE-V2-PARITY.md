@@ -1,5 +1,7 @@
 # MS-02: Guarantee v2 Parity (30-Day Proof + 90-Day Recovery)
 
+> **⚠️ SUPERSEDED** — The guarantee model described here (proof-of-life lead count + attributed revenue) has been replaced by the operational guarantee model (21-day go-live gate + 30-day logging gate). The implementation shipped uses the new model. See `docs/business-intel/Revenue_Recovery_System_Business_Reference.md` §13. Retained for historical reference.
+
 ## Goal
 Implement the sold two-layer guarantee model:
 - Layer 1: 30-day proof-of-life (>=5 qualified lead engagements)

@@ -1,5 +1,7 @@
 # Stochastic Multi-Agent Consensus Report
 
+> **⚠️ SUPERSEDED** — This document predates the Revenue Recovery System Business Reference (May 2026). Pricing, guarantee, and offer structure described here are outdated. See `docs/business-intel/Revenue_Recovery_System_Business_Reference.md` for current direction. Retained for historical reference only.
+
 **Problem**: Is ConversionSurgery ready to launch at $1,000/month for Canadian renovation contractors? What are the dealbreakers?
 **Agents**: 10 (neutral, risk-averse, growth, contrarian, first-principles, contractor POV, resource-constrained, long-term, data-driven, systems thinker)
 **Date**: 2026-04-01

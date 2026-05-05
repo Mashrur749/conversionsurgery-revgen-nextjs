@@ -6,7 +6,7 @@ Status: Launch-Ready (pending legal review &mdash; see Part 10)
 
 > **NOTE:** The approved copy bank lives in `docs/business-intel/OFFER-APPROVED-COPY.md` (v1.8). The client-facing presentation is `docs/business-intel/offer-page.html`. If this strategy doc and the approved copy conflict, the **approved copy is the source of truth** for anything a contractor might see. This doc provides internal rationale and strategy context.
 >
-> **ICP:** The canonical ICP definition (who we sell to, sub-segment priority, 30-second qualifier, and avoidance criteria) lives in `docs/business-intel/ICP-DEFINITION.md`. Primary target: Calgary basement development contractors.
+> **ICP:** The canonical ICP definition (who we sell to, sub-segment priority, 30-second qualifier, and avoidance criteria) lives in `docs/business-intel/ICP-DEFINITION.md`. Primary target: design-build renovation contractors ($1M-$10M), Calgary + Edmonton first.
 
 This document is the single source of truth for what ConversionSurgery sells, how every component is structured, and the operational definitions behind every promise. All sales scripts, outreach templates, landing pages, and client-facing materials should be built FROM this document.
 
@@ -126,7 +126,7 @@ Voice AI is included in the base price for all clients &mdash; `voiceEnabled` de
 
 **THIS IS THE SINGLE BIGGEST STRUCTURAL CHANGE TO THE OFFER.**
 
-**The problem it solves:** A contractor pays $1,000 and then waits 3 weeks for full automation. That's 21 days of paying for something that isn't fully working. That gap creates doubt, buyer's remorse, and a feeling of "is this actually going to do anything?"
+**The problem it solves:** A contractor pays the setup fee and then waits 3 weeks for full automation. That's 21 days of paying for something that isn't fully working. That gap creates doubt, buyer's remorse, and a feeling of "is this actually going to do anything?"
 
 **The solution: Value within 24 hours.**
 
@@ -199,87 +199,39 @@ We do not guarantee specific revenue outcomes. Renovation project close rates de
 2. 30 days isn't enough time for renovation results. Kitchen projects take 2-3 months to close.
 3. Revenue attribution is contested territory — we can't guarantee what we don't control.
 
-**The new guarantee — two layers:**
+**The guarantee — two operational gates:**
 
-#### Layer 1: The 30-Day Proof-of-Life Guarantee
+#### Gate 1: 21-Day Go-Live Gate
 
-> "If the system doesn&apos;t deliver at least 5 Qualified Lead Engagements in those 30 days, we credit your next month&apos;s fee."
+> "Your system will be fully configured and live within 21 days of your onboarding call &mdash; or we extend your first month at no charge."
 
-**Structure (v3.0 — three-tier model):** Setup fee is non-refundable (covers implementation work already done). Monthly fee credit applies if the system fails to engage 5 qualified leads in the first 30 days. This is an operational proof of life — the system either fires or it doesn&apos;t, and the logs prove it either way.
+This is a delivery commitment, not a revenue promise. The system either goes live or it doesn&apos;t. If we miss this deadline, the client&apos;s billing pauses until the system is live. Setup fee is non-refundable (covers implementation work already done).
 
-**"Qualified Lead Engagement" is defined as:**
+#### Gate 2: 30-Day Logging Gate
 
-- Inbound source (missed call, web form submission, inbound SMS)
-- First system response timestamp logged in platform
-- Two-way interaction (lead replies at least once after system response)
-- Visible in CRM conversation logs with full audit trail
+> "At least 80% of all inbound inquiries will be captured and logged in your CRM within the first 30 days of go-live. If we miss this threshold, we pause billing until logging meets the standard."
 
-This is concrete, measurable, and almost impossible to fail if the contractor has any lead volume at all.
+This is a system-performance gate. The platform logs prove it either way &mdash; no subjective interpretation needed. If logging falls below 80%, billing pauses until the issue is resolved.
 
-#### Layer 2: The 90-Day Operational Guarantee
+**What this is NOT:**
 
-> "If after 90 days the system has not demonstrably engaged leads &mdash; meaning at least one estimate appointment booked from a system-engaged lead OR $5,000 in tracked probable pipeline value &mdash; we credit your most recent month&apos;s fee. You keep a full export of every lead and conversation we captured. You leave with everything."
-
-**Note:** This is an operational credit, not a revenue guarantee. The guarantee covers system performance (did the automation fire, engage leads, and book appointments as designed) — not deal outcomes (whether the contractor won the job). Lead-to-close is outside system control.
-
-**The guarantee passes if EITHER of the following is true:**
-
-1. **1 Attributed Result** — Lead received automated response or follow-up from the system, with logged engagement after system action (reply, booked appointment, resumed conversation). Attribution is log-based; no subjective contractor confirmation required.
-2. **$5,000+ in Probable Pipeline Value** — The platform's automatically calculated `probablePipelineValue` (appointments booked + reactivated quotes × average project value) reaches $5,000 or more within the 90-day window, even if no job has been explicitly won yet.
-
-The pipeline floor (criterion 2) gives contractors with longer renovation sales cycles a concrete, measurable standard — $5,000 in tracked pipeline is visible in the platform and unambiguous. Criterion 1 remains available for contractors who close faster.
-
-**"Attributed Result" (Criterion 1) defined as:**
-
-- Lead received automated response or follow-up from the system
-- Logged engagement after system action (reply, booked appointment, resumed conversation)
-- Attribution confirmed by platform logs (no subjective contractor confirmation required)
-
-**Evidence and Dispute Resolution:**
-
-- Source of truth: platform logs + CRM records + client confirmation
-- 10 business day review window for any guarantee claim
-- If platform logs show system-initiated engagement preceding a booking or resumed conversation, attribution is confirmed. If the client disputes attribution and platform logs are inconclusive, ConversionSurgery will honor the refund. We would rather refund a borderline case than lose a client's trust.
+- NOT a revenue guarantee &mdash; we do not guarantee specific revenue outcomes, pipeline values, or lead counts
+- NOT a refund promise &mdash; billing pauses (not refunds) until operational standards are met
+- NOT tied to deal outcomes &mdash; whether the contractor wins the job is outside system control
 
 **Why this works:**
 
-- **Specific:** "One project you can point to." Not vague "value" — a real job.
-- **Generous in timeframe:** 90 days respects the actual renovation sales cycle.
-- **Generous in outcome:** Refund PLUS you keep the data. The contractor literally can't lose.
-- **Confident:** You're saying "we're so sure this works that we'll bet 3 months on it."
-- **Defensible:** ONE project in 90 days is an extremely low bar for any contractor with reasonable lead flow.
-- **The "keep everything" clause matters:** Contractors fear vendor lock-in. Knowing they can leave with their data removes a hidden objection most won't voice.
-
-**Minimum Lead Volume Assumption:**
-Guarantees assume a minimum of 15 inbound inquiries per month across all tracked channels (calls, forms, SMS). 15/month is a reasonable floor for a $500K-$3M contractor — roughly 3-4 per week.
-
-**Low-Volume Extension Formula:**
-If monthly lead volume falls below 15 due to factors outside ConversionSurgery's control (seasonal slowdown, reduced marketing spend, market conditions), guarantee windows extend proportionally using this formula:
-
-```
-Adjusted window = Base window × (15 ÷ actual monthly volume)
-```
-
-Examples:
-
-| Actual monthly volume | % of threshold | 30-Day Proof window becomes                                                               | 90-Day ROI window becomes |
-| --------------------- | -------------- | ----------------------------------------------------------------------------------------- | ------------------------- |
-| 15+ (meets threshold) | 100%           | 30 days (no change)                                                                       | 90 days (no change)       |
-| 12                    | 80%            | 38 days                                                                                   | 113 days                  |
-| 10                    | 67%            | 45 days                                                                                   | 135 days                  |
-| 8                     | 53%            | 57 days                                                                                   | 170 days                  |
-| Below 8               | <53%           | Case-by-case review — volume too low for system to demonstrate value; discuss with client |
-
-**Calculation uses actual monthly average across the guarantee period**, not any single month's volume. If Month 1 has 10 leads and Month 2 has 20, the average is 15 and no extension applies.
-
-This formula eliminates ad hoc judgment calls during guarantee disputes. Both parties can point to the number.
+- **Binary and measurable:** The system is either live by Day 21 or it isn&apos;t. Logging is either at 80% or it isn&apos;t. No ambiguity.
+- **Fair to both sides:** The contractor doesn&apos;t pay for months where the system isn&apos;t performing. The operator isn&apos;t liable for revenue outcomes they can&apos;t control.
+- **Builds trust:** Billing pause is a stronger signal than a credit &mdash; it says &ldquo;we won&apos;t charge you until we deliver.&rdquo;
+- **Defensible:** These are operational metrics with clear audit trails in the platform.
 
 **Hormozi lever:** Perceived Likelihood — maximized through specificity, generosity, and measurability.
 
 **What this kills:**
 
-- "What if it doesn't work?" — The system either fires or it doesn&apos;t — the logs prove it. If it doesn&apos;t engage leads in 30 days, you get a credit. If it doesn&apos;t produce pipeline in 90 days, you get another credit and keep all your data.
-- "I need to think about it." — The guarantee means if the system doesn&apos;t perform, you don&apos;t pay for months that didn&apos;t deliver. The only risk is waiting another month and losing more leads.
+- "What if it doesn't work?" — If the system isn&apos;t live by Day 21, your billing extends. If it isn&apos;t logging properly by Day 30, billing pauses. You don&apos;t pay for a system that isn&apos;t working.
+- "I need to think about it." — The guarantee means if we don&apos;t deliver on our operational commitments, you don&apos;t pay. The only risk is waiting another month and losing more leads.
 - "Can I try it first?" &mdash; The Pilot tier (first 3 clients) is the lowest-risk entry point. Full service, case study commitment in exchange.
 
 ---
@@ -478,7 +430,7 @@ Here's what you get when you start with ConversionSurgery:
 
 **Complete Done-For-You Service** — We set it up, run it, optimize it. Your only job is to keep building great projects. Total time commitment: under 15 minutes a week.
 
-**90-Day Operational Guarantee** &mdash; If the system doesn&apos;t engage 5 qualified leads in the first 30 days, we credit your next month. If after 90 days the system hasn&apos;t booked at least one estimate from a system-engaged lead or generated $5,000 in tracked pipeline, we credit your last month and you keep every lead and conversation we captured. If your lead volume runs below 15/month, guarantee windows extend proportionally &mdash; you&apos;re never penalized for a slow period.
+**Operational Guarantee** &mdash; Go-live by Day 21 or your first month extends at no charge. 80% logging coverage by Day 30 or billing pauses until we hit the standard. No revenue guarantees, no pipeline promises &mdash; just a commitment that the system will be live and working as designed.
 
 **Weekly Pipeline Update** &mdash; Every Monday, a text on your phone showing your pipeline in dollars. No login required.
 
@@ -501,8 +453,8 @@ Pilot tier ($3,500 setup + $1,500/mo) is available to the first 3 clients only, 
 
 ### Perceived Likelihood: MAXIMIZED ✓
 
-- 90-Day Revenue Recovery Guarantee with specific, measurable, airtight criteria
-- 30-Day Proof-of-Life Guarantee for early confidence
+- 21-Day Go-Live Gate &mdash; system live or billing extends
+- 30-Day Logging Gate &mdash; 80% capture or billing pauses
 - Day-One Activation so they see it working in hours, not weeks
 - Revenue Leak Audit with THEIR numbers, not generic industry claims
 - Bi-Weekly Scoreboard with "Leads at Risk" line making value concrete and visible
@@ -584,11 +536,11 @@ Every component is tagged to the specific objection it preemptively kills:
 | "It's too expensive"                    | ROI math (one recovered project covers setup + months of service)                      | Bi-Weekly Scoreboard, unlimited messaging (no surprise costs)                       |
 | "Why a setup fee?"                      | Setup fee covers real implementation work (AI config, KB, onboarding) — not a markup  | Day-One Activation (phone number + missed-call text-back live Day 1)                |
 | "I need to think about it"              | Day-One Activation (value starts immediately, waiting costs leads)                     | 90-day minimum aligns with renovation cycle — short relative to project payback     |
-| "What if it doesn't work?"              | 90-Day Operational Guarantee (credit + keep everything)                                | 30-Day Proof-of-Life (you'll see it working in weeks)                               |
+| "What if it doesn't work?"              | Operational Guarantee (21-day go-live gate + 30-day logging gate, billing pause)        | Day-One Activation (you'll see it working in hours)                                 |
 | "I've tried CRM/software before"        | Managed Service (we run it, not you)                                                   | 15 min/week (nothing to learn or operate)                                           |
 | "I can hire someone instead"            | Revenue Engine (24/7, comparable monthly cost, no management overhead)                 | Day-One Activation (employee takes weeks to hire and train)                         |
 | "What about slow months?"               | Quarterly Growth Blitz (slow months = reactivation/pipeline months)                   | Dormant Client Reactivation (revenue at zero acquisition cost)                      |
-| "Can I try it free?"                    | Pilot tier available (first 3 clients — case study program)                            | Operational guarantee means if it doesn&apos;t engage leads, you get a credit       |
+| "Can I try it free?"                    | Pilot tier available (first 3 clients — case study program)                            | Operational guarantee means if we don&apos;t deliver, billing pauses                 |
 | "What if AI says something wrong?"      | Managed Service (assist mode first week, guardrails, escalation)                       | Bi-Weekly Scoreboard (you see what it's saying and doing)                           |
 | "I don't have time for onboarding"      | Day-One Activation (30-min call + we do rest, value day 1)                             | 15 min/week ongoing                                                                 |
 | "What if I want to cancel?"             | 90-day minimum only, then month-to-month + full data export (CSV, 5 business days)     | No penalty after minimum, no lock-in                                                |
@@ -716,7 +668,7 @@ If building this offer in phases, here's the sequence:
 | Priority | Component                                                                                                    | Impact                                                  | Effort                                                                             |
 | -------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | 1        | **Day-One Activation** (missed call text-back on Day 1 + call-your-number demo)                              | Biggest impact on the wow moment gap                    | Minimal — just sequencing what already exists                                      |
-| 2        | **90-Day Revenue Recovery Guarantee** (replace old 30-day guarantee, implement pro-rata extension formula)   | Biggest impact on sales close rate                      | Zero technical change — policy decision + updated scripts                          |
+| 2        | **Operational Guarantee** (21-day go-live gate + 30-day logging gate with billing pause)                      | Biggest impact on sales close rate                      | Zero technical change — policy decision + updated scripts                          |
 | 3        | **Low-friction estimate triggers** (SMS keyword trigger + notification quick-reply + fallback nudge)         | Prevents the highest-value automation from going unused | Moderate — new trigger endpoints, but logic is straightforward                     |
 | 4        | **Smart assist mode** (auto-send after 5-minute approval window)                                             | Preserves speed-to-lead during onboarding               | Small — configurable delay on existing assist mode logic                           |
 | 5        | **Revenue Leak Audit** (personalized pre-onboarding research)                                                | High impact on both sales and onboarding trust          | Create template + define 30-45 min research process                                |
@@ -734,14 +686,14 @@ Once this document is finalized and legal-reviewed, the following should be upda
 
 | Document                                   | Key changes needed                                                                                                                                                                                                                                       |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 00-AI-AGENT-KNOWLEDGE-BASE.md              | Remove lead/message limits. Update guarantee language with pro-rata formula. Add smart assist mode description. Update quiet hours if legal review changes classification.                                                                               |
-| 01-SALES-SCRIPTS.md                        | Rebuild close section with unlimited messaging, new guarantee + extension formula, Day-One Activation. Update assist mode description to smart assist. Add aspirational/qualified language boundary.                                                     |
-| 02-OUTREACH-TEMPLATES.md                   | Update value prop lines. Reference unlimited messaging and 90-day guarantee. Ensure all written copy uses qualified language per guardrails.                                                                                                             |
+| 00-AI-AGENT-KNOWLEDGE-BASE.md              | Remove lead/message limits. Update guarantee language to operational gates (21-day go-live, 30-day logging). Add smart assist mode description. Update quiet hours if legal review changes classification.                                                |
+| 01-SALES-SCRIPTS.md                        | Rebuild close section with unlimited messaging, operational guarantee (21-day + 30-day gates), Day-One Activation. Update assist mode description to smart assist. Add aspirational/qualified language boundary.                                         |
+| 02-OUTREACH-TEMPLATES.md                   | Update value prop lines. Reference unlimited messaging and operational guarantee. Ensure all written copy uses qualified language per guardrails.                                                                                                         |
 | 03-ONBOARDING-PLAYBOOK.md                  | Add customer list extraction to onboarding call script. Update assist mode to smart assist with auto-send. Add KB quality sprint process. Add low-friction estimate trigger setup. Update "Client Ongoing Responsibilities" doc with SMS trigger option. |
-| 05-BATTLE-CARDS.md                         | Add "unlimited, no caps" as differentiator. Update guarantee references with extension formula. Add voice AI as separate add-on positioning.                                                                                                             |
+| 05-BATTLE-CARDS.md                         | Add "unlimited, no caps" as differentiator. Update guarantee references to operational gates. Add voice AI included by default.                                                                                                                          |
 | 06-ROI-CALCULATOR.md                       | Update value stack for unlimited messaging. Remove overage math.                                                                                                                                                                                         |
 | BUSINESS-CASE.md                           | Keep overage billing dormant in codebase. Add smart assist auto-send feature. Add SMS estimate trigger endpoint. Add fallback nudge cron job. Update compliance gateway if quiet hours classification changes.                                           |
-| ConversionSurgery Business Reference Guide | Update core offer, plan limits, guarantee, pricing, onboarding timeline, client responsibilities, and compliance sections throughout.                                                                                                                    |
+| ConversionSurgery Business Reference Guide | Update core offer, plan limits, guarantee (operational gates), pricing, onboarding timeline, client responsibilities, and compliance sections throughout.                                                                                                |
 | Sales Process & Offer Presentation         | Update pricing section with unlimited messaging. Present voice AI as separate add-on. Use aspirational language verbally, qualified language in leave-behinds.                                                                                           |
 
 ---
@@ -751,9 +703,9 @@ Once this document is finalized and legal-reviewed, the following should be upda
 Before using this offer architecture with real clients, the following should be reviewed by a Canadian contract lawyer:
 
 1. **Quiet hours response classification (HIGH PRIORITY)** — Are direct replies to inbound inquiries (missed call text-back, form submission response) exempt from CRTC quiet hours as conversational responses rather than unsolicited commercial messages? This directly affects the core "24/7 response" value proposition. If replies are NOT exempt, marketing must be adjusted.
-2. **Guarantee language** — Are the 30-Day and 90-Day guarantees enforceable as written? Is the "Qualified Lead Engagement" definition specific enough for a contractual context?
-3. **Guarantee extension formula** — Is the pro-rata volume extension formula (Base window × 15 ÷ actual volume) enforceable and clear enough for a contractual context?
-4. **Dispute resolution clause** — Is the "honor the refund if logs are inconclusive" policy appropriate from a liability standpoint? Should there be a cap on refund exposure or a formal claims process?
+2. **Guarantee language** — Are the 21-day go-live gate and 30-day logging gate (with billing pause) enforceable as written? Is the 80% logging threshold specific enough for a contractual context?
+3. **Billing pause mechanics** — Is the billing pause mechanism (not refund, not credit) appropriate from a liability and accounting standpoint?
+4. **Dispute resolution clause** — Should there be a formal process for determining whether the go-live or logging gate was met? What evidence standard is appropriate?
 5. **Cancellation terms** — Are 30 calendar days notice and 5-business-day data export compliant with Canadian consumer protection standards?
 6. **"Unlimited" messaging claims** — Any risk in advertising "unlimited" with the contract qualifier excluding broadcast/personal/out-of-scope use? Is the qualifier sufficient protection?
 7. **CASL/CRTC compliance** — Does the service model as described satisfy consent and opt-out requirements for automated messaging in Canada?
@@ -765,7 +717,7 @@ Items 1-3 must be reviewed by legal counsel BEFORE using this offer architecture
 | Priority      | Item                                                  | Why it can't wait                                                            |
 | ------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------- |
 | **Must-have** | Quiet hours response classification (#1)              | Determines whether the core response time claim is legally accurate          |
-| **Must-have** | Guarantee enforceability + extension formula (#2, #3) | Financial commitments that could create liability if poorly drafted          |
+| **Must-have** | Guarantee enforceability + billing pause (#2, #3)     | Financial commitments that could create liability if poorly drafted          |
 | **Must-have** | "Unlimited" clause language (#6)                      | Contract language that needs legal validation before any agreement is signed |
 
 Items 4, 5, and 7 should be reviewed before scaling but can be addressed in the first 60 days of operation if counsel availability is limited.
@@ -784,7 +736,7 @@ The following capability and policy updates were shipped as part of Wave 6 (Apri
 
 A public API endpoint (`POST /api/public/roi-calculator`) accepts contractor inputs (monthly lead volume, average project value, estimated follow-up gap, quote-to-win rate) and returns a personalized revenue-at-risk estimate. Use this during the sales call instead of doing the math on paper.
 
-Sales flow: pull up the calculator during Objection 8 ("$1,000 is expensive") or Objection 3 (referral-heavy contractor). Enter their numbers. Show the output on screen. The conversation shifts from "is $1,000 expensive?" to "I'm leaving $X on the table every month."
+Sales flow: pull up the calculator during the pricing objection or Objection 3 (referral-heavy contractor). Enter their numbers. Show the output on screen. The conversation shifts from "is this expensive?" to "I'm leaving $X on the table every month."
 
 Inputs accepted: monthly lead volume, average project value, current follow-up rate (%), estimated conversion lift.
 Output: annual revenue at risk, monthly recovery potential, months-to-break-even.
@@ -821,7 +773,7 @@ The following changes affect client-facing promises and have NOT yet been update
 | Change | What needs updating in OFFER-APPROVED-COPY.md |
 |--------|-----------------------------------------------|
 | Voice AI included by default | Section describing Voice AI as "optional add-on" should be updated |
-| Guarantee pipeline floor ($5,000 probable pipeline OR 1 opportunity) | Section 3 guarantee language needs the pipeline floor criterion added |
+| Operational guarantee (21-day go-live + 30-day logging gate) | Section 3 guarantee language needs updating to operational gates |
 | ROI Calculator available for pre-sale | Can be added as a pre-sale tool reference |
 
 **Action required:** Review these three items with the founder and update OFFER-APPROVED-COPY.md with approved copy before using the updated scripts in live sales calls.

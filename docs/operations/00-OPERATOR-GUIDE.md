@@ -61,28 +61,36 @@ At 5 clients, your weekly time is ~5-7 hours. At 10 clients, ~10-14 hours.
 
 ### Pricing
 
-**First month free. Then $1,000/month.** Month-to-month. No contract. No setup fee. No message limits. Billing starts Day 31.
+**Three tiers. Setup fee + monthly. 90-day minimum, then month-to-month with 30 days notice.**
+
+| Tier | Setup Fee | Monthly | Best for |
+|------|:---------:|:-------:|----------|
+| **Pilot** | $3,500 | $1,500/mo | Testing the system, smaller contractors |
+| **Standard** | $5,500 | $2,000/mo | Most design-build renovators ($1M-$5M) |
+| **Premium** | $9,500 | $3,500/mo | High-volume firms ($5M-$10M), priority support |
+
+Billing starts at signup. No trial. No free month. Voice AI included in all tiers.
 
 Full pricing details and approved comparison language: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 4.
 
 ### Guarantee
 
-**The Guarantee (two layers):**
+**Operational Guarantee (two layers):**
 
-- **Layer 1 (30-Day Proof):** 5 qualified lead engagements in the first month, or full refund.
-- **Layer 2 (90-Day Recovery):** 1 booked estimate from a cold lead OR $5,000 in probable pipeline, or refund of last month.
+- **Layer 1 (21-Day Go-Live):** System fully operational within 21 days of signup, or we extend at no charge until it is.
+- **Layer 2 (30-Day Logging):** If the system fails to log and respond to inbound leads for 30 consecutive days due to a platform fault, billing pauses until resolved.
 
-Attribution is verified from platform logs only &mdash; no subjective judgment, no arguing.
+This is an operational guarantee, not a revenue guarantee. We guarantee the system works &mdash; not that leads close. Attribution is verified from platform logs only.
 
-Full guarantee terms, volume conditions, and attribution rules: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 3.
+Full guarantee terms and conditions: see `docs/business-intel/OFFER-APPROVED-COPY.md` Section 3.
 
 ### The ROI Math (Memorize This)
 
-One recovered kitchen ($7-13K profit at 20% margin) or basement ($9-16K profit) project covers **7-16 months** of the service. Always use profit math, not revenue &mdash; contractors know their margins and will do the calculation themselves.
+One recovered kitchen ($7-13K profit at 20% margin) or basement ($9-16K profit) project covers **6-11 months** of the Pilot tier. Always use profit math, not revenue &mdash; contractors know their margins and will do the calculation themselves.
 
-A contractor with 20 dead quotes at $40K average has $160K in profit sitting in their phone (at 20% margin). The system contacts all 20 for free in Month 1. If ONE responds and closes, that&apos;s $8K profit from a $1K monthly investment.
+A contractor with 20 dead quotes at $40K average has $160K in profit sitting in their phone (at 20% margin). The system contacts all 20 in Month 1. If ONE responds and closes, that&apos;s $8K profit from a $1,500/mo investment.
 
-**Monthly ROI: recovering 1 leaked lead/month = 8-16x.** Frame as monthly, not annual &mdash; that&apos;s how they think.
+**Monthly ROI: recovering 1 leaked lead/month = 5-11x on Pilot.** Frame as monthly, not annual &mdash; that&apos;s how they think.
 
 ### Who Gets 5-10x ROI (Sign Them)
 
@@ -96,9 +104,9 @@ A contractor with 20 dead quotes at $40K average has $160K in profit sitting in 
 
 **Hard NOs &mdash; never sign these profiles:**
 - **Commercial-only contractors** &mdash; the system is built for homeowner lead recovery, not procurement contacts or B2B sales cycles
-- **Below $200K annual revenue** &mdash; $12K/year is 6%+ of their revenue; the math doesn&apos;t work and they&apos;ll churn with a bad story
+- **Below $200K annual revenue** &mdash; $21,500/year (Pilot) is 10%+ of their revenue; the math doesn&apos;t work and they&apos;ll churn with a bad story
 - **Fewer than 10 leads/month with no dead quote backlog** &mdash; not enough volume for the system to demonstrate value within the guarantee window
-- **Tech-savvy DIY builders** who enjoy configuring their own tools &mdash; they&apos;ll resent paying $1,000 for what they perceive as a GHL setup they could do for $300
+- **Tech-savvy DIY builders** who enjoy configuring their own tools &mdash; they&apos;ll resent paying $1,500/mo for what they perceive as a GHL setup they could do for $300
 
 **Also avoid:**
 - Average project under $10K
@@ -106,7 +114,7 @@ A contractor with 20 dead quotes at $40K average has $160K in profit sitting in 
 - Already has staff handling all follow-ups systematically
 - In active financial distress
 
-**The rule:** If you wouldn&apos;t feel good explaining to their spouse why they should pay $1,000/month, don&apos;t sign them. A bad-fit client who churns in a referral-dense Alberta contractor network does more damage than the revenue was worth.
+**The rule:** If you wouldn&apos;t feel good explaining to their spouse why they should pay $1,500/month (Pilot), don&apos;t sign them. A bad-fit client who churns in a referral-dense Alberta contractor network does more damage than the revenue was worth.
 
 ---
 
@@ -193,7 +201,7 @@ This is the highest-ROI feature. Most contractors never follow up on estimates. 
 | &ldquo;It does my marketing&rdquo; | No lead generation. It converts leads you already get. | &ldquo;We handle what happens after someone reaches out.&rdquo; |
 | &ldquo;AI knows everything about my business&rdquo; | AI knows what&apos;s in the KB. Week 1 will have gaps. | &ldquo;Gets smarter every week. By Week 3 it handles 90%+ of questions.&rdquo; |
 | &ldquo;I never have to do anything&rdquo; | Flag estimates, mark wins, respond to escalations. Under 15 min/week. | &ldquo;You do 4 things: flag quotes, mark wins, respond to escalations, approve reviews.&rdquo; |
-| &ldquo;Guaranteed results&rdquo; | First month free + 90-day guarantee. Both log-verified. | &ldquo;First month is free. If we don&apos;t deliver 1 booked estimate from a cold lead or $5,000 in probable pipeline within 90 days, you get your last month back.&rdquo; |
+| &ldquo;Guaranteed results&rdquo; | Operational guarantee: 21-day go-live, 30-day logging with billing pause. Log-verified. | &ldquo;We guarantee the system is live in 21 days. If the platform ever fails to log leads for 30 days straight, billing pauses. We guarantee the system works &mdash; results depend on your lead volume.&rdquo; |
 
 ---
 
@@ -236,7 +244,7 @@ This single moment converts more skeptics than any feature list or ROI calculati
 1. **Open with their pain:** &ldquo;How many estimates have you sent in the last 90 days that went quiet?&rdquo;
 2. **Do the math live:** [Their dead quotes] &times; [their avg project value] &times; 10% = recoverable pipeline. Use the ROI worksheet.
 3. **Show the demo:** Call the number. Let the text arrive.
-4. **State the deal:** &ldquo;First month is free. System runs for 30 days. If 5 leads don&apos;t engage, you walk away owing nothing and keep every lead we captured.&rdquo;
+4. **State the deal:** &ldquo;Pilot tier is $3,500 setup plus $1,500 a month. 90-day minimum. System is live within 21 days or we extend at no charge. You see value before the first 90 days are up.&rdquo;
 5. **Handle the objection** (see below).
 6. **Close:** &ldquo;Want to get started? All I need is a 30-minute call to set it up.&rdquo;
 
@@ -246,10 +254,10 @@ This single moment converts more skeptics than any feature list or ROI calculati
 Week 1-2: every response goes through Smart Assist review before sending. After that, the AI only handles what it&apos;s confident about &mdash; anything else escalates to you.
 
 **Objection 2: &ldquo;I tried something like this before and got burned.&rdquo;**
-This is a managed service, not software. You run it, you fix it. First month is free &mdash; they see proof before they pay.
+This is a managed service, not software. You run it, you fix it. We guarantee the system is live in 21 days &mdash; if it&apos;s not, we extend at no charge.
 
-**Objection 3: &ldquo;$1,000/month is expensive.&rdquo;**
-Do the dead-quote math live: [their dead quotes] &times; [avg project value] &times; 10% = recoverable pipeline. One recovery pays for the year. First month is free.
+**Objection 3: &ldquo;$1,500/month is expensive.&rdquo;**
+Do the dead-quote math live: [their dead quotes] &times; [avg project value] &times; 10% = recoverable pipeline. One recovery pays for the year. The $3,500 setup covers full onboarding &mdash; no hidden costs after that.
 
 Full scripts for all 10 objections: see `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`.
 
@@ -313,7 +321,7 @@ These are non-negotiable until legal counsel is engaged at client #5.
 1. **Never enable evening response mode** &mdash; keep STRICT quiet hours
 2. **Never use the post-legal-review version** of quiet hours copy in writing
 3. **Never promise evening or overnight response** in writing, proposals, or emails
-4. **Never argue a guarantee dispute** &mdash; if ambiguous, refund immediately
+4. **Never argue a guarantee dispute** &mdash; if the platform failed to go live by Day 21 or failed to log leads, honor the guarantee immediately
 5. **Never send mass broadcasts** or allow contractors to use the system for cold outreach
 6. **Always use the interim-safe language** in all written materials
 7. **Always verbally disclose** the adjusted guarantee window for sub-15 lead volume prospects

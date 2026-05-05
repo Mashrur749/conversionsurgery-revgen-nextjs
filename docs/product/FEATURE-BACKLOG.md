@@ -55,7 +55,7 @@ However, this only fires when the **dial times out** (30s). If the owner or team
 
 **Priority:** High (post-validation — build after 5 paying clients prove the model)
 **Area:** Platform Architecture / Billing / Multi-Tenancy
-**Revenue impact:** Primary scaling engine — $1,497/mo + $997 setup per agency
+**Revenue impact:** Primary scaling engine — pricing TBD per agency (current direct model: Pilot $1,500/mo, Standard $2,000/mo, Premium $3,500/mo)
 
 ### Context
 
@@ -70,7 +70,7 @@ ConversionSurgery is currently single-agency: the platform owner is also the onl
 
 ### Desired behavior
 
-1. **Agency subscription tier**: Agencies subscribe to the platform ($1,497/mo + $997 setup). Self-serve signup or sales-assisted onboarding.
+1. **Agency subscription tier**: Agencies subscribe to the platform (pricing TBD — post-validation). Sales-assisted onboarding.
 2. **Stripe Connect**: Each agency connects their own Stripe account. Contractors pay the agency, platform takes a revenue share (percentage or flat fee per client).
 3. **Per-agency configuration**: Each agency gets their own Twilio numbers, business branding, custom domain (optional), email sender identity, and AI knowledge base defaults.
 4. **Tenant isolation**: Agencies only see their own clients, leads, conversations, reports. Platform owner sees aggregate metrics across all agencies.

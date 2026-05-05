@@ -12,7 +12,7 @@ This is an honest comparison. If an alternative is genuinely better for a specif
 
 ## Feature & Capability Comparison
 
-| Dimension | ConversionSurgery ($1,000/mo) | GHL Agency ($300–700/mo) | Freelance VA ($1,500–2,500/mo) | Answering Service ($500–1,500/mo) | Jobber/ServiceTitan ($49–500/mo) | Doing Nothing ($0) |
+| Dimension | ConversionSurgery ($1,500–3,500/mo) | GHL Agency ($300–700/mo) | Freelance VA ($1,500–2,500/mo) | Answering Service ($500–1,500/mo) | Jobber/ServiceTitan ($49–500/mo) | Doing Nothing ($0) |
 |---|---|---|---|---|---|---|
 | **Lead response speed** | Under 10 seconds, all channels, 24/7 within CASL hours | Varies — depends on automation setup. Often 15–60 min | 1–4 hours (business hours only) | 30 seconds (voice only, business hours) | Not built for lead response | Whenever contractor checks phone |
 | **Estimate follow-up** | 4-touch automated sequence over 14 days | Template email drip (if configured) | Manual — if reminded | None | Basic reminder email (if configured) | When contractor remembers |
@@ -22,9 +22,9 @@ This is an honest comparison. If an alternative is genuinely better for a specif
 | **Payment collection** | Automated reminders with one-click payment links | Not typically included | Manual — if assigned | None | Invoice reminders (built-in) | Awkward phone calls |
 | **Voice call handling** | Voice AI included (answers missed calls) | Not included | Human answers during business hours | Human answers (per-minute billing) | Not included | Voicemail |
 | **Contractor time** | Under 15 min/week | 2–5 hrs/week managing CRM | 1–2 hrs/week managing VA | Callback burden after every message | 2–5 hrs/week managing software | All of it |
-| **Guarantee** | $5K recovered pipeline in 90 days or last month free | None | None | Uptime SLA only | None | None |
+| **Guarantee** | Operational: 21-day go-live gate + 30-day logging gate (billing pause if missed) | None | None | Uptime SLA only | None | None |
 | **CASL/CRTC compliance** | Built-in, managed by operator | Contractor's responsibility (or ignored) | VA's responsibility (often unaware) | Usually compliant for calls only | Not relevant (job management tool) | Contractor's risk |
-| **Month-to-month / no contract** | Yes, cancel anytime, 30 days notice, full data export | Varies (some require 3–6 month contracts) | Usually month-to-month | Usually month-to-month | Annual contracts common | N/A |
+| **Contract term** | 90-day minimum, then month-to-month, 30 days notice, full data export | Varies (some require 3–6 month contracts) | Usually month-to-month | Usually month-to-month | Annual contracts common | N/A |
 
 ---
 
@@ -67,7 +67,7 @@ Be brutally honest about this:
 
 ## The One-Line Close
 
-"We respond in seconds, follow up for weeks, recover dead quotes, book appointments, collect payments, and generate reviews — managed, for $1,000 a month flat with a $5K guarantee. No alternative does all of that."
+"We respond in seconds, follow up for weeks, recover dead quotes, book appointments, collect payments, and generate reviews — managed, starting at $1,500 a month with an operational go-live guarantee. No alternative does all of that."
 
 ---
 

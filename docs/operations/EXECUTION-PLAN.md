@@ -141,7 +141,7 @@ Before you sell anything, the platform must work and you must have confidence in
 
 ## Phase 2: Building Pipeline (Weeks 2-4)
 
-**Goal:** 6-8 signed clients. First revenue arrives Week 5-6.
+**Goal:** 6-8 signed clients. Revenue starts at signup (no trial).
 
 ### Weekly rhythm (repeat every week)
 
@@ -175,11 +175,11 @@ Before you sell anything, the platform must work and you must have confidence in
 
 ## Phase 3: First Revenue + Case Study (Weeks 5-8)
 
-**Goal:** First $997 payment. First case study. Close rate jumps to 45%.
+**Goal:** First recurring revenue confirmed. First case study. Close rate jumps to 45%.
 
 ### What changes:
-- **Week 5-6:** First clients clear their 30-day trial. Revenue starts. Celebrate privately.
-- **Week 6-7:** Guarantee milestone SMS fires for Client #1 (&ldquo;5 leads engaged &mdash; billing starts&rdquo;). Push for a WON lead.
+- **Week 5-6:** First clients are past onboarding, system is autonomous. Revenue is flowing from Day 1 &mdash; billing started at signup.
+- **Week 6-7:** First WON leads should be appearing. Push for confirmation on the strategy call.
 - **Week 7-8:** Case study available. Update your cold call opener: &ldquo;I just helped a basement contractor in [quadrant] recover a $65K job from a lead he&apos;d given up on.&rdquo;
 
 ### Weekly rhythm shifts:
@@ -195,7 +195,7 @@ Before you sell anything, the platform must work and you must have confidence in
 
 ### Week 8 targets:
 - [ ] 8-10 signed clients total
-- [ ] 4-6 paying clients ($4K-$6K MRR)
+- [ ] 4-6 paying clients ($6K-$9K MRR at Pilot)
 - [ ] 1 case study with a specific dollar amount
 - [ ] First bi-weekly strategy call completed
 
@@ -243,7 +243,7 @@ Once you quit the day job:
 - **Sales hours triple.** You can call during the day when contractors are in trucks (6-8am) AND on breaks (12-1pm) AND after work (4-6pm).
 - **Onboarding capacity increases.** 2-3/week instead of 1.
 - **Delivery quality improves.** Strategy calls get your full attention.
-- **New clients at $1,200-$1,500/month.** You have 15+ case studies. Premium pricing is justified.
+- **New clients at Standard ($5,500 + $2,000/mo) or Premium ($9,500 + $3,500/mo).** You have 15+ case studies. Higher tiers are justified.
 
 This phase is beyond the scope of this plan. When you get here, run a new simulation.
 
@@ -271,7 +271,7 @@ Switch to DMs for 3 days. Instagram DMs have 8% response rate with personalizati
 Your opener isn&apos;t landing. Try the instant demo approach: &ldquo;Can I show you something in 60 seconds? Call your own number right now.&rdquo; Skip the scheduling step entirely.
 
 ### &ldquo;I&apos;m doing demos but nobody is closing&rdquo;
-Two likely causes: (1) the Revenue Leak Audit isn&apos;t landing &mdash; make it MORE specific to their business, or (2) you&apos;re not asking for the close. After the demo, say: &ldquo;Want to try the free month?&rdquo; and then stop talking. The silence is uncomfortable but necessary.
+Two likely causes: (1) the Revenue Leak Audit isn&apos;t landing &mdash; make it MORE specific to their business, or (2) you&apos;re not asking for the close. After the demo, say: &ldquo;Want to get started on the Pilot?&rdquo; and then stop talking. The silence is uncomfortable but necessary.
 
 ### &ldquo;I signed 3 clients but one just churned&rdquo;
 Review the exit reason. If it&apos;s &ldquo;didn&apos;t see results&rdquo; &mdash; were you doing the strategy calls? Was their pipeline SMS showing activity? Fix the root cause. One early churn is normal &mdash; don&apos;t spiral. Replace them and move on.

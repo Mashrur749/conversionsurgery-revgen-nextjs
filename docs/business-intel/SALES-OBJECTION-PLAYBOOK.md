@@ -97,11 +97,13 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 >
 > "That makes sense. Here's the thing — what you're describing sounds like you bought software and they left you to figure it out. This is different in one specific way: I run it. I'm the one who sets it up, monitors it, fixes the KB when the AI gets something wrong, and sends you a report every two weeks showing exactly what happened. You don't manage anything.
 >
-> But honestly, I don't expect you to take my word for that. That's why the guarantee is the first thing I want you to look at, not the last. If you don't see 5 real leads engaged in your first 30 days — leads that replied to the system — you get your first month back. There's nothing to sign up for long-term. It's month-to-month.
+> But honestly, I don't expect you to take my word for that. That's why the guarantee is the first thing I want you to look at, not the last. We guarantee the system is live by day 21 and logging compliance is confirmed by day 30. If we miss either milestone, we continue working at no charge until it's right — and if logging isn't working by day 30, billing pauses until it is. That's an operational guarantee, not a vague promise.
 >
-> The question isn't whether you trust me yet. The question is: do you have 15-20 old quotes sitting there who never called you back? Because in the first week, we're going to text all of them. If even one of them responds, you've already covered the first month."
+> The commitment is a 90-day initial term — enough time for the system to prove itself. After that, it's month-to-month with 30 days' notice.
+>
+> The question isn't whether you trust me yet. The question is: do you have 15-20 old quotes sitting there who never called you back? Because in the first week, we're going to text all of them. If even one of them responds, you've already seen the value."
 
-**Proof point:** Pull up Section 3 of the offer (guarantee terms). Read Layer 1 out loud — "5 Qualified Lead Engagements in your first 30 days or your first month is refunded." Then show Section 5 — "90-day initial term, then month-to-month with 30 days&apos; notice, no cancellation fees, full data export."
+**Proof point:** Pull up the offer guarantee terms. Walk through the operational guarantee: go-live by day 21, logging compliance by day 30 — or billing pauses. Then show the commitment terms: 90-day initial term, then month-to-month with 30 days&apos; notice, no cancellation fees, full data export.
 
 ---
 
@@ -438,7 +440,7 @@ Use these angles for cold outreach (SMS, email, LinkedIn DM). Pick the angle tha
 
 ### Pre-Call: Lead Leak Snapshot
 
-Before or during outreach, send the prospect a link to the Lead Leak Snapshot calculator on the marketing site. It asks 5 questions and outputs their personalized annual revenue at risk. This converts the conversation from &ldquo;is $1,000 expensive?&rdquo; to &ldquo;I&apos;m losing $X/year and this costs $12K.&rdquo;
+Before or during outreach, send the prospect a link to the Lead Leak Snapshot calculator on the marketing site. It asks 5 questions and outputs their personalized annual revenue at risk. This converts the conversation from &ldquo;is the monthly fee expensive?&rdquo; to &ldquo;I&apos;m losing $X/year and this costs a fraction of one recovered project.&rdquo;
 
 If they complete it before the call, open with: &ldquo;I saw your numbers &mdash; you have about $[X] in dead quotes and another $[Y] in estimates with no follow-up. That&apos;s $[total] sitting on the table. Want to talk about getting some of it back?&rdquo;
 
@@ -457,7 +459,7 @@ Before the call, gather:
 3. **Google reviews**: Check their Google Business Profile review count vs. top 3 competitors (already done in pre-sale audit)
 4. **Current tools**: &ldquo;Do you use Jobber, ServiceTitan, or anything for lead management?&rdquo;
 5. **Guarantee window**: If below 15 leads/month, calculate the adjusted guarantee window and state it explicitly during the call: &ldquo;Your guarantee window would be X days, not 30, based on your lead volume.&rdquo;
-6. **Loss ceiling**: State it plainly: &ldquo;Your maximum financial exposure is the setup fee plus the first month. The setup fee covers real implementation work. If 5 leads don&apos;t engage in the first 30 days, you get that first month back. One recovered project&apos;s profit covers the service for over a year.&rdquo;
+6. **Loss ceiling**: State it plainly: &ldquo;Your maximum financial exposure is the setup fee plus the first month. The setup fee covers real implementation work. We guarantee go-live by day 21 and logging compliance by day 30 &mdash; if we miss those, billing pauses until we deliver. After a 90-day initial term, it&apos;s month-to-month with 30 days&apos; notice. One recovered project&apos;s profit covers the service for over a year.&rdquo;
 7. **ROI Calculator**: Have the calculator ready at `POST /api/public/roi-calculator` or the ROI worksheet at `docs/operations/templates/REACTIVATION-ROI-WORKSHEET.md`. Enter their numbers live during the call if price comes up.
 
 ---

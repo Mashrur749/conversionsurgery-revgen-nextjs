@@ -1,5 +1,7 @@
 # Alberta Contractor Research — Platform & GTM Implications
 
+> **⚠️ SUPERSEDED** — This document predates the Revenue Recovery System Business Reference (May 2026). Pricing, guarantee, and offer structure described here are outdated. See `docs/business-intel/Revenue_Recovery_System_Business_Reference.md` for current direction. Retained for historical reference only.
+
 Source: `conversionurgery_research.docx` (March 2026)
 Research base: ContractorTalk, Reddit, Houzz Pro, finmkt.io, Projul CRM, GreatBuildz, AGC Survey, Harvard JCHS LIRA
 Date: 2026-03-28

@@ -150,7 +150,7 @@ Same weekday/weekend schedule. But now your evenings split between new outreach 
 - Use every lunch break for follow-up texts
 - Run any remaining demos 5:30-6:30 PM
 - Use the &ldquo;I need to think about it&rdquo; script (Script H below)
-- Soft deadline: &ldquo;I&apos;m onboarding my first clients this week. If you want the free month, now is the time.&rdquo;
+- Soft deadline: &ldquo;I&apos;m onboarding my first clients this week. Pilot tier is $3,500 setup plus $1,500/month, 90-day minimum. If you want to lock that in, now is the time.&rdquo;
 - **When they say yes:** schedule the onboarding call for the next Saturday morning (your first available block)
 
 ---
@@ -222,7 +222,7 @@ Record 90 seconds max. Screen share the demo. Say their business name.
 >
 > This is what I built &mdash; it follows up with leads after you send a quote, automatically. Texts them at the right time, handles objections, books them back in.
 >
-> I saw your [kitchen work / project] on [platform]. I&apos;m bringing this to a few Alberta contractors first month free.
+> I saw your [kitchen work / project] on [platform]. I&apos;m bringing this to a few Alberta contractors &mdash; Pilot tier is $3,500 setup and $1,500/month with a 90-day minimum.
 >
 > Here&apos;s a link to grab 15 minutes: [Calendly link]. If it&apos;s not a fit, I&apos;ll tell you straight.
 
@@ -254,7 +254,7 @@ Run the ROI calculator live (POST `/api/public/roi-calculator` or the worksheet 
 
 **Close (5 min):**
 
-> Here&apos;s what I propose: first month free. I set everything up. You pay nothing until you see a result. If you recover one job, it pays for itself 20 times over. If you don&apos;t see value in 30 days, you owe nothing.
+> Here&apos;s what I propose: Pilot tier &mdash; $3,500 setup, $1,500 a month, 90-day minimum. I handle all the setup. System is live within 21 days or we extend at no charge. If you recover one job, it pays for itself 5-10 times over.
 >
 > The only thing I ask: if it works, introduce me to two other contractors you know.
 >
@@ -266,7 +266,7 @@ Run the ROI calculator live (POST `/api/public/roi-calculator` or the worksheet 
 
 > Hey [Name] &mdash; following up from [day]. Totally fine if the timing&apos;s off.
 >
-> Short version: I built a follow-up system for renovation contractors. First month free. If it&apos;s not something you need, just say so and I won&apos;t bother you again.
+> Short version: I built a follow-up system for renovation contractors. $3,500 setup, $1,500/month, 90-day minimum &mdash; system is live within 21 days guaranteed. If it&apos;s not something you need, just say so and I won&apos;t bother you again.
 >
 > Worth 15 minutes?
 
@@ -284,7 +284,7 @@ Do not send a third follow-up to cold prospects.
 
 Handle the specific objection. Then:
 
-> Here&apos;s what I&apos;d suggest: don&apos;t decide today. Let me get you set up on the free month &mdash; takes 20 minutes. You use it for two weeks. If nothing happens, you cancel and owe nothing. The only way to know is to run it.
+> Here&apos;s what I&apos;d suggest: don&apos;t decide today. Let me walk you through the setup &mdash; takes 20 minutes. The system is live within 21 days, guaranteed. 90-day minimum gives you real data to judge by. One recovered project pays for the full 90 days.
 
 **Capacity signal (use when it&apos;s true):**
 
