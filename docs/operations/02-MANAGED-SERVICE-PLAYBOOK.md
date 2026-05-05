@@ -117,6 +117,62 @@ Do not accept auto-resolve suggestions blindly. A partial match that resolves a 
 
 ---
 
+## 1.7. Dead Lead Resurrection Pre-Sale Demo (Lever 1 of Irresistibility Stack)
+
+**When:** PRE-SALE only. Run for warm prospects who replied to outreach but haven&apos;t signed yet. Do NOT use for existing clients (that&apos;s Section 2 — Quote Reactivation).
+
+**Why:** Per E2E §2.4.5, this is the single highest-leverage sales motion available pre-case-study. Buyer watches their own dead pipeline come back to life DURING the discovery call. Converts skeptics in under 15 minutes.
+
+**Pre-call prep (24-48 hours before discovery call):**
+
+1. After warm reply to outreach, message prospect: &quot;Before our call, send me 5-10 of your dead quotes from the past 90 days. Just first name, phone, project type, last contact date. I&apos;ll show you something on the call you&apos;ve never seen before.&quot;
+2. CASL compliance: include in same message: &quot;To send any reactivation, I need you to confirm in writing that these contacts had a prior business relationship with you (you sent them a quote, they inquired about your services). Reply &lsquo;confirmed&rsquo; and I&apos;ll proceed.&quot; SAVE this confirmation.
+3. Once confirmed, load their leads into staging:
+   - Use a dedicated staging Twilio number (NOT a production client number).
+   - Use operator-controlled prompt set, NOT mass-message.
+   - Trigger reactivation sequence one lead at a time over 24-48 hours.
+4. Capture screenshots of every conversation thread &mdash; replies, delivery receipts, booked calls if any.
+5. Pick the 1-2 strongest threads for live walkthrough.
+
+**On the discovery call:**
+
+> &ldquo;Before I tell you what this costs, I want to show you something. You sent me 7 dead quotes yesterday. I ran them through the system overnight on a test number. Three of them texted back. One booked a call. Here are the threads. Look — that&apos;s your guy from the Bridgeland reno project. He&apos;s asking when you can come back and look at the kitchen. That happened while you were sleeping.&rdquo;
+
+Screen-share the actual SMS threads. Walk through 1-2 of the strongest. Pause for reaction.
+
+**Risk mitigation:**
+
+- Use prospect&apos;s own Twilio staging number, not their production line.
+- Operator manually approves every send in the staging sequence (no auto-fire).
+- If a lead complains or replies negatively, screenshot it but DO NOT show on the call. Use only positive/neutral results.
+- Keep total leads tested per prospect to ≤10 to avoid looking like spam to carriers.
+- After the discovery call (signed or not), wipe the staging conversation thread from the lead&apos;s view (not platform logs &mdash; just clean up the test channel).
+
+---
+
+## 1.8. Spouse Line Protocol (Lever 4 of Irresistibility Stack)
+
+**When:** PRE-SALE. Stated explicitly in proposal: &quot;If your wife or business partner wants to talk this through with both of us before you decide, I&apos;ll get on a 15-minute call with the three of us. No hard sell. Just answer questions plainly.&quot;
+
+**Why:** The wife/partner veto is real and almost never addressed directly. Naming it removes its power as a silent objection. Most contractor &ldquo;let me think about it&rdquo; replies are this veto in disguise.
+
+**Process if invoked:**
+
+1. Schedule 15-min Zoom or phone call with all three present.
+2. Open with: &ldquo;Thanks for joining. I&apos;m not here to sell harder. I&apos;m here to answer whatever questions are on your mind. What are you wondering about?&rdquo;
+3. LET THE PARTNER LEAD. They will. Answer in plain language. Cite specifics from the agreement &mdash; Day-14 cancel right, 30-day pause right, operational guarantee, data export.
+4. Common partner concerns and responses:
+   - &ldquo;What if it doesn&apos;t work?&rdquo; → Day-14 cancel right. Maximum exposure $1,750.
+   - &ldquo;What does the AI say to our customers?&rdquo; → offer to text-demo on the call to a number they control.
+   - &ldquo;What happens to our data?&rdquo; → Data export within 5 business days, full CSV, theirs forever.
+   - &ldquo;What if we need a slow month?&rdquo; → 30-day pause right after Day 90.
+5. End with: &ldquo;Want me to send the agreement, or do you both want a few days to talk it over?&rdquo;
+6. Do NOT close on this call. Let them decide together off-call. Closing on the spouse call feels predatory and tanks trust.
+
+**Sign of success:** They book the agreement signing within 48 hours. If they go silent for 5+ days, follow up once: &ldquo;No pressure &mdash; just checking if you&apos;ve had a chance to talk it through.&rdquo;
+
+---
+
 ## 2. Quote Reactivation (First-Week Deliverable)
 
 **When:** Day 1-2 of a new client, after phone number is assigned.
@@ -315,35 +371,88 @@ The guarantee cron checks daily. At day 21:
 
 ## 6. Contractor Wants to Pause
 
-**When:** Contractor going on vacation, seasonal slowdown, or cash flow issue.
+### 6a. 30-Day Pause Right (post-Minimum-Term, contractual)
+
+**When:** Per Service Agreement §5, after the 90-day Minimum Term, contractor may pause up to 30 days/year, once per 12-month rolling window, with 7 days written notice.
+
+**Operator response script (acknowledge within 24 hours):**
+
+> &ldquo;Got your pause request. Confirming: pausing service starting [start date = notice date + 7 days] for [up to 30] days. While paused, your business number stays active and inbound leads still get captured &mdash; outbound automations stop, billing pauses, and your Stripe subscription is paused via API. I&apos;ll text you 7 days before pause ends to confirm resume or close out. Reply with the resume date you want or &lsquo;auto&rsquo; to resume on schedule.&rdquo;
 
 **Process:**
 
-1. Go to `/admin/clients/[id]` &rarr; Edit &rarr; set status to **Paused**.
-2. This automatically blocks all outbound messages for this client only (other clients unaffected). The compliance gateway checks client status before every send.
-3. Pause the subscription in Stripe if billing should also stop (or the contractor pauses from `/client/billing`).
-4. Text the contractor: &quot;Your account is paused. No charges until you resume. Your leads are still being captured &mdash; we&apos;ll follow up with them when you&apos;re back.&quot;
-5. Set a calendar reminder for their expected return date.
-6. On return: set status back to **Active**, resume subscription if paused, text them: &quot;Welcome back. [X] leads came in while you were away. Here&apos;s the summary.&quot;
+1. Calendar reminder: pause start date.
+2. On pause start:
+   - Stripe Dashboard: pause subscription (`pause_collection.behavior = void`).
+   - Admin: set client status to **Paused**.
+   - Compliance gateway blocks all outbound automatically.
+   - Inbound capture (missed-call text-back, AI conversation agent, lead logging) stays live.
+3. Calendar reminder: 7 days before pause end. Text contractor: &ldquo;Pause ending [date]. Resume on schedule or extend? Note: extension counts as next year&apos;s pause.&rdquo;
+4. On resume: Stripe resume subscription, set client status back to **Active**, text: &ldquo;Welcome back. [X] leads came in while you were away. Here&apos;s the summary: [link]&rdquo;.
+5. Track pause history in `clientNotes` &mdash; one pause per 12-month rolling window enforced.
+
+### 6b. Ad-Hoc Pause (operator courtesy, pre-Minimum-Term)
+
+**When:** Contractor on vacation, cash flow blip, or operational hiccup before Day 90. Not contractual &mdash; operator discretion.
+
+**Process:**
+
+1. Set status = **Paused** at `/admin/clients/[id]` &rarr; Edit.
+2. Pause Stripe subscription only if billing should stop (operator&apos;s call &mdash; usually only if pause is &gt;7 days).
+3. Text: &ldquo;Your account is paused. Your leads are still being captured &mdash; we&apos;ll follow up with them when you&apos;re back.&rdquo;
+4. Calendar reminder: expected return date.
+5. On return: status = **Active**, resume subscription if paused, summary text.
 
 ---
 
 ## 7. Contractor Wants to Cancel
 
-**When:** Client dissatisfied, budget issues, or business closing.
+### 7a. Day-14 Cancel Right (contractual, no questions asked)
+
+**When:** Within 14 calendar days of service start. Per Service Agreement §5, contractor cancels with one phone call or email. No forms, no process, no explanation required.
+
+**Operator response script (acknowledge within 24 hours):**
+
+> &ldquo;Got it. Cancelling per the Day-14 cancel right. Here&apos;s what happens: the second setup invoice is cancelled, monthly retainer doesn&apos;t start, your data export is on the way within 5 business days. The first signing-fee installment ($1,750 Pilot / $2,750 Standard) covers the setup work and isn&apos;t refundable per Section 4 of the agreement. Anything you want to share about what didn&apos;t fit? Totally optional &mdash; helps us improve.&rdquo;
 
 **Process:**
 
-1. The cancellation flow has a 30-day notice period (per the offer terms).
-2. **Before accepting:** Have a retention conversation. Ask what&apos;s not working. Common issues and fixes:
-   - &quot;I&apos;m not seeing results&quot; &rarr; Check reports together. Show the pipeline value. Often they don&apos;t realize the system recovered $X.
-   - &quot;The AI said something wrong&quot; &rarr; Fix the KB entry. Offer to re-train. This is a knowledge gap, not a system failure.
-   - &quot;Too expensive&quot; &rarr; Show ROI math. One recovered $15k project covers 15 months. If they truly have zero ROI after 90 days, the guarantee covers them.
-3. If they confirm cancel:
-   - Process via `/client/cancel` (contractor) or admin dashboard.
-   - Data export is generated within 5 business days (CSV: leads, conversations, pipeline).
-   - Final billing runs at period end.
-   - Text: &quot;Your data export is ready. Thanks for giving us a shot. If anything changes, we&apos;re here.&quot;
+1. Acknowledge in writing (email or SMS) within 24 hours.
+2. Set client status = **Cancelled** in admin. Compliance gateway blocks all outbound.
+3. Stripe: cancel the second setup invoice (do not charge). Do NOT initiate the monthly subscription.
+4. Trigger data export. Deliver via secure link within 5 business days.
+5. Capture cancel reason in admin form (cancel type = `day_14`, reason category, free-text). Day-14 cancels are the highest-signal feedback you&apos;ll ever get &mdash; do not skip this.
+6. Day 21 follow-up email: &ldquo;If you ever want to revisit, your data export link is good for 30 days. No pressure &mdash; just letting you know.&rdquo;
+
+**DO NOT:** Try to talk them out of it. Day-14 is a no-questions-asked right. Trying to negotiate erodes trust faster than the cancel itself.
+
+### 7b. Cancel After Day 14 (within Minimum Term)
+
+**When:** Day 15 through Day 90. Contractor wants out. Not contractually allowed except via guarantee triggers (§6).
+
+**Process:**
+
+1. Have the retention conversation first. Ask what&apos;s not working:
+   - &ldquo;I&apos;m not seeing results&rdquo; &rarr; Check reports together. Show pipeline value. Often they don&apos;t realize the system recovered $X.
+   - &ldquo;The AI said something wrong&rdquo; &rarr; Fix the KB entry. Offer to re-train. Knowledge gap, not system failure.
+   - &ldquo;Too expensive&rdquo; &rarr; ROI math. One recovered $15k project covers 15 months.
+2. If guarantee was triggered (Day-21 go-live failure or Day-30 logging failure): honor it. Cancel + waive remaining monthly fees.
+3. If guarantee was met and they still want out: they remain contractually obligated for remaining Minimum Term fees. Setup fee non-refundable. Use judgment &mdash; angry refund disputes cost more than a partial credit.
+4. Capture cancel reason (type = `mid_term`, reason, notes).
+
+### 7c. Cancel After Minimum Term
+
+**When:** Day 91+. Contractor exercises 30-day notice clause.
+
+**Process:**
+
+1. Acknowledge receipt of notice within 24 hours.
+2. Set cancellation date = 30 calendar days from notice receipt.
+3. Final monthly billing runs at period end.
+4. Auto-reminders fire at 20/7/3 days before grace ends (`/api/cron/cancellation-reminders`).
+5. Data export delivered within 5 business days of grace end.
+6. Win-back email fires 7 days after grace ends.
+7. Capture cancel reason (type = `post_term`, reason, notes).
 
 ---
 
