@@ -53,7 +53,7 @@ fi
 ok "All required tools available (pnpm, node, git)"
 
 # 2. Verify progress.md exists
-PROGRESS_FILE=".Codex/progress.md"
+PROGRESS_FILE=".agent/progress.md"
 if [ ! -f "$PROGRESS_FILE" ]; then
   warn "${PROGRESS_FILE} not found. Creating from template..."
   mkdir -p .Codex
@@ -158,7 +158,7 @@ else
 fi
 
 # 4. Work-tracker status
-WORK_TRACKER=".Codex/work-tracker.md"
+WORK_TRACKER=".agent/work-tracker.md"
 IN_PROGRESS_COUNT=0
 if [ -f "$WORK_TRACKER" ]; then
   IN_PROGRESS_COUNT="$(grep -c 'in_progress' "$WORK_TRACKER" || true)"

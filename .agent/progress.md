@@ -21,7 +21,7 @@
 |---|---|
 | Task ID | A1-D1 |
 | Description | Build hands-off agent infrastructure: MCP cleanup, session continuity, guardrails, CI hardening |
-| Files Touched | `.Codex/progress.md`, `.Codex/work-tracker.md`, `.agent/workflows/session-recovery.md`, `.agent/rules/session-state.md`, `docs/engineering/AGENT-ENVIRONMENT.md`, `docs/engineering/AGENT-SETUP.md`, `scripts/agent/start-session.sh`, `scripts/agent/safe-commit.sh`, `scripts/agent/verify-work-state.sh`, `package.json`, `AGENTS.md`, `.github/workflows/ci.yml` |
+| Files Touched | `.agent/progress.md`, `.agent/work-tracker.md`, `.agent/workflows/session-recovery.md`, `.agent/rules/session-state.md`, `docs/engineering/AGENT-ENVIRONMENT.md`, `docs/engineering/AGENT-SETUP.md`, `scripts/agent/start-session.sh`, `scripts/agent/safe-commit.sh`, `scripts/agent/verify-work-state.sh`, `package.json`, `AGENTS.md`, `.github/workflows/ci.yml` |
 | Started At | 2026-05-05T16:34:00Z |
 
 ## Blockers
@@ -60,4 +60,4 @@ None
 - `16:45` — Wave 1 complete. A1 and B1 done.
 - `16:47` — Wave 2 complete. C1 done. Cleaned up accidental commit of pre-existing changes.
 - `16:57` — Wave 3 complete. D1 done.
-- `16:58` — Created missing `.Codex/progress.md`. Preparing final commit.
+- `16:58` — Created missing `.agent/progress.md`. Preparing final commit.

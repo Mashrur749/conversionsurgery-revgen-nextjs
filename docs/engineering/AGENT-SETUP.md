@@ -120,7 +120,7 @@ pnpm run agent:start
 
 [info] Checking required tools...
 [ok] All required tools available (pnpm, node, git)
-[ok] .Codex/progress.md found
+[ok] .agent/progress.md found
 [info] Checking git state...
 [ok] Working tree is clean
 [ok] Work-tracker: 0 item(s) in_progress
@@ -140,8 +140,8 @@ pnpm run agent:start
 If the script exits non-zero, stop and resolve the issue before coding. Common causes:
 
 - Missing tool (pnpm, node, or git not in PATH)
-- Uncommitted files not documented in `.Codex/progress.md`
-- `.Codex/progress.md` missing (the script auto-creates it from template)
+- Uncommitted files not documented in `.agent/progress.md`
+- `.agent/progress.md` missing (the script auto-creates it from template)
 
 ---
 
@@ -191,7 +191,7 @@ If `progress.md` is missing, `agent:start` creates it from template automaticall
 git status
 git diff
 
-# If the changes are valid work-in-progress, document them in .Codex/progress.md
+# If the changes are valid work-in-progress, document them in .agent/progress.md
 # under "Uncommitted Files" and "Uncommitted Note", then re-run agent:check.
 
 # If the changes are leftover cruft, discard them:

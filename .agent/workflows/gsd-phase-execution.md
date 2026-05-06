@@ -17,7 +17,7 @@ If this fails, resolve the issue before proceeding. Do not start a GSD phase wit
 
 ### 2. Update Progress.md for GSD Context
 
-Open `.Codex/progress.md` and fill in:
+Open `.agent/progress.md` and fill in:
 
 | Field | Value |
 |---|---|
@@ -36,13 +36,13 @@ In the **Session Log**, add:
 - Read `.planning/PROJECT.md` for project state
 - Read `.planning/ROADMAP.md` (if exists) for phase list
 - Read the phase's `RESEARCH.md`, `PLAN.md`, or `SPEC.md` if already generated
-- Read `.Codex/work-tracker.md` to see if any parallel work is in progress
+- Read `.agent/work-tracker.md` to see if any parallel work is in progress
 
 ## During Phase Execution
 
 ### Per-Wave Checkpoint (Execute Phase)
 
-If running `/gsd-execute-phase` with wave-based parallelization, update `.Codex/progress.md` **before spawning each wave**:
+If running `/gsd-execute-phase` with wave-based parallelization, update `.agent/progress.md` **before spawning each wave**:
 
 ```markdown
 ## Next Step
@@ -65,7 +65,7 @@ After each wave completes:
 
 ### Per-Plan Checkpoint (Interactive Mode)
 
-If running with `--interactive` (sequential, no subagents), update `.Codex/progress.md` after every plan:
+If running with `--interactive` (sequential, no subagents), update `.agent/progress.md` after every plan:
 - Mark the plan done in **Session Log**
 - Update **Files Touched**
 - Run `pnpm run agent:check`
@@ -75,12 +75,12 @@ If running with `--interactive` (sequential, no subagents), update `.Codex/progr
 
 After the phase completes (all waves done, verification passed):
 
-1. **Update `.Codex/progress.md`:**
+1. **Update `.agent/progress.md`:**
    - Set **Next Step** to `"Phase complete — awaiting verification or next phase"`
    - Mark all verification gates as ✅ or ❌
    - Record final commit hash in **Commit State**
 
-2. **Update `.Codex/work-tracker.md`:**
+2. **Update `.agent/work-tracker.md`:**
    - If this phase was tracked as a work item, mark it `done`
    - Unlock dependent waves/items if applicable
 
@@ -97,7 +97,7 @@ After the phase completes (all waves done, verification passed):
 
 If a GSD phase must be abandoned mid-wave:
 
-1. Immediately update `.Codex/progress.md`:
+1. Immediately update `.agent/progress.md`:
    - **Blockers:** Record why the phase stopped
    - **Next Step:** `"Abandoned — resume from Wave N, Plan [name]"`
    - **Commit State:** Note any uncommitted files

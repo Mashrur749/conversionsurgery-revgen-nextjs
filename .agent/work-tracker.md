@@ -41,7 +41,7 @@
 | ID | Status | Assigned Agent | Task | Files Touched | Depends On |
 |---|---|---|---|---|---|
 | A1 | `done` | a42e9b607 | MCP zero-friction: Remove Serena, pin versions, document env | `~/.kimi/mcp.json`, `docs/engineering/AGENT-ENVIRONMENT.md` | — |
-| B1 | `done` | a05388554 | Session continuity: Create recovery workflow, progress template, state rules | `.Codex/work-tracker.md` (meta section only), `.Codex/progress.md`, `.agent/workflows/session-recovery.md`, `.agent/rules/session-state.md` | — |
+| B1 | `done` | a05388554 | Session continuity: Create recovery workflow, progress template, state rules | `.agent/work-tracker.md` (meta section only), `.agent/progress.md`, `.agent/workflows/session-recovery.md`, `.agent/rules/session-state.md` | — |
 
 ## Wave 2 — Depends on Wave 1B
 

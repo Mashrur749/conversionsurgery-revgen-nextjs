@@ -9,7 +9,7 @@ Do these steps **in order**. Do not skip. Do not start coding until the checklis
 
 ### 1. Read the Work Tracker
 
-Read `.Codex/work-tracker.md`.
+Read `.agent/work-tracker.md`.
 
 - Identify which wave is active.
 - Identify which items are `in_progress`.
@@ -17,7 +17,7 @@ Read `.Codex/work-tracker.md`.
 
 ### 2. Read the Session Progress File
 
-Read `.Codex/progress.md`.
+Read `.agent/progress.md`.
 
 - Was there an interrupted session?
 - Check **Blockers** — is the previous agent stuck on something you can resolve?
@@ -61,7 +61,7 @@ git log --oneline -3
 
 Only after steps 1–5 are complete:
 
-1. Update `.Codex/progress.md` **Current Session** with today's date, branch, and your model.
+1. Update `.agent/progress.md` **Current Session** with today's date, branch, and your model.
 2. If resuming: append to **Session Log** — `"Resuming from [last next-step]"`.
 3. If restarting: append to **Session Log** — `"Restarting [task ID] from commit [hash]"`.
 4. Proceed with the task.
@@ -70,7 +70,7 @@ Only after steps 1–5 are complete:
 
 If you are explicitly instructed by the user to ignore recovery and start a brand-new task immediately:
 
-1. Still read `.Codex/work-tracker.md` and `.Codex/progress.md`.
+1. Still read `.agent/work-tracker.md` and `.agent/progress.md`.
 2. Append a note to **Session Log**: `"Emergency override — starting new task [ID] per user instruction. Previous state archived."`.
 3. Archive the old **Active Task** section by moving it to a new `## Archived Sessions` section at the bottom of `progress.md`.
 4. Initialize a fresh **Active Task** for the new work.

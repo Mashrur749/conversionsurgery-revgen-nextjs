@@ -100,7 +100,7 @@ if git commit -m "$MESSAGE"; then
   ok "Committed successfully: ${NEW_HASH}"
   echo
   echo "Next steps:"
-  echo "  - Update .Codex/progress.md Commit State"
+  echo "  - Update .agent/progress.md Commit State"
   echo "  - Append to Session Log"
   exit 0
 else

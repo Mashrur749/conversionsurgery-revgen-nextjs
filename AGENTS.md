@@ -187,7 +187,7 @@ Three-tier verification protocol (mandatory):
 
 - Commit working code frequently — small commits, not one giant commit at the end
 - Before stopping (for any reason): ensure the build passes and all changes are committed
-- When using worktrees: update `.Codex/progress.md` before the session ends
+- When using worktrees: update `.agent/progress.md` before the session ends
 
 ## File Organization
 
@@ -292,10 +292,10 @@ When you change code, check whether the affected docs need updating. This is man
 
 ## Parallel Agent Execution
 
-For multi-item execution (UX fixes, edge cases, feature batches), use the work tracker at `.Codex/work-tracker.md`.
+For multi-item execution (UX fixes, edge cases, feature batches), use the work tracker at `.agent/work-tracker.md`.
 
 **Orchestration rules:**
-1. Read `.Codex/work-tracker.md` to see what's todo/in_progress/done
+1. Read `.agent/work-tracker.md` to see what's todo/in_progress/done
 2. Before dispatching agents, update item status to `in_progress` and fill the Assigned Agent column
 3. Check the Files Touched column — never assign two agents to the same file
 4. Check the Depends On column — don't start dependent items until prerequisites are done
@@ -336,7 +336,7 @@ When multiple agent plugins or slash-command systems overlap, use this ownership
 
 ## Worktree Workflow
 
-For large features (3+ files), use slash commands: `/plan`, `/scaffold`, `/implement`, `/resume`, `/review`, `/merge`, `/status`, `/cleanup`. Script: `.Codex/scripts/worktree-manager.sh`. Each worktree tracks progress in `.Codex/progress.md`.
+For large features (3+ files), use slash commands: `/plan`, `/scaffold`, `/implement`, `/resume`, `/review`, `/merge`, `/status`, `/cleanup`. Script: `.Codex/scripts/worktree-manager.sh`. Each worktree tracks progress in `.agent/progress.md`.
 
 Skills to use during worktree work:
 
@@ -352,7 +352,7 @@ These scripts enforce safe, unattended agent execution. Agents must use them ins
 
 Run `pnpm run agent:start` before any new work. This script:
 - Verifies required tools (`pnpm`, `node`, `git`) are available
-- Checks that `.Codex/progress.md` exists (creates from template if missing)
+- Checks that `.agent/progress.md` exists (creates from template if missing)
 - Validates the working tree is clean OR uncommitted changes are documented in `progress.md`
 - Prints a summary of branch, last commit, and work-tracker status
 
@@ -373,7 +373,7 @@ This script:
 ### State Validation
 
 Run `pnpm run agent:check` before long operations or when resuming a session. This script:
-- Warns if `.Codex/progress.md` is stale (>4 hours old)
+- Warns if `.agent/progress.md` is stale (>4 hours old)
 - Verifies files listed in `Files Touched` actually exist
 - Flags uncommitted changes not documented in `progress.md`
 - Runs a quick typecheck to confirm the codebase is not broken
@@ -393,7 +393,7 @@ For the full session recovery protocol, see `.agent/workflows/session-recovery.m
 When executing GSD phases (`/gsd-plan-phase`, `/gsd-execute-phase`), follow `.agent/workflows/gsd-phase-execution.md`:
 
 1. **Always run `pnpm run agent:start` before phase work.**
-2. **Tag GSD tasks in `.Codex/progress.md`** with Task ID `GSD-PN` (e.g., `GSD-P3`).
+2. **Tag GSD tasks in `.agent/progress.md`** with Task ID `GSD-PN` (e.g., `GSD-P3`).
 3. **Checkpoint per wave:** Update `progress.md` before/after each wave. Commit with `pnpm run agent:ship` every 3–5 files.
 4. **Post-phase doc sync:** Check the Change→Doc mapping table and update affected docs before marking the phase done.
 5. **Abandonment protocol:** If a phase must stop mid-wave, update `progress.md` with the exact wave and plan to resume from, then commit with `--force` if necessary.

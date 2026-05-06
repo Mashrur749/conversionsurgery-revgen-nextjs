@@ -22,7 +22,7 @@ fail()  { echo "${red}[fail]${reset} $*" >&2; }
 info()  { echo "${blue}[info]${reset} $*"; }
 ok()    { echo "${green}[ok]${reset} $*"; }
 
-PROGRESS_FILE=".Codex/progress.md"
+PROGRESS_FILE=".agent/progress.md"
 STATE="clean"
 BLOCKERS=""
 LAST_ACTION=""

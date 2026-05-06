@@ -5,7 +5,7 @@
 
 ## Mandatory Checkpoints
 
-Agents MUST update `.Codex/progress.md` at the following moments:
+Agents MUST update `.agent/progress.md` at the following moments:
 
 1. **Before any long-running operation**
    - `pnpm run build`
@@ -16,7 +16,7 @@ Agents MUST update `.Codex/progress.md` at the following moments:
    - Update **Next Step** to `"Running [operation]"` and note the start time in **Session Log**.
 
 2. **Before stopping** (for any reason — success, failure, context limit, user request)
-   - Update all fields in `.Codex/progress.md`.
+   - Update all fields in `.agent/progress.md`.
    - If stopping mid-task, **Next Step** must be a single, actionable sentence.
    - If there are uncommitted changes, list them in **Commit State** and explain why.
    - Append stop reason to **Session Log**.
@@ -46,9 +46,9 @@ Agents MUST update `.Codex/progress.md` at the following moments:
 
 ## State Hygiene
 
-- **Do not modify another agent's in-progress row** in `.Codex/work-tracker.md`.
+- **Do not modify another agent's in-progress row** in `.agent/work-tracker.md`.
 - **Do not delete old Session Log entries.** Archive them if the file grows >100 lines.
-- **Keep `.Codex/progress.md` truthful.** If you guessed at a commit hash or file list, mark it with `(estimated)`.
+- **Keep `.agent/progress.md` truthful.** If you guessed at a commit hash or file list, mark it with `(estimated)`.
 - **If you find stale / contradictory state, fix it.** Do not silently overwrite — append a correction note to the Session Log.
 
 ## Recovery Reference
