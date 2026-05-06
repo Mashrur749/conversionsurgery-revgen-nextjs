@@ -135,13 +135,13 @@ jobs:
             echo "OK: $script syntax valid"
           done
 
-      - name: Check .Codex markdown validity (if modified)
+      - name: Check .agent markdown validity (if modified)
         if: github.event_name == 'pull_request'
         run: |
-          CHANGED_CODEX=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '^\.Codex/' || true)
-          if [ -n "$CHANGED_CODEX" ]; then
-            echo "Checking markdown files in .Codex/:"
-            for f in $CHANGED_CODEX; do
+          CHANGED_AGENT=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '^\.agent/' || true)
+          if [ -n "$CHANGED_AGENT" ]; then
+            echo "Checking markdown files in .agent/:"
+            for f in $CHANGED_AGENT; do
               if [[ "$f" == *.md ]]; then
                 if [ ! -s "$f" ]; then
                   echo "ERROR: $f is empty"
@@ -155,7 +155,7 @@ jobs:
               fi
             done
           else
-            echo "No .Codex/ files modified — skipping"
+            echo "No .agent/ files modified — skipping"
           fi
 
       - name: Check AGENTS.md still has Agent Orchestration section (if modified)
@@ -174,45 +174,45 @@ jobs:
 
       - name: Prepare progress.md for agent:check
         run: |
-          mkdir -p .Codex
-          echo "# Session Progress" > .Codex/progress.md
-          echo "" >> .Codex/progress.md
-          echo "## Current Session" >> .Codex/progress.md
-          echo "" >> .Codex/progress.md
-          echo "| Field | Value |" >> .Codex/progress.md
-          echo "|---|---|" >> .Codex/progress.md
-          echo "| Date | CI |" >> .Codex/progress.md
-          echo "| Branch | main |" >> .Codex/progress.md
-          echo "| Agent Model | github-actions |" >> .Codex/progress.md
-          echo "" >> .Codex/progress.md
-          echo "## Active Task" >> .Codex/progress.md
-          echo "" >> .Codex/progress.md
-          echo "| Field | Value |" >> .Codex/progress.md
-          echo "|---|---|" >> .Codex/progress.md
-          echo "| Task ID | CI-agent-infra |" >> .Codex/progress.md
-          echo "| Description | Agent infrastructure validation |" >> .Codex/progress.md
-          echo "| Files Touched | List files modified so far in this session |" >> .Codex/progress.md
-          echo "| Started At | n/a |" >> .Codex/progress.md
-          echo "" >> .Codex/progress.md
-          echo "## Verification Status" >> .Codex/progress.md
-          echo "" >> .Codex/progress.md
-          echo "| Gate | Status | Notes |" >> .Codex/progress.md
-          echo "|---|---|---|" >> .Codex/progress.md
-          echo "| pnpm run typecheck | pass | |" >> .Codex/progress.md
-          echo "| pnpm run lint | pass | |" >> .Codex/progress.md
-          echo "| pnpm run build | pass | |" >> .Codex/progress.md
-          echo "| pnpm test | pass | |" >> .Codex/progress.md
-          echo "| pnpm run quality:no-regressions | pass | |" >> .Codex/progress.md
-          echo "| pnpm run quality:logging-guard | pass | |" >> .Codex/progress.md
-          echo "" >> .Codex/progress.md
-          echo "## Commit State" >> .Codex/progress.md
-          echo "" >> .Codex/progress.md
-          echo "| Field | Value |" >> .Codex/progress.md
-          echo "|---|---|" >> .Codex/progress.md
-          echo "| Last Commit Hash | n/a |" >> .Codex/progress.md
-          echo "| Last Commit Message | CI check |" >> .Codex/progress.md
-          echo "| Uncommitted Files | .Codex/progress.md |" >> .Codex/progress.md
-          echo "| Uncommitted Note | Created by CI for agent:check validation |" >> .Codex/progress.md
+          mkdir -p .agent
+          echo "# Session Progress" > .agent/progress.md
+          echo "" >> .agent/progress.md
+          echo "## Current Session" >> .agent/progress.md
+          echo "" >> .agent/progress.md
+          echo "| Field | Value |" >> .agent/progress.md
+          echo "|---|---|" >> .agent/progress.md
+          echo "| Date | CI |" >> .agent/progress.md
+          echo "| Branch | main |" >> .agent/progress.md
+          echo "| Agent Model | github-actions |" >> .agent/progress.md
+          echo "" >> .agent/progress.md
+          echo "## Active Task" >> .agent/progress.md
+          echo "" >> .agent/progress.md
+          echo "| Field | Value |" >> .agent/progress.md
+          echo "|---|---|" >> .agent/progress.md
+          echo "| Task ID | CI-agent-infra |" >> .agent/progress.md
+          echo "| Description | Agent infrastructure validation |" >> .agent/progress.md
+          echo "| Files Touched | List files modified so far in this session |" >> .agent/progress.md
+          echo "| Started At | n/a |" >> .agent/progress.md
+          echo "" >> .agent/progress.md
+          echo "## Verification Status" >> .agent/progress.md
+          echo "" >> .agent/progress.md
+          echo "| Gate | Status | Notes |" >> .agent/progress.md
+          echo "|---|---|---|" >> .agent/progress.md
+          echo "| pnpm run typecheck | pass | |" >> .agent/progress.md
+          echo "| pnpm run lint | pass | |" >> .agent/progress.md
+          echo "| pnpm run build | pass | |" >> .agent/progress.md
+          echo "| pnpm test | pass | |" >> .agent/progress.md
+          echo "| pnpm run quality:no-regressions | pass | |" >> .agent/progress.md
+          echo "| pnpm run quality:logging-guard | pass | |" >> .agent/progress.md
+          echo "" >> .agent/progress.md
+          echo "## Commit State" >> .agent/progress.md
+          echo "" >> .agent/progress.md
+          echo "| Field | Value |" >> .agent/progress.md
+          echo "|---|---|" >> .agent/progress.md
+          echo "| Last Commit Hash | n/a |" >> .agent/progress.md
+          echo "| Last Commit Message | CI check |" >> .agent/progress.md
+          echo "| Uncommitted Files | .agent/progress.md |" >> .agent/progress.md
+          echo "| Uncommitted Note | Created by CI for agent:check validation |" >> .agent/progress.md
 
       - name: Run agent:check
         run: pnpm run agent:check
