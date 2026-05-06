@@ -268,6 +268,8 @@ export async function POST(request: NextRequest) {
       );
       results.guaranteeCheck = await dispatch(baseUrl, '/api/cron/guarantee-check', cronSecret!, 'GET', failedJobs);
       results.guaranteeAlert = await dispatch(baseUrl, '/api/cron/guarantee-alert', cronSecret!, 'GET', failedJobs);
+      results.guarantee21Day = await dispatch(baseUrl, '/api/cron/guarantee-21day', cronSecret!, 'GET', failedJobs);
+      results.guarantee30Day = await dispatch(baseUrl, '/api/cron/guarantee-30day', cronSecret!, 'GET', failedJobs);
       results.monthlyReset = await dispatch(baseUrl, '/api/cron/monthly-reset', cronSecret!, 'GET', failedJobs);
       results.billingReminder = await dispatch(baseUrl, '/api/cron/billing-reminder', cronSecret!, 'GET', failedJobs);
       results.heartbeatCheck = await dispatch(baseUrl, '/api/cron/heartbeat-check', cronSecret!, 'GET', failedJobs);

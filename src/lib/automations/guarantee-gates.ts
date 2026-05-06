@@ -5,7 +5,7 @@
  * A6: Day-30 logging gate — 80% of inquiries logged with source/status/follow-up?
  */
 import { getDb } from '@/db';
-import { subscriptions, clients, leads, plans } from '@/db/schema';
+import { subscriptions, clients, leads } from '@/db/schema';
 import { onboardingMilestones } from '@/db/schema/onboarding-day-one';
 import { eq, and, sql, gte } from 'drizzle-orm';
 import { getStripeClient } from '@/lib/clients/stripe';
