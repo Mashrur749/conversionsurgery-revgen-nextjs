@@ -56,6 +56,15 @@ cmd_create() {
         log_ok "Generated CLAUDE.md"
     fi
 
+    if [[ -f "$TEMPLATES_DIR/slice-kimi.md" ]]; then
+        sed -e "s|{{FEATURE_NAME}}|$feature|g" \
+            -e "s|{{SLICE_NUMBER}}|$slice_num|g" \
+            -e "s|{{SLICE_DESCRIPTION}}|$description|g" \
+            -e "s|{{BRANCH_NAME}}|$branch|g" \
+            "$TEMPLATES_DIR/slice-kimi.md" > "$wt_dir/KIMI.md"
+        log_ok "Generated KIMI.md"
+    fi
+
     if [[ -f "$PLANS_DIR/${feature}.md" ]]; then
         mkdir -p "$wt_dir/.claude"
         cp "$PLANS_DIR/${feature}.md" "$wt_dir/.claude/feature-plan.md"
@@ -75,7 +84,7 @@ cmd_create() {
     echo ""
     log_ok "✅ Ready: $wt_dir"
     log_info "Branch: $branch"
-    log_info "Next: cd $wt_dir && claude"
+    log_info "Next: cd $wt_dir && claude    # or: cd $wt_dir && kimi"
 }
 
 # ---- list ----
