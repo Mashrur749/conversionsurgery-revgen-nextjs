@@ -24,6 +24,7 @@ Read `.Codex/progress.md`.
 - Check **Next Step** — is it explicit enough to resume?
 - Check **Verification Status** — which gates passed or failed?
 - Check **Commit State** — are there uncommitted files? Are they expected?
+- **Detect GSD context** — Is the **Task ID** prefixed with `GSD-P` or does the description mention a phase/plan? If so, read `.agent/workflows/gsd-phase-execution.md` before deciding how to resume.
 
 ### 3. Decide: Resume or Restart
 
@@ -32,6 +33,7 @@ Read `.Codex/progress.md`.
 | `progress.md` exists, no blocker, uncommitted files match expectation | **Resume** from Next Step |
 | `progress.md` exists, blocker listed, you can resolve it | **Resume** after resolving blocker; document the fix |
 | `progress.md` exists, but state is inconsistent (e.g., files listed as touched do not exist, commit hash is wrong) | **Restart** the current task from last known good commit; document the restart in progress.md |
+| `progress.md` shows an abandoned GSD phase (blocker = "Abandoned — resume from Wave N") | **Resume** the GSD phase by reading the phase PLAN.md, then follow `.agent/workflows/gsd-phase-execution.md` from Wave N |
 | `progress.md` missing or empty | Treat as cold start; initialize progress.md with current session info |
 | Uncommitted files exist but are NOT noted in progress.md | **Stop and investigate.** Do not commit mystery files. Use `git diff` to inspect. Record findings in progress.md before proceeding. |
 

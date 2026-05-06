@@ -57,7 +57,7 @@
 
 ## Completion Gate
 
-- [ ] All waves complete
-- [ ] `pnpm run quality:no-regressions` passes
-- [ ] `pnpm run typecheck` passes
-- [ ] Work-tracker updated to all `done`
+- [x] All waves complete
+- [x] `pnpm run quality:no-regressions` passes
+- [x] `pnpm run typecheck` passes
+- [x] Work-tracker updated to all `done`

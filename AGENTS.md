@@ -388,6 +388,16 @@ If `--force` is used, the agent **must** log a memory entry explaining why befor
 
 For the full session recovery protocol, see `.agent/workflows/session-recovery.md`.
 
+### GSD Phase Integration
+
+When executing GSD phases (`/gsd-plan-phase`, `/gsd-execute-phase`), follow `.agent/workflows/gsd-phase-execution.md`:
+
+1. **Always run `pnpm run agent:start` before phase work.**
+2. **Tag GSD tasks in `.Codex/progress.md`** with Task ID `GSD-PN` (e.g., `GSD-P3`).
+3. **Checkpoint per wave:** Update `progress.md` before/after each wave. Commit with `pnpm run agent:ship` every 3–5 files.
+4. **Post-phase doc sync:** Check the Change→Doc mapping table and update affected docs before marking the phase done.
+5. **Abandonment protocol:** If a phase must stop mid-wave, update `progress.md` with the exact wave and plan to resume from, then commit with `--force` if necessary.
+
 ## Learned Rules
 
 Rules are appended when corrections happen. Format: `N. [CATEGORY] Instruction — reason.` Higher numbers win on conflict. Never delete, only supersede.
