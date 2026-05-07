@@ -54,7 +54,7 @@ The following lines are approved for live sales conversations, landing page head
 > - **Appointment Confirmation & No-Show Recovery** — Reminders before every appointment. If they miss it, the system follows up same day and attempts to rebook.
 > - **Payment Collection** — Automated deposit and invoice reminders with one-click payment links.
 > - **Review Generation** — After every completed job, an automated review request with a direct link to Google.
-> - **Dormant Lead Reactivation** — Past inquiries and old estimates that went cold get re-engaged with personalized follow-up.
+> - **Dormant Lead Reactivation** — Past inquiries from the last 6 months get re-engaged with personalized follow-up. Older inquiries can be reactivated only with documented express consent on file (Canada Anti-Spam Law caps implied consent from inquiry at 6 months; consent from a prior purchase or contract extends to 24 months).
 >
 > **Unlimited Conversations and Messaging**
 > No message caps. No overage charges. No surprise bills. The system handles as many leads and conversations as your business generates.
@@ -80,9 +80,9 @@ The following lines are approved for live sales conversations, landing page head
 
 > Every 90 days, we run a proactive campaign on your behalf — beyond the normal automation:
 >
-> - **Q1:** Dormant lead reactivation — re-engage past inquiries and old estimates that went cold
+> - **Q1:** Dormant lead reactivation — re-engage past inquiries from the last 6 months that went cold (older inquiries require documented express consent)
 > - **Q2:** Review acceleration — targeted push to increase your Google reviews
-> - **Q3:** Pipeline builder — reach out to past inquiries who never converted, filling your fall pipeline
+> - **Q3:** Pipeline builder — reach out to past inquiries from the last 6 months who never converted, filling your fall pipeline (older inquiries require documented express consent)
 > - **Q4:** Year-end performance review + 30-minute strategy call to plan the year ahead
 >
 > Campaign selection is recommended based on your account data. You can request an alternative from the available campaign menu.
@@ -144,9 +144,11 @@ The following lines are approved for live sales conversations, landing page head
 >
 > | Tier | Setup Fee | Monthly | Best For |
 > | --- | --- | --- | --- |
-> | **Pilot** | $3,500 | $1,500/mo | First 3 clients &mdash; foundational system, case-study partnership |
-> | **Standard** | $5,500 | $2,000/mo | Main offer &mdash; full managed service with complete automation |
-> | **Premium** | $9,500 | $3,500/mo | Full attribution, estimator-level reporting, CRM integration |
+> | **Pilot** | $3,500 | $1,500/mo | First 3 clients only &mdash; full managed service, discounted in exchange for case-study partnership and feedback |
+> | **Standard** | $5,500 | $2,000/mo | Full managed service &mdash; general availability after the pilot cohort |
+> | **Premium** | $9,500 | $3,500/mo | Full managed service plus full attribution, estimator-level reporting, CRM integration |
+>
+> **Pilot and Standard are the same service.** The difference is price and case-study participation. Pilot pricing is unavailable after our first 3 clients have signed.
 >
 > All tiers include: unlimited messaging, no overage charges, dedicated business number, voice included, bi-weekly reporting, operational guarantee.
 >
@@ -202,9 +204,20 @@ The following must appear in the service agreement:
 >
 > We are actively reviewing whether direct replies to inbound inquiries qualify for exemption from quiet-hours restrictions. We will update you on any changes to response coverage as our compliance review is finalized.
 
-### Post-Legal-Review Version (use ONLY if counsel confirms inbound-reply exemption)
+### Post-Legal-Review Version
 
-> ConversionSurgery responds to new inquiries within seconds, any time of day. When a homeowner calls, texts, or submits a form — even at 10 PM on a Saturday — they get an immediate response. Proactive follow-up sequences (estimate reminders, reactivation campaigns, review requests) are sent during business hours only, in compliance with CRTC regulations.
+> **🛑 DO NOT USE — counsel review pending. Platform default is STRICT mode (queues inbound replies during quiet hours). Using this language without (a) counsel sign-off AND (b) flipping the per-client `inboundReplyExemptionEnabled` feature flag will create a contradiction between what you sold and what the system actually does.**
+>
+> Held below for reference until both gates are cleared:
+>
+> > ConversionSurgery responds to new inquiries within seconds, any time of day. When a homeowner calls, texts, or submits a form — even at 10 PM on a Saturday — they get an immediate response. Proactive follow-up sequences (estimate reminders, reactivation campaigns, review requests) are sent during business hours only, in compliance with CRTC regulations.
+>
+> **When this language becomes safe to use:**
+> 1. Canadian telecom counsel confirms in writing that automated inbound replies fall under CASL s.6(6)(a) exemption from quiet hours.
+> 2. The per-client `inboundReplyExemptionEnabled` flag is set to true in admin (off by default).
+> 3. Both 1 and 2 are documented in the client's onboarding record before this language appears in any client-facing material.
+>
+> Until then, use the Current Interim Version above without modification.
 
 ---
 
@@ -213,8 +226,9 @@ The following must appear in the service agreement:
 > Every message sent through ConversionSurgery is fully compliant with Canada's Anti-Spam Legislation (CASL) and CRTC telecom regulations.
 >
 > - Consent is tracked for every lead — we never message anyone without proper authorization
+> - Reactivation respects CASL's 6-month implied-consent window. Past inquiries can be re-engaged within 6 months of the original inquiry date. Older inquiries require documented express consent on file before any outbound contact. Existing-customer consent (from a prior purchase or contract) extends to 24 months.
 > - Opt-outs are honored instantly — when someone texts STOP, all messaging stops immediately
-> - Quiet hours are enforced — no messages during restricted windows
+> - Quiet hours are enforced — no proactive outbound messages during restricted windows (9 PM – 10 AM recipient local time per CRTC)
 > - Your business is identified in every conversation
 > - A full audit trail is maintained for every message sent and every compliance decision made
 >

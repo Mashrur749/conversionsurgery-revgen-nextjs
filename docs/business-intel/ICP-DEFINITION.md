@@ -86,7 +86,9 @@ All six must pass (Q1-Q4 are dealbreakers, Q5-Q6 are flags):
 
 ## Cold Call Script
 
-&ldquo;Hey [Name], this is [Your Name] from Calgary. Quick one &mdash; I built something for renovation contractors that texts back every missed call in 5 seconds, follows up on every estimate for 2 weeks, and books the site visit while you&rsquo;re still on the job. Most guys I talk to are losing 3&ndash;4 jobs a year just from leads that went cold. We have a Pilot rate for our first three clients. You got 15 minutes this week?&rdquo;
+&ldquo;Hey [Name], this is [Your Name] from Calgary. Quick one &mdash; I built something for renovation contractors that texts back every missed call in seconds during permitted hours, follows up on every estimate for 2 weeks, and books the site visit while you&rsquo;re still on the job. Most guys I talk to are losing 3&ndash;4 jobs a year just from leads that went cold. We have a Pilot rate for our first three clients. You got 15 minutes this week?&rdquo;
+
+> **Operator note:** &ldquo;Permitted hours&rdquo; covers everything except 9 PM &ndash; 10 AM recipient local time (CRTC). Inbound replies during quiet hours are queued for first-thing-next-morning delivery. Sales pitch must match this reality &mdash; do NOT promise &ldquo;5 seconds&rdquo; with no qualifier.
 
 ---
 
