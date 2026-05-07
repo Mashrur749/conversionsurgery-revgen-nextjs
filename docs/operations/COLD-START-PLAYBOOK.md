@@ -88,6 +88,18 @@ Good news: contractors are ALSO unavailable 9-5 &mdash; they&apos;re on job site
 
 **Weekly total: ~17-20 hours** (12.5 weekday + 6 weekend)
 
+> **Capacity realism note:** If you only have 6-10 hours/week (not 17-20), run the compressed schedule below. Volume beats polish — even at half the hours, consistent outreach wins.
+>
+> **Compressed schedule (6-10 hrs/week):**
+> - Weekday mornings: 3-4 texts/DMs (20 min)
+> - Weekday lunch: 2-3 follow-ups (15 min)
+> - Tuesday + Thursday evening: 5-7 cold calls each (1.5 hrs total)
+> - Saturday morning: 10 DMs/texts + 1-2 Loom audits (2.5 hrs)
+> - Sunday: Plan next week (30 min)
+> - **Weekly total: ~6-7 hours**
+>
+> At this volume: 15-20 cold calls, 15-20 DMs/texts, 2-3 audits = ~35-45 touches/week. Expect 1 client per 100-120 touches. First client in 8-12 weeks. Tight but doable.
+
 ### Day 1 Actions (evening + next morning)
 
 **Tonight (1.5 hours):**
@@ -156,6 +168,78 @@ Same weekday/weekend schedule. But now your evenings split between new outreach 
 - Use the &ldquo;I need to think about it&rdquo; script (Script H below)
 - Soft deadline: &ldquo;I&apos;m onboarding my first clients this week. Pilot tier is $3,500 setup plus $1,500/month, 90-day minimum. If you want to lock that in, now is the time.&rdquo;
 - **When they say yes:** schedule the onboarding call for the next Saturday morning (your first available block)
+
+---
+
+## Deliverability Discipline (Read Before Any Cold Email)
+
+Cold email is the highest-leverage outreach channel for this business. It is also the channel that most quickly destroys itself if you ignore deliverability rules. A new sender account that breaks these rules will land in spam within 24 hours and stay there until the account is replaced. There is no recovery from a tanked sender reputation worth the time it takes &mdash; just spin up a new account and start over.
+
+Follow these nine rules without exception. They are non-negotiable.
+
+### Rule 1: No links on the first cold email
+
+No Loom URL. No website. No calendar link. No Google Drive. Nothing. A brand-new sender + a link in the first email is the single most reliable spam trigger. Save links for the SECOND email after they reply &mdash; once a conversation thread exists, the algorithm trusts the thread.
+
+This is why the Loom audit (Script E) is for warm prospects who replied, not cold first-touch.
+
+### Rule 2: No attachments on the first cold email
+
+No PDFs. No flyers. No sample postcards. No screenshots. Same reason as links &mdash; cold + attachment = spam flag. Save the assets for after they reply.
+
+### Rule 3: Plain text only, short and simple
+
+3-5 sentences. No HTML formatting. No images embedded in signature. No fancy fonts. The goal is to look like a real human typing a quick note, not a marketing department.
+
+### Rule 4: Personalize beyond first name
+
+Every email must cite ONE specific data point about THAT prospect &mdash; their GBP review count vs a competitor, their service specialty, a recent review, something on their Facebook page. First-name personalization is meaningless to spam algorithms; they detect identical bodies sent 50 times in a row even with the names swapped. Real personalization is what differentiates from template-blast spam.
+
+If you do not have a real data point for a prospect, do not send them an email. Add the data point first, send second.
+
+### Rule 5: Aim for a one-word reply, not a sale
+
+The first email's job is to get a reply. Period. Reply rate &gt; sender reputation &gt; future deliverability. If your emails get replies, future emails land in inboxes; if they don't, future emails land in spam. So ask one easy question they can answer with "yes" or "no" or "send it." Save the pitch for the reply.
+
+### Rule 6: Subject line should be specific, not "question"
+
+"Question" used to work; it's now a spam-tier signature because every cold sender uses it. Use a specific, honest subject line that references the data point in the body. Examples: `12 reviews vs Trico 84` &mdash; `your dead quotes` &mdash; `quick check on [Business Name]`.
+
+### Rule 7: Warm new email accounts slowly
+
+A brand-new email account that sends 50 cold emails on Day 1 is going to spam. No exceptions. The carrier reputation algorithms have zero history on the account, so they default to the worst-case interpretation: spammer.
+
+Warming protocol per account:
+
+- **Week 1:** 5 emails per day, weekdays only (25 emails total)
+- **Week 2:** 10 emails per day (50 emails total &mdash; this is when you hit the 50/week floor)
+- **Week 3:** 15 emails per day (75 emails total)
+- **Week 4+:** 30 emails per day maximum (150/week ceiling per account)
+
+Do not skip steps. If you blast 50 on Day 1, you will spend two weeks in spam jail with no idea why nothing is converting.
+
+### Rule 8: Spread sending across the day
+
+Do not send 25 emails in a 5-minute window. That looks like a bot. Send 2-3 emails per hour spread across morning + early afternoon. A real human typing personalized emails takes 4-6 minutes per email; the algorithm knows that.
+
+### Rule 9: Never use a bulk sending platform for cold
+
+Mailchimp, Constant Contact, MailerLite, ConvertKit &mdash; all built for newsletters and opt-in lists. Their sender signatures auto-route every email through carrier filters into the Promotions tab. That is what the Promotions tab exists for. Cold outreach must come from a real personal mailbox &mdash; Gmail, Outlook, or your domain inbox &mdash; sent one at a time.
+
+### Multi-Account Strategy (For Volume)
+
+The 30/day per-account ceiling means a single account caps at 150 emails/week. If you want more volume than that, run multiple accounts in parallel:
+
+- 2 accounts warmed in parallel = 60/day = 300/week capacity by Week 4
+- 3 accounts = 90/day = 450/week capacity by Week 4
+
+For solo founders launching this business, **a single warmed account hitting 50/week (Week 2 onward) is sufficient for the first 90 days**. Multi-account is a Wave-B optimization once you have revenue and want to scale outreach.
+
+Each account warms independently. You cannot transfer reputation. Spinning up two accounts on Day 1 means both ramp from 5/day Week 1 in lockstep.
+
+### One Operational Reality
+
+These rules are why the journey doc's Day 3 plan sends only **5 emails**, not 25. The 50/week floor is a Week 2 milestone on a properly-warmed account, not a Day 3 milestone. Anyone who tells you otherwise (or any tool that promises to "skip the warming") is selling you a way to burn your sender reputation faster.
 
 ---
 

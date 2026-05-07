@@ -1,24 +1,26 @@
 # 16 — Day 3 Checkpoint
 
 ## What this is
-The end of the 3-day execution sprint. You verify five boxes are green, confirm the platform is sales-ready and outreach is in motion, then transition to reactive mode. From here forward, files 17–26 open only when a real client lifecycle event triggers them — they are job-aids, not pre-reading.
+The end of the 3-day execution sprint. You verify six boxes are green, confirm the platform is sales-ready and outreach is in motion under a proper warming protocol, then transition to reactive mode. From here forward, files 17–26 open only when a real client lifecycle event triggers them — they are job-aids, not pre-reading.
 
 ## Before you start this
-- [ ] Batches 1 and 2 (files 13 and 15) are sent — 50 emails total
+- [ ] Day 3 first send (file 13) is sent — 5 emails out (NOT 50 — see warming protocol)
 - [ ] Your prospect list spreadsheet has every send logged
+- [ ] You have read `docs/operations/COLD-START-PLAYBOOK.md` §Deliverability Discipline
 
 ## Time required
 ~15 minutes (verification only)
 
 ## What you'll do
 
-### The 5 checkboxes
+### The 6 checkboxes
 
 Tick each one. If any stays red, do not consider Day 3 done — go back and finish.
 
-- [ ] **50 cold emails sent this week.** Count rows in your spreadsheet where `sent_date_batch_1` or `sent_date_batch_2` = today (or this week). Must equal 50.
-- [ ] **Tracking spreadsheet up to date.** Every sent row has `variant`, `data_point_used`, and `sent_date_batch_X` filled. Open + reply columns will fill in over 48–72h — that's fine.
-- [ ] **Loom audit template recorded.** From file 10. Sharable URL works on a fresh incognito browser. You can drop it into a reply within 30 seconds.
+- [ ] **5 cold emails sent today.** Count rows in your spreadsheet where `sent_date` = today. Must equal 5 (NOT 50 — sender warming requires Week 1 = 5/day, ramping to 50/week in Week 2). If you sent more than 5 today, your sender account is now at risk; pause sending for the rest of the week and resume tomorrow at 5.
+- [ ] **Warming schedule understood and committed to calendar.** You know that Week 1 = 5/day, Week 2 = 10/day, Week 3 = 15/day, Week 4+ = 30/day cap. Daily 30-min outreach block is on your calendar 9-11am weekdays.
+- [ ] **Tracking spreadsheet up to date.** Every sent row has `variant`, `data_point_used`, and `sent_date` filled. Open + reply columns will fill in over 48–72h — that's fine.
+- [ ] **Loom audit template recorded.** From file 10. Sharable URL works on a fresh incognito browser. You can drop it into a warm reply within 30 seconds. Reminder: the Loom URL goes ONLY in the second email (after warm reply), never in cold first email.
 - [ ] **At least 1 staging Twilio number ready for Dead Lead Resurrection demos.** Test it: send a text to your own phone from the staging environment. The conversation agent should reply within 60s. If not, fix before the first warm reply lands.
 - [ ] **First warm reply protocol (file 14) bookmarked for fast reach.** Browser bookmark or open tab. When a reply lands, you should be able to open file 14 in under 5 seconds.
 
@@ -27,7 +29,7 @@ Tick each one. If any stays red, do not consider Day 3 done — go back and fini
 After three days you should be in this state:
 
 - **Sales-ready.** OFFER-APPROVED-COPY internalized (file 09). 4 Irresistibility Levers rehearsed. ROI calculator working. Audit template recorded. You can pitch the Pilot tier ($3,500 setup + $1,500/mo, 90-day minimum) in your sleep.
-- **Outreach in motion.** 50 emails out this week. Reply data accumulating over the next 48–72h. Prospect list still has 30+ unsent qualified rows for next week.
+- **Outreach in motion under proper warming.** 5 emails out today. The Week 1 schedule (5/day × 5 weekdays = 25/week) is on your calendar. You'll hit the 50/week floor in Week 2 (10/day). Prospect list still has 30+ unsent qualified rows for the rest of Week 1.
 - **Ready to handle warm replies.** File 14 protocol bookmarked. Staging Twilio ready for resurrection demos. Calendar booking links in your reply templates.
 
 ### What's NEXT — the reactive files
@@ -69,7 +71,8 @@ Close the laptop. The sprint is done. Cold replies will land over the next 48–
 - [ ] Calendar weekly review (Friday) is scheduled
 
 ## If something goes wrong
-- **Fewer than 50 emails sent.** Send the gap tomorrow morning before 11 AM. Do not let the weekly floor slip in week 1 — it sets the cadence for every week after.
+- **Fewer than 5 emails sent today.** Acceptable if it's because you didn't have 5 strong data points — quality > volume during warming. Add data points to more rows tonight, send the missing ones tomorrow morning. Don't double up tomorrow to make up for today; that breaks the warming protocol.
+- **More than 5 emails sent today.** This is a deliverability problem, not a volume win. Pause sending for the rest of this week. Resume Monday at 5/day. Track whether your sender reputation tanks — if it does, you may need to spin up a new account.
 - **Loom or staging Twilio not actually working.** Fix it now. The first warm reply could land in the next 12 hours. You will not have time to debug then.
 - **A2P stuck in carrier review past 5 business days.** Open a Twilio support ticket referencing your campaign ID. Most stuck cases resolve within 24h of the ticket.
 

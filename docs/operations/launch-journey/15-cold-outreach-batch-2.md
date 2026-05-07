@@ -1,88 +1,95 @@
-# 15 — Cold Outreach Batch 2
+# 15 — Week 1 Daily Continuation + Week 2 Ramp
 
 ## What this is
-Your second 25 personalized cold emails. The Day 3 afternoon task. Same scripts as Batch 1, different prospects, refined by what you learned this morning. By the end of today, 50 emails are out and you have hit your weekly outreach floor.
+The discipline file for Days 4-10. Day 3 (file 13) sent your first 5 emails. Now you sustain 5/day for the rest of Week 1, then ramp to 10/day in Week 2 (when you hit the 50/week floor), then 15/day in Week 3, then 30/day cap from Week 4 onward. This file replaces what would have been "Day 3 Batch 2" — there is no afternoon batch, because warming protocol forbids it.
 
 ## Before you start this
-- [ ] Batch 1 (file 13) is sent and logged in your spreadsheet
-- [ ] You took a 60-minute break between batches
-- [ ] You have ~10 minutes to refine before sending — do not skip the refinement step
+- [ ] Day 3 (file 13) sent — 5 emails out, spreadsheet logged
+- [ ] You read `docs/operations/COLD-START-PLAYBOOK.md` §Deliverability Discipline §Rule 7 (warming) and accept the pacing
+- [ ] You set a daily 30-min calendar block for cold outreach, weekday mornings, 9-11am
 
 ## Time required
-~90 minutes (10 min refinement + 80 min sending at 10–15 emails/hour)
+~30 min/day in Week 1, ~60 min/day in Week 2, ~90 min/day in Week 3, ~3 hours/day at Week 4+ cap
 
 ## What you'll do
 
-### Refine before you send
+### The honest pacing
 
-Before opening Gmail, spend 10 minutes looking at Batch 1 data. Even though most replies won't land for 24–48h, you can already see two signals:
+Repeat after me: warming is not optional. The 50/week outreach floor is a Week 2 milestone, not a Day 3 milestone.
 
-1. **Subject line opens.** Gmail's "opened" indicator (or your sender tool's open tracking) tells you which subject lines made it past the first glance. Rank your subject lines by open rate and use the top 1–2 for Batch 2.
-2. **Personalization angle.** Re-read the data points you used in Batch 1. Which felt strongest when you hit send? Which felt weakest? The strongest angle for Calgary/Edmonton renovators is usually the missed-call or dead-quote pain — review-count comparisons are useful but less visceral.
+| When | Per-day | Weekly total | Cumulative total |
+|---|---|---|---|
+| Day 3 (file 13) | 5 | 5 (Day 3 only) | 5 |
+| Days 4-7 (rest of Week 1) | 5 | 25 | 25 |
+| Week 2 | 10 | 50 (floor hit) | 75 |
+| Week 3 | 15 | 75 | 150 |
+| Week 4+ | 30 | 150 (per-account cap) | rolling |
 
-Do not over-think this. Refinement is "use what felt strong, drop what felt weak." If 10 minutes of reflection doesn't surface a clear adjustment, just send Batch 2 with the same mix.
+If you have data points for fewer prospects than your daily cap, send what you have. Skip rows without strong personalization. Quality > volume during warming.
 
-### Same scripts, different prospects
+### Daily routine (Week 1, Days 4-7)
 
-Use the same three variants from `docs/operations/COLD-START-PLAYBOOK.md` §The Scripts:
+Same protocol as Day 3 (file 13). Five emails, one spreadsheet row each, full personalization, no links, no attachments, plain text, 9-11am their local time.
 
-- **Email A — Specific Finding** (review counts, response time, portfolio gap)
-- **Email B — Missed Call Hook** (the demo-number-text-back angle)
-- **Email C — Direct Pain Point** (dead-quote question)
+By end of Friday Week 1: 25 emails sent, sender account has 5 days of clean signal, ready to step up.
 
-If Batch 1 leaned heavily on one variant, weight Batch 2 toward the others to keep learning.
+### Daily routine (Week 2)
 
-### Pacing and personalization rule (unchanged from Batch 1)
+Step up to 10/day. Same rules. Two batches of 5, spaced an hour apart in the 9-11am window — or 10 sends spread evenly across that window with 12-15 minutes between sends.
 
-- 10–15 emails per hour, ~80 min for 25 emails
-- Every email cites ONE specific data point about THAT prospect
-- Skip rows without a real data point — do not send generic emails
+You will hit the 50/week floor by Friday Week 2. From the data perspective, this is also when reply patterns become statistically meaningful — you can start refining subject lines and opener variants by what's actually opening + replying.
 
-### Send timing
+### Daily routine (Week 3)
 
-- Afternoon: 1:00–3:00 PM local time (their local — Calgary/Edmonton MST/MDT)
-- 1–3 PM is a strong window for B2B email in trade industries — they're back from lunch, between job-site visits, and inbox-checking on phones.
+Step up to 15/day. Same rules. Now you're sending across a wider window — 9-11am for the first 10, then 1-2pm for the additional 5. Still spaced. Still personalized. Still no copy-paste.
 
-### Track every send
+### Daily routine (Week 4+)
 
-In your prospect list spreadsheet, fill the same columns as Batch 1 but on a separate set of rows:
+You're now at full sustainable cap: 30/day weekdays, 150/week per account. This is the steady state.
 
-- `sent_date_batch_2` — today
-- `variant` — A, B, or C
-- `data_point_used` — one phrase
-- `opened` — fill in over the next 48h
-- `replied` — fill in as replies arrive
+If you want more volume than 150/week, see `docs/operations/COLD-START-PLAYBOOK.md` §Multi-Account Strategy. For solo founders launching this business, **150/week is plenty for the first 90 days** — you'll have your first 3-5 warm replies by Week 3, your first discovery call by Week 4, your first close by Week 6-8.
 
-### After Batch 2 — you've hit the weekly floor
+### Refine as you learn
 
-50 personalized emails this week. That is the volume floor in `docs/operations/COLD-START-PLAYBOOK.md` §Email Outreach Floor. From here forward, the cadence is:
+Once Week 2 reply data starts landing, do a weekly mini-review:
 
-- **Minimum:** 50/week (one batch of 25 Tue + one batch of 25 Thu)
-- **Accelerating:** 100/week if you have 60+ qualified prospects ready and the demo workflow is dialed (one batch of 25 Mon/Tue/Wed/Thu)
-- **Reply triage** as warm replies land — file 14 protocol per reply, no exceptions
+1. **Subject line opens.** Which subject lines hit >40% open rate? Use those for the next week.
+2. **Personalization angle.** Which data points (review-count, missed-call, dead-quote) are pulling the most replies? Weight that variant heavier.
+3. **Time-of-day.** Track open times. Adjust your send window based on when your prospects actually open.
+
+Do not over-engineer this. 10 minutes of reflection per week is enough.
+
+### Track every send (same as Day 3)
+
+For each row, fill: `sent_date`, `variant`, `data_point_used`, `opened`, `replied`. The spreadsheet is your reply pipeline + your deliverability dashboard combined.
 
 ### Friday review ritual
 
-Every Friday, do the operator weekly routine described in `docs/operations/E2E-PILOT-STANDARD-DELIVERY-GUIDE.md` §7.2:
+Every Friday afternoon, do the operator weekly routine described in `docs/operations/E2E-PILOT-STANDARD-DELIVERY-GUIDE.md` §7.2:
 
-- Recompute reply / open / discovery-call-booked rates from this week's batches
-- Decide next week's volume (hold at 50, push to 100, or slow if reply pipeline is full)
+- Compute reply / open / discovery-call-booked rates from this week
+- Decide next week's volume (hold per warming schedule, accelerate only if account has clean signal)
 - Top up the prospect list — never start a Monday with fewer than 30 unsent qualified rows
+- Reread `docs/operations/COLD-START-PLAYBOOK.md` §Deliverability Discipline if anything felt sloppy this week
 
-This is not optional. The cold outreach pipeline is the only thing that produces clients in month 1. Friday review is what keeps the pipeline alive.
+This is the only thing that produces clients in month 1. Friday review is what keeps the pipeline alive.
 
 ## What success looks like
-- [ ] 50 total cold emails sent this week (25 + 25)
-- [ ] Spreadsheet updated for all Batch 2 rows
-- [ ] You have a written note on which variant / subject line worked best in Batch 1, used to refine Batch 2
-- [ ] Friday review put on your calendar as a recurring weekly event
+- [ ] By end of Week 1: 25 emails sent (5/day × 5 days)
+- [ ] By end of Week 2: 50 cumulative this week (10/day × 5 days) — outreach floor hit
+- [ ] By end of Week 3: 75 cumulative this week (15/day × 5 days)
+- [ ] By Week 4+: 150/week at the per-account cap, sustained
+- [ ] Friday review on calendar as recurring weekly event
+- [ ] Spreadsheet updated for every send (no untracked sends)
 
 ## If something goes wrong
-- **You are exhausted and tempted to skip Batch 2.** Send 10 instead of 25. Half a batch beats zero. Then catch up Friday.
-- **Gmail throttled you.** New senders cap at ~150/day. If you hit it, finish tomorrow morning. Schedule sends for 9:00 AM via Gmail's scheduled-send if you must compose tonight.
-- **Reply pipeline already feels full from Batch 1.** Good problem. Pause Batch 2, run file 14 protocol on each warm reply, and resume cold sends only when your discovery-call calendar has slots open.
+- **You're tempted to skip warming and send 25 today.** Don't. Re-read `docs/operations/COLD-START-PLAYBOOK.md` §Rule 7.
+- **Your reply rate is zero through Week 1.** Normal. Most replies land 24-72h after send, and Week 1 is only 25 emails. Wait for Week 2 data before adjusting variants.
+- **Your account got flagged anyway.** Check Gmail's "Postmaster Tools" if your sending domain has more than ~200 sends/week — it shows reputation. If reputation is "Bad" or "Low", pause sending for 5 business days, then resume at half pace.
+- **Reply pipeline fills before you finish warming.** Pause cold sends, run file 14 protocol on warm replies, resume cold sends only when discovery-call calendar has slots open.
 
 ## Reference
+- `docs/operations/COLD-START-PLAYBOOK.md` §Deliverability Discipline (the 9 rules + warming protocol)
 - `docs/operations/COLD-START-PLAYBOOK.md` §The Scripts, §Email Outreach Floor
 - `docs/operations/E2E-PILOT-STANDARD-DELIVERY-GUIDE.md` §7.2 (Operator Weekly Routine — Friday review)
 - `docs/operations/launch-journey/13-cold-outreach-batch-1.md`

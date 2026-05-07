@@ -25,6 +25,15 @@ A prospect replies positively to one of your cold emails. "Positive" means any o
 
 A "thanks but no thanks" or "remove me" is not warm. Mark `replied = no` on the spreadsheet and stop.
 
+### Why the Loom comes NOW (not in the cold email)
+
+This is the moment to send the Loom audit URL — not before. Two reasons:
+
+1. **Sales sequencing.** A cold prospect doesn't watch a 5-minute video from a stranger. A warm prospect who just expressed interest does. The reply is the permission.
+2. **Deliverability protection.** A link in a cold first email is the single most reliable spam trigger for a brand-new sender account. Once a conversation thread exists (their reply created it), the algorithm trusts the thread. Links inside an active thread are normal email behavior, not spam signals.
+
+This is why file 13 explicitly forbade Loom links in the cold email — and why this file says "send the Loom now."
+
 ### Within 1 hour of the reply
 
 Move fast. Reply rates drop sharply if you wait more than 60 minutes — they have moved on to their next job.

@@ -36,10 +36,10 @@ Files 01–16 are sequential setup + first sale. Files 17–26 are reactive job-
 | 2   | 10 Script Rehearsal          | Cold scripts read out loud, 1 mock discovery call    | 90 min |
 | 2   | 11 Loom + Prospects          | Loom Pro set up, 30+ prospect list refined           | 2-3 hours |
 | 2   | 12 Day-2 Checkpoint          | 10 green boxes — pitch-ready, demo-ready             | 15 min |
-| 3   | 13 Cold Outreach Batch 1     | First 25 personalized emails out (morning)           | 60-90 min |
+| 3   | 13 First Send Day            | First **5** personalized emails out (Week 1 warming begins)  | 30 min |
 | 3   | 14 Warm Reply Protocol       | Bookmark — what to do when first reply lands        | bookmark |
-| 3   | 15 Cold Outreach Batch 2     | Second 25 personalized emails out (afternoon)        | 60-90 min |
-| 3   | 16 Day-3 Checkpoint          | 50 emails sent, transition to reactive mode          | 15 min |
+| 3   | 15 Week 1-4 Ramp             | Daily warming schedule: 5/day Week 1, 10 Week 2 (50/wk floor), 15 Week 3, 30 Week 4+ | ongoing |
+| 3   | 16 Day-3 Checkpoint          | 5 emails sent, warming on calendar, ready for reactive mode | 15 min |
 
 After Day 3 you are in execution mode. Files 17–26 are reactive:
 
