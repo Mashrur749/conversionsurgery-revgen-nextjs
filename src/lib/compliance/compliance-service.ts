@@ -7,6 +7,7 @@ import {
   complianceAuditLog,
   complianceCheckCache,
   leads,
+  blockedNumbers,
 } from '@/db';
 import { eq, and, or, isNull, gte } from 'drizzle-orm';
 import { createHash } from 'crypto';
@@ -467,12 +468,13 @@ export class ComplianceService {
   static isFederalHoliday(date: Date): boolean {
     const month = date.getMonth();
     const day = date.getDate();
+    const year = date.getFullYear();
 
     // Canadian federal holidays (CASL/CRTC jurisdiction)
     const fixedHolidays = [
       { month: 0, day: 1 }, // New Year's Day
       { month: 6, day: 1 }, // Canada Day
-      { month: 8, day: 30 }, // National Day for Truth and Reconciliation (approx)
+      { month: 8, day: 30 }, // National Day for Truth and Reconciliation
       { month: 10, day: 11 }, // Remembrance Day
       { month: 11, day: 25 }, // Christmas Day
       { month: 11, day: 26 }, // Boxing Day
@@ -484,7 +486,88 @@ export class ComplianceService {
       }
     }
 
+    // Movable holidays: calculate based on year
+    const easterSunday = this.getEasterSunday(year);
+    const goodFriday = new Date(easterSunday);
+    goodFriday.setDate(goodFriday.getDate() - 2);
+    const victoriaDay = this.getNthWeekdayOfMonth(year, 4, 1, 1); // 1st Monday before May 25
+    const labourDay = this.getNthWeekdayOfMonth(year, 8, 1, 1); // 1st Monday in September
+    const thanksgivingCA = this.getNthWeekdayOfMonth(year, 9, 2, 1); // 2nd Monday in October
+    const familyDay = this.getNthWeekdayOfMonth(year, 1, 3, 1); // 3rd Monday in February (AB, ON, SK, NB)
+
+    const movableHolidays = [
+      goodFriday,
+      new Date(easterSunday.getFullYear(), easterSunday.getMonth(), easterSunday.getDate() + 1), // Easter Monday
+      victoriaDay,
+      labourDay,
+      thanksgivingCA,
+      familyDay,
+      // US holidays (many contacts may be US-based)
+      this.getNthWeekdayOfMonth(year, 0, 3, 1), // MLK Day (3rd Monday Jan)
+      this.getNthWeekdayOfMonth(year, 1, 3, 1), // Presidents Day (3rd Monday Feb)
+      this.getNthWeekdayOfMonth(year, 4, -1, 1), // Memorial Day (last Monday May)
+      this.getNthWeekdayOfMonth(year, 6, 3, 0), // Independence Day observed
+      this.getNthWeekdayOfMonth(year, 10, 4, 4), // Thanksgiving US (4th Thursday Nov)
+    ];
+
+    for (const holiday of movableHolidays) {
+      if (month === holiday.getMonth() && day === holiday.getDate()) {
+        return true;
+      }
+    }
+
     return false;
+  }
+
+  /**
+   * Calculate Easter Sunday for a given year (Gregorian calendar)
+   */
+  private static getEasterSunday(year: number): Date {
+    const a = year % 19;
+    const b = Math.floor(year / 100);
+    const c = year % 100;
+    const d = Math.floor(b / 4);
+    const e = b % 4;
+    const f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4);
+    const k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+    const day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month, day);
+  }
+
+  /**
+   * Get the nth occurrence of a weekday in a month.
+   * n: positive for nth from start, negative for nth from end (e.g., -1 = last).
+   * weekday: 0 = Sunday, 1 = Monday, ..., 6 = Saturday.
+   */
+  private static getNthWeekdayOfMonth(year: number, month: number, n: number, weekday: number): Date {
+    if (n > 0) {
+      let count = 0;
+      for (let day = 1; day <= 31; day++) {
+        const d = new Date(year, month, day);
+        if (d.getMonth() !== month) break;
+        if (d.getDay() === weekday) {
+          count++;
+          if (count === n) return d;
+        }
+      }
+    } else {
+      let count = 0;
+      for (let day = 31; day >= 1; day--) {
+        const d = new Date(year, month, day);
+        if (d.getMonth() !== month) continue;
+        if (d.getDay() === weekday) {
+          count++;
+          if (count === Math.abs(n)) return d;
+        }
+      }
+    }
+    return new Date(year, month, 1);
   }
 
   /**
@@ -529,6 +612,13 @@ export class ComplianceService {
       processedAt: new Date(),
       processedBy: 'system',
     });
+
+    // Also block at platform level so other clients cannot message this number
+    await db.insert(blockedNumbers).values({
+      clientId,
+      phone: normalizedPhone,
+      reason: reason === 'stop_keyword' ? 'opt_out' : reason,
+    }).onConflictDoNothing();
 
     // Invalidate any existing consent
     await db
@@ -593,6 +683,14 @@ export class ComplianceService {
         reminders: boolean;
       };
       language: string;
+      // Optional override for the consent timestamp. Defaults to now().
+      // CASL intake: when recording `implied` consent for an imported lead,
+      // pass the original inquiry date so the 6-month expiry clock runs from
+      // inquiry, not from import.
+      consentTimestamp?: Date;
+      // Free-text evidence of how express consent was obtained
+      // (e.g. CSV row attestation, signed form description).
+      consentEvidence?: string;
       ipAddress?: string;
       userAgent?: string;
       formUrl?: string;
@@ -633,7 +731,8 @@ export class ComplianceService {
         consentSource: consent.source,
         consentScope: consent.scope,
         consentLanguage: consent.language,
-        consentTimestamp: new Date(),
+        consentEvidence: consent.consentEvidence,
+        consentTimestamp: consent.consentTimestamp ?? new Date(),
         ipAddress: consent.ipAddress,
         userAgent: consent.userAgent,
         formUrl: consent.formUrl,

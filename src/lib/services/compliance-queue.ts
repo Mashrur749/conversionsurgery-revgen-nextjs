@@ -65,7 +65,7 @@ export async function processQueuedComplianceMessages(limit = 100): Promise<Queu
     }
 
     try {
-      const sendResult = await sendCompliantMessage({
+      let sendResult = await sendCompliantMessage({
         clientId: event.clientId,
         to,
         from,
@@ -85,8 +85,39 @@ export async function processQueuedComplianceMessages(limit = 100): Promise<Queu
         event.leadId == null &&
         (sendResult.blockReason || '').toLowerCase().includes('consent')
       ) {
-        // Internal non-lead reminders may not have consent records.
-        await sendSMS(to, body, from);
+        // Internal non-lead reminders: record transactional consent and retry
+        // through the gateway instead of bypassing compliance checks.
+        await ComplianceService.recordConsent(event.clientId, to, {
+          type: 'transactional',
+          source: 'manual_entry',
+          scope: {
+            marketing: false,
+            transactional: true,
+            promotional: false,
+            reminders: true,
+          },
+          language: 'Transactional consent for internal operational reminders.',
+        });
+
+        sendResult = await sendCompliantMessage({
+          clientId: event.clientId,
+          to,
+          from,
+          body,
+          messageClassification,
+          messageCategory,
+          consentBasis: { type: 'existing_consent' },
+          queueOnQuietHours: false,
+          metadata: {
+            source: 'queued_compliance_replay',
+            queueEventId: event.id,
+          },
+        });
+
+        if (sendResult.blocked) {
+          result.skipped++;
+          continue;
+        }
       } else if (sendResult.blocked) {
         result.skipped++;
         continue;

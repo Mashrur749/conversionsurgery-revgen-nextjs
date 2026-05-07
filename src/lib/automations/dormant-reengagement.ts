@@ -16,7 +16,7 @@
 
 import { getDb } from '@/db';
 import { leads, clients, conversations, consentRecords } from '@/db/schema';
-import { eq, and, lte, gte, inArray } from 'drizzle-orm';
+import { eq, and, lte, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
 import { logSanitizedConsoleError } from '@/lib/services/internal-error-log';
 import { addMonths } from 'date-fns';
@@ -80,10 +80,16 @@ export async function runDormantReengagement(): Promise<DormantReengagementResul
   let messaged = 0;
   let skipped = 0;
 
-  // updatedAt window: between 180 and 210 days ago
+  // Dormancy window: between 180 and 210 days since the original inquiry.
+  // CASL: anchor on inquiry_date, falling back to created_at for legacy rows
+  // imported before the inquiry-date intake gate landed.
+  // Dedup: dormantReengagementSentAt prevents weekly re-fires on the same lead
+  // (we can no longer rely on bumping updatedAt to evict a lead from the band).
   const now = new Date();
   const cutoffOld = new Date(now.getTime() - DORMANT_MAX_DAYS * 24 * 60 * 60 * 1000);
   const cutoffRecent = new Date(now.getTime() - DORMANT_MIN_DAYS * 24 * 60 * 60 * 1000);
+
+  const inquiryAnchor = sql`COALESCE(${leads.inquiryDate}, ${leads.createdAt})`;
 
   const dormantLeads = await db
     .select({
@@ -102,8 +108,9 @@ export async function runDormantReengagement(): Promise<DormantReengagementResul
         eq(leads.status, 'dormant'),
         eq(leads.optedOut, false),
         eq(clients.status, 'active'),
-        gte(leads.updatedAt, cutoffOld),
-        lte(leads.updatedAt, cutoffRecent)
+        isNull(leads.dormantReengagementSentAt),
+        gte(inquiryAnchor, cutoffOld),
+        lte(inquiryAnchor, cutoffRecent)
       )
     );
 
@@ -232,10 +239,12 @@ export async function runDormantReengagement(): Promise<DormantReengagementResul
             });
           }
 
-          // Bump updatedAt so this lead won't re-enter the 180-210 day window
+          // Mark sent so this lead is excluded from future dormant runs.
+          // (updatedAt bump no longer evicts the lead — the window is now
+          // anchored at inquiry_date / created_at, which never changes.)
           await db
             .update(leads)
-            .set({ updatedAt: new Date() })
+            .set({ dormantReengagementSentAt: new Date(), updatedAt: new Date() })
             .where(eq(leads.id, lead.id));
         } else if (result.blocked) {
           skipped++;

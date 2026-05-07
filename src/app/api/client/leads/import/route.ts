@@ -6,6 +6,7 @@ import { leads } from '@/db/schema/leads';
 import { normalizePhoneNumber } from '@/lib/utils/phone';
 import { eq, and, inArray } from 'drizzle-orm';
 import { triggerEstimateFollowup } from '@/lib/services/estimate-triggers';
+import { ComplianceService } from '@/lib/compliance/compliance-service';
 
 const MAX_ROWS = 1000;
 
@@ -137,7 +138,7 @@ export const POST = portalRoute(
 
     // Insert in transaction
     let imported = 0;
-    const insertedLeads: { id: string; status: string | null }[] = [];
+    const insertedLeads: { id: string; status: string | null; phone: string }[] = [];
     if (toInsert.length > 0) {
       await withTransaction(async (tx) => {
         const inserted = await tx
@@ -155,15 +156,31 @@ export const POST = portalRoute(
               caslConsentAttestedAt: new Date(),
             }))
           )
-          .returning({ id: leads.id, status: leads.status });
+          .returning({ id: leads.id, status: leads.status, phone: leads.phone });
         imported = inserted.length;
         insertedLeads.push(...inserted);
       });
+
+      // Create consent records for imported leads so compliance gateway
+      // permits automated sequences.
+      for (const lead of insertedLeads) {
+        await ComplianceService.recordConsent(clientId, lead.phone, {
+          type: 'express_written',
+          source: 'api_import',
+          scope: {
+            marketing: true,
+            transactional: true,
+            promotional: true,
+            reminders: true,
+          },
+          language: 'Consent attested via CSV import by account holder.',
+        });
+      }
     }
 
     // Auto-trigger estimate follow-up for imported leads with status=estimate_sent
     const estimateLeads = insertedLeads.filter(
-      (l): l is { id: string; status: string } => l.status === 'estimate_sent'
+      (l): l is { id: string; status: string; phone: string } => l.status === 'estimate_sent'
     );
     if (estimateLeads.length > 0) {
       for (const lead of estimateLeads) {

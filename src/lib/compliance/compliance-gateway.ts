@@ -17,6 +17,79 @@ import { resolveFeatureFlag } from '@/lib/services/feature-flags';
 import { QUIET_HOURS_MESSAGE_CLASSIFICATIONS } from '@/lib/compliance/quiet-hours-policy';
 
 /**
+ * Infer IANA timezone from North American phone number area code.
+ * Covers major Canadian and US area codes for CASL/TCPA compliance.
+ */
+function inferTimezoneFromPhone(phoneNumber: string): string | undefined {
+  const digits = phoneNumber.replace(/\D/g, '');
+  // Extract area code (skip +1 prefix if present)
+  const areaCode = digits.length === 10 ? digits.slice(0, 3) : digits.length === 11 && digits.startsWith('1') ? digits.slice(1, 4) : undefined;
+  if (!areaCode) return undefined;
+
+  const areaCodeNum = parseInt(areaCode, 10);
+
+  // Pacific (UTC-8/-7)
+  if (
+    [204, 250, 604, 778, 236, 672].includes(areaCodeNum) || // BC, MB
+    [206, 253, 360, 425, 509, 541, 503, 971].includes(areaCodeNum) // WA, OR
+  ) {
+    return 'America/Vancouver';
+  }
+
+  // Mountain (UTC-7/-6)
+  if (
+    [403, 587, 780, 825].includes(areaCodeNum) || // AB
+    [208, 406, 307, 435, 505, 575, 702, 725, 775].includes(areaCodeNum) // ID, MT, WY, UT, NV
+  ) {
+    return 'America/Edmonton';
+  }
+
+  // Central (UTC-6/-5)
+  if (
+    [204, 431, 506].includes(areaCodeNum) || // MB, NB
+    [204, 431].includes(areaCodeNum) || // MB
+    [204, 431, 306, 639].includes(areaCodeNum) || // MB, SK
+    [204, 431, 306, 639, 807].includes(areaCodeNum) || // MB, SK, ON (NW)
+    [204, 431, 306, 639, 807, 416, 647, 437, 905, 289, 365, 742, 519, 226, 548, 613, 343, 705, 249, 226].includes(areaCodeNum) // ON
+  ) {
+    return 'America/Winnipeg';
+  }
+
+  // Eastern (UTC-5/-4)
+  if (
+    [416, 647, 437, 905, 289, 365, 742, 519, 226, 548, 613, 343, 753, 705, 249, 226, 807].includes(areaCodeNum) || // ON
+    [514, 438, 450, 579, 819, 873, 354].includes(areaCodeNum) || // QC
+    [902, 782, 506, 428].includes(areaCodeNum) // NS, NB, PEI
+  ) {
+    return 'America/Toronto';
+  }
+
+  // Atlantic (UTC-4/-3)
+  if (
+    [709, 867].includes(areaCodeNum) // NL, NT/NU/YT
+  ) {
+    return 'America/Halifax';
+  }
+
+  // US Eastern
+  if (
+    [212, 315, 347, 516, 518, 585, 607, 631, 646, 716, 718, 845, 914, 917, 929].includes(areaCodeNum) || // NY
+    [201, 609, 640, 732, 848, 856, 862, 908, 973].includes(areaCodeNum) // NJ
+  ) {
+    return 'America/New_York';
+  }
+
+  // US Central
+  if (
+    [214, 281, 512, 713, 832, 903, 915, 936, 940, 956, 972, 254, 325, 361, 409, 430, 432, 469, 682, 737, 806, 817, 830, 903, 936, 940, 956, 972].includes(areaCodeNum) // TX
+  ) {
+    return 'America/Chicago';
+  }
+
+  return undefined;
+}
+
+/**
  * Consent basis for first-contact messages.
  * Under CASL, an inbound call or form submission constitutes an "inquiry"
  * which grants implied consent for 6 months (s.10(9)(b)).
@@ -44,8 +117,7 @@ export interface SendCompliantMessageParams {
    * TCPA/CASL quiet hours must be evaluated against the CALLED PARTY's local time, not the
    * client's (contractor's) timezone. Pass this whenever you have lead location data.
    * Falls back to the client's timezone when omitted.
-   * // TODO: Infer recipient timezone from phone area code when recipientTimezone not provided
-   */
+     */
   recipientTimezone?: string;
   /** If true, queue for next available window instead of failing on quiet hours */
   queueOnQuietHours?: boolean;
@@ -259,9 +331,13 @@ export async function sendCompliantMessage(
   // Step 0.5: Resolve quiet-hours policy and delivery decision
   // -----------------------------------------------------------
   // TCPA/CASL: quiet hours must be evaluated in the RECIPIENT's (called party's) local time.
-  // Prefer the explicitly-provided recipientTimezone; fall back to the client's timezone when
-  // recipient location is unknown.
-  const effectiveTimezone = recipientTimezone || clientData.timezone || undefined;
+  // Prefer the explicitly-provided recipientTimezone; fall back to area-code inference,
+  // then the client's timezone when recipient location is unknown.
+  const effectiveTimezone =
+    recipientTimezone ||
+    inferTimezoneFromPhone(normalizedPhone) ||
+    clientData.timezone ||
+    undefined;
   const quietHoursResult = await ComplianceService.isQuietHours(
     clientId,
     effectiveTimezone,

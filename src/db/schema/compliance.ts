@@ -79,6 +79,11 @@ export const consentRecords = pgTable(
     // Consent language shown
     consentLanguage: text('consent_language').notNull(),
 
+    // Evidence — free-text describing how express consent was obtained
+    // (e.g. "Form fill on website 2024-08-15", "Written request via email"),
+    // used by CASL express-consent CSV imports for >180-day inquiries.
+    consentEvidence: text('consent_evidence'),
+
     // Evidence
     consentTimestamp: timestamp('consent_timestamp').notNull(),
     ipAddress: text('ip_address'),

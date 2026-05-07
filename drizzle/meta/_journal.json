@@ -211,6 +211,13 @@
       "when": 1778018991325,
       "tag": "0029_orange_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1778127702283,
+      "tag": "0030_flawless_stingray",
+      "breakpoints": true
     }
   ]
 }

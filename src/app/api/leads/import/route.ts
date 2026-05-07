@@ -8,12 +8,17 @@ import { getClientId } from '@/lib/get-client-id';
 import { eq, and, inArray } from 'drizzle-orm';
 import { safeErrorResponse } from '@/lib/utils/api-errors';
 import { triggerEstimateFollowup } from '@/lib/services/estimate-triggers';
+import { ComplianceService } from '@/lib/compliance/compliance-service';
 
 const MAX_ROWS = 1000;
+// CASL §10(1): implied consent from inquiry expires after 6 calendar months.
+// Standard CSV intake rejects rows whose inquiry_date is older than this.
+const CASL_IMPLIED_CONSENT_DAYS = 180;
+const MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH = 10;
 
 const ALLOWED_IMPORT_STATUSES = ['new', 'contacted', 'estimate_sent'] as const;
 
-const rowSchema = z.object({
+const baseRowSchema = z.object({
   name: z.string().max(255).optional(),
   phone: z.string().min(1, 'Phone is required'),
   email: z.string().email().max(255).optional().or(z.literal('')),
@@ -21,12 +26,32 @@ const rowSchema = z.object({
   projectType: z.string().max(255).optional(),
   notes: z.string().optional(),
   status: z.enum(ALLOWED_IMPORT_STATUSES).optional(),
+  // ISO date or YYYY-MM-DD — original homeowner inquiry date.
+  inquiryDate: z.string().min(1, 'inquiry_date is required'),
+  // Free-text attestation of how express consent was obtained.
+  // Required for `express_consent` mode, ignored in `standard` mode.
+  expressConsentEvidence: z.string().optional(),
 });
+
+type ImportRow = z.infer<typeof baseRowSchema>;
 
 interface ImportError {
   row: number;
   phone?: string;
   error: string;
+}
+
+function parseInquiryDate(raw: string): Date | null {
+  // Accept full ISO strings as well as YYYY-MM-DD; reject anything else.
+  // Date parsing of "YYYY-MM-DD" yields UTC midnight, which is fine for
+  // day-precision comparisons against the 180-day cutoff.
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  return d;
+}
+
+function daysBetween(from: Date, to: Date): number {
+  return Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 /** POST /api/leads/import — Bulk import leads from parsed CSV data */
@@ -42,7 +67,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No client selected' }, { status: 400 });
     }
 
-    const body: { rows?: unknown[]; consentAttested?: unknown } = await request.json();
+    const body: {
+      rows?: unknown[];
+      consentAttested?: unknown;
+      intakeMode?: unknown;
+    } = await request.json();
     const rows = body.rows;
 
     if (body.consentAttested !== true) {
@@ -51,6 +80,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const intakeMode: 'standard' | 'express_consent' =
+      body.intakeMode === 'express_consent' ? 'express_consent' : 'standard';
 
     if (!Array.isArray(rows)) {
       return NextResponse.json({ error: 'Expected rows array' }, { status: 400 });
@@ -69,11 +101,13 @@ export async function POST(request: NextRequest) {
 
     const db = getDb();
     const errors: ImportError[] = [];
-    const validRows: z.infer<typeof rowSchema>[] = [];
+    const validRows: (ImportRow & { parsedInquiryDate: Date })[] = [];
 
-    // Validate all rows first
+    const now = new Date();
+
+    // Validate all rows first (schema + inquiry_date parse)
     for (let i = 0; i < rows.length; i++) {
-      const result = rowSchema.safeParse(rows[i]);
+      const result = baseRowSchema.safeParse(rows[i]);
       if (!result.success) {
         const firstError = result.error.issues[0];
         errors.push({
@@ -82,12 +116,49 @@ export async function POST(request: NextRequest) {
         });
         continue;
       }
-      validRows.push(result.data);
+      const parsed = parseInquiryDate(result.data.inquiryDate);
+      if (!parsed) {
+        errors.push({ row: i + 1, error: 'inquiry_date: invalid date format' });
+        continue;
+      }
+      validRows.push({ ...result.data, parsedInquiryDate: parsed });
+    }
+
+    // Mode-specific validation
+    if (intakeMode === 'standard') {
+      const tooOld = validRows.filter(
+        (r) => daysBetween(r.parsedInquiryDate, now) >= CASL_IMPLIED_CONSENT_DAYS
+      );
+      if (tooOld.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Standard CSV requires all inquiries within last ${CASL_IMPLIED_CONSENT_DAYS} days. Found ${tooOld.length} rows older than ${CASL_IMPLIED_CONSENT_DAYS} days. Use express-consent CSV format for older leads.`,
+          },
+          { status: 400 }
+        );
+      }
+    } else {
+      // express_consent: per-row evidence required
+      const missingEvidence: ImportRow[] = [];
+      for (const r of validRows) {
+        const evidence = (r.expressConsentEvidence ?? '').trim();
+        if (evidence.length < MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH) {
+          missingEvidence.push(r);
+        }
+      }
+      if (missingEvidence.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Express-consent CSV requires express_consent_evidence (>= ${MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH} chars) on every row. Found ${missingEvidence.length} rows missing evidence.`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Normalize phones and check for duplicates within the import
     const seenPhones = new Set<string>();
-    const deduped: z.infer<typeof rowSchema>[] = [];
+    const deduped: (ImportRow & { parsedInquiryDate: Date })[] = [];
 
     for (let i = 0; i < validRows.length; i++) {
       const row = validRows[i];
@@ -120,7 +191,7 @@ export async function POST(request: NextRequest) {
     // Check for existing leads with same phone numbers
     const existingPhones = new Set<string>();
     if (deduped.length > 0) {
-      const phonesToCheck = deduped.map(r => r.phone);
+      const phonesToCheck = deduped.map((r) => r.phone);
       // Check in batches of 100 to avoid query size limits
       for (let i = 0; i < phonesToCheck.length; i += 100) {
         const batch = phonesToCheck.slice(i, i + 100);
@@ -152,7 +223,7 @@ export async function POST(request: NextRequest) {
 
     // Insert in transaction
     let imported = 0;
-    const insertedLeads: { id: string; status: string | null }[] = [];
+    const insertedLeads: { id: string; status: string | null; phone: string; inquiryDate: Date; expressConsentEvidence: string | null }[] = [];
     if (toInsert.length > 0) {
       await withTransaction(async (tx) => {
         // Batch insert with returning to capture IDs for post-import automation
@@ -167,20 +238,61 @@ export async function POST(request: NextRequest) {
             notes: row.notes || null,
             source: 'csv_import' as const,
             status: row.status || 'new',
-            caslConsentAttested: true,
-            caslConsentAttestedAt: new Date(),
+            inquiryDate: row.parsedInquiryDate,
           }))
-        ).returning({ id: leads.id, status: leads.status });
+        ).returning({ id: leads.id, status: leads.status, phone: leads.phone });
         imported = inserted.length;
-        insertedLeads.push(...inserted);
+        for (let i = 0; i < inserted.length; i++) {
+          insertedLeads.push({
+            ...inserted[i],
+            inquiryDate: toInsert[i].parsedInquiryDate,
+            expressConsentEvidence: toInsert[i].expressConsentEvidence?.trim() || null,
+          });
+        }
       });
+
+      // Create consent records for imported leads so the compliance gateway
+      // permits automated sequences. CASL semantics:
+      // - Standard mode: implied consent anchored at inquiry_date (6-month clock)
+      // - Express mode: express_written, evidence stored on the consent record
+      for (const lead of insertedLeads) {
+        if (intakeMode === 'standard') {
+          await ComplianceService.recordConsent(clientId, lead.phone, {
+            type: 'implied',
+            source: 'api_import',
+            scope: {
+              marketing: true,
+              transactional: true,
+              promotional: true,
+              reminders: true,
+            },
+            language:
+              'Implied consent from inquiry; CSV import attestation by account holder.',
+            consentTimestamp: lead.inquiryDate,
+          });
+        } else {
+          const evidence = lead.expressConsentEvidence ?? '';
+          await ComplianceService.recordConsent(clientId, lead.phone, {
+            type: 'express_written',
+            source: 'api_import',
+            scope: {
+              marketing: true,
+              transactional: true,
+              promotional: true,
+              reminders: true,
+            },
+            language: evidence,
+            consentEvidence: evidence,
+          });
+        }
+      }
     }
 
     // Auto-trigger estimate follow-up for imported leads with status=estimate_sent.
     // These are "dead quotes" — the sales pitch guarantees we text them this week,
     // so we schedule the Day 2/5/10/14 sequence immediately rather than waiting
     // for the win-back cron (which fires 25-35 days after import).
-    const estimateLeads = insertedLeads.filter((l): l is { id: string; status: string } => l.status === 'estimate_sent');
+    const estimateLeads = insertedLeads.filter((l): l is typeof insertedLeads[number] & { status: string } => l.status === 'estimate_sent');
     if (estimateLeads.length > 0) {
       let triggered = 0;
       let skippedActive = 0;
@@ -204,7 +316,7 @@ export async function POST(request: NextRequest) {
       skipped: deduped.length - toInsert.length,
       errors: errors.length > 0 ? errors : undefined,
       total: rows.length,
-      _audit: { consentAttested: true },
+      _audit: { consentAttested: true, intakeMode },
     });
   } catch (error) {
     return safeErrorResponse('[Leads][import]', error, 'Import failed', 500);

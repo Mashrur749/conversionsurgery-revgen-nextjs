@@ -35,8 +35,6 @@ interface IncomingSMSPayload {
   MediaItems?: { url: string; contentType: string; sid?: string }[];
 }
 
-const STOP_WORDS = ['stop', 'unsubscribe', 'cancel', 'end', 'quit'];
-
 const VENDOR_KEYWORDS = [
   'marketing',
   'seo',
@@ -488,7 +486,7 @@ export async function handleIncomingSMS(payload: IncomingSMSPayload) {
   }
 
   // 2. Handle opt-out
-  if (STOP_WORDS.includes(messageBody.toLowerCase())) {
+  if (ComplianceService.isOptOutMessage(messageBody)) {
     return await handleOptOut(db, client, senderPhone);
   }
 
@@ -1512,12 +1510,18 @@ async function handleOptOut(db: ReturnType<typeof getDb>, client: typeof clients
     businessName: client.businessName,
   });
 
-  await sendSMS(phone, confirmMessage, client.twilioNumber as string);
-  await ComplianceService.logComplianceEvent(client.id, 'compliance_exempt_send', {
-    phoneNumber: phone,
-    phoneHash: ComplianceService.hashPhoneNumber(phone),
-    reason: 'opt_out_confirmation',
+  // Send opt-out confirmation via compliance gateway (respects quiet hours,
+  // logs properly, and ensures platform DNC is enforced for future sends).
+  await sendCompliantMessage({
+    clientId: client.id,
+    to: phone,
+    from: client.twilioNumber as string,
+    body: confirmMessage,
+    messageClassification: 'inbound_reply',
+    messageCategory: 'transactional',
+    consentBasis: { type: 'existing_consent' },
     leadId: leadResult.length ? leadResult[0].id : undefined,
+    queueOnQuietHours: false,
   });
 
   return { processed: true, optedOut: true };

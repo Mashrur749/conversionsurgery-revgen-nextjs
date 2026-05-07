@@ -71,7 +71,9 @@ If either test fails, fix before moving to old quote import. The system has to b
 
 Cross-reference `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` §2 for the full Quote Reactivation deliverable.
 
-- Get the client's last-90-days quote list (CSV: name, phone, email, project type, quote date, quote value).
+- Get the client's last-90-days quote list (CSV: name, phone, email, project type, **inquiry_date**, quote value).
+- **Capture `inquiry_date` for each lead** — the date the homeowner first reached out, not the date the contractor sent the quote. The platform's CSV importer requires this column on every row.
+- **If any lead is >180 days old, switch to express-consent CSV mode and capture `express_consent_evidence` per lead** (e.g. "signed estimate request form on 2024-08-15"). Standard CSV mode rejects rows older than 6 months per CASL §10(1). Refer the contractor to `02-MANAGED-SERVICE-PLAYBOOK.md` §1.7 if older leads come up.
 - Import via the CSV upload at `/admin/clients/[id]/leads/import` (or the API endpoint if no UI).
 - Once imported, the leads enter the resurrection sequence per the rules in §2 — staged outbound starts on a delay so they don't all fire at once.
 - Confirm the import log shows expected row count.

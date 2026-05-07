@@ -54,6 +54,15 @@ export const leads = pgTable(
     optOutReason: varchar('opt_out_reason', { length: 50 }),
     caslConsentAttested: boolean('casl_consent_attested').default(false),
     caslConsentAttestedAt: timestamp('casl_consent_attested_at'),
+    // Original homeowner inquiry date — required for new intake; nullable for
+    // back-compat with rows imported before the CASL intake gate landed.
+    // Used by the dormant-reengagement window and as the consent timestamp
+    // anchor for implied-consent CSV imports (CASL §10(1) 6-month clock).
+    inquiryDate: timestamp('inquiry_date'),
+    // Last time the dormant re-engagement automation messaged this lead.
+    // Replaces updatedAt as the dedup signal once the dormant window switches
+    // to inquiry_date (updatedAt no longer evicts a lead from the 180-210d band).
+    dormantReengagementSentAt: timestamp('dormant_reengagement_sent_at'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },

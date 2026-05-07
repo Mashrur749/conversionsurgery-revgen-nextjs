@@ -127,6 +127,10 @@ Do not accept auto-resolve suggestions blindly. A partial match that resolves a 
 
 1. After warm reply to outreach, message prospect: &quot;Before our call, send me 5-10 of your dead quotes from the past 90 days. Just first name, phone, project type, last contact date. I&apos;ll show you something on the call you&apos;ve never seen before.&quot;
 2. CASL compliance: include in same message: &quot;To send any reactivation, I need you to confirm in writing that these contacts had a prior business relationship with you (you sent them a quote, they inquired about your services). Reply &lsquo;confirmed&rsquo; and I&apos;ll proceed.&quot; SAVE this confirmation.
+
+   **Inquiry date capture &mdash; required.** When the contractor sends the dead-quote list, ALWAYS capture the original inquiry date for each lead (the date the homeowner first reached out), not the date the contractor sent you the quote. The intake form enforces this: anything older than 6 months requires per-lead express-consent attestation before the system will let you import or message it. This is CASL §10(1) implied consent expiry; no exceptions.
+
+   **Leads &gt;6 months old.** If the contractor brings dead quotes older than 6 months, they must provide written attestation of how express consent was obtained for each (e.g. &ldquo;signed estimate request form on 2024-08-15&rdquo;, &ldquo;email request to come quote the kitchen&rdquo;). Document via the express-consent intake mode in the CSV import or the operator quick-add form &mdash; the platform stores the attestation text on the consent record. If the contractor cannot provide attestation for a given lead, exclude it from the demo. Do not approximate, do not guess, do not paraphrase &mdash; the attestation is the legal evidence and must be verbatim from the contractor.
 3. Once confirmed, load their leads into staging:
    - Use a dedicated staging Twilio number (NOT a production client number).
    - Use operator-controlled prompt set, NOT mass-message.
