@@ -28,9 +28,9 @@ Files 01–16 are sequential setup + first sale. Files 17–26 are reactive job-
 | 1   | 02 A2P First                 | A2P brand + campaign filed (waiting on carrier) | 30 min |
 | 1   | 03 Stripe Products           | 3 products + 6 prices, 9 env vars set           | 45 min |
 | 1   | 04 Deploy                    | App live at real domain with SSL                | 60 min |
-| 1   | 05 Twilio + Resend + Operator| All three integrations wired                    | 45 min |
-| 1   | 06 Migrations + Seed         | DB schema current, plans seeded                 | 20 min |
-| 1   | 07 Day-1 Checkpoint          | 12 green boxes — ready for E2E                  | 15 min |
+| 1   | 05 Twilio + Resend + Operator + R2 | Four integrations wired (R2 = compliance audit bucket) | 60 min |
+| 1   | 06 Migrations + Seed         | DB schema current (4 migrations incl. Wave A Hardening), plans seeded | 25 min |
+| 1   | 07 Day-1 Checkpoint          | 16 green boxes — ready for E2E                  | 15 min |
 | 2   | 08 Platform Rehearsal        | Test contractor walked through full E2E in test mode | 3-4 hours |
 | 2   | 09 Offer Mastery             | OFFER-APPROVED-COPY + ICP-DEFINITION internalized    | 90 min |
 | 2   | 10 Script Rehearsal          | Cold scripts read out loud, 1 mock discovery call    | 90 min |

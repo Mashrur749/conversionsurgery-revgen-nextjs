@@ -1,7 +1,7 @@
 # 06 — Migrations + Seed
 
 ## What this is
-Push pending Drizzle migrations to your production database and confirm the plans table is seeded. This step is often skipped — when it is, the Day-14 cancel form crashes the first time a client invokes their cancel right.
+Push pending Drizzle migrations to your production database and confirm the plans table is seeded. This step is often skipped — when it is, the Day-14 cancel form crashes the first time a client invokes their cancel right, the new lead intake throws 500 on `inquiry_date`, and the contractor notification preferences page returns null.
 
 ## Before you start this
 - [ ] Production database is reachable (you have `DATABASE_URL` set in production env)
@@ -9,11 +9,20 @@ Push pending Drizzle migrations to your production database and confirm the plan
 - [ ] You have read the **decision point** below before running anything
 
 ## Time required
-~20 minutes (longer if you need to hand-curate migration 0028)
+~25 minutes (longer if you need to hand-curate migration 0028)
 
 ## Why this matters
 
-The `client_cancellations` table (added by migration **0029**) is what `/admin/clients/[id]` writes to when a contractor invokes their Day-14 cancel right. If this table does not exist in production, the form throws a 500 the first time you click "Confirm Cancel" — exactly when you cannot afford a bug.
+Four migrations need to land before the platform is fully production-correct:
+
+- **0028** — `leads.first_recovery_replay_sent_at` (First Missed Lead Replay SMS dedup signal)
+- **0029** — `client_cancellations` table (Day-14 cancel form writes here)
+- **0030** — CASL gate columns: `leads.inquiry_date`, `leads.dormant_reengagement_sent_at`, `consent_records.consent_evidence` — required by Wave A Hardening intake gate
+- **0031** — `clients.contractor_alert_quiet_hours_enabled` (Decision F: per-client quiet-hours preference for contractor SMS alerts)
+
+If any of these are missing in production, specific code paths throw at runtime: Day-14 cancel form (0029), new lead intake `inquiry_date` write (0030), notification preferences toggle (0031), and dormant-reengagement dedup (0028).
+
+All four are nullable / default-safe. Back-compat with existing rows.
 
 ## Decision point — Migration 0028
 
@@ -44,6 +53,26 @@ Open `drizzle/0029_orange_lady_vermin.sql` and confirm it contains ONLY:
 
 It must not contain any DROP, RENAME, or ALTER on existing tables. If it does, stop and ask before pushing.
 
+## Migrations 0030 + 0031 — Wave A Hardening (CASL gate + Decision F)
+
+Both are nullable column adds. Safe.
+
+`drizzle/0030_flawless_stingray.sql`:
+
+```sql
+ALTER TABLE "leads" ADD COLUMN "inquiry_date" timestamp;
+ALTER TABLE "leads" ADD COLUMN "dormant_reengagement_sent_at" timestamp;
+ALTER TABLE "consent_records" ADD COLUMN "consent_evidence" text;
+```
+
+`drizzle/0031_big_boom_boom.sql`:
+
+```sql
+ALTER TABLE "clients" ADD COLUMN "contractor_alert_quiet_hours_enabled" boolean DEFAULT false NOT NULL;
+```
+
+No destructive operations in either. Push both alongside 0028/0029 in the same `db:push` command — Drizzle handles the order.
+
 ## What you'll do
 
 1. Decide on migration 0028 (above). Edit the SQL file if needed, commit the change.
@@ -61,7 +90,17 @@ It must not contain any DROP, RENAME, or ALTER on existing tables. If it does, s
    SELECT table_name FROM information_schema.tables WHERE table_name = 'client_cancellations';
    ```
    Expected: 1 row.
-5. Verify `plans` table is seeded:
+5. Verify Wave A Hardening columns exist:
+   ```sql
+   SELECT column_name FROM information_schema.columns
+   WHERE table_name = 'leads' AND column_name IN ('inquiry_date', 'dormant_reengagement_sent_at');
+   SELECT column_name FROM information_schema.columns
+   WHERE table_name = 'consent_records' AND column_name = 'consent_evidence';
+   SELECT column_name FROM information_schema.columns
+   WHERE table_name = 'clients' AND column_name = 'contractor_alert_quiet_hours_enabled';
+   ```
+   Expected: 2 + 1 + 1 = 4 rows total.
+6. Verify `plans` table is seeded:
    ```sql
    SELECT slug, stripe_product_id, stripe_price_id_setup, stripe_price_id_monthly
    FROM plans ORDER BY slug;
@@ -69,10 +108,13 @@ It must not contain any DROP, RENAME, or ALTER on existing tables. If it does, s
    Expected: 3 rows (pilot, standard, premium), every Stripe ID column populated. If any column is empty, re-run `pnpm tsx scripts/seed-plans.ts` against the production `DATABASE_URL`.
 
 ## What success looks like
-- [ ] You read migration 0029 before pushing
+- [ ] You read migrations 0029, 0030, 0031 before pushing
 - [ ] Migration 0028 decision made and applied (cleaned, or deferred)
 - [ ] `db:push` completed with no errors
 - [ ] `client_cancellations` table exists in production
+- [ ] `leads.inquiry_date` + `leads.dormant_reengagement_sent_at` columns exist (migration 0030)
+- [ ] `consent_records.consent_evidence` column exists (migration 0030)
+- [ ] `clients.contractor_alert_quiet_hours_enabled` column exists with default `false` (migration 0031)
 - [ ] `plans` has 3 rows with all Stripe IDs filled
 
 ## If something goes wrong

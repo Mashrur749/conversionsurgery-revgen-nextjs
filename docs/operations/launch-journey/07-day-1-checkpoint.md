@@ -14,7 +14,7 @@ The end-of-Day-1 verification. Every box below must be green before you start Da
 
 Walk this list top to bottom. Tick each box only after you have verified it (not just "I think I did that earlier"). For ambiguous boxes, do the verification command in your terminal or click into the dashboard.
 
-## The 12 boxes
+## The 16 boxes
 
 - [ ] **A2P brand filed.** Twilio Console → Trust Hub → Brand Registrations shows your brand with a Brand SID.
 - [ ] **A2P campaign filed.** Twilio Console → Trust Hub → Campaign Registrations shows your campaign with a Campaign SID. Status may be "Pending" — that is fine.
@@ -22,10 +22,14 @@ Walk this list top to bottom. Tick each box only after you have verified it (not
 - [ ] **9 Stripe env vars set** in `.env.local` AND in production deployment env (Cloudflare secrets or Vercel env vars).
 - [ ] **`seed-plans.ts` ran cleanly.** SQL: `SELECT count(*) FROM plans;` returns 3.
 - [ ] **Migration 0029 pushed.** SQL: `SELECT table_name FROM information_schema.tables WHERE table_name = 'client_cancellations';` returns 1 row.
+- [ ] **Migrations 0030 + 0031 pushed (Wave A Hardening).** SQL verification queries are listed in file 06 — all 4 expected columns must exist in production (`leads.inquiry_date`, `leads.dormant_reengagement_sent_at`, `consent_records.consent_evidence`, `clients.contractor_alert_quiet_hours_enabled`).
 - [ ] **App deployed at real domain with SSL.** `curl -I https://your-domain.com/api/health` returns `HTTP/2 200`.
 - [ ] **`/login`, `/signup`, `/client-login` all return 200.** Three curl commands. All three return `HTTP/2 200`.
 - [ ] **Twilio number provisioned with all three webhooks** (SMS in, Voice in, Voice status). Twilio Console → Phone Numbers → click your number → all three webhook URLs point at your production domain.
 - [ ] **Resend domain verified.** Resend Dashboard → Domains shows green/verified for your sending domain.
+- [ ] **R2 audit bucket created.** Cloudflare Dashboard → R2 → `conversionsurgery-audit-logs` exists with COMPLIANCE-mode object-lock + 2557-day retention.
+- [ ] **5 R2 env vars set** in `.env.local` AND production env (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_AUDIT_BUCKET`, `R2_AUDIT_RETENTION_DAYS`).
+- [ ] **R2 audit-log-export cron returns 200.** `curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.com/api/cron/audit-log-export` returns 200 AND a new object appears in the R2 bucket with retention applied.
 - [ ] **`operator_phone` + `operator_name` set at `/admin/agency`.** Log in to deployed admin, navigate to Settings → Agency Settings, both fields are filled.
 - [ ] **Test cron triggered, SMS received at `operator_phone`.** `curl -X POST https://your-domain.com/api/cron/morning-brief -H "Authorization: Bearer $CRON_SECRET"` returned 200 AND an SMS landed on your phone.
 

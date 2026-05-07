@@ -100,12 +100,108 @@ Submit the cancel form on the test client. Pick a reason. Confirm:
 
 Cross-reference: E2E §8.0a and 02-MANAGED-SERVICE-PLAYBOOK §7a.
 
+### 13. Wave A Hardening tests (11 additional checks)
+
+These verify the work that landed during the Wave A Hardening phase: the CASL 6-month gate at intake, the 24-month customer-consent path, the lead-detail consent badges, the compliance sentinel, the R2 audit export, and the per-client quiet-hours preference (Decision F).
+
+Run each one and tick the boxes.
+
+#### 13.1 Operator quick-add: standard mode (<180 days inquiry)
+
+- Open `/admin/clients/[id]` → New Lead
+- Select **"New inquiry (last 6 months)"**
+- Pick a date 30 days ago. Submit.
+- [ ] Lead created with `inquiry_date` set
+- [ ] Consent record written: `type='implied'`, `source='manual_entry'`, `consentTimestamp = inquiry_date`
+
+#### 13.2 Operator quick-add: express-consent mode (>=180 days)
+
+- New Lead
+- Select **"Older inquiry (express consent on file)"**
+- Pick a date 240 days ago. Evidence text: "Test express consent attestation, signed estimate request 2024-09-01"
+- Submit.
+- [ ] Lead created
+- [ ] Consent record: `type='express_written'`, evidence text stored in `consent_evidence`
+
+#### 13.3 Operator quick-add: existing-customer mode (within 24 months)
+
+- New Lead
+- Select **"Past paid customer (within 24 months)"**
+- Pick a date 14 months ago. Notes: "Test customer, kitchen reno completed Mar 2025"
+- Submit.
+- [ ] Lead created
+- [ ] Consent record: `source='existing_customer'`, expiry computed at +24 months from transaction date
+
+#### 13.4 CSV import: standard mode rejection (>180 days)
+
+- Upload CSV with one row whose `inquiry_date` is 200 days ago.
+- [ ] Rejected with clear error: "Standard CSV requires all inquiries within last 180 days"
+
+#### 13.5 CSV import: express-consent mode acceptance
+
+- Upload CSV with `intakeMode=express_consent` + `express_consent_evidence` column populated per row.
+- [ ] Leads created with `'express_written'` consent + evidence text per lead
+
+#### 13.6 CSV import: existing-customer mode acceptance
+
+- Upload CSV with `intakeMode=existing_customer` + `transaction_date` column.
+- [ ] Leads created with `consent_source = 'existing_customer'`
+
+#### 13.7 Lead detail UI: consent badges
+
+- Open lead with `inquiry_date` 155 days ago.
+  - [ ] Sienna badge: "Approaching CASL window — 25 days until consent expires"
+- Open lead with `inquiry_date` 200 days ago + no express consent.
+  - [ ] Red badge: "Express consent required for further outbound"
+- Open lead with `consent_source = 'existing_customer'` (transaction date 14 months ago).
+  - [ ] Badge: "Customer consent (transaction date: ..., 18 months remaining)"
+
+#### 13.8 Compliance sentinel block
+
+- Add operator's own phone to platform DNC manually (admin → DNC list → add).
+- Trigger any operator alert (e.g., escalation cron) that would normally fire to operator's phone.
+- [ ] SMS NOT sent
+- [ ] `compliance_audit_log` shows new entry with `category='internal_sms_sentinel_block'`
+- [ ] `compliance_sentinel_blocked_total` counter incremented (visible at `/admin/system-health`)
+- Remove operator's phone from DNC. Retry the alert. Verify SMS now sends.
+
+#### 13.9 Twilio bypass guard (ESLint + CI gate)
+
+- Create temporary file `src/lib/services/test-bypass.ts` with `import twilio from 'twilio'` and `twilio(...).messages.create({...})`.
+- [ ] `pnpm run lint` blocks with the custom ESLint rule message
+- [ ] `pnpm run quality:no-regressions` fails on the twilio bypass guard step
+- Delete the temporary file and re-run — both pass.
+
+#### 13.10 R2 audit log export
+
+- Manually trigger the export cron:
+  ```
+  curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.com/api/cron/audit-log-export
+  ```
+- [ ] HTTP 200 response with `{ exportedAt, recordCount, key, etag, retainUntil }`
+- [ ] Cloudflare R2 dashboard → bucket → new object exists at `audit-export/YYYY-MM-DD-{hash}.json`
+- [ ] Object shows COMPLIANCE-mode object-lock with retain-until date ~7 years out
+- [ ] Last successful export timestamp updates in `/admin/system-health`
+
+#### 13.11 Per-client quiet hours toggle (Decision F)
+
+- Open `/client/settings/notifications` (signed in as the test contractor).
+- Toggle **"Respect quiet hours (9pm–10am) for SMS alerts to me"** → ON.
+- At 11pm contractor local time (or fake the timezone via test client setup), trigger an operator alert addressed to the contractor.
+- [ ] SMS queued (not sent immediately) — visible in `scheduled_messages` table or compliance queue
+- Toggle OFF. Retry at 11pm.
+- [ ] SMS sent immediately
+- Reset toggle to default (OFF) on the test client.
+
+Cross-reference: `.planning/phases/wave-A-hardening/OPERATOR-ACTIONS.md` §3A for the canonical version of these 11 tests.
+
 ## What success looks like
 
 - [ ] Test client signed up, onboarded, and walked all the way to Day-30 in test mode
 - [ ] All 16 production tests green
 - [ ] Both gates (Day-21, Day-30) verified
 - [ ] Day-14 cancel form tested and writes to `client_cancellations`
+- [ ] All 11 Wave A Hardening tests green (§13.1–§13.11)
 - [ ] You have a clean test client record you can leave in the DB or wipe before launch
 
 ## If something goes wrong

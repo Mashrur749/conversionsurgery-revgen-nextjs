@@ -1,15 +1,15 @@
-# 05 — Twilio + Resend + Operator Profile
+# 05 — Twilio + Resend + Operator Profile + R2 Audit Bucket
 
 ## What this is
-Three dashboard tasks in one file because they share the same headspace: provisioning your first production Twilio number, verifying your Resend email domain, and setting your operator contact info inside the deployed admin app.
+Four dashboard tasks in one file because they share the same headspace: provisioning your first production Twilio number, verifying your Resend email domain, setting your operator contact info inside the deployed admin app, and creating the Cloudflare R2 bucket where weekly compliance audit logs are exported with object-lock retention.
 
 ## Before you start this
 - [ ] App is deployed to a real HTTPS domain (file 04 done)
-- [ ] You have admin access to Twilio and Resend
+- [ ] You have admin access to Twilio, Resend, and Cloudflare
 - [ ] You can log into the deployed `/admin` with your operator email
 
 ## Time required
-~45 minutes
+~60 minutes (the extra 15 minutes is the R2 setup)
 
 ## Part 1 — Twilio production number
 
@@ -41,6 +41,58 @@ This first number is your **demo / pilot pool** number. You will buy additional 
    - `operator_phone` — your real cell phone in E.164 format (e.g. `+14035550100`)
 3. Save. The platform sends ops notifications (cron alerts, escalations, Friday Pulse) to this phone via SMS.
 
+## Part 4 — Cloudflare R2 audit log bucket (Wave A Hardening)
+
+The platform exports compliance audit logs (`compliance_audit_log` + `consent_records`) weekly to Cloudflare R2 with object-lock retention. This is your tamper-evident regulatory paper trail. CRTC investigations would accept R2 with COMPLIANCE-mode object-lock as immutable evidence.
+
+### Steps
+
+1. Sign in to Cloudflare Dashboard → **R2** → **Overview**.
+2. Click **Create bucket**.
+   - Bucket name: `conversionsurgery-audit-logs`
+   - Region: **Automatic** (Cloudflare picks closest)
+3. Click into the bucket → **Settings** tab → **Object Lock**.
+4. Enable Object Lock with these settings:
+   - **Default retention mode:** `Compliance` (NOT Governance — Compliance is non-overridable, which is the regulatory point)
+   - **Default retention period:** `2557` days (= 7 years)
+5. Click **Save**.
+
+### Generate API credentials
+
+6. Cloudflare Dashboard → **R2** → **Manage R2 API Tokens**.
+7. Click **Create API Token**.
+   - Token name: `conversionsurgery-audit-export`
+   - Permissions: **Object Read and Write**
+   - Specify bucket: `conversionsurgery-audit-logs`
+   - TTL: leave unlimited
+8. **Copy the Access Key ID and Secret Access Key now — you'll only see the secret once.**
+9. Note the **Account ID** from the R2 dashboard sidebar.
+
+### Add R2 environment variables
+
+Add to your production deployment env (Cloudflare Workers env or Vercel env, depending on the platform you chose in file 04). Also add to local `.env.local` so the cron route works during dev testing.
+
+```
+R2_ACCOUNT_ID=<your account id>
+R2_ACCESS_KEY_ID=<from step 8>
+R2_SECRET_ACCESS_KEY=<from step 8>
+R2_AUDIT_BUCKET=conversionsurgery-audit-logs
+R2_AUDIT_RETENTION_DAYS=2557
+```
+
+### Verify the export cron is wired
+
+After all env vars are set and a deploy has occurred, manually trigger the export cron:
+
+```
+curl -X GET "https://your-domain.com/api/cron/audit-log-export" \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+Expected: HTTP 200 with response containing `{ exportedAt, recordCount, key, etag, retainUntil }`. Cloudflare Dashboard → R2 bucket → confirm a new object exists at `audit-export/YYYY-MM-DD-{hash}.json` with the retention date applied.
+
+If the cron returns 500, the most common cause is missing env vars or the R2 token doesn't have write permission to that specific bucket.
+
 ## Test: trigger a cron, confirm SMS arrives
 
 This single test verifies all three integrations are wired. It uses `CRON_SECRET` from your env.
@@ -63,6 +115,9 @@ If any one of those fails, that integration is the suspect.
 - [ ] Resend domain verified (green checkmark in dashboard)
 - [ ] `RESEND_FROM_EMAIL` set in production env
 - [ ] `operator_name` + `operator_phone` saved at `/admin/agency`
+- [ ] Cloudflare R2 bucket `conversionsurgery-audit-logs` created with Compliance object-lock + 2557-day retention
+- [ ] All 5 R2 env vars set in production + local
+- [ ] Manual `audit-log-export` cron returned 200, object visible in R2 bucket with retention applied
 - [ ] Manual cron trigger returned 200
 - [ ] SMS landed on your phone from the Twilio number
 
