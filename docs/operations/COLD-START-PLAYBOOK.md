@@ -58,7 +58,7 @@ Google Sheet: Name | Business | Phone | City | Channel | Date Contacted | Status
 
 ### Verify your demo
 
-Call your demo number from your personal phone. Missed-call text-back fires in 5 seconds. If it doesn&apos;t, fix it before anything else. Note: if the prospect asks what happens when a lead calls and no one answers, the answer is Voice AI picks up automatically &mdash; it handles the call and hands off to the contractor when they&apos;re available.
+Call your demo number from your personal phone (during permitted hours). Missed-call text-back fires within seconds. Outside permitted hours it queues and fires the moment the window opens. If the live test fails during permitted hours, fix it before anything else. Note: if the prospect asks what happens when a lead calls and no one answers, the answer is Voice AI picks up automatically &mdash; it handles the call and hands off to the contractor when they&apos;re available.
 
 ---
 
@@ -277,13 +277,13 @@ These rules are why the journey doc's Day 3 plan sends only **5 emails**, not 25
 
 **Default opener (no audit data):**
 
-> Hey [Name], this is [Your Name] &mdash; I&apos;ll be super quick, 60 seconds. I built a tool that texts back missed calls in 5 seconds &mdash; every missed call, automatically. I know you guys miss calls on job sites all the time. I&apos;m not pitching you today. Can I send you our demo number right now? You call it, hang up, and your phone buzzes in 5 seconds. That&apos;s it.
+> Hey [Name], this is [Your Name] &mdash; I&apos;ll be super quick, 60 seconds. I built a tool that texts back missed calls in seconds during permitted hours &mdash; every missed call, automatically. I know you guys miss calls on job sites all the time. I&apos;m not pitching you today. Can I send you our demo number right now? Try it during business hours &mdash; you call, hang up, your phone buzzes within seconds. That&apos;s it.
 
 **If busy:** &ldquo;I figured &mdash; that&apos;s literally why I&apos;m calling. I&apos;ll text you the number right now. Try it when you&apos;re done today.&rdquo;
 
 **Voicemail:**
 
-> Hey [Name], this is [Your Name]. I built something for renovation contractors &mdash; texts back missed calls in 5 seconds, automatically. I know that&apos;s a problem when you&apos;re on site. My number&apos;s [your number]. I&apos;ll try you again [day].
+> Hey [Name], this is [Your Name]. I built something for renovation contractors &mdash; texts back missed calls in seconds during permitted hours, automatically. I know that&apos;s a problem when you&apos;re on site. My number&apos;s [your number]. I&apos;ll try you again [day].
 
 ---
 

@@ -104,7 +104,7 @@ The prospect CSV is already ranked by tier (1 = strongest ICP fit, 4 = likely to
 
 ### Set up your demo line
 
-Before any outreach, have your platform's missed-call text-back working on a demo number. You need to be able to say "call this number, let it ring, watch what happens" on every sales call. Test it yourself 5 times. Make sure it fires in under 5 seconds every time.
+Before any outreach, have your platform's missed-call text-back working on a demo number. You need to be able to say "call this number, let it ring, watch what happens" on every sales call &mdash; during permitted hours. Test it yourself 5 times. Make sure it fires within seconds during permitted hours every time. Outside permitted hours it queues, which is correct behaviour but kills the demo &mdash; never demo outside hours.
 
 ---
 
@@ -151,7 +151,7 @@ Body (email version):
 
 **Cold call opener** (phone, when you can reach them directly):
 
-&ldquo;Hey [Name], this is Mashrur from Calgary. Quick one &mdash; I run a managed service for basement contractors that texts back every missed call in 5 seconds, follows up on every estimate for 2 weeks, and books the site visit while you&rsquo;re still on the job. Most guys I talk to are losing 3&ndash;4 basement jobs a year just from leads that went cold. I&rsquo;m only taking three founding clients right now. You got 15 minutes this week?&rdquo;
+&ldquo;Hey [Name], this is Mashrur from Calgary. Quick one &mdash; I run a managed service for basement contractors that texts back every missed call in seconds during permitted hours, follows up on every estimate for 2 weeks, and books the site visit while you&rsquo;re still on the job. Most guys I talk to are losing 3&ndash;4 basement jobs a year just from leads that went cold. I&rsquo;m only taking three founding clients right now. You got 15 minutes this week?&rdquo;
 
 ### Channel strategy (multi-touch, same asset)
 
@@ -229,9 +229,9 @@ This is your entire sales process. It's not a discovery call. It's not a consult
 
 2. **(2 min) Set up the demo.** "I want to show you something. Can you call this number on your phone right now? \[Give demo number.\] Let it ring — don't leave a voicemail — just hang up after 3-4 rings."
 
-3. **(30 sec) Let them experience it.** They call. They hang up. Within 5 seconds, a text arrives on their phone: "Hey, sorry we missed your call! What can we help you with?" Say nothing. Let them react.
+3. **(30 sec) Let them experience it.** They call. They hang up. Within seconds (running this demo during permitted hours, which we always do), a text arrives on their phone: "Hey, sorry we missed your call! What can we help you with?" Say nothing. Let them react.
 
-4. **(3 min) Explain what just happened.** &ldquo;That text went out in under 5 seconds. If that was a homeowner looking for a basement quote, you just captured them before they called the next contractor on Google. Now imagine that happening for every missed call while you&rsquo;re underground &mdash; and then the AI follows up on every estimate you send for 2 weeks straight. A $80K suite job that would have gone cold just got recovered.&rdquo;
+4. **(3 min) Explain what just happened.** &ldquo;That text went out in seconds &mdash; that&rsquo;s how it works during permitted hours. After hours, the text queues so you stay compliant and fires the moment the window opens. If that was a homeowner looking for a basement quote during business hours, you just captured them before they called the next contractor on Google. Now imagine that happening for every missed call while you&rsquo;re underground &mdash; and then the AI follows up on every estimate you send for 2 weeks straight. A $80K suite job that would have gone cold just got recovered.&rdquo;
 
 5. **(3 min) The pitch.** &ldquo;We&rsquo;re taking our first three clients at a founding rate &mdash; $3,500 to set everything up, then $1,500/month. After that our standard rate is $5,500 setup and $2,000/month. We run the whole thing for you &mdash; your only job is to keep building. The system responds to leads, follows up on estimates, books appointments into your Google Calendar, collects payments, and asks for reviews. You spend about 15 minutes a week on it. We guarantee the system is live within 21 days and fully operational within 30 &mdash; we document every step so you can see exactly what was built. Minimum term is 90 days, no discounts, no trial period &mdash; because this is a real operational system, not a software subscription.&rdquo;
 

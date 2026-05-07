@@ -193,10 +193,10 @@ This tests the inbound-reply exemption (FM-38): a key selling point. &ldquo;Your
 
 1. From Dev Phone #2 (Lead), **call** the Business Line (#1)
 2. Let it ring &mdash; do not answer
-3. Within 5 seconds, Dev Phone #2 should receive a text: &ldquo;Sorry we missed your call...&rdquo;
+3. Within seconds (during permitted hours; queues outside), Dev Phone #2 should receive a text: &ldquo;Sorry we missed your call...&rdquo;
 4. Check Client View &rarr; Conversations &mdash; a new conversation should appear for this caller
 
-- [ ] Text-back arrived within 5 seconds of the missed call
+- [ ] Text-back arrived near-instantly during permitted hours (or queued correctly outside)
 - [ ] Conversation appears in admin
 
 **Voice AI (skip if `ELEVENLABS_API_KEY` is not set):**
@@ -444,17 +444,17 @@ On a sales call, contractors will ask: &ldquo;What happens at 90 days?&rdquo; Yo
 1. Open `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` Section 5.
 2. In admin, click Clients &rarr; Clients &rarr; Peak Basements YYC &rarr; Overview tab &rarr; look for the **Guarantee Status** card.
 3. Note: the phase (`proof_pending` / `recovery_pending`), progress bar, days remaining.
-4. Understand: proof_pending = system is building evidence of pipeline value. recovery_pending = $5K pipeline threshold was not met, recovery window is open.
-5. Know where to find pipeline value: Overview tab, the guarantee card shows the running total.
-6. **Operational guarantee gates** (both must be met for the guarantee to be evaluable):
-   - **21-day go-live gate:** system must be live and processing leads by Day 21. If onboarding is not completed within 21 days (contractor delay), the guarantee clock pauses.
-   - **30-day logging gate:** contractor must log WON/LOST outcomes via SMS commands for at least 30 days before the pipeline floor is evaluated. No logging = no pipeline evidence = guarantee cannot be honored.
+4. Understand the **operational guarantee** (NOT revenue-based): the system runs two automatic gates &mdash; a 21-day go-live gate and a 30-day logging gate (80% of inquiries logged). Auto-pauses billing on miss; auto-resumes when threshold is restored.
+5. Know where to find logging coverage: Overview tab, the guarantee card shows the 30-day logging % and the go-live status.
+6. **Operational guarantee gates** (both run automatically):
+   - **21-day go-live gate:** system must be live and processing leads by Day 21. If onboarding is not completed within 21 days due to operator delay, billing pauses until live (we keep working at no charge).
+   - **30-day logging gate:** if fewer than 80% of inquiries are logged in any rolling 30-day window, billing auto-pauses until the threshold is restored.
 
-- [ ] I can find the guarantee card and read the phase
-- [ ] I know the $5,000 pipeline floor threshold
-- [ ] I can explain proof_pending vs recovery_pending in plain language
-- [ ] I know where to find the pipeline value number
-- [ ] I understand the 21-day go-live gate and 30-day logging gate requirements
+- [ ] I can find the guarantee card and read the gate status
+- [ ] I understand the 21-day go-live gate auto-evaluation
+- [ ] I understand the 30-day logging gate (80% threshold) auto-pause
+- [ ] I know where to find the logging coverage number
+- [ ] I can explain why this is operational, not revenue-based
 
 ---
 
@@ -494,7 +494,7 @@ You should now be able to do all of the following without looking at this docume
 - [ ] Add and remove a number from the exclusion list
 - [ ] Pause and resume a client subscription
 - [ ] Navigate the cancellation flow and explain the 30-day grace period
-- [ ] Find the guarantee status card and explain proof_pending vs recovery_pending
+- [ ] Find the guarantee status card and explain the 21-day go-live gate and 30-day logging gate
 
 **Run the AI safety gate:**
 
@@ -581,7 +581,7 @@ Say these out loud as if you are on the call with a contractor who just said yes
 5. &ldquo;Perfect, I can see that went through. Your 90-day term starts today. Next monthly billing is [date+30d]. Sound good?&rdquo;
 6. &ldquo;Now let&apos;s get you live. I need 30 minutes with you to set up your business number and train the AI on your business. What works &mdash; [time options]?&rdquo;
 7. &ldquo;Here&apos;s what happens next. On our onboarding call I&apos;ll set up your business number, train the AI with your services, and import your old quotes so we can start following up immediately. You&apos;ll start catching leads the same day.&rdquo;
-8. Practice the welcome text: &ldquo;Hey [Name], welcome to ConversionSurgery. Your free month starts today. Onboarding call: [day] at [time]. Before that call, think of 5 people you quoted in the last 6 months that never got back to you &mdash; just first names and what the project was. Talk soon. &mdash; Mashrur&rdquo;
+8. Practice the welcome text: &ldquo;Hey [Name], welcome to ConversionSurgery. Your setup begins today. First half of setup ($1,750 Pilot / $2,750 Standard) is charged at signing. Second half plus your monthly retainer activate at go-live (~Day 21). Onboarding call: [day] at [time]. Before that call, think of 5 people you quoted in the last 6 months that never got back to you &mdash; just first names and what the project was. Talk soon. &mdash; Mashrur&rdquo;
 
 - [ ] Close script practiced out loud &mdash; I can say the 5 key terms without reading
 - [ ] Post-close script practiced &mdash; I can book the onboarding call naturally
@@ -677,7 +677,7 @@ Open `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` Section 1 and Section
 
 1. Read the script out loud 5 times. Record yourself. Listen back.
 2. Practice ALL 6 cold call branches: engage, send me something, not interested, what does it cost, too busy, awkward silence.
-3. Practice the close: &ldquo;First month is free. I set everything up. You pay nothing until you see results.&rdquo;
+3. Practice the close: &ldquo;First half of setup at signing, second half plus your first monthly retainer activate at go-live around Day 21. 21-day go-live or we keep working at no charge. Day-14 cancel right caps your max exposure at $1,750 (Pilot) / $2,750 (Standard).&rdquo;
 4. Have someone play the contractor using these 5 responses: (a) &ldquo;yeah tell me more&rdquo; (b) &ldquo;not interested&rdquo; (c) &ldquo;what does it cost?&rdquo; (d) &ldquo;I&apos;m busy&rdquo; (e) awkward silence
 5. Your first 3 REAL calls are practice calls &mdash; pick the 3 lowest-priority prospects on your list.
 
@@ -687,7 +687,7 @@ Open `docs/operations/templates/SALES-TOOLKIT-BASEMENT.md` Section 1 and Section
 **Live demo &mdash; 10 min:**
 
 1. Open your local environment. Walk through a demo as if a prospect is screen-sharing with you.
-2. The &ldquo;wow moment&rdquo;: &ldquo;Call this number right now.&rdquo; Text-back fires in 5 seconds. Voice AI answers.
+2. The &ldquo;wow moment&rdquo;: &ldquo;Call this number right now.&rdquo; Text-back fires within seconds during permitted hours. Voice AI answers.
 3. Use the Voice AI Simulator (Settings &rarr; Voice AI &rarr; expand client &rarr; Simulator) &mdash; type homeowner questions, show AI responses in real time. Works even without a live Twilio call.
 
 - [ ] I can walk through a live demo confidently
@@ -721,7 +721,7 @@ This is the deliverable you give every client within 48 hours. Practice on real 
 - [ ] Who should you NOT sign? Name 3 disqualifiers.
 - [ ] &ldquo;What if the AI says something wrong?&rdquo; &mdash; what do you say?
 - [ ] &ldquo;I got burned before.&rdquo; &mdash; what do you say?
-- [ ] &ldquo;$1,000 is expensive.&rdquo; &mdash; what do you say?
+- [ ] &ldquo;$1,500/mo for Pilot is more than they expected.&rdquo; &mdash; what do you say?
 - [ ] What&apos;s the demo moment that closes deals?
 - [ ] What&apos;s the max the contractor can lose?
 - [ ] What&apos;s the onboarding call script flow?
@@ -868,7 +868,7 @@ This must be filed BEFORE your first client signs, not after. Run it in parallel
 
 1. Buy a real Alberta number (403 or 780 area code) in Twilio
 2. Assign it to a demo client in the admin
-3. **Call it from your real phone.** Text-back in 5 seconds?
+3. **Call it from your real phone (during permitted hours).** Text-back within seconds?
 4. **Text it from your real phone.** AI responds in 10 seconds?
 5. **Let it ring.** Voice AI answers?
 
@@ -967,10 +967,10 @@ Use this section only if a specific feature breaks during Phase 2 or during a re
 
 1. From Dev Phone #2 (Lead), **call** the Business Line (#1)
 2. Let it ring &mdash; don&apos;t answer
-3. Within 5 seconds, Dev Phone #2 should receive a text: &ldquo;Sorry we missed your call...&rdquo;
+3. Within seconds during permitted hours (queues outside), Dev Phone #2 should receive a text: &ldquo;Sorry we missed your call...&rdquo;
 4. Check **Client View** &rarr; **Conversations** &mdash; a new conversation should appear
 
-- [ ] Text-back arrived within 5 seconds of the missed call
+- [ ] Text-back arrived near-instantly during permitted hours (or queued correctly outside)
 
 ### A.4 Voice AI
 

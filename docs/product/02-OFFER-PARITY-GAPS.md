@@ -17,8 +17,8 @@ Objective: Track every promise in the Business Reference against platform realit
 | Tier | Public price | Readiness |
 |---|---|---|
 | Estimate Recovery Audit (free) | n/a | Ready — operator process documented at `docs/operations/templates/PRESALE-REVENUE-LEAK-AUDIT-TEMPLATE.md`. |
-| Pilot Revenue Recovery System | $3,500 setup + $1,500/mo | **Ready to sell** once `PG-001` is resolved. All operational deliverables built. |
-| Standard Revenue Recovery System | $5,500 setup + $2,000/mo | **Ready to sell** once `PG-001`, `PG-002` are resolved. |
+| Pilot Revenue Recovery System | $3,500 setup + $1,500/mo | **Ready to sell.** PG-001 done (operational guarantee implemented). PG-002 deferred to Wave A.5 — relevant only at Standard scale, not blocking first Pilot sale. |
+| Standard Revenue Recovery System | $5,500 setup + $2,000/mo | **Ready to sell.** PG-001 done. PG-002 deferred to Wave A.5 — implement before scaling beyond first 3 Pilot clients. |
 | Booked Estimate OS (Premium) | $9,500 setup + $3,500/mo | **Do not sell yet.** 6 of 11 attribution / CRM-depth deliverables open (`PG-101..PG-106`). |
 | Microsite + Tracking add-on | $2,500-$5,000 | **Out of scope.** `OFFER-APPROVED-COPY` Section 8 explicitly excludes website work. Resolve scoping before listing. |
 | Advanced Attribution Setup add-on | $2,500-$5,000 | Depends on `PG-101..PG-104`. Do not sell until those land. |

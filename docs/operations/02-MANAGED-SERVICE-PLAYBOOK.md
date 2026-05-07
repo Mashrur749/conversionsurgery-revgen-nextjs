@@ -176,7 +176,7 @@ Screen-share the actual SMS threads. Walk through 1-2 of the strongest. Pause fo
 
    **Trust fears:**
 
-   - &ldquo;What does the AI actually say to our customers?&rdquo; → I&apos;ll text-demo right now to a number you control. You&apos;ll see the response in 5 seconds. We can do it on this call.
+   - &ldquo;What does the AI actually say to our customers?&rdquo; → I&apos;ll text-demo right now to a number you control. You&apos;ll see the response within seconds during permitted hours (queues outside). We can do it on this call.
    - &ldquo;What if the AI says something wrong and embarrasses us?&rdquo; → For the first two weeks, every response is reviewed by our team before it reaches your customers. Smart Assist mode. Nothing goes out without a human check. After two weeks of clean responses, the system progresses to autonomous &mdash; and the safety net stays: any flagged response is reviewed.
    - &ldquo;Who are you and why should we trust you?&rdquo; → Local Calgary. {operatorName}. You can find me. The 21-day go-live guarantee and Day-14 cancel right are in the contract &mdash; if I disappear, your money is protected by the contract terms, not by my word.
 
@@ -575,7 +575,7 @@ Do NOT start with a product tour or a features walkthrough. Start with the pain 
 
 3. **Test it live:** Have them call their own business number from another phone (spouse&apos;s phone, your phone). Their phone rings 3 times. They don&apos;t answer. Two things happen:
    - **Voice AI picks up:** &quot;Hi, thanks for calling [Business Name]. I&apos;m the scheduling assistant &mdash; how can I help?&quot;
-   - **5-second text-back fires** on the caller&apos;s phone.
+   - **Near-instant text-back fires** on the caller&apos;s phone (within seconds during permitted hours; queues outside).
 
 4. **The wow moment:** Say nothing for 4 seconds after the text arrives. Let them sit with it. Then:
 
@@ -624,7 +624,7 @@ Do not push Phase 2 on Day 0. Let the data make the argument.
 
 Capture the card NOW &mdash; while the contractor is seeing the system work. Do not wait until the end of the call.
 
-&gt; &quot;Let me get the billing out of the way so we can focus on the fun stuff. I&apos;m texting you a link right now &mdash; first month completely free. Card is just so billing starts automatically on [exact date] if you decide to keep it. Cancel anytime before then, zero charge.&quot;
+&gt; &quot;Let me get the billing out of the way so we can focus on the fun stuff. I&apos;m texting you a link right now &mdash; $1,750 today covers your first half of setup (Pilot tier; $2,750 for Standard). Second half plus your first monthly retainer activate at go-live around Day 21. Day-14 cancel right is in the contract if you change your mind early.&quot;
 
 Stay on the line. Confirm in Stripe. See Payment Capture section below for hesitation/refusal scripts.
 
@@ -703,7 +703,7 @@ This addresses the agency trauma directly, at the end, after they&apos;ve alread
 
 ### Payment Capture (During Onboarding Call)
 
-**Why now:** Setup fee + first month are due at signup — no trial period. Getting full payment during the onboarding call (or immediately after) avoids a second awkward conversation and ensures billing is confirmed before ops time is invested.
+**Why now:** First half of setup fee is due at signing (50% of $3,500 / $5,500 / $9,500); second half plus monthly retainer activate at go-live (~Day 21). No trial period. Getting the signing payment during the onboarding call (or immediately after) avoids a second awkward conversation and ensures billing is confirmed before ops time is invested.
 
 **Pricing tiers (confirm which applies before the call):**
 
@@ -717,12 +717,12 @@ This addresses the agency trauma directly, at the end, after they&apos;ve alread
 
 **The script (after the &quot;wow moment&quot;, before expectations):**
 
-&gt; &quot;Alright, everything&apos;s looking great. Let me get the billing piece out of the way so we can focus on results. I&apos;m going to send you a link right now &mdash; it covers the setup fee and your first month together. Once that&apos;s through, we&apos;re locked in and I start the clock on your go-live.&quot;
+&gt; &quot;Alright, everything&apos;s looking great. Let me get the billing piece out of the way so we can focus on results. I&apos;m going to send you a link right now &mdash; it covers the first half of your setup fee. The second half plus your first monthly retainer activate when we go live, around Day 21. Once today&apos;s payment is through, we&apos;re locked in and I start the clock on your go-live.&quot;
 
 **How to do it:**
 
 1. While on the call, go to the contractor&apos;s client detail page in admin.
-2. Click **&ldquo;Send Payment Link&rdquo;** in the page header &mdash; select the correct tier, click Send. The system creates a Stripe Checkout Session (setup fee + first month, no trial) and texts + emails the link to the contractor instantly. No portal login needed &mdash; they tap the link, enter their card on Stripe&apos;s page, done. Takes 30 seconds.
+2. Click **&ldquo;Send Payment Link&rdquo;** in the page header &mdash; select the correct tier, click Send. The system creates a Stripe Checkout Session for the first half of the setup fee (50% of the tier&apos;s setup) and texts + emails the link to the contractor instantly. The second half plus the monthly retainer auto-charge at go-live. No portal login needed &mdash; they tap the link, enter their card on Stripe&apos;s page, done. Takes 30 seconds.
 3. Confirm you see the subscription created: &quot;Perfect, I can see that went through. You&apos;re locked in. I&apos;ll have the system live within 21 days — that&apos;s the go-live guarantee.&quot;
 
 **If they hesitate on the setup fee:**
@@ -745,7 +745,7 @@ If they still won&apos;t pay, add to a warm nurture list. Do not invest ops time
 - **Run Voice AI Playground QA:** Open `/admin/voice-ai`, expand the client. Preview the greeting (hear it in their voice). Run the KB Test (all 10 questions should be answered or deferred, not gapped). Run the Guardrail Test (all 8 should pass). Complete QA Checklist &rarr; click &ldquo;Go Live.&rdquo;
 - **KB embedding:** After saving structured knowledge, entries are automatically embedded for semantic search. No action needed &mdash; the system handles this in the background. If the Voyage AI service is down, search falls back to keyword matching until embeddings complete.
 - Verify call forwarding with a test call to XYZ &mdash; confirm it rings 3 times then forwards to Twilio.
-- Verify subscription was created in Stripe Dashboard (setup fee + first month charged, card on file, no trial).
+- Verify subscription was created in Stripe Dashboard (first half of setup fee charged, card on file, second-half + monthly scheduled for go-live, no trial).
 - Add exclusion list contacts to the DNC/skip list in admin.
 - **Mark exclusion list reviewed** in admin (Configuration tab → Exclusion List → &ldquo;Mark as Reviewed&rdquo;) — required before autonomous mode can be enabled.
 - **Check onboarding checklist** on the client detail page. Verify items 1-5 (phone, forwarding, hours, KB, pricing) are green before closing the post-call session. Any red items are Day 1 blockers.
@@ -884,7 +884,7 @@ Do not offer a referral incentive yet. At this stage the social currency (&quot;
 5. **Min 15-18: Verify routing.**
    - Place a test call from your phone to the new number listed on GBP.
    - Confirm Voice AI picks up OR call routes to contractor per their setup.
-   - Send a test SMS to the same number. Confirm the AI replies within 5 seconds.
+   - Send a test SMS to the same number. Confirm the AI replies within seconds (during permitted hours).
 6. **Min 18-20: Close.**
    - &ldquo;All three listings now route to your business number. From this point forward, every Google search, every HomeStars match, every Yelp lookup goes through the system. You&apos;ll see it in next week&apos;s report.&rdquo;
    - Confirm next touch point: bi-weekly strategy call at Day 14.
@@ -1130,7 +1130,7 @@ When the text-back arrives in 10&ndash;15 seconds, say nothing. Let them react.
 
 **Basement-specific framing after the demo lands:**
 
-> &ldquo;That text just went out in 5 seconds. Picture this: you&rsquo;re down in a basement, no signal, framing a wall. A homeowner calls for a suite quote. They don&rsquo;t leave a voicemail &mdash; they call the next guy on Google. With this, they get a text before they even hang up. You just stole the lead from whoever was going to answer.&rdquo;
+> &ldquo;That text just went out in seconds during permitted hours. Picture this: you&rsquo;re down in a basement, no signal, framing a wall. A homeowner calls for a suite quote. They don&rsquo;t leave a voicemail &mdash; they call the next guy on Google. With this, during permitted hours they get a text before they even hang up. After hours, the text queues and fires the moment the window opens. You just stole the lead from whoever was going to answer.&rdquo;
 
 This is the most effective demo in the sales sequence. It costs you nothing to run and converts skeptics immediately. If they&apos;re with you in person, show it from across the table. If you&apos;re on a video call, have them text the number and screen-share the response.
 
@@ -1157,7 +1157,7 @@ Full scripts are in `docs/business-intel/SALES-OBJECTION-PLAYBOOK.md`. This is t
 
 ### Post-Call Follow-Up Templates
 
-**No trial period &mdash; payment is due at signup.** The system does not send a Day 25 trial-end reminder. Payment (setup fee + first month) is collected via Stripe Checkout before onboarding begins.
+**No trial period &mdash; signing payment is due at signup.** The system does not send a Day 25 trial-end reminder. The first half of the setup fee is collected via Stripe Checkout before onboarding begins; the second half plus monthly retainer auto-charge at go-live (~Day 21).
 
 **If payment was captured on the sales/onboarding call (standard path):**
 
@@ -1189,7 +1189,7 @@ Send within two hours of the sales call. Include the payment link. No onboarding
 > Good talking today. Here&apos;s a quick summary:
 >
 > - [One sentence on what resonated most &mdash; estimate follow-up, reactivation, or response speed based on their profile]
-> - Setup fee + first month via this link: [payment link] &mdash; takes 60 seconds. Once that&apos;s confirmed, I&apos;ll schedule your onboarding call and your number goes live within 21 days.
+> - First half of the setup fee via this link: [payment link] &mdash; takes 60 seconds. Second half plus your first monthly retainer activate at go-live around Day 21. Once today&apos;s payment is confirmed, I&apos;ll schedule your onboarding call.
 > - 90-day commitment, then month-to-month with 30 days notice.
 >
 > If you have questions, reply here or text [your number].
@@ -1514,7 +1514,7 @@ Understand this before your first sales call. This is what you are promising.
 Contractor signs the service agreement. You create their account, assign an Alberta phone number. They see an onboarding dashboard with 3 steps: phone (done), AI setup, and old quotes.
 
 **Day 1 &mdash; Onboarding call (30 min):**
-You fill their KB, they call their own number and watch the missed-call text arrive in 3-5 seconds. This is the &ldquo;holy shit&rdquo; moment. You import their old quotes. They leave the call knowing the system is live.
+You fill their KB, they call their own number and watch the missed-call text arrive within seconds during permitted hours (queues outside). This is the &ldquo;holy shit&rdquo; moment. You import their old quotes. They leave the call knowing the system is live.
 
 **Day 1-2 &mdash; Revenue Leak Audit delivered:**
 They receive a one-page assessment showing where money is leaking: slow response times, dead quotes, review gap vs competitors. This is the first proof the service is personalized, not generic.
@@ -1575,7 +1575,7 @@ Know these so you never overpromise in a sales conversation.
 | &ldquo;AI will know everything about my business&rdquo; | AI knows what&apos;s in the KB. Week 1 will have gaps. | &ldquo;The AI starts with what you tell it on the onboarding call. It gets smarter every week as we fill gaps. By Week 3 it handles 90%+ of questions.&rdquo; |
 | &ldquo;I never have to do anything&rdquo; | Contractor must: flag estimates, mark wins/losses, respond to escalations, approve review responses occasionally. Under 15 min/week. | &ldquo;You do 4 things: flag when you send a quote (one text), mark when you win or lose a job (one tap), respond when the AI escalates something to you, and approve review responses. Total: under 15 minutes a week.&rdquo; |
 | &ldquo;It integrates with Jobber&rdquo; | Webhook fires on lead status change. Contractor can connect via Zapier. No native integration. | &ldquo;We fire a webhook when leads change status. If you use Zapier, you can connect it to Jobber in 5 minutes. We don&apos;t have a native Jobber plugin yet.&rdquo; |
-| &ldquo;Guaranteed results&rdquo; | Guarantee is 5 engagements in 30 days (Layer 1) and 1 attributed project in 90 days (Layer 2). Both are platform-verified, not subjective. | &ldquo;The guarantee is specific: 5 real lead conversations in 30 days, or your first month is free. One project the system helped you win in 90 days, or your most recent month is refunded. Both are verified from our logs, not my opinion.&rdquo; |
+| &ldquo;Guaranteed results&rdquo; | Operational guarantee, not revenue-based. 21-day go-live or we keep working at no charge; 80% of inquiries logged by Day 30 or billing pauses until the threshold is restored. Setup fee non-refundable after Day 7. Day-14 cancel right caps max exposure at the first signing-fee installment ($1,750 Pilot / $2,750 Standard / $4,750 Premium). | &ldquo;21-day go-live or we keep working at no charge. 80% of inquiries logged by Day 30 or billing pauses until 80% threshold restored. Setup fee non-refundable after Day 7. Day-14 cancel right available (max exposure $1,750 / $2,750 first signing-fee installment). All platform-verified, not my opinion.&rdquo; |
 
 ---
 
@@ -1621,7 +1621,7 @@ sees it.       +----+----+
 - They call the contractor&apos;s number from Google. It rings 3 times.
 - If answered: normal conversation with the contractor.
 - If not answered: Voice AI picks up with a professional greeting using the contractor&apos;s business name. Qualifies the project, answers questions from the KB, books an estimate.
-- AND: they get a text-back from a local number within 5 seconds, referencing the number they called.
+- AND: they get a text-back from a local number within seconds during permitted hours (queues outside), referencing the number they called.
 
 ### Carrier-Specific Setup
 
@@ -1723,7 +1723,7 @@ Never say these to a contractor. They trigger agency trauma, tech anxiety, or id
 | Say This | Why It Works |
 |----------|-------------|
 | &quot;Your leads get followed up on even when you&apos;re mid-job&quot; | Paints the picture. No jargon. |
-| &quot;Texts back missed calls in 5 seconds&quot; | Specific, tangible, measurable |
+| &quot;Texts back missed calls in seconds during permitted hours&quot; | Specific, tangible, compliant |
 | &ldquo;90-day commitment, then month-to-month with 30 days notice&rdquo; | Sets honest expectations while neutralizing agency trauma |
 | &quot;Runs in the background&quot; | No management burden implied |
 | &quot;You built the estimate. You shouldn&apos;t have to beg for the job.&quot; | Names the dignity issue of follow-up |
@@ -1748,7 +1748,7 @@ Every contractor is running these through their head during the pitch:
 
 ### The Referral Story (What Spreads)
 
-&gt; &quot;I was on a job, missed a call, and 5 seconds later the system texted the homeowner. But the crazy part &mdash; he also found 12 old quotes in my phone. Three replied. One&apos;s a $40K kitchen. I paid five grand to a marketing company last year for nothing. This costs a thousand and it&apos;s already paid for itself twice over.&quot;
+&gt; &quot;I was on a job, missed a call, and seconds later the system texted the homeowner &mdash; during permitted hours, near-instant. But the crazy part &mdash; he also found 12 old quotes in my phone. Three replied. One&apos;s a $40K kitchen. I paid five grand to a marketing company last year for nothing. This costs $1,500 a month and it&apos;s already paid for itself twice over.&quot;
 
 **Why this spreads:** Specific dollar amount, zero-effort narrative, competitor contrast, no jargon, ends with a referral action.
 

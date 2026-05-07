@@ -132,7 +132,11 @@ const data = row.jsonbColumn as unknown as MyType;
 
 **AI callers:** All non-agent AI callers use `getTrackedAI()` for usage tracking. Agent nodes use `getAIProvider()` directly.
 
-**SMS sending:** All outbound messages go through `sendCompliantMessage()` from the compliance gateway — never call Twilio directly.
+**SMS sending:** All outbound messages go through the compliance gateway — never call Twilio directly.
+
+- **Lead-facing** (homeowner messages) → `sendCompliantMessage()` from `src/lib/compliance/compliance-gateway.ts`. Enforces consent, opt-out, DNC, quiet hours.
+- **Operator-facing** (hot-transfer, escalation, ops alerts) → `sendInternalSMS()` from the same gateway. Sentinel-protected and audit-logged; skips homeowner-specific checks.
+- **Banned:** direct `twilio` imports outside the whitelist (`twilio.ts`, `twilio-provisioning.ts`, `ring-group.ts`, `webhooks/twilio/**`, `cron/check-missed-calls`). The legacy `sendSMS` is now `_sendSmsToTwilio` (private). Enforced by ESLint rule + `quality:no-regressions` CI gate (`scripts/quality/twilio-bypass-guard.sh`).
 
 ## Error Handling
 

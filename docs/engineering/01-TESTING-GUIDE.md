@@ -343,6 +343,37 @@ Expected:
 - No matches in `src/app/api`.
 - `quality:logging-guard` passes.
 
+## 1b. React Component Tests (Wave 2B, May 2026)
+
+Component tests live alongside source files (`*.test.tsx`) and run inside a jsdom environment configured via the vitest projects setup.
+
+### How it&apos;s wired
+
+- `vitest.config.ts` defines two projects: a node project for service/library tests and a jsdom project for `*.test.tsx` files. The jsdom project loads `vitest.setup.ts` which imports `@testing-library/jest-dom` matchers.
+- `pnpm test` runs both projects sequentially; no separate command.
+- `@testing-library/react` is the canonical render/interaction API. Avoid `enzyme` or direct DOM manipulation.
+
+### Existing component tests (use as templates)
+
+- `src/components/leads/consent-status-badge.test.tsx` — pure presentational component with prop variants
+- `src/components/leads/intake-mode-selector.test.tsx` — controlled component with user interaction (`userEvent.click`)
+- `src/app/(dashboard)/leads/create-lead-dialog.test.tsx` — dialog with form submission + validation
+- `src/lib/clients/r2.test.ts` — non-component module test alongside Wave A R2 client
+
+### When to write a component test
+
+- The component renders conditional logic based on props or state (badges, status pills, mode selectors)
+- The component captures user input that maps to a domain decision (mode selection, consent attestation)
+- Visual regressions would have downstream compliance impact (consent badges)
+
+Snapshot tests are not used — assertions should be explicit DOM queries (`getByRole`, `getByText`) so changes surface as readable diffs.
+
+### Baseline
+
+Test count baseline as of May 2026: ~983 deterministic tests across both projects (was 312 before Wave 2B added the jsdom project + component test fixtures). Re-validate the count when making structural changes via `pnpm test --reporter=verbose | tail -5`.
+
+---
+
 ## 2. Sequential Manual Test Run
 
 Run in order. Do not skip prerequisites.
@@ -3523,7 +3554,7 @@ Expected:
 
 ```bash
 # Automated baseline
-npm test                    # 315 deterministic tests (no LLM calls)
+npm test                    # ~983 deterministic tests across node + jsdom projects (no LLM calls)
 npm run test:ai             # 29 AI tests: 23 single-turn criteria + 6 multi-turn scenarios (requires ANTHROPIC_API_KEY)
 npm run test:ai:full        # all 11 .ai-test.ts files across 6 eval categories, HTML report + baseline tracking (~$0.30, ~4min)
 npm run build

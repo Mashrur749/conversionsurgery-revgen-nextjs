@@ -273,6 +273,7 @@ Rules are appended when corrections happen. Format: `N. [CATEGORY] Instruction �
 12. [UX] No emojis in SMS notifications, email subjects, or any user-facing text — use professional text labels (URGENT:, REMINDER:, Claimed:).
 13. [UX] Mobile layouts must use flex + min-h-0 + dvh — never `h-[calc(100vh-Xrem)]` which breaks on iOS with dynamic browser chrome.
 14. [UX] Tables on mobile (< 640px) must use card layout fallback — `hidden sm:block` for table, `sm:hidden` for cards.
+15. [CODE] Operator-facing alerts use `sendInternalSMS()` from `compliance-gateway.ts` (sentinel-protected). Lead-facing messages use `sendCompliantMessage()`. Never call `_sendSmsToTwilio` directly or import `twilio` from outside the whitelist (twilio.ts, twilio-provisioning.ts, ring-group.ts, webhooks/twilio/**, cron/check-missed-calls). Enforced by ESLint + CI gate.
 
 ## graphify
 

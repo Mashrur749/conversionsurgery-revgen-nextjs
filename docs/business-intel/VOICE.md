@@ -1,5 +1,7 @@
 # ConversionSurgery Voice System (Canonical)
 
+> **⚠️ PRICING NOTE — May 2026:** This doc references the legacy $1,000/mo single-tier model. Current pricing is three-tier: Pilot ($3,500 setup + $1,500/mo, first 3 clients only), Standard ($5,500 + $2,000/mo, client 4+), Premium ($9,500 + $3,500/mo, hidden from public proposals). The voice/tone guidance in this doc remains current. See `OFFER-APPROVED-COPY.md` for canonical client-facing copy.
+
 Version: 1.0  
 Date: February 24, 2026  
 Owner: Founder

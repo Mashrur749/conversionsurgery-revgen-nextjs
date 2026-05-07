@@ -122,8 +122,9 @@ Varies — used reactively. Most fixes are 15–60 min. A2P suspension or compli
 **Symptom.** Contractor calls you alarmed. Or you receive a CASL complaint via email/regulator. Or a homeowner replies hostile: "I never asked for this, I'm reporting you."
 
 **Diagnosis.**
-1. Open the lead/conversation in admin. Pull the compliance audit log: when was consent captured? What was the source? What did the consent statement say?
-2. Verify against `complianceConsent` table — record exists? source URL or capture event present?
+1. First check `/admin/system-health` → Compliance Observability for sentinel-block aggregates (`compliance_sentinel_blocked_total`). Non-zero count means a bypass was caught — investigate which call site triggered it before opening the per-lead audit log.
+2. Open the lead/conversation in admin. Pull the compliance audit log: when was consent captured? What was the source? What did the consent statement say?
+3. Verify against `complianceConsent` table — record exists? source URL or capture event present?
 
 **Fix.**
 - Immediate: opt-out the recipient, add to DNC, send a brief apology ("Sorry — won't message you again. Removed."). Do not argue legality with the complainant.

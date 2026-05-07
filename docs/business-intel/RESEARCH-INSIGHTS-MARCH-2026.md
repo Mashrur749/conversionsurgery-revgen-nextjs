@@ -1,6 +1,8 @@
 # Alberta Contractor Research — Platform & GTM Implications
 
 > **⚠️ SUPERSEDED** — This document predates the Revenue Recovery System Business Reference (May 2026). Pricing, guarantee, and offer structure described here are outdated. See `docs/business-intel/Revenue_Recovery_System_Business_Reference.md` for current direction. Retained for historical reference only.
+>
+> **⚠️ PRICING NOTE — May 2026:** This doc references the legacy $1,000/mo single-tier model (and an earlier $1,497/mo iteration). Current pricing is three-tier: Pilot ($3,500 setup + $1,500/mo, first 3 clients only), Standard ($5,500 + $2,000/mo, client 4+), Premium ($9,500 + $3,500/mo, hidden from public proposals). Research framing (offer angles, objection handling, seasonality) remains directionally useful. See `OFFER-APPROVED-COPY.md` for canonical client-facing copy.
 
 Source: `conversionurgery_research.docx` (March 2026)
 Research base: ContractorTalk, Reddit, Houzz Pro, finmkt.io, Projul CRM, GreatBuildz, AGC Survey, Harvard JCHS LIRA

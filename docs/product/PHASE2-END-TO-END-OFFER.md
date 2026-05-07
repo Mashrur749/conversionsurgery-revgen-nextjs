@@ -139,6 +139,8 @@ Per 8-agent stochastic consensus (2026-04-11): basement development beat kitchen
 
 ## Upsell Ladder
 
+> **🛑 SUPERSEDED PRICING — current model is three-tier. See top of doc.**
+
 | Tier | When | What | Price | Cumulative |
 |------|------|------|-------|------------|
 | Base | Month 1 | Lead response + follow-up + reviews + bi-weekly strategy calls | $1,000/mo | $1,000/mo |
@@ -150,6 +152,8 @@ Per 8-agent stochastic consensus (2026-04-11): basement development beat kitchen
 **Key insight:** Don't need 15 clients at $1K. Need 8 at $4K = $32K MRR.
 
 ### Pricing Psychology (ICP-specific)
+
+> **🛑 SUPERSEDED PRICING — current model is three-tier. See top of doc.**
 
 **$1,000 not $997.** Contractors see $997 as a marketing trick. Round number = honest. These are tradesmen, not SaaS buyers.
 
@@ -181,12 +185,16 @@ Per 8-agent stochastic consensus (2026-04-11): basement development beat kitchen
 - Recovering 1 leaked lead/month = 16x monthly ROI
 - Never say "one job pays for 6.7 years" — that's revenue math, not profit math
 
+> **🛑 SUPERSEDED PRICING — current model is three-tier. See top of doc.**
+
 **Upsell rules:**
 1. Never upsell before base service proves ROI (wait for Day 45 strategy call with concrete numbers)
 2. Never upsell to a client who hasn't confirmed a win via WON command
 3. The upsell should come from THEM on the bi-weekly call, not a pitch
 
 ## Sequencing
+
+> **🛑 SUPERSEDED PRICING — current model is three-tier. See top of doc.**
 
 1. **Now → 5-7 clients:** Prove backend with Calgary basement contractors, collect conversion data, build case studies
 2. **At 5-7 clients:** Build templatized ads + landing pages using real keyword/conversion intelligence from basement niche

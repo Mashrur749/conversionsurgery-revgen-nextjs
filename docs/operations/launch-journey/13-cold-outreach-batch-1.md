@@ -52,7 +52,7 @@ From file 11's prospect list, pick 5 rows where you have the strongest specific 
 Map to scripts in `docs/operations/COLD-START-PLAYBOOK.md` §The Scripts (Scripts A, C, D adapted for email):
 
 - **Email A — Specific Finding.** Lead with one number. "I noticed [Business] has 12 Google reviews; [Competitor] has 84. I can tell you what that gap is likely costing in 60 seconds — worth a reply?"
-- **Email B — Missed Call Hook.** Lead with the recovery angle. "I built a tool that texts back missed calls in 5 seconds. Most renovators I talk to lose 3-4 jobs a year to leads that went cold on a job site. Want me to show you what mine sends back?"
+- **Email B — Missed Call Hook.** Lead with the recovery angle. "I built a tool that texts back missed calls in seconds during permitted hours. Most renovators I talk to lose 3-4 jobs a year to leads that went cold on a job site. Want me to show you what mine sends back?"
 - **Email C — Direct Pain Point.** Lead with the dead-quote question. "Quick question — when [Business] sends a quote and the homeowner goes quiet, what happens after that?"
 
 NO Loom link. NO calendar link. NO attachments. The Loom is for the SECOND email, after they reply (file 14).

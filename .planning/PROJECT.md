@@ -59,7 +59,7 @@ Current gaps and work in progress:
 
 ## Context
 
-**Business model:** Managed service for Calgary basement/renovation contractors. Three tiers: Pilot ($1,500/mo), Standard ($2,000/mo), Premium ($3,500/mo — blocked). 30-day free trial + 90-day pipeline guarantee.
+**Business model:** Managed service for Calgary basement/renovation contractors. Three tiers: Pilot ($3,500 setup + $1,500/mo, first 3 clients only), Standard ($5,500 setup + $2,000/mo, client 4+), Premium ($9,500 setup + $3,500/mo, hidden from public proposals via `publiclyVisible: false`). Setup split 50/50 (signing/go-live), Day-7 non-refundable. Operational guarantee: 21-day go-live + 30-day logging gate (auto-pause billing). Day-14 cancel right + 30-day pause right. Voice AI included free with 1,000 min/mo fair-use clause.
 
 **ICP:** Referral-driven renovation contractors doing $500K-$3M annual revenue, 2-15 employees, who lose revenue from missed calls and unworked estimates.
 

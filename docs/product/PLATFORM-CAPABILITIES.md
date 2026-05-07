@@ -1,7 +1,80 @@
 # Platform Capabilities
 
-Last updated: 2026-04-14 (FMA Surfaced FM resolution: attribution evidence in call prep, competitor-chosen guard on estimate auto-trigger, web form verification checklist item, listing migration tracking + cockpit action, phone validation for dormant reengagement, payment capture cockpit action)
+Last updated: 2026-05-07 (Wave A Hardening: 3-mode intake selector, sendInternalSMS path, compliance-bypass guard, sentinel observability, R2 audit log export, contractor quiet-hours preference)
 Purpose: Complete inventory of what ConversionSurgery can do today — organized by value delivered, not by technical area.
+
+---
+
+## Wave A Hardening (May 2026)
+
+Pre-launch compliance + observability hardening shipped across two phases (commits `3cde5bc`, `a5901c0`). These are platform-level guarantees that protect every downstream feature.
+
+### 3-Mode Intake Selector (CASL §10 + §10(2))
+
+The lead intake form (admin and portal) presents three consent modes; the operator picks the one that matches the inquiry context:
+
+| Mode | CASL basis | Recency window | Evidence required |
+|------|-----------|----------------|-------------------|
+| **Standard (implied)** | §10 implied — inquiry from prospect | inquiry_date &lt; 180 days | inquiry_date timestamp |
+| **Express consent** | §10(1) express written consent | any age | `express_consent_evidence` text (where/how consent was captured) |
+| **Existing customer** | §10(2) existing business relationship | within 24 months of last transaction | last-transaction date + customer flag |
+
+- The intake form pivots its required fields based on mode selection (`src/components/leads/intake-mode-selector.tsx`)
+- A consent badge surfaces on the lead detail page reflecting the mode and recency
+- `src/app/api/leads/import` and `src/app/api/client/leads/import` validate the mode + evidence before insert; CSV uploaders enforce the same gate
+- Migration `0030` adds `consent_mode`, `express_consent_evidence`, and `last_transaction_at` columns to `leads`
+
+### Operator-Alert SMS Path (`sendInternalSMS()`)
+
+Operator-facing SMS alerts (hot-transfer, escalation, ops health) used to bypass the compliance gateway for performance. Wave A introduced `sendInternalSMS()` in `src/lib/compliance/compliance-gateway.ts` which:
+
+- Routes through the same gateway as lead-facing sends (sentinel + audit-log path)
+- Skips homeowner-specific checks (consent, quiet hours, DNC) since the recipient is internal staff
+- Tags every send with `category: 'internal_alert'` for downstream audit filtering
+- Replaces all 7 prior direct-Twilio call sites identified in the bypass audit
+
+Lead-facing sends continue to use `sendCompliantMessage()`. There is no other supported send path.
+
+### Compliance Bypass Guard (ESLint + CI)
+
+A static guard prevents direct `twilio` imports outside an explicit whitelist:
+
+- ESLint rule blocks `import twilio` and `from 'twilio'` everywhere except: `src/lib/services/twilio.ts`, `src/lib/services/twilio-provisioning.ts`, `src/lib/services/ring-group.ts`, `src/app/api/webhooks/twilio/**`, and `src/app/api/cron/check-missed-calls/**`
+- CI gate `scripts/quality/twilio-bypass-guard.sh` runs in `quality:no-regressions` and fails the build if the rule is violated or a new direct caller appears
+- The duplicate `src/lib/clients/twilio-tracked.ts` was deleted; the legacy `sendSMS` was renamed `_sendSmsToTwilio` and is now private to `twilio.ts`
+
+### Compliance Sentinel + Observability
+
+Every gateway invocation is counted; blocks are aggregated into `compliance_sentinel_blocked_total`:
+
+- Surfaced at `/admin/system-health` via `compliance-observability-panel.tsx`
+- Non-zero block counts indicate either a normal compliance event (opt-out, quiet hours) or a bypass attempt the guard caught
+- Operators monitor this tile during the daily ops review (see `docs/operations/01-OPERATIONS-GUIDE.md`)
+
+### R2 Audit Log Export (Weekly Cron, 7-Year Retention)
+
+Compliance audit log + consent records export to Cloudflare R2 weekly via `/api/cron/audit-log-export`:
+
+- Object-lock mode `COMPLIANCE` (immutable; not even root can delete during retention window)
+- Retention 7 years (CASL §49 audit-trail floor)
+- Implementation: `src/lib/clients/r2.ts` (R2 client wrapper), `src/app/api/cron/audit-log-export/` (cron route)
+- Export status surfaces at `/admin/system-health`
+- Configured via Cloudflare R2 bucket policy + worker cron trigger
+
+### Per-Client Contractor Quiet Hours Preference (Decision F)
+
+Contractors can opt their own outbound notification stream into quiet-hours enforcement:
+
+- Setting at `/client/settings/notifications` (`contractor_alert_quiet_hours_enabled`, default OFF — exempt)
+- When enabled, operator-alert SMS to that contractor is queued during their local quiet-hours window
+- Default OFF preserves existing behavior; opt-in is the contractor's call
+- Migration `0031` adds the column to `clients`
+
+### Verification
+
+- Component tests: `src/components/leads/consent-status-badge.test.tsx`, `src/components/leads/intake-mode-selector.test.tsx`, `src/lib/clients/r2.test.ts`, `src/lib/compliance/compliance-gateway.internal.test.ts`
+- E2E: `docs/engineering/01-TESTING-GUIDE.md` Phase G — Compliance
+- Migrations: `drizzle/0030_*.sql`, `drizzle/0031_big_boom_boom.sql`
 
 ---
 

@@ -154,7 +154,7 @@ Hardened controls to prevent double-texts, lost messages, and infinite retries:
    - `active_calls.call_sid` unique index (prevents duplicate call records)
    - `webhook_log` indexes on `(client_id, event_type)` and `created_at` for debugging
 
-6. **Compliance gateway coverage:** All lead-facing outbound SMS routes through `sendCompliantMessage()` for opt-out/DNC/consent/quiet-hours enforcement. Direct `sendSMS()` is reserved for internal team notifications and compliance-exempt responses (HELP, opt-in/opt-out confirmations).
+6. **Compliance gateway coverage:** All lead-facing outbound SMS routes through `sendCompliantMessage()` for opt-out/DNC/consent/quiet-hours enforcement. Operator-facing alerts (hot-transfer, escalation, ops health) use `sendInternalSMS()` from `src/lib/compliance/compliance-gateway.ts` — the canonical operator-alert path, sentinel-protected and audit-logged. The legacy `sendSMS` is now `_sendSmsToTwilio` (private to `twilio.ts`) and is not callable externally; direct `twilio` imports are banned outside a whitelist enforced by ESLint + the `quality:no-regressions` CI gate.
 
 7. **CTIA HELP keyword:** Inbound `HELP`/`INFO` messages trigger mandatory auto-reply (business contact + opt-out instructions). All exempt sends produce `compliance_exempt_send` audit events.
 

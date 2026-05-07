@@ -39,7 +39,7 @@ Done quarterly is too late, daily is too often.
 
 1. **Template refinement.** Pull the top 10 AI replies and bottom 10 (by quality flag or operator override). Update prompts/KB if you see a pattern.
 2. **KB optimization across clients.** Are similar KB entries duplicated across clients? Promote shared knowledge to a portfolio-level KB. Are unique KBs drifting from client truth? Refresh.
-3. **Compliance audit.** Sample 20 random outbound messages from the past 30 days. Verify: sender ID present, STOP language present, consent record exists in `complianceConsent`. Document the audit run in your ops log. This is your CASL/CRTC defense if a complaint ever lands.
+3. **Compliance audit.** Sample 20 random outbound messages from the past 30 days. Verify: sender ID present, STOP language present, consent record exists in `complianceConsent`. Document the audit run in your ops log. This is your CASL/CRTC defense if a complaint ever lands. The compliance audit log + consent records export to Cloudflare R2 weekly via `/api/cron/audit-log-export`. Logs retained 7 years with COMPLIANCE-mode object-lock. View export status at `/admin/system-health`.
 4. **Billing reconciliation.** Verify Stripe charges match expected MRR per client. Investigate any failed payment.
 
 ### Quarterly routine — Growth Blitz (~4–6 hours)

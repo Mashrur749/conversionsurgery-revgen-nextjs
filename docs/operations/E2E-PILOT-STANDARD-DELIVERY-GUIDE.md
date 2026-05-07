@@ -92,7 +92,7 @@ Use the cold call opener from `COLD-START-PLAYBOOK.md` Script C. When you have a
 
 If no audit data, use the missed-call hook:
 
-> "Hey [Name], this is [Your Name] — I'll be super quick, 60 seconds. I built a tool that texts back missed calls in 5 seconds — every missed call, automatically. I'm not pitching you today. Can I send you our demo number right now? You call it, hang up, and your phone buzzes in 5 seconds."
+> "Hey [Name], this is [Your Name] — I'll be super quick, 60 seconds. I built a tool that texts back missed calls in seconds during permitted hours — every missed call, automatically. I'm not pitching you today. Can I send you our demo number right now? Try it during business hours — you call it, hang up, and your phone buzzes within seconds."
 
 ### 2.2 Discovery Questions
 
@@ -399,7 +399,7 @@ Reference: `01-TESTING-GUIDE.md` Step A.3.
 
 **Setup**: Same.
 **Action**: Call the Business Line from Dev Phone #2. Let it ring through to Voice AI / hang up.
-**Expected**: Within 5 seconds, Dev Phone #2 receives "Sorry we missed your call..." text.
+**Expected**: Within seconds during permitted hours (queues outside), Dev Phone #2 receives "Sorry we missed your call..." text. Run this test during permitted hours to validate the live path.
 **Verify**: New conversation appears in Client View → Conversations.
 - [ ] Pass
 

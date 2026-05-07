@@ -4,6 +4,8 @@ Version 1.0 | April 11, 2026
 For: Mashrur (solo cold outreach)
 Vertical: Basement development contractors, Calgary, $600K-$1.5M revenue, 15-25 leads/month
 
+> **Scope note:** This toolkit is sub-niche-specific to basement contractors ($600K-$1.5M revenue band). The strategic ICP is broader — Calgary/Edmonton design-build renovators at $1M-$10M revenue, 15-40 leads/month, including kitchen/bath, basement, and whole-home/additions sub-niches. See `docs/business-intel/ICP-DEFINITION.md` for the canonical ICP. Use this toolkit only when prospecting basement-vertical contractors; defer to ICP-DEFINITION for cross-vertical outreach.
+
 ---
 
 ## HOW TO USE THIS DOCUMENT
@@ -44,7 +46,7 @@ Then STOP. Do not say another word. Let them answer.
 
 **If they say "goes to voicemail" / "I try to call back later" / "my wife grabs it sometimes":**
 
-> "Yeah, that's what I hear from every basement guy I talk to. I built something that catches that call, texts the homeowner back in 5 seconds, and books the site visit -- while you're still holding the drill. Want to see how it works? Takes 60 seconds on the phone right now."
+> "Yeah, that's what I hear from every basement guy I talk to. I built something that catches that call, texts the homeowner back in seconds during permitted hours, and books the site visit -- while you're still holding the drill. Want to see how it works? Takes 60 seconds on the phone right now."
 
 If they say yes, go to **Section 3: Instant Demo**.
 
@@ -148,7 +150,7 @@ Always state the guarantee before the price. Every time.
 
 **Expected response rate:** 3-8%; lower because messages often go to filtered inbox.
 
-> "Hey [Name], I&apos;m Mashrur -- I&apos;m local here in Calgary. I help basement contractors catch the leads they miss when they&apos;re on a job. Not a marketing company -- just a system that texts homeowners back in 5 seconds when you can&apos;t answer. Worth a quick chat?"
+> "Hey [Name], I&apos;m Mashrur -- I&apos;m local here in Calgary. I help basement contractors catch the leads they miss when they&apos;re on a job. Not a marketing company -- just a system that texts homeowners back in seconds during permitted hours when you can&apos;t answer. Worth a quick chat?"
 
 **When they reply:** Same approach -- move to a phone call. If they say "tell me more," give 2-3 sentences max, then ask for 15 minutes on the phone.
 
@@ -178,7 +180,7 @@ After that, move on.
 
 **When to use:** You texted or called yesterday and got no response. This is your one follow-up. After this, they go on the "try again in 30 days" list.
 
-> "Hey [Name], tried you yesterday -- I help basement contractors in Calgary catch the calls they miss on site. Not a marketing agency. Just a system that responds to leads in 5 seconds while you're working. Got 2 minutes this week?"
+> "Hey [Name], tried you yesterday -- I help basement contractors in Calgary catch the calls they miss on site. Not a marketing agency. Just a system that responds to leads in seconds during permitted hours while you're working. Got 2 minutes this week?"
 
 **When they reply:** Same as above -- call them immediately.
 
@@ -200,10 +202,10 @@ If the contractor says "show me" or "how does it work?" -- run this live demo. I
 
 **What happens:**
 - Voice AI picks up the call
-- Missed-call text-back fires within 5 seconds
+- Missed-call text-back fires within seconds during permitted hours (queues outside)
 - The caller gets a text and the AI starts qualifying them
 
-> "See that text? That just happened in 5 seconds. That's what happens to every call you miss. The system qualifies them, answers their questions about your services, and books a site visit into your calendar. You don't touch anything."
+> "See that text? That just happened in seconds during permitted hours. That's what happens to every call you miss during business hours. After hours, it queues and fires the moment the window opens. The system qualifies them, answers their questions about your services, and books a site visit into your calendar. You don't touch anything."
 
 Now hit them with the ROI math:
 
@@ -237,11 +239,11 @@ For each objection: what they say, what they really mean, what to say, and what 
 
 **What to say:**
 
-> "HomeStars is great for getting the lead. But what happens after the lead comes in? They submit a request, three contractors get notified, and the first one to respond gets the job. If you're in a basement when that notification comes in, you're not first. The system makes you first -- every time. It responds in 5 seconds, qualifies the project, and books the visit. HomeStars gets you the lead. This makes sure you actually win it."
+> "HomeStars is great for getting the lead. But what happens after the lead comes in? They submit a request, three contractors get notified, and the first one to respond gets the job. If you're in a basement when that notification comes in, you're not first. The system makes you first -- every time, during permitted hours. It responds in seconds, qualifies the project, and books the visit. HomeStars gets you the lead. This makes sure you actually win it."
 
 **If they push back:** "I respond fast enough."
 
-> "How fast? Because the data on HomeStars says the contractor who responds in under 5 minutes wins the job 78% of the time. When you're mid-job, are you responding in under 5 minutes? The system does it in under 5 seconds."
+> "How fast? Because the data on HomeStars says the contractor who responds in under 5 minutes wins the job 78% of the time. When you're mid-job, are you responding in under 5 minutes? The system does it in seconds during permitted hours."
 
 ---
 
@@ -357,7 +359,7 @@ Point out message 6: the AI hit a boundary, said so honestly, and escalated with
 
 **If they push back:** "My customers expect to talk to me."
 
-> "And they will -- for the conversations that matter. But when a new lead calls at 2pm on a Tuesday and you're cutting headers in a basement, would they rather get a professional response in 5 seconds or your voicemail? The system is what happens between 'they called' and 'you called back.' It buys you time without losing the lead."
+> "And they will -- for the conversations that matter. But when a new lead calls at 2pm on a Tuesday and you're cutting headers in a basement, would they rather get a professional response within seconds (during permitted hours) or your voicemail? The system is what happens between 'they called' and 'you called back.' It buys you time without losing the lead."
 
 ---
 
@@ -429,7 +431,7 @@ The Problem:
 You're in a basement framing a wall. Your phone buzzes. A homeowner wants a quote on a $70K basement development. You can't answer. By the time you call back, they've already talked to two other contractors. You do this 3-4 times a week. At $60K-$80K per basement, that's $200K+ in potential revenue walking away every month.
 
 The Solution:
-- Every missed call gets a response in under 5 seconds -- the system picks up, qualifies the project, answers questions, and books the site visit into your calendar
+- Every missed call gets a response within seconds during permitted hours (queues outside) -- the system picks up, qualifies the project, answers questions, and books the site visit into your calendar
 - Every estimate you send gets 4 personalized follow-ups over 14 days until you get a yes or a no -- no more quotes going silent
 - Every finished job gets an automatic Google review request -- your reviews grow on autopilot
 
@@ -623,7 +625,7 @@ When they say "send me something" on the call, send this within 30 minutes. Spee
 >
 > I built a system specifically for basement contractors in Calgary that does three things:
 >
-> 1. Catches every call you miss on site and texts the homeowner back in 5 seconds
+> 1. Catches every call you miss on site and texts the homeowner back within seconds during permitted hours (queues outside)
 > 2. Follows up on every estimate you send for 14 days automatically
 > 3. Requests a Google review after every completed job
 >

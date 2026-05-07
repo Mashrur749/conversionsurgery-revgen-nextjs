@@ -123,6 +123,8 @@ Last verified commit: `docs: Wave 7 additions (2026-04-01)`
 64. **Permanent removal requests:** When a lead requests permanent removal beyond the standard STOP opt-out, add their number to the global DNC list via the admin compliance tools. DNC blocks ALL outbound including transactional messages, unlike opt-out which only blocks commercial messages.
 65. **DNC list audit (monthly):** Periodically audit the DNC list to confirm no legitimate leads were accidentally added. Check for numbers that were added without a clear opt-out or removal request in the audit log.
 
+65a. **Audit log immutable export (weekly):** The compliance audit log + consent records export to Cloudflare R2 weekly via `/api/cron/audit-log-export`. Logs retained 7 years with COMPLIANCE-mode object-lock (immutable; even root cannot delete during the retention window). View export status at `/admin/system-health`. If the export status shows a failed or stale run, re-trigger via curl with `CRON_SECRET` and investigate the cron log; export drift is a CASL §49 audit-trail risk.
+
 ### Feature Toggle Reference
 66. **Toggle-first diagnosis:** When a contractor reports unexpected behavior (AI not responding, flows not sending, voice not activating), check their feature toggle state before investigating code. The 18 toggles are: `missedCallSms`, `aiResponse`, `aiAgent`, `autoEscalation`, `voice`, `flows`, `leadScoring`, `reputationMonitoring`, `autoReviewResponse`, `calendarSync`, `hotTransfer`, `paymentLinks`, `photoRequests`, `multiLanguage`, `smartAssist`, `smartAssistDelay`, `smartAssistManualCategories`, `preferredLanguage`. Most &ldquo;broken feature&rdquo; reports are a disabled toggle.
 

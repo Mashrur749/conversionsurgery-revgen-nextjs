@@ -299,4 +299,19 @@ Since the original audit window, new managed-service features (Smart Assist work
    - Applied to: agent orchestrator, win-back automation, no-show recovery automation.
    - No auth boundary changes were introduced.
 
+26. Compliance Bypass Hardening (Wave A Hardening, 2026-05):
+   - **7 bypass sites migrated through the gateway.** A bypass audit identified 7 direct-Twilio call sites (operator alerts, hot-transfer notifications, ops-health pings) that were sending without going through `sendCompliantMessage()`. All 7 now route through the gateway via the new `sendInternalSMS()` path.
+   - **`sendInternalSMS()` introduced** in `src/lib/compliance/compliance-gateway.ts` as the canonical operator-facing SMS path. It enforces sentinel + audit-log telemetry while skipping homeowner-specific checks (consent, quiet hours, DNC). All sends are tagged `category: 'internal_alert'`.
+   - **`sendSMS` renamed `_sendSmsToTwilio`** and made private to `src/lib/services/twilio.ts`. External callers cannot import it. The duplicate `src/lib/clients/twilio-tracked.ts` was deleted.
+   - **ESLint rule** banning direct `twilio` imports outside an explicit whitelist:
+     - `src/lib/services/twilio.ts`
+     - `src/lib/services/twilio-provisioning.ts`
+     - `src/lib/services/ring-group.ts`
+     - `src/app/api/webhooks/twilio/**`
+     - `src/app/api/cron/check-missed-calls/**`
+   - **CI gate** (`scripts/quality/twilio-bypass-guard.sh`) wired into `pnpm run quality:no-regressions` — fails the build if a new direct-Twilio caller appears or the ESLint rule is suppressed.
+   - **Compliance sentinel counter** (`compliance_sentinel_blocked_total`) surfaces aggregate blocks at `/admin/system-health` so non-zero counts are visible in daily ops review.
+   - **Audit log immutable export.** Weekly cron `/api/cron/audit-log-export` writes the compliance audit log + consent records to Cloudflare R2 with object-lock mode `COMPLIANCE` (immutable) and 7-year retention. Implementation in `src/lib/clients/r2.ts`.
+   - No auth boundary changes were introduced.
+
 Security posture remains aligned with the audited model; no new auth model exceptions were introduced.

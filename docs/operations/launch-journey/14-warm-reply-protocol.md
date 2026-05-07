@@ -45,6 +45,8 @@ Move fast. Reply rates drop sharply if you wait more than 60 minutes — they ha
 
 3. **Save their written confirmation.** Screenshot or PDF the email/SMS where they say "yes, you have authorization." Store it in your CRM or prospect list under that prospect's row. This is your CASL paper trail. No confirmation, no demo — fall back to a generic Dead Lead Resurrection demo using your existing test data.
 
+> **Intake-mode callout (CASL).** When collecting dead quotes for the demo, ask for `inquiry_date` per quote. If any quote is &gt;180 days old, you'll need `express_consent_evidence` per row (CASL §10 implied-consent recency window expires at 180 days). The demo CSV/intake supports three modes — use `express_consent` mode for any older quotes, or skip them. Reference: `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` §1.7 for the full protocol.
+
 ### Pre-call (24–48 hours before the discovery call)
 
 This is where the demo gets built. The full Dead Lead Resurrection protocol lives in `docs/operations/02-MANAGED-SERVICE-PLAYBOOK.md` §1.7 — read it before every demo until it's muscle memory. The summary:
