@@ -85,7 +85,7 @@ const sendMessageSchema = z.object({
 
 export const POST = adminRoute(
   { permission: AGENCY_PERMISSIONS.CONVERSATIONS_RESPOND },
-  async ({ request }) => {
+  async ({ request, session }) => {
     const body = await request.json();
     const data = sendMessageSchema.parse(body);
 
@@ -109,7 +109,7 @@ export const POST = adminRoute(
       return NextResponse.json({ success: true });
     }
 
-    // Custom message — send directly via agency number
+    // Custom message — route through compliance gateway.
     const db = getDb();
     const [client] = await db
       .select()
@@ -121,24 +121,36 @@ export const POST = adminRoute(
       return NextResponse.json({ error: 'Client has no phone number' }, { status: 400 });
     }
 
-    // Import twilio and send
-    const twilio = await import('twilio');
-    const twilioClient = twilio.default(
-      process.env.TWILIO_ACCOUNT_SID!,
-      process.env.TWILIO_AUTH_TOKEN!,
-    );
-
     const { getAgencyNumber } = await import('@/lib/services/agency-communication');
+    const { sendCompliantMessage } = await import('@/lib/compliance/compliance-gateway');
     const agencyNumber = await getAgencyNumber();
     if (!agencyNumber) {
       return NextResponse.json({ error: 'Agency number not configured' }, { status: 400 });
     }
 
-    const message = await twilioClient.messages.create({
+    const result = await sendCompliantMessage({
+      clientId: data.clientId,
       to: client.phone,
       from: agencyNumber,
       body: data.message,
+      messageClassification: 'proactive_outreach',
+      messageCategory: 'transactional',
+      metadata: {
+        source: 'admin_custom_message',
+        adminUserId: session.userId,
+      },
     });
+
+    if (result.blocked) {
+      return NextResponse.json(
+        {
+          error: 'Compliance gateway blocked send',
+          reason: result.blockReason,
+          warnings: result.warnings,
+        },
+        { status: 409 },
+      );
+    }
 
     const [inserted] = await db
       .insert(agencyMessages)
@@ -148,11 +160,16 @@ export const POST = adminRoute(
         channel: 'sms',
         content: data.message,
         category: 'custom',
-        twilioSid: message.sid,
-        delivered: true,
+        twilioSid: result.messageSid ?? null,
+        delivered: result.sent,
       })
       .returning();
 
-    return NextResponse.json({ success: true, messageId: inserted.id });
+    return NextResponse.json({
+      success: true,
+      messageId: inserted.id,
+      queued: result.queued,
+      warnings: result.warnings,
+    });
   }
 );

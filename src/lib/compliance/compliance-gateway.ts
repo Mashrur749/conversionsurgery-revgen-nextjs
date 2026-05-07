@@ -1,9 +1,9 @@
-import { sendSMS } from '@/lib/services/twilio';
+import { _sendSmsToTwilio } from '@/lib/services/twilio';
 import { ComplianceService } from './compliance-service';
 import { getClientUsagePolicy, getSubscriptionWithPlan } from '@/lib/services/subscription';
-import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessages, blockedNumbers } from '@/db';
+import { getDb, clients, leads, consentRecords, quietHoursConfig, scheduledMessages, blockedNumbers, optOutRecords, doNotContactList } from '@/db';
 import { isMessageLimitReached } from '@/lib/services/usage-policy';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, isNull } from 'drizzle-orm';
 import { getTimezoneOffset } from 'date-fns-tz';
 import { createHash } from 'crypto';
 import {
@@ -576,7 +576,7 @@ export async function sendCompliantMessage(
   // -----------------------------------------------------------
   let messageSid: string;
   try {
-    messageSid = await sendSMS(normalizedPhone, body, from, mediaUrl?.length ? { mediaUrl } : undefined);
+    messageSid = await _sendSmsToTwilio(normalizedPhone, body, from, mediaUrl?.length ? { mediaUrl } : undefined);
   } catch (error) {
     // Log failed send attempt
     await ComplianceService.logComplianceEvent(clientId, 'message_send_failed', {
@@ -796,4 +796,181 @@ async function getNextAllowedSendAt(clientId: string, timezone: string): Promise
 
   // Convert the computed local target back to UTC-ish timestamp using current zone offset.
   return new Date(localTarget.getTime() - offset);
+}
+
+// ===========================================================================
+// Internal SMS gateway — operator alerts only
+// ===========================================================================
+
+/**
+ * Parameters for sendInternalSMS.
+ */
+export interface SendInternalSMSParams {
+  /** Operator's personal phone (E.164 or normalizable). */
+  to: string;
+  /** Sender phone (agency Twilio number). */
+  from: string;
+  /** Message body. */
+  body: string;
+  /** Subject identifier — used for audit logging and dedup keys upstream. */
+  subject: string;
+  /** Optional structured metadata for the audit log. */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Result returned by sendInternalSMS.
+ */
+export interface SendInternalSMSResult {
+  sent: boolean;
+  blocked: boolean;
+  blockReason?: string;
+  messageSid?: string;
+  auditId?: string;
+}
+
+/**
+ * FOR OPERATOR-FACING / INTERNAL ALERTS ONLY.
+ *
+ * Adding callers other than operator-alert paths requires explicit security review.
+ * For lead-facing or contractor-facing sends, use {@link sendCompliantMessage} instead —
+ * that path enforces the full CASL/TCPA pipeline (consent, quiet hours, monthly limits).
+ *
+ * This path is the narrow gateway for alerts the operator MUST receive (system errors,
+ * compliance incidents, etc.). It still runs three sentinel checks before transport:
+ *   1. Operator kill switch (OUTBOUND_AUTOMATIONS).
+ *   2. Recipient opt-out — should never be true for operator phone, but if a
+ *      misconfiguration puts the operator on opt-out we surface it loudly.
+ *   3. Platform DNC.
+ *
+ * Every call writes to compliance_audit_log with category
+ *   - `internal_sms_sent` on success
+ *   - `internal_sms_sentinel_block` on block
+ * so Phase 2 sentinel-counter dashboards can derive metrics.
+ */
+export async function sendInternalSMS(
+  params: SendInternalSMSParams
+): Promise<SendInternalSMSResult> {
+  const { to, from, body, subject, metadata } = params;
+
+  const normalizedPhone = ComplianceService.normalizePhoneNumber(to);
+  const phoneHash = ComplianceService.hashPhoneNumber(normalizedPhone);
+
+  const baseAuditMetadata: Record<string, unknown> = {
+    phoneNumber: normalizedPhone,
+    phoneHash,
+    subject,
+    direction: 'internal_operator_alert',
+    ...metadata,
+  };
+
+  // -----------------------------------------------------------
+  // Sentinel 1: kill switch
+  // -----------------------------------------------------------
+  const killSwitchOn = await isOpsKillSwitchEnabled(
+    OPS_KILL_SWITCH_KEYS.OUTBOUND_AUTOMATIONS
+  );
+  if (killSwitchOn) {
+    await ComplianceService.logComplianceEvent(null, 'internal_sms_sentinel_block', {
+      ...baseAuditMetadata,
+      blockReason: 'kill_switch',
+    });
+    return {
+      sent: false,
+      blocked: true,
+      blockReason: 'kill_switch',
+    };
+  }
+
+  // -----------------------------------------------------------
+  // Sentinel 2: opt-out (operator phone should never be opted out;
+  // if it is, that's a misconfiguration we MUST surface)
+  // -----------------------------------------------------------
+  const db = getDb();
+  const optOut = await db.query.optOutRecords.findFirst({
+    where: and(
+      eq(optOutRecords.phoneNumberHash, phoneHash),
+      isNull(optOutRecords.reoptedInAt)
+    ),
+  });
+  if (optOut) {
+    await ComplianceService.logComplianceEvent(null, 'internal_sms_sentinel_block', {
+      ...baseAuditMetadata,
+      blockReason: 'opted_out',
+      optOutId: optOut.id,
+    });
+    return {
+      sent: false,
+      blocked: true,
+      blockReason: 'opted_out',
+    };
+  }
+
+  // -----------------------------------------------------------
+  // Sentinel 3: platform DNC
+  // -----------------------------------------------------------
+  const [platformDnc] = await db
+    .select({ id: blockedNumbers.id, reason: blockedNumbers.reason })
+    .from(blockedNumbers)
+    .where(eq(blockedNumbers.phone, normalizedPhone))
+    .limit(1);
+
+  if (platformDnc) {
+    await ComplianceService.logComplianceEvent(null, 'internal_sms_sentinel_block', {
+      ...baseAuditMetadata,
+      blockReason: 'platform_dnc',
+      platformDncReason: platformDnc.reason,
+    });
+    return {
+      sent: false,
+      blocked: true,
+      blockReason: 'platform_dnc',
+    };
+  }
+
+  // Also check the legacy do_not_contact_list (no clientId scope = global)
+  const dnc = await db.query.doNotContactList.findFirst({
+    where: and(
+      eq(doNotContactList.phoneNumberHash, phoneHash),
+      eq(doNotContactList.isActive, true),
+      isNull(doNotContactList.clientId)
+    ),
+  });
+  if (dnc) {
+    await ComplianceService.logComplianceEvent(null, 'internal_sms_sentinel_block', {
+      ...baseAuditMetadata,
+      blockReason: 'platform_dnc',
+      dncSource: dnc.source,
+    });
+    return {
+      sent: false,
+      blocked: true,
+      blockReason: 'platform_dnc',
+    };
+  }
+
+  // -----------------------------------------------------------
+  // All sentinels clear — send via privileged transport
+  // -----------------------------------------------------------
+  let messageSid: string;
+  try {
+    messageSid = await _sendSmsToTwilio(normalizedPhone, body, from);
+  } catch (error) {
+    await ComplianceService.logComplianceEvent(null, 'internal_sms_send_failed', {
+      ...baseAuditMetadata,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+
+  await ComplianceService.logComplianceEvent(null, 'internal_sms_sent', {
+    ...baseAuditMetadata,
+    messageSid,
+  });
+
+  return {
+    sent: true,
+    blocked: false,
+    messageSid,
+  };
 }

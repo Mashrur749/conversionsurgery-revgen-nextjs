@@ -53,7 +53,16 @@ export class TwilioAmbiguousError extends Error {
   }
 }
 
-export async function sendSMS(
+/**
+ * Internal: do NOT call directly outside the compliance gateway.
+ * Use {@link sendCompliantMessage} (lead-facing) or {@link sendInternalSMS} (operator)
+ * from `@/lib/compliance/compliance-gateway`. Adding new direct callers requires
+ * explicit security review and bypasses CASL/TCPA enforcement.
+ *
+ * The legacy `sendSMS` export is preserved as a re-export below for callers that
+ * have not yet been migrated to the gateway. New code MUST use the gateway.
+ */
+export async function _sendSmsToTwilio(
   to: string,
   body: string,
   from: string,
@@ -120,18 +129,23 @@ export async function sendSMS(
  * @param metadata - Additional metadata to track with the message
  * @returns Message SID from Twilio
  */
-export async function sendTrackedSMS(
+/**
+ * Internal: do NOT call directly outside the compliance gateway.
+ * See {@link _sendSmsToTwilio} for the full warning. The legacy `sendTrackedSMS`
+ * export is preserved as a re-export below for not-yet-migrated callers.
+ */
+export async function _sendTrackedSmsToTwilio(
   to: string,
   body: string,
   from: string,
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 ): Promise<string> {
   try {
     const message = await client.messages.create({
       to,
       from,
       body,
-      statusCallback: metadata.statusCallback,
+      statusCallback: metadata.statusCallback as string | undefined,
     });
     console.log('[Messaging] Tracked SMS sent:', message.sid, metadata);
     return message.sid;
@@ -140,6 +154,21 @@ export async function sendTrackedSMS(
     throw error;
   }
 }
+
+/**
+ * @deprecated DO NOT add new callers. Use sendCompliantMessage() (lead-facing) or
+ * sendInternalSMS() (operator) from `@/lib/compliance/compliance-gateway`.
+ * Re-exported under the legacy name only so existing call sites continue to compile;
+ * each remaining call site is on the migration backlog.
+ */
+export const sendSMS = _sendSmsToTwilio;
+
+/**
+ * @deprecated DO NOT add new callers. Use sendCompliantMessage() (lead-facing) or
+ * sendInternalSMS() (operator) from `@/lib/compliance/compliance-gateway`.
+ * Re-exported under the legacy name only for backwards compatibility.
+ */
+export const sendTrackedSMS = _sendTrackedSmsToTwilio;
 
 /**
  * Validate a Twilio webhook request signature.

@@ -147,6 +147,8 @@ These are the four offer enhancements that converted the offer from 6/10 to 8-9/
 
 Before the discovery call, ask the prospect to send 5-10 dead quotes from the past 90 days (name, phone, project type, last contact date). Run them through the system in test mode using a staging Twilio number. On the call, share screen and show the actual SMS threads — replies, booked calls, or at minimum delivery receipts. He watches his own dead pipeline come back to life.
 
+**If you have no warm prospects yet:** See `ACQUISITION-PLAYBOOK-0-TO-5.md` Phase 2 "What If You Have No Warm Prospects?" for the simulated demo alternative. Use test numbers, record the staging sequence, and screen-share the recording on cold calls. It's weaker than real data but stronger than no demo at all.
+
 Script: *"Before I tell you what this costs, I want to show you something. You sent me 7 dead quotes yesterday. I ran them through the system overnight on a test number. Three of them texted back. One booked a call. Here are the threads. Look — that&apos;s your guy from the Bridgeland reno project. He&apos;s asking when you can come back and look at the kitchen. That happened while you were sleeping."*
 
 **Lever 2 — The Day-14 Cancel Right**

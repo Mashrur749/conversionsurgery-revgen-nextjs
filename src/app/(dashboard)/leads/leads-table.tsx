@@ -10,6 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatDistanceToNow } from 'date-fns';
 import { formatPhoneNumber } from '@/lib/utils/phone';
 import { LeadScoreBadge } from '@/components/leads/lead-score-badge';
+import { deriveInlineConsentIndicator } from '@/components/leads/consent-status-badge-state';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LeadFilters } from './lead-filters';
 import { ChevronLeft, ChevronRight, ArrowUpDown, Download } from 'lucide-react';
@@ -200,7 +207,11 @@ export function LeadsTable() {
             <>
               {/* Mobile card layout */}
               <div className="sm:hidden divide-y">
-                {leads.map((lead) => (
+                {leads.map((lead) => {
+                  const consentIndicator = deriveInlineConsentIndicator({
+                    inquiryDate: lead.inquiryDate ? new Date(lead.inquiryDate) : null,
+                  });
+                  return (
                   <div
                     key={lead.id}
                     className="flex items-start gap-3 px-4 py-3 hover:bg-[#F8F9FA] transition-colors cursor-pointer"
@@ -216,6 +227,23 @@ export function LeadsTable() {
                       <div className="flex items-center gap-2">
                         {lead.actionRequired && (
                           <span className="w-2 h-2 bg-destructive rounded-full shrink-0" />
+                        )}
+                        {consentIndicator && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className={`w-2 h-2 rounded-full shrink-0 ${
+                                    consentIndicator.tone === 'error'
+                                      ? 'bg-[#C15B2E]'
+                                      : 'bg-sienna'
+                                  }`}
+                                  aria-label={consentIndicator.tooltip}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>{consentIndicator.tooltip}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                         <p className="font-medium truncate">
                           {lead.name || formatPhoneNumber(lead.phone)}
@@ -245,7 +273,8 @@ export function LeadsTable() {
                       </p>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Desktop table layout */}
@@ -269,7 +298,11 @@ export function LeadsTable() {
                 </div>
 
                 <div className="divide-y">
-                  {leads.map((lead) => (
+                  {leads.map((lead) => {
+                    const consentIndicator = deriveInlineConsentIndicator({
+                      inquiryDate: lead.inquiryDate ? new Date(lead.inquiryDate) : null,
+                    });
+                    return (
                     <div
                       key={lead.id}
                       className="grid grid-cols-[auto_1fr_120px_100px_100px_120px] gap-3 px-4 py-3 hover:bg-[#F8F9FA] transition-colors cursor-pointer items-center"
@@ -284,6 +317,23 @@ export function LeadsTable() {
                       <div className="flex items-center gap-3 min-w-0">
                         {lead.actionRequired && (
                           <span className="w-2 h-2 bg-destructive rounded-full shrink-0" />
+                        )}
+                        {consentIndicator && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  className={`w-2 h-2 rounded-full shrink-0 ${
+                                    consentIndicator.tone === 'error'
+                                      ? 'bg-[#C15B2E]'
+                                      : 'bg-sienna'
+                                  }`}
+                                  aria-label={consentIndicator.tooltip}
+                                />
+                              </TooltipTrigger>
+                              <TooltipContent>{consentIndicator.tooltip}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -321,7 +371,8 @@ export function LeadsTable() {
                         {formatDistanceToNow(new Date(lead.updatedAt!), { addSuffix: true })}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </>

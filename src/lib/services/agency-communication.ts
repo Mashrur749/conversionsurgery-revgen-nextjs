@@ -1,4 +1,3 @@
-import twilio from "twilio";
 import { getDb } from "@/db";
 import {
   agencyMessages,
@@ -17,11 +16,7 @@ import {
   agencyWeeklyDigestEmail,
 } from "./resend";
 import { triggerEstimateFollowup } from "./estimate-triggers";
-
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID!,
-  process.env.TWILIO_AUTH_TOKEN!,
-);
+import { sendCompliantMessage } from "@/lib/compliance/compliance-gateway";
 
 // ---------------------------------------------------------------------------
 // Agency number helper
@@ -86,11 +81,47 @@ async function sendAgencySMS(params: {
   const db = getDb();
 
   try {
-    const message = await twilioClient.messages.create({
+    // Route through compliance gateway. Contractor-facing alerts are transactional
+    // and proactive (the agency initiates them); use proactive_outreach so quiet-hours
+    // policy treats them consistently with other outbound, but mark category as
+    // transactional because they are operational notifications, not marketing.
+    const result = await sendCompliantMessage({
+      clientId: params.clientId,
       to: params.toPhone,
       from: agencyNumber,
       body: params.body,
+      messageClassification: "proactive_outreach",
+      messageCategory: "transactional",
+      metadata: {
+        category: params.category,
+        promptType: params.promptType,
+        source: "agency_communication.sendAgencySMS",
+      },
     });
+
+    if (result.blocked) {
+      console.error(
+        `[Agency] Compliance gateway blocked SMS to ${params.toPhone}: ${result.blockReason}`,
+      );
+      // Persist the failed attempt so the audit trail is complete.
+      const [insertedFailed] = await db
+        .insert(agencyMessages)
+        .values({
+          clientId: params.clientId,
+          direction: "outbound",
+          channel: "sms",
+          content: params.body,
+          category: params.category,
+          promptType: params.promptType ?? null,
+          actionPayload: params.actionPayload ?? null,
+          actionStatus: params.promptType ? "pending" : null,
+          inReplyTo: params.inReplyTo ?? null,
+          delivered: false,
+          expiresAt: params.expiresAt ?? null,
+        })
+        .returning();
+      return insertedFailed?.id ?? null;
+    }
 
     const [inserted] = await db
       .insert(agencyMessages)
@@ -104,13 +135,15 @@ async function sendAgencySMS(params: {
         actionPayload: params.actionPayload ?? null,
         actionStatus: params.promptType ? "pending" : null,
         inReplyTo: params.inReplyTo ?? null,
-        twilioSid: message.sid,
-        delivered: true,
+        twilioSid: result.messageSid ?? null,
+        delivered: result.sent,
         expiresAt: params.expiresAt ?? null,
       })
       .returning();
 
-    console.log(`[Agency] SMS sent to ${params.toPhone}: ${message.sid}`);
+    console.log(
+      `[Agency] SMS dispatched to ${params.toPhone}: sid=${result.messageSid ?? "n/a"} sent=${result.sent} queued=${result.queued}`,
+    );
     return inserted.id;
   } catch (error) {
     console.error("[Agency] Failed to send SMS:", error);
@@ -674,46 +707,18 @@ async function handleWonLostNudgeYesPrompt(
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 48);
 
-    await db.insert(agencyMessages).values({
+    // Route through sendAgencySMS so the message goes through the compliance
+    // gateway and the agency_messages row is inserted with the Twilio SID
+    // populated atomically (no separate insert + update pattern).
+    await sendAgencySMS({
       clientId,
-      direction: "outbound",
-      channel: "sms",
-      content: "Great! What was the job value? Reply with the amount (e.g. 55000)",
+      toPhone: client.phone,
+      body: "Great! What was the job value? Reply with the amount (e.g. 55000)",
       category: "action_prompt",
       promptType: "won_revenue_entry",
       actionPayload: { leadId },
-      actionStatus: "pending",
       expiresAt,
     });
-
-    // Send via Twilio
-    const twilioClient = (await import("twilio")).default(
-      process.env.TWILIO_ACCOUNT_SID!,
-      process.env.TWILIO_AUTH_TOKEN!,
-    );
-    const agencyNumber = await getAgencyNumber();
-    if (agencyNumber) {
-      try {
-        const msg = await twilioClient.messages.create({
-          to: client.phone,
-          from: agencyNumber,
-          body: "Great! What was the job value? Reply with the amount (e.g. 55000)",
-        });
-        // Update the inserted record with the Twilio SID
-        await db
-          .update(agencyMessages)
-          .set({ twilioSid: msg.sid, delivered: true })
-          .where(
-            and(
-              eq(agencyMessages.clientId, clientId),
-              eq(agencyMessages.promptType, "won_revenue_entry"),
-              eq(agencyMessages.actionStatus, "pending"),
-            ),
-          );
-      } catch {
-        // Non-fatal — the prompt record exists and can be answered later
-      }
-    }
   }
 
   return { ackMessage: "" }; // ackMessage is handled by the revenue prompt above
@@ -883,43 +888,25 @@ async function executeNumberedReply(
       inReplyTo: pendingPrompt.id,
     });
 
-    // Send revenue prompt for first won lead (if any)
+    // Send revenue prompt for first won lead (if any) — routed through gateway.
     if (wonLeads.length > 0) {
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 48);
 
-      await db2.insert(agencyMessages).values({
+      const promptBody =
+        wonLeads.length === 1
+          ? "What was the job value? Reply with the amount (e.g. 55000) or S to skip."
+          : `${wonLeads.length} wins recorded. What was the job value for the first one? Reply amount or S to skip.`;
+
+      await sendAgencySMS({
         clientId,
-        direction: "outbound",
-        channel: "sms",
-        content:
-          wonLeads.length === 1
-            ? "What was the job value? Reply with the amount (e.g. 55000) or S to skip."
-            : `${wonLeads.length} wins recorded. What was the job value for the first one? Reply amount or S to skip.`,
+        toPhone: clientPhone,
+        body: promptBody,
         category: "action_prompt",
         promptType: "won_revenue_entry",
         actionPayload: { leadId: wonLeads[0] },
-        actionStatus: "pending",
         expiresAt,
       });
-
-      const agencyNumber = await getAgencyNumber();
-      if (agencyNumber) {
-        try {
-          const twilioClient = (await import("twilio")).default(
-            process.env.TWILIO_ACCOUNT_SID!,
-            process.env.TWILIO_AUTH_TOKEN!,
-          );
-          await twilioClient.messages.create({
-            to: clientPhone,
-            from: agencyNumber,
-            body:
-              wonLeads.length === 1
-                ? "What was the job value? Reply with the amount (e.g. 55000) or S to skip."
-                : `${wonLeads.length} wins recorded. What was the job value for the first one? Reply amount or S to skip.`,
-          });
-        } catch {}
-      }
     }
 
     return true;

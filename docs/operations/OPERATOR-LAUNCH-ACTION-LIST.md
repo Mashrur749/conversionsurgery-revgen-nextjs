@@ -235,6 +235,26 @@ Work this list top to bottom. The first item runs in the background; start it be
 
 ---
 
+## ACTION 9.5 — Record Your Origin Story Video (60-90 seconds)
+
+**Why:** Your origin story is your unfair advantage. Every marketing company who has ever called them was from Toronto or Vancouver or a call center. You're from Calgary. You built this because of a real contractor you know. That story is worth more than any feature list. Use it when the conversation gets real, and use it as a trust signal on your website/social profiles.
+
+**Script (from `SALES-TOOLKIT-BASEMENT.md` Section 1 Notes):**
+
+> "My buddy's dad runs a contracting business here in Calgary. Great guy, incredible work. But I watched him lose a $60K basement job last year because he was on a job site and missed the call. By the time he called back, the homeowner had already booked with someone else. That happened three more times that quarter. I built this system so that never happens again — not to him, not to any contractor in this city."
+
+**Steps:**
+1. Record on your phone or Loom. 60-90 seconds max.
+2. Standing up, looking at the camera, not reading.
+3. Post to: your website About section, LinkedIn profile, Instagram story, and send as a follow-up to prospects who say "I need to think about it."
+4. Save as "Origin Story v1" — refine after your first 5 sales calls based on what resonates.
+
+**Done when:** Video recorded, posted to at least one public profile, and you can recite the story without notes.
+
+**Estimated time:** 30 minutes (15 min recording + 15 min posting).
+
+---
+
 ## ACTION 10 — Set Up Loom Pro Account + Record First Audit Template
 
 **Why:** Every warm prospect gets a personalized 3-7 minute Loom audit before the discovery call. The Loom is the lead magnet that opens the conversation. No Loom = no warm-prospect pipeline.
@@ -334,11 +354,13 @@ Work this list top to bottom. The first item runs in the background; start it be
 4. Capture screenshots of every conversation thread.
 5. On the discovery call, screen-share the threads. Walk through 1-2 of the strongest ones live.
 
+**If you have no warm prospects yet:** See `ACQUISITION-PLAYBOOK-0-TO-5.md` Phase 2 "What If You Have No Warm Prospects?" Run a simulated demo using test numbers you control, record the staging sequence, and use that recording on cold calls. It's weaker than real data but stronger than no demo.
+
 **Note:** This is the single highest-leverage sales motion you have available pre-case-study. Per the consensus, it converts skeptics in under 15 minutes.
 
-**Done when:** First 3 warm prospects have demos prepared before their discovery calls.
+**Done when:** First 3 warm prospects have demos prepared before their discovery calls (or simulated demo recorded if no warm prospects yet).
 
-**Estimated time:** 30-60 minutes per demo (mostly running the staging sequence and waiting for replies).
+**Estimated time:** 30-60 minutes per demo (mostly running the staging sequence and waiting for replies). 15 minutes for a simulated demo.
 
 ---
 
@@ -372,7 +394,7 @@ When Claude is done with the platform side and you're done with this list, the s
 |---|---|
 | Operator-only external configs (Actions 1-8) | ~3-4 hours active + 1-5 days A2P wait |
 | E2E rehearsal (Action 9) | 4-6 hours over 1-2 days |
-| Sales prep (Actions 10-12, 14) | ~5-7 hours |
+| Sales prep (Actions 9.5, 10-12, 14) | ~6-8 hours |
 | Cold outreach (Action 13) | 4-6 hours/week ongoing |
 | **Total to first sales-ready state** | **~12-17 hours over 5-7 days** |
 

@@ -263,6 +263,111 @@ describe('CSV import — express-consent mode (>180 days allowed)', () => {
   });
 });
 
+// ── Existing-customer mode tests ──────────────────────────────────────────────
+
+describe('CSV import — existing-customer mode (24-month implied consent)', () => {
+  it('accepts rows with transaction_date within 24 months and records implied consent with source=existing_customer', async () => {
+    const txnDate = isoDaysAgo(300);
+    insertReturning.mockResolvedValueOnce([
+      { id: 'lead-cust-1', status: 'new', phone: '+15551112222' },
+    ]);
+
+    const res = await POST(
+      makeRequest({
+        consentAttested: true,
+        intakeMode: 'existing_customer',
+        rows: [
+          {
+            name: 'Jane Past Customer',
+            phone: '5551112222',
+            transactionDate: txnDate,
+            notes: 'Kitchen renovation completed Jul 2024, $52K',
+          },
+        ],
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = await readJson(res);
+    expect(body.imported).toBe(1);
+    expect(body._audit?.intakeMode).toBe('existing_customer');
+
+    expect(mockRecordConsent).toHaveBeenCalledTimes(1);
+    const [, , consent] = mockRecordConsent.mock.calls[0];
+    expect(consent.type).toBe('implied');
+    expect(consent.source).toBe('existing_customer');
+    expect(consent.consentTimestamp).toBeInstanceOf(Date);
+    expect(consent.consentTimestamp.toISOString()).toBe(new Date(txnDate).toISOString());
+    expect(consent.language).toMatch(/Implied consent from prior paid customer relationship/);
+    expect(consent.language).toMatch(/Kitchen renovation completed Jul 2024/);
+  });
+
+  it('rejects when any row is older than 730 days', async () => {
+    const res = await POST(
+      makeRequest({
+        consentAttested: true,
+        intakeMode: 'existing_customer',
+        rows: [
+          { name: 'Recent', phone: '5551112222', transactionDate: isoDaysAgo(300) },
+          { name: 'TooOld', phone: '5553334444', transactionDate: isoDaysAgo(800) },
+        ],
+      })
+    );
+
+    expect(res.status).toBe(400);
+    const body = await readJson(res);
+    expect(body.error).toMatch(/within last 24 months/);
+    expect(body.error).toMatch(/1 rows older than 24 months/);
+    expect(insertReturning).not.toHaveBeenCalled();
+    expect(mockRecordConsent).not.toHaveBeenCalled();
+  });
+
+  it('rejects when transaction_date is missing', async () => {
+    const res = await POST(
+      makeRequest({
+        consentAttested: true,
+        intakeMode: 'existing_customer',
+        rows: [{ name: 'Missing', phone: '5551112222' }],
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const body = await readJson(res);
+    expect(body.errors).toBeDefined();
+    expect(body.errors?.[0]?.error).toMatch(/transaction_date/);
+    expect(body.imported).toBe(0);
+  });
+
+  it('writes inquiry_date = transaction_date so dormant re-engagement keeps working', async () => {
+    const txnDate = isoDaysAgo(400);
+    insertReturning.mockResolvedValueOnce([
+      { id: 'lead-cust-2', status: 'new', phone: '+15551112222' },
+    ]);
+
+    await POST(
+      makeRequest({
+        consentAttested: true,
+        intakeMode: 'existing_customer',
+        rows: [
+          {
+            name: 'Past',
+            phone: '5551112222',
+            transactionDate: txnDate,
+          },
+        ],
+      })
+    );
+
+    // The first arg to insert().values() captures inquiryDate — assert via the
+    // values() mock seen by the insertion pipeline.
+    const calls = insertValues.mock.calls as unknown as Array<Array<Array<{ inquiryDate: Date }>>>;
+    const valuesArg = calls[0]?.[0];
+    expect(valuesArg).toBeDefined();
+    expect(valuesArg).toHaveLength(1);
+    expect(valuesArg[0].inquiryDate.toISOString()).toBe(new Date(txnDate).toISOString());
+  });
+});
+
 // ── Validation guard tests ────────────────────────────────────────────────────
 
 describe('CSV import — validation guards', () => {
@@ -290,7 +395,7 @@ describe('CSV import — validation guards', () => {
     // but the request itself succeeds (consistent with the existing per-row error pattern).
     const body = await readJson(res);
     expect(body.errors).toBeDefined();
-    expect(body.errors?.[0]?.error).toMatch(/inquiryDate/i);
+    expect(body.errors?.[0]?.error).toMatch(/inquiry_date/i);
     expect(body.imported).toBe(0);
   });
 });

@@ -196,6 +196,29 @@ Most responses will be one of three types:
 
 **"I'm not interested right now"**→ "No problem at all. The audit is yours to keep. If anything changes, I'm here." Add to nurture list.
 
+### What If You Have No Warm Prospects?
+
+The Dead Lead Resurrection demo assumes you have a warm prospect who replies to outreach and shares their dead quotes. If you have **zero warm prospects** (no replies yet, no network to tap), use this alternative path:
+
+**Alternative 1: Simulated Dead Lead Demo (pre-case-study)**
+1. Create a realistic scenario using public data from a Calgary contractor's reviews/website.
+2. Use your staging environment to run a mock reactivation sequence against 3-5 test numbers you control (friends, family, your own secondary numbers).
+3. Record the screen as the SMS threads unfold. Save the recording.
+4. On cold discovery calls, say: *"I ran a simulated reactivation on quotes like yours — here's what the follow-up looks like."* Screen-share the recording. It's not as powerful as real data, but it shows the system in action.
+
+**Alternative 2: Practice Demos on Cold Prospects**
+Your first 3 real calls to low-priority prospects are practice calls per `SALES-TOOLKIT-BASEMENT.md` Section 6. Run the full demo flow even though they'll likely say no. You're practicing the flow, not chasing the close. By demo #3, you'll be smooth enough that demo #4-5 have a real shot.
+
+**Alternative 3: Defer Proof-Building and Compensate with Volume**
+Without warm prospects or case studies, your close rate drops from ~20-25% to ~10-15%. The math still works — you just need more at-bats. At 6-10 hrs/week, focus on:
+- 15-20 cold calls/week (not 25-40)
+- 5-8 personalized audit emails/week (not 10)
+- Expect 1 client per 80-120 touches instead of per 50-80
+
+**Reality check:** Your binding constraint is hours, not warmth. At 6-10 hrs/week with cold outreach, expect 6-12 weeks to first client. If you can find 15 hrs/week for Month 1, cut that to 4-6 weeks. The offer is strong — the variable is volume.
+
+---
+
 ### The 15-minute demo call
 
 This is your entire sales process. It's not a discovery call. It's not a consultation. It's a demo with one killer moment.

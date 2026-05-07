@@ -24,6 +24,7 @@ Get yourself sales-ready. Run these once.
 | A2P/10DLC, Stripe, deployment, Twilio, Resend, operator profile | [`OPERATOR-LAUNCH-ACTION-LIST.md`](./OPERATOR-LAUNCH-ACTION-LIST.md) Actions 1-8 |
 | Pre-launch infrastructure checklist (Cloudflare, env vars, webhooks) | [`LAUNCH-CHECKLIST.md`](./LAUNCH-CHECKLIST.md) Phase 4 |
 | End-to-end rehearsal with test contractor | [`E2E-PILOT-STANDARD-DELIVERY-GUIDE.md`](./E2E-PILOT-STANDARD-DELIVERY-GUIDE.md) Phases 1-7 |
+| Origin story video (60-90 sec, phone recording) | [`OPERATOR-LAUNCH-ACTION-LIST.md`](./OPERATOR-LAUNCH-ACTION-LIST.md) Action 9.5 + [`templates/SALES-TOOLKIT-BASEMENT.md`](./templates/SALES-TOOLKIT-BASEMENT.md) §1 Notes |
 | Loom Pro account + first audit recording | [`OPERATOR-LAUNCH-ACTION-LIST.md`](./OPERATOR-LAUNCH-ACTION-LIST.md) Action 10 |
 | Prospect list refinement | [`OPERATOR-LAUNCH-ACTION-LIST.md`](./OPERATOR-LAUNCH-ACTION-LIST.md) Action 11 + [`templates/calgary-basement-prospects.csv`](./templates/calgary-basement-prospects.csv) |
 
@@ -43,7 +44,8 @@ Cold outreach to a prospect on your discovery call.
 | Discovery call prep | [`E2E-PILOT-STANDARD-DELIVERY-GUIDE.md`](./E2E-PILOT-STANDARD-DELIVERY-GUIDE.md) §1.3 |
 | 10-question discovery scorecard | [`E2E-PILOT-STANDARD-DELIVERY-GUIDE.md`](./E2E-PILOT-STANDARD-DELIVERY-GUIDE.md) §2.2 |
 | Tier recommendation logic (Pilot vs Standard, hard rule) | [`E2E-PILOT-STANDARD-DELIVERY-GUIDE.md`](./E2E-PILOT-STANDARD-DELIVERY-GUIDE.md) §2.3 |
-| Objection handling (16 objections, all tiers) | [`../business-intel/SALES-OBJECTION-PLAYBOOK.md`](../business-intel/SALES-OBJECTION-PLAYBOOK.md) |
+| Objection handling (16 objections + gatekeeper, all tiers) | [`../business-intel/SALES-OBJECTION-PLAYBOOK.md`](../business-intel/SALES-OBJECTION-PLAYBOOK.md) |
+| No warm prospects — alternative demo path | [`ACQUISITION-PLAYBOOK-0-TO-5.md`](./ACQUISITION-PLAYBOOK-0-TO-5.md) Phase 2 "What If You Have No Warm Prospects?" |
 | Outreach floor (50/wk minimum, 100/wk for accelerated timeline) | [`EXECUTION-PLAN.md`](./EXECUTION-PLAN.md) + [`COLD-START-PLAYBOOK.md`](./COLD-START-PLAYBOOK.md) |
 
 ---

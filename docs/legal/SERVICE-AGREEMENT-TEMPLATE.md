@@ -77,9 +77,7 @@ The Setup Fee is split 50/50: 50% is due at signing and the remaining 50% is due
 
 Monthly billing begins at go-live (not at signing) and auto-charges via the payment method on file each calendar month thereafter. No free trial period. No message caps. No overage charges.
 
-**Annual prepay option:** Client may elect to prepay twelve (12) months of monthly fees at signing in exchange for an approximately 15% discount on the monthly rate. Annual prepay is offered only on request.
-
-**Voice AI** is included at no additional cost up to 1,000 inbound minutes per month. Usage above 1,000 minutes/month is billed at $0.15/minute. Service Provider will notify Client in writing if monthly usage exceeds 800 minutes for two consecutive months.
+**Voice AI** is included at no additional cost. There are no per-minute charges and no usage overage fees for inbound voice calls within normal business use.
 
 Add-ons (if applicable):
 - Additional phone numbers: $15/month each

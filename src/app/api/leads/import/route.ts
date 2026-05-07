@@ -14,10 +14,15 @@ const MAX_ROWS = 1000;
 // CASL §10(1): implied consent from inquiry expires after 6 calendar months.
 // Standard CSV intake rejects rows whose inquiry_date is older than this.
 const CASL_IMPLIED_CONSENT_DAYS = 180;
+// CASL §10(10)(a): existing-customer relationship grants implied consent for
+// 24 months from the date of the most recent paid transaction.
+const CASL_EXISTING_CUSTOMER_DAYS = 730;
 const MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH = 10;
 
 const ALLOWED_IMPORT_STATUSES = ['new', 'contacted', 'estimate_sent'] as const;
 
+// Row schema is permissive on the date columns — exactly one of inquiryDate
+// or transactionDate is required, and that's enforced per-mode below.
 const baseRowSchema = z.object({
   name: z.string().max(255).optional(),
   phone: z.string().min(1, 'Phone is required'),
@@ -27,10 +32,14 @@ const baseRowSchema = z.object({
   notes: z.string().optional(),
   status: z.enum(ALLOWED_IMPORT_STATUSES).optional(),
   // ISO date or YYYY-MM-DD — original homeowner inquiry date.
-  inquiryDate: z.string().min(1, 'inquiry_date is required'),
+  // Required for `standard` and `express_consent` modes.
+  inquiryDate: z.string().optional(),
   // Free-text attestation of how express consent was obtained.
-  // Required for `express_consent` mode, ignored in `standard` mode.
+  // Required for `express_consent` mode, ignored in other modes.
   expressConsentEvidence: z.string().optional(),
+  // ISO date or YYYY-MM-DD — when the contractor was paid by this customer.
+  // Required for `existing_customer` mode, ignored in other modes.
+  transactionDate: z.string().optional(),
 });
 
 type ImportRow = z.infer<typeof baseRowSchema>;
@@ -81,8 +90,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const intakeMode: 'standard' | 'express_consent' =
-      body.intakeMode === 'express_consent' ? 'express_consent' : 'standard';
+    const intakeMode: 'standard' | 'express_consent' | 'existing_customer' =
+      body.intakeMode === 'express_consent'
+        ? 'express_consent'
+        : body.intakeMode === 'existing_customer'
+          ? 'existing_customer'
+          : 'standard';
 
     if (!Array.isArray(rows)) {
       return NextResponse.json({ error: 'Expected rows array' }, { status: 400 });
@@ -105,7 +118,9 @@ export async function POST(request: NextRequest) {
 
     const now = new Date();
 
-    // Validate all rows first (schema + inquiry_date parse)
+    // Validate all rows first (schema + per-mode date parse).
+    // For `existing_customer`, transaction_date drives both inquiry_date
+    // (so dormant re-engagement keeps working) AND the 24-month consent clock.
     for (let i = 0; i < rows.length; i++) {
       const result = baseRowSchema.safeParse(rows[i]);
       if (!result.success) {
@@ -116,9 +131,21 @@ export async function POST(request: NextRequest) {
         });
         continue;
       }
-      const parsed = parseInquiryDate(result.data.inquiryDate);
+
+      const dateField =
+        intakeMode === 'existing_customer'
+          ? result.data.transactionDate
+          : result.data.inquiryDate;
+      const dateLabel =
+        intakeMode === 'existing_customer' ? 'transaction_date' : 'inquiry_date';
+
+      if (!dateField) {
+        errors.push({ row: i + 1, error: `${dateLabel}: required` });
+        continue;
+      }
+      const parsed = parseInquiryDate(dateField);
       if (!parsed) {
-        errors.push({ row: i + 1, error: 'inquiry_date: invalid date format' });
+        errors.push({ row: i + 1, error: `${dateLabel}: invalid date format` });
         continue;
       }
       validRows.push({ ...result.data, parsedInquiryDate: parsed });
@@ -137,7 +164,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-    } else {
+    } else if (intakeMode === 'express_consent') {
       // express_consent: per-row evidence required
       const missingEvidence: ImportRow[] = [];
       for (const r of validRows) {
@@ -150,6 +177,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             error: `Express-consent CSV requires express_consent_evidence (>= ${MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH} chars) on every row. Found ${missingEvidence.length} rows missing evidence.`,
+          },
+          { status: 400 }
+        );
+      }
+    } else {
+      // existing_customer: every transaction_date must be ≤ 730 days ago
+      const tooOld = validRows.filter(
+        (r) => daysBetween(r.parsedInquiryDate, now) > CASL_EXISTING_CUSTOMER_DAYS
+      );
+      if (tooOld.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Existing-customer CSV requires transaction_date within last 24 months (${CASL_EXISTING_CUSTOMER_DAYS} days). Found ${tooOld.length} rows older than 24 months.`,
           },
           { status: 400 }
         );
@@ -223,7 +263,14 @@ export async function POST(request: NextRequest) {
 
     // Insert in transaction
     let imported = 0;
-    const insertedLeads: { id: string; status: string | null; phone: string; inquiryDate: Date; expressConsentEvidence: string | null }[] = [];
+    const insertedLeads: {
+      id: string;
+      status: string | null;
+      phone: string;
+      inquiryDate: Date;
+      expressConsentEvidence: string | null;
+      customerNotes: string | null;
+    }[] = [];
     if (toInsert.length > 0) {
       await withTransaction(async (tx) => {
         // Batch insert with returning to capture IDs for post-import automation
@@ -238,6 +285,8 @@ export async function POST(request: NextRequest) {
             notes: row.notes || null,
             source: 'csv_import' as const,
             status: row.status || 'new',
+            // For existing_customer mode, transaction_date is written as
+            // inquiry_date so dormant re-engagement automation keeps working.
             inquiryDate: row.parsedInquiryDate,
           }))
         ).returning({ id: leads.id, status: leads.status, phone: leads.phone });
@@ -247,14 +296,17 @@ export async function POST(request: NextRequest) {
             ...inserted[i],
             inquiryDate: toInsert[i].parsedInquiryDate,
             expressConsentEvidence: toInsert[i].expressConsentEvidence?.trim() || null,
+            customerNotes: toInsert[i].notes?.trim() || null,
           });
         }
       });
 
       // Create consent records for imported leads so the compliance gateway
       // permits automated sequences. CASL semantics:
-      // - Standard mode: implied consent anchored at inquiry_date (6-month clock)
-      // - Express mode: express_written, evidence stored on the consent record
+      // - Standard mode:           implied consent anchored at inquiry_date (6-mo clock)
+      // - Express-consent mode:    express_written, evidence stored on the consent record
+      // - Existing-customer mode:  implied consent with source=existing_customer, anchored
+      //                            at transaction_date (24-mo clock per CASL §10(10)(a))
       for (const lead of insertedLeads) {
         if (intakeMode === 'standard') {
           await ComplianceService.recordConsent(clientId, lead.phone, {
@@ -270,7 +322,7 @@ export async function POST(request: NextRequest) {
               'Implied consent from inquiry; CSV import attestation by account holder.',
             consentTimestamp: lead.inquiryDate,
           });
-        } else {
+        } else if (intakeMode === 'express_consent') {
           const evidence = lead.expressConsentEvidence ?? '';
           await ComplianceService.recordConsent(clientId, lead.phone, {
             type: 'express_written',
@@ -283,6 +335,22 @@ export async function POST(request: NextRequest) {
             },
             language: evidence,
             consentEvidence: evidence,
+          });
+        } else {
+          const trimmedNotes = lead.customerNotes ?? '';
+          await ComplianceService.recordConsent(clientId, lead.phone, {
+            type: 'implied',
+            source: 'existing_customer',
+            scope: {
+              marketing: true,
+              transactional: true,
+              promotional: true,
+              reminders: true,
+            },
+            language:
+              'Implied consent from prior paid customer relationship; CSV import attestation by account holder. ' +
+              trimmedNotes,
+            consentTimestamp: lead.inquiryDate,
           });
         }
       }

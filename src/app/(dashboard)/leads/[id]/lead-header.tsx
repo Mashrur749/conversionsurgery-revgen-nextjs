@@ -12,6 +12,11 @@ import { useRouter } from 'next/navigation';
 import { LEAD_STATUSES, LEAD_TEMPERATURES, TEMPERATURE_COLORS } from '@/lib/constants/leads';
 import { LeadNavigation } from './lead-navigation';
 import { LeadScoreBadge } from '@/components/leads/lead-score-badge';
+import { ConsentStatusBadge } from '@/components/leads/consent-status-badge';
+import type {
+  ConsentBadgeSource,
+  ConsentBadgeType,
+} from '@/components/leads/consent-status-badge-state';
 import type { Lead } from '@/db/schema/leads';
 
 const CONVERSATION_MODE_STYLES: Record<string, string> = {
@@ -35,8 +40,20 @@ const STAGE_STYLES: Record<string, string> = {
   lost: 'bg-[#FDEAE4] text-[#C15B2E]',
 };
 
+/**
+ * Most-recent consent record summary for a lead. Drives the
+ * <ConsentStatusBadge> at the top of this header.
+ */
+export interface LeadConsentSummary {
+  consentSource: ConsentBadgeSource;
+  consentType: ConsentBadgeType;
+  consentTimestamp: Date | null;
+  consentEvidence: string | null;
+}
+
 export interface LeadHeaderProps {
   lead: Lead;
+  consent?: LeadConsentSummary | null;
   conversationStage?: string | null;
   scores?: {
     urgency: number;
@@ -60,7 +77,7 @@ export interface LeadHeaderProps {
   } | null;
 }
 
-export function LeadHeader({ lead, conversationStage, scores, decisionMakers, strategyState }: LeadHeaderProps) {
+export function LeadHeader({ lead, consent, conversationStage, scores, decisionMakers, strategyState }: LeadHeaderProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [modeLoading, setModeLoading] = useState(false);
@@ -149,6 +166,15 @@ export function LeadHeader({ lead, conversationStage, scores, decisionMakers, st
           {lead.caslConsentAttested && (
             <Badge variant="outline" className="mt-1 text-xs bg-[#E8F5E9] text-[#3D7A50]">CASL</Badge>
           )}
+          <div className="mt-2">
+            <ConsentStatusBadge
+              inquiryDate={lead.inquiryDate ? new Date(lead.inquiryDate) : null}
+              consentSource={consent?.consentSource ?? null}
+              consentType={consent?.consentType ?? null}
+              consentTimestamp={consent?.consentTimestamp ?? null}
+              consentEvidence={consent?.consentEvidence ?? null}
+            />
+          </div>
           {strategyState && conversationStage && conversationStage !== 'greeting' && (
             <div className="text-xs text-muted-foreground mt-1">
               Objective: {strategyState.currentObjective}
@@ -210,7 +236,7 @@ export function LeadHeader({ lead, conversationStage, scores, decisionMakers, st
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
         <div>
           <label className="text-muted-foreground text-xs">Project Type</label>
           <Input
@@ -245,6 +271,21 @@ export function LeadHeader({ lead, conversationStage, scores, decisionMakers, st
           {(lead.status === 'won' || lead.status === 'completed') && (
             <p className="text-xs text-[#3D7A50] mt-0.5">Actual job value (dollars)</p>
           )}
+        </div>
+        <div>
+          <label className="text-muted-foreground text-xs">Inquiry</label>
+          <p className="text-sm font-medium mt-1">
+            {lead.inquiryDate ? (
+              <>
+                {format(new Date(lead.inquiryDate), 'MMM d, yyyy')}
+                <span className="text-xs text-muted-foreground">
+                  {' '}({Math.max(0, Math.floor((Date.now() - new Date(lead.inquiryDate).getTime()) / 86_400_000))} days ago)
+                </span>
+              </>
+            ) : (
+              <span className="text-muted-foreground">&mdash;</span>
+            )}
+          </p>
         </div>
         <div>
           <label className="text-muted-foreground text-xs">Created</label>

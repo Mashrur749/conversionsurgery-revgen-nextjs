@@ -149,6 +149,35 @@ If you have a live client on Smart Assist, pull up the conversation queue. Show 
 
 ---
 
+## TIER 2.5 — GATEKEEPER / OFFICE MANAGER OBJECTION
+
+### Objection 3.5: "Our office manager handles that" / "Talk to my office manager"
+
+**Why they say it:** The contractor has an office manager, receptionist, or assistant who handles inquiries and follow-up. This is an ICP disqualifier per `ACQUISITION-PLAYBOOK-0-TO-5.md` — "problem already solved." However, you will still hit this objection, especially with larger contractors or when the gatekeeper answers the phone.
+
+**The wrong response:** "The AI is better than your office manager." — Insults their team, ends the conversation, and makes you sound like every other vendor who doesn't listen.
+
+**The right response (gatekeeper pivot to co-pilot frame):**
+
+> "That's great — sounds like you've got someone keeping things organized. Quick question: what happens to leads that come in after 5pm or on weekends? And how many quotes are sitting in your sent folder that your office manager hasn't had time to follow up on yet?
+>
+> Here's what I keep hearing from contractors who have staff: the office manager is great during business hours, but they're already juggling phones, scheduling, and homeowner questions. The system handles the repetitive 80% — instant response to every inquiry, automatic appointment booking, standard follow-ups — so your office manager can focus on the 20% that actually needs a human: complex quotes, upset homeowners, vendor negotiations.
+>
+> It's not about replacing them. It's about giving them a team of ten without hiring anyone. The after-hours gap alone — 6pm to 8am — is where most leads go cold because there's no one there to respond."
+
+**If they push back:** "Our office manager handles everything just fine."
+
+> "Fair enough. The main value for you would be the after-hours speed advantage and review automation. If those gaps aren't real for you, this probably isn't the right fit — and that's okay. Most of our clients are owner-operators who don't have anyone handling follow-up at all."
+
+**Proof point:** Ask about their after-hours response time and their current follow-up process for old quotes. If they genuinely have systematic follow-up covered, **disqualify gracefully.** The ICP is owner-operators with no office manager for a reason — the incremental value is low if follow-up is already systematic.
+
+**When to use the co-pilot narrative vs. pass:**
+- Office manager is part-time or overwhelmed → co-pilot frame, continue
+- Full-time office manager with systematic follow-up → pass, add to nurture list
+- Office manager only answers phones, doesn't do follow-up → standard pitch applies, continue
+
+---
+
 ## TIER 3 — LIKELY WITH SPECIFIC PROFILES
 
 ### Objection 5: "I don't want my customers talking to a robot"
@@ -383,6 +412,7 @@ Get the CRTC inbound-reply exemption legal opinion before the second client conv
 |-------------------|-----------|
 | Referral-heavy, established | Estimate follow-up, review generation, win-back (Objection 3) |
 | Has staff / assistant | Consistency gaps, follow-up depth (Objection 4) |
+| Gatekeeper / office manager | After-hours gap, co-pilot frame, or disqualify gracefully (Objection 3.5) |
 | Had bad agency experience | Lead with guarantee, differentiate managed vs. software (Objection 2) |
 | Worried about AI quality | Smart Assist demo, sample conversation (Objection 1) |
 | Price-sensitive / fee confusion | ROI math on outstanding quotes, fee split explanation (Objection 8, 11) |

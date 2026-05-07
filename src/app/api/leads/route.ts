@@ -12,7 +12,14 @@ import { ComplianceService } from '@/lib/compliance/compliance-service';
 // CASL §10(1): implied consent from inquiry expires after 6 calendar months.
 // Inquiries older than this require documented express consent to contact.
 const CASL_IMPLIED_CONSENT_DAYS = 180;
+// CASL §10(10)(a): existing-customer relationship grants implied consent for
+// 24 months from the date of the most recent paid transaction.
+const CASL_EXISTING_CUSTOMER_DAYS = 730;
 const MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH = 10;
+
+function daysBetween(from: Date, to: Date): number {
+  return Math.floor((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+}
 
 const querySchema = z.object({
   search: z.string().optional(),
@@ -158,7 +165,8 @@ export async function GET(request: NextRequest) {
   });
 }
 
-const createLeadSchema = z.object({
+// Shared lead identity fields for all three intake modes.
+const baseLeadFields = {
   name: z.string().min(1, 'Name is required'),
   phone: z.string().min(10, 'Phone number is required'),
   email: z.string().email().optional().or(z.literal('')),
@@ -166,12 +174,36 @@ const createLeadSchema = z.object({
   notes: z.string().optional(),
   projectType: z.string().optional(),
   address: z.string().optional(),
-  // ISO date string. Defaults to today client-side; enforced server-side
-  // because the inquiry date drives CASL consent semantics.
-  inquiryDate: z.string().min(1, 'inquiryDate is required'),
-  // Required only when inquiryDate is >= 180 days old. Ignored otherwise.
-  expressConsentEvidence: z.string().optional(),
-}).strict();
+} as const;
+
+// CASL three-mode intake:
+//   - inquiry:           recent (≤180d) inquiry → implied consent (6mo clock from inquiry)
+//   - express_consent:   any age + evidence → express_written consent
+//   - existing_customer: paid customer (≤730d) → implied consent (24mo clock from txn)
+const createLeadSchema = z.discriminatedUnion('consentMode', [
+  z.object({
+    ...baseLeadFields,
+    consentMode: z.literal('inquiry'),
+    inquiryDate: z.string().min(1, 'inquiryDate is required'),
+  }).strict(),
+  z.object({
+    ...baseLeadFields,
+    consentMode: z.literal('express_consent'),
+    inquiryDate: z.string().min(1, 'inquiryDate is required'),
+    expressConsentEvidence: z
+      .string()
+      .min(
+        MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH,
+        `expressConsentEvidence must be at least ${MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH} characters`
+      ),
+  }).strict(),
+  z.object({
+    ...baseLeadFields,
+    consentMode: z.literal('existing_customer'),
+    transactionDate: z.string().min(1, 'transactionDate is required'),
+    customerNotes: z.string().optional(),
+  }).strict(),
+]);
 
 /** POST /api/leads - Create a lead manually. */
 export async function POST(request: NextRequest) {
@@ -243,33 +275,54 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Parse + validate inquiry date and express-consent rules
-  const inquiryDate = new Date(data.inquiryDate);
-  if (Number.isNaN(inquiryDate.getTime())) {
-    return NextResponse.json(
-      { error: 'inquiryDate: invalid date format' },
-      { status: 400 }
-    );
-  }
-  const ageMs = Date.now() - inquiryDate.getTime();
-  const ageDays = Math.floor(ageMs / (1000 * 60 * 60 * 24));
-  const isOld = ageDays >= CASL_IMPLIED_CONSENT_DAYS;
-
-  // Old inquiries require documented express consent.
-  // Recent inquiries: ignore expressConsentEvidence — prevents accidentally
-  // laundering recent leads as express consent.
-  let evidence: string | null = null;
-  if (isOld) {
-    const trimmed = (data.expressConsentEvidence ?? '').trim();
-    if (trimmed.length < MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH) {
+  // Resolve the lead's effective inquiry_date per mode.
+  // For existing_customer, transaction_date drives both inquiry_date (so dormant
+  // re-engagement keeps working) AND the 24-month implied-consent clock.
+  let effectiveInquiryDate: Date;
+  if (data.consentMode === 'existing_customer') {
+    const txn = new Date(data.transactionDate);
+    if (Number.isNaN(txn.getTime())) {
+      return NextResponse.json(
+        { error: 'transactionDate: invalid date format' },
+        { status: 400 }
+      );
+    }
+    const ageDays = daysBetween(txn, new Date());
+    if (ageDays < 0) {
+      return NextResponse.json(
+        { error: 'transactionDate cannot be in the future' },
+        { status: 400 }
+      );
+    }
+    if (ageDays > CASL_EXISTING_CUSTOMER_DAYS) {
       return NextResponse.json(
         {
-          error: `Inquiries older than ${CASL_IMPLIED_CONSENT_DAYS} days require expressConsentEvidence (>= ${MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH} chars).`,
+          error: `transactionDate must be within last 24 months (${CASL_EXISTING_CUSTOMER_DAYS} days). Found ${ageDays} days.`,
         },
         { status: 400 }
       );
     }
-    evidence = trimmed;
+    effectiveInquiryDate = txn;
+  } else {
+    const inquiryDate = new Date(data.inquiryDate);
+    if (Number.isNaN(inquiryDate.getTime())) {
+      return NextResponse.json(
+        { error: 'inquiryDate: invalid date format' },
+        { status: 400 }
+      );
+    }
+    if (data.consentMode === 'inquiry') {
+      const ageDays = daysBetween(inquiryDate, new Date());
+      if (ageDays >= CASL_IMPLIED_CONSENT_DAYS) {
+        return NextResponse.json(
+          {
+            error: `Inquiries older than ${CASL_IMPLIED_CONSENT_DAYS} days require consentMode='express_consent' with expressConsentEvidence.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+    effectiveInquiryDate = inquiryDate;
   }
 
   const db = getDb();
@@ -288,14 +341,13 @@ export async function POST(request: NextRequest) {
       source: 'manual',
       status: 'new',
       temperature: 'warm',
-      inquiryDate,
+      inquiryDate: effectiveInquiryDate,
     })
     .returning();
 
-  // Record CASL consent matched to the inquiry age:
-  // - Recent: implied consent anchored at inquiryDate (6-month clock from inquiry)
-  // - Old:    express_written consent with operator-supplied evidence
-  if (isOld) {
+  // Record CASL consent record matched to the chosen intake mode.
+  if (data.consentMode === 'express_consent') {
+    const evidence = data.expressConsentEvidence.trim();
     await ComplianceService.recordConsent(effectiveClientId, normalizedPhone, {
       type: 'express_written',
       source: 'manual_entry',
@@ -305,8 +357,24 @@ export async function POST(request: NextRequest) {
         promotional: true,
         reminders: true,
       },
-      language: evidence ?? '',
-      consentEvidence: evidence ?? undefined,
+      language: evidence,
+      consentEvidence: evidence,
+    });
+  } else if (data.consentMode === 'existing_customer') {
+    const trimmedNotes = data.customerNotes?.trim();
+    await ComplianceService.recordConsent(effectiveClientId, normalizedPhone, {
+      type: 'implied',
+      source: 'existing_customer',
+      scope: {
+        marketing: true,
+        transactional: true,
+        promotional: true,
+        reminders: true,
+      },
+      language:
+        'Existing customer (paid relationship)' +
+        (trimmedNotes ? ': ' + trimmedNotes : ''),
+      consentTimestamp: effectiveInquiryDate,
     });
   } else {
     await ComplianceService.recordConsent(effectiveClientId, normalizedPhone, {
@@ -319,7 +387,7 @@ export async function POST(request: NextRequest) {
         reminders: true,
       },
       language: 'Implied consent from inquiry',
-      consentTimestamp: inquiryDate,
+      consentTimestamp: effectiveInquiryDate,
     });
   }
 

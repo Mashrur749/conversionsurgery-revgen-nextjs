@@ -10,8 +10,7 @@ import {
 } from '@/db/schema';
 import type { EscalationQueueStatus } from '@/db/schema/agent-enums';
 import { eq, and, desc, sql, or, not } from 'drizzle-orm';
-import { sendTrackedSMS } from '@/lib/clients/twilio-tracked';
-import { sendCompliantMessage } from '@/lib/compliance/compliance-gateway';
+import { sendCompliantMessage, sendInternalSMS } from '@/lib/compliance/compliance-gateway';
 import { sendEmail } from '@/lib/services/resend';
 import { getTeamMembers, getTeamMemberById, getEscalationMembers } from '@/lib/services/team-bridge';
 import { assertSameClient, ClientOwnershipError } from '@/lib/utils/client-ownership';
@@ -276,12 +275,29 @@ async function notifyEscalation(
     // SMS notification
     if (channels.includes('sms') && recipient.phone && client?.twilioNumber) {
       try {
-        await sendTrackedSMS({
-          clientId: escalation.clientId,
+        // Escalation alerts go to the contractor's INTERNAL team (assistants,
+        // office managers — see getEscalationMembers in team-bridge.ts). Those
+        // phones never have lead-side consent records, so the lead-facing
+        // gateway would always block them. sendInternalSMS is the right path:
+        // kill-switch + opt-out + platform DNC sentinels apply, but no consent
+        // requirement (matches the operator-alerts.ts pattern).
+        const result = await sendInternalSMS({
           to: recipient.phone,
           from: client.twilioNumber,
           body: `${message}\nView: ${process.env.NEXT_PUBLIC_APP_URL}/escalations/${escalation.id}`,
+          subject: `escalation:${escalation.id}`,
+          metadata: {
+            source: 'escalation.notify_recipient',
+            escalationId: escalation.id,
+            clientId: escalation.clientId,
+            recipientRole: recipient.role,
+          },
         });
+        if (result.blocked) {
+          console.warn(
+            `[Escalation] Sentinel blocked SMS to ${recipient.name}: ${result.blockReason}`,
+          );
+        }
       } catch (error) {
         console.error(`[Escalation] Failed to send SMS to ${recipient.name}:`, error);
       }

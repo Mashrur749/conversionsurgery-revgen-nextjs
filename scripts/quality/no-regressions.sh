@@ -16,24 +16,27 @@ export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-ci-anthropic-key}"
 export TWILIO_ACCOUNT_SID="${TWILIO_ACCOUNT_SID:-AC00000000000000000000000000000000}"
 export TWILIO_AUTH_TOKEN="${TWILIO_AUTH_TOKEN:-ci-twilio-token}"
 
-echo "==> 1/4 MS structural + type gate"
+echo "==> 1/6 MS structural + type gate"
 pnpm run ms:gate
 
-echo "==> 2/5 Logging guard"
+echo "==> 2/6 Logging guard"
 pnpm run quality:logging-guard
 
-echo "==> 3/5 Production build"
+echo "==> 3/6 Twilio bypass guard"
+pnpm run quality:twilio-guard
+
+echo "==> 4/6 Production build"
 # Defensive unset: some environments leave NODE_OPTIONS from prior node workers.
 unset NODE_OPTIONS || true
 pnpm run build
 
-echo "==> 4/5 Test suite"
+echo "==> 5/6 Test suite"
 pnpm test
 
 if [[ "${SKIP_RUNTIME_SMOKE:-0}" == "1" ]]; then
-  echo "==> 5/5 Runtime smoke (skipped via SKIP_RUNTIME_SMOKE=1)"
+  echo "==> 6/6 Runtime smoke (skipped via SKIP_RUNTIME_SMOKE=1)"
 else
-  echo "==> 5/5 Runtime smoke"
+  echo "==> 6/6 Runtime smoke"
   pnpm run quality:runtime-smoke
 fi
 

@@ -4,8 +4,9 @@ import { leads } from '@/db/schema/leads';
 import { conversations } from '@/db/schema/conversations';
 import { scheduledMessages } from '@/db/schema/scheduled-messages';
 import { mediaAttachments } from '@/db/schema/media-attachments';
+import { consentRecords } from '@/db/schema/compliance';
 import { flowExecutions, flows, leadContext } from '@/db/schema';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,7 @@ import { ReplyForm } from './reply-form';
 import { ActionButtons } from './action-buttons';
 import { LeadTabs } from './lead-tabs';
 import { LeadHeader } from './lead-header';
-import type { LeadHeaderProps } from './lead-header';
+import type { LeadHeaderProps, LeadConsentSummary } from './lead-header';
 import { FlowStatus } from './flow-status';
 import { LeadTags } from './lead-tags';
 import { SMART_ASSIST_STATUS } from '@/lib/services/smart-assist-state';
@@ -95,6 +96,35 @@ export default async function LeadDetailPage({ params }: Props) {
     .where(eq(leadContext.leadId, lead.id))
     .limit(1);
 
+  // Most-recent active consent record for this lead's phone (CASL boundary
+  // surfacing on the consent badge). isActive filter excludes revoked records.
+  const [latestConsent] = await db
+    .select({
+      consentSource: consentRecords.consentSource,
+      consentType: consentRecords.consentType,
+      consentTimestamp: consentRecords.consentTimestamp,
+      consentEvidence: consentRecords.consentEvidence,
+    })
+    .from(consentRecords)
+    .where(
+      and(
+        eq(consentRecords.clientId, clientId),
+        eq(consentRecords.phoneNumber, lead.phone),
+        eq(consentRecords.isActive, true)
+      )
+    )
+    .orderBy(desc(consentRecords.consentTimestamp))
+    .limit(1);
+
+  const consentSummary: LeadConsentSummary | null = latestConsent
+    ? {
+        consentSource: latestConsent.consentSource,
+        consentType: latestConsent.consentType,
+        consentTimestamp: latestConsent.consentTimestamp ?? null,
+        consentEvidence: latestConsent.consentEvidence ?? null,
+      }
+    : null;
+
   const [scheduled, activeFlows] = await Promise.all([
     db
       .select()
@@ -132,6 +162,7 @@ export default async function LeadDetailPage({ params }: Props) {
     <div className="space-y-6">
       <LeadHeader
         lead={lead}
+        consent={consentSummary}
         conversationStage={contextResult?.conversationStage}
         scores={contextResult ? {
           urgency: contextResult.urgencyScore ?? 0,
