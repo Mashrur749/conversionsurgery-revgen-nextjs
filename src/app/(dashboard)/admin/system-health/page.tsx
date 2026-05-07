@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { generateMonthlyDigest } from '@/lib/services/monthly-health-digest';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { ComplianceObservabilityPanel } from './compliance-observability-panel';
+import { ComplianceService } from '@/lib/compliance/compliance-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +49,9 @@ export default async function SystemHealthPage() {
   const digest = await generateMonthlyDigest();
   const { clientOverview, capacity, automationHealth, guaranteeTracker, keyMetrics } =
     digest.sections;
+
+  const sentinel = await ComplianceService.getSentinelBlockedTotals();
+  const lastAuditExport = await ComplianceService.getLastAuditExportInfo();
 
   const generatedDate = new Date(digest.generatedAt).toLocaleString('en-CA', {
     dateStyle: 'medium',
@@ -234,6 +239,17 @@ export default async function SystemHealthPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Compliance Observability — Wave A Hardening Phase 2 */}
+      <ComplianceObservabilityPanel
+        sentinelTotal={sentinel.total}
+        sentinelLast7Days={sentinel.last7Days}
+        sentinelLastBlockAt={sentinel.lastBlockAt?.toISOString() ?? null}
+        sentinelByReason={sentinel.byReason}
+        lastAuditExportAt={lastAuditExport.at?.toISOString() ?? null}
+        lastAuditExportObjectKey={lastAuditExport.objectKey}
+        lastAuditExportRetainUntil={lastAuditExport.retainUntil?.toISOString() ?? null}
+      />
 
       {/* Row 3: Automation Health */}
       <Card>

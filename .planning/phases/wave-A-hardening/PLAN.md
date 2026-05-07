@@ -334,6 +334,8 @@ These gaps are independent — Gap 2 (lead UI), Gap 3 (24-month customer-consent
 
 **Goal:** Sentinel metric counter + immutable consent-audit export ready before first paid client volume hits production.
 
+> **IMPLEMENTATION NOTE (Wave 2 actual):** Phase 2 Task 2 originally specified a Neon-DB-backed snapshot table (`compliance_audit_snapshots`) because Cloudflare Workers has no fs access. **Actual delivery uses Cloudflare R2 with COMPLIANCE-mode Object Lock (7-year retention, 2557 days) at `src/lib/clients/r2.ts` + `src/app/api/cron/audit-log-export/route.ts`.** R2 provides cryptographic immutability + S3-compatible API + Cloudflare-ecosystem pricing. The DB-snapshot fallback was redundant once R2 was greenlit. Operator provisioning steps live in `OPERATOR-ACTIONS.md` Action 1B/1C. Decision F (per-client `contractor_alert_quiet_hours_enabled`) added to clients schema via migration `0031_big_boom_boom.sql`. React component test infra (jsdom + @testing-library/react) added under Wave 2B.
+
 #### Phase 2 Task 1 — Sentinel block counter `compliance_sentinel_blocked_total`
 - **Files modified:** `src/lib/compliance/compliance-gateway.ts`, `src/app/(dashboard)/admin/compliance/compliance-dashboard-client.tsx`, `src/app/api/compliance/check/route.ts` (or new endpoint)
 - **Action:** Implement the counter in the simplest way that survives Cloudflare Workers' single-threaded, no-global-state runtime: **DERIVE it from `compliance_audit_log`**. No new in-memory counter needed.

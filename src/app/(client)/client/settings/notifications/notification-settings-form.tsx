@@ -24,6 +24,7 @@ interface NotificationPrefs {
   quietHoursStart: string;
   quietHoursEnd: string;
   urgentOverride: boolean;
+  contractorAlertQuietHoursEnabled: boolean;
 }
 
 interface Props {
@@ -89,6 +90,44 @@ export function NotificationSettingsForm({ initialPrefs }: Props) {
           <div className="flex items-center justify-between">
             <Label>Negative review alerts</Label>
             <Switch checked={prefs.smsNegativeReview} onCheckedChange={() => toggle('smsNegativeReview')} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-1.5">
+            <CardTitle>SMS alert delivery</CardTitle>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>
+                    Controls whether platform quiet hours (9pm&ndash;10am in your
+                    timezone) apply to SMS alerts addressed to you. Default is OFF
+                    so urgent business alerts arrive immediately.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <CardDescription>How quiet hours apply to alerts about your business</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label>Respect quiet hours (9pm&ndash;10am) for SMS alerts to me</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                When ON, SMS alerts addressed to your phone are held back during
+                platform quiet hours. When OFF (default), alerts always send.
+              </p>
+            </div>
+            <Switch
+              checked={prefs.contractorAlertQuietHoursEnabled}
+              onCheckedChange={() => toggle('contractorAlertQuietHoursEnabled')}
+            />
           </div>
         </CardContent>
       </Card>

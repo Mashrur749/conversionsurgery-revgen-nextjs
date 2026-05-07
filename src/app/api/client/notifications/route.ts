@@ -18,6 +18,9 @@ const updateSchema = z.object({
   quietHoursStart: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   quietHoursEnd: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   urgentOverride: z.boolean().optional(),
+  // Decision F (Wave A Hardening): per-client quiet-hours preference for
+  // internal SMS alerts addressed to the contractor's own phone.
+  contractorAlertQuietHoursEnabled: z.boolean().optional(),
 });
 
 export const GET = portalRoute(

@@ -396,6 +396,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── Weekly Sunday 3am UTC ─────────────────────────────────
+    // Wave A Hardening Phase 2: immutable audit-log export to Cloudflare R2
+    // with COMPLIANCE-mode Object Lock (7-year retention by default).
+    if (day === 0 && hour === 3 && minute < 10) {
+      results.auditLogExport = await dispatch(
+        baseUrl,
+        '/api/cron/audit-log-export',
+        cronSecret!,
+        'GET',
+        failedJobs,
+      );
+    }
+
     // ── Weekly Wednesday 10am UTC ─────────────────────────────
     if (day === 3 && hour === 10 && minute < 10) {
       // GAP-03: 6-month dormant re-engagement — runs weekly on Wednesdays

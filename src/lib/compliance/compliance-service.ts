@@ -778,6 +778,100 @@ export class ComplianceService {
   }
 
   /**
+   * Aggregate counter for `internal_sms_sentinel_block` audit rows.
+   *
+   * Used by the admin system-health dashboard to surface "non-zero =
+   * a bypass attempt was caught" signal. Derived directly from
+   * `compliance_audit_log` so there is no separate counter to keep in sync.
+   *
+   * @param since  Optional lower bound; when omitted, returns lifetime totals.
+   */
+  static async getSentinelBlockedTotals(
+    since?: Date
+  ): Promise<{
+    total: number;
+    last7Days: number;
+    lastBlockAt: Date | null;
+    byReason: Record<string, number>;
+  }> {
+    const db = getDb();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000);
+
+    const baseWhere = eq(complianceAuditLog.eventType, 'internal_sms_sentinel_block');
+
+    const rows = await db
+      .select({
+        eventTimestamp: complianceAuditLog.eventTimestamp,
+        eventData: complianceAuditLog.eventData,
+      })
+      .from(complianceAuditLog)
+      .where(
+        since ? and(baseWhere, gte(complianceAuditLog.eventTimestamp, since)) : baseWhere
+      );
+
+    let total = 0;
+    let last7Days = 0;
+    let lastBlockAt: Date | null = null;
+    const byReason: Record<string, number> = {};
+
+    for (const row of rows) {
+      total++;
+      if (row.eventTimestamp.getTime() >= sevenDaysAgo.getTime()) last7Days++;
+      if (!lastBlockAt || row.eventTimestamp.getTime() > lastBlockAt.getTime()) {
+        lastBlockAt = row.eventTimestamp;
+      }
+      const data = (row.eventData ?? {}) as Record<string, unknown>;
+      const reason = typeof data.blockReason === 'string' ? data.blockReason : 'unknown';
+      byReason[reason] = (byReason[reason] ?? 0) + 1;
+    }
+
+    return { total, last7Days, lastBlockAt, byReason };
+  }
+
+  /**
+   * Read metadata about the last successful R2 audit-log export, if any.
+   * Used by the system-health dashboard to confirm the weekly cron is firing.
+   * Returns the wall-clock timestamp, R2 object key, and Object Lock
+   * retain-until timestamp, all derived from `system_settings`.
+   */
+  static async getLastAuditExportInfo(): Promise<{
+    at: Date | null;
+    objectKey: string | null;
+    retainUntil: Date | null;
+  }> {
+    const { systemSettings } = await import('@/db');
+    const db = getDb();
+    const rows = await db
+      .select({ key: systemSettings.key, value: systemSettings.value })
+      .from(systemSettings)
+      .where(
+        or(
+          eq(systemSettings.key, 'audit_export.last_run_at'),
+          eq(systemSettings.key, 'audit_export.last_run_object_key'),
+          eq(systemSettings.key, 'audit_export.last_run_retain_until')
+        )
+      );
+
+    let at: Date | null = null;
+    let objectKey: string | null = null;
+    let retainUntil: Date | null = null;
+
+    for (const row of rows) {
+      if (row.key === 'audit_export.last_run_at') {
+        const parsed = new Date(row.value);
+        at = Number.isNaN(parsed.getTime()) ? null : parsed;
+      } else if (row.key === 'audit_export.last_run_object_key') {
+        objectKey = row.value;
+      } else if (row.key === 'audit_export.last_run_retain_until') {
+        const parsed = new Date(row.value);
+        retainUntil = Number.isNaN(parsed.getTime()) ? null : parsed;
+      }
+    }
+
+    return { at, objectKey, retainUntil };
+  }
+
+  /**
    * Log a compliance event
    */
   static async logComplianceEvent(

@@ -814,6 +814,15 @@ export interface SendInternalSMSParams {
   body: string;
   /** Subject identifier — used for audit logging and dedup keys upstream. */
   subject: string;
+  /**
+   * Decision F (Wave A Hardening): when this internal SMS targets a specific
+   * contractor (their own phone, e.g. lead-recovery alert addressed to them),
+   * pass the client id so the gateway can honor that contractor's
+   * `contractorAlertQuietHoursEnabled` preference. Operator-alert callers
+   * (`alertOperator()`) leave this UNDEFINED; quiet-hours enforcement is a
+   * contractor-self preference, not an operator one.
+   */
+  clientId?: string;
   /** Optional structured metadata for the audit log. */
   metadata?: Record<string, unknown>;
 }
@@ -830,28 +839,39 @@ export interface SendInternalSMSResult {
 }
 
 /**
- * FOR OPERATOR-FACING / INTERNAL ALERTS ONLY.
+ * FOR INTERNAL ALERTS ONLY (operator OR contractor-self).
  *
- * Adding callers other than operator-alert paths requires explicit security review.
- * For lead-facing or contractor-facing sends, use {@link sendCompliantMessage} instead —
- * that path enforces the full CASL/TCPA pipeline (consent, quiet hours, monthly limits).
+ * Adding callers requires explicit security review. For lead-facing /
+ * homeowner-facing sends, use {@link sendCompliantMessage} instead — that
+ * path enforces the full CASL/TCPA pipeline (consent, quiet hours, monthly
+ * limits) governed by recipient consent.
  *
- * This path is the narrow gateway for alerts the operator MUST receive (system errors,
- * compliance incidents, etc.). It still runs three sentinel checks before transport:
+ * This path is the narrow gateway for alerts the operator OR contractor MUST
+ * receive (system errors, missed-lead replays, compliance incidents, etc.).
+ *
+ * Wave A Hardening Phase 2 / Decision F: when `clientId` is passed, the
+ * gateway also honors that contractor's `contractorAlertQuietHoursEnabled`
+ * preference. Operator-alert callers (`alertOperator()`) omit `clientId` so
+ * quiet hours never apply to operator notifications.
+ *
+ * Sentinel checks (always, in order):
  *   1. Operator kill switch (OUTBOUND_AUTOMATIONS).
- *   2. Recipient opt-out — should never be true for operator phone, but if a
- *      misconfiguration puts the operator on opt-out we surface it loudly.
+ *   2. Recipient opt-out — surfaced loudly because an operator/contractor on
+ *      opt-out is almost certainly a misconfiguration.
  *   3. Platform DNC.
+ *   4. Decision F quiet-hours preference (only when `clientId` is present and
+ *      the contractor has explicitly opted in).
  *
- * Every call writes to compliance_audit_log with category
- *   - `internal_sms_sent` on success
- *   - `internal_sms_sentinel_block` on block
- * so Phase 2 sentinel-counter dashboards can derive metrics.
+ * Audit categories written to compliance_audit_log:
+ *   - `internal_sms_sent`              — success
+ *   - `internal_sms_sentinel_block`    — kill switch / opt-out / platform DNC
+ *   - `internal_sms_quiet_hours_block` — Decision F quiet-hours preference
+ *   - `internal_sms_send_failed`       — Twilio transport error
  */
 export async function sendInternalSMS(
   params: SendInternalSMSParams
 ): Promise<SendInternalSMSResult> {
-  const { to, from, body, subject, metadata } = params;
+  const { to, from, body, subject, clientId, metadata } = params;
 
   const normalizedPhone = ComplianceService.normalizePhoneNumber(to);
   const phoneHash = ComplianceService.hashPhoneNumber(normalizedPhone);
@@ -950,20 +970,56 @@ export async function sendInternalSMS(
   }
 
   // -----------------------------------------------------------
+  // Decision F: per-client contractor quiet-hours preference.
+  // Only applies when caller supplied `clientId` (i.e. the alert is
+  // addressed to that contractor's own phone). Operator alerts pass no
+  // clientId and bypass this check.
+  // -----------------------------------------------------------
+  if (clientId) {
+    const [clientRow] = await db
+      .select({
+        contractorAlertQuietHoursEnabled: clients.contractorAlertQuietHoursEnabled,
+        timezone: clients.timezone,
+      })
+      .from(clients)
+      .where(eq(clients.id, clientId))
+      .limit(1);
+
+    if (clientRow?.contractorAlertQuietHoursEnabled) {
+      const quietHoursResult = await ComplianceService.isQuietHours(
+        clientId,
+        clientRow.timezone || undefined
+      );
+      if (quietHoursResult.isQuietHours) {
+        await ComplianceService.logComplianceEvent(clientId, 'internal_sms_quiet_hours_block', {
+          ...baseAuditMetadata,
+          blockReason: 'contractor_quiet_hours',
+          quietHoursReason: quietHoursResult.reason,
+        });
+        return {
+          sent: false,
+          blocked: true,
+          blockReason: 'contractor_quiet_hours',
+        };
+      }
+    }
+  }
+
+  // -----------------------------------------------------------
   // All sentinels clear — send via privileged transport
   // -----------------------------------------------------------
   let messageSid: string;
   try {
     messageSid = await _sendSmsToTwilio(normalizedPhone, body, from);
   } catch (error) {
-    await ComplianceService.logComplianceEvent(null, 'internal_sms_send_failed', {
+    await ComplianceService.logComplianceEvent(clientId ?? null, 'internal_sms_send_failed', {
       ...baseAuditMetadata,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
   }
 
-  await ComplianceService.logComplianceEvent(null, 'internal_sms_sent', {
+  await ComplianceService.logComplianceEvent(clientId ?? null, 'internal_sms_sent', {
     ...baseAuditMetadata,
     messageSid,
   });

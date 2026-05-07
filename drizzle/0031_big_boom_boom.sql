@@ -1,0 +1,1 @@
+ALTER TABLE "clients" ADD COLUMN "contractor_alert_quiet_hours_enabled" boolean DEFAULT false NOT NULL;

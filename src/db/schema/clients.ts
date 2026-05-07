@@ -168,6 +168,19 @@ export const clients = pgTable(
     // proving the system works without forcing the contractor into the dashboard.
     firstRecoveryReplaySentAt: timestamp('first_recovery_replay_sent_at'),
 
+    // Decision F (Wave A Hardening, Phase 2):
+    // When TRUE, SMS alerts to this contractor's own phone respect platform quiet
+    // hours (queued for next allowed window). When FALSE (default), the contractor
+    // is exempt from quiet hours on alerts addressed to themselves — the standard
+    // operator/contractor expectation that urgent business alerts arrive in real
+    // time. This setting affects ONLY contractor-self alerts routed through
+    // sendInternalSMS (passing this client's id). Lead/homeowner-facing sends are
+    // governed by the existing per-message quiet-hours pipeline in
+    // sendCompliantMessage and are NOT affected by this flag.
+    contractorAlertQuietHoursEnabled: boolean('contractor_alert_quiet_hours_enabled')
+      .default(false)
+      .notNull(),
+
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },

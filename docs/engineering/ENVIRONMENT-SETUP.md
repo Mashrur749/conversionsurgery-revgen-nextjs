@@ -101,6 +101,16 @@ TWILIO_WEBHOOK_BASE_URL=http://localhost:3000    # Will change to ngrok URL in S
 # Google Calendar (optional for now — skip if not set up)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+
+# Cloudflare R2 audit-log export (Wave A Hardening Phase 2 — required only for
+# the weekly compliance audit-log export cron. Optional for local dev: when
+# unset, the cron route returns 500 with a clear error and the last-run
+# timestamp is NOT advanced. Provision per OPERATOR-ACTIONS.md Action 1B/1C.)
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_AUDIT_BUCKET=conversionsurgery-audit-logs
+R2_AUDIT_RETENTION_DAYS=2557          # 7 years; bucket also has a default
 ```
 
 > **Stripe and Google keys are optional for local testing.** If you skip them, billing and calendar features won&apos;t work but everything else will. You&apos;ll set these up properly in Phase 5 of the Launch Checklist.
