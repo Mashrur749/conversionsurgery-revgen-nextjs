@@ -1,7 +1,7 @@
 # ConversionSurgery — Approved Copy Bank
 
-Version 2.0
-Date: May 4, 2026
+Version 2.1
+Date: May 6, 2026
 Status: Approved for use in proposals, agreements, emails, leave-behinds, and website copy
 
 ---
@@ -396,9 +396,10 @@ This is the highest-ROI single SMS in the entire onboarding flow. It converts th
 | 1.7     | April 4, 2026     | Four changes from competitive offer analysis: (1) Voice AI changed from optional add-on to included in base price. (2) 90-day guarantee tightened: now triggers on "1 booked estimate from a cold lead OR $5,000 probable pipeline" instead of vague "project you can point to." Attribution definition updated to "Attributed Result." (3) Weekly Pipeline Update added to Section 2 and Section 9 — Monday SMS with dollar pipeline values. (4) Capacity/exclusivity FAQ added: "one to three contractors per trade per city." Section 9 full offer updated to reflect voice + guarantee + weekly SMS. |
 | 1.8     | April 4, 2026     | Language alignment: replaced "AI" with "the system" throughout all client-facing copy per ICP psychology research (7/10 agents: contractors associate "AI" with chatbots they&apos;ve been burned by). "AI Conversation Agent" → "Intelligent Conversation Agent." "Voice AI" → "Voice." All action descriptions now use "the system" instead of "the AI." FAQ question reframed from "What if the AI says something wrong" to "What if the system says something wrong." Estimate follow-up in Section 9 now specifies "4-touch sequence over 14 days." |
 | 2.0     | May 4, 2026       | **Business Reference v1.0 alignment (Wave A).** Complete rewrite of pricing, guarantee, and terms to three-tier model: Pilot ($3,500+$1,500/mo), Standard ($5,500+$2,000/mo), Premium ($9,500+$3,500/mo). Setup fee added. 90-day minimum term replaces month-to-month from day one. Guarantee rewritten from revenue-based (30-Day Proof-of-Life + 90-Day Revenue Recovery) to operational (21-day go-live + 30-day logging gate with auto-pause). Pilot "first 3 clients" callout added. Three new FAQ entries: "why both fees," "can I self-serve," cancellation updated for 90-day minimum. Founder authorized 2026-05-04. |
+| 2.1     | May 6, 2026       | **Pre-launch doc-vs-code consistency fixes.** §2 Dormant Lead Reactivation + §2 Q1/Q3 Quarterly Growth Blitz: added explicit 6-month CASL implied-consent qualifier ("past inquiries from the last 6 months"). §4 Pilot vs Standard: rewritten as same service / different price ("foundational system" → "full managed service, discounted in exchange for case-study partnership") + added clarification line. §6 Post-Legal-Review variant: gated behind prominent "🛑 DO NOT USE" banner pending counsel sign-off + per-client `inboundReplyExemptionEnabled` flag. §7 Compliance: added bullet on CASL 6-month implied / 24-month customer consent windows. ICP-DEFINITION.md cold-call script aligned ("5 seconds" → "in seconds during permitted hours"). **Open: CASL intake-side enforcement gate (operator quick-add UI + CSV import inquiry-date capture) — copy now promises a 6-month gate that code does not yet enforce at intake. Block-launch dev work tracked separately.** |
 
 ---
 
-_ConversionSurgery — Client-Facing Approved Copy v2.0_
+_ConversionSurgery — Client-Facing Approved Copy v2.1_
 _Source: Business Reference v1.0 + Grand Slam Offer Architecture_
 _May 2026_
