@@ -39,7 +39,7 @@ Objective: Track every promise in the Business Reference against platform realit
 |---|---|---|---|
 | `PG-003` | Won/lost reason tracking ("Won/lost reasons logged" KPI, §12) | `lostReason` exists on `jobs` table only, not `leads`. No structured reason capture surface in portal. Win-back AI uses conversation history but doesn't classify objections. Cross-references gap-register `BL-14`. | Open |
 | `PG-004` | Estimator-level reporting & pipeline visibility (§6.3, §6.4) | Estimator-specific briefing on appointment reminder is built. No `assignedEstimatorId` FK on `leads` or `appointments`. Portal cannot filter pipeline by estimator. | Open |
-| `PG-005` | First-response time as a surfaced KPI (§12) | `avg_response_time_seconds` is logged on `analytics-daily/weekly` and `lead-context`. Confirm whether the bi-weekly report or contractor portal exposes it as a named metric to the buyer. | Needs verification |
+| `PG-005` | First-response time as a surfaced KPI (§12) | Verified 2026-05-07. `avg_response_time_seconds` surfaces in: `/client/revenue` portal page (via `getSpeedToLeadMetrics`), bi-weekly report payload (`src/lib/services/report-generation.ts:402-424`), `/admin/reports/[id]:236` ("Your avg first response time"), ROI dashboard (`roi-dashboard.tsx:76`), call-prep page, analytics-dashboard, AI-health/AI-effectiveness. | **Done** |
 
 ### P2 — Premium tier (Booked Estimate OS) gaps (do not sell tier until closed)
 
