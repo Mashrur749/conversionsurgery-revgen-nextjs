@@ -149,14 +149,14 @@ beforeEach(() => {
   mockCheckUsageLimit.mockResolvedValue({ allowed: true, current: 0, limit: 1000 });
 });
 
-// ── inquiry mode ──────────────────────────────────────────────────────────────
+// ── standard mode ─────────────────────────────────────────────────────────────
 
-describe('POST /api/leads — consentMode: inquiry', () => {
+describe('POST /api/leads — consentMode: standard', () => {
   it('accepts a recent inquiry and records implied consent (source=manual_entry, anchored at inquiryDate)', async () => {
     const inquiry = isoDateDaysAgo(30);
     const res = await POST(
       makeRequest({
-        consentMode: 'inquiry',
+        consentMode: 'standard',
         name: 'Alice',
         phone: '5551112222',
         inquiryDate: inquiry,
@@ -176,7 +176,7 @@ describe('POST /api/leads — consentMode: inquiry', () => {
   it('rejects an inquiry older than 180 days with a clear error', async () => {
     const res = await POST(
       makeRequest({
-        consentMode: 'inquiry',
+        consentMode: 'standard',
         name: 'Bob',
         phone: '5551112222',
         inquiryDate: isoDateDaysAgo(200),

@@ -35,7 +35,7 @@ async function openDialog() {
 }
 
 describe('<CreateLeadDialog />', () => {
-  it('opens with consent mode defaulting to "inquiry"', async () => {
+  it('opens with consent mode defaulting to "standard"', async () => {
     await openDialog();
 
     // The "inquiry" radio is checked by default.
@@ -116,7 +116,7 @@ describe('<CreateLeadDialog />', () => {
     expect(submit).not.toBeDisabled();
   });
 
-  it('disables submit in inquiry mode when inquiry date is older than 6 months', async () => {
+  it('disables submit in standard mode when inquiry date is older than 6 months', async () => {
     const user = await openDialog();
 
     const submit = screen.getByRole('button', { name: /Create Lead/i });
@@ -142,11 +142,11 @@ describe('<CreateLeadDialog />', () => {
     expect(warningPanel?.className).toMatch(/bg-\[#FFF3E0\]/);
   });
 
-  it('verifies the inquiry mode shows the inquiry-date field by default', async () => {
+  it('verifies the standard mode shows the inquiry-date field by default', async () => {
     await openDialog();
 
     // Sanity assertion separate from default-mode test — focuses on the
-    // contract that "inquiry" is the entry point and the date field is the
+    // contract that "standard" is the entry point and the date field is the
     // primary input for that mode.
     const dateField = screen.getByLabelText(/Inquiry date/i) as HTMLInputElement;
     expect(dateField.type).toBe('date');

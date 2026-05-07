@@ -25,7 +25,7 @@ const CASL_IMPLIED_CONSENT_DAYS = 180;
 const CASL_EXISTING_CUSTOMER_DAYS = 730;
 const MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH = 10;
 
-type ConsentMode = 'inquiry' | 'express_consent' | 'existing_customer';
+type ConsentMode = 'standard' | 'express_consent' | 'existing_customer';
 
 function todayISODate(): string {
   // YYYY-MM-DD in the user's local timezone — matches <input type="date"> format.
@@ -47,7 +47,7 @@ export function CreateLeadDialog({ onCreated }: CreateLeadDialogProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const today = useMemo(todayISODate, []);
-  const [consentMode, setConsentMode] = useState<ConsentMode>('inquiry');
+  const [consentMode, setConsentMode] = useState<ConsentMode>('standard');
   const [inquiryDate, setInquiryDate] = useState(today);
   const [expressConsentEvidence, setExpressConsentEvidence] = useState('');
   const [transactionDate, setTransactionDate] = useState(today);
@@ -59,12 +59,12 @@ export function CreateLeadDialog({ onCreated }: CreateLeadDialogProps) {
     expressConsentEvidence.trim().length >= MIN_EXPRESS_CONSENT_EVIDENCE_LENGTH;
   const transactionWithinWindow =
     transactionAgeDays >= 0 && transactionAgeDays <= CASL_EXISTING_CUSTOMER_DAYS;
-  // Auto-prompt when an "inquiry" mode date crosses the 6-month boundary.
+  // Auto-prompt when a "standard" mode inquiry date crosses the 6-month boundary.
   const inquiryRequiresExpressConsent =
-    consentMode === 'inquiry' && inquiryAgeDays >= CASL_IMPLIED_CONSENT_DAYS;
+    consentMode === 'standard' && inquiryAgeDays >= CASL_IMPLIED_CONSENT_DAYS;
 
   let submitDisabled = saving;
-  if (consentMode === 'inquiry' && inquiryRequiresExpressConsent) {
+  if (consentMode === 'standard' && inquiryRequiresExpressConsent) {
     submitDisabled = true;
   }
   if (consentMode === 'express_consent' && !evidenceValid) {
@@ -75,7 +75,7 @@ export function CreateLeadDialog({ onCreated }: CreateLeadDialogProps) {
   }
 
   function resetForm() {
-    setConsentMode('inquiry');
+    setConsentMode('standard');
     setInquiryDate(today);
     setExpressConsentEvidence('');
     setTransactionDate(today);
@@ -158,7 +158,7 @@ export function CreateLeadDialog({ onCreated }: CreateLeadDialogProps) {
               className="gap-2"
             >
               <label className="flex items-start gap-2 rounded-md border border-input p-2 cursor-pointer hover:bg-muted/30">
-                <RadioGroupItem value="inquiry" id="consent-inquiry" className="mt-1" />
+                <RadioGroupItem value="standard" id="consent-inquiry" className="mt-1" />
                 <div className="text-sm">
                   <p className="font-medium">New inquiry (last 6 months)</p>
                   <p className="text-xs text-muted-foreground">
@@ -212,7 +212,7 @@ export function CreateLeadDialog({ onCreated }: CreateLeadDialogProps) {
             <Input id="projectType" name="projectType" placeholder="Kitchen remodel, plumbing repair..." />
           </div>
 
-          {(consentMode === 'inquiry' || consentMode === 'express_consent') && (
+          {(consentMode === 'standard' || consentMode === 'express_consent') && (
             <div className="space-y-2">
               <Label htmlFor="inquiryDate">Inquiry date *</Label>
               <Input
@@ -230,7 +230,7 @@ export function CreateLeadDialog({ onCreated }: CreateLeadDialogProps) {
             </div>
           )}
 
-          {consentMode === 'inquiry' && inquiryRequiresExpressConsent && (
+          {consentMode === 'standard' && inquiryRequiresExpressConsent && (
             <div className="space-y-2 rounded-md border border-sienna bg-[#FFF3E0] p-3">
               <p className="text-sm font-medium text-sienna">
                 This inquiry is over 6 months old. Switch to &ldquo;Older inquiry&rdquo; mode and

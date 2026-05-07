@@ -177,13 +177,13 @@ const baseLeadFields = {
 } as const;
 
 // CASL three-mode intake:
-//   - inquiry:           recent (≤180d) inquiry → implied consent (6mo clock from inquiry)
+//   - standard:          recent (≤180d) inquiry → implied consent (6mo clock from inquiry)
 //   - express_consent:   any age + evidence → express_written consent
 //   - existing_customer: paid customer (≤730d) → implied consent (24mo clock from txn)
 const createLeadSchema = z.discriminatedUnion('consentMode', [
   z.object({
     ...baseLeadFields,
-    consentMode: z.literal('inquiry'),
+    consentMode: z.literal('standard'),
     inquiryDate: z.string().min(1, 'inquiryDate is required'),
   }).strict(),
   z.object({
@@ -311,7 +311,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (data.consentMode === 'inquiry') {
+    if (data.consentMode === 'standard') {
       const ageDays = daysBetween(inquiryDate, new Date());
       if (ageDays >= CASL_IMPLIED_CONSENT_DAYS) {
         return NextResponse.json(

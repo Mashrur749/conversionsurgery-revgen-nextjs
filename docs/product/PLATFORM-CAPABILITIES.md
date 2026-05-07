@@ -15,14 +15,15 @@ The lead intake form (admin and portal) presents three consent modes; the operat
 
 | Mode | CASL basis | Recency window | Evidence required |
 |------|-----------|----------------|-------------------|
-| **Standard (implied)** | §10 implied — inquiry from prospect | inquiry_date &lt; 180 days | inquiry_date timestamp |
-| **Express consent** | §10(1) express written consent | any age | `express_consent_evidence` text (where/how consent was captured) |
-| **Existing customer** | §10(2) existing business relationship | within 24 months of last transaction | last-transaction date + customer flag |
+| **Standard (implied)** | §10 implied — inquiry from prospect | inquiry_date &lt; 180 days | `leads.inquiry_date` timestamp |
+| **Express consent** | §10(1) express written consent | any age | `consent_records.consent_evidence` text (where/how consent was captured) |
+| **Existing customer** | §10(2) existing business relationship | within 24 months of last transaction | transaction date stored in `leads.inquiry_date` + `consent_records.consent_source = 'existing_customer'` |
 
 - The intake form pivots its required fields based on mode selection (`src/components/leads/intake-mode-selector.tsx`)
 - A consent badge surfaces on the lead detail page reflecting the mode and recency
 - `src/app/api/leads/import` and `src/app/api/client/leads/import` validate the mode + evidence before insert; CSV uploaders enforce the same gate
-- Migration `0030` adds `consent_mode`, `express_consent_evidence`, and `last_transaction_at` columns to `leads`
+- Migration `0030` adds three nullable columns: `leads.inquiry_date` (records when the homeowner first inquired), `leads.dormant_reengagement_sent_at` (idempotency for the dormant-reengagement automation), and `consent_records.consent_evidence` (free-text attestation when the operator records express consent for an older lead). The intake mode itself is encoded via the existing `consent_records.consent_source` enum (`'manual_entry'` for the standard/express paths from the admin dialog, `'web_form'`/`'text_optin'`/`'paper_form'`/`'phone_recording'`/`'api_import'` for the inquiry-source variants captured elsewhere, and `'existing_customer'` for the 24-month customer-consent path). For the `existing_customer` mode, the operator-supplied transaction date is stored in `leads.inquiry_date` (the field is reused since both anchor a CASL window — 6 months from inquiry, 24 months from transaction)
+- API vocabulary: the `/api/leads` POST handler accepts `consentMode: 'standard' | 'express_consent' | 'existing_customer'`; CSV imports use the same vocabulary as `intakeMode`
 
 ### Operator-Alert SMS Path (`sendInternalSMS()`)
 
@@ -31,7 +32,7 @@ Operator-facing SMS alerts (hot-transfer, escalation, ops health) used to bypass
 - Routes through the same gateway as lead-facing sends (sentinel + audit-log path)
 - Skips homeowner-specific checks (consent, quiet hours, DNC) since the recipient is internal staff
 - Tags every send with `category: 'internal_alert'` for downstream audit filtering
-- Replaces all 7 prior direct-Twilio call sites identified in the bypass audit
+- Replaces all known direct-Twilio call sites identified in the bypass audit; future bypasses prevented by ESLint + CI gate
 
 Lead-facing sends continue to use `sendCompliantMessage()`. There is no other supported send path.
 
@@ -420,6 +421,16 @@ Always-on continuous automation (separate from Quarterly Growth Blitz campaigns)
 - **Dormant lead auto-promotion:** when a dormant lead texts back, status automatically promoted to `contacted` so they appear in the active pipeline
 - **Engagement-depth tone:** Win-back messages adapt tone based on prior conversation depth — leads with 5+ messages get a warm reconnect referencing their project; leads with minimal engagement get a fresh introductory approach
 - **Returning lead detection:** When a lead replies after 7+ days of silence, the conversation stage resets to greeting with a fresh summary, preventing the agent from resuming mid-strategy with stale context
+
+### First Missed Lead Replay
+
+Within 30 days of go-live, the first time the system catches a recovery event the contractor would have lost (missed call recovered, dormant lead reactivated who replied, after-hours form responded to and replied within 7 days), an automated SMS fires to the contractor: &ldquo;Caught one. {firstName} called {X} days ago, no response. System followed up. He replied. Look at the thread when you get a chance.&rdquo;
+
+- One-shot per client (tracked via `clients.first_recovery_replay_sent_at` to prevent re-fire)
+- Window: Day 21&ndash;51 post-go-live (after the operational guarantee Day-21 gate clears)
+- Routed via `sendInternalSMS()` to the contractor&apos;s own phone (transactional, not consumer marketing)
+- Solves the &ldquo;vendors take my money and disappear&rdquo; trust wound &mdash; pushes proof to the contractor&apos;s phone the first time the system catches money he would have lost
+- Implementation: `src/lib/automations/first-recovery-replay.ts`
 
 ### Notification Priority Tiers
 
@@ -990,6 +1001,18 @@ Every Monday morning, the system sends the contractor an SMS activity summary. C
 
 Sent from the client&apos;s business line (same thread as AI conversations). Per-client toggle: `weeklyDigestEnabled`. **Per-membership opt-in:** team members with `receiveWeeklyDigest = true` on their `clientMemberships` record also receive the digest SMS. Cron: `/api/cron/weekly-digest` on Monday 7am UTC.
 
+### Friday Pulse SMS
+
+Every Friday at 4pm in the contractor&apos;s local timezone, an automated SMS pushes the week&apos;s pipeline to the contractor&apos;s phone: &ldquo;This week &mdash; N new leads, N booked, $X probable pipeline. Your system worked while you were on site. Reply with any questions.&rdquo;
+
+- Forwardable to spouse/partner &mdash; closes the silent veto in the sales conversation by reaching the household decision-maker without requiring portal access
+- Solves the dashboard-aversion problem (contractors don&apos;t live in dashboards; they live on job sites)
+- Timezone-aware via `date-fns-tz` &mdash; correctly fires at 4pm local even when client tz differs from server tz
+- Reuses `getWeeklyStats()` from weekly-digest service for consistent metrics across both Monday + Friday touches
+- Gated by `client.weeklyDigestEnabled` (same toggle as Monday digest)
+- Cron: `/api/cron/friday-pulse` on Friday 21:00&ndash;22:00 UTC (covers all North American timezones at 4pm local)
+- Implementation: `src/lib/services/friday-pulse.ts`
+
 ### Delivery Infrastructure
 
 - Report delivery lifecycle: generated &rarr; queued &rarr; sent &rarr; failed
@@ -1109,14 +1132,26 @@ Two operational guarantee gates replace the revenue-based guarantee. Both run as
 
 ### Cancellation
 
-- 30-day notice period
+Three contractual cancellation paths, surfaced in admin and contractor portal:
+
+**Day-14 Cancel Right (no questions asked).** Per Service Agreement §5, contractor may cancel within 14 days of service start via one phone call or email. Maximum exposure to contractor: first signing-fee installment ($1,750 Pilot / $2,750 Standard / $4,750 Premium). The second installment is not invoiced. Monthly retainer never starts.
+
+- **Day-14 countdown banner:** sienna banner on `/admin/clients/[id]` during Day 0&ndash;14 window (`day-14-cancel-banner.tsx`). After Day 14, banner replaced with neutral &ldquo;Day-14 cancel window: closed [date]&rdquo; text.
+- **Reason-capture form** (`cancel-client-form.tsx`): structured form recording cancel type (`day_14` / `mid_term` / `post_term` / `guarantee_trigger` / `other`), reason category, free-text notes, captured-by operator. Stored in `client_cancellations` table for retrospective and pattern analysis. Day-14 cancels are highest-signal feedback &mdash; structured capture prevents loss of insight.
+- **No-questions-asked rule:** operator script forbids retention attempts on Day-14 invocations (per `02-MANAGED-SERVICE-PLAYBOOK.md` §7a). Trying to negotiate erodes trust faster than the cancel itself.
+
+**Mid-Term Cancel (Day 15&ndash;90).** Not contractually allowed except via guarantee triggers. Operator runs the retention conversation (per Playbook §7b). If guarantee was triggered: honor cancellation. If not: contractor remains contractually obligated for remaining Minimum Term fees.
+
+**Post-Minimum-Term Cancel (Day 91+).** 30 days written notice required.
+
 - **Cancellation value summary:** shows both confirmed revenue AND estimated revenue, plus count of stuck estimates with prompt to update. Prevents churn from misleadingly low ROI numbers.
 - **Operator cancellation alert:** URGENT SMS sent to operator immediately on cancellation request, including reason and business name. Enables proactive retention call scheduling.
 - Data export within 5 business days (CSV: leads, conversations, pipeline jobs)
 - Export download with time-limited token
-- Retention call scheduling option
-- **Automated grace-period reminders:** daily cron sends email reminders at 20 days left, 7 days left, and 3 days left — each fired at most once per client, deduplicated via audit_log. Grace-period reminders target both pending cancellation requests and those with a scheduled save call (status: pending or scheduled_call)
+- **Automated grace-period reminders:** daily cron sends email reminders at 20 days left, 7 days left, and 3 days left &mdash; each fired at most once per client, deduplicated via audit_log. Grace-period reminders target both pending cancellation requests and those with a scheduled save call (status: pending or scheduled_call)
 - **Post-cancellation win-back:** personalized email sent 7 days after grace period ends. Includes months active, leads captured, messages sent, and revenue tracked from the stored `valueShown` snapshot. Falls back to generic copy if data unavailable.
+
+**30-Day Pause Right (post-Minimum-Term, planned for Wave B).** Per Service Agreement §5, after Minimum Term contractor may pause service up to 30 days/year, once per 12 months, with 7 days written notice. Manual operator process today via Stripe subscription pause; automated workflow scheduled for Wave B.
 
 ---
 
@@ -1284,18 +1319,19 @@ Lifecycle: planned &rarr; scheduled &rarr; launched &rarr; completed. Invalid ju
 
 All non-core automations and notifications are controlled by per-client feature flags with system-level defaults. Flags can be overridden per client via the admin client detail page (Configuration tab) or via `system_settings` for platform-wide defaults.
 
-**8 controllable flags:**
+**9 controllable flags (8 FMA + 1 compliance):**
 
 | Flag | Default | Controls |
 |------|---------|----------|
-| `dailyDigestEnabled` | on | Daily contractor digest (P2 notification batching) |
-| `billingReminderEnabled` | on | Day 25 trial-end billing reminder SMS |
-| `engagementSignalsEnabled` | on | Weekly engagement health signals to contractor |
-| `autoResolveEnabled` | on | Auto-resolve KB gaps when a matching entry is added |
-| `forwardingVerificationEnabled` | on | Call-forwarding health check nudges |
-| `opsHealthMonitorEnabled` | on | Operator alerts for platform health thresholds |
-| `callPrepEnabled` | on | Pre-call context brief generation |
-| `capacityTrackingEnabled` | on | Contractor capacity signals and booking limit nudges |
+| `dailyDigest` | on | Daily contractor digest (P2 notification batching) |
+| `billingReminder` | on | Day 25 trial-end billing reminder SMS |
+| `engagementSignals` | on | Weekly engagement health signals to contractor |
+| `autoResolve` | on | Auto-resolve KB gaps when a matching entry is added |
+| `forwardingVerification` | on | Call-forwarding health check nudges |
+| `opsHealthMonitor` | on | Operator alerts for platform health thresholds |
+| `callPrep` | on | Pre-call context brief generation |
+| `capacityTracking` | on | Contractor capacity signals and booking limit nudges |
+| `inboundReplyExemptionEnabled` | on | CASL §6(6) inbound-reply quiet-hours exemption (see §6 Compliance) |
 
 **Emergency pause:** Setting `globalAutomationPause = true` in `system_settings` immediately halts all non-critical outbound automations across all clients, equivalent to enabling the outbound kill switch but persistent across restarts. Use for platform-wide incidents. Cleared via admin Settings page.
 
@@ -1436,7 +1472,7 @@ Eval results saved to `.scratch/eval-history.json` (rolling 50 runs). HTML repor
 
 ### Cron Orchestrator
 
-42 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), KB empty nudge (daily), day 3 check-in (daily), KB gap auto-notify (daily), AI auto-progression (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, daily contractor digest (hourly), billing reminder (daily midnight), guarantee Day 80 alert (daily midnight), onboarding call reminder (every 30 min), onboarding priming SMS (daily 7am UTC), heartbeat check (daily — verifies all cron jobs fired within expected window), and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
+50 scheduled jobs covering: message processing (5 min), calendar sync (15 min), review sync (hourly), analytics aggregation (daily), win-back campaigns (daily), KB empty nudge (daily), day 3 check-in (daily), KB gap auto-notify (daily), AI auto-progression (daily), probable wins nudge (weekly), dormant re-engagement (Wednesdays), engagement health check (Mondays), report generation (bi-weekly), guarantee checks (daily), SLA monitoring (hourly), compliance queue replay, daily contractor digest (hourly), billing reminder (daily midnight), guarantee Day 80 alert (daily midnight), onboarding call reminder (every 30 min), onboarding priming SMS (daily 7am UTC), Friday Pulse SMS (4pm Friday client local time), audit log export to R2 (Sundays 03:00 UTC, 7-year retention), heartbeat check (daily — verifies all cron jobs fired within expected window), and more. Failed jobs trigger operator SMS alerts (see Operator Alerting above).
 
 ### Ops Health Monitor (FMA Wave 4)
 
